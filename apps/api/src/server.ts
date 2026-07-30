@@ -10,8 +10,21 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+app.get("/", (req, res) => {
+  res.json({
+    message: "Welcome to Vendeur IA OS API",
+    status: "online",
+    docs: "/health"
+  });
+});
+
 app.get("/health", (req, res) => {
-  res.json({ status: "ok", service: "vendeur-ia-api", version: "1.0.0-standalone" });
+  res.json({
+    status: "ok",
+    service: "vendeur-ia-api",
+    version: "1.0.0-standalone",
+    timestamp: new Date().toISOString()
+  });
 });
 
 // Mount Routes

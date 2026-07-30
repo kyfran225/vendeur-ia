@@ -2,6 +2,7 @@
   "name": "vendeur-ia-monorepo",
   "private": true,
   "type": "module",
+  "packageManager": "pnpm@10.28.2",
   "workspaces": [
     "apps/*",
     "packages/*"
@@ -13,7 +14,7 @@
     "typecheck": "turbo typecheck"
   },
   "devDependencies": {
-    "turbo": "^2.0.4",
+    "turbo": "^2.10.7",
     "typescript": "^5.4.5"
   }
 }

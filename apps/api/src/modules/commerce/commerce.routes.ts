@@ -122,58 +122,50 @@ router.patch("/ai-settings", authenticate, async (req, res) => {
   }
 });
 
-// Demo AI Processing Route (Replicated from hold)
+import { aiAgentService } from "../../services/ai-agent.service.js";
+
+// ... existing imports ...
+
+// Demo AI Processing Route (Unified with Main Agent)
 router.post("/demo/process", async (req, res) => {
   try {
     const { businessName, city, category, description, message, history, phone } = req.body;
 
-    const isLocal = phone?.startsWith('225') || !phone;
-    const isInitial = message === "SYSTEM_INITIAL_GREETING";
-
     const [merchantInstructions, merchantPayments] = (description || "").split("---");
 
-    const prompt = `Tu es l'Expert Principal de Vente de la boutique "${businessName}" située à ${city}.
-Ton domaine : ${category}.
+    // Parse simulated payment channels if provided in description
+    const paymentChannels = merchantPayments?.split(',').map(p => {
+      const [label, number] = p.trim().split(':');
+      return { label: label?.trim(), number: number?.trim() };
+    }).filter(p => p.label && p.number) || [];
 
-OBJECTIF : Agir comme un vendeur d'élite, professionnel, exhaustif et persuasif.
+    const reply = await aiAgentService.generateResponse({
+      merchant: {
+        businessName,
+        category,
+        city,
+        country: "CI", // Default for demo
+        description: merchantInstructions,
+        paymentChannels
+      },
+      products: [], // Demo starts with no products, or we could add mock ones
+      knowledge: {
+        businessRules: {
+          deliveryZones: merchantInstructions ? [merchantInstructions] : ["Abidjan"]
+        },
+        customInstructions: "Ceci est une démonstration. Sois ultra-convaincant pour que l'utilisateur veuille activer sa machine."
+      },
+      history: history.map((h: any) => ({
+        role: h.role === "customer" ? "customer" : "ai",
+        text: h.text
+      })),
+      message: message === "SYSTEM_INITIAL_GREETING" ? "Bonjour !" : message,
+      customerPhone: phone
+    });
 
-RÈGLES D'OR DE COMPORTEMENT :
-1. PROFESSIONNALISME : Ton poli, expert et pro-actif. Évite les interjections familières.
-2. EXHAUSTIVITÉ : Réponds à CHAQUE point mentionné dans le message du client.
-3. PAIEMENTS : Utilise exactement ces infos si demandées : ${merchantPayments || "Consulter le vendeur"}.
-4. LIVRAISON/CONSIGNES : Applique ces instructions : ${merchantInstructions || "À confirmer"}.
-5. STRUCTURE : Salutation + Validation des demandes + Solution + Action concrète.
-
-ANALYSE STRATÉGIQUE :
-- Localisation du client : ${isLocal ? 'Client Local' : 'Client International'}.
-- Tactique :
-   * Si Local : Encourage la visite au showroom ou la livraison rapide.
-   * Si International : Rassure sur les délais d'expédition.
-
-${isInitial ? "ACTION : C'est le premier contact. Fais un accueil mémorable, pro et structuré." : `HISTORIQUE : ${JSON.stringify(history)}`}
-
-${isInitial ? '' : `MESSAGE CLIENT ACTUEL : "${message}"`}
-
-INSTRUCTIONS DE SORTIE : Max 65 mots.
-RECOMMANDATION : Ne demande JAMAIS l'adresse ou la localisation du client dans un premier message de salutation. Attends que la commande ou la livraison soit abordée.`;
-
-    let reply = "";
-    if (env.GEMINI_API_KEY) {
-       try {
-         const response = await axios.post(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${env.GEMINI_API_KEY}`, {
-           contents: [{ parts: [{ text: prompt }] }],
-           generationConfig: { maxOutputTokens: 160, temperature: 0.7 }
-         });
-         reply = response.data.candidates[0].content.parts[0].text;
-       } catch (err) {
-         reply = `Bonjour ! ✨ Bienvenue chez ${businessName}. Comment puis-je vous aider aujourd'hui ?`;
-       }
-    } else {
-       reply = `Bonjour ! ✨ Bienvenue chez ${businessName}. Nous sommes spécialisés en ${category} à ${city}. Que recherchez-vous ?`;
-    }
-
-    res.json({ reply: reply.trim() });
+    res.json({ reply });
   } catch (error) {
+    console.error("Demo AI Error:", error);
     res.status(500).json({ error: "ai_demo_error" });
   }
 });

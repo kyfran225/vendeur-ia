@@ -49,7 +49,7 @@ class WhatsAppService {
     sock.ev.on("messages.upsert", async (m) => {
       if (m.type === "notify") {
         for (const msg of m.messages) {
-          if (!msg.key.fromMe && msg.message) {
+          if (!msg.key.fromMe) {
             await this.handleIncomingMessage(userId, msg);
           }
         }
@@ -59,7 +59,16 @@ class WhatsAppService {
 
   async handleIncomingMessage(userId: string, msg: any) {
     const from = msg.key.remoteJid;
-    const text = msg.message.conversation || msg.message.extendedTextMessage?.text;
+    let text = msg.message?.conversation || msg.message?.extendedTextMessage?.text;
+
+    // Vocal Support: Handle Audio Messages
+    if (!text && (msg.message?.audioMessage || msg.message?.videoMessage)) {
+        console.log("[WhatsApp] Audio/Video message received, attempting transcription...");
+        // In a real scenario, we would download the media and use aiProvider.transcribeAudio
+        // For now, we'll use a placeholder to show the "brain" is aware of vocal inputs
+        text = "[Message Vocal Reçu]";
+    }
+
     if (!text) return;
 
     const merchant = await CommerceMerchantModel.findOne({ ownerId: userId });
@@ -80,6 +89,16 @@ class WhatsAppService {
     // Save customer message
     const customerMsg = await CommerceMessageModel.create({ conversationId: conversation._id, sender: "customer", content: text });
 
+    // Fetch conversation history
+    const historyMessages = await CommerceMessageModel.find({ conversationId: conversation._id })
+      .sort({ timestamp: -1 })
+      .limit(10);
+
+    const history = historyMessages.reverse().map(m => ({
+      sender: m.sender,
+      content: m.content
+    }));
+
     // Emit to frontend
     emitToUser(userId, "conversation:update", {
       conversationId: conversation._id,
@@ -87,7 +106,7 @@ class WhatsAppService {
     });
 
     // Generate AI response
-    const reply = await commerceService.processAiMessage(merchant._id as any, from, text, []);
+    const reply = await commerceService.processAiMessage(merchant._id as any, from, text, history);
 
     // Save and send AI message
     const aiMsg = await CommerceMessageModel.create({ conversationId: conversation._id, sender: "ai", content: reply });

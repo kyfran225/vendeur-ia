@@ -95,10 +95,10 @@ export function SalesDashboard() {
 
   return (
     <div className="min-h-screen bg-vendeur-bg text-white pb-24">
-      <header className="h-16 md:h-20 border-b border-white/5 bg-vendeur-bg/80 backdrop-blur-md flex items-center justify-between px-4 md:px-12 sticky top-0 z-40 w-full gap-4">
+      <header className="h-12 md:h-14 border-b border-white/5 bg-vendeur-bg/80 backdrop-blur-md flex items-center justify-between px-4 md:px-12 sticky top-0 z-40 w-full gap-4">
         <div className="flex items-center gap-3 md:gap-4 flex-1 min-w-0">
-          <div className="h-9 w-9 md:h-10 md:w-10 rounded-xl bg-vendeur-emerald/10 flex items-center justify-center border border-vendeur-emerald/20 shrink-0">
-            <Bot className="text-vendeur-emerald" size={20} />
+          <div className="h-7 w-7 md:h-8 md:w-8 rounded-xl bg-vendeur-emerald/10 flex items-center justify-center border border-vendeur-emerald/20 shrink-0">
+            <Bot className="text-vendeur-emerald" size={16} />
           </div>
           <div className="text-left min-w-0">
             <p className="text-sm md:text-base font-black text-white uppercase tracking-tight truncate">{merchant?.businessName || "Mon Commerce"}</p>
@@ -106,21 +106,21 @@ export function SalesDashboard() {
           </div>
         </div>
         <div className="flex items-center gap-2 md:gap-4 shrink-0">
-           <div className="h-9 w-9 md:h-10 md:w-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-white/60">
-             <User size={18} />
+           <div className="h-7 w-7 md:h-8 md:w-8 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-white/60">
+             <User size={14} />
            </div>
            <button
              onClick={logout}
-             className="h-9 w-9 md:w-auto md:px-4 rounded-xl border border-white/10 text-white/40 text-[10px] font-black uppercase hover:text-red-400 hover:border-red-400/20 transition-all flex items-center justify-center gap-2"
+             className="h-7 w-7 md:h-8 md:w-auto md:px-4 rounded-xl border border-white/10 text-white/40 text-[10px] font-black uppercase hover:text-red-400 hover:border-red-400/20 transition-all flex items-center justify-center gap-2"
              title="Déconnexion"
            >
-             <LogOut size={16} className="md:hidden" />
+             <LogOut size={12} className="md:hidden" />
              <span className="hidden md:inline">Déconnexion</span>
            </button>
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto p-6 pt-8 md:pt-12 space-y-8">
+      <main className="max-w-7xl mx-auto p-4 md:p-6 space-y-4">
         <nav className="flex gap-2 p-1 bg-vendeur-coal rounded-2xl border border-white/5 w-fit">
           <TabButton active={tab === "home"} onClick={() => setTab("home")} icon={<LayoutDashboard size={18}/>} label="Stats" />
           <TabButton active={tab === "inbox"} onClick={() => setTab("inbox")} icon={<MessageCircle size={18}/>} label="Inbox" />

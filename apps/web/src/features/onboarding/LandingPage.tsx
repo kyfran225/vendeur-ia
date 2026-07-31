@@ -256,7 +256,7 @@ function LandingHero({
   };
 
   return (
-    <section className="w-full px-0 py-8 lg:py-16 grid lg:grid-cols-2 gap-8 items-center text-left">
+    <section className="w-full px-0 py-2 lg:py-4 grid lg:grid-cols-2 gap-8 items-center text-left">
       <div className="animate-in fade-in slide-in-from-left-4 duration-700 w-full px-2">
         <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-emerald-300/20 bg-emerald-300/10 px-4 py-2 text-xs font-black uppercase tracking-widest text-emerald-300">
           <Sparkles size={14} />
@@ -502,12 +502,12 @@ export function LandingPage() {
   const { user, logout } = useAuthStore();
 
   return (
-    <div className="min-h-screen bg-[#07100d] selection:bg-emerald-300/30 overflow-x-hidden text-left pt-16 md:pt-24 w-full">
-      <header className="fixed top-0 left-0 right-0 z-50 border-b border-white/5 bg-[#07100d]/80 backdrop-blur-md w-full h-16 md:h-20">
+    <div className="min-h-screen bg-[#07100d] selection:bg-emerald-300/30 overflow-x-hidden text-left pt-14 md:pt-16 w-full">
+      <header className="fixed top-0 left-0 right-0 z-50 border-b border-white/5 bg-[#07100d]/80 backdrop-blur-md w-full h-12 md:h-14">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 h-full gap-4">
           <div className="flex items-center gap-3 md:gap-4 flex-1 min-w-0">
-            <div className="flex h-10 w-10 md:h-12 md:w-12 shrink-0 items-center justify-center rounded-xl md:rounded-2xl bg-emerald-500/10 border border-emerald-500/20 shadow-lg shadow-emerald-500/5">
-              <Bot className="text-emerald-500" size={24} />
+            <div className="flex h-8 w-8 md:h-9 md:w-9 shrink-0 items-center justify-center overflow-hidden">
+              <img src="/apple-touch-icon.png" alt="Logo" className="h-full w-full object-contain" />
             </div>
             <div className="min-w-0">
               <p className="truncate text-sm md:text-base font-black text-white uppercase">{dynamicTitle}</p>

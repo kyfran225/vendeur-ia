@@ -14,8 +14,8 @@ export function Sidebar() {
 
   return (
     <aside className="w-24 bg-vendeur-coal border-r border-white/5 flex flex-col items-center py-8 space-y-12">
-      <div className="h-12 w-12 bg-vendeur-emerald/10 rounded-2xl flex items-center justify-center border border-vendeur-emerald/20">
-        <Bot className="text-vendeur-emerald" size={24} />
+      <div className="h-12 w-12 flex items-center justify-center overflow-hidden">
+        <img src="/apple-touch-icon.png" alt="Logo" className="h-full w-full object-contain" />
       </div>
 
       <nav className="flex-1 w-full flex flex-col items-center gap-6">

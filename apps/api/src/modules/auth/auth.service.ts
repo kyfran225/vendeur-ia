@@ -3,11 +3,12 @@ import jwt from "jsonwebtoken";
 import { OAuth2Client } from "google-auth-library";
 import { env } from "../../config/env.js";
 import { UserModel } from "./user.model.js";
+import axios from "axios";
 
 const ACCESS_TOKEN_EXPIRES_IN = "15m";
 const REFRESH_TOKEN_EXPIRES_IN = "7d";
 
-const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+const googleClient = new OAuth2Client(env.GOOGLE_CLIENT_ID);
 
 export class AuthService {
   async generateTokens(user: any) {
@@ -56,19 +57,40 @@ export class AuthService {
   }
 
   async verifyGoogleToken(token: string) {
-    const ticket = await googleClient.verifyIdToken({
-      idToken: token,
-      audience: process.env.GOOGLE_CLIENT_ID,
-    });
-    const payload = ticket.getPayload();
-    if (!payload) throw new Error("Invalid Google token");
+    let payload;
+
+    try {
+      // Try verifying as ID Token (JWT)
+      const ticket = await googleClient.verifyIdToken({
+        idToken: token,
+        audience: env.GOOGLE_CLIENT_ID,
+      });
+      payload = ticket.getPayload();
+    } catch (e) {
+      // If failed, try as Access Token by calling Google UserInfo API
+      try {
+        const res = await axios.get("https://www.googleapis.com/oauth2/v3/userinfo", {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        payload = {
+          email: res.data.email,
+          sub: res.data.sub,
+          name: res.data.name,
+          picture: res.data.picture
+        };
+      } catch (err) {
+        throw new Error("Invalid Google token (Access Token check failed)");
+      }
+    }
+
+    if (!payload || !payload.email) throw new Error("Invalid Google token payload");
 
     let user = await UserModel.findOne({ email: payload.email });
     if (!user) {
       user = await UserModel.create({
         email: payload.email,
         googleId: payload.sub,
-        displayName: payload.name,
+        displayName: payload.name || "Utilisateur Google",
         avatarUrl: payload.picture,
         onboardingCompleted: false,
       });

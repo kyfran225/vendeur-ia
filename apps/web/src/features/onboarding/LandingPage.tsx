@@ -113,6 +113,8 @@ function PillarSection() {
   );
 }
 
+import { useOnboardingStore } from "@/stores/onboardingStore";
+
 // THE MAIN LANDING HERO (1:1 UI REPLICA)
 function LandingHero({
   onAuth,
@@ -121,8 +123,9 @@ function LandingHero({
   onAuth: () => void;
   onFormUpdate: (name: string) => void;
 }) {
-  const [step, setStep] = useState<"form" | "simulator">("form");
-  const [form, setForm] = useState({
+  const { tempData, setTempData, isSimulatorActive, setSimulatorActive } = useOnboardingStore();
+  const [step, setStep] = useState<"form" | "simulator">(isSimulatorActive ? "simulator" : "form");
+  const [form, setForm] = useState(tempData || {
     businessName: "",
     category: "fashion",
     description: "",
@@ -130,8 +133,10 @@ function LandingHero({
     address: "",
     whatsappNumber: ""
   });
-  const [selectedCountry, setSelectedCountry] = useState(COUNTRIES[0]);
-  const [localPhone, setLocalPhone] = useState("");
+  const [selectedCountry, setSelectedCountry] = useState(
+    COUNTRIES.find(c => c.code === (tempData?.country || "CI")) || COUNTRIES[0]
+  );
+  const [localPhone, setLocalPhone] = useState(tempData?.whatsappNumber?.replace(selectedCountry.dialCode, "") || "");
   const { accessToken } = useAuthStore();
 
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -158,24 +163,10 @@ function LandingHero({
   const getTime = () => new Date().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
 
   const handleCreateVendeur = async () => {
-    if (form.businessName) {
-      // 1. Create Merchant in DB (Real Logic)
-      try {
-        if (!accessToken) {
-          toast.error("Veuillez vous connecter d'abord.");
-          onAuth();
-          return;
-        }
-
-        const headers = { Authorization: `Bearer ${accessToken}` };
-        await axios.post(`${API_URL}/api/commerce/merchant`, {
-          ...form,
-          city: "Abidjan"
-        }, { headers });
-        toast.success("Votre machine a été initialisée ! ✨");
-      } catch (err) {
-        console.error("Merchant creation failed", err);
-      }
+    if (form.businessName && form.address && form.whatsappNumber) {
+      // 1. Save to store
+      setTempData({ ...form, city: "Abidjan" });
+      setSimulatorActive(true);
 
       onFormUpdate(form.businessName);
       setStep("simulator");
@@ -195,7 +186,7 @@ function LandingHero({
           category: form.category,
           description: form.description,
           message: "SYSTEM_INITIAL_GREETING",
-          phone: form.whatsappNumber || "22501010101",
+          phone: form.whatsappNumber,
           history: []
         });
 
@@ -213,7 +204,14 @@ function LandingHero({
       } finally {
         setIsReplying(false);
       }
+    } else {
+      toast.error("Veuillez remplir tous les champs obligatoires.");
     }
+  };
+
+  const handleActivate = () => {
+    setSimulatorActive(true); // Ensure it's active for onboarding store
+    onAuth();
   };
 
   const handleSend = async () => {
@@ -466,7 +464,7 @@ function LandingHero({
                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/[0.03] to-transparent -translate-x-full group-hover:animate-[shimmer_2s_infinite] pointer-events-none" />
 
                <button
-                  onClick={onAuth}
+                  onClick={handleActivate}
                   className="w-full flex h-16 items-center justify-between px-8 rounded-[2rem] bg-gradient-to-r from-[#00a884] to-[#00c9a0] text-sm font-black uppercase tracking-[0.15em] text-white transition-all hover:scale-[1.02] hover:shadow-[0_0_40px_rgba(0,168,132,0.4)] active:scale-95 shadow-2xl relative overflow-hidden group/btn"
                 >
                   <Sparkles className="animate-pulse shrink-0" size={18} />
@@ -480,7 +478,10 @@ function LandingHero({
                      <span className="text-[9px] font-bold text-white/20 uppercase tracking-[0.2em] italic">REAL AI ENGINE DEMO</span>
                   </div>
                   <div className="flex gap-4 order-2 sm:order-1">
-                    <button onClick={() => setStep("form")} className="text-[10px] font-black text-white/30 uppercase tracking-[0.15em] hover:text-emerald-400 transition-colors flex items-center gap-1.5">
+                    <button onClick={() => {
+                      setStep("form");
+                      setSimulatorActive(false);
+                    }} className="text-[10px] font-black text-white/30 uppercase tracking-[0.15em] hover:text-emerald-400 transition-colors flex items-center gap-1.5">
                       <ChevronLeft size={14} /> Modifier
                     </button>
                     <button onClick={() => window.location.href = "/dashboard"} className="text-[10px] font-black text-emerald-400 uppercase tracking-[0.15em] hover:text-emerald-300 transition-colors flex items-center gap-1.5">

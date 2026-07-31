@@ -32,8 +32,10 @@ Vendeur IA OS is a production-ready "Sales Machine" that transforms TikTok, Inst
 - **Key Components**: Mapbox Address Autocomplete, Flag-based Country Selector, Iconic Payment Method Selector.
 
 ## 📍 Current Status (Production Ready)
-- Backend services are fully защищены (protected) via `authenticate` middleware.
-- Onboarding flow transitions perfectly from Demo Simulator to real Merchant Account.
+- Backend services are fully protected via `authenticate` middleware.
+- Onboarding flow transitions from Demo Simulator to real Merchant Account.
+- **Real WhatsApp Connectivity**: QR Code generation via `@whiskeysockets/baileys` and `Socket.io` is fully functional in the onboarding flow.
+- **Real Merchant Persistence**: Merchant records are created in MongoDB immediately upon starting the onboarding wizard.
 - High-fidelity Dashboard is connected to real database metrics.
 
 *Last Updated: 2026-07-31*

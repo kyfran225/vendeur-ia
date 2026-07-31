@@ -51,4 +51,40 @@ router.post("/google", async (req, res) => {
   }
 });
 
+router.post("/forgot-password", async (req, res) => {
+  try {
+    await authService.forgotPassword(req.body.email);
+    res.status(200).json({ message: "Si un compte existe, un email a été envoyé." });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.post("/reset-password", async (req, res) => {
+  try {
+    await authService.resetPassword(req.body.token, req.body.password);
+    res.status(200).json({ message: "Mot de passe réinitialisé avec succès." });
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+router.post("/verify-email", async (req, res) => {
+  try {
+    await authService.verifyEmail(req.body.token);
+    res.status(200).json({ message: "Email vérifié avec succès." });
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+router.post("/resend-verification", authenticate, async (req, res) => {
+  try {
+    await authService.sendEmailVerification((req as any).user.id);
+    res.status(200).json({ message: "Email de vérification envoyé." });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 export default router;

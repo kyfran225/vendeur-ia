@@ -3,7 +3,7 @@ import { commerceService } from "./commerce.service.js";
 import { paystackService } from "../../services/paystack.service.js";
 import { env } from "../../config/env.js";
 import { authenticate } from "../../middleware/authenticate.js";
-import { CommerceMerchantModel, CommerceProductModel } from "./commerce.model.js";
+import { CommerceMerchantModel, CommerceProductModel, CommerceConversationModel, CommerceMessageModel } from "./commerce.model.js";
 import axios from "axios";
 import multer from "multer";
 

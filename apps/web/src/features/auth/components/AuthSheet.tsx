@@ -18,7 +18,7 @@ const GoogleIcon = () => (
 );
 
 export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
-  const [mode, setMode] = useState<"login" | "register">("login");
+  const [mode, setMode] = useState<"login" | "register" | "forgot">("login");
   const [loading, setLoading] = useState(false);
   const { setSession } = useAuthStore();
 
@@ -64,6 +64,13 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
     setLoading(true);
 
     try {
+      if (mode === "forgot") {
+        await axios.post(`${API_URL}/api/auth/forgot-password`, { email: form.email });
+        toast.success("Lien de réinitialisation envoyé !");
+        setMode("login");
+        return;
+      }
+
       const endpoint = mode === "login" ? "/api/auth/login" : "/api/auth/register";
       const res = await axios.post(`${API_URL}${endpoint}`, form);
 
@@ -92,27 +99,31 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
             <Bot className="text-vendeur-emerald" size={32} />
           </div>
           <h2 className="text-2xl font-black text-white uppercase tracking-tight">
-            {mode === "login" ? "Content de vous revoir" : "Rejoindre l'aventure"}
+            {mode === "login" ? "Content de vous revoir" : mode === "register" ? "Rejoindre l'aventure" : "Mot de passe oublié"}
           </h2>
           <p className="text-sm text-white/40 mt-1">
-            {mode === "login" ? "Accédez à votre machine de vente." : "Créez votre compte en quelques secondes."}
+            {mode === "login" ? "Accédez à votre machine de vente." : mode === "register" ? "Créez votre compte en quelques secondes." : "Entrez votre email pour recevoir un lien."}
           </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <button
-            type="button"
-            onClick={handleGoogleAuth}
-            className="w-full h-12 bg-white text-black font-bold rounded-xl flex items-center justify-center gap-3 hover:bg-gray-100 transition-all border border-black/5 shadow-sm mb-6"
-          >
-            <GoogleIcon />
-            {mode === "login" ? "Continuer avec Google" : "S'inscrire avec Google"}
-          </button>
+          {mode !== "forgot" && (
+            <>
+              <button
+                type="button"
+                onClick={handleGoogleAuth}
+                className="w-full h-12 bg-white text-black font-bold rounded-xl flex items-center justify-center gap-3 hover:bg-gray-100 transition-all border border-black/5 shadow-sm mb-6"
+              >
+                <GoogleIcon />
+                {mode === "login" ? "Continuer avec Google" : "S'inscrire avec Google"}
+              </button>
 
-          <div className="relative flex items-center justify-center mb-6">
-            <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-white/5"></div></div>
-            <span className="relative px-3 bg-vendeur-coal text-[10px] text-white/20 font-black uppercase tracking-widest">OU</span>
-          </div>
+              <div className="relative flex items-center justify-center mb-6">
+                <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-white/5"></div></div>
+                <span className="relative px-3 bg-vendeur-coal text-[10px] text-white/20 font-black uppercase tracking-widest">OU</span>
+              </div>
+            </>
+          )}
 
           {mode === "register" && (
             <div className="space-y-1.5">
@@ -145,20 +156,33 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
             </div>
           </div>
 
-          <div className="space-y-1.5">
-            <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Mot de passe</label>
-            <div className="relative">
-              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" size={18} />
-              <input
-                required
-                type="password"
-                className="w-full h-12 bg-black/40 border border-white/10 rounded-xl pl-11 pr-4 text-white focus:border-vendeur-emerald outline-none transition-all"
-                placeholder="••••••••"
-                value={form.password}
-                onChange={e => setForm({ ...form, password: e.target.value })}
-              />
+          {mode !== "forgot" && (
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Mot de passe</label>
+                {mode === "login" && (
+                  <button
+                    type="button"
+                    onClick={() => setMode("forgot")}
+                    className="text-[10px] font-bold text-vendeur-emerald hover:underline"
+                  >
+                    Oublié ?
+                  </button>
+                )}
+              </div>
+              <div className="relative">
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" size={18} />
+                <input
+                  required
+                  type="password"
+                  className="w-full h-12 bg-black/40 border border-white/10 rounded-xl pl-11 pr-4 text-white focus:border-vendeur-emerald outline-none transition-all"
+                  placeholder="••••••••"
+                  value={form.password}
+                  onChange={e => setForm({ ...form, password: e.target.value })}
+                />
+              </div>
             </div>
-          </div>
+          )}
 
           <button
             type="submit"
@@ -167,7 +191,7 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
           >
             {loading ? <Sparkles className="animate-spin" size={20} /> : (
               <>
-                {mode === "login" ? "Se Connecter" : "Créer mon compte"}
+                {mode === "login" ? "Se Connecter" : mode === "register" ? "Créer mon compte" : "Envoyer le lien"}
                 <ChevronRight size={20} />
               </>
             )}

@@ -1,47 +1,40 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
+export interface OnboardingData {
+  businessName: string;
+  category: string;
+  description: string;
+  country: string;
+  address: string;
+  whatsappNumber: string;
+  city?: string;
+  paymentMethods?: string[];
+}
+
 interface OnboardingState {
-  draft: {
-    businessName: string;
-    category: string;
-    whatsappNumber: string;
-    city: string;
-    address: string;
-    countryCode: string;
-    description: string;
-    paymentChannels: Array<{ provider: string; label: string; number: string }>;
-  };
-  setDraft: (draft: Partial<OnboardingState["draft"]>) => void;
-  clearDraft: () => void;
+  tempData: OnboardingData | null;
+  currentStep: number;
+  isSimulatorActive: boolean;
+  setTempData: (data: Partial<OnboardingData>) => void;
+  setStep: (step: number) => void;
+  setSimulatorActive: (active: boolean) => void;
+  clearOnboarding: () => void;
 }
 
 export const useOnboardingStore = create<OnboardingState>()(
   persist(
     (set) => ({
-      draft: {
-        businessName: "",
-        category: "fashion",
-        whatsappNumber: "",
-        city: "Abidjan",
-        address: "",
-        countryCode: "CI",
-        description: "",
-        paymentChannels: [],
-      },
-      setDraft: (newDraft) => set((state) => ({ draft: { ...state.draft, ...newDraft } })),
-      clearDraft: () => set({
-        draft: {
-          businessName: "",
-          category: "fashion",
-          whatsappNumber: "",
-          city: "Abidjan",
-          address: "",
-          countryCode: "CI",
-          description: "",
-          paymentChannels: [],
-        }
-      }),
+      tempData: null,
+      currentStep: 0,
+      isSimulatorActive: false,
+      setTempData: (data) =>
+        set((state) => ({
+          tempData: state.tempData ? { ...state.tempData, ...data } : (data as OnboardingData),
+        })),
+      setStep: (step) => set({ currentStep: step }),
+      setSimulatorActive: (active) => set({ isSimulatorActive: active }),
+      clearOnboarding: () => set({ tempData: null, currentStep: 0, isSimulatorActive: false }),
     }),
     {
       name: "vendeur-ia-onboarding",

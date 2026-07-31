@@ -6,8 +6,13 @@ const userSchema = new Schema({
   googleId: { type: String, sparse: true, unique: true, index: true },
   displayName: { type: String, required: true },
   avatarUrl: { type: String },
-  roles: [{ type: String, enum: ["user", "admin"], default: ["user"] }],
+  roles: [{ type: String, enum: ["user", "admin", "creator"], default: ["user"] }],
   refreshTokenHash: { type: String },
+  emailVerifiedAt: { type: Date },
+  emailVerificationTokenHash: { type: String, index: true },
+  emailVerificationExpiresAt: { type: Date },
+  passwordResetTokenHash: { type: String, index: true },
+  passwordResetExpiresAt: { type: Date },
   onboardingCompleted: { type: Boolean, default: false },
   lastSeenAt: { type: Date, default: Date.now }
 }, {

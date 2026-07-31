@@ -3,7 +3,9 @@ import jwt from "jsonwebtoken";
 import { OAuth2Client } from "google-auth-library";
 import { env } from "../../config/env.js";
 import { UserModel } from "./user.model.js";
+import { authEmailService } from "./auth-email.service.js";
 import axios from "axios";
+import { randomBytes, createHash } from "node:crypto";
 
 const ACCESS_TOKEN_EXPIRES_IN = "15m";
 const REFRESH_TOKEN_EXPIRES_IN = "7d";
@@ -20,7 +22,7 @@ export class AuthService {
 
     const refreshToken = jwt.sign(
       { id: user._id },
-      env.JWT_SECRET,
+      env.JWT_REFRESH_SECRET || env.JWT_SECRET,
       { expiresIn: REFRESH_TOKEN_EXPIRES_IN }
     );
 
@@ -105,7 +107,7 @@ export class AuthService {
 
   async refreshToken(token: string) {
     try {
-      const decoded = jwt.verify(token, env.JWT_SECRET) as any;
+      const decoded = jwt.verify(token, env.JWT_REFRESH_SECRET || env.JWT_SECRET) as any;
       const user = await UserModel.findById(decoded.id);
       if (!user || !user.refreshTokenHash) throw new Error("Invalid token");
 
@@ -120,6 +122,72 @@ export class AuthService {
 
   async logout(userId: string) {
     await UserModel.findByIdAndUpdate(userId, { $unset: { refreshTokenHash: 1 } });
+  }
+
+  async forgotPassword(email: string) {
+    const user = await UserModel.findOne({ email });
+    if (!user) return; // Silent return for security
+
+    const token = randomBytes(32).toString("hex");
+    const hash = createHash("sha256").update(token).digest("hex");
+
+    user.passwordResetTokenHash = hash;
+    user.passwordResetExpiresAt = new Date(Date.now() + 3600000); // 1 hour
+    await user.save();
+
+    await authEmailService.sendPasswordResetEmail({
+      to: user.email,
+      displayName: user.displayName,
+      token
+    });
+  }
+
+  async resetPassword(token: string, password: any) {
+    const hash = createHash("sha256").update(token).digest("hex");
+    const user = await UserModel.findOne({
+      passwordResetTokenHash: hash,
+      passwordResetExpiresAt: { $gt: new Date() }
+    });
+
+    if (!user) throw new Error("Invalid or expired reset token");
+
+    user.passwordHash = await bcrypt.hash(password, 10);
+    user.passwordResetTokenHash = undefined;
+    user.passwordResetExpiresAt = undefined;
+    await user.save();
+  }
+
+  async sendEmailVerification(userId: string) {
+    const user = await UserModel.findById(userId);
+    if (!user || user.emailVerifiedAt) return;
+
+    const token = randomBytes(32).toString("hex");
+    const hash = createHash("sha256").update(token).digest("hex");
+
+    user.emailVerificationTokenHash = hash;
+    user.emailVerificationExpiresAt = new Date(Date.now() + 86400000); // 24 hours
+    await user.save();
+
+    await authEmailService.sendVerificationEmail({
+      to: user.email,
+      displayName: user.displayName,
+      token
+    });
+  }
+
+  async verifyEmail(token: string) {
+    const hash = createHash("sha256").update(token).digest("hex");
+    const user = await UserModel.findOne({
+      emailVerificationTokenHash: hash,
+      emailVerificationExpiresAt: { $gt: new Date() }
+    });
+
+    if (!user) throw new Error("Invalid or expired verification token");
+
+    user.emailVerifiedAt = new Date();
+    user.emailVerificationTokenHash = undefined;
+    user.emailVerificationExpiresAt = undefined;
+    await user.save();
   }
 }
 

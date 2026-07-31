@@ -265,7 +265,7 @@ function LandingHero({
           <span className="text-emerald-300 text-transparent bg-clip-text bg-gradient-to-r from-emerald-300 to-emerald-500">vend tout seul.</span>
         </h1>
         <p className="text-xl text-white/60 mb-8 max-w-2xl leading-relaxed font-medium">
-          L'IA gère les clients, les livraisons et les paiements pendant que vous travaillez. Reconstruction propre pour une performance maximale.
+          L'Employé Numérique du Commerce Social. Transformez votre WhatsApp en machine de vente. Propulsez votre croissance grâce à une performance IA disponible 24h/7.
         </p>
       </div>
 

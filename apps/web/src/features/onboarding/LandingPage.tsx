@@ -164,12 +164,34 @@ function LandingHero({
 
   const handleCreateVendeur = async () => {
     if (form.businessName && form.address && form.whatsappNumber) {
-      // 1. Save to store
+      // 1. Save to local store
       setTempData({ ...form, city: "Abidjan" });
       setSimulatorActive(true);
 
+      // 2. Persist to Backend if authenticated
+      if (accessToken) {
+        try {
+          await axios.post(`${API_URL}/api/commerce/merchant`, {
+            businessName: form.businessName,
+            category: form.category,
+            description: form.description,
+            address: form.address,
+            whatsappNumber: form.whatsappNumber,
+            city: "Abidjan",
+            country: form.country
+          }, {
+            headers: { Authorization: `Bearer ${accessToken}` }
+          });
+          toast.success("Boutique configurée avec succès !");
+        } catch (error) {
+          console.error("Merchant Creation Error:", error);
+          // Non-blocking for demo, but logged
+        }
+      }
+
       onFormUpdate(form.businessName);
       setStep("simulator");
+      // ... rest of the flow
 
       setHistory([{
         role: "ai",

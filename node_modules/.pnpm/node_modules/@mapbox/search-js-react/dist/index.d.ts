@@ -1,0 +1,12 @@
+import '@mapbox/search-js-web';
+export { config } from '@mapbox/search-js-web';
+export { AddressAutofill, type AddressAutofillRefType } from './components/AddressAutofill';
+export { SearchBox, type SearchBoxRefType } from './components/SearchBox';
+export { Geocoder, type GeocoderRefType } from './components/Geocoder';
+export { AddressMinimap } from './components/AddressMinimap';
+export { useEvented } from './hooks/useEvented';
+export { useAddressAutofillCore, useAddressAutofillCore as useMapboxAutofill } from './hooks/useAddressAutofillCore';
+export { useSearchBoxCore } from './hooks/useSearchBoxCore';
+export { useGeocodingCore } from './hooks/useGeocodingCore';
+export { useSearchSession } from './hooks/useSearchSession';
+export { useConfirmAddress } from './hooks/useConfirmAddress';

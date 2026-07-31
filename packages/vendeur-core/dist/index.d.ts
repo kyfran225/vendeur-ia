@@ -13,7 +13,7 @@ export declare const merchantSchema: z.ZodObject<{
     category: z.ZodEnum<["fashion", "food", "beauty", "electronics", "services", "digital", "artisan", "other"]>;
     description: z.ZodString;
     country: z.ZodDefault<z.ZodString>;
-    city: z.ZodString;
+    city: z.ZodDefault<z.ZodString>;
     address: z.ZodString;
     phone: z.ZodString;
     whatsappNumber: z.ZodString;
@@ -32,6 +32,7 @@ export declare const merchantSchema: z.ZodObject<{
         provider: "wave" | "orange_money" | "mtn_momo" | "moov_money" | "visa" | "cash";
         label: string;
     }>, "many">>;
+    countryCode: z.ZodDefault<z.ZodString>;
     subscription: z.ZodObject<{
         plan: z.ZodDefault<z.ZodEnum<["starter", "premium", "business"]>>;
         status: z.ZodDefault<z.ZodEnum<["trial", "active", "past_due", "cancelled"]>>;
@@ -78,6 +79,7 @@ export declare const merchantSchema: z.ZodObject<{
         provider: "wave" | "orange_money" | "mtn_momo" | "moov_money" | "visa" | "cash";
         label: string;
     }[];
+    countryCode: string;
     subscription: {
         status: "cancelled" | "trial" | "active" | "past_due";
         plan: "premium" | "starter" | "business";
@@ -96,7 +98,6 @@ export declare const merchantSchema: z.ZodObject<{
     businessName: string;
     category: "fashion" | "food" | "beauty" | "electronics" | "services" | "digital" | "artisan" | "other";
     description: string;
-    city: string;
     address: string;
     phone: string;
     whatsappNumber: string;
@@ -113,6 +114,7 @@ export declare const merchantSchema: z.ZodObject<{
     createdAt: string;
     updatedAt: string;
     country?: string | undefined;
+    city?: string | undefined;
     currency?: string | undefined;
     language?: "fr" | "en" | "wolof" | "yoruba" | "lingala" | undefined;
     paymentChannels?: {
@@ -120,6 +122,7 @@ export declare const merchantSchema: z.ZodObject<{
         provider: "wave" | "orange_money" | "mtn_momo" | "moov_money" | "visa" | "cash";
         label: string;
     }[] | undefined;
+    countryCode?: string | undefined;
 }>;
 export type Merchant = z.infer<typeof merchantSchema>;
 export declare const productSchema: z.ZodObject<{

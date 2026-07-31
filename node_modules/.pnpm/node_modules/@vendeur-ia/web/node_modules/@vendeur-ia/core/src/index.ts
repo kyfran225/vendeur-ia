@@ -19,7 +19,7 @@ export const merchantSchema = z.object({
   category: z.enum(commerceCategories),
   description: z.string(),
   country: z.string().default("CI"),
-  city: z.string(),
+  city: z.string().default("Abidjan"),
   address: z.string(),
   phone: z.string(),
   whatsappNumber: z.string(),
@@ -30,6 +30,7 @@ export const merchantSchema = z.object({
     label: z.string(),
     number: z.string()
   })).default([]),
+  countryCode: z.string().default("CI"),
   subscription: z.object({
     plan: z.enum(["starter", "premium", "business"]).default("starter"),
     status: z.enum(["trial", "active", "past_due", "cancelled"]).default("trial"),

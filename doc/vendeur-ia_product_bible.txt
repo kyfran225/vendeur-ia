@@ -2997,5 +2997,23 @@ La premiÃ¨re version doit rester extrÃªmement focalisÃ©e :
 TikTok â†’ WhatsApp â†’ AI Seller â†’ Mobile Money
 C'est cette boucle courte qui peut gÃ©nÃ©rer les premiers revenus, financer l'Ã©quipe et ouvrir ensuite la voie vers une plateforme beaucoup plus ambitieuse.
 
+________________________________________
+PART 7 â€” ADVANCED AI OPERATIONS & LOGISTICS
+Local Intelligence Â· Production Excellence Â· Scaling Human-AI Hybrid
+________________________________________
+
+1. Local Intelligence Prompt Strategy
+Pour dominer les marchÃ©s Ã©mergents, l'IA ne doit pas seulement parler franÃ§ais.
+Elle doit comprendre les nuances du commerce local :
+- "Prix svp" : Saluer chaleureusement avant de donner le prix.
+- "C'est le dernier prix ?" : L'IA doit savoir quand proposer une petite remise ou un cadeau (upsell).
+- Localisation : Comprendre les quartiers (ex: Cocody, Yopougon, Plateau).
+
+2. The Sales Hybrid Loop
+Si l'IA dÃ©tecte une intention d'achat Ã©levÃ©e mais une hÃ©sitation technique (ex: problÃ¨me de paiement), elle doit immÃ©diatement Ã©mettre une notification "Human Takeover Required".
+
+3. Advanced Fulfillment
+IntÃ©gration future avec des flottes de livraison locales via API (ex: Glovo, Yango Deli) pour automatiser la boucle de vente jusqu'Ã  la porte du client.
+
 
 

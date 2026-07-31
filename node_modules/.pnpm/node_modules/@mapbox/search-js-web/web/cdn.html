@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- Address Autofill CDN script -->
+    <script
+      id="mapbox-search-web"
+      defer
+      src="http://localhost:3000/dist/mapboxsearch.js"
+    ></script>
+    <script>
+      document.getElementById('mapbox-search-web').onload = () => {
+        mapboxsearch.config.accessToken =
+          localStorage.getItem('MapboxAccessToken');
+
+        const minimap = new MapboxAddressMinimap();
+        minimap.canAdjustMarker = true;
+        minimap.satelliteToggle = true;
+        document.getElementById('minimap-container').appendChild(minimap);
+
+        const autofillOptions = { country: 'us' };
+        // Set initialization options
+        const autofillCollection = mapboxsearch.autofill({
+          options: autofillOptions,
+          popoverOptions: { offset: 0, flip: true },
+          browserAutofillEnabled: true,
+          confirmOnBrowserAutofill: {
+            skipConfirmModal: (feature) =>
+              ['exact', 'high'].includes(
+                feature.properties.match_code.confidence
+              )
+          }
+        });
+        autofillCollection.addEventListener('retrieve', (e) => {
+          // Do something when retrieve is called
+          // e.g. expand a collapsed form, or show a Minimap
+          const input = e.target;
+          const autocompleteAttr = input.getAttribute('autocomplete');
+          // In this example, there are multiple autofill instances in the collection;
+          // We might only want to trigger some action when a specific instance fires an event
+          // In this case, we're determining which form section based on the input element attributes
+          if (autocompleteAttr.indexOf('shipping') > -1) {
+            console.log(e.detail);
+            console.log(e.detail.features[0].properties.place_name);
+            minimap.feature = e.detail.features[0];
+          }
+        });
+
+        // Add confirmation prompt to shipping address
+        const form = document.querySelector('form');
+        form.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const result = await mapboxsearch.confirmAddress(form, {
+            options: autofillOptions,
+            minimap: true,
+            skipConfirmModal: (feature) =>
+              ['exact', 'high'].includes(
+                feature.properties.match_code.confidence
+              )
+          });
+          if (result.type === 'nochange') form.submit();
+        });
+      };
+    </script>
+
+    <!-- Assembly styling -->
+    <script
+      async
+      defer
+      src="https://api.mapbox.com/mapbox-assembly/v1.3.0/assembly.js"
+    ></script>
+    <link
+      href="https://api.mapbox.com/mapbox-assembly/v1.3.0/assembly.min.css"
+      rel="stylesheet"
+    />
+  </head>
+  <body class="px30 py30 absolute">
+    <div class="flex">
+      <form class="w300">
+        <h2 class="txt-h2">Shipping Address</h2>
+        <div class="flex flex--column mt6" class="flex flex--column mt6">
+          <label> Address </label>
+          <input
+            class="input"
+            type="text"
+            placeholder="Street"
+            autocomplete="shipping street-address"
+          />
+        </div>
+        <div class="flex flex--column mt6">
+          <label>City</label>
+          <input
+            class="input"
+            type="text"
+            placeholder="City"
+            autocomplete="shipping address-level2"
+          />
+        </div>
+        <div class="flex flex--column mt6">
+          <label>State</label>
+          <input
+            class="input"
+            type="text"
+            placeholder="State"
+            autocomplete="shipping address-level1"
+          />
+        </div>
+        <div class="flex flex--column mt6">
+          <label>Country</label>
+          <select
+            class="select select--stroke"
+            type="text"
+            placeholder="Country"
+            autocomplete="shipping country"
+          >
+            <option value="ca">Canada</option>
+            <option value="us">United States</option>
+          </select>
+        </div>
+        <div class="flex flex--column mt6">
+          <label>Zip</label>
+          <input
+            class="input"
+            type="text"
+            placeholder="Zip"
+            autocomplete="shipping postal-code"
+          />
+        </div>
+
+        <div class="border-b border--gray h12 mb12 mt12"></div>
+
+        <h2 class="txt-h2">Billing Address</h2>
+        <div class="flex flex--column mt6">
+          <label> Address </label>
+          <input
+            class="input"
+            type="text"
+            placeholder="Street"
+            autocomplete="billing street-address"
+          />
+        </div>
+        <div class="flex flex--column mt6">
+          <label>City</label>
+          <input
+            class="input"
+            type="text"
+            placeholder="City"
+            autocomplete="billing address-level2"
+          />
+        </div>
+        <div class="flex flex--column mt6">
+          <label>State</label>
+          <input
+            class="input"
+            type="text"
+            placeholder="State"
+            autocomplete="billing address-level1"
+          />
+        </div>
+        <div class="flex flex--column mt6">
+          <label>Country</label>
+          <select
+            class="select select--stroke"
+            type="text"
+            placeholder="Country"
+            autocomplete="billing country"
+          >
+            <option value="ca">Canada</option>
+            <option value="us">United States</option>
+          </select>
+        </div>
+        <div class="flex flex--column mt6">
+          <label>Zip</label>
+          <input
+            class="input"
+            type="text"
+            placeholder="Zip"
+            autocomplete="billing postal-code"
+          />
+        </div>
+        <div class="mt12">
+          <button class="btn" type="submit">Submit</button>
+        </div>
+      </form>
+      <div id="minimap-container" class="w300 h300 ml30"></div>
+    </div>
+  </body>
+</html>

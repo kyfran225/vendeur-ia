@@ -16,6 +16,17 @@ export default {
       },
       fontFamily: {
         sans: ["Inter", "system-ui", "sans-serif"],
+      },
+      keyframes: {
+        shimmer: {
+          "100%": { transform: "translateX(100%)" }
+        }
+      },
+      animation: {
+        shimmer: "shimmer 2s infinite"
+      },
+      boxShadow: {
+        "3xl": "0 35px 60px -15px rgba(0, 0, 0, 0.6)",
       }
     },
   },

@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <style>
+      body {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      #map {
+        margin-top: 20px;
+        width: 800px;
+        height: 600px;
+      }
+    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link
+      href="https://api.mapbox.com/mapbox-gl-js/v2.7.0/mapbox-gl.css"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div class="leading-loose">
+      <select id="theme" style="margin-bottom: 30px">
+        <option value="Default">Default</option>
+        <option value="Branded">Branded</option>
+        <option value="Nike">Nike</option>
+        <option value="NintyFive">1995</option>
+      </select>
+
+      <div>
+        <h2>Geocoder component outside of a map</h2>
+        <mapbox-geocoder id="geocoder-default"></mapbox-geocoder>
+      </div>
+      <div>
+        <h2>Geocoder component as control to a map</h2>
+        <div id="map"></div>
+      </div>
+      <br />
+      <div>
+        <h2>Geocoder with customSearch option</h2>
+        <mapbox-geocoder id="geocoder-customsearch"></mapbox-geocoder>
+      </div>
+    </div>
+    <script type="module" src="/index-bundle.js"></script>
+  </body>
+</html>

@@ -1,0 +1,30 @@
+declare const _default: {
+    placeholder: {
+        de: string;
+        it: string;
+        en: string;
+        nl: string;
+        fr: string;
+        ca: string;
+        he: string;
+        ja: string;
+        lv: string;
+        pt: string;
+        sr: string;
+        zh: string;
+        cs: string;
+        hu: string;
+        ka: string;
+        nb: string;
+        sk: string;
+        th: string;
+        fi: string;
+        is: string;
+        ko: string;
+        pl: string;
+        sl: string;
+        fa: string;
+        ru: string;
+    };
+};
+export default _default;

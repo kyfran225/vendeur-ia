@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      body {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+  </head>
+  <body>
+    <div class="leading-loose">
+      <select id="theme">
+        <option value="Default">Default</option>
+        <option value="Branded">Branded</option>
+        <option value="Nike">Nike</option>
+        <option value="NintyFive">1995</option>
+      </select>
+      <form class="max-w-xl m-4 p-10 bg-white rounded shadow-xl">
+        <p class="text-gray-800 font-medium">Customer information</p>
+        <div class="">
+          <label class="block text-sm text-gray-00" for="cus_name">Name</label>
+          <input
+            class="w-full px-5 py-1 text-gray-700 bg-gray-200 rounded"
+            id="cus_name"
+            name="cus_name"
+            type="text"
+            placeholder="Your Name"
+            aria-label="Name"
+          />
+        </div>
+        <div class="mt-2">
+          <label class="block text-sm text-gray-600" for="cus_email"
+            >Email</label
+          >
+          <input
+            class="w-full px-5 py-4 text-gray-700 bg-gray-200 rounded"
+            id="cus_email"
+            name="cus_email"
+            type="text"
+            placeholder="Your Email"
+            aria-label="Email"
+          />
+        </div>
+        <div class="mt-2">
+          <label class="block text-sm text-gray-600" for="cus_email">
+            Address
+          </label>
+          <mapbox-address-autofill
+            id="autofill-element"
+            minimap-on-confirm="true"
+            browser-autofill-enabled="true"
+          >
+            <input
+              class="w-full px-2 py-2 text-gray-700 bg-gray-200 rounded"
+              id="mapbox_address"
+              name="cus_email"
+              type="text"
+              required=""
+              placeholder="Street"
+              aria-label="Email"
+              autocomplete="shipping street-address"
+            />
+          </mapbox-address-autofill>
+        </div>
+        <div class="mt-2">
+          <label class="hidden text-sm block text-gray-600" for="cus_email"
+            >Address Line 2</label
+          >
+          <input
+            class="w-full px-2 py-2 text-gray-700 bg-gray-200 rounded"
+            id="cus_email"
+            name="cus_email"
+            type="text"
+            placeholder="Unit, Apt, Suite, etc."
+            autocomplete="shipping address-line2"
+            aria-label="Email"
+          />
+        </div>
+        <div class="mt-2">
+          <label class="hidden text-sm block text-gray-600" for="cus_email"
+            >Address Line 3</label
+          >
+          <input
+            class="w-full px-2 py-2 text-gray-700 bg-gray-200 rounded"
+            id="cus_email"
+            name="cus_email"
+            type="text"
+            placeholder="Additional address detail (optional)"
+            autocomplete="shipping address-line3"
+            aria-label="Email"
+          />
+        </div>
+        <div class="mt-2">
+          <label class="hidden text-sm block text-gray-600" for="cus_email"
+            >City</label
+          >
+          <input
+            class="w-full px-2 py-2 text-gray-700 bg-gray-200 rounded"
+            id="cus_email"
+            name="cus_email"
+            type="text"
+            required=""
+            placeholder="City"
+            autocomplete="shipping address-level2"
+            aria-label="Email"
+          />
+        </div>
+        <div class="mt-2">
+          <label class="hidden text-sm block text-gray-600" for="cus_email"
+            >State</label
+          >
+          <input
+            class="w-full px-2 py-2 text-gray-700 bg-gray-200 rounded"
+            id="cus_email"
+            name="cus_email"
+            type="text"
+            required=""
+            placeholder="State"
+            autocomplete="shipping address-level1"
+            aria-label="Email"
+          />
+        </div>
+        <div class="inline-block mt-2 w-1/2 pr-1">
+          <label class="hidden block text-sm text-gray-600" for="cus_email"
+            >Country</label
+          >
+          <select
+            class="w-full px-2 py-2 text-gray-700 bg-gray-200 rounded"
+            id="cus_email"
+            name="cus_email"
+            type="text"
+            required=""
+            placeholder="Country"
+            autocomplete="shipping country-name"
+            aria-label="Email"
+          >
+            <option disabled selected value>-- Select a country --</option>
+            <option value="Canada">Canada</option>
+            <option value="United States">United States</option>
+          </select>
+        </div>
+        <div class="inline-block mt-2 -mx-1 pl-1 w-1/2">
+          <label class="hidden block text-sm text-gray-600" for="cus_email"
+            >Zip</label
+          >
+          <input
+            class="w-full px-2 py-2 text-gray-700 bg-gray-200 rounded"
+            id="cus_email"
+            name="cus_email"
+            type="text"
+            required=""
+            placeholder="Zip"
+            autocomplete="shipping postal-code"
+            aria-label="Email"
+          />
+        </div>
+        <div class="mt-4">
+          <button
+            class="px-4 py-1 text-white font-light tracking-wider bg-gray-900 rounded"
+            type="submit"
+          >
+            Submit
+          </button>
+        </div>
+      </form>
+      <div
+        id="minimap-container"
+        style="height: 240px; width: 360px; display: none"
+      >
+        <mapbox-address-minimap
+          can-adjust-marker="true"
+          satellite-toggle="true"
+        ></mapbox-address-minimap>
+      </div>
+    </div>
+    <script type="module" src="/index-bundle.js"></script>
+  </body>
+</html>

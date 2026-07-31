@@ -35,6 +35,9 @@ Vendeur IA OS is a production-ready "Sales Machine" that transforms TikTok, Inst
 - Backend services are fully protected via `authenticate` middleware.
 - Onboarding flow transitions from Demo Simulator to real Merchant Account.
 - **Real WhatsApp Connectivity**: QR Code generation via `@whiskeysockets/baileys` and `Socket.io` is fully functional in the onboarding flow.
+- **Hybrid WhatsApp Strategy**: Dual-provider system supporting both **Mode Express (Baileys/QR Code)** and **Mode Pro (Meta Cloud API)** for 100k+ scalability.
+- **AI Growth Advisor**: Pro-active business analysis service that provides merchants with actionable, data-driven sales tips directly on the dashboard.
+- **RAM Contribution Fee**: Secure payment flow via **Paystack Inline Popup** with HMAC-verified webhooks for automated billing.
 - **Real Merchant Persistence**: Merchant records are created in MongoDB immediately upon starting the onboarding wizard.
 - High-fidelity Dashboard is connected to real database metrics.
 

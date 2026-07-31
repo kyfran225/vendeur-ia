@@ -151,14 +151,19 @@ class WhatsAppService {
   }
 
   async sendMetaMessage(merchant: any, to: string, text: string) {
-    if (!env.WHATSAPP_PHONE_ID || !env.WHATSAPP_ACCESS_TOKEN) {
-      console.warn("[Meta WhatsApp] API Credentials missing");
+    const config = merchant.whatsappConfig?.meta || {
+        phoneNumberId: env.WHATSAPP_PHONE_ID,
+        accessToken: env.WHATSAPP_ACCESS_TOKEN
+    };
+
+    if (!config.phoneNumberId || !config.accessToken) {
+      console.warn(`[Meta WhatsApp] API Credentials missing for merchant ${merchant.businessName}`);
       return;
     }
 
     try {
       await axios.post(
-        `https://graph.facebook.com/v20.0/${env.WHATSAPP_PHONE_ID}/messages`,
+        `https://graph.facebook.com/v20.0/${config.phoneNumberId}/messages`,
         {
           messaging_product: "whatsapp",
           recipient_type: "individual",
@@ -168,12 +173,12 @@ class WhatsAppService {
         },
         {
           headers: {
-            Authorization: `Bearer ${env.WHATSAPP_ACCESS_TOKEN}`,
+            Authorization: `Bearer ${config.accessToken}`,
             "Content-Type": "application/json",
           },
         }
       );
-      console.log(`[Meta WhatsApp] Message sent to ${to}`);
+      console.log(`[Meta WhatsApp] Message sent to ${to} (Merchant: ${merchant.businessName})`);
     } catch (error: any) {
       console.error("[Meta WhatsApp] Error sending message:", error.response?.data || error.message);
     }
@@ -181,8 +186,7 @@ class WhatsAppService {
 
   async handleMetaIncomingMessage(from: string, text: string, phoneId: string, media?: { mediaId: string, mediaType: string }) {
     // 1. Find the merchant associated with this Phone ID
-    // Note: In a multi-tenant app, we'd search by phoneId
-    const merchant = await CommerceMerchantModel.findOne({});
+    const merchant = await CommerceMerchantModel.findOne({ "whatsappConfig.meta.phoneNumberId": phoneId });
 
     if (!merchant) {
       console.error(`[Meta WhatsApp] No merchant found for PhoneID ${phoneId}`);

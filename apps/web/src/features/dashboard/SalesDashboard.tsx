@@ -47,6 +47,7 @@ function formatAmount(value: number) {
 }
 
 import { SalesInbox } from "../inbox/SalesInbox";
+import { WhatsAppConnectionFlow } from "./components/WhatsAppConnectionFlow";
 
 export function SalesDashboard() {
   const [tab, setTab] = useState<"home" | "products" | "inbox" | "settings">("home");
@@ -153,8 +154,48 @@ function TabButton({ active, onClick, icon, label }: { active: boolean; onClick:
 }
 
 function HomePanel({ dashboard }: { dashboard: any }) {
+  const tips = dashboard?.aiGrowthAdvice?.tips || [];
+  const status = dashboard?.merchant?.whatsappConfig?.status || 'disconnected';
+
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-700">
+      {/* AI GROWTH ADVISOR SECTION */}
+      <section className="relative overflow-hidden bg-vendeur-emerald/10 border border-vendeur-emerald/20 p-6 md:p-8 rounded-[2.5rem] group">
+        <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-110 transition-transform duration-700">
+           <Sparkles size={120} className="text-vendeur-emerald" />
+        </div>
+
+        <div className="relative z-10 space-y-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-2xl bg-vendeur-emerald flex items-center justify-center text-vendeur-coal shadow-lg shadow-vendeur-emerald/20">
+                <Bot size={20} />
+              </div>
+              <div>
+                <h2 className="text-xl font-black text-white uppercase tracking-tighter">Conseiller de Croissance IA</h2>
+                <div className="flex items-center gap-2">
+                  <div className={cn("h-2 w-2 rounded-full animate-pulse", status === 'connected' ? "bg-vendeur-emerald" : "bg-red-500")} />
+                  <p className="text-[10px] font-black uppercase text-vendeur-emerald/60 tracking-widest">
+                    {status === 'connected' ? "IA en ligne & active" : "IA en attente de connexion"}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {tips.map((tip: string, i: number) => (
+              <div key={i} className="bg-black/40 backdrop-blur-md border border-white/5 p-4 rounded-2xl text-xs font-medium leading-relaxed hover:border-vendeur-emerald/30 transition-colors">
+                {tip}
+              </div>
+            ))}
+            {tips.length === 0 && (
+               <div className="col-span-3 text-white/40 text-xs italic">Analyse de votre business en cours...</div>
+            )}
+          </div>
+        </div>
+      </section>
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <MetricCard icon={<DollarSign className="text-vendeur-emerald" />} label="Revenu Jour" value={formatAmount(dashboard?.metrics?.revenueToday || 0)} />
         <MetricCard icon={<MessageCircle className="text-blue-400" />} label="Conversations" value={String(dashboard?.metrics?.conversationsToday || 0)} />
@@ -373,36 +414,12 @@ function SettingsPanel({ merchant }: { merchant: any }) {
 
           <div className="space-y-4">
             <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-vendeur-emerald">Connexion WhatsApp</h3>
-            <div className="p-6 bg-black/40 border border-white/5 rounded-2xl space-y-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                   <div className="h-12 w-12 rounded-xl bg-vendeur-emerald/10 border border-vendeur-emerald/20 flex items-center justify-center">
-                      <MessageCircle className="text-vendeur-emerald" />
-                   </div>
-                   <div>
-                      <p className="font-black">Lien direct QR Code</p>
-                      <p className="text-xs text-white/40">Connectez votre téléphone en 5 secondes.</p>
-                   </div>
-                </div>
-                <button
-                  onClick={() => connectMutation.mutate()}
-                  className="h-10 px-6 rounded-xl bg-white text-vendeur-coal text-[10px] font-black uppercase tracking-[0.15em] hover:bg-vendeur-emerald transition-all"
-                >
-                  Lancer
-                </button>
-              </div>
-
-              {qrCode && (
-                <div className="flex flex-col items-center gap-4 py-4 animate-in zoom-in-95 duration-500">
-                  <div className="p-4 bg-white rounded-2xl shadow-2xl">
-                    <img src={qrCode} alt="WhatsApp QR Code" className="w-48 h-48" />
-                  </div>
-                  <p className="text-xs text-white/40 flex items-center gap-2">
-                    <QrCode size={14} /> Scannez ce code avec votre WhatsApp
-                  </p>
-                </div>
-              )}
-            </div>
+            <WhatsAppConnectionFlow
+              merchant={{ ...merchant, systemSettings: dashboard.systemSettings }}
+              qrCode={qrCode || null}
+              onInitBaileys={() => connectMutation.mutate()}
+              onRefreshMerchant={() => queryClient.invalidateQueries({ queryKey: ["dashboard"] })}
+            />
           </div>
         </div>
       </section>

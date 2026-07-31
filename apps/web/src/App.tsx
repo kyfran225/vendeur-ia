@@ -7,6 +7,7 @@ import { SalesDashboard } from "./features/dashboard/SalesDashboard";
 import { ProductManager } from "./features/products/ProductManager";
 import { SalesInbox } from "./features/inbox/SalesInbox";
 import { KnowledgeSetup } from "./features/settings/KnowledgeSetup";
+import { AdminDashboard } from "./features/admin/AdminDashboard";
 import { AppLayout } from "./components/layout/AppLayout";
 import { useAuthStore } from "./stores/authStore";
 import { useOnboardingStore } from "./stores/onboardingStore";
@@ -32,6 +33,7 @@ function App() {
 
           <Route element={<AppLayout />}>
             <Route path="/dashboard" element={<SalesDashboard />} />
+            <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/products" element={<ProductManager />} />
             <Route path="/inbox" element={<SalesInbox />} />
             <Route path="/knowledge" element={<KnowledgeSetup />} />

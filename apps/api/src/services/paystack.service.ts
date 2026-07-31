@@ -1,3 +1,4 @@
+import crypto from "crypto";
 import axios from "axios";
 import { env } from "../config/env.js";
 
@@ -9,6 +10,14 @@ export class PaystackService {
       Authorization: `Bearer ${env.PAYSTACK_SECRET_KEY}`,
       "Content-Type": "application/json"
     };
+  }
+
+  verifyWebhookSignature(body: string, signature: string): boolean {
+    const hash = crypto
+      .createHmac("sha512", env.PAYSTACK_WEBHOOK_SECRET || "")
+      .update(body)
+      .digest("hex");
+    return hash === signature;
   }
 
   async initializeSubscription(email: string, amount: number) {

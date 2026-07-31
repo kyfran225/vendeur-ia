@@ -27,6 +27,17 @@ const MerchantSchema = new Schema({
     personality: { type: String, default: "friendly" },
     responseStyle: { type: String, default: "normal" },
     autoReply: { type: Boolean, default: true }
+  },
+  whatsappConfig: {
+    provider: { type: String, enum: ['baileys', 'meta'], default: 'baileys' },
+    meta: {
+      phoneNumberId: String,
+      accessToken: String,
+      verifyToken: String,
+      wabaId: String
+    },
+    status: { type: String, enum: ['disconnected', 'connected', 'error'], default: 'disconnected' },
+    lastBillingDate: { type: Date, default: null }
   }
 }, { timestamps: true });
 

@@ -7,6 +7,7 @@ import {
   CommerceCustomerModel
 } from "./commerce.model.js";
 import { aiAgentService } from "../../services/ai-agent.service.js";
+import { aiGrowthService } from "../../services/ai-growth.service.js";
 import { env } from "../../config/env.js";
 import axios from "axios";
 
@@ -31,6 +32,8 @@ export class CommerceService {
       leadScore: { $gte: 50 }
     });
 
+    const aiGrowthAdvice = await aiGrowthService.generateGrowthAdvice(merchant._id.toString());
+
     return {
       merchant,
       products,
@@ -38,7 +41,8 @@ export class CommerceService {
         revenueToday: 0, // Will be implemented with real orders later
         conversationsToday,
         hotLeads
-      }
+      },
+      aiGrowthAdvice
     };
   }
 

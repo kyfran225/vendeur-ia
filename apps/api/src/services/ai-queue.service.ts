@@ -53,13 +53,20 @@ export const aiWorker = new Worker(
         message: aiMsg,
       });
 
-      // SEND MESSAGE (Try Meta Cloud API first, then Baileys if active)
-      if (env.WHATSAPP_PHONE_ID && env.WHATSAPP_ACCESS_TOKEN) {
-        await whatsappService.sendMetaMessage(context.merchant, remoteJid, reply);
+      // SEND MESSAGE (Choose provider based on merchant config)
+      const merchant = await CommerceMerchantModel.findById(context.merchant._id);
+      const config = merchant?.whatsappConfig;
+
+      if (config?.provider === 'meta' && config.meta?.phoneNumberId && config.meta?.accessToken) {
+        // Use Merchant Specific Meta Token
+        await whatsappService.sendMetaMessage(merchant, remoteJid, reply);
       } else {
+        // Fallback to Baileys
         const sock = (whatsappService as any).activeSessions?.get(userId);
         if (sock) {
           await sock.sendMessage(remoteJid, { text: reply });
+        } else {
+            console.warn(`[AI Queue] No active Baileys session for user ${userId}`);
         }
       }
 

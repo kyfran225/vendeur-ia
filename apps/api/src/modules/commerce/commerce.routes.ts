@@ -3,7 +3,9 @@ import { commerceService } from "./commerce.service.js";
 import { paystackService } from "../../services/paystack.service.js";
 import { env } from "../../config/env.js";
 import { authenticate } from "../../middleware/authenticate.js";
-import { CommerceMerchantModel, CommerceProductModel, CommerceConversationModel, CommerceMessageModel } from "./commerce.model.js";
+import { CommerceMerchantModel, CommerceProductModel, CommerceConversationModel, CommerceMessageModel, CommerceCustomerModel } from "./commerce.model.js";
+import { TransactionModel } from "./transaction.model.js";
+import { SystemSettingsModel } from "./admin.model.js";
 import axios from "axios";
 import multer from "multer";
 
@@ -13,7 +15,17 @@ const upload = multer({ storage: multer.memoryStorage() });
 router.get("/dashboard", authenticate, async (req, res) => {
   const ownerId = (req as any).user?.id;
   const data = await commerceService.getDashboard(ownerId);
-  res.json(data);
+
+  // Also include public system settings (like support number)
+  const settings = await SystemSettingsModel.findOne();
+
+  res.json({
+    ...data,
+    systemSettings: {
+      supportWhatsApp: settings?.supportWhatsApp || "+2250700000000",
+      packProFee: settings?.pricing?.packProFee || 25000
+    }
+  });
 });
 
 router.get("/conversations", authenticate, async (req, res) => {
@@ -49,6 +61,96 @@ router.post("/activate-premium", authenticate, async (req, res) => {
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
+});
+
+router.post("/verify-payment", authenticate, async (req, res) => {
+  const { reference, type } = req.body;
+  const userId = (req as any).user.id;
+
+  try {
+    const transaction = await paystackService.verifyTransaction(reference);
+
+    if (transaction.status === "success") {
+      const merchant = await CommerceMerchantModel.findOne({ ownerId: userId });
+      if (!merchant) return res.status(404).json({ error: "Merchant not found" });
+
+      // Save Transaction for Admin Visibility
+      await TransactionModel.create({
+        merchantId: merchant._id,
+        ownerId: userId,
+        reference: transaction.reference,
+        amount: transaction.amount / 100,
+        currency: transaction.currency,
+        type: type || "subscription",
+        status: "success",
+        paymentMethod: transaction.channel,
+        paidAt: new Date(transaction.paid_at)
+      });
+
+      if (type === "ram_contribution") {
+        merchant.whatsappConfig.lastBillingDate = new Date();
+        merchant.whatsappConfig.status = 'connected'; // Allow connection process
+        await merchant.save();
+      }
+
+      res.json({ success: true, message: "Payment verified" });
+    } else {
+      res.status(400).json({ success: false, message: "Payment failed" });
+    }
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Paystack Webhook (Public)
+router.post("/webhooks/paystack", express.raw({ type: 'application/json' }), async (req, res) => {
+  const signature = req.headers['x-paystack-signature'] as string;
+  const body = req.body.toString();
+
+  if (!paystackService.verifyWebhookSignature(body, signature)) {
+    return res.status(400).send('Invalid signature');
+  }
+
+  const event = JSON.parse(body);
+
+  if (event.event === 'charge.success') {
+    const data = event.data;
+    const { type, userId } = data.metadata || {};
+
+    if (type === 'ram_contribution' && userId) {
+      console.log(`[Paystack Webhook] RAM Contribution success for User: ${userId}`);
+
+      const merchant = await CommerceMerchantModel.findOneAndUpdate(
+        { ownerId: userId },
+        {
+          $set: {
+            "whatsappConfig.lastBillingDate": new Date(),
+            "whatsappConfig.status": "connected"
+          }
+        }
+      );
+
+      if (merchant) {
+        await TransactionModel.findOneAndUpdate(
+          { reference: data.reference },
+          {
+            merchantId: merchant._id,
+            ownerId: userId,
+            reference: data.reference,
+            amount: data.amount / 100,
+            currency: data.currency,
+            type: 'ram_contribution',
+            status: 'success',
+            paymentMethod: data.channel,
+            paidAt: new Date(data.paid_at)
+          },
+          { upsert: true }
+        );
+      }
+    }
+  }
+
+  res.status(200).send('OK');
 });
 
 router.post("/merchant", authenticate, async (req, res) => {

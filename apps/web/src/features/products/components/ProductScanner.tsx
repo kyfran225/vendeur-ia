@@ -2,6 +2,13 @@ import React, { useRef, useState, useEffect, useCallback } from "react";
 import { X, Camera, Sparkles, RefreshCw, Check, Loader2, Zap, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import { PosterGenerator } from "./PosterGenerator";
+import { useAuthStore } from "@/stores/authStore";
+import { useOnboardingStore } from "@/stores/onboardingStore";
+import { compressImage } from "@/lib/imageUtils";
+import axios from "axios";
+
+const API_URL = import.meta.env.VITE_API_URL;
+if (!API_URL) console.warn("VITE_API_URL is not defined! Check your .env file.");
 
 interface ProductScannerProps {
   onClose: () => void;
@@ -10,6 +17,7 @@ interface ProductScannerProps {
 }
 
 export function ProductScanner({ onClose, onScanComplete, boutiqueName }: ProductScannerProps) {
+  const { accessToken } = useAuthStore();
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [stream, setStream] = useState<MediaStream | null>(null);
@@ -67,20 +75,40 @@ export function ProductScanner({ onClose, onScanComplete, boutiqueName }: Produc
     // Stop stream to save battery
     stream?.getTracks().forEach(track => track.stop());
 
-    // 2. Simulate High-Quality Background Removal & AI Analysis
+    // 2. Real AI Analysis call with Compression
     setScanStep("analyzing");
 
-    // Simulate AI & Background Removal
-    setTimeout(() => {
-      const mockData = {
-        name: "Produit Premium IA",
-        category: "Mode",
-        price: 25000,
+    try {
+      // Production Hardening: Compress image before upload
+      const compressedBlob = await compressImage(imageData, 1080, 0.7);
+
+      const formData = new FormData();
+      formData.append("image", compressedBlob, "product.jpg");
+
+      const response = await axios.post(`${API_URL}/api/commerce/products/vision`, formData, {
+        headers: {
+          "Authorization": `Bearer ${accessToken}`,
+          "Content-Type": "multipart/form-data"
+        },
+        timeout: 30000 // 30s timeout for AI analysis in prod
+      });
+
+      setDetectedData({
+        ...response.data,
         image: imageData
-      };
-      setDetectedData(mockData);
+      });
       setScanStep("studio");
-    }, 2500);
+    } catch (error) {
+      console.error("Vision API Error:", error);
+      toast.error("L'IA n'a pas pu analyser l'image. Utilisation du mode manuel.");
+      setDetectedData({
+        name: "Produit sans nom",
+        price: 0,
+        category: "Mode",
+        image: imageData
+      });
+      setScanStep("studio");
+    }
   };
 
   if (scanStep === "studio" && detectedData) {
@@ -88,6 +116,7 @@ export function ProductScanner({ onClose, onScanComplete, boutiqueName }: Produc
       <PosterGenerator
         productData={detectedData}
         boutiqueName={boutiqueName}
+        businessCategory={useOnboardingStore.getState().tempData?.category || "fashion"}
         onBack={() => {
           setScanStep("idle");
           setPreviewUrl(null);

@@ -10,34 +10,37 @@ import { KnowledgeSetup } from "./features/settings/KnowledgeSetup";
 import { AppLayout } from "./components/layout/AppLayout";
 import { useAuthStore } from "./stores/authStore";
 import { useOnboardingStore } from "./stores/onboardingStore";
+import { ErrorBoundary } from "./components/ui/ErrorBoundary";
 
 function App() {
   const { user } = useAuthStore();
   const { tempData } = useOnboardingStore();
 
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={
-          user
-            ? <Navigate to={tempData ? "/onboarding" : "/dashboard"} />
-            : <LandingPage />
-        } />
+    <ErrorBoundary>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={
+            user
+              ? <Navigate to={tempData ? "/onboarding" : "/dashboard"} />
+              : <LandingPage />
+          } />
 
-        <Route path="/onboarding" element={
-          user ? <OnboardingWizard /> : <Navigate to="/" />
-        } />
+          <Route path="/onboarding" element={
+            user ? <OnboardingWizard /> : <Navigate to="/" />
+          } />
 
-        <Route element={<AppLayout />}>
-          <Route path="/dashboard" element={<SalesDashboard />} />
-          <Route path="/products" element={<ProductManager />} />
-          <Route path="/inbox" element={<SalesInbox />} />
-          <Route path="/knowledge" element={<KnowledgeSetup />} />
-          <Route path="/settings" element={<div>Paramètres</div>} />
-        </Route>
-      </Routes>
-      <Toaster theme="dark" position="top-center" />
-    </BrowserRouter>
+          <Route element={<AppLayout />}>
+            <Route path="/dashboard" element={<SalesDashboard />} />
+            <Route path="/products" element={<ProductManager />} />
+            <Route path="/inbox" element={<SalesInbox />} />
+            <Route path="/knowledge" element={<KnowledgeSetup />} />
+            <Route path="/settings" element={<div>Paramètres</div>} />
+          </Route>
+        </Routes>
+        <Toaster theme="dark" position="top-center" />
+      </BrowserRouter>
+    </ErrorBoundary>
   );
 }
 

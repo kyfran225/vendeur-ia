@@ -1,0 +1,68 @@
+import axios from "axios";
+import { env } from "../../config/env.js";
+import { downloadContentFromMessage } from "@whiskeysockets/baileys";
+
+export class WhatsAppMediaService {
+  /**
+   * Downloads media from Meta Cloud API
+   * @param mediaId The ID of the media provided by Meta
+   * @returns Buffer of the downloaded media
+   */
+  async downloadMetaMedia(mediaId: string): Promise<Buffer> {
+    if (!env.WHATSAPP_ACCESS_TOKEN) {
+      throw new Error("WHATSAPP_ACCESS_TOKEN is not configured");
+    }
+
+    try {
+      // 1. Get the media URL from Meta
+      const mediaResponse = await axios.get(`https://graph.facebook.com/v20.0/${mediaId}`, {
+        headers: {
+          Authorization: `Bearer ${env.WHATSAPP_ACCESS_TOKEN}`,
+        },
+      });
+
+      const mediaUrl = mediaResponse.data.url;
+
+      // 2. Download the media content
+      const contentResponse = await axios.get(mediaUrl, {
+        headers: {
+          Authorization: `Bearer ${env.WHATSAPP_ACCESS_TOKEN}`,
+        },
+        responseType: "arraybuffer",
+      });
+
+      return Buffer.from(contentResponse.data);
+    } catch (error: any) {
+      console.error("[Meta Media Download] Error:", error.response?.data || error.message);
+      throw new Error("Failed to download media from Meta");
+    }
+  }
+
+  /**
+   * Downloads media from Baileys
+   * @param msg The message object containing the media
+   * @param type The type of media ('image' | 'audio' | 'video' | 'document')
+   * @returns Buffer of the downloaded media
+   */
+  async downloadBaileysMedia(msg: any, type: 'image' | 'audio' | 'video' | 'document'): Promise<Buffer> {
+    try {
+      const messageContent = msg.message?.[`${type}Message`];
+      if (!messageContent) {
+        throw new Error(`Message does not contain ${type} media`);
+      }
+
+      const stream = await downloadContentFromMessage(messageContent, type);
+      let buffer = Buffer.from([]);
+      for await (const chunk of stream) {
+        buffer = Buffer.concat([buffer, chunk]);
+      }
+
+      return buffer;
+    } catch (error: any) {
+      console.error("[Baileys Media Download] Error:", error.message);
+      throw new Error("Failed to download media from Baileys");
+    }
+  }
+}
+
+export const whatsappMediaService = new WhatsAppMediaService();

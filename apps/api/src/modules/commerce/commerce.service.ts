@@ -85,19 +85,19 @@ export class CommerceService {
     });
   }
 
-  async analyzeProductImage(imageBuffer: Buffer, mimeType: string) {
+  async validatePaymentProof(imageBuffer: Buffer, mimeType: string) {
     if (!env.GEMINI_API_KEY) throw new Error("GEMINI_API_KEY not configured");
 
-    const prompt = `Analyse cette image de produit et extrait les informations suivantes au format JSON :
+    const prompt = `Analyse cette capture d'écran de paiement Mobile Money (Wave, Orange Money, MTN, etc.) et extrait les informations suivantes au format JSON :
 {
-  "name": "Nom du produit",
-  "price": 10000,
-  "category": "Catégorie",
-  "description": "Description courte et vendeuse",
-  "tags": ["tag1", "tag2"],
-  "tiktokCaption": "Une légende accrocheuse pour TikTok avec des hashtags"
+  "isPaymentProof": true/false,
+  "amount": number,
+  "transactionId": "string",
+  "platform": "Wave" | "Orange Money" | "MTN" | "Autre",
+  "status": "success" | "pending" | "failed",
+  "date": "string"
 }
-Si tu ne peux pas déterminer le prix, suggère un prix réaliste en FCFA (XOF) basé sur le type de produit. Réponds UNIQUEMENT avec le JSON.`;
+Réponds UNIQUEMENT avec le JSON. Si ce n'est pas une preuve de paiement, mets isPaymentProof à false.`;
 
     try {
       const response = await axios.post(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${env.GEMINI_API_KEY}`, {
@@ -120,8 +120,8 @@ Si tu ne peux pas déterminer le prix, suggère un prix réaliste en FCFA (XOF) 
 
       return JSON.parse(jsonMatch[0]);
     } catch (error: any) {
-      console.error("[Vision] Error:", error.response?.data || error.message);
-      throw new Error("Erreur lors de l'analyse de l'image par l'IA");
+      console.error("[Payment Validation] Error:", error.response?.data || error.message);
+      throw new Error("Erreur lors de la validation du paiement par l'IA");
     }
   }
 }

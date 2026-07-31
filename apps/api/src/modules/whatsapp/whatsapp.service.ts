@@ -7,6 +7,7 @@ import { CommerceMerchantModel, CommerceConversationModel, CommerceMessageModel,
 import { emitToUser } from "../../realtime/socketServer.js";
 import axios from "axios";
 import { addAIJob } from "../../services/ai-queue.service.js";
+import { whatsappMediaService } from "./whatsapp-media.service.js";
 
 class WhatsAppService {
   private activeSessions: Map<string, any> = new Map();
@@ -61,16 +62,15 @@ class WhatsAppService {
   async handleIncomingMessage(userId: string, msg: any) {
     const from = msg.key.remoteJid;
     let text = msg.message?.conversation || msg.message?.extendedTextMessage?.text;
+    const imageMsg = msg.message?.imageMessage;
 
     // Vocal Support: Handle Audio Messages
     if (!text && (msg.message?.audioMessage || msg.message?.videoMessage)) {
         console.log("[WhatsApp] Audio/Video message received, attempting transcription...");
-        // In a real scenario, we would download the media and use aiProvider.transcribeAudio
-        // For now, we'll use a placeholder to show the "brain" is aware of vocal inputs
         text = "[Message Vocal Reçu]";
     }
 
-    if (!text) return;
+    if (!text && !imageMsg) return;
 
     const merchant = await CommerceMerchantModel.findOne({ ownerId: userId });
     if (!merchant) return;
@@ -85,6 +85,28 @@ class WhatsAppService {
     let conversation = await CommerceConversationModel.findOne({ merchantId: merchant._id, customerId: customer._id, status: "active" });
     if (!conversation) {
       conversation = await CommerceConversationModel.create({ merchantId: merchant._id, customerId: customer._id });
+    }
+
+    // Handle Image / Payment Proof
+    if (imageMsg) {
+      console.log("[WhatsApp] Image received, checking for payment proof...");
+      try {
+        const buffer = await whatsappMediaService.downloadBaileysMedia(msg, 'image');
+        const paymentInfo = await commerceService.validatePaymentProof(buffer, 'image/jpeg');
+
+        if (paymentInfo && paymentInfo.isPaymentProof) {
+          emitToUser(userId, "payment:detected", {
+            conversationId: conversation._id,
+            ...paymentInfo
+          });
+          text = `[PREUVE DE PAIEMENT DÉTECTÉE: ${paymentInfo.platform} - ${paymentInfo.amount} XOF]`;
+        } else {
+          text = "[Image / Capture d'écran reçue]";
+        }
+      } catch (err) {
+        console.error("Error handling image:", err);
+        text = "[Image / Capture d'écran reçue]";
+      }
     }
 
     // Save customer message
@@ -155,6 +177,48 @@ class WhatsAppService {
     } catch (error: any) {
       console.error("[Meta WhatsApp] Error sending message:", error.response?.data || error.message);
     }
+  }
+
+  async handleMetaIncomingMessage(from: string, text: string, phoneId: string, media?: { mediaId: string, mediaType: string }) {
+    // 1. Find the merchant associated with this Phone ID
+    // Note: In a multi-tenant app, we'd search by phoneId
+    const merchant = await CommerceMerchantModel.findOne({});
+
+    if (!merchant) {
+      console.error(`[Meta WhatsApp] No merchant found for PhoneID ${phoneId}`);
+      return;
+    }
+
+    // 2. Prepare message object for handleIncomingMessage
+    const msg: any = {
+      key: { remoteJid: from, fromMe: false },
+      message: { conversation: text }
+    };
+
+    // 3. Handle Media if present
+    if (media && media.mediaType === 'image') {
+      try {
+        console.log(`[Meta WhatsApp] Downloading image ${media.mediaId}...`);
+        const buffer = await whatsappMediaService.downloadMetaMedia(media.mediaId);
+
+        // Mocking Baileys-like structure for handleIncomingMessage compatibility
+        msg.message.imageMessage = true;
+
+        // We override handleIncomingMessage's internal download for Meta
+        // or we refactor handleIncomingMessage to accept a buffer
+        // For now, let's keep it simple and just process the payment proof here
+        const paymentInfo = await commerceService.validatePaymentProof(buffer, 'image/jpeg');
+        if (paymentInfo && paymentInfo.isPaymentProof) {
+          text = `[PREUVE DE PAIEMENT DÉTECTÉE: ${paymentInfo.platform} - ${paymentInfo.amount} XOF]`;
+          msg.message.conversation = text;
+          // We'll let handleIncomingMessage handle the rest (DB saving, AI response)
+        }
+      } catch (error) {
+        console.error("[Meta WhatsApp] Error processing media:", error);
+      }
+    }
+
+    await this.handleIncomingMessage(merchant.ownerId, msg);
   }
 }
 

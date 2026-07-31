@@ -1,21 +1,39 @@
 import React, { useState } from "react";
-import { Package, Plus, Sparkles, Trash2, Edit } from "lucide-react";
+import { Package, Plus, Sparkles, Trash2, Edit, Camera } from "lucide-react";
+import { ProductScanner } from "./components/ProductScanner";
 
 export function ProductManager() {
-  const [products] = useState([
+  const [isScannerOpen, setIsScannerOpen] = useState(false);
+  const [products, setProducts] = useState([
     { id: 1, name: "Robe Ankara Élégance", price: 15000, stock: 12, category: "Mode" },
     { id: 2, name: "Sandales Traditionnelles", price: 8500, stock: 5, category: "Accessoires" }
   ]);
 
+  const handleScanComplete = (data: any) => {
+    // In a real flow, this would open a confirmation modal with the AI-detected info
+    console.log("Scan Data:", data);
+  };
+
   return (
     <div className="p-6 space-y-8">
+      {isScannerOpen && (
+        <ProductScanner
+          onClose={() => setIsScannerOpen(false)}
+          onScanComplete={handleScanComplete}
+          boutiqueName="Ma Boutique IA"
+        />
+      )}
+
       <header className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-black tracking-tight">Catalogue IA</h1>
+          <h1 className="text-3xl font-black tracking-tight text-white">Catalogue IA</h1>
           <p className="text-white/40">Gérez vos articles et laissez l'IA créer vos fiches.</p>
         </div>
-        <button className="flex items-center gap-2 bg-vendeur-emerald text-vendeur-coal px-6 py-3 rounded-2xl font-black uppercase tracking-widest text-xs shadow-lg">
-          <Plus size={18} /> Ajouter Produit
+        <button
+          onClick={() => setIsScannerOpen(true)}
+          className="flex items-center gap-2 bg-emerald-300 text-[#06130d] px-6 py-3 rounded-2xl font-black uppercase tracking-widest text-xs shadow-lg shadow-emerald-500/10 hover:scale-[1.02] active:scale-95 transition-all"
+        >
+          <Camera size={18} /> Scanner IA
         </button>
       </header>
 

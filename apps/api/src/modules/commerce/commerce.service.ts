@@ -7,9 +7,61 @@ import {
   CommerceCustomerModel
 } from "./commerce.model.js";
 import { aiAgentService } from "../../services/ai-agent.service.js";
+import { env } from "../../config/env.js";
+import axios from "axios";
 
 export class CommerceService {
-  // ... existing methods ...
+  async getDashboard(ownerId: string) {
+    const merchant = await CommerceMerchantModel.findOne({ ownerId });
+    if (!merchant) return { merchant: null, products: [], metrics: {} };
+
+    const products = await CommerceProductModel.find({ merchantId: merchant._id });
+
+    // Simple metrics calculation
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const conversationsToday = await CommerceConversationModel.countDocuments({
+      merchantId: merchant._id,
+      createdAt: { $gte: today }
+    });
+
+    const hotLeads = await CommerceCustomerModel.countDocuments({
+      merchantId: merchant._id,
+      leadScore: { $gte: 50 }
+    });
+
+    return {
+      merchant,
+      products,
+      metrics: {
+        revenueToday: 0, // Will be implemented with real orders later
+        conversationsToday,
+        hotLeads
+      }
+    };
+  }
+
+  async createMerchant(ownerId: string, data: any) {
+    const merchant = await CommerceMerchantModel.create({
+      ownerId,
+      ...data
+    });
+
+    // Initialize Knowledge Base
+    await CommerceKnowledgeModel.create({
+      merchantId: merchant._id,
+      businessRules: {
+        deliveryZones: [data.city || "Abidjan"],
+        openingHours: "09:00 - 18:00",
+        returnPolicy: "Retours acceptés sous 48h.",
+        paymentMethods: ["Mobile Money", "Cash"]
+      },
+      customInstructions: `Vends avec passion les produits de ${data.businessName}.`
+    });
+
+    return merchant;
+  }
 
   async processAiMessage(merchantId: string, customerPhone: string, message: string, history: any[]) {
     const merchant = await CommerceMerchantModel.findById(merchantId);
@@ -19,7 +71,7 @@ export class CommerceService {
     const knowledge = await CommerceKnowledgeModel.findOne({ merchantId });
 
     const formattedHistory = history.map(h => ({
-      role: h.sender === "customer" ? "customer" : "ai" as const,
+      role: (h.sender === "customer" ? "customer" : "ai") as "customer" | "ai",
       text: h.content
     }));
 

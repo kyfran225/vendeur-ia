@@ -1,5 +1,7 @@
 import axios from "axios";
 import { env } from "../config/env.js";
+import { Redis } from "ioredis";
+import crypto from "crypto";
 
 export interface AIRequest {
   systemPrompt: string;
@@ -11,18 +13,53 @@ export interface AIRequest {
 
 export class AIProvider {
   private static readonly GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent";
+  private redis: Redis | null = null;
+
+  constructor() {
+    if (env.REDIS_URL) {
+      this.redis = new Redis(env.REDIS_URL);
+    }
+  }
+
+  private generateCacheKey(request: AIRequest): string {
+    const data = JSON.stringify({
+      system: request.systemPrompt,
+      user: request.userMessage,
+      history: request.history?.slice(-3) // Cache based on last 3 exchanges for context
+    });
+    return `ai_cache:${crypto.createHash('md5').update(data).digest('hex')}`;
+  }
 
   async generateText(request: AIRequest): Promise<string> {
-    if (env.GEMINI_API_KEY) {
-      try {
-        return await this.generateWithGemini(request);
-      } catch (error) {
-        console.error("Gemini failed, using smart mock.");
+    // 1. Try Semantic Cache (MD5 hash of context for now)
+    const cacheKey = this.generateCacheKey(request);
+    if (this.redis) {
+      const cached = await this.redis.get(cacheKey);
+      if (cached) {
+        console.log("[AI Provider] Cache Hit ✨");
+        return cached;
       }
     }
 
-    // Mocked Sales Expert response for demonstration when API fails or is missing
-    return `✨ Bonjour ! La Robe de Gala rouge est à 25.000 XOF. Nous livrons bien à Cocody pour 1.500 XOF. C'est une pièce magnifique qui part vite ! Souhaitez-vous que je vous l'envoie ? 🚀`;
+    let responseText: string;
+
+    if (env.GEMINI_API_KEY) {
+      try {
+        responseText = await this.generateWithGemini(request);
+      } catch (error) {
+        console.error("Gemini failed, using smart mock.");
+        responseText = `✨ Bonjour ! La Robe de Gala rouge est à 25.000 XOF. Nous livrons bien à Cocody pour 1.500 XOF. C'est une pièce magnifique qui part vite ! Souhaitez-vous que je vous l'envoie ? 🚀`;
+      }
+    } else {
+      responseText = `✨ Bonjour ! La Robe de Gala rouge est à 25.000 XOF. Nous livrons bien à Cocody pour 1.500 XOF. C'est une pièce magnifique qui part vite ! Souhaitez-vous que je vous l'envoie ? 🚀`;
+    }
+
+    // 2. Save to Cache
+    if (this.redis) {
+      await this.redis.set(cacheKey, responseText, 'EX', 3600); // 1 hour cache
+    }
+
+    return responseText;
   }
 
   private async generateWithGemini(request: AIRequest): Promise<string> {

@@ -233,7 +233,7 @@ export function ProductManager() {
           onClick={() => setIsScannerOpen(true)}
           className={`flex items-center gap-2 bg-${config.accent}-300 text-black px-6 py-3 rounded-2xl font-black uppercase tracking-widest text-xs shadow-lg hover:scale-[1.02] active:scale-95 transition-all`}
         >
-          <Camera size={18} /> {category === "services" ? "Ajouter Service" : "Scanner IA"}
+          <Camera size={18} /> {businessCategory === "services" ? "Ajouter Service" : "Scanner IA"}
         </button>
       </header>
 

@@ -3,9 +3,10 @@ import { Boom } from "@hapi/boom";
 import QRCode from "qrcode";
 import { env } from "../../config/env.js";
 import { commerceService } from "../commerce/commerce.service.js";
-import { CommerceMerchantModel, CommerceConversationModel, CommerceMessageModel, CommerceCustomerModel } from "../commerce/commerce.model.js";
+import { CommerceMerchantModel, CommerceConversationModel, CommerceMessageModel, CommerceCustomerModel, CommerceProductModel, CommerceKnowledgeModel } from "../commerce/commerce.model.js";
 import { emitToUser } from "../../realtime/socketServer.js";
 import axios from "axios";
+import { addAIJob } from "../../services/ai-queue.service.js";
 
 class WhatsAppService {
   private activeSessions: Map<string, any> = new Map();
@@ -105,25 +106,55 @@ class WhatsAppService {
       message: customerMsg
     });
 
-    // Generate AI response
-    const reply = await commerceService.processAiMessage(merchant._id as any, from, text, history);
+    // --- DELEGATE TO QUEUE ---
+    const products = await CommerceProductModel.find({ merchantId: merchant._id });
+    const knowledge = await CommerceKnowledgeModel.findOne({ merchantId: merchant._id });
 
-    // Save and send AI message
-    const aiMsg = await CommerceMessageModel.create({ conversationId: conversation._id, sender: "ai", content: reply });
+    const formattedHistory = history.map(h => ({
+      role: (h.sender === "customer" ? "customer" : "ai") as "customer" | "ai",
+      text: h.content
+    }));
 
-    emitToUser(userId, "conversation:update", {
-      conversationId: conversation._id,
-      message: aiMsg
+    await addAIJob({
+      userId,
+      conversationId: conversation._id.toString(),
+      remoteJid: from,
+      merchant: merchant.toObject(),
+      products: products.map(p => p.toObject()),
+      knowledge: knowledge ? (knowledge.toObject() as any) : {},
+      history: formattedHistory,
+      message: text,
+      customerPhone: from
     });
-
-    const sock = this.activeSessions.get(userId);
-    if (sock) {
-      await sock.sendMessage(from, { text: reply });
-    }
   }
 
   async sendMetaMessage(merchant: any, to: string, text: string) {
-    // Implementation for Cloud API (if configured)
+    if (!env.WHATSAPP_PHONE_ID || !env.WHATSAPP_ACCESS_TOKEN) {
+      console.warn("[Meta WhatsApp] API Credentials missing");
+      return;
+    }
+
+    try {
+      await axios.post(
+        `https://graph.facebook.com/v20.0/${env.WHATSAPP_PHONE_ID}/messages`,
+        {
+          messaging_product: "whatsapp",
+          recipient_type: "individual",
+          to,
+          type: "text",
+          text: { body: text },
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${env.WHATSAPP_ACCESS_TOKEN}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      console.log(`[Meta WhatsApp] Message sent to ${to}`);
+    } catch (error: any) {
+      console.error("[Meta WhatsApp] Error sending message:", error.response?.data || error.message);
+    }
   }
 }
 

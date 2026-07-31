@@ -9,6 +9,7 @@ import authRoutes from "./modules/auth/auth.routes.js";
 import commerceRoutes from "./modules/commerce/commerce.routes.js";
 import whatsappRoutes from "./modules/whatsapp/whatsapp.routes.js";
 import mediaRoutes from "./modules/media/media.routes.js";
+import "./services/ai-queue.service.js"; // Import workers and queue
 
 const app = express();
 const httpServer = createServer(app);

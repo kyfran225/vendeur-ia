@@ -134,10 +134,10 @@ router.post("/demo/process", async (req, res) => {
     const [merchantInstructions, merchantPayments] = (description || "").split("---");
 
     // Parse simulated payment channels if provided in description
-    const paymentChannels = merchantPayments?.split(',').map(p => {
+    const paymentChannels = merchantPayments?.split(',').map((p: string) => {
       const [label, number] = p.trim().split(':');
       return { label: label?.trim(), number: number?.trim() };
-    }).filter(p => p.label && p.number) || [];
+    }).filter((p: any) => p.label && p.number) || [];
 
     const reply = await aiAgentService.generateResponse({
       merchant: {

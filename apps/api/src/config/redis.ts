@@ -1,8 +1,8 @@
-import { createClient } from "redis";
+import { Redis } from "ioredis";
 import { env } from "./env.js";
 import { logger } from "../services/logger.service.js";
 
-let redisClient: ReturnType<typeof createClient> | null = null;
+let redisClient: Redis | null = null;
 
 export async function connectRedis() {
   if (!env.REDIS_URL) {
@@ -10,25 +10,29 @@ export async function connectRedis() {
     return null;
   }
 
-  redisClient = createClient({
-    url: env.REDIS_URL,
-    socket: {
-      reconnectStrategy: (retries) => {
-        const delay = Math.min(retries * 100, 3000);
-        logger.warn(`[Redis] Reconnecting... (Attempt ${retries}, Delay ${delay}ms)`);
-        return delay;
-      }
-    }
-  });
-
-  redisClient.on("error", (err) => logger.error("[Redis Error]", { message: err.message }));
-  redisClient.on("connect", () => logger.info("✅ Redis Connected"));
-
   try {
-    await redisClient.connect();
+    // ioredis handles rediss:// and TLS automatically
+    redisClient = new Redis(env.REDIS_URL, {
+      maxRetriesPerRequest: null,
+      retryStrategy: (times) => {
+        const delay = Math.min(times * 50, 2000);
+        return delay;
+      },
+      // Essential for Upstash TLS
+      tls: env.REDIS_URL.startsWith("rediss://") ? {} : undefined
+    });
+
+    redisClient.on("error", (err) => {
+      logger.error("[Redis Error]", { message: err.message });
+    });
+
+    redisClient.on("connect", () => {
+      logger.info("✅ Redis Connected (ioredis)");
+    });
+
     return redisClient;
   } catch (err: any) {
-    logger.error("[Redis Critical] Connection failed", { message: err.message });
+    logger.error("[Redis Critical] Initialization failed", { message: err.message });
     return null;
   }
 }

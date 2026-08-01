@@ -1,4 +1,4 @@
-# 🚀 Vendeur IA — L'Employé Numérique du Social Commerce
+# 🚀 Vendeur IA - L'Employé Numérique du Social Commerce
 
 **Vendeur IA** est un système d'exploitation commercial (OS) autonome conçu pour transformer les conversations WhatsApp en ventes réelles. Il permet aux entrepreneurs de gérer leur catalogue, leurs clients et leurs paiements via une intelligence artificielle spécialisée dans le marché africain.
 
@@ -69,5 +69,5 @@ pnpm dev
 ---
 
 ## 📄 Licence & Propriété
-**Vendeur IA** — Créé par **Kyfran**. Tous droits réservés.
+**Vendeur IA** - Créé par **Kyfran**. Tous droits réservés.
 "Votre WhatsApp vend pendant que vous dormez."

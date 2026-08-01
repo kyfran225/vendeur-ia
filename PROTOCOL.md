@@ -1,4 +1,4 @@
-# 🚀 VENDEUR IA — Agent Operating Protocol (Finalisation & Excellence)
+# 🚀 VENDEUR IA - Agent Operating Protocol (Finalisation & Excellence)
 
 Dernière mise à jour : 2026-07-30 UTC
 

@@ -1,4 +1,4 @@
-# 🚀 VENDEUR IA OS — Ultra-Detailed Implementation Roadmap (110%)
+# 🚀 VENDEUR IA OS - Ultra-Detailed Implementation Roadmap (110%)
 
 Ce document trace la route vers une version production "Over-Delivered".
 

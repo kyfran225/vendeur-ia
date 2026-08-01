@@ -50,7 +50,8 @@ app.get("/", (req, res) => {
 app.get("/health", async (req, res) => {
   const dbStatus = mongoose.connection.readyState === 1 ? "connected" : "disconnected";
   const redis = getRedisClient();
-  const redisStatus = redis?.isOpen ? "connected" : "disconnected";
+  // ioredis status check: 'ready' or 'connect' means it's up
+  const redisStatus = redis && (redis.status === 'ready' || redis.status === 'connect') ? "connected" : "disconnected";
   const waSessions = (whatsappService as any).activeSessions?.size || 0;
 
   const isHealthy = dbStatus === "connected" && redisStatus === "connected";

@@ -1,4 +1,4 @@
-# ☁️ Vendeur IA — Guide de Déploiement Cloud
+# ☁️ Vendeur IA - Guide de Déploiement Cloud
 
 Ce document détaille la procédure pour déployer **Vendeur IA OS** en production sur Render et Vercel.
 

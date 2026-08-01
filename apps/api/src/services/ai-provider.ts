@@ -1,6 +1,7 @@
 import axios from "axios";
 import { env } from "../config/env.js";
 import { Redis } from "ioredis";
+import { getRedisClient } from "../config/redis.js";
 import crypto from "crypto";
 
 export interface AIRequest {
@@ -13,12 +14,8 @@ export interface AIRequest {
 
 export class AIProvider {
   private static readonly GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent";
-  private redis: Redis | null = null;
-
   constructor() {
-    if (env.REDIS_URL) {
-      this.redis = new Redis(env.REDIS_URL);
-    }
+    this.redis = getRedisClient();
   }
 
   private generateCacheKey(request: AIRequest): string {

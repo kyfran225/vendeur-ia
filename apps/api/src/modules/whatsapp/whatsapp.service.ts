@@ -8,6 +8,7 @@ import { emitToUser } from "../../realtime/socketServer.js";
 import axios from "axios";
 import { addAIJob } from "../../services/ai-queue.service.js";
 import { whatsappMediaService } from "./whatsapp-media.service.js";
+import { aiProvider } from "../../services/ai-provider.js";
 
 class WhatsAppService {
   private activeSessions: Map<string, any> = new Map();
@@ -64,15 +65,31 @@ class WhatsAppService {
     let text = msg.message?.conversation || msg.message?.extendedTextMessage?.text;
     const imageMsg = msg.message?.imageMessage;
 
+    const merchant = await CommerceMerchantModel.findOne({ ownerId: userId });
+
     // Vocal Support: Handle Audio Messages
     if (!text && (msg.message?.audioMessage || msg.message?.videoMessage)) {
-        console.log("[WhatsApp] Audio/Video message received, attempting transcription...");
-        text = "[Message Vocal Reçu]";
+      console.log("[WhatsApp] Audio/Video message received, attempting transcription...");
+      try {
+        const type = msg.message?.audioMessage ? 'audio' : 'video';
+        const buffer = await whatsappMediaService.downloadBaileysMedia(msg, type);
+        const merchantContext = merchant ? `Boutique: ${merchant.businessName}, Ville: ${merchant.city}` : "";
+
+        text = await aiProvider.transcribeAudio(
+          buffer,
+          msg.message?.[`${type}Message`]?.mimetype || 'audio/ogg',
+          merchantContext
+        );
+
+        console.log(`[WhatsApp] Transcription result: ${text}`);
+      } catch (err) {
+        console.error("Error handling audio/video transcription:", err);
+        text = "[Message Vocal Reçu (Transcription échouée)]";
+      }
     }
 
     if (!text && !imageMsg) return;
 
-    const merchant = await CommerceMerchantModel.findOne({ ownerId: userId });
     if (!merchant) return;
 
     // Find or create customer
@@ -110,7 +127,15 @@ class WhatsAppService {
     }
 
     // Save customer message
-    const customerMsg = await CommerceMessageModel.create({ conversationId: conversation._id, sender: "customer", content: text });
+    const customerMsg = await CommerceMessageModel.create({
+      conversationId: conversation._id,
+      sender: "customer",
+      content: text
+    });
+
+    // Update conversation metadata
+    conversation.lastMessageAt = new Date();
+    await conversation.save();
 
     // Fetch conversation history
     const historyMessages = await CommerceMessageModel.find({ conversationId: conversation._id })
@@ -129,6 +154,11 @@ class WhatsAppService {
     });
 
     // --- DELEGATE TO QUEUE ---
+    if (conversation.status === "needs_human") {
+      console.log(`[WhatsApp] Skipping AI for conversation ${conversation._id} (Status: needs_human)`);
+      return;
+    }
+
     const products = await CommerceProductModel.find({ merchantId: merchant._id });
     const knowledge = await CommerceKnowledgeModel.findOne({ merchantId: merchant._id });
 
@@ -146,7 +176,11 @@ class WhatsAppService {
       knowledge: knowledge ? (knowledge.toObject() as any) : {},
       history: formattedHistory,
       message: text,
-      customerPhone: from
+      customerPhone: from,
+      customerLoyalty: {
+        points: customer.loyaltyPoints || 0,
+        isVIP: (customer.loyaltyPoints || 0) >= 50
+      }
     });
   }
 
@@ -184,6 +218,56 @@ class WhatsAppService {
     }
   }
 
+  async sendMetaAudio(merchant: any, to: string, audioBuffer: Buffer) {
+    const config = merchant.whatsappConfig?.meta || {
+        phoneNumberId: env.WHATSAPP_PHONE_ID,
+        accessToken: env.WHATSAPP_ACCESS_TOKEN
+    };
+
+    if (!config.phoneNumberId || !config.accessToken) return;
+
+    try {
+      // 1. Upload Media
+      const formData = new FormData();
+      formData.append("file", new Blob([audioBuffer]), "voice.ogg");
+      formData.append("type", "audio/ogg");
+      formData.append("messaging_product", "whatsapp");
+
+      const uploadRes = await axios.post(
+        `https://graph.facebook.com/v20.0/${config.phoneNumberId}/media`,
+        formData,
+        {
+          headers: {
+            Authorization: `Bearer ${config.accessToken}`,
+          },
+        }
+      );
+
+      const mediaId = uploadRes.data.id;
+
+      // 2. Send Audio Message
+      await axios.post(
+        `https://graph.facebook.com/v20.0/${config.phoneNumberId}/messages`,
+        {
+          messaging_product: "whatsapp",
+          recipient_type: "individual",
+          to,
+          type: "audio",
+          audio: { id: mediaId },
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${config.accessToken}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      console.log(`[Meta WhatsApp] Audio sent to ${to}`);
+    } catch (error: any) {
+      console.error("[Meta WhatsApp] Error sending audio:", error.response?.data || error.message);
+    }
+  }
+
   async handleMetaIncomingMessage(from: string, text: string, phoneId: string, media?: { mediaId: string, mediaType: string }) {
     // 1. Find the merchant associated with this Phone ID
     const merchant = await CommerceMerchantModel.findOne({ "whatsappConfig.meta.phoneNumberId": phoneId });
@@ -200,22 +284,32 @@ class WhatsAppService {
     };
 
     // 3. Handle Media if present
-    if (media && media.mediaType === 'image') {
+    if (media) {
       try {
-        console.log(`[Meta WhatsApp] Downloading image ${media.mediaId}...`);
+        console.log(`[Meta WhatsApp] Downloading ${media.mediaType} ${media.mediaId}...`);
         const buffer = await whatsappMediaService.downloadMetaMedia(media.mediaId);
 
-        // Mocking Baileys-like structure for handleIncomingMessage compatibility
-        msg.message.imageMessage = true;
+        if (media.mediaType === 'image') {
+          // Mocking Baileys-like structure for handleIncomingMessage compatibility
+          msg.message.imageMessage = true;
 
-        // We override handleIncomingMessage's internal download for Meta
-        // or we refactor handleIncomingMessage to accept a buffer
-        // For now, let's keep it simple and just process the payment proof here
-        const paymentInfo = await commerceService.validatePaymentProof(buffer, 'image/jpeg');
-        if (paymentInfo && paymentInfo.isPaymentProof) {
-          text = `[PREUVE DE PAIEMENT DÉTECTÉE: ${paymentInfo.platform} - ${paymentInfo.amount} XOF]`;
+          const paymentInfo = await commerceService.validatePaymentProof(buffer, 'image/jpeg');
+          if (paymentInfo && paymentInfo.isPaymentProof) {
+            text = `[PREUVE DE PAIEMENT DÉTECTÉE: ${paymentInfo.platform} - ${paymentInfo.amount} XOF]`;
+            msg.message.conversation = text;
+          }
+        } else if (media.mediaType === 'audio') {
+          console.log("[Meta WhatsApp] Audio received, attempting transcription...");
+          const merchantContext = merchant ? `Boutique: ${merchant.businessName}, Ville: ${merchant.city}` : "";
+
+          text = await aiProvider.transcribeAudio(
+            buffer,
+            'audio/ogg', // Meta usually sends ogg
+            merchantContext
+          );
+
           msg.message.conversation = text;
-          // We'll let handleIncomingMessage handle the rest (DB saving, AI response)
+          console.log(`[Meta WhatsApp] Transcription result: ${text}`);
         }
       } catch (error) {
         console.error("[Meta WhatsApp] Error processing media:", error);
@@ -223,6 +317,17 @@ class WhatsAppService {
     }
 
     await this.handleIncomingMessage(merchant.ownerId, msg);
+  }
+
+  async sendPresence(userId: string, remoteJid: string, presence: 'composing' | 'available' | 'paused') {
+    const sock = this.activeSessions.get(userId);
+    if (sock) {
+      try {
+        await sock.sendPresenceUpdate(presence, remoteJid);
+      } catch (err) {
+        console.error(`[WhatsApp] Failed to send presence for user ${userId}:`, err);
+      }
+    }
   }
 }
 

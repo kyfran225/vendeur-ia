@@ -1,0 +1,90 @@
+import { whatsappService } from '../modules/whatsapp/whatsapp.service.js';
+import { CommerceMerchantModel } from '../modules/commerce/commerce.model.js';
+import axios from 'axios';
+
+export class MessagingService {
+  async sendMessage(merchant: any, platform: string, remoteId: string, content: string, options: { type?: string; mediaUrl?: string; audioBuffer?: Buffer } = {}) {
+    console.log(`[MessagingService] Sending to ${platform}:${remoteId}`);
+
+    switch (platform) {
+      case 'whatsapp':
+        return this.sendWhatsApp(merchant, remoteId, content, options);
+      case 'instagram':
+        return this.sendInstagram(merchant, remoteId, content);
+      case 'tiktok':
+        return this.sendTikTok(merchant, remoteId, content);
+      default:
+        throw new Error(`Unsupported platform: ${platform}`);
+    }
+  }
+
+  private async sendWhatsApp(merchant: any, remoteId: string, content: string, options: any) {
+    const config = merchant.whatsappConfig;
+    const userId = merchant.ownerId;
+
+    if (options.audioBuffer) {
+      if (config?.provider === 'meta') {
+        return (whatsappService as any).sendMetaAudio(merchant, remoteId, options.audioBuffer);
+      } else {
+        const sock = (whatsappService as any).activeSessions?.get(userId);
+        if (sock) {
+          return sock.sendMessage(remoteId, { audio: options.audioBuffer, mimetype: 'audio/mp4', ptt: true });
+        }
+      }
+    } else {
+      if (config?.provider === 'meta' && config.meta?.phoneNumberId && config.meta?.accessToken) {
+        return whatsappService.sendMetaMessage(merchant, remoteId, content);
+      } else {
+        const sock = (whatsappService as any).activeSessions?.get(userId);
+        if (sock) {
+          return sock.sendMessage(remoteId, { text: content });
+        }
+      }
+    }
+  }
+
+  private async sendInstagram(merchant: any, remoteId: string, content: string) {
+    const config = merchant.instagramConfig;
+    if (!config?.accessToken || !config?.pageId) {
+      throw new Error("Instagram not configured for this merchant");
+    }
+
+    try {
+      const url = `https://graph.facebook.com/v19.0/me/messages?access_token=${config.accessToken}`;
+      await axios.post(url, {
+        recipient: { id: remoteId },
+        message: { text: content },
+        messaging_type: "RESPONSE"
+      });
+    } catch (error: any) {
+      console.error("[MessagingService] Instagram send error:", error.response?.data || error.message);
+      throw error;
+    }
+  }
+
+  private async sendTikTok(merchant: any, remoteId: string, content: string) {
+    const config = merchant.tiktokConfig;
+    if (!config?.accessToken) {
+      throw new Error("TikTok not configured for this merchant");
+    }
+
+    // Note: TikTok Messaging API requires specific message format and recipient open_id
+    try {
+      const url = `https://open.tiktokapis.com/v2/business/message/send/`;
+      await axios.post(url, {
+        recipient_id: remoteId,
+        message: { text: content }
+      }, {
+        headers: {
+          'Authorization': `Bearer ${config.accessToken}`,
+          'Content-Type': 'application/json'
+        }
+      });
+    } catch (error: any) {
+      console.error("[MessagingService] TikTok send error:", error.response?.data || error.message);
+      throw error;
+    }
+  }
+}
+
+export const messagingService = new MessagingService();

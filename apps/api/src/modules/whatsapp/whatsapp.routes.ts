@@ -62,7 +62,7 @@ router.post("/webhook", async (req, res) => {
               if ((text || mediaId) && from) {
                 console.log(`[Webhook] New ${msg.type || 'message'} from ${from} to PhoneID ${phoneId}`);
                 // Handle the incoming message
-                await whatsappService.handleMetaIncomingMessage(from, text || "", phoneId, { mediaId, mediaType });
+                await whatsappService.handleMetaIncomingMessage(from, text || "", phoneId, { mediaId, mediaType: mediaType as any });
               }
             }
           }

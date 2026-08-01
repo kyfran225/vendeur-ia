@@ -1,9 +1,9 @@
-import { Router } from "express";
+import express, { Router } from "express";
 import { commerceService } from "./commerce.service.js";
 import { paystackService } from "../../services/paystack.service.js";
 import { env } from "../../config/env.js";
 import { authenticate } from "../../middleware/authenticate.js";
-import { CommerceMerchantModel, CommerceProductModel, CommerceConversationModel, CommerceMessageModel, CommerceCustomerModel } from "./commerce.model.js";
+import { CommerceMerchantModel, CommerceProductModel, CommerceConversationModel, CommerceMessageModel, CommerceCustomerModel, CommerceOrderModel } from "./commerce.model.js";
 import { TransactionModel } from "./transaction.model.js";
 import { SystemSettingsModel } from "./admin.model.js";
 import axios from "axios";
@@ -53,6 +53,79 @@ router.get("/conversations/:id/messages", authenticate, async (req, res) => {
   }
 });
 
+router.patch("/conversations/:id/status", authenticate, async (req, res) => {
+  try {
+    const ownerId = (req as any).user.id;
+    const merchant = await CommerceMerchantModel.findOne({ ownerId });
+    if (!merchant) return res.status(404).json({ error: "Merchant not found" });
+
+    const { status } = req.body;
+    if (!["active", "needs_human", "converted", "closed"].includes(status)) {
+      return res.status(400).json({ error: "Invalid status" });
+    }
+
+    const conversation = await CommerceConversationModel.findOneAndUpdate(
+      { _id: req.params.id, merchantId: merchant._id },
+      { $set: { status } },
+      { new: true }
+    );
+    res.json(conversation);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.post("/conversations/:id/generate-followup", authenticate, async (req, res) => {
+  try {
+    const ownerId = (req as any).user.id;
+    const merchant = await CommerceMerchantModel.findOne({ ownerId });
+    if (!merchant) return res.status(404).json({ error: "Merchant not found" });
+
+    const result = await commerceService.generateFollowUp(req.params.id);
+    res.json(result);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.post("/conversations/:id/messages", authenticate, async (req, res) => {
+  try {
+    const ownerId = (req as any).user.id;
+    const merchant = await CommerceMerchantModel.findOne({ ownerId });
+    if (!merchant) return res.status(404).json({ error: "Merchant not found" });
+
+    const { content } = req.body;
+    const conversation = await CommerceConversationModel.findOne({
+      _id: req.params.id,
+      merchantId: merchant._id
+    }).populate("customerId");
+
+    if (!conversation) return res.status(404).json({ error: "Conversation not found" });
+
+    // 1. Save message to DB
+    const message = await CommerceMessageModel.create({
+      conversationId: conversation._id,
+      sender: "human",
+      content
+    });
+
+    // 2. Send via WhatsApp
+    const customer = conversation.customerId as any;
+    if (merchant.whatsappConfig?.provider === 'meta') {
+      await whatsappService.sendMetaMessage(merchant, customer.phone, content);
+    } else {
+      const sock = (whatsappService as any).activeSessions?.get(ownerId);
+      if (sock) {
+        await sock.sendMessage(customer.phone, { text: content });
+      }
+    }
+
+    res.status(201).json(message);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 router.post("/activate-premium", authenticate, async (req, res) => {
   const { email } = req.body;
   try {
@@ -88,8 +161,15 @@ router.post("/verify-payment", authenticate, async (req, res) => {
       });
 
       if (type === "ram_contribution") {
-        merchant.whatsappConfig.lastBillingDate = new Date();
-        merchant.whatsappConfig.status = 'connected'; // Allow connection process
+        if (merchant.whatsappConfig) {
+          merchant.whatsappConfig.lastBillingDate = new Date();
+          merchant.whatsappConfig.status = 'connected'; // Allow connection process
+        } else {
+          merchant.whatsappConfig = {
+            status: 'connected',
+            lastBillingDate: new Date()
+          } as any;
+        }
         await merchant.save();
       }
 
@@ -163,6 +243,42 @@ router.post("/merchant", authenticate, async (req, res) => {
   }
 });
 
+router.patch("/merchant", authenticate, async (req, res) => {
+  const ownerId = (req as any).user.id;
+  try {
+    const merchant = await commerceService.updateMerchant(ownerId, req.body);
+    res.json(merchant);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.get("/knowledge", authenticate, async (req, res) => {
+  try {
+    const ownerId = (req as any).user.id;
+    const merchant = await CommerceMerchantModel.findOne({ ownerId });
+    if (!merchant) return res.status(404).json({ error: "Merchant not found" });
+
+    const knowledge = await commerceService.getKnowledge(merchant._id.toString());
+    res.json(knowledge);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.patch("/knowledge", authenticate, async (req, res) => {
+  try {
+    const ownerId = (req as any).user.id;
+    const merchant = await CommerceMerchantModel.findOne({ ownerId });
+    if (!merchant) return res.status(404).json({ error: "Merchant not found" });
+
+    const knowledge = await commerceService.updateKnowledge(merchant._id.toString(), req.body);
+    res.json(knowledge);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 router.post("/products", authenticate, async (req, res) => {
   try {
     const ownerId = (req as any).user.id;
@@ -210,6 +326,25 @@ router.delete("/products/:id", authenticate, async (req, res) => {
   }
 });
 
+router.post("/products/:id/caption", authenticate, async (req, res) => {
+  try {
+    const ownerId = (req as any).user.id;
+    const merchant = await CommerceMerchantModel.findOne({ ownerId });
+    if (!merchant) return res.status(404).json({ error: "Merchant not found" });
+
+    const product = await CommerceProductModel.findOne({
+      _id: req.params.id,
+      merchantId: merchant._id
+    });
+    if (!product) return res.status(404).json({ error: "Product not found" });
+
+    const result = await commerceService.generateProductCaption(product._id.toString());
+    res.json(result);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 router.patch("/ai-settings", authenticate, async (req, res) => {
   try {
     const ownerId = (req as any).user.id;
@@ -224,7 +359,68 @@ router.patch("/ai-settings", authenticate, async (req, res) => {
   }
 });
 
+router.get("/orders", authenticate, async (req, res) => {
+  try {
+    const ownerId = (req as any).user.id;
+    const merchant = await CommerceMerchantModel.findOne({ ownerId });
+    if (!merchant) return res.status(404).json({ error: "Merchant not found" });
+
+    const orders = await CommerceOrderModel.find({ merchantId: merchant._id })
+      .populate("customerId")
+      .sort({ createdAt: -1 });
+    res.json(orders);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.patch("/orders/:id", authenticate, async (req, res) => {
+  try {
+    const ownerId = (req as any).user.id;
+    const merchant = await CommerceMerchantModel.findOne({ ownerId });
+    if (!merchant) return res.status(404).json({ error: "Merchant not found" });
+
+    const orderId = req.params.id;
+    const updateData = req.body;
+
+    // Special handling for payment confirmation
+    if (updateData.status === "paid") {
+      await commerceService.confirmOrderPayment(orderId);
+      const receipt = await commerceService.generateDigitalReceipt(orderId);
+
+      // Send receipt via WhatsApp (Meta or Baileys)
+      const order = await CommerceOrderModel.findById(orderId).populate("customerId");
+      if (order) {
+        const customer = order.customerId as any;
+        const merchantObj = await CommerceMerchantModel.findById(merchant._id);
+
+        if (merchantObj?.whatsappConfig?.provider === 'meta') {
+          await whatsappService.sendMetaMessage(merchantObj, customer.phone, receipt);
+        } else {
+          const sock = (whatsappService as any).activeSessions?.get(ownerId);
+          if (sock) {
+            await sock.sendMessage(customer.phone, { text: receipt });
+          }
+        }
+      }
+
+      return res.json({ success: true, message: "Paiement confirmé et reçu envoyé." });
+    }
+
+    const order = await CommerceOrderModel.findOneAndUpdate(
+      { _id: orderId, merchantId: merchant._id },
+      { $set: updateData },
+      { new: true }
+    );
+    res.json(order);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 import { aiAgentService } from "../../services/ai-agent.service.js";
+import { aiProvider } from "../../services/ai-provider.js";
+import { pushService } from "../../services/push.service.js";
 
 // ... existing imports ...
 
@@ -269,6 +465,32 @@ router.post("/demo/process", async (req, res) => {
   } catch (error) {
     console.error("Demo AI Error:", error);
     res.status(500).json({ error: "ai_demo_error" });
+  }
+});
+
+router.post("/demo/transcribe", upload.single("audio"), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ error: "No audio provided" });
+
+    const transcription = await aiProvider.transcribeAudio(
+      req.file.buffer,
+      req.file.mimetype,
+      "Démonstration Landing Page"
+    );
+
+    res.json({ transcription });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.post("/push/subscribe", authenticate, async (req, res) => {
+  try {
+    const userId = (req as any).user.id;
+    await pushService.subscribe(userId, req.body);
+    res.status(200).json({ success: true });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
   }
 });
 

@@ -1,11 +1,18 @@
 import { Queue, Worker, Job } from 'bullmq';
 import { env } from '../config/env.js';
 import { aiAgentService, SalesContext } from './ai-agent.service.js';
-import { CommerceMessageModel, CommerceConversationModel } from '../modules/commerce/commerce.model.js';
+import { CommerceMessageModel, CommerceConversationModel, CommerceMerchantModel } from '../modules/commerce/commerce.model.js';
 import { emitToUser } from '../realtime/socketServer.js';
 import { whatsappService } from '../modules/whatsapp/whatsapp.service.js';
+import { pushService } from './push.service.js';
+import { aiProvider } from './ai-provider.js';
+import fs from 'fs';
+import path from 'path';
+
+import { messagingService } from './messaging.service.js';
 
 const REDIS_URL = env.REDIS_URL || 'redis://localhost:6379';
+const API_URL = env.API_URL || 'http://localhost:3001';
 
 export const aiQueue = new Queue('ai-processing', {
   connection: {
@@ -13,7 +20,7 @@ export const aiQueue = new Queue('ai-processing', {
   },
 });
 
-export async function addAIJob(context: SalesContext & { userId: string; conversationId: string; remoteJid: string }) {
+export async function addAIJob(context: SalesContext & { userId: string; conversationId: string; remoteJid: string; platform?: string }) {
   await aiQueue.add('process-message', context, {
     attempts: 3,
     backoff: {
@@ -27,19 +34,110 @@ export async function addAIJob(context: SalesContext & { userId: string; convers
 export const aiWorker = new Worker(
   'ai-processing',
   async (job: Job) => {
-    const { userId, conversationId, remoteJid, ...context } = job.data;
+    const { userId, conversationId, remoteJid, platform = 'whatsapp', ...context } = job.data;
 
     try {
-      console.log(`[AI Queue] Processing job ${job.id} for user ${userId}`);
+      if (job.name === 'broadcast-message') {
+        const { content, merchantId } = job.data;
+        const merchant = await CommerceMerchantModel.findById(merchantId);
+        let voiceMode = merchant?.aiSettings?.voiceMode && platform === 'whatsapp';
+
+        console.log(`[AI Queue] Sending broadcast to ${remoteJid} on ${platform} (Voice: ${voiceMode})`);
+
+        let audioUrl = "";
+        let audioBuffer: Buffer | null = null;
+
+        if (voiceMode) {
+          try {
+            audioBuffer = await aiProvider.generateSpeech(content);
+            const fileName = `broadcast-${Date.now()}.ogg`;
+            const filePath = path.join(process.cwd(), 'uploads', 'audio', fileName);
+            if (!fs.existsSync(path.join(process.cwd(), 'uploads', 'audio'))) {
+              fs.mkdirSync(path.join(process.cwd(), 'uploads', 'audio'), { recursive: true });
+            }
+            fs.writeFileSync(filePath, audioBuffer);
+            audioUrl = `${API_URL}/uploads/audio/${fileName}`;
+          } catch (err) {
+            console.warn("[AI Queue] Broadcast TTS failed, falling back to text:", err);
+            voiceMode = false;
+          }
+        }
+
+        // Save AI message to history
+        const aiMsg = await CommerceMessageModel.create({
+          conversationId,
+          sender: 'ai',
+          type: voiceMode ? 'audio' : 'text',
+          content: content,
+          mediaUrl: audioUrl
+        });
+
+        // Update conversation
+        await CommerceConversationModel.findByIdAndUpdate(conversationId, {
+          updatedAt: new Date(),
+        });
+
+        // Emit to frontend
+        emitToUser(userId, 'conversation:update', {
+          conversationId,
+          message: aiMsg,
+        });
+
+        // SEND MESSAGE
+        await messagingService.sendMessage(merchant, platform, remoteJid, content, {
+          audioBuffer: audioBuffer || undefined
+        });
+
+        return { status: 'broadcast_sent' };
+      }
+
+      console.log(`[AI Queue] Processing job ${job.id} for user ${userId} on ${platform}`);
+
+      // Emit typing start
+      emitToUser(userId, 'ai:typing', { conversationId, isTyping: true });
+
+      // Native Typing Indicator (Only WhatsApp for now in this impl)
+      if (platform === 'whatsapp') {
+        await whatsappService.sendPresence(userId, remoteJid, 'composing');
+      }
 
       // Generate AI response
-      const reply = await aiAgentService.generateResponse(context);
+      const reply = await aiAgentService.generateResponse({ ...context, platform } as any);
+
+      const merchant = await CommerceMerchantModel.findById(context.merchant._id);
+      let voiceMode = merchant?.aiSettings?.voiceMode && platform === 'whatsapp';
+
+      let audioUrl = "";
+      let audioBuffer: Buffer | null = null;
+
+      if (voiceMode) {
+        try {
+          console.log(`[AI Queue] Voice mode active. Generating audio for user ${userId}`);
+          audioBuffer = await aiProvider.generateSpeech(reply);
+
+          // Save to local storage
+          const fileName = `voice-${Date.now()}.ogg`;
+          const filePath = path.join(process.cwd(), 'uploads', 'audio', fileName);
+
+          if (!fs.existsSync(path.join(process.cwd(), 'uploads', 'audio'))) {
+            fs.mkdirSync(path.join(process.cwd(), 'uploads', 'audio'), { recursive: true });
+          }
+
+          fs.writeFileSync(filePath, audioBuffer);
+          audioUrl = `${API_URL}/uploads/audio/${fileName}`;
+        } catch (err) {
+          console.warn("[AI Queue] TTS Generation failed, falling back to text mode:", err);
+          voiceMode = false;
+        }
+      }
 
       // Save AI message
       const aiMsg = await CommerceMessageModel.create({
         conversationId,
         sender: 'ai',
+        type: voiceMode ? 'audio' : 'text',
         content: reply,
+        mediaUrl: audioUrl
       });
 
       // Update conversation last message timestamp
@@ -53,22 +151,25 @@ export const aiWorker = new Worker(
         message: aiMsg,
       });
 
-      // SEND MESSAGE (Choose provider based on merchant config)
-      const merchant = await CommerceMerchantModel.findById(context.merchant._id);
-      const config = merchant?.whatsappConfig;
+      // Emit typing stop
+      emitToUser(userId, 'ai:typing', { conversationId, isTyping: false });
 
-      if (config?.provider === 'meta' && config.meta?.phoneNumberId && config.meta?.accessToken) {
-        // Use Merchant Specific Meta Token
-        await whatsappService.sendMetaMessage(merchant, remoteJid, reply);
-      } else {
-        // Fallback to Baileys
-        const sock = (whatsappService as any).activeSessions?.get(userId);
-        if (sock) {
-          await sock.sendMessage(remoteJid, { text: reply });
-        } else {
-            console.warn(`[AI Queue] No active Baileys session for user ${userId}`);
-        }
+      // Native Typing Indicator (Stop)
+      if (platform === 'whatsapp') {
+        await whatsappService.sendPresence(userId, remoteJid, 'paused');
       }
+
+      // Notify Merchant via Push
+      pushService.sendNotification(userId, {
+        title: `Nouvelle réponse (${platform}) de ${context.merchant.businessName}`,
+        body: reply.length > 100 ? reply.substring(0, 97) + '...' : reply,
+        data: { conversationId }
+      }).catch(err => console.error("[AI Queue] Push notification error:", err));
+
+      // SEND MESSAGE via Unified Messaging Service
+      await messagingService.sendMessage(merchant, platform, remoteJid, reply, {
+        audioBuffer: audioBuffer || undefined
+      });
 
       return reply;
     } catch (error) {

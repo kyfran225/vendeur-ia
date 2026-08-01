@@ -1,44 +1,19 @@
-# Vendeur IA OS — Project Memory
+# Project Memory: Vendeur IA
 
-## 🎯 Core Mission
-Vendeur IA OS is a production-ready "Sales Machine" that transforms TikTok, Instagram, and WhatsApp catalogues into automated selling systems. It handles customer inquiries, product advice, delivery logistics, and payment verification 24/7 using advanced AI.
+## Core Value Proposition (CVP)
+**Simplicité & Efficacité Locale.** 
+Le produit doit être utilisable par un commerçant sans formation technique en moins d'une minute.
 
-## 🏗️ Technical Architecture
-- **Monorepo Structure**: Managed via `pnpm` and `turbo`.
-    - `apps/api`: Express.js backend with Mongoose/MongoDB.
-    - `apps/web`: React.js (Vite) frontend with Tailwind CSS.
-    - `packages/vendeur-core`: Shared Zod schemas and constants.
-- **Real-time Layer**: `Socket.io` for live WhatsApp QR generation and dashboard updates.
-- **Security**: "Passport" system with JWT (Access + Refresh tokens) and Google SSO support.
+## Tech Stack & Priorities
+- **Backend**: Node.js/Express, MongoDB (Focus: Performance & Simplicity)
+- **AI**: Gemini 1.5 Pro/Flash (Focus: Localized tone, Vision for products, Automatic Follow-ups)
+- **WhatsApp**: Baileys/Meta API (Focus: Reliability & "One-click" connection)
 
-## 🤖 AI Sales Engine
-- **Expert Principal Persona**: A strategic prompt that adapts the AI's tone based on customer location (Local vs. International) and business category.
-- **Multi-Model Support**: Connected to Gemini (Primary), with fallback logic for Groq/OpenAI.
-- **Knowledge Base**: Automated generation of business rules (delivery zones, opening hours, payment methods) upon merchant creation.
+## UX Commandments
+1. **The 30-Second Rule**: From sign-up to first product scan must take < 30s.
+2. **Local Context First**: Every prompt must enforce local city/country context and tone.
+3. **Automated Everything**: Receipts, follow-ups, stock alerts must be automated, not manual "workflows".
 
-## 📱 WhatsApp Integration
-- **Direct Phone Link**: Powered by `@whiskeysockets/baileys` (QR Code scan).
-- **Automation**: Automatic persistence of customers, conversations, and messages.
-- **Meta Ready**: Webhook structure in place for Meta Cloud API scaling.
-
-## 💰 SaaS Ecosystem
-- **Monetization**: Paystack integration for the "Studio IA Premium" plan (5.000 FCFA / Month).
-- **Money Board**: Real-time sales dashboard with pipeline visualization (Conversations -> Payments -> Orders).
-- **Inventory Pro**: Full product CRUD with IA Vision UI (image-to-product mapping).
-
-## 🎨 Design Language
-- **Theme**: "Emerald & Coal" (Dark emerald tones, high contrast, heavy typography).
-- **UI/UX Standard**: "Logic-Perfect" and "Zero UI Morte" as per `PROTOCOL.md`.
-- **Key Components**: Mapbox Address Autocomplete, Flag-based Country Selector, Iconic Payment Method Selector.
-
-## 📍 Current Status (Production Ready)
-- Backend services are fully protected via `authenticate` middleware.
-- Onboarding flow transitions from Demo Simulator to real Merchant Account.
-- **Real WhatsApp Connectivity**: QR Code generation via `@whiskeysockets/baileys` and `Socket.io` is fully functional in the onboarding flow.
-- **Hybrid WhatsApp Strategy**: Dual-provider system supporting both **Mode Express (Baileys/QR Code)** and **Mode Pro (Meta Cloud API)** for 100k+ scalability.
-- **AI Growth Advisor**: Pro-active business analysis service that provides merchants with actionable, data-driven sales tips directly on the dashboard.
-- **RAM Contribution Fee**: Secure payment flow via **Paystack Inline Popup** with HMAC-verified webhooks for automated billing.
-- **Real Merchant Persistence**: Merchant records are created in MongoDB immediately upon starting the onboarding wizard.
-- High-fidelity Dashboard is connected to real database metrics.
-
-*Last Updated: 2026-07-31*
+## Ongoing Phase: Phase 8 - Marketing Hub
+- **Objective**: Let the merchant broadcast offers without complexity.
+- **Rule**: No complex segmentation editor. Just "Send to VIPs" or "Send to all active customers".

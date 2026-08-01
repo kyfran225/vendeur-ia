@@ -1,38 +1,26 @@
-# 🤖 AI AGENT MANIFESTO — Vendeur IA OS
+# Vendeur IA : Le Manifeste de la Simplicité 🌍✨
 
-**CRITICAL: ANY AI AGENT INTERACTING WITH THIS CODEBASE MUST READ AND FOLLOW THIS MANIFESTO.**
+## La Philosophie
+L'innovation de Vendeur IA n'est pas technologique, elle est **humaine**. 
+Nous ne construisons pas un CRM, nous construisons un **associé de vente**.
 
-## 🎯 The Mission
-Transform WhatsApp Business into an autonomous sales machine for the African market. 
-**Vendeur IA is NOT a general chatbot.** It is a specialized digital employee that:
-1. Identifies products from social media content (AI Vision).
-2. Closes sales via WhatsApp using local payment numbers (Wave, Orange, etc.).
-3. Notifies the merchant for payment verification.
+## Pourquoi nous ? (vs TalkForce & Consorts)
+La plupart des solutions imposent des pipelines, des workflows complexes et des interfaces lourdes. Vendeur IA repose sur une seule promesse : **La Vente en 3 étapes.**
 
----
+1. **Créer la boutique** (30 secondes)
+2. **Scanner les produits** (IA Vision - pas de saisie manuelle)
+3. **Connecter WhatsApp** (Et c'est tout)
 
-## 🚫 Strict Technical Rules (No Regressions)
+## Nos 4 Piliers d'Évidence
+1. **Simplicité Radicale** : Pas de menus cachés, pas de configuration complexe. Si un vendeur de vêtements au marché ne comprend pas en 10 secondes, nous avons échoué.
+2. **Langage Local** : L'IA ne parle pas comme un robot californien. Elle parle Nouchi, elle utilise les expressions d'Abidjan, de Dakar, de Lomé. Elle est chaleureuse.
+3. **Paiement Intégré** : On ne demande pas de configurer une passerelle complexe. On demande un numéro Mobile Money.
+4. **Vendre, pas Gérer** : L'IA ne "gère" pas des leads, elle **conclut des ventes**.
 
-### 1. Pure Commerce Focus
-- **DO NOT** add social features, feeds, or debate modules.
-- **DO NOT** import anything from the legacy MaatFeed codebase.
-- Every new line of code must directly help a merchant **SELL MORE**.
-
-### 2. Standalone Architecture
-- Maintain the **Monorepo** structure (`vendeur-core`, `api`, `web`).
-- Use `@vendeur-ia/core` as the single source of truth for schemas and contracts.
-- **Zod** is mandatory for all data validation between API and Web.
-
-### 3. Payment Flow (The "Local" Way)
-- **Paystack** is strictly for **Merchant Subscriptions**.
-- **Customer Sales** must use the merchant's configured local numbers.
-- AI Agents must never hallucinate external payment links.
-
-### 4. Mobile-First UI
-- All UI components must be optimized for one-thumb usage on smartphones.
-- Fast loading and offline-ready behaviors are priority #1.
+## L'Esprit dans le Code
+- **Zéro Friction** : Chaque clic supprimé est une victoire.
+- **IA Invisible** : L'utilisateur ne doit pas "configurer" l'IA, il doit la voir travailler.
+- **Résultat Immédiat** : Le premier message de l'IA doit être une claque d'efficacité.
 
 ---
-
-## 🛰️ Permanent Operational Memory
-Consult **[MEMORY.md](file:///C:/Users/Franck/web-apps/vendeur-ia/MEMORY.md)** before starting any task to see the current state of progress and avoid repeating work or breaking completed modules.
+*"Si c'est complexe, c'est que c'est mal fait."* 🚀⚡

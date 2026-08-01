@@ -9,6 +9,7 @@ import {
 } from "./commerce.model.js";
 import { aiAgentService } from "../../services/ai-agent.service.js";
 import { aiGrowthService } from "../../services/ai-growth.service.js";
+import { aiProvider } from "../../services/ai-provider.js";
 import { env } from "../../config/env.js";
 import axios from "axios";
 
@@ -151,12 +152,13 @@ export class CommerceService {
     }));
 
     return aiAgentService.generateResponse({
-      merchant: merchant.toObject(),
+      merchant: merchant.toObject() as any,
       products: products.map(p => p.toObject()),
       knowledge: knowledge ? (knowledge.toObject() as any) : {},
       history: formattedHistory,
       message,
-      customerPhone
+      customerPhone,
+      platform: "whatsapp" // Default platform for this method
     });
   }
 
@@ -322,7 +324,7 @@ Réponds UNIQUEMENT avec le texte du message.`;
     const date = new Date(order.createdAt).toLocaleDateString("fr-FR");
     const time = new Date(order.createdAt).toLocaleTimeString("fr-FR", { hour: '2-digit', minute: '2-digit' });
 
-    let itemsStr = order.items.map(item => `${item.quantity}x ${item.name} - ${item.price * item.quantity} ${order.currency}`).join("\n");
+    let itemsStr = order.items.map(item => `${item.quantity}x ${item.name} - ${(item.price || 0) * item.quantity} ${order.currency}`).join("\n");
 
     const receipt = `
 🧾 *REÇU DE COMMANDE - ${merchant.businessName}*
@@ -361,6 +363,44 @@ Points Fidélité gagnés: +${Math.floor(order.totalAmount / 1000)}
     }
 
     return order;
+  }
+
+  async getSalesContext(merchantId: string, customerId: string) {
+    const merchant = await CommerceMerchantModel.findById(merchantId);
+    if (!merchant) throw new Error("Merchant not found");
+
+    const customer = await CommerceCustomerModel.findById(customerId);
+    if (!customer) throw new Error("Customer not found");
+
+    const products = await CommerceProductModel.find({ merchantId });
+    const knowledge = await CommerceKnowledgeModel.findOne({ merchantId });
+
+    // Get last 10 messages for history
+    const conversation = await CommerceConversationModel.findOne({
+      merchantId,
+      customerId,
+      status: { $ne: "closed" }
+    });
+
+    let history: any[] = [];
+    if (conversation) {
+      const messages = await CommerceMessageModel.find({
+        conversationId: conversation._id
+      }).sort({ timestamp: -1 }).limit(10);
+
+      history = messages.reverse().map(m => ({
+        role: (m.sender === "customer" ? "customer" : "ai") as "customer" | "ai",
+        text: m.content
+      }));
+    }
+
+    return {
+      merchant: merchant.toObject() as any,
+      products: products.map(p => p.toObject()),
+      knowledge: knowledge ? (knowledge.toObject() as any) : {},
+      history,
+      message: "" // Initial empty message
+    };
   }
 }
 

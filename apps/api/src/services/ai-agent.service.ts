@@ -1,18 +1,12 @@
 import { aiProvider } from "./ai-provider.js";
 
 export interface SalesContext {
-  merchant: {
-    businessName: string;
-    category: string;
-    city: string;
-    country: string;
-    description?: string;
-    paymentChannels?: any[];
-  };
+  merchant: SalesMerchant;
   products: any[];
   knowledge: {
     businessRules?: {
       deliveryZones?: string[];
+      deliveryFees?: { zone: string; price: number }[];
       openingHours?: string;
       returnPolicy?: string;
       paymentMethods?: string[];
@@ -28,6 +22,16 @@ export interface SalesContext {
     points: number;
     isVIP: boolean;
   };
+}
+
+export interface SalesMerchant {
+  businessName: string;
+  category: string;
+  city: string;
+  country: string;
+  currency?: string;
+  description?: string;
+  paymentChannels?: any[];
 }
 
 export class AIAgentService {

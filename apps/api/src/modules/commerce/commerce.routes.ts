@@ -1,8 +1,13 @@
 import express, { Router } from "express";
 import { commerceService } from "./commerce.service.js";
+import { whatsappService } from "../whatsapp/whatsapp.service.js";
 import { paystackService } from "../../services/paystack.service.js";
 import { env } from "../../config/env.js";
 import { authenticate } from "../../middleware/authenticate.js";
+import { aiLimiter } from "../../middleware/rate-limiter.js";
+import { logger } from "../../services/logger.service.js";
+import { validate } from "../../middleware/validate.js";
+import { CreateProductSchema, UpdateMerchantSchema } from "./commerce.schema.js";
 import { CommerceMerchantModel, CommerceProductModel, CommerceConversationModel, CommerceMessageModel, CommerceCustomerModel, CommerceOrderModel } from "./commerce.model.js";
 import { TransactionModel } from "./transaction.model.js";
 import { SystemSettingsModel } from "./admin.model.js";
@@ -243,12 +248,13 @@ router.post("/merchant", authenticate, async (req, res) => {
   }
 });
 
-router.patch("/merchant", authenticate, async (req, res) => {
+router.patch("/merchant", authenticate, validate(UpdateMerchantSchema), async (req, res) => {
   const ownerId = (req as any).user.id;
   try {
     const merchant = await commerceService.updateMerchant(ownerId, req.body);
     res.json(merchant);
   } catch (error: any) {
+    logger.error(`[Merchant Update Error] ${error.message}`, { userId: ownerId });
     res.status(500).json({ error: error.message });
   }
 });
@@ -279,11 +285,13 @@ router.patch("/knowledge", authenticate, async (req, res) => {
   }
 });
 
-router.post("/products", authenticate, async (req, res) => {
+router.post("/products", authenticate, validate(CreateProductSchema), async (req, res) => {
   try {
     const ownerId = (req as any).user.id;
     const merchant = await CommerceMerchantModel.findOne({ ownerId });
     if (!merchant) return res.status(404).json({ error: "Merchant not found" });
+
+    logger.info(`[Product] Creating new product for merchant ${merchant.businessName}`);
 
     const product = await CommerceProductModel.create({
       ...req.body,
@@ -291,13 +299,16 @@ router.post("/products", authenticate, async (req, res) => {
     });
     res.status(201).json(product);
   } catch (error: any) {
+    logger.error(`[Product Creation Error] ${error.message}`);
     res.status(500).json({ error: error.message });
   }
 });
 
-router.post("/products/vision", authenticate, upload.single("image"), async (req, res) => {
+router.post("/products/vision", authenticate, aiLimiter, upload.single("image"), async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ error: "No image provided" });
+
+    logger.info(`[Vision] Image analysis requested by user ${(req as any).user.id}`);
 
     const analysis = await commerceService.analyzeProductImage(
       req.file.buffer,
@@ -306,6 +317,7 @@ router.post("/products/vision", authenticate, upload.single("image"), async (req
 
     res.json(analysis);
   } catch (error: any) {
+    logger.error(`[Vision Error] ${error.message}`, { userId: (req as any).user.id });
     res.status(500).json({ error: error.message });
   }
 });

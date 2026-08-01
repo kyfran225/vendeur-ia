@@ -1,5 +1,7 @@
 import express from "express";
 import cors from "cors";
+import helmet from "helmet";
+import sanitize from "mongo-sanitize";
 import { createServer } from "http";
 import { env } from "./config/env.js";
 import { connectDatabase } from "./config/database.js";
@@ -15,14 +17,28 @@ import tiktokRoutes from "./modules/tiktok/tiktok.routes.js";
 import mediaRoutes from "./modules/media/media.routes.js";
 import "./services/ai-queue.service.js"; // Import workers and queue
 
+import { globalLimiter } from "./middleware/rate-limiter.js";
+import { logger } from "./services/logger.service.js";
+
 const app = express();
 const httpServer = createServer(app);
 
 // Initialize Sockets
 initSocketServer(httpServer);
 
+app.use(helmet()); // Secure HTTP headers
 app.use(cors());
 app.use(express.json());
+
+// NoSQL Injection Protection
+app.use((req, res, next) => {
+  req.body = sanitize(req.body);
+  req.query = sanitize(req.query);
+  req.params = sanitize(req.params);
+  next();
+});
+
+app.use(globalLimiter); // Apply global rate limit to all routes
 app.use("/uploads", express.static("uploads"));
 
 app.get("/", (req, res) => {
@@ -33,12 +49,27 @@ app.get("/", (req, res) => {
   });
 });
 
-app.get("/health", (req, res) => {
-  res.json({
-    status: "ok",
-    service: "vendeur-ia-api",
-    version: "1.0.0-standalone",
-    timestamp: new Date().toISOString()
+import mongoose from "mongoose";
+import { getRedisClient } from "./config/redis.js";
+import { whatsappService } from "./modules/whatsapp/whatsapp.service.js";
+
+app.get("/health", async (req, res) => {
+  const dbStatus = mongoose.connection.readyState === 1 ? "connected" : "disconnected";
+  const redis = getRedisClient();
+  const redisStatus = redis?.isOpen ? "connected" : "disconnected";
+  const waSessions = (whatsappService as any).activeSessions?.size || 0;
+
+  const isHealthy = dbStatus === "connected" && redisStatus === "connected";
+
+  res.status(isHealthy ? 200 : 503).json({
+    status: isHealthy ? "ok" : "degraded",
+    version: "1.0.0-hardened",
+    timestamp: new Date().toISOString(),
+    services: {
+      database: dbStatus,
+      redis: redisStatus,
+      whatsapp_active_sessions: waSessions
+    }
   });
 });
 
@@ -58,7 +89,7 @@ async function start() {
 
   const port = parseInt(env.PORT, 10);
   httpServer.listen(port, "0.0.0.0", () => {
-    console.log(`🚀 Vendeur IA OS API running on http://localhost:${port}`);
+    logger.info(`🚀 Vendeur IA OS API running on http://localhost:${port}`);
   });
 }
 

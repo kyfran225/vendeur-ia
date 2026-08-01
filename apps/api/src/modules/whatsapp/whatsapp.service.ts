@@ -229,7 +229,8 @@ class WhatsAppService {
     try {
       // 1. Upload Media
       const formData = new FormData();
-      formData.append("file", new Blob([audioBuffer]), "voice.ogg");
+      const blob = new Blob([new Uint8Array(audioBuffer)], { type: "audio/ogg" });
+      formData.append("file", blob, "voice.ogg");
       formData.append("type", "audio/ogg");
       formData.append("messaging_product", "whatsapp");
 

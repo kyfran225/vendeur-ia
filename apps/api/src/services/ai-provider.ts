@@ -205,7 +205,8 @@ Réponds UNIQUEMENT avec le texte transcrit.`;
     if (env.OPENAI_API_KEY) {
       try {
         const formData = new FormData();
-        formData.append("file", new Blob([audioBuffer]), "audio.ogg");
+        const blob = new Blob([new Uint8Array(audioBuffer)], { type: "audio/ogg" });
+        formData.append("file", blob, "audio.ogg");
         formData.append("model", "whisper-1");
         formData.append("prompt", context || "");
 

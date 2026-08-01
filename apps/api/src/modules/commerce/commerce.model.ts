@@ -64,7 +64,12 @@ const KnowledgeSchema = new Schema({
     }],
     openingHours: String,
     returnPolicy: String,
-    paymentMethods: [String]
+    paymentMethods: [String],
+    dynamicInsights: [{
+      insight: String,
+      type: { type: String, enum: ["product", "customer", "business"], default: "business" },
+      createdAt: { type: Date, default: Date.now }
+    }]
   },
   faq: [{
     question: String,
@@ -109,7 +114,8 @@ const ConversationSchema = new Schema({
   platform: { type: String, enum: ["whatsapp", "instagram", "tiktok"], default: "whatsapp" },
   status: { type: String, enum: ["active", "needs_human", "converted", "closed"], default: "active" },
   lastMessageAt: { type: Date, default: Date.now },
-  messagesCount: { type: Number, default: 0 }
+  messagesCount: { type: Number, default: 0 },
+  aiSummary: { type: String, default: "" }
 }, { timestamps: true });
 
 // --- MESSAGE ---

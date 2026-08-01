@@ -14,6 +14,25 @@ import { SystemSettingsModel } from "../commerce/admin.model.js";
 class WhatsAppService {
   private activeSessions: Map<string, any> = new Map();
 
+  async bootSessions() {
+    console.log("[WhatsApp] Booting sessions for active merchants...");
+    try {
+      const activeMerchants = await CommerceMerchantModel.find({
+        "whatsappConfig.status": "connected",
+        "whatsappConfig.provider": "baileys"
+      });
+
+      for (const merchant of activeMerchants) {
+        console.log(`[WhatsApp] Auto-reconnecting session for user: ${merchant.ownerId}`);
+        this.initSession(merchant.ownerId).catch(err =>
+          console.error(`[WhatsApp] Failed to boot session for ${merchant.ownerId}:`, err)
+        );
+      }
+    } catch (err) {
+      console.error("[WhatsApp] Error during bootSessions:", err);
+    }
+  }
+
   async initSession(userId: string) {
     if (this.activeSessions.has(userId)) return;
 
@@ -225,7 +244,8 @@ class WhatsAppService {
       customerLoyalty: {
         points: customer.loyaltyPoints || 0,
         isVIP: (customer.loyaltyPoints || 0) >= 50
-      }
+      },
+      aiSummary: (conversation as any).aiSummary || ""
     });
   }
 

@@ -100,6 +100,28 @@ export function WhatsAppConnectionFlow({ merchant, qrCode, onInitBaileys, onRefr
     window.open(whatsappUrl, '_blank');
   };
 
+  const handlePaystackPayment = async () => {
+    setLoading(true);
+    try {
+      const res = await apiClient.post("/api/commerce/activate-premium", {
+        email: user?.email,
+        type: "ram_contribution",
+        userId: user?.id
+      });
+
+      if (res.data.authorization_url) {
+        window.location.href = res.data.authorization_url;
+      } else {
+        throw new Error("Lien de paiement non reçu");
+      }
+    } catch (error) {
+      toast.error("Erreur lors de l'initialisation du paiement");
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

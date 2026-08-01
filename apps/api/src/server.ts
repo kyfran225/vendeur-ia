@@ -11,6 +11,11 @@ async function start() {
   const port = parseInt(env.PORT, 10);
   httpServer.listen(port, "0.0.0.0", () => {
     logger.info(`🚀 Vendeur IA OS API running on http://localhost:${port}`);
+
+    // Boot WhatsApp Sessions
+    import("./modules/whatsapp/whatsapp.service.js").then(({ whatsappService }) => {
+      whatsappService.bootSessions();
+    });
   });
 }
 

@@ -210,11 +210,11 @@ Réponds UNIQUEMENT avec le JSON. Si ce n'est pas une preuve de paiement, mets i
 {
   "name": "Nom accrocheur du produit",
   "price": number (prix estimé ou 0 si inconnu, en FCFA),
-  "description": "Description vendeuse et détaillée",
-  "category": "Catégorie (ex: Mode, Électronique, Maison)",
+  "description": "Description vendeuse et détaillée, incluant les variantes (tailles, couleurs) si détectées sur l'image ou l'étiquette",
+  "category": "Choisir parmi: fashion, food, beauty, electronics, artisan, services, digital, home, grocery, health, auto, other",
   "tags": ["tag1", "tag2"]
 }
-Réponds UNIQUEMENT avec le JSON. Sois précis et utilise un ton vendeur.`;
+Réponds UNIQUEMENT avec le JSON. Sois précis sur les détails techniques (matières, variantes).`;
 
         const response = await axios.post(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${env.GEMINI_API_KEY}`, {
           contents: [{
@@ -256,29 +256,36 @@ Réponds UNIQUEMENT avec le JSON. Sois précis et utilise un ton vendeur.`;
     const merchant = await CommerceMerchantModel.findById(product.merchantId);
     if (!merchant) throw new Error("Marchand non trouvé");
 
-    const prompt = `Génère une légende percutante pour les réseaux sociaux (TikTok/Instagram) pour ce produit.
+    const prompt = `Génère 3 options de légendes percutantes pour les réseaux sociaux (TikTok/Instagram) pour ce produit.
 Produit : ${product.name}
 Prix : ${product.price} ${product.currency}
 Description : ${product.description || "Pas de description"}
 Boutique : ${merchant.businessName}
-Ville : ${merchant.city}
 
-Format attendu :
-- Une accroche forte (Hook)
-- 3 à 5 points clés avec des emojis
-- Un appel à l'action clair (CTA)
-- Des hashtags pertinents
+Format de réponse attendu (JSON uniquement) :
+{
+  "viral": "Accroche forte (Hook), ton dynamique, beaucoup d'emojis, hashtags tendances",
+  "professional": "Ton expert, focus sur la qualité et les bénéfices, élégant",
+  "urgent": "Focus sur le stock limité, promo flash, appel à l'action immédiat"
+}
 
-Le ton doit être très vendeur, dynamique et adapté à une audience d'Afrique de l'Ouest (chaleureux et direct).`;
+Le ton doit être adapté à une audience d'Afrique de l'Ouest (chaleureux et direct).`;
 
-    const caption = await aiProvider.generateText({
+    const result = await aiProvider.generateText({
       systemPrompt: "Tu es un expert en marketing digital et copywriting spécialisé dans la vente sur les réseaux sociaux.",
       userMessage: prompt,
       temperature: 0.8,
-      maxTokens: 500
+      maxTokens: 800
     });
 
-    return { caption };
+    try {
+      const jsonMatch = result.match(/\{[\s\S]*\}/);
+      if (jsonMatch) return JSON.parse(jsonMatch[0]);
+    } catch (err) {
+      console.warn("[Caption] Failed to parse JSON, returning raw text as viral");
+    }
+
+    return { viral: result, professional: result, urgent: result };
   }
 
   async generateFollowUp(conversationId: string) {
@@ -362,7 +369,61 @@ Points Fidélité gagnés: +${Math.floor(order.totalAmount / 1000)}
       });
     }
 
+    // Trigger Knowledge Learning
+    this.extractMerchantKnowledge(order._id.toString()).catch(err =>
+      console.error("[Learning Error] Failed to extract knowledge:", err)
+    );
+
     return order;
+  }
+
+  async extractMerchantKnowledge(orderId: string) {
+    const order = await CommerceOrderModel.findById(orderId).populate("merchantId customerId");
+    if (!order) return;
+
+    // Fetch conversation for this order
+    const conversation = await CommerceConversationModel.findOne({
+      merchantId: (order.merchantId as any)._id,
+      customerId: (order.customerId as any)._id
+    });
+    if (!conversation) return;
+
+    const messages = await CommerceMessageModel.find({ conversationId: conversation._id }).sort({ timestamp: 1 });
+    const history = messages.map(m => `${m.sender === "customer" ? "Client" : "IA"}: ${m.content}`).join("\n");
+
+    const prompt = `Analyse cette conversation de vente réussie pour la boutique "${(order.merchantId as any).businessName}".
+Extrais un unique "Insight" métier court (max 20 mots) qui aidera le marchand ou l'IA à être plus performant à l'avenir.
+L'insight doit porter sur : les préférences clients, une objection résolue, ou une amélioration de produit.
+
+Conversation :
+${history}
+
+Format JSON :
+{
+  "insight": "Texte de l'insight",
+  "type": "product" | "customer" | "business"
+}
+Réponds UNIQUEMENT avec le JSON.`;
+
+    const result = await aiProvider.generateText({
+      systemPrompt: "Tu es un consultant en stratégie commerciale expert en social commerce.",
+      userMessage: prompt,
+      temperature: 0.5
+    });
+
+    try {
+      const jsonMatch = result.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        const insightData = JSON.parse(jsonMatch[0]);
+        await CommerceKnowledgeModel.findOneAndUpdate(
+          { merchantId: (order.merchantId as any)._id },
+          { $push: { "businessRules.dynamicInsights": { ...insightData, createdAt: new Date() } } }
+        );
+        console.log(`[Learning] New insight saved for merchant ${(order.merchantId as any)._id}`);
+      }
+    } catch (err) {
+      console.warn("[Learning] Failed to parse insight JSON");
+    }
   }
 
   async getSalesContext(merchantId: string, customerId: string) {
@@ -392,6 +453,17 @@ Points Fidélité gagnés: +${Math.floor(order.totalAmount / 1000)}
         role: (m.sender === "customer" ? "customer" : "ai") as "customer" | "ai",
         text: m.content
       }));
+
+      // Update messages count and check for summary
+      await CommerceConversationModel.findByIdAndUpdate(conversation._id, {
+        $inc: { messagesCount: 1 }
+      });
+
+      if (((conversation.messagesCount || 0) + 1) % 10 === 0) {
+        this.updateConversationSummary(conversation._id.toString()).catch(err =>
+          console.error("[Summary Error] Failed to update summary:", err)
+        );
+      }
     }
 
     return {
@@ -399,8 +471,34 @@ Points Fidélité gagnés: +${Math.floor(order.totalAmount / 1000)}
       products: products.map(p => p.toObject()),
       knowledge: knowledge ? (knowledge.toObject() as any) : {},
       history,
-      message: "" // Initial empty message
+      message: "", // Initial empty message
+      aiSummary: (conversation as any)?.aiSummary || ""
     };
+  }
+
+  async updateConversationSummary(conversationId: string) {
+    const messages = await CommerceMessageModel.find({ conversationId }).sort({ timestamp: 1 });
+    const historyText = messages.map(m => `${m.sender === "customer" ? "Client" : "IA"}: ${m.content}`).join("\n");
+
+    const prompt = `Résume les faits cruciaux de cette conversation commerciale pour la mémoire à long terme de l'IA.
+Inclus : Produits d'intérêt, tailles/couleurs, lieu de livraison mentionné, budget, objections.
+Sois très concis (Style liste à puces).
+
+Historique :
+${historyText}
+
+Résumé actuel :`;
+
+    const summary = await aiProvider.generateText({
+      systemPrompt: "Tu es un assistant de gestion de relation client ultra-précis.",
+      userMessage: prompt,
+      temperature: 0.3
+    });
+
+    await CommerceConversationModel.findByIdAndUpdate(conversationId, {
+      $set: { aiSummary: summary }
+    });
+    console.log(`[Summary] Conversation ${conversationId} updated.`);
   }
 }
 

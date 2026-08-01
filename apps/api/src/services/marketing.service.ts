@@ -96,8 +96,9 @@ Réponds UNIQUEMENT avec le texte du message.`;
             userId: merchant.ownerId,
             conversationId: conversation._id.toString(),
             remoteJid: customer.phone,
-            content: messageBody,
-            merchantId: merchant._id.toString()
+            content: messageBody.replace(/{{name}}/g, customer.name || "cher client"),
+            merchantId: merchant._id.toString(),
+            imageUrl: product?.images?.[0] || "" // Send first product image if available
         }, {
             delay: i * 30000, // 30 seconds interval
             attempts: 2

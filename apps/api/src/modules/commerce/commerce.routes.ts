@@ -17,6 +17,16 @@ import multer from "multer";
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage() });
 
+// Middleware express.json() for all routes EXCEPT Paystack Webhook
+// We apply it manually to the router
+router.use((req, res, next) => {
+  if (req.path === "/webhooks/paystack") {
+    next();
+  } else {
+    express.json()(req, res, next);
+  }
+});
+
 router.get("/dashboard", authenticate, async (req, res) => {
   const ownerId = (req as any).user?.id;
   const data = await commerceService.getDashboard(ownerId);
@@ -116,6 +126,12 @@ router.post("/conversations/:id/messages", authenticate, async (req, res) => {
 
     // 2. Send via WhatsApp
     const customer = conversation.customerId as any;
+
+    // 3. Force "needs_human" status to stop AI from intervening
+    if (conversation.status !== "needs_human") {
+      await CommerceConversationModel.findByIdAndUpdate(conversation._id, { status: "needs_human" });
+    }
+
     if (merchant.whatsappConfig?.provider === 'meta') {
       await whatsappService.sendMetaMessage(merchant, customer.phone, content);
     } else {
@@ -187,10 +203,10 @@ router.post("/verify-payment", authenticate, async (req, res) => {
   }
 });
 
-// Paystack Webhook (Public)
+// Paystack Webhook (Public) - Needs raw body
 router.post("/webhooks/paystack", express.raw({ type: 'application/json' }), async (req, res) => {
   const signature = req.headers['x-paystack-signature'] as string;
-  const body = req.body.toString();
+  const body = req.body instanceof Buffer ? req.body.toString() : JSON.stringify(req.body);
 
   if (!paystackService.verifyWebhookSignature(body, signature)) {
     return res.status(400).send('Invalid signature');

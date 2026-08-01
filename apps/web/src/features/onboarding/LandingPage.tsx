@@ -62,7 +62,7 @@ function cn(...inputs: ClassValue[]) {
 }
 
 // Constants from original CommerceApp.tsx
-const MAX_DEMO_REPLIES = 5;
+const MAX_DEMO_REPLIES = 7;
 const API_URL = (import.meta as any).env.VITE_API_URL || "http://localhost:3001";
 
 // Helper components copied from original
@@ -342,7 +342,7 @@ function LandingHero({
               </div>
               <div>
                 <h2 className="text-xl font-black text-white">Prêt à vendre ?</h2>
-                <p className="text-xs text-white/50">Configurez votre vendeur en 30 secondes.</p>
+                <p className="text-xs text-white/50">Lancez votre machine de vente en 2 minutes.</p>
               </div>
             </div>
 
@@ -360,10 +360,15 @@ function LandingHero({
                       <option value="fashion">👗 Mode & Beauté</option>
                       <option value="food">🍔 Restauration & Food</option>
                       <option value="beauty">💄 Soins & Cosmétiques</option>
-                      <option value="electronics">📱 Électronique</option>
-                      <option value="artisan">🛠️ Artisanat</option>
-                      <option value="services">🛠️ Services</option>
-                      <option value="digital">📚 Digital</option>
+                      <option value="electronics">📱 Électronique & High-Tech</option>
+                      <option value="artisan">🛠️ Artisanat & Fait Main</option>
+                      <option value="services">💼 Prestations de Services</option>
+                      <option value="digital">📚 Produits Digitaux & Formations</option>
+                      <option value="home">🏠 Maison & Décoration</option>
+                      <option value="grocery">🛒 Épicerie & Supérette</option>
+                      <option value="health">💊 Santé & Bien-être</option>
+                      <option value="auto">🚗 Auto-Moto & Pièces</option>
+                      <option value="other">📦 Autre Commerce</option>
                     </select>
                     <ChevronRight size={16} className="absolute right-4 top-1/2 -translate-y-1/2 rotate-90 text-white/30 pointer-events-none" />
                   </div>
@@ -472,20 +477,23 @@ function LandingHero({
                 <MemoizedWhatsAppBubble key={i} role={msg.role} text={msg.text} time={msg.time} />
               ))}
 
-              {isReplying && (
-                <div className="flex justify-start mb-4 animate-in fade-in duration-300">
-                   <div className="bg-[#202c33] text-emerald-400 text-[11px] px-4 py-2 rounded-xl border border-white/5 font-bold shadow-sm">
-                     {form.businessName} écrit...
+              {aiResponseCount >= 4 && aiResponseCount < MAX_DEMO_REPLIES && (
+                <div className="flex justify-center my-4 animate-bounce">
+                   <div className="bg-amber-500/10 border border-amber-500/30 px-4 py-2 rounded-full text-[10px] font-black text-amber-500 uppercase tracking-widest shadow-lg">
+                     Attention : Plus que {MAX_DEMO_REPLIES - aiResponseCount} réponse{MAX_DEMO_REPLIES - aiResponseCount > 1 ? 's' : ''} gratuite{MAX_DEMO_REPLIES - aiResponseCount > 1 ? 's' : ''} ⏳
                    </div>
                 </div>
               )}
 
               {aiResponseCount >= MAX_DEMO_REPLIES && (
                 <div className="flex justify-center my-6">
-                   <div className="bg-[#111b21] border border-emerald-300/20 p-4 rounded-2xl text-center max-w-[90%]">
-                      <AlertCircle className="mx-auto mb-2 text-emerald-300" size={24} />
-                      <p className="text-sm font-bold text-white">Démonstration terminée !</p>
-                      <p className="text-[11px] text-white/50 mt-1">Vous avez testé le potentiel de votre IA. Activez maintenant votre propre machine de vente réelle.</p>
+                   <div className="bg-[#111b21] border-2 border-emerald-300 border-dashed p-6 rounded-[2rem] text-center max-w-[90%] shadow-2xl animate-in zoom-in-95">
+                      <Sparkles className="mx-auto mb-4 text-emerald-300" size={32} />
+                      <p className="text-lg font-black text-white uppercase tracking-tight">Potentiel Débloqué ! 🚀</p>
+                      <p className="text-xs text-white/60 mt-2 leading-relaxed">
+                        Vous avez vu un aperçu de la puissance de votre <b>Vendeur IA</b>.
+                        Ne laissez plus vos clients attendre. Activez votre machine réelle maintenant !
+                      </p>
                    </div>
                 </div>
               )}

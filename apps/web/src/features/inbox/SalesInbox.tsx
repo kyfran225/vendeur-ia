@@ -29,6 +29,7 @@ export function SalesInbox() {
   const [selectedChat, setSelectedChat] = useState<string | null>(null);
   const [typingChats, setTypingChats] = useState<Record<string, boolean>>({});
   const [manualMessage, setManualMessage] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
   const [followupData, setFollowupData] = useState<{ text: string; isOpen: boolean }>({ text: "", isOpen: false });
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -95,6 +96,12 @@ export function SalesInbox() {
 
   const activeChatData = conversations?.find((c: any) => c._id === selectedChat);
 
+  const filteredConversations = conversations?.filter((c: any) => {
+    if (!searchQuery) return true;
+    const phone = c.customerId?.phone?.toLowerCase() || "";
+    return phone.includes(searchQuery.toLowerCase());
+  });
+
   const toggleTakeover = () => {
     if (!selectedChat || !activeChatData) return;
     const newStatus = activeChatData.status === "needs_human" ? "active" : "needs_human";
@@ -143,7 +150,12 @@ export function SalesInbox() {
           </div>
           <div className="relative">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" size={18} />
-            <input className="w-full bg-vendeur-coal border border-white/5 rounded-2xl py-3 pl-12 pr-4 text-sm outline-none focus:border-vendeur-emerald transition-all" placeholder="Rechercher..." />
+            <input
+              className="w-full bg-vendeur-coal border border-white/5 rounded-2xl py-3 pl-12 pr-4 text-sm outline-none focus:border-vendeur-emerald transition-all"
+              placeholder="Rechercher par numéro..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
           </div>
         </div>
 
@@ -151,7 +163,7 @@ export function SalesInbox() {
           {loadingChats ? (
             <div className="flex justify-center p-8"><Loader2 className="animate-spin text-white/20" /></div>
           ) : (
-            conversations?.map((chat: any) => (
+            filteredConversations?.map((chat: any) => (
               <ChatListItem
                 key={chat._id}
                 name={chat.customerId?.phone || "Client"}
@@ -359,18 +371,27 @@ function ChatListItem({ name, lastMsg, time, unread, active, platform, onClick }
 
 function ChatBubble({ role, text, time, type, mediaUrl }: any) {
   const isCustomer = role === "customer";
+  const isPaymentDetected = text?.includes("[PREUVE DE PAIEMENT DÉTECTÉE]");
+
   return (
     <div className={cn("flex w-full animate-in slide-in-from-bottom-2 duration-300", isCustomer ? "justify-start" : "justify-end")}>
       <div className={cn(
         "max-w-[80%] p-4 rounded-3xl shadow-lg relative",
         isCustomer
           ? "bg-vendeur-coal border border-white/10 rounded-tl-none text-white"
-          : "bg-vendeur-emerald text-vendeur-coal rounded-tr-none font-bold"
+          : "bg-vendeur-emerald text-vendeur-coal rounded-tr-none font-bold",
+        isPaymentDetected && "ring-4 ring-amber-500/50 border-amber-500 bg-amber-900/20"
       )}>
         <div className="flex items-center gap-2 mb-1 opacity-40">
            {role === "ai" ? <Bot size={12}/> : <User size={12}/>}
            <span className="text-[9px] font-black uppercase tracking-widest">{role}</span>
         </div>
+
+        {isPaymentDetected && (
+          <div className="flex items-center gap-2 mb-2 px-2 py-1 bg-amber-500 text-black rounded-lg text-[10px] font-black uppercase">
+            <ShieldCheck size={12} /> Paiement à valider
+          </div>
+        )}
 
         {type === "audio" && mediaUrl ? (
           <div className="space-y-2">

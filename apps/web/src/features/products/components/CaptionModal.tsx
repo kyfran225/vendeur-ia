@@ -5,20 +5,25 @@ import { toast } from "sonner";
 interface CaptionModalProps {
   isOpen: boolean;
   onClose: () => void;
-  caption: string;
+  caption: any; // Can be string (fallback) or object with viral/professional/urgent
   productName: string;
 }
 
 export function CaptionModal({ isOpen, onClose, caption, productName }: CaptionModalProps) {
-  const [copied, setCopied] = React.useState(false);
+  const [copied, setCopied] = React.useState<string | null>(null);
+  const [activeStyle, setActiveStyle] = React.useState<string>("viral");
 
   if (!isOpen) return null;
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText(caption);
-    setCopied(true);
+  const captionsMap = typeof caption === 'string'
+    ? { viral: caption, professional: caption, urgent: caption }
+    : caption;
+
+  const handleCopy = (text: string, id: string) => {
+    navigator.clipboard.writeText(text);
+    setCopied(id);
     toast.success("Légende copiée !");
-    setTimeout(() => setCopied(false), 2000);
+    setTimeout(() => setCopied(null), 2000);
   };
 
   return (
@@ -40,20 +45,37 @@ export function CaptionModal({ isOpen, onClose, caption, productName }: CaptionM
           </button>
         </div>
 
+        <div className="flex gap-2">
+          {["viral", "professional", "urgent"].map(style => (
+            <button
+              key={style}
+              onClick={() => setActiveStyle(style)}
+              className={cn(
+                "flex-1 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all border",
+                activeStyle === style
+                  ? "bg-sky-500/10 border-sky-500 text-sky-400"
+                  : "bg-white/5 border-white/5 text-white/40 hover:border-white/20"
+              )}
+            >
+              {style === 'viral' ? '🚀 Viral' : style === 'professional' ? '👔 Pro' : '🔥 Flash'}
+            </button>
+          ))}
+        </div>
+
         <div className="relative group">
           <div className="absolute -inset-0.5 bg-gradient-to-r from-sky-500 to-emerald-500 rounded-2xl blur opacity-20 group-hover:opacity-40 transition duration-1000"></div>
           <div className="relative bg-vendeur-coal border border-white/10 rounded-2xl p-6 min-h-[200px] whitespace-pre-wrap text-sm leading-relaxed text-white/90">
-            {caption}
+            {captionsMap[activeStyle]}
           </div>
         </div>
 
         <div className="flex flex-col gap-3">
           <button
-            onClick={handleCopy}
+            onClick={() => handleCopy(captionsMap[activeStyle], activeStyle)}
             className="w-full h-14 bg-sky-400 text-black font-black uppercase tracking-widest rounded-2xl flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all"
           >
-            {copied ? <Check size={18} /> : <Copy size={18} />}
-            {copied ? "Copié !" : "Copier la légende"}
+            {copied === activeStyle ? <Check size={18} /> : <Copy size={18} />}
+            {copied === activeStyle ? "Copié !" : "Copier la légende"}
           </button>
           <p className="text-center text-[10px] text-white/30 font-medium italic">
             Collez ce texte sur TikTok ou Instagram avec votre photo/vidéo.

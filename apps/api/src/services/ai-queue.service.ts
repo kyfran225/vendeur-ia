@@ -38,11 +38,11 @@ export const aiWorker = new Worker(
 
     try {
       if (job.name === 'broadcast-message') {
-        const { content, merchantId } = job.data;
+        const { content, merchantId, imageUrl } = job.data;
         const merchant = await CommerceMerchantModel.findById(merchantId);
         let voiceMode = merchant?.aiSettings?.voiceMode && platform === 'whatsapp';
 
-        console.log(`[AI Queue] Sending broadcast to ${remoteJid} on ${platform} (Voice: ${voiceMode})`);
+        console.log(`[AI Queue] Sending broadcast to ${remoteJid} on ${platform} (Voice: ${voiceMode}, Image: ${!!imageUrl})`);
 
         let audioUrl = "";
         let audioBuffer: Buffer | null = null;
@@ -67,9 +67,9 @@ export const aiWorker = new Worker(
         const aiMsg = await CommerceMessageModel.create({
           conversationId,
           sender: 'ai',
-          type: voiceMode ? 'audio' : 'text',
+          type: voiceMode ? 'audio' : (imageUrl ? 'image' : 'text'),
           content: content,
-          mediaUrl: audioUrl
+          mediaUrl: voiceMode ? audioUrl : (imageUrl || "")
         });
 
         // Update conversation
@@ -85,7 +85,9 @@ export const aiWorker = new Worker(
 
         // SEND MESSAGE
         await messagingService.sendMessage(merchant, platform, remoteJid, content, {
-          audioBuffer: audioBuffer || undefined
+          audioBuffer: audioBuffer || undefined,
+          mediaUrl: imageUrl || undefined,
+          type: imageUrl ? 'image' : 'text'
         });
 
         return { status: 'broadcast_sent' };

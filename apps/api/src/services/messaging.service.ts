@@ -31,16 +31,17 @@ export class MessagingService {
           return sock.sendMessage(remoteId, { audio: options.audioBuffer, mimetype: 'audio/mp4', ptt: true });
         }
       }
-    } else {
-      if (config?.provider === 'meta' && config.meta?.phoneNumberId && config.meta?.accessToken) {
-        return whatsappService.sendMetaMessage(merchant, remoteId, content);
+    } else if (options.mediaUrl && options.type === 'image') {
+      if (config?.provider === 'meta') {
+        // To implement for Meta: Upload by URL then send
+        return whatsappService.sendMetaMessage(merchant, remoteId, content); // Fallback for now
       } else {
         const sock = (whatsappService as any).activeSessions?.get(userId);
         if (sock) {
-          return sock.sendMessage(remoteId, { text: content });
+          return sock.sendMessage(remoteId, { image: { url: options.mediaUrl }, caption: content });
         }
       }
-    }
+    } else {
   }
 
   private async sendInstagram(merchant: any, remoteId: string, content: string) {

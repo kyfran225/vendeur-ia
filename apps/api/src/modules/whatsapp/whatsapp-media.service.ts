@@ -53,8 +53,14 @@ export class WhatsAppMediaService {
 
       const stream = await downloadContentFromMessage(messageContent, type);
       let buffer = Buffer.from([]);
+
+      const MAX_SIZE = 5 * 1024 * 1024; // 5MB Limit
+
       for await (const chunk of stream) {
         buffer = Buffer.concat([buffer, chunk]);
+        if (buffer.length > MAX_SIZE) {
+          throw new Error("File too large. Max size is 5MB.");
+        }
       }
 
       return buffer;

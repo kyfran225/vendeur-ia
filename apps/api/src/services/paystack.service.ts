@@ -13,8 +13,12 @@ export class PaystackService {
   }
 
   verifyWebhookSignature(body: string, signature: string): boolean {
+    if (!env.PAYSTACK_WEBHOOK_SECRET) {
+      console.error("[Paystack] Webhook verification failed: PAYSTACK_WEBHOOK_SECRET not configured");
+      return false;
+    }
     const hash = crypto
-      .createHmac("sha512", env.PAYSTACK_WEBHOOK_SECRET || "")
+      .createHmac("sha512", env.PAYSTACK_WEBHOOK_SECRET)
       .update(body)
       .digest("hex");
     return hash === signature;

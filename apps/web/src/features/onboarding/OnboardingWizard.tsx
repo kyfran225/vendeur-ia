@@ -74,6 +74,13 @@ export function OnboardingWizard() {
     }} /> },
   ];
 
+  // Jump to Subscription step if coming from Simulator (avoiding double welcome)
+  useEffect(() => {
+    if (tempData && currentStep === 0) {
+      setStep(1);
+    }
+  }, [tempData, setStep]);
+
   return (
     <div className="min-h-screen bg-vendeur-coal flex flex-col items-center justify-center p-4 md:p-8">
       {/* Progress Bar */}

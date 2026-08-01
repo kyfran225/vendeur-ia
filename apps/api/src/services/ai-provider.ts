@@ -22,10 +22,11 @@ export class AIProvider {
   }
 
   private generateCacheKey(request: AIRequest): string {
+    // We include up to 6 messages for better context integrity in the cache
     const data = JSON.stringify({
       system: request.systemPrompt,
       user: request.userMessage,
-      history: request.history?.slice(-3)
+      history: request.history?.slice(-6)
     });
     return `ai_cache:${crypto.createHash('md5').update(data).digest('hex')}`;
   }

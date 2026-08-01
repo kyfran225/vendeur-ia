@@ -216,6 +216,34 @@ function HomePanel({ dashboard }: { dashboard: any }) {
           <PipelineStep label="Taux de Conversion" value={dashboard?.metrics?.conversionRate || 0} max={100} color="bg-vendeur-emerald" />
         </div>
       </section>
+
+      {/* DYNAMIC AI INSIGHTS SECTION */}
+      {dashboard?.merchant?.knowledge?.businessRules?.dynamicInsights?.length > 0 && (
+        <section className="bg-vendeur-coal border border-white/5 rounded-[2.5rem] p-8">
+          <div className="flex items-center gap-3 mb-6">
+            <Sparkles className="text-amber-400" size={20} />
+            <h2 className="text-xl font-black">Conseils Rentables de votre IA</h2>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {dashboard.merchant.knowledge.businessRules.dynamicInsights.slice(-4).reverse().map((insight: any, i: number) => (
+              <div key={i} className="bg-vendeur-bg border border-white/5 p-5 rounded-2xl flex items-start gap-4">
+                <div className={cn(
+                  "h-8 w-8 rounded-lg flex items-center justify-center shrink-0",
+                  insight.type === 'product' ? "bg-blue-500/10 text-blue-400" :
+                  insight.type === 'customer' ? "bg-purple-500/10 text-purple-400" : "bg-emerald-500/10 text-emerald-400"
+                )}>
+                  {insight.type === 'product' ? <Package size={16} /> :
+                   insight.type === 'customer' ? <Users size={16} /> : <TrendingUp size={16} />}
+                </div>
+                <div>
+                  <p className="text-sm font-medium leading-relaxed">{insight.insight}</p>
+                  <p className="text-[10px] text-white/20 uppercase font-black mt-2">Appris le {new Date(insight.createdAt).toLocaleDateString()}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
     </div>
   );
 }
@@ -455,10 +483,15 @@ function SettingsPanel({ merchant, systemSettings }: { merchant: any; systemSett
               <option value="fashion">👗 Mode & Beauté</option>
               <option value="food">🍔 Restauration & Food</option>
               <option value="beauty">💄 Soins & Cosmétiques</option>
-              <option value="electronics">📱 Électronique</option>
-              <option value="artisan">🛠️ Artisanat</option>
-              <option value="services">🛠️ Services</option>
-              <option value="digital">📚 Digital</option>
+              <option value="electronics">📱 Électronique & High-Tech</option>
+              <option value="artisan">🛠️ Artisanat & Fait Main</option>
+              <option value="services">💼 Prestations de Services</option>
+              <option value="digital">📚 Produits Digitaux & Formations</option>
+              <option value="home">🏠 Maison & Décoration</option>
+              <option value="grocery">🛒 Épicerie & Supérette</option>
+              <option value="health">💊 Santé & Bien-être</option>
+              <option value="auto">🚗 Auto-Moto & Pièces</option>
+              <option value="other">📦 Autre Commerce</option>
             </select>
           </label>
           <label className="grid gap-1.5">
@@ -494,31 +527,8 @@ function SettingsPanel({ merchant, systemSettings }: { merchant: any; systemSett
           <div className="space-y-4">
             <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-vendeur-emerald">Connexions Multi-Canal</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-               <div className="p-6 bg-vendeur-bg border border-white/5 rounded-2xl space-y-4">
-                  <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-full bg-pink-500/10 flex items-center justify-center border border-pink-500/20">
-                      <Instagram className="text-pink-500" size={20} />
-                    </div>
-                    <div>
-                      <p className="font-bold text-sm">Instagram</p>
-                      <p className="text-[10px] text-white/40 uppercase tracking-widest">DMs & Commentaires</p>
-                    </div>
-                  </div>
-                  <button className="w-full py-3 bg-pink-500 text-white font-black text-[10px] uppercase tracking-widest rounded-xl hover:bg-pink-600 transition-all">Lier Instagram Business</button>
-               </div>
-
-               <div className="p-6 bg-vendeur-bg border border-white/5 rounded-2xl space-y-4">
-                  <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-full bg-white/10 flex items-center justify-center border border-white/20">
-                      <TikTokIcon size={20} className="text-white" />
-                    </div>
-                    <div>
-                      <p className="font-bold text-sm">TikTok</p>
-                      <p className="text-[10px] text-white/40 uppercase tracking-widest">DMs TikTok Shop</p>
-                    </div>
-                  </div>
-                  <button className="w-full py-3 bg-white text-black font-black text-[10px] uppercase tracking-widest rounded-xl hover:bg-gray-200 transition-all">Lier TikTok Business</button>
-               </div>
+               <InstagramConfig merchant={merchant} />
+               <TikTokConfig merchant={merchant} />
             </div>
 
             <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-vendeur-emerald mt-8">Connexion WhatsApp</h3>
@@ -564,6 +574,100 @@ function PipelineStep({ label, value, max, color }: { label: string; value: numb
         <div className={cn("h-full transition-all duration-1000", color)} style={{ width: `${percentage}%` }} />
       </div>
       <div className="w-12 text-right font-black">{value}</div>
+    </div>
+  );
+}
+
+function InstagramConfig({ merchant }: { merchant: any }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [config, setConfig] = useState({
+    pageId: merchant?.instagramConfig?.pageId || "",
+    accessToken: merchant?.instagramConfig?.accessToken || ""
+  });
+  const queryClient = useQueryClient();
+
+  const updateMutation = useMutation({
+    mutationFn: async (data: any) => {
+      await apiClient.patch("/api/commerce/merchant", { instagramConfig: data });
+    },
+    onSuccess: () => {
+      toast.success("Instagram configuré ! 📸");
+      setIsOpen(false);
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+    }
+  });
+
+  const isConnected = !!merchant?.instagramConfig?.pageId;
+
+  return (
+    <div className="p-6 bg-vendeur-bg border border-white/5 rounded-2xl space-y-4">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 rounded-full bg-pink-500/10 flex items-center justify-center border border-pink-500/20 text-pink-500">
+            <Instagram size={20} />
+          </div>
+          <div>
+            <p className="font-bold text-sm">Instagram</p>
+            <p className="text-[10px] text-white/40 uppercase tracking-widest">{isConnected ? "Connecté" : "DMs & Commentaires"}</p>
+          </div>
+        </div>
+        {isConnected && <CheckCircle2 className="text-vendeur-emerald" size={16} />}
+      </div>
+
+      {!isOpen ? (
+        <button
+          onClick={() => setIsOpen(true)}
+          className={cn(
+            "w-full py-3 font-black text-[10px] uppercase tracking-widest rounded-xl transition-all",
+            isConnected ? "bg-white/5 text-white/40 hover:bg-white/10" : "bg-pink-500 text-white hover:bg-pink-600"
+          )}
+        >
+          {isConnected ? "Modifier la connexion" : "Lier Instagram Business"}
+        </button>
+      ) : (
+        <div className="space-y-3 animate-in slide-in-from-top-2 duration-300">
+          <input
+            className="w-full h-10 bg-vendeur-coal border border-white/10 rounded-lg px-3 text-xs text-white"
+            placeholder="Page ID"
+            value={config.pageId}
+            onChange={e => setConfig({...config, pageId: e.target.value})}
+          />
+          <input
+            className="w-full h-10 bg-vendeur-coal border border-white/10 rounded-lg px-3 text-xs text-white"
+            placeholder="Access Token"
+            value={config.accessToken}
+            onChange={e => setConfig({...config, accessToken: e.target.value})}
+          />
+          <div className="flex gap-2">
+            <button onClick={() => updateMutation.mutate(config)} className="flex-1 py-2 bg-vendeur-emerald text-vendeur-coal font-black text-[10px] uppercase rounded-lg">Sauver</button>
+            <button onClick={() => setIsOpen(false)} className="px-4 py-2 bg-white/5 text-white/40 font-black text-[10px] uppercase rounded-lg">X</button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function TikTokConfig({ merchant }: { merchant: any }) {
+  const isConnected = !!merchant?.tiktokConfig?.accessToken;
+
+  return (
+    <div className="p-6 bg-vendeur-bg border border-white/5 rounded-2xl space-y-4">
+      <div className="flex items-center gap-3">
+        <div className="h-10 w-10 rounded-full bg-white/10 flex items-center justify-center border border-white/20">
+          <TikTokIcon size={20} className="text-white" />
+        </div>
+        <div>
+          <p className="font-bold text-sm">TikTok</p>
+          <p className="text-[10px] text-white/40 uppercase tracking-widest">{isConnected ? "Connecté" : "DMs TikTok Shop"}</p>
+        </div>
+      </div>
+      <button
+        disabled
+        className="w-full py-3 bg-white/5 text-white/20 font-black text-[10px] uppercase tracking-widest rounded-xl cursor-not-allowed"
+      >
+        Arrive bientôt 🚀
+      </button>
     </div>
   );
 }

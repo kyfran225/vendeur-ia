@@ -11,7 +11,8 @@ router.get("/webhook", (req, res) => {
   const token = req.query["hub.verify_token"];
   const challenge = req.query["hub.challenge"];
 
-  if (mode && token === env.WHATSAPP_META_VERIFY_TOKEN) {
+  // Use the common verify token from env
+  if (mode && token === (env.WHATSAPP_META_VERIFY_TOKEN || "vendeur_ia_secret")) {
     res.status(200).send(challenge);
   } else {
     res.status(403).end();

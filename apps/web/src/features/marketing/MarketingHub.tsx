@@ -161,7 +161,10 @@ export function MarketingHub() {
             </div>
 
             <div className="flex justify-between items-center">
-              <h3 className="font-black text-white uppercase tracking-widest text-xs">Aperçu du message IA</h3>
+              <div className="space-y-1">
+                <h3 className="font-black text-white uppercase tracking-widest text-xs">Aperçu du message IA</h3>
+                <p className="text-[9px] text-white/40 font-bold uppercase tracking-tighter">Astuce : Utilisez {"{{name}}"} pour le nom du client</p>
+              </div>
               <button
                 onClick={() => previewMutation.mutate()}
                 disabled={!selectedProduct || previewMutation.isPending}

@@ -53,17 +53,18 @@ export const productSchema = z.object({
   id: z.string(),
   merchantId: z.string(),
   name: z.string(),
-  description: z.string(),
-  category: z.string(),
+  description: z.string().optional(),
+  category: z.string().optional(),
   price: z.number().nonnegative(),
   currency: z.string().default("XOF"),
   images: z.array(z.string()).default([]),
   stock: z.number().int().nonnegative().default(0),
   availability: z.enum(["available", "limited", "sold_out", "hidden"]).default("available"),
+  isService: z.boolean().optional(),
   aiMetadata: z.object({
     tags: z.array(z.string()).default([]),
     tiktokCaption: z.string().optional()
-  }),
+  }).optional(),
   createdAt: z.string(),
   updatedAt: z.string()
 });

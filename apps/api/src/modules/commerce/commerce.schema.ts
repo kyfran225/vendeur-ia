@@ -7,8 +7,38 @@ export const CreateProductSchema = z.object({
     description: z.string().optional(),
     category: z.string().optional(),
     stock: z.number().int().min(0).default(0),
-    imageUrl: z.string().url().optional().or(z.string().length(0)),
+    imageUrl: z.string().optional().or(z.string().length(0)),
+    images: z.array(z.string()).optional(),
     isService: z.boolean().optional(),
+  })
+});
+
+export const UpdateProductSchema = z.object({
+  body: z.object({
+    name: z.string().min(2).optional(),
+    price: z.number().min(0).optional(),
+    description: z.string().optional(),
+    category: z.string().optional(),
+    stock: z.number().int().min(0).optional(),
+    images: z.array(z.string()).optional(),
+    availability: z.enum(["available", "limited", "sold_out", "hidden"]).optional(),
+    isService: z.boolean().optional(),
+  })
+});
+
+export const CreateOrderSchema = z.object({
+  body: z.object({
+    customerId: z.string(),
+    items: z.array(z.object({
+      productId: z.string(),
+      name: z.string(),
+      price: z.number(),
+      quantity: z.number().int().positive()
+    })),
+    totalAmount: z.number(),
+    currency: z.string().default("XOF"),
+    shippingAddress: z.string().optional(),
+    paymentMethod: z.string().optional(),
   })
 });
 

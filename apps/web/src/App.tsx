@@ -6,6 +6,7 @@ import { LandingPage } from "./features/onboarding/LandingPage";
 import { OnboardingWizard } from "./features/onboarding/OnboardingWizard";
 import { SalesDashboard } from "./features/dashboard/SalesDashboard";
 import { ProductManager } from "./features/products/ProductManager";
+import { OrderManager } from "./features/orders/OrderManager";
 import { SalesInbox } from "./features/inbox/SalesInbox";
 import { MarketingHub } from "./features/marketing/MarketingHub";
 import { KnowledgeSetup } from "./features/settings/KnowledgeSetup";
@@ -48,6 +49,7 @@ function App() {
               <Route path="/dashboard" element={<SalesDashboard />} />
               <Route path="/admin" element={<AdminDashboard />} />
               <Route path="/products" element={<ProductManager />} />
+              <Route path="/orders" element={<OrderManager />} />
               <Route path="/inbox" element={<SalesInbox />} />
               <Route path="/marketing" element={<MarketingHub />} />
               <Route path="/knowledge" element={<KnowledgeSetup />} />

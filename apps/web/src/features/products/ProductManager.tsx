@@ -75,8 +75,10 @@ export function ProductManager() {
   const config = useMemo(() => BUSINESS_CONFIGS[businessCategory] || DEFAULT_CONFIG, [businessCategory]);
 
   const [isScannerOpen, setIsScannerOpen] = useState(false);
+  const [isAddingManual, setIsAddingManual] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [deletingProduct, setDeletingProduct] = useState<Product | null>(null);
+  const [newProduct, setNewProduct] = useState({ name: "", price: 0, stock: 1, category: businessCategory });
   const [captionData, setCaptionData] = useState<{ isOpen: boolean; text: string; productName: string }>({
     isOpen: false,
     text: "",
@@ -176,6 +178,17 @@ export function ProductManager() {
     if (editingProduct) updateMutation.mutate(editingProduct);
   };
 
+  const handleManualCreate = (e: React.FormEvent) => {
+    e.preventDefault();
+    createMutation.mutate({
+      ...newProduct,
+      category: newProduct.category || businessCategory,
+      isService: businessCategory === "services"
+    });
+    setIsAddingManual(false);
+    setNewProduct({ name: "", price: 0, stock: 1, category: businessCategory });
+  };
+
   return (
     <div className="p-6 space-y-8 relative min-h-screen">
       {isScannerOpen && (
@@ -205,16 +218,18 @@ export function ProductManager() {
       />
 
       {/* Edit Form Modal */}
-      {editingProduct && (
+      {(editingProduct || isAddingManual) && (
         <div className="fixed inset-0 z-[150] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/90 backdrop-blur-md" onClick={() => setEditingProduct(null)} />
+          <div className="absolute inset-0 bg-black/90 backdrop-blur-md" onClick={() => { setEditingProduct(null); setIsAddingManual(false); }} />
           <form
-            onSubmit={handleUpdate}
+            onSubmit={editingProduct ? handleUpdate : handleManualCreate}
             className="relative w-full max-w-lg bg-[#0c0f0d] border border-white/10 rounded-[2.5rem] p-8 space-y-6 shadow-2xl animate-in zoom-in-95 duration-200"
           >
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-2xl font-black text-white">Modifier {config.itemLabel.toLowerCase()}</h2>
-              <button onClick={() => setEditingProduct(null)} type="button" className="text-white/20 hover:text-white"><X size={24} /></button>
+              <h2 className="text-2xl font-black text-white">
+                {editingProduct ? "Modifier" : "Ajouter"} {config.itemLabel.toLowerCase()}
+              </h2>
+              <button onClick={() => { setEditingProduct(null); setIsAddingManual(false); }} type="button" className="text-white/20 hover:text-white"><X size={24} /></button>
             </div>
 
             <div className="space-y-4">
@@ -222,8 +237,12 @@ export function ProductManager() {
                 Nom {config.itemLabel.toLowerCase() === "service" ? "de la prestation" : "de l'article"}
                 <input
                   className="h-12 rounded-xl bg-white/5 border border-white/10 px-4 text-white outline-none focus:border-emerald-300"
-                  value={editingProduct.name}
-                  onChange={e => setEditingProduct({...editingProduct, name: e.target.value})}
+                  value={editingProduct ? editingProduct.name : newProduct.name}
+                  onChange={e => editingProduct
+                    ? setEditingProduct({...editingProduct, name: e.target.value})
+                    : setNewProduct({...newProduct, name: e.target.value})
+                  }
+                  required
                 />
               </label>
               <div className="grid grid-cols-2 gap-4">
@@ -232,8 +251,12 @@ export function ProductManager() {
                   <input
                     type="number"
                     className="h-12 rounded-xl bg-white/5 border border-white/10 px-4 text-white outline-none focus:border-emerald-300"
-                    value={editingProduct.price}
-                    onChange={e => setEditingProduct({...editingProduct, price: parseInt(e.target.value)})}
+                    value={editingProduct ? editingProduct.price : newProduct.price}
+                    onChange={e => editingProduct
+                      ? setEditingProduct({...editingProduct, price: parseInt(e.target.value)})
+                      : setNewProduct({...newProduct, price: parseInt(e.target.value)})
+                    }
+                    required
                   />
                 </label>
                 <label className="grid gap-2 text-xs font-black uppercase tracking-widest text-white/40">
@@ -241,15 +264,19 @@ export function ProductManager() {
                   <input
                     type="number"
                     className="h-12 rounded-xl bg-white/5 border border-white/10 px-4 text-white outline-none focus:border-emerald-300"
-                    value={editingProduct.stock}
-                    onChange={e => setEditingProduct({...editingProduct, stock: parseInt(e.target.value)})}
+                    value={editingProduct ? editingProduct.stock : newProduct.stock}
+                    onChange={e => editingProduct
+                      ? setEditingProduct({...editingProduct, stock: parseInt(e.target.value)})
+                      : setNewProduct({...newProduct, stock: parseInt(e.target.value)})
+                    }
                   />
                 </label>
               </div>
             </div>
 
             <button type="submit" className="w-full h-14 bg-emerald-300 text-black font-black uppercase tracking-widest rounded-2xl flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all">
-              <Save size={18} /> Enregistrer
+              {editingProduct ? <Save size={18} /> : <Plus size={18} />}
+              {editingProduct ? "Enregistrer" : "Ajouter"}
             </button>
           </form>
         </div>
@@ -271,18 +298,15 @@ export function ProductManager() {
           )}
           <button
             onClick={() => {
-               // Manual add logic or just open scanner for services
-               if (businessCategory === "services") setIsScannerOpen(true);
+               if (businessCategory === "services") setIsAddingManual(true);
                else {
-                 // For now, let's just use scanner as the primary way
-                 // or we could add a manual form toggle
-                 setIsScannerOpen(true);
+                 setIsAddingManual(true);
                }
             }}
             className={`flex items-center gap-2 bg-${config.accent}-300 text-black px-6 py-3 rounded-2xl font-black uppercase tracking-widest text-xs shadow-lg hover:scale-[1.02] active:scale-95 transition-all`}
           >
             {businessCategory === "services" ? <Zap size={18} /> : <Plus size={18} />}
-            {businessCategory === "services" ? "Ajouter Service" : "Ajout Rapide"}
+            {businessCategory === "services" ? "Ajouter Service" : "Ajout Manuel"}
           </button>
         </div>
       </header>
@@ -302,8 +326,8 @@ export function ProductManager() {
           products.map(p => (
             <div key={p._id} className={`bg-[#0c0f0d] border border-white/10 rounded-3xl overflow-hidden group hover:border-${config.accent}-500/30 transition-all shadow-xl`}>
               <div className="aspect-square bg-white/5 flex items-center justify-center relative">
-                {(p as any).imageUrl ? (
-                  <img src={(p as any).imageUrl} className="w-full h-full object-cover" alt={p.name} />
+                {(p as any).imageUrl || (p as any).images?.[0] ? (
+                  <img src={(p as any).imageUrl || (p as any).images?.[0]} className="w-full h-full object-cover" alt={p.name} />
                 ) : config.icon}
                 <div className="absolute top-4 right-4 bg-sky-500/10 border border-sky-500/30 px-3 py-1 rounded-lg flex items-center gap-1.5 backdrop-blur-md">
                   <Sparkles size={12} className="text-sky-400" />

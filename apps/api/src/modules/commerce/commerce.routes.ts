@@ -7,7 +7,7 @@ import { authenticate } from "../../middleware/authenticate.js";
 import { aiLimiter } from "../../middleware/rate-limiter.js";
 import { logger } from "../../services/logger.service.js";
 import { validate } from "../../middleware/validate.js";
-import { CreateProductSchema, UpdateMerchantSchema } from "./commerce.schema.js";
+import { CreateProductSchema, UpdateMerchantSchema, UpdateProductSchema, CreateOrderSchema } from "./commerce.schema.js";
 import { CommerceMerchantModel, CommerceProductModel, CommerceConversationModel, CommerceMessageModel, CommerceCustomerModel, CommerceOrderModel } from "./commerce.model.js";
 import { TransactionModel } from "./transaction.model.js";
 import { SystemSettingsModel } from "./admin.model.js";
@@ -293,8 +293,14 @@ router.post("/products", authenticate, validate(CreateProductSchema), async (req
 
     logger.info(`[Product] Creating new product for merchant ${merchant.businessName}`);
 
+    const productData = { ...req.body };
+    if (productData.imageUrl && (!productData.images || productData.images.length === 0)) {
+      productData.images = [productData.imageUrl];
+    }
+    delete productData.imageUrl;
+
     const product = await CommerceProductModel.create({
-      ...req.body,
+      ...productData,
       merchantId: merchant._id
     });
     res.status(201).json(product);
@@ -318,6 +324,25 @@ router.post("/products/vision", authenticate, aiLimiter, upload.single("image"),
     res.json(analysis);
   } catch (error: any) {
     logger.error(`[Vision Error] ${error.message}`, { userId: (req as any).user.id });
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.patch("/products/:id", authenticate, validate(UpdateProductSchema), async (req, res) => {
+  try {
+    const ownerId = (req as any).user.id;
+    const merchant = await CommerceMerchantModel.findOne({ ownerId });
+    if (!merchant) return res.status(404).json({ error: "Merchant not found" });
+
+    const product = await CommerceProductModel.findOneAndUpdate(
+      { _id: req.params.id, merchantId: merchant._id },
+      { $set: req.body },
+      { new: true }
+    );
+    if (!product) return res.status(404).json({ error: "Product not found" });
+
+    res.json(product);
+  } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
 });
@@ -381,6 +406,22 @@ router.get("/orders", authenticate, async (req, res) => {
       .populate("customerId")
       .sort({ createdAt: -1 });
     res.json(orders);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.post("/orders", authenticate, validate(CreateOrderSchema), async (req, res) => {
+  try {
+    const ownerId = (req as any).user.id;
+    const merchant = await CommerceMerchantModel.findOne({ ownerId });
+    if (!merchant) return res.status(404).json({ error: "Merchant not found" });
+
+    const order = await CommerceOrderModel.create({
+      ...req.body,
+      merchantId: merchant._id
+    });
+    res.status(201).json(order);
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }

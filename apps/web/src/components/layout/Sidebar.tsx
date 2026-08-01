@@ -1,12 +1,13 @@
 import React from "react";
 import { NavLink } from "react-router-dom";
-import { LayoutDashboard, Package, MessageCircle, Brain, Settings, Megaphone } from "lucide-react";
+import { LayoutDashboard, Package, MessageCircle, Brain, Settings, Megaphone, ShoppingCart } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export function Sidebar() {
   const links = [
     { to: "/dashboard", icon: LayoutDashboard, label: "Stats" },
     { to: "/products", icon: Package, label: "Stock" },
+    { to: "/orders", icon: ShoppingCart, label: "Commandes" },
     { to: "/inbox", icon: MessageCircle, label: "Messages" },
     { to: "/marketing", icon: Megaphone, label: "Marketing" },
     { to: "/knowledge", icon: Brain, label: "IA" },

@@ -40,7 +40,8 @@ import {
   Rocket,
   ChevronDown,
   LogIn,
-  User
+  User,
+  Megaphone
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -93,9 +94,21 @@ const MemoizedWhatsAppBubble = memo(WhatsAppBubble);
 
 function PillarSection() {
   const pillars = [
-    { icon: <Package className="text-sky-400" />, title: "IA Vision", desc: "Prenez une photo. L'IA crée votre fiche produit, le prix et les tags automatiquement." },
-    { icon: <Bot className="text-emerald-400" />, title: "IA Sales Agent", desc: "Répond instantanément à vos clients 24h/7, en français, anglais et argot local." },
-    { icon: <Banknote className="text-amber-400" />, title: "IA Payment", desc: "L'IA guide vos clients pour payer par Wave, Orange, MTN, Moov ou Visa et valide les preuves de transfert." }
+    {
+      icon: <Bot className="text-emerald-400" />,
+      title: "Cerveau IA Vendeur",
+      desc: "L'IA analyse vos photos, gère vos stocks et répond à vos clients par texte ou notes vocales 24h/7 sur WhatsApp et Instagram."
+    },
+    {
+      icon: <Megaphone className="text-sky-400" />,
+      title: "Hub Marketing",
+      desc: "Diffusez vos promos vers vos segments VIP. Tracking en temps réel et protection anti-spam intelligente pour votre compte WhatsApp."
+    },
+    {
+      icon: <ShieldCheck className="text-amber-400" />,
+      title: "Conversion & Paiement",
+      desc: "Validez vos commandes en un clic. L'IA sécurise vos encaissements Wave, Orange et MTN sans aucune erreur de numéro."
+    }
   ];
 
   return (

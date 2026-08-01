@@ -1,13 +1,17 @@
-import { CommerceProductModel, CommerceConversationModel, CommerceMessageModel } from "../modules/commerce/commerce.model.js";
+import { CommerceProductModel, CommerceConversationModel, CommerceMessageModel, CommerceMerchantModel } from "../modules/commerce/commerce.model.js";
 import { aiProvider } from "./ai-provider.js";
 
 export class AIGrowthService {
   async generateGrowthAdvice(merchantId: string) {
     try {
       // 1. Collect real data for analysis
+      const merchant = await CommerceMerchantModel.findById(merchantId);
       const products = await CommerceProductModel.find({ merchantId });
       const totalProducts = products.length;
       const lowStockProducts = products.filter(p => p.stock < 5).map(p => p.name);
+
+      const isInstagramLinked = !!merchant?.instagramConfig?.accessToken;
+      const isTikTokLinked = !!merchant?.tiktokConfig?.accessToken;
 
       const last7Days = new Date();
       last7Days.setDate(last7Days.getDate() - 7);
@@ -23,12 +27,15 @@ export class AIGrowthService {
         - Nombre total de produits : ${totalProducts}
         - Produits en stock faible : ${lowStockProducts.join(', ') || 'Aucun'}
         - Conversations ces 7 derniers jours : ${recentConversations}
+        - Instagram lié : ${isInstagramLinked ? 'Oui' : 'Non'}
+        - TikTok lié : ${isTikTokLinked ? 'Oui' : 'Non'}
         - Catalogue : ${products.map(p => `${p.name} (${p.price} XOF)`).join(', ')}
       `;
 
       const prompt = `
-        En tant qu'expert en stratégie de vente e-commerce, analyse ces données et donne 3 conseils ultra-courts (max 15 mots chacun) et actionnables pour augmenter les ventes de ce commerçant.
-        Utilise des emojis pour rendre les conseils attrayants.
+        En tant qu'expert en stratégie de vente e-commerce omnicanal, analyse ces données et donne 3 conseils ultra-courts (max 15 mots chacun).
+        Si Instagram ou TikTok n'est pas lié, suggère-le fortement comme levier de croissance.
+        Utilise des emojis.
         Réponds au format JSON uniquement :
         {
           "tips": [

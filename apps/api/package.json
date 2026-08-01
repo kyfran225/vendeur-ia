@@ -10,6 +10,7 @@
   "dependencies": {
     "@hapi/boom": "^10.0.1",
     "@types/multer": "^2.2.0",
+    "@types/web-push": "^3.6.4",
     "@vendeur-ia/core": "workspace:*",
     "@whiskeysockets/baileys": "7.0.0-rc14",
     "axios": "^1.7.2",
@@ -29,6 +30,7 @@
     "qrcode": "^1.5.4",
     "redis": "^4.6.13",
     "socket.io": "^4.7.5",
+    "web-push": "^3.6.7",
     "zod": "^3.23.8"
   },
   "devDependencies": {

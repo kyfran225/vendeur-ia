@@ -1,6 +1,6 @@
 import React from "react";
 import { NavLink } from "react-router-dom";
-import { LayoutDashboard, Package, MessageCircle, Brain, Settings, Bot } from "lucide-react";
+import { LayoutDashboard, Package, MessageCircle, Brain, Settings, Megaphone } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export function Sidebar() {
@@ -8,7 +8,8 @@ export function Sidebar() {
     { to: "/dashboard", icon: LayoutDashboard, label: "Stats" },
     { to: "/products", icon: Package, label: "Stock" },
     { to: "/inbox", icon: MessageCircle, label: "Messages" },
-    { to: "/knowledge", icon: Brain, label: "Cerveau IA" },
+    { to: "/marketing", icon: Megaphone, label: "Marketing" },
+    { to: "/knowledge", icon: Brain, label: "IA" },
     { to: "/settings", icon: Settings, label: "Réglages" },
   ];
 

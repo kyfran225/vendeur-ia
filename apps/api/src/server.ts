@@ -8,7 +8,10 @@ import { initSocketServer } from "./realtime/socketServer.js";
 import authRoutes from "./modules/auth/auth.routes.js";
 import commerceRoutes from "./modules/commerce/commerce.routes.js";
 import adminRoutes from "./modules/commerce/admin.routes.js";
+import marketingRoutes from "./modules/commerce/marketing.routes.js";
 import whatsappRoutes from "./modules/whatsapp/whatsapp.routes.js";
+import instagramRoutes from "./modules/instagram/instagram.routes.js";
+import tiktokRoutes from "./modules/tiktok/tiktok.routes.js";
 import mediaRoutes from "./modules/media/media.routes.js";
 import "./services/ai-queue.service.js"; // Import workers and queue
 
@@ -42,8 +45,11 @@ app.get("/health", (req, res) => {
 // Mount Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/commerce", commerceRoutes);
+app.use("/api/marketing", marketingRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/whatsapp", whatsappRoutes);
+app.use("/api/instagram", instagramRoutes);
+app.use("/api/tiktok", tiktokRoutes);
 app.use("/api/media", mediaRoutes);
 
 async function start() {

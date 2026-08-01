@@ -22,7 +22,12 @@ export interface SalesContext {
   };
   history: { role: "customer" | "ai"; text: string }[];
   message: string;
+  platform?: "whatsapp" | "instagram" | "tiktok";
   customerPhone?: string;
+  customerLoyalty?: {
+    points: number;
+    isVIP: boolean;
+  };
 }
 
 export class AIAgentService {
@@ -39,18 +44,33 @@ export class AIAgentService {
   }
 
   private buildSystemPrompt(context: SalesContext): string {
-    const { merchant, products, knowledge, customerPhone } = context;
+    const { merchant, products, knowledge, customerPhone, customerLoyalty, platform = "whatsapp" } = context;
+
+    const platformInstructions = {
+      whatsapp: "Le client est sur WhatsApp. Si tu as besoin de son adresse, demande-lui de t'envoyer sa localisation WhatsApp ou son quartier précis.",
+      instagram: "Le client est sur Instagram. Tu peux mentionner 'le lien dans ma bio' pour plus de photos ou le catalogue complet. Encourage le partage en story s'il est ravi.",
+      tiktok: "Le client est sur TikTok. Utilise un ton encore plus dynamique et court. Mentionne que tes produits sont 'ceux de la vidéo' s'il pose des questions sur un post."
+    };
 
     const productsStr = products
-      .filter(p => p.availability !== "sold_out" && p.availability !== "hidden")
-      .map(p => `- ${p.name}: ${p.price} ${p.currency || "XOF"} (${p.description || "Pas de description"})`)
+      .filter(p => p.availability !== "hidden")
+      .map(p => {
+        const stockStatus = p.stock <= 0 ? "ÉPUISÉ" : p.stock <= 5 ? `STOCK TRÈS LIMITÉ (${p.stock} restants)` : "Disponible";
+        return `- ${p.name}: ${p.price} ${p.currency || "XOF"} [${stockStatus}] (${p.description || "Pas de description"})`;
+      })
       .join("\n");
+
+    const loyaltyStr = customerLoyalty
+      ? `CLIENT : ${customerPhone}. Fidélité: ${customerLoyalty.points} points. Statut: ${customerLoyalty.isVIP ? "VIP (Très fidèle)" : "Habituel"}.`
+      : `NOUVEAU CLIENT : ${customerPhone}.`;
 
     const paymentsStr = merchant.paymentChannels?.length
       ? merchant.paymentChannels.map(c => `${c.label}: ${c.number}`).join(", ")
       : "Contacter le marchand pour les détails de paiement.";
 
-    const deliveryStr = knowledge.businessRules?.deliveryZones?.join(", ") || "À discuter avec le client.";
+    const deliveryFeesStr = knowledge.businessRules?.deliveryFees?.length
+      ? knowledge.businessRules.deliveryFees.map((f: any) => `- ${f.zone}: ${f.price} ${merchant.currency || "XOF"}`).join("\n")
+      : "Tarif à discuter selon la zone.";
 
     const isWestAfrica = merchant.country === "CI" || merchant.country === "SN" || merchant.country === "BF";
     const localStyle = isWestAfrica
@@ -60,11 +80,16 @@ export class AIAgentService {
     return `Tu es l'Expert Principal de Vente de "${merchant.businessName}" situé à ${merchant.city}, ${merchant.country}.
 Ton but : Transformer chaque conversation en VENTE RÉELLE.
 
-CATALOGUE PRODUITS :
+${loyaltyStr}
+Si c'est un client VIP ou fidèle, commence par un accueil personnalisé reconnaissant sa loyauté.
+
+CATALOGUE PRODUITS & STOCKS :
 ${productsStr || "Aucun produit disponible pour le moment."}
 
-RÈGLES DE VENTE :
-- LIVRAISON : ${deliveryStr}. Frais : ${knowledge.businessRules?.openingHours || "Voir avec le client"}.
+RÈGLES DE VENTE & URGENCE :
+- Si un produit est marqué [STOCK TRÈS LIMITÉ], souligne subtilement qu'il part vite pour inciter à la réservation immédiate.
+- Si un produit est [ÉPUISÉ], propose poliment un autre produit similaire du catalogue. Ne dis jamais "on n'a plus rien", sois proactif.
+- LIVRAISON : Voici tes tarifs par zone :\n${deliveryFeesStr}\nSi la zone n'est pas dans la liste, demande l'adresse exacte et dis que tu vas voir avec le livreur pour le prix.
 - PAIEMENTS : ${paymentsStr}.
 - RETOURS : ${knowledge.businessRules?.returnPolicy || "Selon conditions du magasin"}.
 - INSTRUCTIONS SPÉCIFIQUES : ${knowledge.customInstructions || "Sois le meilleur vendeur possible."}
@@ -72,6 +97,7 @@ RÈGLES DE VENTE :
 TON ET PERSONA :
 - Professionnel, Persuasif, Chaleureux.
 - STYLE : ${localStyle}
+- CANAL : ${platformInstructions[platform]}
 - ADAPTATION : Adapte ton langage, tes expressions et tes références culturelles à la ville de ${merchant.city}. Cela s'applique à tes réponses ÉCRITES et à tes transcriptions/interactions VOCALES. Ton "intonation" textuelle doit refléter la politesse locale.
 - LANGUE : Réponds TOUJOURS dans la langue du client (Français, Anglais, Espagnol, etc.).
 
@@ -90,7 +116,6 @@ RÈGLES D'OR :
 - Ne demande JAMAIS l'adresse au premier message de salutation.
 - Inculque un sentiment d'urgence ou d'exclusivité.
 - Si le client demande le prix, donne-le CLAIREMENT avec la devise.
-${customerPhone ? `- Le numéro du client est ${customerPhone}.` : ""}
 `;
   }
 }

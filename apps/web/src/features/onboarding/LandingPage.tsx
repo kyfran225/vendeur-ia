@@ -51,6 +51,7 @@ import { AddressAutocomplete } from "./components/AddressAutocomplete";
 import { PaymentMethodSelector } from "./components/PaymentMethodSelector";
 import { AuthSheet } from "../auth/components/AuthSheet";
 import { useAuthStore } from "@/stores/authStore";
+import { AudioRecorder } from "@/lib/audioUtils";
 import axios from "axios";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
@@ -138,6 +139,9 @@ function LandingHero({
   );
   const [localPhone, setLocalPhone] = useState(tempData?.whatsappNumber?.replace(selectedCountry.dialCode, "") || "");
   const { accessToken } = useAuthStore();
+
+  const recorderRef = useRef<AudioRecorder | null>(null);
+  const [isRecording, setIsRecording] = useState(false);
 
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -236,8 +240,43 @@ function LandingHero({
     onAuth();
   };
 
-  const handleSend = async () => {
-    if (!testMessage.trim()) return;
+  const handleMicClick = async () => {
+    if (isRecording) {
+      const audioBlob = await recorderRef.current?.stop();
+      setIsRecording(false);
+      if (!audioBlob) return;
+
+      setIsReplying(true);
+      try {
+        const formData = new FormData();
+        formData.append("audio", audioBlob, "demo.webm");
+        const res = await axios.post(`${API_URL}/api/commerce/demo/transcribe`, formData);
+
+        if (res.data.transcription) {
+          setMessage(res.data.transcription);
+          // Auto-send if transcription is good
+          setTimeout(() => handleSend(res.data.transcription), 500);
+        }
+      } catch (err) {
+        toast.error("Échec de la transcription vocale.");
+      } finally {
+        setIsReplying(false);
+      }
+    } else {
+      try {
+        if (!recorderRef.current) recorderRef.current = new AudioRecorder();
+        await recorderRef.current.start();
+        setIsRecording(true);
+        toast.info("Enregistrement en cours...");
+      } catch (err) {
+        toast.error("Microphone non accessible.");
+      }
+    }
+  };
+
+  const handleSend = async (manualMessage?: string) => {
+    const textToSend = manualMessage || testMessage;
+    if (!textToSend.trim()) return;
 
     if (aiResponseCount >= MAX_DEMO_REPLIES) {
       toast.error("Limite de démonstration atteinte. Activez votre machine pour continuer !");
@@ -245,9 +284,9 @@ function LandingHero({
     }
 
     const userTime = getTime();
-    const newMsg: ChatMessage = { role: "customer", text: testMessage, time: userTime };
+    const newMsg: ChatMessage = { role: "customer", text: textToSend, time: userTime };
     setHistory(prev => [...prev, newMsg]);
-    const currentInput = testMessage;
+    const currentInput = textToSend;
     setMessage("");
     setIsReplying(true);
 
@@ -472,10 +511,10 @@ function LandingHero({
                <div
                  className={cn(
                    "w-12 h-12 rounded-full flex items-center justify-center text-white shadow-xl transition-all cursor-pointer",
-                   testMessage ? "bg-[#00a884] scale-110" : "bg-[#00a884]/80",
-                   (aiResponseCount >= MAX_DEMO_REPLIES || isReplying) && "opacity-30 cursor-not-allowed"
+                   testMessage ? "bg-[#00a884] scale-110" : isRecording ? "bg-red-500 animate-pulse" : "bg-[#00a884]/80",
+                   (aiResponseCount >= MAX_DEMO_REPLIES || isReplying) && !isRecording && "opacity-30 cursor-not-allowed"
                  )}
-                 onClick={handleSend}
+                 onClick={() => testMessage ? handleSend() : handleMicClick()}
                >
                  {testMessage ? <Send size={20} /> : <Mic size={20} />}
                </div>

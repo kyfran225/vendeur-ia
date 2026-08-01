@@ -26,7 +26,8 @@ const MerchantSchema = new Schema({
   aiSettings: {
     personality: { type: String, default: "friendly" },
     responseStyle: { type: String, default: "normal" },
-    autoReply: { type: Boolean, default: true }
+    autoReply: { type: Boolean, default: true },
+    voiceMode: { type: Boolean, default: false }
   },
   whatsappConfig: {
     provider: { type: String, enum: ['baileys', 'meta'], default: 'baileys' },
@@ -38,6 +39,17 @@ const MerchantSchema = new Schema({
     },
     status: { type: String, enum: ['disconnected', 'connected', 'error'], default: 'disconnected' },
     lastBillingDate: { type: Date, default: null }
+  },
+  instagramConfig: {
+    pageId: String,
+    accessToken: String,
+    status: { type: String, enum: ['disconnected', 'connected', 'error'], default: 'disconnected' }
+  },
+  tiktokConfig: {
+    openId: String,
+    accessToken: String,
+    refreshToken: String,
+    status: { type: String, enum: ['disconnected', 'connected', 'error'], default: 'disconnected' }
   }
 }, { timestamps: true });
 
@@ -45,7 +57,11 @@ const MerchantSchema = new Schema({
 const KnowledgeSchema = new Schema({
   merchantId: { type: Schema.Types.ObjectId, ref: "CommerceMerchant", required: true, index: true },
   businessRules: {
-    deliveryZones: [String],
+    deliveryZones: [String], // Keep for backward compatibility
+    deliveryFees: [{
+      zone: { type: String, required: true },
+      price: { type: Number, required: true }
+    }],
     openingHours: String,
     returnPolicy: String,
     paymentMethods: [String]
@@ -78,15 +94,19 @@ const ProductSchema = new Schema({
 const CustomerSchema = new Schema({
   merchantId: { type: Schema.Types.ObjectId, ref: "CommerceMerchant", required: true, index: true },
   phone: { type: String, required: true, index: true },
+  platform: { type: String, enum: ["whatsapp", "instagram", "tiktok"], default: "whatsapp" },
+  platformId: { type: String }, // For non-phone IDs like Instagram Scoped ID
   name: String,
   location: String,
-  leadScore: { type: Number, default: 0 }
+  leadScore: { type: Number, default: 0 },
+  loyaltyPoints: { type: Number, default: 0 }
 }, { timestamps: true });
 
 // --- CONVERSATION ---
 const ConversationSchema = new Schema({
   merchantId: { type: Schema.Types.ObjectId, ref: "CommerceMerchant", required: true, index: true },
   customerId: { type: Schema.Types.ObjectId, ref: "CommerceCustomer", required: true },
+  platform: { type: String, enum: ["whatsapp", "instagram", "tiktok"], default: "whatsapp" },
   status: { type: String, enum: ["active", "needs_human", "converted", "closed"], default: "active" },
   lastMessageAt: { type: Date, default: Date.now },
   messagesCount: { type: Number, default: 0 }
@@ -96,7 +116,9 @@ const ConversationSchema = new Schema({
 const MessageSchema = new Schema({
   conversationId: { type: Schema.Types.ObjectId, ref: "CommerceConversation", required: true, index: true },
   sender: { type: String, enum: ["customer", "ai", "human"], required: true },
+  type: { type: String, enum: ["text", "audio", "image"], default: "text" },
   content: { type: String, required: true },
+  mediaUrl: String,
   timestamp: { type: Date, default: Date.now }
 });
 
@@ -106,3 +128,29 @@ export const CommerceProductModel = mongoose.model("CommerceProduct", ProductSch
 export const CommerceCustomerModel = mongoose.model("CommerceCustomer", CustomerSchema);
 export const CommerceConversationModel = mongoose.model("CommerceConversation", ConversationSchema);
 export const CommerceMessageModel = mongoose.model("CommerceMessage", MessageSchema);
+
+// --- ORDER ---
+const OrderSchema = new Schema({
+  merchantId: { type: Schema.Types.ObjectId, ref: "CommerceMerchant", required: true, index: true },
+  customerId: { type: Schema.Types.ObjectId, ref: "CommerceCustomer", required: true, index: true },
+  conversationId: { type: Schema.Types.ObjectId, ref: "CommerceConversation" },
+  items: [{
+    productId: { type: Schema.Types.ObjectId, ref: "CommerceProduct" },
+    name: String,
+    price: Number,
+    quantity: { type: Number, default: 1 }
+  }],
+  totalAmount: { type: Number, required: true },
+  currency: { type: String, default: "XOF" },
+  status: {
+    type: String,
+    enum: ["pending", "confirmed", "paid", "delivered", "cancelled"],
+    default: "pending"
+  },
+  paymentMethod: String,
+  shippingAddress: String,
+  paidAt: Date,
+  deliveredAt: Date
+}, { timestamps: true });
+
+export const CommerceOrderModel = mongoose.model("CommerceOrder", OrderSchema);

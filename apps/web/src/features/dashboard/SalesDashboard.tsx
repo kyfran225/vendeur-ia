@@ -20,8 +20,15 @@ import {
   QrCode,
   LogIn,
   User,
-  LogOut
+  LogOut,
+  Instagram
 } from "lucide-react";
+
+const TikTokIcon = ({ size = 16, className = "" }: { size?: number; className?: string }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5" />
+  </svg>
+);
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuthStore } from "@/stores/authStore";
 import { useSocket } from "@/hooks/useSocket";
@@ -132,7 +139,7 @@ export function SalesDashboard() {
         {tab === "home" && <HomePanel dashboard={dashboard} />}
         {tab === "inbox" && <SalesInbox />}
         {tab === "products" && <ProductsPanel dashboard={dashboard} />}
-        {tab === "settings" && <SettingsPanel merchant={merchant} />}
+        {tab === "settings" && <SettingsPanel merchant={merchant} systemSettings={dashboard?.systemSettings} />}
       </main>
     </div>
   );
@@ -199,16 +206,16 @@ function HomePanel({ dashboard }: { dashboard: any }) {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <MetricCard icon={<DollarSign className="text-vendeur-emerald" />} label="Revenu Jour" value={formatAmount(dashboard?.metrics?.revenueToday || 0)} />
         <MetricCard icon={<MessageCircle className="text-blue-400" />} label="Conversations" value={String(dashboard?.metrics?.conversationsToday || 0)} />
-        <MetricCard icon={<Zap className="text-amber-400" />} label="Leads Chauds" value={String(dashboard?.metrics?.hotLeads || 0)} />
-        <MetricCard icon={<TrendingUp className="text-rose-400" />} label="Conversion" value="0%" />
+        <MetricCard icon={<Zap className="text-amber-400" />} label="Commandes" value={String(dashboard?.metrics?.ordersToday || 0)} />
+        <MetricCard icon={<TrendingUp className="text-rose-400" />} label="Conversion" value={`${dashboard?.metrics?.conversionRate || 0}%`} />
       </div>
 
       <section className="bg-vendeur-coal border border-white/5 rounded-[2.5rem] p-8">
         <h2 className="text-xl font-black mb-6">Pipeline de Vente</h2>
         <div className="space-y-4">
-          <PipelineStep label="Discussion WhatsApp" value={dashboard?.metrics?.conversationsToday || 0} max={20} color="bg-blue-400" />
-          <PipelineStep label="Paiement Initié" value={0} max={20} color="bg-amber-400" />
-          <PipelineStep label="Commandes Validées" value={0} max={20} color="bg-vendeur-emerald" />
+          <PipelineStep label="Discussion WhatsApp" value={dashboard?.metrics?.conversationsToday || 0} max={Math.max(20, dashboard?.metrics?.conversationsToday || 0)} color="bg-blue-400" />
+          <PipelineStep label="Paiement Confirmé" value={dashboard?.metrics?.ordersToday || 0} max={Math.max(20, dashboard?.metrics?.conversationsToday || 0)} color="bg-amber-400" />
+          <PipelineStep label="Taux de Conversion" value={dashboard?.metrics?.conversionRate || 0} max={100} color="bg-vendeur-emerald" />
         </div>
       </section>
     </div>
@@ -363,10 +370,28 @@ function ProductsPanel({ dashboard }: { dashboard: any }) {
   );
 }
 
-function SettingsPanel({ merchant }: { merchant: any }) {
+function SettingsPanel({ merchant, systemSettings }: { merchant: any; systemSettings: any }) {
   const queryClient = useQueryClient();
   const { accessToken } = useAuthStore();
   const qrCode = queryClient.getQueryData<string>(["whatsapp:qr"]);
+
+  const [localMerchant, setLocalMerchant] = useState(merchant);
+
+  useEffect(() => {
+    if (merchant) setLocalMerchant(merchant);
+  }, [merchant]);
+
+  const updateMerchantMutation = useMutation({
+    mutationFn: async (data: any) => {
+      await axios.patch(`${API_URL}/api/commerce/merchant`, data, {
+        headers: { Authorization: `Bearer ${accessToken}` }
+      });
+    },
+    onSuccess: () => {
+      toast.success("Profil mis à jour !");
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+    }
+  });
 
   const connectMutation = useMutation({
     mutationFn: async () => {
@@ -391,8 +416,75 @@ function SettingsPanel({ merchant }: { merchant: any }) {
     }
   });
 
+  const handleSaveProfile = () => {
+    updateMerchantMutation.mutate({
+      businessName: localMerchant.businessName,
+      category: localMerchant.category,
+      whatsappNumber: localMerchant.whatsappNumber,
+      address: localMerchant.address
+    });
+  };
+
   return (
     <div className="max-w-3xl space-y-8 animate-in fade-in duration-700">
+      {/* SECTION : PROFIL BOUTIQUE */}
+      <section className="bg-vendeur-coal border border-white/10 p-8 rounded-[2.5rem] space-y-6">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-black">Profil de la Boutique</h2>
+          <button
+            onClick={handleSaveProfile}
+            disabled={updateMerchantMutation.isPending}
+            className="flex h-10 items-center justify-center gap-2 rounded-xl bg-vendeur-emerald px-4 text-[10px] font-black uppercase text-vendeur-coal shadow-lg hover:scale-105 active:scale-95 transition-all disabled:opacity-50"
+          >
+            {updateMerchantMutation.isPending ? <Loader2 className="animate-spin" size={14} /> : <Save size={14} />}
+            Enregistrer
+          </button>
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <label className="grid gap-1.5">
+            <span className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Nom du commerce</span>
+            <input
+              className="h-12 rounded-xl bg-black/40 border border-white/10 px-4 text-white focus:border-vendeur-emerald outline-none transition-all"
+              value={localMerchant?.businessName || ""}
+              onChange={e => setLocalMerchant({...localMerchant, businessName: e.target.value})}
+            />
+          </label>
+          <label className="grid gap-1.5">
+            <span className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">WhatsApp Business</span>
+            <input
+              className="h-12 rounded-xl bg-black/40 border border-white/10 px-4 text-white focus:border-vendeur-emerald outline-none transition-all"
+              value={localMerchant?.whatsappNumber || ""}
+              onChange={e => setLocalMerchant({...localMerchant, whatsappNumber: e.target.value})}
+            />
+          </label>
+          <label className="grid gap-1.5">
+            <span className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Catégorie</span>
+            <select
+              className="h-12 rounded-xl bg-black/40 border border-white/10 px-4 text-white focus:border-vendeur-emerald outline-none transition-all"
+              value={localMerchant?.category || ""}
+              onChange={e => setLocalMerchant({...localMerchant, category: e.target.value})}
+            >
+              <option value="fashion">👗 Mode & Beauté</option>
+              <option value="food">🍔 Restauration & Food</option>
+              <option value="beauty">💄 Soins & Cosmétiques</option>
+              <option value="electronics">📱 Électronique</option>
+              <option value="artisan">🛠️ Artisanat</option>
+              <option value="services">🛠️ Services</option>
+              <option value="digital">📚 Digital</option>
+            </select>
+          </label>
+          <label className="grid gap-1.5">
+            <span className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Adresse</span>
+            <input
+              className="h-12 rounded-xl bg-black/40 border border-white/10 px-4 text-white focus:border-vendeur-emerald outline-none transition-all"
+              value={localMerchant?.address || ""}
+              onChange={e => setLocalMerchant({...localMerchant, address: e.target.value})}
+            />
+          </label>
+        </div>
+      </section>
+
       <section className="bg-vendeur-coal border border-white/10 p-8 rounded-[2.5rem] space-y-6">
         <h2 className="text-xl font-black">Configuration de l'IA</h2>
         <div className="space-y-6">
@@ -413,9 +505,38 @@ function SettingsPanel({ merchant }: { merchant: any }) {
           </div>
 
           <div className="space-y-4">
-            <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-vendeur-emerald">Connexion WhatsApp</h3>
+            <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-vendeur-emerald">Connexions Multi-Canal</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+               <div className="p-6 bg-vendeur-bg border border-white/5 rounded-2xl space-y-4">
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-full bg-pink-500/10 flex items-center justify-center border border-pink-500/20">
+                      <Instagram className="text-pink-500" size={20} />
+                    </div>
+                    <div>
+                      <p className="font-bold text-sm">Instagram</p>
+                      <p className="text-[10px] text-white/40 uppercase tracking-widest">DMs & Commentaires</p>
+                    </div>
+                  </div>
+                  <button className="w-full py-3 bg-pink-500 text-white font-black text-[10px] uppercase tracking-widest rounded-xl hover:bg-pink-600 transition-all">Lier Instagram Business</button>
+               </div>
+
+               <div className="p-6 bg-vendeur-bg border border-white/5 rounded-2xl space-y-4">
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-full bg-white/10 flex items-center justify-center border border-white/20">
+                      <TikTokIcon size={20} className="text-white" />
+                    </div>
+                    <div>
+                      <p className="font-bold text-sm">TikTok</p>
+                      <p className="text-[10px] text-white/40 uppercase tracking-widest">DMs TikTok Shop</p>
+                    </div>
+                  </div>
+                  <button className="w-full py-3 bg-white text-black font-black text-[10px] uppercase tracking-widest rounded-xl hover:bg-gray-200 transition-all">Lier TikTok Business</button>
+               </div>
+            </div>
+
+            <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-vendeur-emerald mt-8">Connexion WhatsApp</h3>
             <WhatsAppConnectionFlow
-              merchant={{ ...merchant, systemSettings: dashboard.systemSettings }}
+              merchant={{ ...merchant, systemSettings }}
               qrCode={qrCode || null}
               onInitBaileys={() => connectMutation.mutate()}
               onRefreshMerchant={() => queryClient.invalidateQueries({ queryKey: ["dashboard"] })}

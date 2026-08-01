@@ -28,7 +28,10 @@ const envSchema = z.object({
   API_URL: z.string().optional(),
   GOOGLE_CLIENT_ID: z.string().optional(),
   GOOGLE_CLIENT_SECRET: z.string().optional(),
-  GOOGLE_CALLBACK_URL: z.string().optional()
+  GOOGLE_CALLBACK_URL: z.string().optional(),
+  WHATSAPP_META_VERIFY_TOKEN: z.string().optional(),
+  ELEVENLABS_API_KEY: z.string().optional(),
+  ELEVENLABS_VOICE_ID: z.string().optional(),
 });
 
 export const env = envSchema.parse(process.env);

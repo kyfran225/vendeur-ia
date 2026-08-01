@@ -42,6 +42,8 @@ export class MessagingService {
         }
       }
     } else {
+      return whatsappService.sendMessage(userId, remoteId, content);
+    }
   }
 
   private async sendInstagram(merchant: any, remoteId: string, content: string) {

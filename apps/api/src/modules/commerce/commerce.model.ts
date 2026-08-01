@@ -64,7 +64,11 @@ const KnowledgeSchema = new Schema({
     }],
     openingHours: String,
     returnPolicy: String,
-    paymentMethods: [String],
+    paymentMethods: [{
+      provider: { type: String, required: true }, // e.g. "Wave", "Orange Money"
+      number: { type: String, required: true },
+      label: String
+    }],
     dynamicInsights: [{
       insight: String,
       type: { type: String, enum: ["product", "customer", "business"], default: "business" },
@@ -125,6 +129,10 @@ const MessageSchema = new Schema({
   type: { type: String, enum: ["text", "audio", "image"], default: "text" },
   content: { type: String, required: true },
   mediaUrl: String,
+  aiMetadata: {
+    tokensUsed: { type: Number, default: 0 },
+    cost: { type: Number, default: 0 }
+  },
   timestamp: { type: Date, default: Date.now }
 });
 
@@ -160,3 +168,18 @@ const OrderSchema = new Schema({
 }, { timestamps: true });
 
 export const CommerceOrderModel = mongoose.model("CommerceOrder", OrderSchema);
+
+// --- MARKETING CAMPAIGN ---
+const MarketingCampaignSchema = new Schema({
+  merchantId: { type: Schema.Types.ObjectId, ref: "CommerceMerchant", required: true, index: true },
+  productId: { type: Schema.Types.ObjectId, ref: "CommerceProduct" },
+  segment: { type: String, required: true },
+  content: { type: String, required: true },
+  targetCount: { type: Number, default: 0 },
+  sentCount: { type: Number, default: 0 },
+  failedCount: { type: Number, default: 0 },
+  status: { type: String, enum: ["pending", "active", "completed", "failed"], default: "pending" },
+  createdAt: { type: Date, default: Date.now }
+}, { timestamps: true });
+
+export const MarketingCampaignModel = mongoose.model("MarketingCampaign", MarketingCampaignSchema);

@@ -1,8 +1,9 @@
 import { Router } from "express";
 import { authenticate } from "../../middleware/authenticate.js";
 import { SystemSettingsModel } from "./admin.model.js";
-import { CommerceMerchantModel, CommerceConversationModel } from "./commerce.model.js";
+import { CommerceMerchantModel, CommerceConversationModel, CommerceMessageModel, CommerceOrderModel } from "./commerce.model.js";
 import { TransactionModel } from "./transaction.model.js";
+import { aiQueue } from "../../services/ai-queue.service.js";
 
 const router = Router();
 
@@ -49,7 +50,21 @@ router.get("/stats", authenticate, isAdmin, async (req, res) => {
     const activeSessions = await CommerceMerchantModel.countDocuments({ "whatsappConfig.status": "connected" });
     const totalConversations = await CommerceConversationModel.countDocuments();
 
-    // Revenue aggregation
+    // AI Costs aggregation
+    const aiCostStats = await CommerceMessageModel.aggregate([
+      { $match: { sender: "ai" } },
+      { $group: { _id: null, totalCost: { $sum: "$aiMetadata.cost" }, totalTokens: { $sum: "$aiMetadata.tokensUsed" } } }
+    ]);
+    const totalAiCost = aiCostStats[0]?.totalCost || 0;
+
+    // Gross Merchandise Value (GMV) of all merchants
+    const gmvStats = await CommerceOrderModel.aggregate([
+      { $match: { status: "paid" } },
+      { $group: { _id: null, total: { $sum: "$totalAmount" } } }
+    ]);
+    const totalGMV = gmvStats[0]?.total || 0;
+
+    // Total Revenue (from successful transactions)
     const revenueStats = await TransactionModel.aggregate([
       { $match: { status: "success" } },
       { $group: { _id: null, total: { $sum: "$amount" } } }
@@ -61,13 +76,48 @@ router.get("/stats", authenticate, isAdmin, async (req, res) => {
       .sort({ createdAt: -1 })
       .limit(10);
 
+    // QUEUE STATS
+    const [waiting, active, completed, failed, delayed] = await Promise.all([
+      aiQueue.getWaitingCount(),
+      aiQueue.getActiveCount(),
+      aiQueue.getCompletedCount(),
+      aiQueue.getFailedCount(),
+      aiQueue.getDelayedCount(),
+    ]);
+
     res.json({
       totalMerchants,
       activeSessions,
       totalConversations,
       totalRevenue,
-      recentTransactions
+      totalAiCost,
+      totalGMV,
+      recentTransactions,
+      queue: {
+        waiting,
+        active,
+        completed,
+        failed,
+        delayed
+      }
     });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// GET Failed Jobs Details
+router.get("/queue/failed", authenticate, isAdmin, async (req, res) => {
+  try {
+    const failedJobs = await aiQueue.getFailed(0, 50);
+    const details = failedJobs.map(job => ({
+      id: job.id,
+      name: job.name,
+      data: job.data,
+      failedReason: job.failedReason,
+      timestamp: job.timestamp
+    }));
+    res.json(details);
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }

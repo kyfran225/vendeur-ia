@@ -70,9 +70,13 @@ export class AIAgentService {
       ? `CLIENT : ${customerPhone}. Fidélité: ${customerLoyalty.points} points. Statut: ${customerLoyalty.isVIP ? "VIP (Très fidèle)" : "Habituel"}.`
       : `NOUVEAU CLIENT : ${customerPhone}.`;
 
-    const paymentsStr = merchant.paymentChannels?.length
-      ? merchant.paymentChannels.map(c => `${c.label}: ${c.number}`).join(", ")
-      : "Contacter le marchand pour les détails de paiement.";
+    // Payment Methods from Knowledge (Source of truth)
+    const paymentMethods = knowledge.businessRules?.paymentMethods || [];
+    const paymentsStr = paymentMethods.length
+      ? (paymentMethods as any[]).map(c => `${c.provider}${c.label ? ` (${c.label})` : ""}: ${c.number}`).join(", ")
+      : (merchant.paymentChannels?.length
+          ? merchant.paymentChannels.map(c => `${c.label || c.provider}: ${c.number}`).join(", ")
+          : "Contacter le marchand pour les détails de paiement.");
 
     const deliveryFeesStr = knowledge.businessRules?.deliveryFees?.length
       ? knowledge.businessRules.deliveryFees.map((f: any) => `- ${f.zone}: ${f.price} ${merchant.currency || "XOF"}`).join("\n")

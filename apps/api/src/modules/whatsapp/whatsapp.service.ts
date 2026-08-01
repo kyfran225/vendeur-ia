@@ -9,6 +9,7 @@ import axios from "axios";
 import { addAIJob } from "../../services/ai-queue.service.js";
 import { whatsappMediaService } from "./whatsapp-media.service.js";
 import { aiProvider } from "../../services/ai-provider.js";
+import { smsService } from "../../services/sms.service.js";
 import { SystemSettingsModel } from "../commerce/admin.model.js";
 
 class WhatsAppService {
@@ -79,6 +80,14 @@ class WhatsAppService {
         );
 
         if (shouldReconnect) {
+          console.warn(`[WhatsApp] Critical disconnection for user ${userId}. Sending alert...`);
+          const merchant = await CommerceMerchantModel.findOne({ ownerId: userId });
+          if (merchant?.whatsappNumber) {
+            smsService.sendAlert(
+              merchant.whatsappNumber,
+              `Chef, votre Vendeur IA est déconnecté ! Vérifiez votre téléphone ou votre connexion.`
+            );
+          }
           this.initSession(userId);
         } else {
           this.activeSessions.delete(userId);
@@ -129,7 +138,21 @@ class WhatsAppService {
     let text = msg.message?.conversation || msg.message?.extendedTextMessage?.text;
     const imageMsg = msg.message?.imageMessage;
 
+    // WhatsApp Service: handleIncomingMessage
     const merchant = await CommerceMerchantModel.findOne({ ownerId: userId });
+    if (!merchant) return;
+
+    // --- HUMAN TAKEOVER LOGIC ---
+    let conversation = await CommerceConversationModel.findOne({
+      merchantId: merchant._id,
+      customerId: (await CommerceCustomerModel.findOne({ phone: from, merchantId: merchant._id }))?._id
+    });
+
+    if (conversation?.status === 'needs_human') {
+      console.log(`[WhatsApp] Human takeover active for conversation ${conversation._id}. AI skipped.`);
+      return;
+    }
+    // ----------------------------
 
     // Vocal Support: Handle Audio Messages
     if (!text && (msg.message?.audioMessage || msg.message?.videoMessage)) {
@@ -163,7 +186,7 @@ class WhatsAppService {
     }
 
     // Find or create conversation
-    let conversation = await CommerceConversationModel.findOne({ merchantId: merchant._id, customerId: customer._id, status: "active" });
+    conversation = await CommerceConversationModel.findOne({ merchantId: merchant._id, customerId: customer._id, status: "active" });
     if (!conversation) {
       conversation = await CommerceConversationModel.create({ merchantId: merchant._id, customerId: customer._id });
     }
@@ -411,11 +434,26 @@ class WhatsAppService {
     }
   }
 
+  async sendMessage(userId: string, to: string, text: string) {
+    const merchant = await CommerceMerchantModel.findOne({ ownerId: userId });
+    if (!merchant) throw new Error("Merchant not found");
+
+    if (merchant.whatsappConfig?.provider === 'meta') {
+      return this.sendMetaMessage(merchant, to, text);
+    } else {
+      const sock = this.activeSessions.get(userId);
+      if (sock) {
+        return sock.sendMessage(to, { text });
+      } else {
+        throw new Error("WhatsApp session not active");
+      }
+    }
+  }
+
   async getSessionStatus(userId: string) {
     const session = this.activeSessions.get(userId);
     if (!session) return "disconnected";
-    // Baileys doesn't have a simple 'isConnected' property, but the presence of the socket
-    // and the last known state in DB is usually enough.
+
     const merchant = await CommerceMerchantModel.findOne({ ownerId: userId });
     return merchant?.whatsappConfig?.status || "disconnected";
   }

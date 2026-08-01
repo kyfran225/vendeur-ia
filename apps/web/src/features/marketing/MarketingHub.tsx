@@ -1,9 +1,9 @@
-import React, { useState } from "react";
-import { Sparkles, Users, Megaphone, Loader2, CheckCircle2, ShoppingBag } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { Sparkles, Users, Megaphone, Loader2, CheckCircle2, ShoppingBag, History, TrendingUp } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuthStore } from "@/stores/authStore";
 import { apiClient } from "@/lib/apiClient";
-import axios from "axios";
+import { useSocket } from "@/hooks/useSocket";
 import { toast } from "sonner";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
@@ -12,13 +12,34 @@ function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
-
 export function MarketingHub() {
   const { accessToken } = useAuthStore();
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [selectedSegment, setSelectedSegment] = useState<string>("vip");
   const [previewText, setPreviewText] = useState("");
+  const [activeCampaign, setActiveCampaign] = useState<any>(null);
+
+  const queryClient = useQueryClient();
+  const socket = useSocket();
+
+  useEffect(() => {
+    if (socket) {
+      socket.on("marketing:progress", (data: any) => {
+        setActiveCampaign((prev: any) => {
+          if (!prev || prev.campaignId !== data.campaignId) return prev;
+          return { ...prev, ...data };
+        });
+        if (data.status === "completed") {
+          toast.success("Campagne terminée ! ✨");
+          queryClient.invalidateQueries({ queryKey: ["campaigns"] });
+          setTimeout(() => setActiveCampaign(null), 5000);
+        }
+      });
+    }
+    return () => {
+      socket?.off("marketing:progress");
+    };
+  }, [socket, queryClient]);
 
   // Fetch Data
   const { data: products = [] } = useQuery({
@@ -36,6 +57,34 @@ export function MarketingHub() {
       return res.data;
     }
   });
+
+  const { data: campaigns = [] } = useQuery({
+    queryKey: ["campaigns"],
+    queryFn: async () => {
+      const res = await apiClient.get("/api/marketing/campaigns");
+      return res.data;
+    }
+  });
+
+  const { data: serverActiveCampaign } = useQuery({
+    queryKey: ["activeCampaign"],
+    queryFn: async () => {
+      const res = await apiClient.get("/api/marketing/active");
+      return res.data;
+    },
+    refetchInterval: (data) => (data ? 5000 : false) // Refetch every 5s if active
+  });
+
+  useEffect(() => {
+    if (serverActiveCampaign && !activeCampaign) {
+      setActiveCampaign({
+        campaignId: serverActiveCampaign._id,
+        sentCount: serverActiveCampaign.sentCount,
+        targetCount: serverActiveCampaign.targetCount,
+        status: serverActiveCampaign.status
+      });
+    }
+  }, [serverActiveCampaign, activeCampaign]);
 
   const previewMutation = useMutation({
     mutationFn: async () => {
@@ -59,6 +108,12 @@ export function MarketingHub() {
     },
     onSuccess: (data) => {
       toast.success(`Diffusion lancée vers ${data.count} clients !`);
+      setActiveCampaign({
+        campaignId: data.campaignId,
+        sentCount: 0,
+        targetCount: data.count,
+        status: "active"
+      });
       setPreviewText("");
       setSelectedProduct(null);
     }
@@ -75,7 +130,7 @@ export function MarketingHub() {
   };
 
   return (
-    <div className="p-8 space-y-8 animate-in fade-in duration-700">
+    <div className="p-4 md:p-8 space-y-8 pb-24 animate-in fade-in duration-700">
       <header className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-black tracking-tight text-white flex items-center gap-3">
@@ -86,6 +141,30 @@ export function MarketingHub() {
         </div>
       </header>
 
+      {/* Campaign Progress Overlay */}
+      {activeCampaign && (
+        <div className="bg-sky-500/10 border border-sky-500/20 p-6 rounded-[2rem] animate-in slide-in-from-top duration-500 flex flex-col sm:flex-row items-center justify-between gap-6">
+          <div className="flex items-center gap-4 w-full sm:w-auto">
+             <div className="h-12 w-12 bg-sky-500 rounded-2xl flex items-center justify-center text-black shadow-lg shadow-sky-500/20 shrink-0">
+               <Loader2 className="animate-spin" size={24} />
+             </div>
+             <div>
+                <h3 className="text-sm font-black uppercase tracking-widest text-white">Diffusion en cours...</h3>
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-sky-400 mt-1">
+                  {activeCampaign.sentCount} / {activeCampaign.targetCount} envoyés
+                </p>
+             </div>
+          </div>
+          <div className="flex-1 w-full max-w-md h-2 bg-white/5 rounded-full overflow-hidden">
+             <div
+                className="h-full bg-sky-400 transition-all duration-1000 ease-out"
+                style={{ width: `${(activeCampaign.sentCount / activeCampaign.targetCount) * 100}%` }}
+             />
+          </div>
+          <p className="text-[10px] font-black uppercase tracking-widest text-white/40 italic">Pause de 30s</p>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Step 1: Product Selection */}
         <section className="space-y-4">
@@ -93,18 +172,18 @@ export function MarketingHub() {
             <span className="h-6 w-6 rounded-full bg-white/10 flex items-center justify-center text-[10px]">1</span>
             Choisir un produit
           </h2>
-          <div className="grid grid-cols-2 gap-3 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
+          <div className="flex lg:grid lg:grid-cols-2 gap-3 overflow-x-auto lg:overflow-y-auto lg:max-h-[500px] pr-2 custom-scrollbar no-scrollbar pb-2">
             {products.map((p: any) => (
               <button
                 key={p._id}
                 onClick={() => handleProductSelect(p)}
                 className={cn(
-                  "relative aspect-square rounded-2xl overflow-hidden border-2 transition-all group",
+                  "relative aspect-square w-32 lg:w-auto shrink-0 rounded-2xl overflow-hidden border-2 transition-all group",
                   selectedProduct?._id === p._id ? "border-sky-400" : "border-white/5 grayscale hover:grayscale-0 hover:border-white/20"
                 )}
               >
-                {p.imageUrl ? (
-                  <img src={p.imageUrl} className="w-full h-full object-cover" alt={p.name} />
+                {p.images?.[0] ? (
+                  <img src={p.images[0]} className="w-full h-full object-cover" alt={p.name} />
                 ) : (
                   <div className="w-full h-full bg-white/5 flex items-center justify-center"><ShoppingBag className="text-white/10" /></div>
                 )}
@@ -129,7 +208,7 @@ export function MarketingHub() {
               Cible & Message
             </h2>
 
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {[
                 { id: 'vip', label: 'VIPs', count: segments?.vip || 0, icon: Sparkles, color: 'amber' },
                 { id: 'active', label: 'Actifs', count: segments?.active || 0, icon: Users, color: 'sky' },
@@ -218,6 +297,70 @@ export function MarketingHub() {
               L'IA enverra les messages progressivement (1 toutes les 30s) pour protéger votre compte WhatsApp.
             </p>
           </div>
+        </section>
+
+        {/* Step 3: History */}
+        <section className="lg:col-span-3 space-y-6 pt-8">
+           <header className="flex items-center justify-between">
+              <h2 className="text-sm font-black uppercase tracking-widest text-white/60 flex items-center gap-2">
+                <History className="text-white/20" size={18} />
+                Dernières Campagnes
+              </h2>
+           </header>
+
+           <div className="grid gap-4">
+              {campaigns.length === 0 ? (
+                <div className="bg-white/5 border border-dashed border-white/10 p-12 rounded-[2.5rem] text-center opacity-40">
+                   <p className="text-xs font-bold uppercase tracking-widest">Aucune campagne passée.</p>
+                </div>
+              ) : (
+                campaigns.map((c: any) => (
+                  <div key={c._id} className="bg-vendeur-coal border border-white/5 p-6 rounded-3xl flex flex-col gap-4 group hover:border-white/10 transition-all">
+                     <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-6">
+                           <div className={cn(
+                             "h-12 w-12 rounded-2xl flex items-center justify-center shadow-lg",
+                             c.status === 'completed' ? "bg-emerald-500/10 text-emerald-400 shadow-emerald-500/5" : "bg-sky-500/10 text-sky-400 shadow-sky-500/5"
+                           )}>
+                              {c.status === 'completed' ? <CheckCircle2 size={24} /> : <TrendingUp size={24} />}
+                           </div>
+                           <div>
+                              <p className="text-sm font-black text-white">{c.content.substring(0, 60)}...</p>
+                              <div className="flex items-center gap-3 mt-1.5">
+                                 <p className="text-[9px] font-black uppercase tracking-widest text-white/40">{new Date(c.createdAt).toLocaleDateString()}</p>
+                                 <span className="h-1 w-1 rounded-full bg-white/10" />
+                                 <p className="text-[9px] font-black uppercase tracking-widest text-emerald-400">{c.sentCount} clients touchés</p>
+                                 <span className="h-1 w-1 rounded-full bg-white/10" />
+                                 <p className="text-[9px] font-black uppercase tracking-widest text-white/20">Segment: {c.segment}</p>
+                              </div>
+                           </div>
+                        </div>
+                        <div className={cn(
+                          "px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest",
+                          c.status === 'completed' ? "bg-emerald-500/10 text-emerald-400" : "bg-sky-500/10 text-sky-400"
+                        )}>
+                           {c.status === 'completed' ? 'Succès' : 'En cours'}
+                        </div>
+                     </div>
+
+                     {c.status === 'active' && (
+                        <div className="space-y-2">
+                           <div className="flex justify-between text-[8px] font-black uppercase tracking-widest text-white/40">
+                              <span>Progression</span>
+                              <span>{c.sentCount} / {c.targetCount}</span>
+                           </div>
+                           <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+                              <div
+                                 className="h-full bg-sky-400 transition-all duration-1000"
+                                 style={{ width: `${(c.sentCount / c.targetCount) * 100}%` }}
+                              />
+                           </div>
+                        </div>
+                     )}
+                  </div>
+                ))
+              )}
+           </div>
         </section>
       </div>
     </div>

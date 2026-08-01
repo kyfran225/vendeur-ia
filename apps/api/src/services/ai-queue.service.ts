@@ -1,7 +1,12 @@
 import { Queue, Worker, Job } from 'bullmq';
 import { env } from '../config/env.js';
 import { aiAgentService, SalesContext } from './ai-agent.service.js';
-import { CommerceMessageModel, CommerceConversationModel, CommerceMerchantModel } from '../modules/commerce/commerce.model.js';
+import {
+  CommerceMessageModel,
+  CommerceConversationModel,
+  CommerceMerchantModel,
+  MarketingCampaignModel
+} from '../modules/commerce/commerce.model.js';
 import { emitToUser } from '../realtime/socketServer.js';
 import { whatsappService } from '../modules/whatsapp/whatsapp.service.js';
 import { pushService } from './push.service.js';
@@ -38,14 +43,15 @@ export const aiWorker = new Worker(
 
     try {
       if (job.name === 'broadcast-message') {
-        const { content, merchantId, imageUrl } = job.data;
+        const { content, merchantId, imageUrl, campaignId } = job.data;
         const merchant = await CommerceMerchantModel.findById(merchantId);
         let voiceMode = merchant?.aiSettings?.voiceMode && platform === 'whatsapp';
 
-        console.log(`[AI Queue] Sending broadcast to ${remoteJid} on ${platform} (Voice: ${voiceMode}, Image: ${!!imageUrl})`);
+        console.log(`[AI Queue] Sending broadcast to ${remoteJid} on ${platform} (Voice: ${voiceMode}, Image: ${!!imageUrl}, Campaign: ${campaignId})`);
 
         let audioUrl = "";
         let audioBuffer: Buffer | null = null;
+        let ttsError = false;
 
         if (voiceMode) {
           try {
@@ -60,6 +66,7 @@ export const aiWorker = new Worker(
           } catch (err) {
             console.warn("[AI Queue] Broadcast TTS failed, falling back to text:", err);
             voiceMode = false;
+            ttsError = true;
           }
         }
 
@@ -77,6 +84,31 @@ export const aiWorker = new Worker(
           updatedAt: new Date(),
         });
 
+        // Track Campaign Progress
+        if (campaignId) {
+          try {
+            const campaign = await MarketingCampaignModel.findByIdAndUpdate(
+              campaignId,
+              { $inc: { sentCount: 1 } },
+              { new: true }
+            );
+
+            if (campaign && campaign.sentCount >= campaign.targetCount) {
+              await MarketingCampaignModel.findByIdAndUpdate(campaignId, { status: "completed" });
+            }
+
+            // Emit Progress to Merchant
+            emitToUser(userId, 'marketing:progress', {
+              campaignId,
+              sentCount: campaign?.sentCount,
+              targetCount: campaign?.targetCount,
+              status: campaign?.status
+            });
+          } catch (err) {
+            console.error("[AI Queue] Failed to update campaign progress:", err);
+          }
+        }
+
         // Emit to frontend
         emitToUser(userId, 'conversation:update', {
           conversationId,
@@ -90,10 +122,17 @@ export const aiWorker = new Worker(
           type: imageUrl ? 'image' : 'text'
         });
 
-        return { status: 'broadcast_sent' };
+        return { status: 'broadcast_sent', ttsFallback: ttsError };
       }
 
       console.log(`[AI Queue] Processing job ${job.id} for user ${userId} on ${platform}`);
+
+      // CHECK HUMAN TAKEOVER STATUS AGAIN (In case it changed while in queue)
+      const currentConv = await CommerceConversationModel.findById(conversationId);
+      if (currentConv?.status === 'needs_human') {
+        console.log(`[AI Queue] Human takeover active for ${conversationId}. Skipping AI response.`);
+        return { status: 'skipped_human_takeover' };
+      }
 
       // Emit typing start
       emitToUser(userId, 'ai:typing', { conversationId, isTyping: true });
@@ -139,7 +178,11 @@ export const aiWorker = new Worker(
         sender: 'ai',
         type: voiceMode ? 'audio' : 'text',
         content: reply,
-        mediaUrl: audioUrl
+        mediaUrl: audioUrl,
+        aiMetadata: {
+          tokensUsed: reply.length / 4, // Rough estimation (4 chars per token)
+          cost: (reply.length / 4) * 0.00002 // Estimated cost in USD
+        }
       });
 
       // Update conversation last message timestamp

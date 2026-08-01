@@ -16,12 +16,16 @@ import {
   CheckCircle2,
   XCircle,
   ExternalLink,
-  Bot
+  Bot,
+  ShoppingBag,
+  Activity,
+  Zap,
+  Clock,
+  AlertCircle
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuthStore } from "@/stores/authStore";
 import { apiClient } from "@/lib/apiClient";
-import axios from "axios";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { toast } from "sonner";
@@ -29,8 +33,6 @@ import { toast } from "sonner";
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
-
-const API_URL = (import.meta as any).env.VITE_API_URL || "http://localhost:3001";
 
 export function AdminDashboard() {
   const [activeTab, setActiveTab] = useState<"overview" | "merchants" | "settings">("overview");
@@ -43,7 +45,18 @@ export function AdminDashboard() {
     queryFn: async () => {
       const res = await apiClient.get("/api/admin/stats");
       return res.data;
-    }
+    },
+    enabled: !!accessToken,
+    refetchInterval: 10000 // Refresh every 10s
+  });
+
+  const { data: failedJobs } = useQuery({
+    queryKey: ["admin:queue:failed"],
+    queryFn: async () => {
+      const res = await apiClient.get("/api/admin/queue/failed");
+      return res.data;
+    },
+    enabled: !!accessToken && activeTab === "overview"
   });
 
   // 2. Fetch All Merchants
@@ -52,7 +65,8 @@ export function AdminDashboard() {
     queryFn: async () => {
       const res = await apiClient.get("/api/admin/merchants");
       return res.data;
-    }
+    },
+    enabled: !!accessToken
   });
 
   // 3. Fetch Global Settings
@@ -61,7 +75,8 @@ export function AdminDashboard() {
     queryFn: async () => {
       const res = await apiClient.get("/api/admin/settings");
       return res.data;
-    }
+    },
+    enabled: !!accessToken
   });
 
   const updateSettingsMutation = useMutation({
@@ -112,7 +127,7 @@ export function AdminDashboard() {
           <AdminTabButton active={activeTab === "settings"} onClick={() => setActiveTab("settings")} icon={<Settings size={18}/>} label="Système" />
         </nav>
 
-        {activeTab === "overview" && <OverviewPanel stats={stats} />}
+        {activeTab === "overview" && <OverviewPanel stats={stats} failedJobs={failedJobs} statsLoading={statsLoading} />}
         {activeTab === "merchants" && <MerchantsPanel merchants={merchants} loading={merchantsLoading} />}
         {activeTab === "settings" && <SettingsPanel settings={settings} onUpdate={(data) => updateSettingsMutation.mutate(data)} isUpdating={updateSettingsMutation.isPending} />}
       </main>
@@ -135,17 +150,40 @@ function AdminTabButton({ active, onClick, icon, label }: { active: boolean; onC
   );
 }
 
-function OverviewPanel({ stats }: { stats: any }) {
+function OverviewPanel({ stats, failedJobs, statsLoading }: { stats: any; failedJobs: any; statsLoading: boolean }) {
   const transactions = stats?.recentTransactions || [];
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-700">
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
         <StatCard label="Total Marchands" value={stats?.totalMerchants || 0} icon={<Users className="text-amber-500" />} />
         <StatCard label="Sessions Actives" value={stats?.activeSessions || 0} icon={<Smartphone className="text-vendeur-emerald" />} />
-        <StatCard label="Revenu Plateforme" value={`${(stats?.totalRevenue || 0).toLocaleString()} XOF`} icon={<DollarSign className="text-amber-500" />} />
+        <StatCard label="Abonnements (CA)" value={`${(stats?.totalRevenue || 0).toLocaleString()} XOF`} icon={<DollarSign className="text-amber-500" />} />
+        <StatCard label="GMV (Ventes IA)" value={`${(stats?.totalGMV || 0).toLocaleString()} XOF`} icon={<ShoppingBag className="text-emerald-400" />} />
         <StatCard label="Messages IA" value={stats?.totalConversations || 0} icon={<MessageSquare className="text-blue-400" />} />
+        <StatCard label="Coûts IA (Est.)" value={`$${(stats?.totalAiCost || 0).toFixed(2)}`} icon={<Bot className="text-rose-400" />} />
       </div>
+
+      {/* --- QUEUE MONITORING SECTION --- */}
+      <section className="bg-vendeur-coal border border-white/10 rounded-[2.5rem] p-8 space-y-6">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-black flex items-center gap-2">
+                <Activity className="text-vendeur-emerald" size={24} />
+                Santé des Files d'Attente (BullMQ)
+            </h2>
+            <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-white/40">
+                <RefreshCw className={cn("animate-spin", statsLoading && "opacity-100")} size={12} /> Temps Réel
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
+            <QueueStat label="En Attente" value={stats?.queue?.waiting} icon={<Clock size={14}/>} color="amber" />
+            <QueueStat label="Actifs" value={stats?.queue?.active} icon={<Zap size={14}/>} color="sky" />
+            <QueueStat label="Terminés" value={stats?.queue?.completed} icon={<CheckCircle2 size={14}/>} color="emerald" />
+            <QueueStat label="Échecs" value={stats?.queue?.failed} icon={<XCircle size={14}/>} color="rose" />
+            <QueueStat label="Différés" value={stats?.queue?.delayed} icon={<ExternalLink size={14}/>} color="purple" />
+          </div>
+      </section>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <div className="bg-vendeur-coal border border-white/5 rounded-[2.5rem] p-8">
@@ -161,11 +199,11 @@ function OverviewPanel({ stats }: { stats: any }) {
                             </div>
                             <div>
                                 <p className="text-xs font-black uppercase tracking-tight">{t.merchantId?.businessName || 'Marchand Inconnu'}</p>
-                                <p className="text-[10px] text-white/40 uppercase font-bold">{t.type.replace('_', ' ')}</p>
+                                <p className="text-[10px] text-white/40 uppercase font-bold">{t.type?.replace('_', ' ')}</p>
                             </div>
                         </div>
                         <div className="text-right">
-                            <p className="text-sm font-black text-amber-500">{t.amount.toLocaleString()} {t.currency}</p>
+                            <p className="text-sm font-black text-amber-500">{t.amount?.toLocaleString()} {t.currency}</p>
                             <p className="text-[9px] text-white/20 uppercase font-bold">{new Date(t.paidAt || t.createdAt).toLocaleDateString()}</p>
                         </div>
                     </div>
@@ -174,17 +212,33 @@ function OverviewPanel({ stats }: { stats: any }) {
         </div>
 
         <div className="bg-vendeur-coal border border-white/5 rounded-[2.5rem] p-8">
-            <h2 className="text-xl font-black mb-6 uppercase tracking-tighter">Santé de la Plateforme</h2>
-            <div className="space-y-4">
-                <HealthItem label="API Cloud Meta" status="operational" />
-                <HealthItem label="Moteur AI (Gemini/Groq)" status="operational" />
-                <HealthItem label="Paiements Paystack" status="operational" />
-            </div>
-            <div className="mt-8 bg-amber-500/5 rounded-3xl p-6 border border-amber-500/10 flex flex-col justify-center items-center text-center space-y-4">
-                <ShieldCheck size={32} className="text-amber-500/40" />
-                <p className="text-[10px] text-amber-500/60 font-black uppercase tracking-widest max-w-xs leading-relaxed">
-                    Plateforme sécurisée. Toutes les transactions sont vérifiées par signature HMAC.
-                </p>
+            <h2 className="text-xl font-black mb-6 uppercase tracking-tighter flex items-center gap-2">
+                <AlertCircle className="text-rose-500" size={24} />
+                Logs d'Erreurs IA
+            </h2>
+            <div className="overflow-x-auto">
+                <table className="w-full text-left">
+                    <thead className="border-b border-white/5 text-[10px] font-black uppercase tracking-widest text-white/20">
+                        <tr>
+                            <th className="pb-4">Job</th>
+                            <th className="pb-4">Erreur</th>
+                            <th className="pb-4">Heure</th>
+                        </tr>
+                    </thead>
+                    <tbody className="text-xs">
+                        {failedJobs?.length === 0 ? (
+                            <tr>
+                                <td colSpan={3} className="py-8 text-center text-white/20 italic font-bold">Système sain. ✨</td>
+                            </tr>
+                        ) : failedJobs?.map((job: any) => (
+                            <tr key={job.id} className="border-b border-white/5 hover:bg-white/[0.02]">
+                                <td className="py-4 font-black">{job.name}</td>
+                                <td className="py-4 text-rose-400 font-medium">{job.failedReason}</td>
+                                <td className="py-4 text-white/40">{new Date(job.timestamp).toLocaleTimeString()}</td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
             </div>
         </div>
       </div>
@@ -247,6 +301,8 @@ function MerchantsPanel({ merchants, loading }: { merchants: any[], loading: boo
                   <div className="flex items-center gap-2">
                     {m.whatsappConfig?.status === 'connected' ? (
                       <><CheckCircle2 size={12} className="text-vendeur-emerald" /> <span className="text-[10px] font-black uppercase text-vendeur-emerald">Actif</span></>
+                    ) : m.whatsappConfig?.status === 'error' ? (
+                      <><AlertTriangle size={12} className="text-amber-500 animate-pulse" /> <span className="text-[10px] font-black uppercase text-amber-500">Erreur</span></>
                     ) : (
                       <><XCircle size={12} className="text-red-500" /> <span className="text-[10px] font-black uppercase text-red-500">Inactif</span></>
                     )}
@@ -371,6 +427,23 @@ function SettingsPanel({ settings, onUpdate, isUpdating }: { settings: any, onUp
             Attention : Toute modification ici impacte immédiatement l'ensemble des commerçants et la rentabilité de la plateforme.
         </p>
       </div>
+    </div>
+  );
+}
+
+function QueueStat({ label, value, icon, color }: any) {
+  const colors: any = {
+    emerald: "text-emerald-400 bg-emerald-500/10 border-emerald-500/20",
+    sky: "text-sky-400 bg-sky-500/10 border-sky-500/20",
+    amber: "text-amber-500 bg-amber-500/10 border-amber-500/20",
+    rose: "text-rose-500 bg-rose-500/10 border-rose-500/20",
+    purple: "text-purple-400 bg-purple-500/10 border-purple-500/20",
+  };
+  return (
+    <div className={cn("p-4 rounded-2xl border text-center space-y-1", colors[color])}>
+       <div className="flex justify-center opacity-40">{icon}</div>
+       <p className="text-xl font-black leading-none">{value || 0}</p>
+       <p className="text-[8px] font-black uppercase tracking-tighter opacity-60">{label}</p>
     </div>
   );
 }

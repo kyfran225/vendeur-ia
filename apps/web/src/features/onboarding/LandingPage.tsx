@@ -314,22 +314,22 @@ function LandingHero({
   };
 
   return (
-    <section className="w-full px-0 py-2 lg:py-4 grid lg:grid-cols-2 gap-8 items-center text-left">
-      <div className="animate-in fade-in slide-in-from-left-4 duration-700 w-full px-2">
-        <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-emerald-300/20 bg-emerald-300/10 px-4 py-2 text-xs font-black uppercase tracking-widest text-emerald-300">
-          <Sparkles size={14} />
+    <section className="w-full px-0 py-4 md:py-8 flex flex-col lg:flex-row items-center justify-center gap-12 lg:gap-24 text-left max-w-6xl mx-auto">
+      <div className="animate-in fade-in slide-in-from-left-4 duration-700 w-full lg:max-w-lg">
+        <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-emerald-300/20 bg-emerald-300/10 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-emerald-300">
+          <Sparkles size={12} />
           vendeurIa™
         </div>
-        <h1 className="text-6xl md:text-8xl font-black leading-[1.05] text-white mb-6 tracking-tighter">
+        <h1 className="text-5xl md:text-6xl font-black leading-[1.05] text-white mb-6 tracking-tighter">
           Votre WhatsApp <br/>
           <span className="text-emerald-300 text-transparent bg-clip-text bg-gradient-to-r from-emerald-300 to-emerald-500">vend tout seul.</span>
         </h1>
-        <p className="text-xl text-white/60 mb-8 max-w-2xl leading-relaxed font-medium">
+        <p className="text-lg text-white/60 mb-8 max-w-xl leading-relaxed font-medium">
           L'Employé Numérique du Commerce Social. Transformez votre WhatsApp en machine de vente. Propulsez votre croissance grâce à une performance IA disponible 24h/7.
         </p>
       </div>
 
-      <div className="relative w-full px-2 lg:mx-0 lg:ml-auto">
+      <div className="relative w-full lg:w-auto px-2">
         <div className="absolute -inset-4 bg-emerald-300/5 blur-[100px] rounded-full pointer-events-none" />
 
         {step === "form" ? (
@@ -404,26 +404,12 @@ function LandingHero({
                 />
               </label>
 
-              <div className="grid gap-2">
-                <span className="text-[10px] font-black uppercase tracking-widest text-emerald-300">Moyens de paiement</span>
-                <PaymentMethodSelector
-                  value={form.description.split("\n\n---\n")[1] || ""}
-                  onChange={(val) => {
-                    const parts = form.description.split("\n\n---\n");
-                    setForm({ ...form, description: `${parts[0] || ""}\n\n---\n${val}` });
-                  }}
-                />
-              </div>
-
               <label className="grid gap-2">
                 <span className="text-[10px] font-black uppercase tracking-widest text-white/40">Ce que vous vendez / Instructions de livraison</span>
                 <textarea
-                  className="min-h-[80px] rounded-xl border border-white/10 bg-black/40 p-4 text-white outline-none focus:border-emerald-300 transition-all resize-none placeholder:text-white/10"
-                  value={form.description.split("\n\n---\n")[0] || ""}
-                  onChange={(e) => {
-                    const parts = form.description.split("\n\n---\n");
-                    setForm({ ...form, description: `${e.target.value}\n\n---\n${parts[1] || ""}` });
-                  }}
+                  className="min-h-[120px] rounded-xl border border-white/10 bg-black/40 p-4 text-white outline-none focus:border-emerald-300 transition-all resize-none placeholder:text-white/10"
+                  value={form.description}
+                  onChange={(e) => setForm({ ...form, description: e.target.value })}
                   placeholder="Ex: Robes, chaussures. Livraison partout sous 2h."
                 />
               </label>
@@ -571,7 +557,7 @@ export function LandingPage() {
   const { user, logout } = useAuthStore();
 
   return (
-    <div className="min-h-screen bg-[#07100d] selection:bg-emerald-300/30 overflow-x-hidden text-left pt-14 md:pt-16 w-full">
+    <div className="min-h-screen bg-[#07100d] selection:bg-emerald-300/30 overflow-x-hidden text-left pt-12 md:pt-14 w-full">
       <header className="fixed top-0 left-0 right-0 z-50 border-b border-white/5 bg-[#07100d]/80 backdrop-blur-md w-full h-12 md:h-14">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 h-full gap-4">
           <div className="flex items-center gap-3 md:gap-4 flex-1 min-w-0">

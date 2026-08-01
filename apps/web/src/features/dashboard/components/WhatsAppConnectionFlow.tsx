@@ -6,30 +6,24 @@ import {
   ChevronRight,
   ArrowRight,
   ShieldCheck,
-  Info,
   ExternalLink,
   Bot,
-  MessageCircle,
   X,
-  CreditCard,
   Loader2,
   Check,
   LogIn,
-  Sparkles
+  Sparkles,
+  Settings
 } from "lucide-react";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { toast } from "sonner";
 import { apiClient } from "@/lib/apiClient";
-import axios from "axios";
 import { useAuthStore } from "@/stores/authStore";
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
-
-const API_URL = (import.meta as any).env.VITE_API_URL || "http://localhost:3001";
-const PAYSTACK_PUBLIC_KEY = (import.meta as any).env.VITE_PAYSTACK_PUBLIC_KEY || "";
 
 interface WhatsAppConnectionFlowProps {
   merchant: any;
@@ -38,7 +32,7 @@ interface WhatsAppConnectionFlowProps {
   onRefreshMerchant: () => void;
 }
 
-export function WhatsAppConnectionFlow({ merchant, qrCode, onInitBaileys, onRefreshMerchant }: WhatsAppConnectionFlowProps) {
+export function WhatsAppConnectionFlow({ merchant, qrCode, onRefreshMerchant }: WhatsAppConnectionFlowProps) {
   const [showHelp, setShowHelp] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
@@ -47,7 +41,7 @@ export function WhatsAppConnectionFlow({ merchant, qrCode, onInitBaileys, onRefr
     accessToken: merchant?.whatsappConfig?.meta?.accessToken || ""
   });
 
-  const { accessToken, user } = useAuthStore();
+  const { user } = useAuthStore();
 
   const handleSaveMetaConfig = async () => {
     setLoading(true);
@@ -71,8 +65,6 @@ export function WhatsAppConnectionFlow({ merchant, qrCode, onInitBaileys, onRefr
     try {
       await apiClient.patch("/api/whatsapp/config", {
         provider: "meta",
-        // No meta object means we use system defaults if they were empty,
-        // or we just switch provider.
       });
       toast.success("Mode Pro Activé ! 🚀");
       onRefreshMerchant();
@@ -89,12 +81,7 @@ export function WhatsAppConnectionFlow({ merchant, qrCode, onInitBaileys, onRefr
 
   const handlePackProLead = () => {
     const businessName = merchant?.businessName || "ma boutique";
-
-    // Use support number from merchant dashboard payload if available
-    // Note: merchant here is the whole dashboard object passed as prop in some cases,
-    // but in SalesDashboard it's dashboard.merchant. Let's be safe.
     const supportNumber = merchant?.systemSettings?.supportWhatsApp || "+2250700000000";
-
     const message = encodeURIComponent(`Bonjour ! Je souhaite activer mon Pack Pro Clé en Main pour ${businessName}. Comment procéder pour le paiement et la configuration ?`);
     const whatsappUrl = `https://wa.me/${supportNumber.replace(/\+/g, '')}?text=${message}`;
     window.open(whatsappUrl, '_blank');

@@ -361,7 +361,16 @@ Points Fidélité gagnés: +${Math.floor(order.totalAmount / 1000)}
     order.paidAt = new Date();
     await order.save();
 
-    // Loyalty Points Logic: 1 point per 1000 XOF
+    // 1. Stock Deduction Logic
+    for (const item of order.items) {
+      if (item.productId) {
+        await CommerceProductModel.findByIdAndUpdate(item.productId, {
+          $inc: { stock: -item.quantity }
+        });
+      }
+    }
+
+    // 2. Loyalty Points Logic: 1 point per 1000 XOF
     const pointsToAdd = Math.floor(order.totalAmount / 1000);
     if (pointsToAdd > 0) {
       await CommerceCustomerModel.findByIdAndUpdate(order.customerId, {

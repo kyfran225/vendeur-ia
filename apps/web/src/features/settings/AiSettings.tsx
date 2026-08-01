@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Mic, MessageSquare, Bot, Zap, Save, Loader2 } from "lucide-react";
+import { Mic, MessageSquare, Bot, Zap, Save, Loader2, DollarSign, Plus, Trash2 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuthStore } from "@/stores/authStore";
 import { apiClient } from "@/lib/apiClient";
@@ -18,6 +18,7 @@ export function AiSettings() {
   const { accessToken } = useAuthStore();
   const queryClient = useQueryClient();
   const [settings, setSettings] = useState<any>(null);
+  const [payments, setPayments] = useState<any[]>([]);
 
   const { data: dashboard, isLoading } = useQuery({
     queryKey: ["dashboard"],
@@ -27,19 +28,37 @@ export function AiSettings() {
     }
   });
 
+  const { data: knowledge } = useQuery({
+    queryKey: ["knowledge"],
+    queryFn: async () => {
+      const res = await apiClient.get("/api/commerce/knowledge");
+      return res.data;
+    }
+  });
+
   useEffect(() => {
     if (dashboard?.merchant?.aiSettings) {
       setSettings(dashboard.merchant.aiSettings);
     }
-  }, [dashboard]);
+    if (knowledge?.businessRules?.paymentMethods) {
+      setPayments(knowledge.businessRules.paymentMethods);
+    }
+  }, [dashboard, knowledge]);
 
   const updateMutation = useMutation({
     mutationFn: async (newSettings: any) => {
       await apiClient.patch("/api/commerce/ai-settings", newSettings);
+      await apiClient.patch("/api/commerce/knowledge", {
+        businessRules: {
+          ...knowledge?.businessRules,
+          paymentMethods: payments
+        }
+      });
     },
     onSuccess: () => {
       toast.success("Réglages IA enregistrés ! ✨");
       queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+      queryClient.invalidateQueries({ queryKey: ["knowledge"] });
     },
     onError: () => toast.error("Échec de la mise à jour")
   });
@@ -90,6 +109,17 @@ export function AiSettings() {
               </button>
            </div>
 
+           {settings.voiceMode && (
+             <div className="bg-sky-500/5 border border-sky-500/20 p-4 rounded-2xl animate-in slide-in-from-top-2">
+                <div className="flex gap-3">
+                  <Zap size={18} className="text-sky-400 shrink-0" />
+                  <p className="text-[10px] text-sky-400/80 font-black uppercase leading-relaxed tracking-wider">
+                    Attention : Le mode vocal consomme plus de crédits IA. Assurez-vous d'avoir un abonnement Pro actif.
+                  </p>
+                </div>
+             </div>
+           )}
+
            <div className="grid grid-cols-2 gap-4">
               <button
                 onClick={() => setSettings({...settings, voiceMode: false})}
@@ -117,6 +147,67 @@ export function AiSettings() {
                   <p className="font-black text-white text-sm">Mode Vocal</p>
                   <p className="text-[10px] text-white/40 font-bold uppercase tracking-widest">Notes vocales</p>
                 </div>
+              </button>
+           </div>
+        </section>
+
+        <section className="bg-vendeur-coal border border-white/10 rounded-[2.5rem] p-8 space-y-6">
+           <div className="space-y-1">
+              <h2 className="text-xl font-black text-white flex items-center gap-2">
+                <DollarSign size={20} className="text-emerald-400" />
+                Moyens de Paiement
+              </h2>
+              <p className="text-xs text-white/40 font-medium">L'IA donnera ces numéros pour les transferts d'argent.</p>
+           </div>
+
+           <div className="space-y-4">
+              {payments.map((p, idx) => (
+                <div key={idx} className="flex gap-3 items-end animate-in slide-in-from-left-2 duration-300">
+                   <div className="flex-1 space-y-1.5">
+                      <label className="text-[9px] font-black uppercase tracking-widest text-white/20 ml-1">Opérateur</label>
+                      <select
+                        className="w-full h-10 bg-black/40 border border-white/10 rounded-xl px-3 text-xs text-white focus:border-emerald-500 outline-none"
+                        value={p.provider}
+                        onChange={(e) => {
+                           const next = [...payments];
+                           next[idx].provider = e.target.value;
+                           setPayments(next);
+                        }}
+                      >
+                         <option value="Wave">Wave</option>
+                         <option value="Orange Money">Orange Money</option>
+                         <option value="MTN MoMo">MTN MoMo</option>
+                         <option value="Moov Money">Moov Money</option>
+                         <option value="Virement Bancaire">Virement</option>
+                      </select>
+                   </div>
+                   <div className="flex-[1.5] space-y-1.5">
+                      <label className="text-[9px] font-black uppercase tracking-widest text-white/20 ml-1">Numéro / Détails</label>
+                      <input
+                        className="w-full h-10 bg-black/40 border border-white/10 rounded-xl px-4 text-xs text-white focus:border-emerald-500 outline-none"
+                        value={p.number}
+                        onChange={(e) => {
+                           const next = [...payments];
+                           next[idx].number = e.target.value;
+                           setPayments(next);
+                        }}
+                        placeholder="Ex: 07 00 00 00 00"
+                      />
+                   </div>
+                   <button
+                     onClick={() => setPayments(payments.filter((_, i) => i !== idx))}
+                     className="h-10 w-10 flex items-center justify-center bg-white/5 rounded-xl text-white/20 hover:text-rose-500 hover:bg-rose-500/10 transition-all"
+                   >
+                      <Trash2 size={16} />
+                   </button>
+                </div>
+              ))}
+
+              <button
+                onClick={() => setPayments([...payments, { provider: "Wave", number: "" }])}
+                className="flex items-center gap-2 text-emerald-400 text-[10px] font-black uppercase tracking-[0.2em] hover:underline pt-2"
+              >
+                 <Plus size={14} /> Ajouter un mode de paiement
               </button>
            </div>
         </section>

@@ -3,7 +3,8 @@ import {
   CommerceProductModel,
   CommerceMerchantModel,
   CommerceConversationModel,
-  CommerceMessageModel
+  CommerceMessageModel,
+  MarketingCampaignModel
 } from "../modules/commerce/commerce.model.js";
 import { aiProvider } from "./ai-provider.js";
 import { aiQueue } from "./ai-queue.service.js";
@@ -25,6 +26,10 @@ export class MarketingService {
       active: activeCount,
       all: totalCount
     };
+  }
+
+  async getCampaigns(merchantId: string) {
+    return MarketingCampaignModel.find({ merchantId }).sort({ createdAt: -1 }).limit(10);
   }
 
   async generateBroadcastPreview(merchantId: string, productId: string, segment: string) {
@@ -82,6 +87,16 @@ Réponds UNIQUEMENT avec le texte du message.`;
 
     if (!messageBody) throw new Error("Message vide");
 
+    // 2.1 Create Campaign for tracking
+    const campaign = await MarketingCampaignModel.create({
+        merchantId,
+        productId,
+        segment,
+        content: messageBody,
+        targetCount: customers.length,
+        status: customers.length > 0 ? "active" : "completed"
+    });
+
     // 3. Queue jobs with delay (e.g., 30s between each)
     for (let i = 0; i < customers.length; i++) {
         const customer = customers[i];
@@ -98,14 +113,15 @@ Réponds UNIQUEMENT avec le texte du message.`;
             remoteJid: customer.phone,
             content: messageBody.replace(/{{name}}/g, customer.name || "cher client"),
             merchantId: merchant._id.toString(),
-            imageUrl: product?.images?.[0] || "" // Send first product image if available
+            imageUrl: product?.images?.[0] || "", // Send first product image if available
+            campaignId: campaign._id.toString()
         }, {
             delay: i * 30000, // 30 seconds interval
             attempts: 2
         });
     }
 
-    return { count: customers.length };
+    return { count: customers.length, campaignId: campaign._id };
   }
 }
 

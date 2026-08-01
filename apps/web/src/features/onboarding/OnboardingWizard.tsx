@@ -22,6 +22,12 @@ import { toast } from "sonner";
 import { apiClient } from "@/lib/apiClient";
 import axios from "axios";
 import { useSocket } from "@/hooks/useSocket";
+import { clsx, type ClassValue } from "clsx";
+import { twMerge } from "tailwind-merge";
+
+function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs));
+}
 
 const API_URL = (import.meta as any).env.VITE_API_URL || "http://localhost:3001";
 
@@ -124,37 +130,79 @@ function WelcomeStep({ onNext }: { onNext: () => void }) {
   const { user } = useAuthStore();
 
   return (
-    <div className="bg-white/5 border border-white/10 rounded-[3rem] p-8 md:p-12 text-center">
-      <div className="inline-flex h-20 w-20 items-center justify-center rounded-3xl bg-vendeur-emerald/10 border border-vendeur-emerald/20 mb-8">
-        <Rocket className="text-vendeur-emerald" size={40} />
-      </div>
-      <h1 className="text-4xl md:text-5xl font-black text-white mb-4 uppercase tracking-tighter">
-        Bonjour {user?.displayName?.split(" ")[0]} ! 👋
-      </h1>
-      <p className="text-xl text-white/50 mb-12 max-w-xl mx-auto">
-        Nous avons préparé les fondations pour <span className="text-white font-bold">{tempData?.businessName || "votre boutique"}</span>.
-        Prêt à activer votre puissance de vente ?
-      </p>
-
-      <div className="grid md:grid-cols-2 gap-4 max-w-2xl mx-auto mb-12 text-left">
-        <div className="p-6 rounded-2xl bg-black/40 border border-white/5">
-          <Store className="text-vendeur-emerald mb-4" size={24} />
-          <h3 className="text-sm font-black text-white uppercase tracking-wider mb-1">Commerce</h3>
-          <p className="text-lg text-white/70">{tempData?.businessName}</p>
+    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-700 w-full max-w-7xl mx-auto">
+      <section className="w-full flex flex-col lg:flex-row items-center justify-center gap-8 lg:gap-24 text-left">
+        <div className="w-full lg:max-w-lg">
+          <div className="mb-6 inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-vendeur-emerald/10 border border-vendeur-emerald/20">
+            <Rocket className="text-vendeur-emerald" size={32} />
+          </div>
+          <h1 className="text-4xl md:text-5xl font-black text-white mb-6 uppercase tracking-tighter leading-tight">
+            Dernière étape pour <br/>
+            <span className="text-vendeur-emerald">lancer vos ventes.</span>
+          </h1>
+          <p className="text-lg text-white/50 mb-8 max-w-xl leading-relaxed font-medium">
+            Remplissez ces quelques informations pour que votre IA commence à travailler. Vous pourrez modifier tout cela plus tard dans les réglages.
+          </p>
         </div>
-        <div className="p-6 rounded-2xl bg-black/40 border border-white/5">
-          <Smartphone className="text-vendeur-emerald mb-4" size={24} />
-          <h3 className="text-sm font-black text-white uppercase tracking-wider mb-1">WhatsApp</h3>
-          <p className="text-lg text-white/70">{tempData?.whatsappNumber}</p>
-        </div>
-      </div>
 
-      <button
-        onClick={onNext}
-        className="h-16 px-12 rounded-2xl bg-vendeur-emerald text-vendeur-coal font-black uppercase tracking-widest text-sm hover:scale-[1.02] active:scale-95 transition-all shadow-2xl shadow-vendeur-emerald/20 flex items-center gap-3 mx-auto"
-      >
-        C'est parti <ChevronRight size={20} />
-      </button>
+        <div className="relative w-full lg:w-auto">
+          <div className="relative rounded-[2.5rem] border border-white/10 bg-[#0c0f0d] p-8 text-left w-full lg:min-w-[500px] shadow-2xl">
+            <div className="mb-8 flex items-center gap-4 relative z-10">
+              <div className="grid h-12 w-12 place-items-center rounded-2xl bg-vendeur-emerald/10 text-vendeur-emerald border border-vendeur-emerald/20">
+                <Store size={24} />
+              </div>
+              <div>
+                <h2 className="text-xl font-black text-white">Profil du commerce</h2>
+                <p className="text-xs text-white/40 font-medium">Ceci aidera l'IA à mieux répondre.</p>
+              </div>
+            </div>
+
+            <div className="grid gap-6 relative z-10">
+               <label className="grid gap-2">
+                <span className="text-[10px] font-black uppercase tracking-widest text-white/20 ml-1">Nom du commerce</span>
+                <input
+                   readOnly
+                   className="h-12 rounded-xl border border-white/5 bg-black/20 px-4 text-white/40 outline-none cursor-not-allowed"
+                   value={tempData?.businessName}
+                />
+              </label>
+
+              <div className="grid grid-cols-2 gap-4">
+                <label className="grid gap-2">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-white/20 ml-1">Catégorie</span>
+                  <div className="h-12 rounded-xl border border-white/5 bg-black/20 px-4 text-white/40 flex items-center text-sm capitalize">
+                    {tempData?.category === 'fashion' ? '👗 Mode & Beauté' :
+                     tempData?.category === 'food' ? '🍔 Restauration' :
+                     tempData?.category === 'services' ? '💼 Services' : '📦 Autre'}
+                  </div>
+                </label>
+                <label className="grid gap-2">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-white/20 ml-1">Ville</span>
+                  <div className="h-12 rounded-xl border border-white/5 bg-black/20 px-4 text-white/40 flex items-center text-sm">
+                    {tempData?.city || 'Abidjan'}
+                  </div>
+                </label>
+              </div>
+
+              <label className="grid gap-2">
+                <span className="text-[10px] font-black uppercase tracking-widest text-white/20 ml-1">Ce que vous vendez</span>
+                <textarea
+                  readOnly
+                  className="min-h-[100px] rounded-xl border border-white/5 bg-black/20 p-4 text-white/40 outline-none resize-none text-sm italic"
+                  value={tempData?.description}
+                />
+              </label>
+
+              <button
+                onClick={onNext}
+                className="mt-4 flex h-16 items-center justify-center gap-3 rounded-2xl bg-vendeur-emerald px-8 text-sm font-black uppercase tracking-widest text-vendeur-coal shadow-xl shadow-vendeur-emerald/10 transition-all hover:scale-[1.02] active:scale-95"
+              >
+                <Rocket size={18} /> Activer ma machine de vente
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }

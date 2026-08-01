@@ -1,6 +1,7 @@
 import express, { Router } from "express";
 import { commerceService } from "./commerce.service.js";
 import { whatsappService } from "../whatsapp/whatsapp.service.js";
+import { messagingService } from "../../services/messaging.service.js";
 import { paystackService } from "../../services/paystack.service.js";
 import { env } from "../../config/env.js";
 import { authenticate } from "../../middleware/authenticate.js";
@@ -157,6 +158,25 @@ router.post("/activate-premium", authenticate, async (req, res) => {
   }
 });
 
+router.post("/buy-pack-pro", authenticate, async (req, res) => {
+  const { email } = req.body;
+  const userId = (req as any).user.id;
+  try {
+    // Pack Pro is 25,000 FCFA
+    const data = await paystackService.initializeSubscription(email, 25000);
+
+    // Add custom metadata for webhook tracking
+    data.metadata = {
+      type: "pack_pro",
+      userId
+    };
+
+    res.json(data);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 router.post("/verify-payment", authenticate, async (req, res) => {
   const { reference, type } = req.body;
   const userId = (req as any).user.id;
@@ -249,6 +269,29 @@ router.post("/webhooks/paystack", express.raw({ type: 'application/json' }), asy
         );
       }
     }
+
+    if (type === 'pack_pro' && userId) {
+      console.log(`[Paystack Webhook] Pack Pro success for User: ${userId}`);
+
+      const merchant = await CommerceMerchantModel.findOneAndUpdate(
+        { ownerId: userId },
+        { $set: { "whatsappConfig.status": "connected" } } // Unlock basic connection
+      );
+
+      if (merchant) {
+        await TransactionModel.create({
+          merchantId: merchant._id,
+          ownerId: userId,
+          reference: data.reference,
+          amount: data.amount / 100,
+          currency: data.currency,
+          type: 'pack_pro',
+          status: 'success',
+          paymentMethod: data.channel,
+          paidAt: new Date(data.paid_at)
+        });
+      }
+    }
   }
 
   res.status(200).send('OK');
@@ -296,6 +339,19 @@ router.patch("/knowledge", authenticate, async (req, res) => {
 
     const knowledge = await commerceService.updateKnowledge(merchant._id.toString(), req.body);
     res.json(knowledge);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.get("/products", authenticate, async (req, res) => {
+  try {
+    const ownerId = (req as any).user.id;
+    const merchant = await CommerceMerchantModel.findOne({ ownerId });
+    if (!merchant) return res.status(404).json({ error: "Merchant not found" });
+
+    const products = await CommerceProductModel.find({ merchantId: merchant._id });
+    res.json(products);
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
@@ -437,6 +493,25 @@ router.post("/orders", authenticate, validate(CreateOrderSchema), async (req, re
       ...req.body,
       merchantId: merchant._id
     });
+
+    // If created from Inbox, we might want to send a confirmation message automatically
+    if (req.body.conversationId) {
+      const customer = await CommerceCustomerModel.findById(req.body.customerId);
+      if (customer) {
+        const itemsList = req.body.items.map((i: any) => `- ${i.name} (x${i.quantity})`).join("\n");
+        const messageContent = `✅ Commande validée !\n\nRécapitulatif :\n${itemsList}\n\nTotal : ${req.body.totalAmount.toLocaleString()} XOF\n\nMerci pour votre confiance ! ✨`;
+
+        await messagingService.sendMessage(merchant, customer.platform || "whatsapp", customer.phone, messageContent);
+
+        // Save confirmation message to history
+        await CommerceMessageModel.create({
+          conversationId: req.body.conversationId,
+          sender: "ai",
+          content: messageContent
+        });
+      }
+    }
+
     res.status(201).json(order);
   } catch (error: any) {
     res.status(500).json({ error: error.message });

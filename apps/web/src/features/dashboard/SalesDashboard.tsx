@@ -21,7 +21,9 @@ import {
   LogIn,
   User,
   LogOut,
-  Instagram
+  Instagram,
+  AlertCircle,
+  CheckCircle2
 } from "lucide-react";
 
 const TikTokIcon = ({ size = 16, className = "" }: { size?: number; className?: string }) => (
@@ -55,9 +57,16 @@ function formatAmount(value: number) {
 
 import { SalesInbox } from "../inbox/SalesInbox";
 import { WhatsAppConnectionFlow } from "./components/WhatsAppConnectionFlow";
+import { PackProModal } from "./components/PackProModal";
 
 export function SalesDashboard() {
   const [tab, setTab] = useState<"home" | "products" | "inbox" | "settings">("home");
+  const [isPackProOpen, setIsPackProOpen] = useState(false);
+
+  useEffect(() => {
+    (window as any).openPackPro = () => setIsPackProOpen(true);
+  }, []);
+
   const { accessToken, logout } = useAuthStore();
   const socket = useSocket();
   const queryClient = useQueryClient();
@@ -101,7 +110,21 @@ export function SalesDashboard() {
 
   return (
     <div className="min-h-screen bg-vendeur-bg text-white pb-24">
+      <PackProModal isOpen={isPackProOpen} onClose={() => setIsPackProOpen(false)} />
       <header className="h-12 md:h-14 border-b border-white/5 bg-vendeur-bg/80 backdrop-blur-md flex items-center justify-between px-4 md:px-12 sticky top-0 z-40 w-full gap-4">
+        {/* Connection Error Banner */}
+        {merchant?.whatsappConfig?.status === 'error' && (
+          <div className="absolute top-full left-0 right-0 bg-red-500 py-2 px-4 flex items-center justify-center gap-3 animate-in slide-in-from-top duration-500">
+            <AlertCircle size={14} className="text-white animate-pulse" />
+            <p className="text-[10px] font-black uppercase tracking-widest text-white">Attention : Votre WhatsApp est déconnecté !</p>
+            <button
+              onClick={() => setTab("settings")}
+              className="px-3 py-1 bg-white text-red-500 rounded-lg text-[9px] font-black uppercase hover:bg-white/90 transition-all"
+            >
+              Reconnecter
+            </button>
+          </div>
+        )}
         <div className="flex items-center gap-3 md:gap-4 flex-1 min-w-0">
           <div className="h-7 w-7 md:h-8 md:w-8 rounded-xl bg-vendeur-emerald/10 flex items-center justify-center border border-vendeur-emerald/20 shrink-0">
             <Bot className="text-vendeur-emerald" size={16} />
@@ -544,10 +567,15 @@ function SettingsPanel({ merchant, systemSettings }: { merchant: any; systemSett
 
       <section className="bg-vendeur-emerald/10 border border-vendeur-emerald/20 p-8 rounded-[2.5rem] flex items-center justify-between">
         <div>
-           <h3 className="text-xl font-black text-vendeur-emerald">Studio IA Premium</h3>
-           <p className="text-sm text-vendeur-emerald/60 mt-1">Abonnement actif jusqu'au 30/08/2026.</p>
+           <h3 className="text-xl font-black text-vendeur-emerald">Pack Pro Clé en Main</h3>
+           <p className="text-sm text-vendeur-emerald/60 mt-1">Vous n'avez pas le temps ? Un expert configure tout pour vous.</p>
         </div>
-        <button className="h-12 px-8 bg-vendeur-emerald text-vendeur-coal font-black uppercase tracking-widest rounded-xl hover:scale-[1.02] active:scale-95 transition-all">Gérer</button>
+        <button
+          onClick={() => (window as any).openPackPro()}
+          className="h-12 px-8 bg-vendeur-emerald text-vendeur-coal font-black uppercase tracking-widest rounded-xl hover:scale-[1.02] active:scale-95 transition-all"
+        >
+          Découvrir
+        </button>
       </section>
     </div>
   );

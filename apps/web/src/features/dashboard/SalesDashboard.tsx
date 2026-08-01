@@ -33,7 +33,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuthStore } from "@/stores/authStore";
 import { useSocket } from "@/hooks/useSocket";
 import { toast } from "sonner";
-import axios from "axios";
+import { apiClient } from "@/lib/apiClient";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
@@ -65,9 +65,7 @@ export function SalesDashboard() {
   const { data: dashboard, isLoading } = useQuery({
     queryKey: ["dashboard"],
     queryFn: async () => {
-      const res = await axios.get(`${API_URL}/api/commerce/dashboard`, {
-        headers: { Authorization: `Bearer ${accessToken}` }
-      });
+      const res = await apiClient.get("/api/commerce/dashboard");
       return res.data;
     },
     enabled: !!accessToken
@@ -240,9 +238,8 @@ function ProductsPanel({ dashboard }: { dashboard: any }) {
       setAnalyzing(true);
       const formData = new FormData();
       formData.append("image", file);
-      const res = await axios.post(`${API_URL}/api/commerce/products/vision`, formData, {
+      const res = await apiClient.post("/api/commerce/products/vision", formData, {
         headers: {
-          Authorization: `Bearer ${accessToken}`,
           "Content-Type": "multipart/form-data"
         }
       });
@@ -272,9 +269,7 @@ function ProductsPanel({ dashboard }: { dashboard: any }) {
 
   const createMutation = useMutation({
     mutationFn: async (input: any) => {
-      const res = await axios.post(`${API_URL}/api/commerce/products`, input, {
-        headers: { Authorization: `Bearer ${accessToken}` }
-      });
+      const res = await apiClient.post("/api/commerce/products", input);
       return res.data;
     },
     onSuccess: () => {
@@ -286,9 +281,7 @@ function ProductsPanel({ dashboard }: { dashboard: any }) {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      await axios.delete(`${API_URL}/api/commerce/products/${id}`, {
-        headers: { Authorization: `Bearer ${accessToken}` }
-      });
+      await apiClient.delete(`/api/commerce/products/${id}`);
     },
     onSuccess: () => {
       toast.success("Produit supprimé.");
@@ -383,9 +376,7 @@ function SettingsPanel({ merchant, systemSettings }: { merchant: any; systemSett
 
   const updateMerchantMutation = useMutation({
     mutationFn: async (data: any) => {
-      await axios.patch(`${API_URL}/api/commerce/merchant`, data, {
-        headers: { Authorization: `Bearer ${accessToken}` }
-      });
+      await apiClient.patch("/api/commerce/merchant", data);
     },
     onSuccess: () => {
       toast.success("Profil mis à jour !");
@@ -395,9 +386,7 @@ function SettingsPanel({ merchant, systemSettings }: { merchant: any; systemSett
 
   const connectMutation = useMutation({
     mutationFn: async () => {
-      await axios.post(`${API_URL}/api/whatsapp/connect`, {}, {
-        headers: { Authorization: `Bearer ${accessToken}` }
-      });
+      await apiClient.post("/api/whatsapp/connect", {});
     },
     onSuccess: () => {
       toast.info("Initialisation de WhatsApp...");
@@ -406,9 +395,7 @@ function SettingsPanel({ merchant, systemSettings }: { merchant: any; systemSett
 
   const updateAiMutation = useMutation({
     mutationFn: async (personality: string) => {
-      await axios.patch(`${API_URL}/api/commerce/ai-settings`, { personality }, {
-        headers: { Authorization: `Bearer ${accessToken}` }
-      });
+      await apiClient.patch("/api/commerce/ai-settings", { personality });
     },
     onSuccess: () => {
       toast.success("Personnalité mise à jour !");

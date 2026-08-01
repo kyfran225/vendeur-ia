@@ -1,3 +1,4 @@
+import { apiClient } from './apiClient';
 import axios from 'axios';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
@@ -26,9 +27,7 @@ export async function subscribeToPush(accessToken: string) {
         applicationServerKey: urlBase64ToUint8Array(publicVapidKey)
       });
 
-      await axios.post(`${API_URL}/api/commerce/push/subscribe`, subscription, {
-        headers: { Authorization: `Bearer ${accessToken}` }
-      });
+      await apiClient.post("/api/commerce/push/subscribe", subscription);
 
       console.log("[Push] Subscribed successfully");
     } catch (err) {

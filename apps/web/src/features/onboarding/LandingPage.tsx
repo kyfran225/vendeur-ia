@@ -52,6 +52,7 @@ import { PaymentMethodSelector } from "./components/PaymentMethodSelector";
 import { AuthSheet } from "../auth/components/AuthSheet";
 import { useAuthStore } from "@/stores/authStore";
 import { AudioRecorder } from "@/lib/audioUtils";
+import { apiClient } from "@/lib/apiClient";
 import axios from "axios";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
@@ -175,7 +176,7 @@ function LandingHero({
       // 2. Persist to Backend if authenticated
       if (accessToken) {
         try {
-          await axios.post(`${API_URL}/api/commerce/merchant`, {
+          await apiClient.post("/api/commerce/merchant", {
             businessName: form.businessName,
             category: form.category,
             description: form.description,
@@ -183,8 +184,6 @@ function LandingHero({
             whatsappNumber: form.whatsappNumber,
             city: "Abidjan",
             country: form.country
-          }, {
-            headers: { Authorization: `Bearer ${accessToken}` }
           });
           toast.success("Boutique configurée avec succès !");
         } catch (error) {

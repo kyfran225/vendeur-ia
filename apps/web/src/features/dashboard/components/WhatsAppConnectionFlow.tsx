@@ -20,6 +20,7 @@ import {
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { toast } from "sonner";
+import { apiClient } from "@/lib/apiClient";
 import axios from "axios";
 import { useAuthStore } from "@/stores/authStore";
 
@@ -61,11 +62,9 @@ export function WhatsAppConnectionFlow({ merchant, qrCode, onInitBaileys, onRefr
       callback: async function(response: any) {
         setLoading(true);
         try {
-          await axios.post(`${API_URL}/api/commerce/verify-payment`, {
+          await apiClient.post("/api/commerce/verify-payment", {
             reference: response.reference,
             type: "ram_contribution"
-          }, {
-            headers: { Authorization: `Bearer ${accessToken}` }
           });
           toast.success("Contribution RAM validée ! 🚀");
           onRefreshMerchant();

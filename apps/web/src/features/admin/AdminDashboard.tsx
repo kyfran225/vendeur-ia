@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuthStore } from "@/stores/authStore";
+import { apiClient } from "@/lib/apiClient";
 import axios from "axios";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
@@ -40,9 +41,7 @@ export function AdminDashboard() {
   const { data: stats, isLoading: statsLoading } = useQuery({
     queryKey: ["admin:stats"],
     queryFn: async () => {
-      const res = await axios.get(`${API_URL}/api/admin/stats`, {
-        headers: { Authorization: `Bearer ${accessToken}` }
-      });
+      const res = await apiClient.get("/api/admin/stats");
       return res.data;
     }
   });
@@ -51,9 +50,7 @@ export function AdminDashboard() {
   const { data: merchants, isLoading: merchantsLoading } = useQuery({
     queryKey: ["admin:merchants"],
     queryFn: async () => {
-      const res = await axios.get(`${API_URL}/api/admin/merchants`, {
-        headers: { Authorization: `Bearer ${accessToken}` }
-      });
+      const res = await apiClient.get("/api/admin/merchants");
       return res.data;
     }
   });
@@ -62,18 +59,14 @@ export function AdminDashboard() {
   const { data: settings, isLoading: settingsLoading } = useQuery({
     queryKey: ["admin:settings"],
     queryFn: async () => {
-      const res = await axios.get(`${API_URL}/api/admin/settings`, {
-        headers: { Authorization: `Bearer ${accessToken}` }
-      });
+      const res = await apiClient.get("/api/admin/settings");
       return res.data;
     }
   });
 
   const updateSettingsMutation = useMutation({
     mutationFn: async (newSettings: any) => {
-      const res = await axios.patch(`${API_URL}/api/admin/settings`, newSettings, {
-        headers: { Authorization: `Bearer ${accessToken}` }
-      });
+      const res = await apiClient.patch("/api/admin/settings", newSettings);
       return res.data;
     },
     onSuccess: () => {

@@ -19,6 +19,7 @@ import { useOnboardingStore } from "@/stores/onboardingStore";
 import { useAuthStore } from "@/stores/authStore";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { apiClient } from "@/lib/apiClient";
 import axios from "axios";
 import { useSocket } from "@/hooks/useSocket";
 
@@ -41,11 +42,9 @@ export function OnboardingWizard() {
     const initMerchant = async () => {
       if (user && accessToken && tempData && !isMerchantCreated) {
         try {
-          await axios.post(`${API_URL}/api/commerce/merchant`, {
+          await apiClient.post("/api/commerce/merchant", {
             ...tempData,
             city: tempData.city || "Abidjan"
-          }, {
-            headers: { Authorization: `Bearer ${accessToken}` }
           });
           setIsMerchantCreated(true);
           console.log("[Onboarding] Merchant created successfully");
@@ -253,8 +252,8 @@ function VisionStep({ onNext }: { onNext: () => void }) {
       const formData = new FormData();
       formData.append("image", selected);
 
-      const res = await axios.post(`${API_URL}/api/commerce/products/vision`, formData, {
-        headers: { Authorization: `Bearer ${accessToken}` }
+      const res = await apiClient.post("/api/commerce/products/vision", formData, {
+        headers: { "Content-Type": "multipart/form-data" }
       });
 
       setResult(res.data);
@@ -377,9 +376,7 @@ function WhatsAppStep({ onNext }: { onNext: () => void }) {
   const startConnection = async () => {
     setLoading(true);
     try {
-      await axios.post(`${API_URL}/api/whatsapp/connect`, {}, {
-        headers: { Authorization: `Bearer ${accessToken}` }
-      });
+      await apiClient.post("/api/whatsapp/connect", {});
     } catch (err) {
       toast.error("Échec du lancement de la connexion");
       setLoading(false);

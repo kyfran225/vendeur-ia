@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Mic, MessageSquare, Bot, Zap, Save, Loader2 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuthStore } from "@/stores/authStore";
+import { apiClient } from "@/lib/apiClient";
 import axios from "axios";
 import { toast } from "sonner";
 import { clsx, type ClassValue } from "clsx";
@@ -21,9 +22,7 @@ export function AiSettings() {
   const { data: dashboard, isLoading } = useQuery({
     queryKey: ["dashboard"],
     queryFn: async () => {
-      const res = await axios.get(`${API_URL}/api/commerce/dashboard`, {
-        headers: { Authorization: `Bearer ${accessToken}` }
-      });
+      const res = await apiClient.get("/api/commerce/dashboard");
       return res.data;
     }
   });
@@ -36,9 +35,7 @@ export function AiSettings() {
 
   const updateMutation = useMutation({
     mutationFn: async (newSettings: any) => {
-      await axios.patch(`${API_URL}/api/commerce/ai-settings`, newSettings, {
-        headers: { Authorization: `Bearer ${accessToken}` }
-      });
+      await apiClient.patch("/api/commerce/ai-settings", newSettings);
     },
     onSuccess: () => {
       toast.success("Réglages IA enregistrés ! ✨");

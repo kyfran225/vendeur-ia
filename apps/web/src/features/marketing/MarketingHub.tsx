@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Sparkles, Users, Megaphone, Loader2, CheckCircle2, ShoppingBag } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuthStore } from "@/stores/authStore";
+import { apiClient } from "@/lib/apiClient";
 import axios from "axios";
 import { toast } from "sonner";
 import { clsx, type ClassValue } from "clsx";
@@ -23,9 +24,7 @@ export function MarketingHub() {
   const { data: products = [] } = useQuery({
     queryKey: ["products"],
     queryFn: async () => {
-      const res = await axios.get(`${API_URL}/api/commerce/products`, {
-        headers: { Authorization: `Bearer ${accessToken}` }
-      });
+      const res = await apiClient.get("/api/commerce/products");
       return res.data;
     }
   });
@@ -33,20 +32,16 @@ export function MarketingHub() {
   const { data: segments } = useQuery({
     queryKey: ["segments"],
     queryFn: async () => {
-      const res = await axios.get(`${API_URL}/api/marketing/segments`, {
-        headers: { Authorization: `Bearer ${accessToken}` }
-      });
+      const res = await apiClient.get("/api/marketing/segments");
       return res.data;
     }
   });
 
   const previewMutation = useMutation({
     mutationFn: async () => {
-      const res = await axios.post(`${API_URL}/api/marketing/preview`, {
+      const res = await apiClient.post("/api/marketing/preview", {
         productId: selectedProduct?._id,
         segment: selectedSegment
-      }, {
-        headers: { Authorization: `Bearer ${accessToken}` }
       });
       return res.data;
     },
@@ -55,12 +50,10 @@ export function MarketingHub() {
 
   const broadcastMutation = useMutation({
     mutationFn: async () => {
-      const res = await axios.post(`${API_URL}/api/marketing/broadcast`, {
+      const res = await apiClient.post("/api/marketing/broadcast", {
         productId: selectedProduct?._id,
         segment: selectedSegment,
         customText: previewText
-      }, {
-        headers: { Authorization: `Bearer ${accessToken}` }
       });
       return res.data;
     },

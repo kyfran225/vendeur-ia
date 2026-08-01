@@ -3,7 +3,7 @@ import { X, Mail, Lock, User, LogIn, Sparkles, ChevronRight, Bot } from "lucide-
 import { useAuthStore } from "@/stores/authStore";
 import { useGoogleLogin } from "@react-oauth/google";
 import { toast } from "sonner";
-import axios from "axios";
+import { apiClient } from "@/lib/apiClient";
 
 const API_URL = (import.meta as any).env.VITE_API_URL || "http://localhost:3001";
 
@@ -34,7 +34,7 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
     onSuccess: async (tokenResponse) => {
       setLoading(true);
       try {
-        const res = await axios.post(`${API_URL}/api/auth/google`, {
+        const res = await apiClient.post("/api/auth/google", {
           token: tokenResponse.access_token,
         });
         setSession(res.data);
@@ -65,14 +65,14 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
 
     try {
       if (mode === "forgot") {
-        await axios.post(`${API_URL}/api/auth/forgot-password`, { email: form.email });
+        await apiClient.post("/api/auth/forgot-password", { email: form.email });
         toast.success("Lien de réinitialisation envoyé !");
         setMode("login");
         return;
       }
 
       const endpoint = mode === "login" ? "/api/auth/login" : "/api/auth/register";
-      const res = await axios.post(`${API_URL}${endpoint}`, form);
+      const res = await apiClient.post(endpoint, form);
 
       // Assume backend returns { accessToken, refreshToken, user }
       setSession(res.data);

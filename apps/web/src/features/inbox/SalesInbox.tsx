@@ -12,7 +12,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuthStore } from "@/stores/authStore";
 import { useSocket } from "@/hooks/useSocket";
 import { toast } from "sonner";
-import axios from "axios";
+import { apiClient } from "@/lib/apiClient";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
@@ -36,9 +36,7 @@ export function SalesInbox() {
   const { data: conversations, isLoading: loadingChats } = useQuery({
     queryKey: ["conversations"],
     queryFn: async () => {
-      const res = await axios.get(`${API_URL}/api/commerce/conversations`, {
-        headers: { Authorization: `Bearer ${accessToken}` }
-      });
+      const res = await apiClient.get("/api/commerce/conversations");
       return res.data;
     },
     enabled: !!accessToken
@@ -48,9 +46,7 @@ export function SalesInbox() {
   const { data: messages, isLoading: loadingMessages } = useQuery({
     queryKey: ["messages", selectedChat],
     queryFn: async () => {
-      const res = await axios.get(`${API_URL}/api/commerce/conversations/${selectedChat}/messages`, {
-        headers: { Authorization: `Bearer ${accessToken}` }
-      });
+      const res = await apiClient.get(`/api/commerce/conversations/${selectedChat}/messages`);
       return res.data;
     },
     enabled: !!selectedChat
@@ -85,9 +81,7 @@ export function SalesInbox() {
 
   const updateStatusMutation = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
-      const res = await axios.patch(`${API_URL}/api/commerce/conversations/${id}/status`, { status }, {
-        headers: { Authorization: `Bearer ${accessToken}` }
-      });
+      const res = await apiClient.patch(`/api/commerce/conversations/${id}/status`, { status });
       return res.data;
     },
     onSuccess: () => {
@@ -109,9 +103,7 @@ export function SalesInbox() {
 
   const generateFollowupMutation = useMutation({
     mutationFn: async (id: string) => {
-      const res = await axios.post(`${API_URL}/api/commerce/conversations/${id}/generate-followup`, {}, {
-        headers: { Authorization: `Bearer ${accessToken}` }
-      });
+      const res = await apiClient.post(`/api/commerce/conversations/${id}/generate-followup`, {});
       return res.data;
     },
     onSuccess: (data) => {
@@ -124,9 +116,7 @@ export function SalesInbox() {
 
   const sendManualMessageMutation = useMutation({
     mutationFn: async ({ id, text }: { id: string; text: string }) => {
-      const res = await axios.post(`${API_URL}/api/commerce/conversations/${id}/messages`, { content: text }, {
-        headers: { Authorization: `Bearer ${accessToken}` }
-      });
+      const res = await apiClient.post(`/api/commerce/conversations/${id}/messages`, { content: text });
       return res.data;
     },
     onSuccess: () => {

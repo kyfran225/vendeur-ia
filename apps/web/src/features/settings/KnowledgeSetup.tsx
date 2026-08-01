@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Brain, MapPin, Truck, HelpCircle, Save, Loader2, Plus, Trash2 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuthStore } from "@/stores/authStore";
+import { apiClient } from "@/lib/apiClient";
 import axios from "axios";
 import { toast } from "sonner";
 
@@ -15,9 +16,7 @@ export function KnowledgeSetup() {
   const { data: knowledge, isLoading } = useQuery({
     queryKey: ["knowledge"],
     queryFn: async () => {
-      const res = await axios.get(`${API_URL}/api/commerce/knowledge`, {
-        headers: { Authorization: `Bearer ${accessToken}` }
-      });
+      const res = await apiClient.get("/api/commerce/knowledge");
       return res.data;
     },
     enabled: !!accessToken
@@ -31,9 +30,7 @@ export function KnowledgeSetup() {
 
   const saveMutation = useMutation({
     mutationFn: async (data: any) => {
-      await axios.patch(`${API_URL}/api/commerce/knowledge`, data, {
-        headers: { Authorization: `Bearer ${accessToken}` }
-      });
+      await apiClient.patch("/api/commerce/knowledge", data);
     },
     onSuccess: () => {
       toast.success("Cerveau IA mis à jour ! 🧠");

@@ -1,10 +1,20 @@
 import { Router } from "express";
 import { authService } from "./auth.service.js";
 import { authenticate } from "../../middleware/authenticate.js";
+import { validate } from "../../middleware/validate.js";
+import {
+  registerSchema,
+  loginSchema,
+  refreshSchema,
+  googleAuthSchema,
+  forgotPasswordSchema,
+  resetPasswordSchema,
+  verifyEmailSchema
+} from "./auth.schema.js";
 
 const router = Router();
 
-router.post("/register", async (req, res) => {
+router.post("/register", validate(registerSchema), async (req, res) => {
   try {
     const tokens = await authService.register(req.body);
     res.status(201).json(tokens);
@@ -13,7 +23,7 @@ router.post("/register", async (req, res) => {
   }
 });
 
-router.post("/login", async (req, res) => {
+router.post("/login", validate(loginSchema), async (req, res) => {
   try {
     const tokens = await authService.login(req.body);
     res.json(tokens);
@@ -22,7 +32,7 @@ router.post("/login", async (req, res) => {
   }
 });
 
-router.post("/refresh", async (req, res) => {
+router.post("/refresh", validate(refreshSchema), async (req, res) => {
   const { refreshToken } = req.body;
   try {
     const tokens = await authService.refreshToken(refreshToken);
@@ -41,7 +51,7 @@ router.post("/logout", authenticate, async (req, res) => {
   }
 });
 
-router.post("/google", async (req, res) => {
+router.post("/google", validate(googleAuthSchema), async (req, res) => {
   const { token } = req.body;
   try {
     const tokens = await authService.verifyGoogleToken(token);
@@ -51,7 +61,7 @@ router.post("/google", async (req, res) => {
   }
 });
 
-router.post("/forgot-password", async (req, res) => {
+router.post("/forgot-password", validate(forgotPasswordSchema), async (req, res) => {
   try {
     await authService.forgotPassword(req.body.email);
     res.status(200).json({ message: "Si un compte existe, un email a été envoyé." });
@@ -60,7 +70,7 @@ router.post("/forgot-password", async (req, res) => {
   }
 });
 
-router.post("/reset-password", async (req, res) => {
+router.post("/reset-password", validate(resetPasswordSchema), async (req, res) => {
   try {
     await authService.resetPassword(req.body.token, req.body.password);
     res.status(200).json({ message: "Mot de passe réinitialisé avec succès." });
@@ -69,7 +79,7 @@ router.post("/reset-password", async (req, res) => {
   }
 });
 
-router.post("/verify-email", async (req, res) => {
+router.post("/verify-email", validate(verifyEmailSchema), async (req, res) => {
   try {
     await authService.verifyEmail(req.body.token);
     res.status(200).json({ message: "Email vérifié avec succès." });

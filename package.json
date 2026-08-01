@@ -16,5 +16,16 @@
   "devDependencies": {
     "turbo": "^2.10.7",
     "typescript": "^5.4.5"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@whiskeysockets/baileys",
+      "bcrypt",
+      "esbuild",
+      "mongodb-memory-server",
+      "msgpackr-extract",
+      "protobufjs",
+      "sharp"
+    ]
   }
 }

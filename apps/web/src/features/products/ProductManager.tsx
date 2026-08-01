@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from "react";
-import { Package, Sparkles, Trash2, Edit, Camera, X, Save, Zap, Utensils, Laptop, Palette, Hammer, ShoppingBag, Loader2 } from "lucide-react";
+import { Package, Sparkles, Trash2, Edit, Camera, X, Save, Zap, Utensils, Laptop, Palette, Hammer, ShoppingBag, Loader2, MessageSquareText, Plus } from "lucide-react";
 import { ProductScanner } from "./components/ProductScanner";
+import { CaptionModal } from "./components/CaptionModal";
 import { ConfirmationModal } from "../../components/ui/ConfirmationModal";
 import { useOnboardingStore } from "@/stores/onboardingStore";
 import { useAuthStore } from "@/stores/authStore";
@@ -76,6 +77,11 @@ export function ProductManager() {
   const [isScannerOpen, setIsScannerOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [deletingProduct, setDeletingProduct] = useState<Product | null>(null);
+  const [captionData, setCaptionData] = useState<{ isOpen: boolean; text: string; productName: string }>({
+    isOpen: false,
+    text: "",
+    productName: ""
+  });
 
   // Real Backend Data Fetching
   const { data: products = [], isLoading } = useQuery<Product[]>({
@@ -136,6 +142,24 @@ export function ProductManager() {
     }
   });
 
+  const generateCaptionMutation = useMutation({
+    mutationFn: (productId: string) =>
+      axios.post(`${API_URL}/api/commerce/products/${productId}/caption`, {}, {
+        headers: { Authorization: `Bearer ${accessToken}` }
+      }),
+    onSuccess: (response, productId) => {
+      const product = products.find(p => p._id === productId);
+      setCaptionData({
+        isOpen: true,
+        text: response.data.caption,
+        productName: product?.name || ""
+      });
+    },
+    onError: () => {
+      toast.error("Impossible de générer la légende.");
+    }
+  });
+
   const handleScanComplete = (data: any) => {
     createMutation.mutate({
       name: data.name,
@@ -161,6 +185,13 @@ export function ProductManager() {
           boutiqueName="Ma Boutique IA"
         />
       )}
+
+      <CaptionModal
+        isOpen={captionData.isOpen}
+        onClose={() => setCaptionData({ ...captionData, isOpen: false })}
+        caption={captionData.text}
+        productName={captionData.productName}
+      />
 
       {/* Custom Confirmation Modal */}
       <ConfirmationModal
@@ -229,12 +260,31 @@ export function ProductManager() {
           <h1 className="text-3xl font-black tracking-tight text-white">{config.title}</h1>
           <p className="text-white/40">Gérez vos {config.itemLabel.toLowerCase()}s et laissez l'IA travailler.</p>
         </div>
-        <button
-          onClick={() => setIsScannerOpen(true)}
-          className={`flex items-center gap-2 bg-${config.accent}-300 text-black px-6 py-3 rounded-2xl font-black uppercase tracking-widest text-xs shadow-lg hover:scale-[1.02] active:scale-95 transition-all`}
-        >
-          <Camera size={18} /> {businessCategory === "services" ? "Ajouter Service" : "Scanner IA"}
-        </button>
+        <div className="flex gap-3">
+          {businessCategory !== "services" && (
+            <button
+              onClick={() => setIsScannerOpen(true)}
+              className="flex items-center gap-2 bg-sky-400 text-black px-6 py-3 rounded-2xl font-black uppercase tracking-widest text-xs shadow-lg hover:bg-sky-500 hover:scale-[1.02] active:scale-95 transition-all"
+            >
+              <Camera size={18} /> Scanner un produit
+            </button>
+          )}
+          <button
+            onClick={() => {
+               // Manual add logic or just open scanner for services
+               if (businessCategory === "services") setIsScannerOpen(true);
+               else {
+                 // For now, let's just use scanner as the primary way
+                 // or we could add a manual form toggle
+                 setIsScannerOpen(true);
+               }
+            }}
+            className={`flex items-center gap-2 bg-${config.accent}-300 text-black px-6 py-3 rounded-2xl font-black uppercase tracking-widest text-xs shadow-lg hover:scale-[1.02] active:scale-95 transition-all`}
+          >
+            {businessCategory === "services" ? <Zap size={18} /> : <Plus size={18} />}
+            {businessCategory === "services" ? "Ajouter Service" : "Ajout Rapide"}
+          </button>
+        </div>
       </header>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -273,6 +323,18 @@ export function ProductManager() {
                     {config.stockLabel}: <span className="text-white">{p.stock}</span>
                   </p>
                   <div className="flex gap-2">
+                    <button
+                      onClick={() => generateCaptionMutation.mutate(p._id)}
+                      disabled={generateCaptionMutation.isPending}
+                      className="p-2 bg-sky-500/10 text-sky-400 rounded-xl hover:bg-sky-500/20 transition-all flex items-center gap-2 group/btn"
+                    >
+                      {generateCaptionMutation.isPending && generateCaptionMutation.variables === p._id ? (
+                        <Loader2 size={16} className="animate-spin" />
+                      ) : (
+                        <MessageSquareText size={16} />
+                      )}
+                      <span className="max-w-0 overflow-hidden group-hover/btn:max-w-xs transition-all duration-500 text-[10px] font-black uppercase tracking-widest whitespace-nowrap">Caption</span>
+                    </button>
                     <button
                       onClick={() => setEditingProduct(p)}
                       className="p-2 bg-white/5 text-white/60 rounded-xl hover:bg-white/10 hover:text-white transition-all"

@@ -12,7 +12,7 @@ export interface AIRequest {
 }
 
 export class AIProvider {
-  private static readonly GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent";
+  private static readonly GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent";
   private redis: Redis | null = null;
 
   constructor() {
@@ -25,7 +25,7 @@ export class AIProvider {
     const data = JSON.stringify({
       system: request.systemPrompt,
       user: request.userMessage,
-      history: request.history?.slice(-3) // Cache based on last 3 exchanges for context
+      history: request.history?.slice(-3)
     });
     return `ai_cache:${crypto.createHash('md5').update(data).digest('hex')}`;
   }
@@ -43,15 +43,34 @@ export class AIProvider {
 
     let responseText: string;
 
+    // 1. Try Gemini (Primary)
     if (env.GEMINI_API_KEY) {
       try {
         responseText = await this.generateWithGemini(request);
       } catch (error) {
-        console.error("Gemini failed, using smart mock.");
-        responseText = `✨ Bonjour ! La Robe de Gala rouge est à 25.000 XOF. Nous livrons bien à Cocody pour 1.500 XOF. C'est une pièce magnifique qui part vite ! Souhaitez-vous que je vous l'envoie ? 🚀`;
+        console.warn("[AI Provider] Gemini failed, falling back to Groq:", (error as any).message);
+
+        // 2. Try Groq (Backup using Free Quota)
+        if (env.GROQ_API_KEY) {
+          try {
+            responseText = await this.generateWithGroq(request);
+          } catch (groqError) {
+            console.error("[AI Provider] Groq failed too:", (groqError as any).message);
+            responseText = this.getSmartMockResponse(request);
+          }
+        } else {
+          responseText = this.getSmartMockResponse(request);
+        }
+      }
+    } else if (env.GROQ_API_KEY) {
+      // Direct to Groq if Gemini is not configured
+      try {
+        responseText = await this.generateWithGroq(request);
+      } catch (error) {
+        responseText = this.getSmartMockResponse(request);
       }
     } else {
-      responseText = `✨ Bonjour ! La Robe de Gala rouge est à 25.000 XOF. Nous livrons bien à Cocody pour 1.500 XOF. C'est une pièce magnifique qui part vite ! Souhaitez-vous que je vous l'envoie ? 🚀`;
+      responseText = this.getSmartMockResponse(request);
     }
 
     // 2. Save to Cache
@@ -108,18 +127,178 @@ export class AIProvider {
     }
   }
 
-  async transcribeAudio(audioBuffer: Buffer, mimeType: string, context?: string): Promise<string> {
-    // Logic for Whisper or Gemini Audio
-    // Injects context (like city/merchant name) to improve transcription of local names/terms
-    console.log(`[Vocal Brain] Transcribing audio with local context: ${context || "Global"}`);
-    return "[Transcription intelligente de l'audio]";
+  private async generateWithGroq(request: AIRequest): Promise<string> {
+    const messages = [];
+
+    messages.push({ role: "system", content: request.systemPrompt });
+
+    if (request.history) {
+      for (const msg of request.history) {
+        messages.push({
+          role: msg.role === "customer" ? "user" : "assistant",
+          content: msg.text
+        });
+      }
+    }
+
+    messages.push({ role: "user", content: request.userMessage });
+
+    try {
+      const response = await axios.post("https://api.groq.com/openai/v1/chat/completions", {
+        model: "llama-3.3-70b-versatile",
+        messages,
+        max_tokens: request.maxTokens || 250,
+        temperature: request.temperature || 0.7,
+      }, {
+        headers: {
+          "Authorization": `Bearer ${env.GROQ_API_KEY}`,
+          "Content-Type": "application/json"
+        }
+      });
+
+      return response.data.choices[0].message.content.trim();
+    } catch (error: any) {
+      console.error("Groq API Error:", error.response?.data || error.message);
+      throw new Error("Failed to generate Groq response");
+    }
   }
 
-  async generateSpeech(text: string, voiceSettings: { language: string; city: string }): Promise<Buffer> {
-    // Logic for Text-to-Speech (ElevenLabs, OpenAI, or Google TTS)
-    // Would use voiceSettings.city to select a voice with the right local accent/tone
-    console.log(`[Vocal Brain] Generating speech for ${voiceSettings.city} in ${voiceSettings.language}`);
-    return Buffer.from("mock_audio_data");
+  private getSmartMockResponse(request: AIRequest): string {
+    return `✨ Bonjour ! Nous sommes ravis de vous servir. Nos articles sont de haute qualité et très demandés. Pourriez-vous nous dire ce qui vous intéresse particulièrement ? 🚀`;
+  }
+
+  async transcribeAudio(audioBuffer: Buffer, mimeType: string, context?: string): Promise<string> {
+    // 1. Try Gemini (Local-aware transcription)
+    if (env.GEMINI_API_KEY) {
+      try {
+        const prompt = `Tu es une IA de transcription pour un commerce local.
+Context du marchand : ${context || "Inconnu"}
+Écoute attentivement cet audio et transcris-le fidèlement en texte.
+Si l'utilisateur parle une langue locale ou utilise de l'argot (comme le Nouchi), transcris-le tel quel mais assure-toi que le sens est clair.
+Réponds UNIQUEMENT avec le texte transcrit.`;
+
+        const response = await axios.post(`${AIProvider.GEMINI_URL}?key=${env.GEMINI_API_KEY}`, {
+          contents: [{
+            parts: [
+              { text: prompt },
+              {
+                inlineData: {
+                  mimeType,
+                  data: audioBuffer.toString("base64")
+                }
+              }
+            ]
+          }]
+        });
+
+        const transcription = response.data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+        if (transcription) {
+          console.log(`[Vocal Brain] Gemini transcription success: "${transcription}"`);
+          return transcription;
+        }
+      } catch (error: any) {
+        console.warn("[Vocal Brain] Gemini transcription failed, falling back to OpenAI Whisper:", error.message);
+      }
+    }
+
+    // 2. Fallback to OpenAI Whisper
+    if (env.OPENAI_API_KEY) {
+      try {
+        const formData = new FormData();
+        formData.append("file", new Blob([audioBuffer]), "audio.ogg");
+        formData.append("model", "whisper-1");
+        formData.append("prompt", context || "");
+
+        const response = await axios.post("https://api.openai.com/v1/audio/transcriptions", formData, {
+          headers: {
+            "Authorization": `Bearer ${env.OPENAI_API_KEY}`,
+          }
+        });
+
+        const transcription = response.data.text;
+        console.log(`[Vocal Brain] Whisper transcription success: "${transcription}"`);
+        return transcription;
+      } catch (error: any) {
+        console.error("[Vocal Brain] Whisper fallback failed too:", error.message);
+      }
+    }
+
+    throw new Error("Échec de la transcription audio par tous les fournisseurs.");
+  }
+
+  async generateSpeech(text: string): Promise<Buffer> {
+    // 1. Try ElevenLabs (Premium Quality)
+    if (env.ELEVENLABS_API_KEY) {
+      try {
+        console.log("[AI Provider] Attempting ElevenLabs TTS...");
+        return await this.generateWithElevenLabs(text);
+      } catch (error) {
+        console.error("[AI Provider] ElevenLabs failed, falling back to OpenAI:", error);
+      }
+    }
+
+    // 2. Try OpenAI (Reliable Backup)
+    if (env.OPENAI_API_KEY) {
+      try {
+        console.log("[AI Provider] Attempting OpenAI TTS...");
+        return await this.generateWithOpenAI(text);
+      } catch (error) {
+        console.error("[AI Provider] OpenAI failed too:", error);
+      }
+    }
+
+    throw new Error("Toutes les méthodes de synthèse vocale ont échoué.");
+  }
+
+  private async generateWithElevenLabs(text: string): Promise<Buffer> {
+    const voiceId = env.ELEVENLABS_VOICE_ID || "21m00Tcm4TlvDq8ikWAM"; // Default Rachel
+    try {
+      const response = await axios.post(
+        `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`,
+        {
+          text,
+          model_id: "eleven_multilingual_v2",
+          voice_settings: {
+            stability: 0.5,
+            similarity_boost: 0.75
+          }
+        },
+        {
+          headers: {
+            "xi-api-key": env.ELEVENLABS_API_KEY,
+            "Content-Type": "application/json"
+          },
+          responseType: "arraybuffer"
+        }
+      );
+      return Buffer.from(response.data);
+    } catch (error: any) {
+      throw error;
+    }
+  }
+
+  private async generateWithOpenAI(text: string): Promise<Buffer> {
+    try {
+      const response = await axios.post(
+        "https://api.openai.com/v1/audio/speech",
+        {
+          model: "tts-1",
+          input: text,
+          voice: "shimmer",
+          response_format: "opus"
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${env.OPENAI_API_KEY}`,
+            "Content-Type": "application/json"
+          },
+          responseType: "arraybuffer"
+        }
+      );
+      return Buffer.from(response.data);
+    } catch (error: any) {
+      throw error;
+    }
   }
 }
 

@@ -9,7 +9,11 @@ const SystemSettingsSchema = new Schema({
   },
   metaConfig: {
     globalAppId: String,
-    globalVerifyToken: String
+    globalVerifyToken: String,
+    whatsappDefaults: {
+      phoneNumberId: String,
+      accessToken: String
+    }
   },
   maintenanceMode: { type: Boolean, default: false }
 }, { timestamps: true });

@@ -273,11 +273,13 @@ function SettingsPanel({ settings, onUpdate, isUpdating }: { settings: any, onUp
   const [formData, setFormData] = useState({
     supportWhatsApp: settings?.supportWhatsApp || "",
     "pricing.ramContributionFee": settings?.pricing?.ramContributionFee || 5000,
-    "pricing.packProFee": settings?.pricing?.packProFee || 25000
+    "pricing.packProFee": settings?.pricing?.packProFee || 25000,
+    "metaConfig.whatsappDefaults.phoneNumberId": settings?.metaConfig?.whatsappDefaults?.phoneNumberId || "",
+    "metaConfig.whatsappDefaults.accessToken": settings?.metaConfig?.whatsappDefaults?.accessToken || ""
   });
 
   return (
-    <div className="max-w-2xl space-y-8 animate-in fade-in duration-700">
+    <div className="max-w-2xl space-y-8 animate-in fade-in duration-700 pb-12">
       <section className="bg-vendeur-coal border border-white/5 p-8 rounded-[2.5rem] space-y-8">
         <h2 className="text-xl font-black uppercase tracking-tighter flex items-center gap-3">
             <Settings size={24} className="text-amber-500" />
@@ -320,6 +322,35 @@ function SettingsPanel({ settings, onUpdate, isUpdating }: { settings: any, onUp
                     />
                     <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-white/20">XOF</span>
                 </div>
+            </div>
+          </div>
+
+          {/* WhatsApp Cloud Defaults */}
+          <div className="pt-6 border-t border-white/5 space-y-6">
+            <h3 className="text-xs font-black uppercase tracking-widest text-white/60 flex items-center gap-2">
+                <MessageSquare size={14} className="text-blue-400" />
+                WhatsApp Cloud (Défauts Système)
+            </h3>
+
+            <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Default Phone Number ID</label>
+                <input
+                    className="w-full h-14 bg-black/40 border border-white/10 rounded-2xl px-6 text-white focus:border-amber-500 outline-none transition-all font-mono text-[10px]"
+                    value={formData["metaConfig.whatsappDefaults.phoneNumberId"]}
+                    onChange={e => setFormData({...formData, "metaConfig.whatsappDefaults.phoneNumberId": e.target.value})}
+                    placeholder="Ex: 106345..."
+                />
+            </div>
+
+            <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Default System Access Token</label>
+                <textarea
+                    className="w-full min-h-[100px] bg-black/40 border border-white/10 rounded-2xl p-6 text-white focus:border-amber-500 outline-none transition-all font-mono text-[10px] resize-none"
+                    value={formData["metaConfig.whatsappDefaults.accessToken"]}
+                    onChange={e => setFormData({...formData, "metaConfig.whatsappDefaults.accessToken": e.target.value})}
+                    placeholder="EAAG..."
+                />
+                <p className="text-[9px] text-white/20 ml-1 uppercase font-bold tracking-wider italic">Utilisé par les marchands en Mode Pro sans clé personnalisée.</p>
             </div>
           </div>
 

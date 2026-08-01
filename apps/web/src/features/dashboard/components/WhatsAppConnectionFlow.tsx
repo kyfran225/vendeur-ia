@@ -41,49 +41,51 @@ interface WhatsAppConnectionFlowProps {
 export function WhatsAppConnectionFlow({ merchant, qrCode, onInitBaileys, onRefreshMerchant }: WhatsAppConnectionFlowProps) {
   const [showHelp, setShowHelp] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [metaConfig, setMetaConfig] = useState({
+    phoneNumberId: merchant?.whatsappConfig?.meta?.phoneNumberId || "",
+    accessToken: merchant?.whatsappConfig?.meta?.accessToken || ""
+  });
+
   const { accessToken, user } = useAuthStore();
 
-  const handlePaystackPayment = () => {
-    if (!PAYSTACK_PUBLIC_KEY) {
-      toast.error("Clé de paiement manquante");
-      return;
+  const handleSaveMetaConfig = async () => {
+    setLoading(true);
+    try {
+      await apiClient.patch("/api/whatsapp/config", {
+        provider: "meta",
+        meta: metaConfig
+      });
+      toast.success("Configuration Meta Pro mise à jour !");
+      onRefreshMerchant();
+      setShowAdvanced(false);
+    } catch (error) {
+      toast.error("Erreur lors de la mise à jour");
+    } finally {
+      setLoading(false);
     }
+  };
 
-    // @ts-ignore
-    const handler = PaystackPop.setup({
-      key: PAYSTACK_PUBLIC_KEY,
-      email: user?.email || "vendeur@vendeur-ia.com",
-      amount: 100000, // 1000 XOF in kobo (if it's XOF, it might be different, let's assume 1000 XOF for now)
-      currency: "XOF",
-      metadata: {
-        type: "ram_contribution",
-        userId: user?.id
-      },
-      callback: async function(response: any) {
-        setLoading(true);
-        try {
-          await apiClient.post("/api/commerce/verify-payment", {
-            reference: response.reference,
-            type: "ram_contribution"
-          });
-          toast.success("Contribution RAM validée ! 🚀");
-          onRefreshMerchant();
-          onInitBaileys();
-        } catch (error) {
-          toast.error("Erreur de vérification du paiement");
-        } finally {
-          setLoading(false);
-        }
-      },
-      onClose: function() {
-        toast.info("Paiement annulé");
-      }
-    });
-    handler.openIframe();
+  const handleActivateMeta = async () => {
+    setLoading(true);
+    try {
+      await apiClient.patch("/api/whatsapp/config", {
+        provider: "meta",
+        // No meta object means we use system defaults if they were empty,
+        // or we just switch provider.
+      });
+      toast.success("Mode Pro Activé ! 🚀");
+      onRefreshMerchant();
+    } catch (error) {
+      toast.error("Erreur d'activation");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const isBaileysActive = merchant?.whatsappConfig?.provider === 'baileys' && merchant?.whatsappConfig?.status === 'connected';
   const isMetaActive = merchant?.whatsappConfig?.provider === 'meta' && merchant?.whatsappConfig?.status === 'connected';
+  const isUsingCustomMeta = merchant?.whatsappConfig?.meta?.phoneNumberId && merchant?.whatsappConfig?.meta?.accessToken;
 
   const handlePackProLead = () => {
     const businessName = merchant?.businessName || "ma boutique";
@@ -151,6 +153,12 @@ export function WhatsAppConnectionFlow({ merchant, qrCode, onInitBaileys, onRefr
           "relative group bg-vendeur-coal border border-white/5 rounded-[2.5rem] p-8 overflow-hidden transition-all hover:border-blue-500/30",
           isMetaActive && "ring-2 ring-blue-500 border-transparent"
         )}>
+          {isMetaActive && (
+             <div className="absolute top-6 right-6 h-6 px-3 rounded-full bg-blue-500 text-white text-[8px] font-black uppercase flex items-center gap-1">
+               <ShieldCheck size={10} /> {isUsingCustomMeta ? "Custom Pro" : "System Pro"}
+             </div>
+          )}
+
            <div className="space-y-6">
             <div className="h-14 w-14 rounded-2xl bg-white/5 flex items-center justify-center text-white/60 group-hover:bg-blue-500/10 group-hover:text-blue-400 transition-colors">
               <Bot size={28} />
@@ -174,17 +182,60 @@ export function WhatsAppConnectionFlow({ merchant, qrCode, onInitBaileys, onRefr
 
             <div className="space-y-4 pt-2">
               <button
-                className="w-full h-14 bg-white/5 border border-white/10 rounded-2xl font-black uppercase tracking-widest text-[10px] text-white/60 flex items-center justify-center gap-2 hover:bg-blue-500 hover:text-white hover:border-blue-500 transition-all active:scale-95"
+                onClick={handleActivateMeta}
+                disabled={loading || isMetaActive}
+                className={cn(
+                  "w-full h-14 rounded-2xl font-black uppercase tracking-widest text-[10px] flex items-center justify-center gap-2 transition-all",
+                  isMetaActive
+                    ? "bg-blue-500/10 text-blue-400 border border-blue-500/20"
+                    : "bg-white text-vendeur-coal hover:bg-blue-500 hover:text-white active:scale-95"
+                )}
               >
-                <LogIn size={16} /> Lier Facebook Business
+                {loading ? <Loader2 className="animate-spin" size={16} /> : <LogIn size={16} />}
+                {isMetaActive ? "Mode Pro Actif" : "Activer via Vendeur IA"}
               </button>
 
-              <button
-                onClick={() => setShowHelp(true)}
-                className="w-full text-[10px] font-black uppercase text-white/20 hover:text-white/40 flex items-center justify-center gap-2 transition-colors"
-              >
-                <HelpCircle size={14} /> Pas de Page Facebook ?
-              </button>
+              <div className="space-y-2">
+                <button
+                  onClick={() => setShowAdvanced(!showAdvanced)}
+                  className="w-full text-[10px] font-black uppercase text-white/20 hover:text-white/40 flex items-center justify-center gap-2 transition-colors py-2"
+                >
+                  <Settings size={14} /> Configuration Personnalisée
+                </button>
+
+                {showAdvanced && (
+                  <div className="p-6 bg-black/40 border border-white/5 rounded-3xl space-y-4 animate-in slide-in-from-top-2 duration-300">
+                    <div className="space-y-2">
+                      <label className="text-[9px] font-black uppercase text-white/40 ml-1">Phone Number ID</label>
+                      <input
+                        className="w-full h-12 bg-vendeur-coal border border-white/10 rounded-xl px-4 text-xs text-white focus:border-blue-500 outline-none transition-all font-mono"
+                        value={metaConfig.phoneNumberId}
+                        onChange={e => setMetaConfig({...metaConfig, phoneNumberId: e.target.value})}
+                        placeholder="Ex: 1063..."
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[9px] font-black uppercase text-white/40 ml-1">Access Token</label>
+                      <textarea
+                        className="w-full h-24 bg-vendeur-coal border border-white/10 rounded-xl p-4 text-[10px] text-white focus:border-blue-500 outline-none transition-all font-mono resize-none"
+                        value={metaConfig.accessToken}
+                        onChange={e => setMetaConfig({...metaConfig, accessToken: e.target.value})}
+                        placeholder="EAAG..."
+                      />
+                    </div>
+                    <button
+                      onClick={handleSaveMetaConfig}
+                      disabled={loading || !metaConfig.phoneNumberId || !metaConfig.accessToken}
+                      className="w-full h-12 bg-blue-500 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-600 transition-all disabled:opacity-50"
+                    >
+                      {loading ? <Loader2 className="animate-spin mx-auto" size={16} /> : "Enregistrer les clés"}
+                    </button>
+                    <p className="text-[8px] text-white/20 text-center uppercase font-bold px-2">
+                      Laisse vide pour utiliser le serveur mutualisé gratuit.
+                    </p>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>

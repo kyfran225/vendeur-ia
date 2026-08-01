@@ -9,6 +9,7 @@ import axios from "axios";
 import { addAIJob } from "../../services/ai-queue.service.js";
 import { whatsappMediaService } from "./whatsapp-media.service.js";
 import { aiProvider } from "../../services/ai-provider.js";
+import { SystemSettingsModel } from "../commerce/admin.model.js";
 
 class WhatsAppService {
   private activeSessions: Map<string, any> = new Map();
@@ -29,6 +30,7 @@ class WhatsAppService {
 
     sock.ev.on("connection.update", async (update) => {
       const { connection, lastDisconnect, qr } = update;
+
       if (qr) {
         const qrCodeData = await QRCode.toDataURL(qr);
         emitToUser(userId, "whatsapp:qr", { qrCodeData });
@@ -36,14 +38,32 @@ class WhatsAppService {
       }
 
       if (connection === "open") {
+        await CommerceMerchantModel.findOneAndUpdate(
+          { ownerId: userId },
+          {
+            $set: {
+              "whatsappConfig.status": "connected",
+              "whatsappConfig.provider": "baileys"
+            }
+          }
+        );
         emitToUser(userId, "whatsapp:connected", {});
         console.log(`[WhatsApp] User ${userId} connected`);
       }
 
       if (connection === "close") {
         const shouldReconnect = (lastDisconnect?.error as Boom)?.output?.statusCode !== DisconnectReason.loggedOut;
-        if (shouldReconnect) this.initSession(userId);
-        else this.activeSessions.delete(userId);
+
+        await CommerceMerchantModel.findOneAndUpdate(
+          { ownerId: userId },
+          { $set: { "whatsappConfig.status": shouldReconnect ? "error" : "disconnected" } }
+        );
+
+        if (shouldReconnect) {
+          this.initSession(userId);
+        } else {
+          this.activeSessions.delete(userId);
+        }
       }
     });
 
@@ -58,6 +78,31 @@ class WhatsAppService {
         }
       }
     });
+  }
+
+  private async getMetaConfig(merchant: any) {
+    // 1. Merchant-specific credentials
+    if (merchant.whatsappConfig?.meta?.phoneNumberId && merchant.whatsappConfig?.meta?.accessToken) {
+      return {
+        phoneNumberId: merchant.whatsappConfig.meta.phoneNumberId,
+        accessToken: merchant.whatsappConfig.meta.accessToken
+      };
+    }
+
+    // 2. Global System Settings
+    const settings = await SystemSettingsModel.findOne();
+    if (settings?.metaConfig?.whatsappDefaults?.phoneNumberId && settings?.metaConfig?.whatsappDefaults?.accessToken) {
+      return {
+        phoneNumberId: settings.metaConfig.whatsappDefaults.phoneNumberId,
+        accessToken: settings.metaConfig.whatsappDefaults.accessToken
+      };
+    }
+
+    // 3. Fallback to Env
+    return {
+      phoneNumberId: env.WHATSAPP_PHONE_ID,
+      accessToken: env.WHATSAPP_ACCESS_TOKEN
+    };
   }
 
   async handleIncomingMessage(userId: string, msg: any) {
@@ -185,10 +230,7 @@ class WhatsAppService {
   }
 
   async sendMetaMessage(merchant: any, to: string, text: string) {
-    const config = merchant.whatsappConfig?.meta || {
-        phoneNumberId: env.WHATSAPP_PHONE_ID,
-        accessToken: env.WHATSAPP_ACCESS_TOKEN
-    };
+    const config = await this.getMetaConfig(merchant);
 
     if (!config.phoneNumberId || !config.accessToken) {
       console.warn(`[Meta WhatsApp] API Credentials missing for merchant ${merchant.businessName}`);
@@ -219,10 +261,7 @@ class WhatsAppService {
   }
 
   async sendMetaAudio(merchant: any, to: string, audioBuffer: Buffer) {
-    const config = merchant.whatsappConfig?.meta || {
-        phoneNumberId: env.WHATSAPP_PHONE_ID,
-        accessToken: env.WHATSAPP_ACCESS_TOKEN
-    };
+    const config = await this.getMetaConfig(merchant);
 
     if (!config.phoneNumberId || !config.accessToken) return;
 
@@ -270,11 +309,32 @@ class WhatsAppService {
   }
 
   async handleMetaIncomingMessage(from: string, text: string, phoneId: string, media?: { mediaId: string, mediaType: string }) {
-    // 1. Find the merchant associated with this Phone ID
-    const merchant = await CommerceMerchantModel.findOne({ "whatsappConfig.meta.phoneNumberId": phoneId });
+    // 1. Find the merchant associated with this Phone ID (Dedicated number)
+    let merchant = await CommerceMerchantModel.findOne({ "whatsappConfig.meta.phoneNumberId": phoneId });
+
+    // 2. If not found, it might be a shared system number
+    if (!merchant) {
+      console.log(`[Meta WhatsApp] No dedicated merchant for PhoneID ${phoneId}, searching via conversation history...`);
+
+      // Find the most recent active conversation with this customer phone number
+      const latestConversation = await CommerceConversationModel.findOne({
+        status: { $in: ["active", "needs_human"] },
+        platform: "whatsapp"
+      })
+      .populate({
+        path: "customerId",
+        match: { phone: from }
+      })
+      .sort({ lastMessageAt: -1 });
+
+      if (latestConversation && latestConversation.customerId) {
+        merchant = await CommerceMerchantModel.findById(latestConversation.merchantId);
+        console.log(`[Meta WhatsApp] Routed shared message to merchant: ${merchant?.businessName}`);
+      }
+    }
 
     if (!merchant) {
-      console.error(`[Meta WhatsApp] No merchant found for PhoneID ${phoneId}`);
+      console.error(`[Meta WhatsApp] No merchant found for incoming message from ${from} on PhoneID ${phoneId}`);
       return;
     }
 
@@ -329,6 +389,27 @@ class WhatsAppService {
         console.error(`[WhatsApp] Failed to send presence for user ${userId}:`, err);
       }
     }
+  }
+
+  async getSessionStatus(userId: string) {
+    const session = this.activeSessions.get(userId);
+    if (!session) return "disconnected";
+    // Baileys doesn't have a simple 'isConnected' property, but the presence of the socket
+    // and the last known state in DB is usually enough.
+    const merchant = await CommerceMerchantModel.findOne({ ownerId: userId });
+    return merchant?.whatsappConfig?.status || "disconnected";
+  }
+
+  async disconnectSession(userId: string) {
+    const sock = this.activeSessions.get(userId);
+    if (sock) {
+      await sock.logout();
+      this.activeSessions.delete(userId);
+    }
+    await CommerceMerchantModel.findOneAndUpdate(
+      { ownerId: userId },
+      { $set: { "whatsappConfig.status": "disconnected" } }
+    );
   }
 }
 

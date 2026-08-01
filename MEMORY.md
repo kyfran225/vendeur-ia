@@ -17,3 +17,10 @@ Le produit doit être utilisable par un commerçant sans formation technique en 
 ## Ongoing Phase: Phase 8 - Marketing Hub
 - **Objective**: Let the merchant broadcast offers without complexity.
 - **Rule**: No complex segmentation editor. Just "Send to VIPs" or "Send to all active customers".
+
+## Architectural Decisions
+- **WhatsApp Multi-Tenancy**: Implemented a fallback system for Meta Cloud API. 
+    1. Merchant-specific keys override everything.
+    2. Fallback to `SystemSettings.metaConfig.whatsappDefaults`.
+    3. Final fallback to environment variables.
+    4. **Shared Webhook Routing**: Messages received on the system number are routed to the merchant with the most recent active conversation with that customer.

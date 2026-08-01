@@ -2,6 +2,7 @@ import { Router } from "express";
 import { whatsappService } from "./whatsapp.service.js";
 import { authenticate } from "../../middleware/authenticate.js";
 import { env } from "../../config/env.js";
+import { CommerceMerchantModel } from "../commerce/commerce.model.js";
 
 const router = Router();
 
@@ -9,6 +10,57 @@ router.post("/connect", authenticate, async (req, res) => {
   try {
     await whatsappService.initSession((req as any).user.id);
     res.json({ message: "WhatsApp connection initialized" });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.post("/disconnect", authenticate, async (req, res) => {
+  try {
+    await whatsappService.disconnectSession((req as any).user.id);
+    res.json({ message: "WhatsApp disconnected" });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.get("/status", authenticate, async (req, res) => {
+  try {
+    const status = await whatsappService.getSessionStatus((req as any).user.id);
+    res.json({ status });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.patch("/config", authenticate, async (req, res) => {
+  try {
+    const { provider, meta } = req.body;
+    const userId = (req as any).user.id;
+
+    const update: any = {
+      "whatsappConfig.provider": provider
+    };
+
+    if (meta) {
+      if (meta.phoneNumberId) update["whatsappConfig.meta.phoneNumberId"] = meta.phoneNumberId;
+      if (meta.accessToken) update["whatsappConfig.meta.accessToken"] = meta.accessToken;
+      if (meta.wabaId) update["whatsappConfig.meta.wabaId"] = meta.wabaId;
+
+      // If switching to meta, we might want to mark it as connected if we assume credentials are valid,
+      // or 'error' if we want to force a test. For now let's set 'connected' to enable it.
+      if (provider === 'meta') {
+        update["whatsappConfig.status"] = 'connected';
+      }
+    }
+
+    const merchant = await CommerceMerchantModel.findOneAndUpdate(
+      { ownerId: userId },
+      { $set: update },
+      { new: true }
+    );
+
+    res.json({ message: "Configuration updated", whatsappConfig: merchant?.whatsappConfig });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }

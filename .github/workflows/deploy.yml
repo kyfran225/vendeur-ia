@@ -1,4 +1,4 @@
-name: Deployment
+name: CI / Deploy
 
 on:
   push:
@@ -6,64 +6,83 @@ on:
       - main
       - preview
 
+# ─────────────────────────────────────────────
+# Jobs
+# ─────────────────────────────────────────────
 jobs:
+  # ── 1. Build & Deploy → Vercel (Prebuilt mode) ──────────────────────────────
   deploy-vercel:
-    name: Deploy to Vercel
+    name: Build & Deploy → Vercel
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
 
-      - name: Install Vercel CLI
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.28.2
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Vercel CLI (latest)
         run: npm install -g vercel@latest
 
-      - name: Deploy to Vercel
-        env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+      # Pull project settings + env vars from Vercel
+      - name: Pull Vercel project settings
         run: |
-          set -euo pipefail
           if [ "$GITHUB_REF" = "refs/heads/main" ]; then
-            vercel deploy --prod --token "$VERCEL_TOKEN" --yes
+            vercel pull --yes --environment=production --token "$VERCEL_TOKEN"
           else
-            vercel deploy --token "$VERCEL_TOKEN" --yes
+            vercel pull --yes --environment=preview --token "$VERCEL_TOKEN"
           fi
 
+      # Build locally (Prebuilt mode) → produces .vercel/output/
+      - name: Build (Prebuilt)
+        run: |
+          if [ "$GITHUB_REF" = "refs/heads/main" ]; then
+            vercel build --prod --token "$VERCEL_TOKEN"
+          else
+            vercel build --token "$VERCEL_TOKEN"
+          fi
+
+      # Upload the pre-built artifact — Vercel skips its own build step
+      - name: Deploy to Vercel
+        run: |
+          if [ "$GITHUB_REF" = "refs/heads/main" ]; then
+            vercel deploy --prebuilt --prod --token "$VERCEL_TOKEN"
+          else
+            vercel deploy --prebuilt --token "$VERCEL_TOKEN"
+          fi
+
+  # ── 2. Trigger → Render ─────────────────────────────────────────────────────
   deploy-render:
-    name: Deploy to Render
+    name: Deploy → Render
     runs-on: ubuntu-latest
     needs: deploy-vercel
-    env:
-      RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
-      RENDER_PREVIEW_DEPLOY_HOOK_URL: ${{ secrets.RENDER_PREVIEW_DEPLOY_HOOK_URL }}
-    steps:
-      - name: Debug Render deployment settings
-        run: |
-          set -euo pipefail
-          echo "Branch = $GITHUB_REF"
-          if [ "$GITHUB_REF" = "refs/heads/main" ]; then
-            echo "Using production Render hook"
-          else
-            echo "Using preview Render hook"
-          fi
-          if [ -z "${RENDER_DEPLOY_HOOK_URL:-}" ]; then
-            echo "RENDER_DEPLOY_HOOK_URL is not set"
-          else
-            echo "RENDER_DEPLOY_HOOK_URL is set"
-          fi
-          if [ -z "${RENDER_PREVIEW_DEPLOY_HOOK_URL:-}" ]; then
-            echo "RENDER_PREVIEW_DEPLOY_HOOK_URL is not set"
-          else
-            echo "RENDER_PREVIEW_DEPLOY_HOOK_URL is set"
-          fi
 
-      - name: Trigger Render Deployment
+    steps:
+      - name: Trigger Render deployment
         env:
           RENDER_HOOK: ${{ github.ref == 'refs/heads/main' && secrets.RENDER_DEPLOY_HOOK_URL || secrets.RENDER_PREVIEW_DEPLOY_HOOK_URL }}
         run: |
           set -euo pipefail
           if [ -z "${RENDER_HOOK:-}" ]; then
-            echo "Error: Render deploy hook URL is empty"
+            echo "❌ Render deploy hook URL is empty — vérifiez les GitHub Secrets"
             exit 1
           fi
-          curl -f -X POST --url "$RENDER_HOOK"
+          echo "🚀 Déclenchement du déploiement Render..."
+          curl -fsS -X POST --url "$RENDER_HOOK"
+          echo "✅ Render deployment triggered"

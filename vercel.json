@@ -1,6 +1,0 @@
-{
-  "installCommand": "pnpm install",
-  "buildCommand": "pnpm build --filter=@vendeur-ia/web",
-  "outputDirectory": "apps/web/dist",
-  "framework": "vite"
-}

@@ -46,6 +46,43 @@ Vercel est optimisé pour les applications React/Vite.
 
 ---
 
+## 🐳 Déploiement via Docker
+
+Le projet inclut une configuration Docker complète pour le développement ou le déploiement on-premise.
+
+### Lancement avec Docker Compose
+```bash
+docker compose up -d
+```
+Les services disposent de **Healthchecks** intégrés :
+- L'API attend que MongoDB et Redis soient "Healthy" avant de démarrer.
+- Vous pouvez vérifier l'état avec `docker compose ps`.
+
+---
+
+## 💾 Sauvegardes (Backups)
+
+Le système inclut un script de backup automatique vers le cloud (Cloudinary par défaut).
+
+### Configuration
+Assurez-vous que les variables suivantes sont définies (API) :
+- `CLOUDINARY_CLOUD_NAME`
+- `CLOUDINARY_API_KEY`
+- `CLOUDINARY_API_SECRET`
+
+### Exécution manuelle
+```bash
+pnpm db:backup
+```
+
+### Automatisation (Crontab)
+Pour un backup quotidien à 3h du matin :
+```bash
+0 3 * * * cd /chemin/vers/projet && /usr/bin/pnpm db:backup >> /var/log/vendeur-ia-backup.log 2>&1
+```
+
+---
+
 ## 🧪 Tests E2E de Paiement (Playwright)
 
 Pour valider que l'IA présente les bons numéros et que le tunnel d'onboarding fonctionne :

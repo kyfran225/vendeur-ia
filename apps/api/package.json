@@ -6,7 +6,8 @@
     "start": "node dist/server.js",
     "dev": "tsx watch src/server.ts",
     "test": "vitest run",
-    "build": "tsc"
+    "build": "tsc",
+    "db:backup": "tsx src/scripts/cloud-backup.ts"
   },
   "dependencies": {
     "@hapi/boom": "^10.0.1",

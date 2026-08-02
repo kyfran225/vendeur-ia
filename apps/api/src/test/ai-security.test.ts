@@ -2,6 +2,18 @@ import { describe, it, expect, vi } from 'vitest';
 import { aiAgentService } from '../services/ai-agent.service.js';
 import { aiProvider } from '../services/ai-provider.js';
 
+// Mock Redis to avoid ECONNREFUSED :6379 during tests
+vi.mock('../config/redis.js', () => ({
+  connectRedis: vi.fn(),
+  getRedisClient: vi.fn(() => ({
+    isOpen: true,
+    get: vi.fn(),
+    set: vi.fn(),
+    del: vi.fn(),
+    on: vi.fn(),
+  })),
+}));
+
 // On mock le provider pour ne pas appeler les APIs réelles
 vi.mock('../services/ai-provider.js', () => ({
   aiProvider: {

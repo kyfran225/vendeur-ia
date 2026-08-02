@@ -4,6 +4,18 @@ import { CommerceMerchantModel, CommerceConversationModel } from '../commerce/co
 import { SystemSettingsModel } from '../commerce/admin.model.js';
 import { env } from '../../config/env.js';
 
+// Mock Redis to avoid ECONNREFUSED :6379 during tests
+vi.mock('../../config/redis.js', () => ({
+  connectRedis: vi.fn(),
+  getRedisClient: vi.fn(() => ({
+    isOpen: true,
+    get: vi.fn(),
+    set: vi.fn(),
+    del: vi.fn(),
+    on: vi.fn(),
+  })),
+}));
+
 // Mock Models
 vi.mock('../commerce/commerce.model.js', () => ({
   CommerceMerchantModel: {

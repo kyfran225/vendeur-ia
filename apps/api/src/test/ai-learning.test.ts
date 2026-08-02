@@ -3,6 +3,18 @@ import { commerceService } from '../modules/commerce/commerce.service.js';
 import { CommerceOrderModel, CommerceConversationModel, CommerceMessageModel, CommerceKnowledgeModel } from '../modules/commerce/commerce.model.js';
 import { aiProvider } from '../services/ai-provider.js';
 
+// Mock Redis to avoid ECONNREFUSED :6379 during tests
+vi.mock('../config/redis.js', () => ({
+  connectRedis: vi.fn(),
+  getRedisClient: vi.fn(() => ({
+    isOpen: true,
+    get: vi.fn(),
+    set: vi.fn(),
+    del: vi.fn(),
+    on: vi.fn(),
+  })),
+}));
+
 vi.mock('../services/ai-provider.js', () => ({
   aiProvider: {
     generateText: vi.fn()

@@ -5,6 +5,18 @@ import { CommerceMerchantModel, CommerceConversationModel, CommerceMessageModel 
 import { instagramService } from '../modules/instagram/instagram.service.js';
 import { aiAgentService } from '../services/ai-agent.service.js';
 
+// Mock Redis to avoid ECONNREFUSED :6379 during tests
+vi.mock('../config/redis.js', () => ({
+  connectRedis: vi.fn(),
+  getRedisClient: vi.fn(() => ({
+    isOpen: true,
+    get: vi.fn(),
+    set: vi.fn(),
+    del: vi.fn(),
+    on: vi.fn(),
+  })),
+}));
+
 vi.mock('../services/ai-agent.service.js', () => ({
   aiAgentService: {
     generateResponse: vi.fn().mockResolvedValue("Réponse Insta")

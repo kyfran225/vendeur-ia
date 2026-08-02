@@ -16,7 +16,9 @@ jobs:
         uses: amondnet/vercel-action@v25
         with:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-args: "${{ github.ref == 'refs/heads/main' && '--prod' || '' }}"
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          vercel-args: "--yes ${{ github.ref == 'refs/heads/main' && '--prod' || '' }}"
           working-directory: .
 
   deploy-render:
@@ -31,4 +33,5 @@ jobs:
             echo "Error: Render deploy hook URL is empty"
             exit 1
           fi
+          # Use --url to be explicit and avoid any potential parsing issues with characters in the URL
           curl -f -X POST "$RENDER_HOOK"

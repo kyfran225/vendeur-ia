@@ -1,6 +1,0 @@
-{
-  "installCommand": "pnpm install --no-frozen-lockfile --ignore-scripts --filter @vendeur-ia/web... && pnpm install --no-frozen-lockfile --filter @vendeur-ia/web...",
-  "buildCommand": "cd ../.. && pnpm build --filter=@vendeur-ia/web",
-  "outputDirectory": "dist",
-  "framework": "vite"
-}

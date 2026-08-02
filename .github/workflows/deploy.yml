@@ -12,30 +12,58 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      - name: Install Vercel CLI
+        run: npm install -g vercel@latest
+
       - name: Deploy to Vercel
-        uses: amondnet/vercel-action@v25
-        with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-          vercel-args: "--scope ${{ secrets.VERCEL_ORG_ID }} ${{ github.ref == 'refs/heads/main' && '--prod' || '' }}"
-          working-directory: .
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: |
+          set -euo pipefail
+          if [ "$GITHUB_REF" = "refs/heads/main" ]; then
+            vercel deploy --prod --token "$VERCEL_TOKEN" --yes
+          else
+            vercel deploy --token "$VERCEL_TOKEN" --yes
+          fi
 
   deploy-render:
     name: Deploy to Render
     runs-on: ubuntu-latest
+    needs: deploy-vercel
+    env:
+      RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+      RENDER_PREVIEW_DEPLOY_HOOK_URL: ${{ secrets.RENDER_PREVIEW_DEPLOY_HOOK_URL }}
     steps:
-      - name: Trigger Render Deployment
+      - name: Debug Render deployment settings
         run: |
-          if [ "${{ github.ref }}" == "refs/heads/main" ]; then
-            URL="${{ secrets.RENDER_DEPLOY_HOOK_URL }}"
+          set -euo pipefail
+          echo "Branch = $GITHUB_REF"
+          if [ "$GITHUB_REF" = "refs/heads/main" ]; then
+            echo "Using production Render hook"
           else
-            URL="${{ secrets.RENDER_PREVIEW_DEPLOY_HOOK_URL }}"
+            echo "Using preview Render hook"
+          fi
+          if [ -z "${RENDER_DEPLOY_HOOK_URL:-}" ]; then
+            echo "RENDER_DEPLOY_HOOK_URL is not set"
+          else
+            echo "RENDER_DEPLOY_HOOK_URL is set"
+          fi
+          if [ -z "${RENDER_PREVIEW_DEPLOY_HOOK_URL:-}" ]; then
+            echo "RENDER_PREVIEW_DEPLOY_HOOK_URL is not set"
+          else
+            echo "RENDER_PREVIEW_DEPLOY_HOOK_URL is set"
           fi
 
-          if [ -z "$URL" ]; then
-            echo "Error: Deployment hook URL not found for branch ${{ github.ref }}"
+      - name: Trigger Render Deployment
+        env:
+          RENDER_HOOK: ${{ github.ref == 'refs/heads/main' && secrets.RENDER_DEPLOY_HOOK_URL || secrets.RENDER_PREVIEW_DEPLOY_HOOK_URL }}
+        run: |
+          set -euo pipefail
+          if [ -z "${RENDER_HOOK:-}" ]; then
+            echo "Error: Render deploy hook URL is empty"
             exit 1
           fi
-
-          curl -f -X POST "$URL"
+          curl -f -X POST --url "$RENDER_HOOK"

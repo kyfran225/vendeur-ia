@@ -52,10 +52,29 @@ app.get("/", (req, res) => {
 });
 
 app.get("/health", async (req, res) => {
-  const dbStatus = mongoose.connection.readyState === 1 ? "connected" : "disconnected";
+  let dbStatus = "disconnected";
+  try {
+    // Active ping to MongoDB
+    if (mongoose.connection.readyState === 1 && mongoose.connection.db) {
+      await mongoose.connection.db.admin().ping();
+      dbStatus = "connected";
+    }
+  } catch (err) {
+    dbStatus = "error";
+  }
+
+  let redisStatus = "disconnected";
   const redis = getRedisClient();
-  // ioredis status check: 'ready' or 'connect' means it's up
-  const redisStatus = redis && (redis.status === 'ready' || redis.status === 'connect') ? "connected" : "disconnected";
+  try {
+    // ioredis status check + active ping
+    if (redis && (redis.status === 'ready' || redis.status === 'connect')) {
+      await redis.ping();
+      redisStatus = "connected";
+    }
+  } catch (err) {
+    redisStatus = "error";
+  }
+
   const waSessions = (whatsappService as any).activeSessions?.size || 0;
 
   const isHealthy = dbStatus === "connected" && redisStatus === "connected";

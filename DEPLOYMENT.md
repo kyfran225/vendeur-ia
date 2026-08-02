@@ -37,10 +37,12 @@ Render est idéal pour le backend Node.js et les Webockets.
 Vercel est optimisé pour les applications React/Vite.
 
 1. **New Project** sur [Vercel.com](https://vercel.app).
-2. **Root Directory** : Sélectionnez `apps/web`.
-3. **Build Command** : `pnpm build`.
-4. **Output Directory** : `dist`.
-5. **Framework Preset** : `Vite`.
+2. **Configuration de l'Environnement** :
+   - Ajoutez `ENABLE_EXPERIMENTAL_COREPACK=1` dans les variables d'environnement pour supporter pnpm 10.
+3. **Root Directory** : Sélectionnez `apps/web`.
+4. **Build Command** : Laissé par défaut (écrasé par `vercel.json`).
+5. **Output Directory** : `dist`.
+6. **Framework Preset** : `Vite`.
 
 ---
 

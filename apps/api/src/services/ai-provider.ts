@@ -14,6 +14,8 @@ export interface AIRequest {
 
 export class AIProvider {
   private static readonly GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent";
+  private redis: Redis | null;
+
   constructor() {
     this.redis = getRedisClient();
   }

@@ -4,6 +4,7 @@ import { useAuthStore } from "@/stores/authStore";
 import { useGoogleLogin } from "@react-oauth/google";
 import { toast } from "sonner";
 import { apiClient } from "@/lib/apiClient";
+import { useNavigate } from "react-router-dom";
 
 const API_URL = (import.meta as any).env.VITE_API_URL || "http://localhost:3001";
 
@@ -21,6 +22,7 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
   const [mode, setMode] = useState<"login" | "register" | "forgot">("login");
   const [loading, setLoading] = useState(false);
   const { setSession } = useAuthStore();
+  const navigate = useNavigate();
 
   const [form, setForm] = useState({
     email: "",
@@ -38,8 +40,16 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
           token: tokenResponse.access_token,
         });
         setSession(res.data);
-        toast.success("Bienvenue avec Google !");
+        toast.success("Bienvenue !");
         onClose();
+
+        // Use the returned user data to determine where to go
+        const user = res.data.user;
+        if (user?.onboardingCompleted) {
+          navigate("/dashboard");
+        } else {
+          navigate("/onboarding");
+        }
       } catch (err: any) {
         toast.error("Erreur d'authentification Google");
       } finally {

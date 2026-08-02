@@ -7,6 +7,7 @@ interface AuthUser {
   displayName: string;
   avatarUrl?: string;
   roles: string[];
+  onboardingCompleted?: boolean;
 }
 
 interface AuthState {

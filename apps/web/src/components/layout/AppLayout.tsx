@@ -5,10 +5,10 @@ import { WifiOff } from "../ui/WifiOff";
 
 export function AppLayout() {
   return (
-    <div className="flex h-screen overflow-hidden">
+    <div className="flex h-screen overflow-hidden flex-col md:flex-row">
       <WifiOff />
       <Sidebar />
-      <main className="flex-1 overflow-y-auto no-scrollbar bg-vendeur-bg">
+      <main className="flex-1 overflow-y-auto no-scrollbar bg-vendeur-bg pb-16 md:pb-0">
         <Outlet />
       </main>
     </div>

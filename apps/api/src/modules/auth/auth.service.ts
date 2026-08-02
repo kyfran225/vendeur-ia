@@ -29,7 +29,18 @@ export class AuthService {
     const refreshTokenHash = await bcrypt.hash(refreshToken, 10);
     await UserModel.findByIdAndUpdate(user._id, { refreshTokenHash });
 
-    return { accessToken, refreshToken };
+    return {
+      accessToken,
+      refreshToken,
+      user: {
+        id: user._id.toString(),
+        email: user.email,
+        displayName: user.displayName,
+        avatarUrl: user.avatarUrl,
+        roles: user.roles,
+        onboardingCompleted: !!user.onboardingCompleted
+      }
+    };
   }
 
   async register(input: any) {

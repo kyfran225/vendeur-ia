@@ -107,7 +107,7 @@ export function Sidebar() {
 
           {/* Vertical layout similar to desktop sidebar but slightly smaller */}
           <nav className="flex-1 w-full flex flex-col items-center gap-6 overflow-y-auto no-scrollbar">
-            {links.map((link) => (
+            {links.slice(4).map((link) => (
               <NavLink
                 key={link.to}
                 to={link.to}

@@ -1,9 +1,10 @@
-name: Production Deployment
+name: Deployment
 
 on:
   push:
     branches:
       - main
+      - preview
 
 jobs:
   deploy-vercel:
@@ -17,7 +18,7 @@ jobs:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-          vercel-args: '--prod'
+          vercel-args: ${{ github.ref == 'refs/heads/main' && '--prod' || '' }}
           working-directory: .
 
   deploy-render:
@@ -26,4 +27,8 @@ jobs:
     steps:
       - name: Trigger Render Deployment
         run: |
-          curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+          if [ "${{ github.ref }}" = "refs/heads/main" ]; then
+            curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+          else
+            curl -X POST ${{ secrets.RENDER_PREVIEW_DEPLOY_HOOK_URL }}
+          fi

@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { Types } from 'mongoose';
 import { aiProvider } from '../services/ai-provider.js';
 import { aiWorker } from '../services/ai-queue.service.js';
 import { CommerceMessageModel, CommerceMerchantModel, CommerceConversationModel } from '../modules/commerce/commerce.model.js';
@@ -20,6 +21,9 @@ vi.mock('../services/messaging.service.js', () => ({
 describe('AI Vocal-First Experience Audit Tests', () => {
   const merchantId = "507f1f77bcf86cd799439011";
   const userId = "user_123";
+  // ObjectIds valides requis par Mongoose pour findById
+  const convId1 = new Types.ObjectId().toString();
+  const convId2 = new Types.ObjectId().toString();
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -34,6 +38,8 @@ describe('AI Vocal-First Experience Audit Tests', () => {
     } as any);
 
     vi.spyOn(CommerceMessageModel, 'create').mockResolvedValue({ _id: "msg_1" } as any);
+    // Mock findById pour éviter le CastError (appelé ligne 131 de ai-queue.service.ts)
+    vi.spyOn(CommerceConversationModel, 'findById').mockResolvedValue({ status: 'open' } as any);
     vi.spyOn(CommerceConversationModel, 'findByIdAndUpdate').mockResolvedValue({} as any);
 
     const job = {
@@ -41,7 +47,7 @@ describe('AI Vocal-First Experience Audit Tests', () => {
       name: 'process-message',
       data: {
         userId,
-        conversationId: "conv_1",
+        conversationId: convId1,
         remoteJid: "12345@s.whatsapp.net",
         merchant: {
             _id: merchantId,
@@ -81,13 +87,15 @@ describe('AI Vocal-First Experience Audit Tests', () => {
     } as any);
 
     vi.spyOn(aiProvider, 'generateSpeech').mockRejectedValue(new Error("TTS Error"));
+    // Mock findById pour éviter le CastError
+    vi.spyOn(CommerceConversationModel, 'findById').mockResolvedValue({ status: 'open' } as any);
 
     const job = {
       id: 'job_2',
       name: 'process-message',
       data: {
         userId,
-        conversationId: "conv_2",
+        conversationId: convId2,
         remoteJid: "12345@s.whatsapp.net",
         merchant: {
             _id: merchantId,

@@ -1,6 +1,0 @@
-{
-  "installCommand": "cd ../.. && pnpm install",
-  "buildCommand": "cd ../.. && pnpm build --filter=@vendeur-ia/web",
-  "outputDirectory": "dist",
-  "framework": "vite"
-}

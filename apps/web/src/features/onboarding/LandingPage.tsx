@@ -152,7 +152,7 @@ function LandingHero({
     COUNTRIES.find(c => c.code === (tempData?.country || "CI")) || COUNTRIES[0]
   );
   const [localPhone, setLocalPhone] = useState(tempData?.whatsappNumber?.replace(selectedCountry.dialCode, "") || "");
-  const { accessToken } = useAuthStore();
+  const { user, accessToken } = useAuthStore();
 
   const recorderRef = useRef<AudioRecorder | null>(null);
   const [isRecording, setIsRecording] = useState(false);

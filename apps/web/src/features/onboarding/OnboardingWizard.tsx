@@ -83,6 +83,16 @@ export function OnboardingWizard() {
     }} onBack={handleBack} /> },
   ];
 
+  // Safety check: if currentStep is out of bounds (e.g. after removing a step), reset to 0 or last valid step
+  useEffect(() => {
+    if (currentStep >= steps.length) {
+      setStep(steps.length - 1);
+    }
+  }, [currentStep, steps.length, setStep]);
+
+  // Pre-render check to avoid crash
+  if (!steps[currentStep]) return null;
+
   return (
     <div className="min-h-screen bg-vendeur-coal flex flex-col items-center justify-center p-4 md:p-12 overflow-x-hidden">
       {/* Progress Bar */}

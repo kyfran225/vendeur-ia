@@ -7,6 +7,7 @@ import {
   CommerceCustomerModel,
   CommerceOrderModel
 } from "./commerce.model.js";
+import { UserModel } from "../auth/user.model.js";
 import { aiAgentService } from "../../services/ai-agent.service.js";
 import { aiGrowthService } from "../../services/ai-growth.service.js";
 import { aiProvider } from "../../services/ai-provider.js";
@@ -97,10 +98,16 @@ export class CommerceService {
         deliveryZones: [data.city || "Abidjan"],
         openingHours: "09:00 - 18:00",
         returnPolicy: "Retours acceptés sous 48h.",
-        paymentMethods: ["Mobile Money", "Cash"]
+        paymentMethods: [
+          { provider: "Wave", number: data.whatsappNumber || "", label: "Wave" },
+          { provider: "Orange Money", number: data.whatsappNumber || "", label: "Orange Money" }
+        ]
       },
       customInstructions: `Vends avec passion les produits de ${data.businessName}.`
     });
+
+    // Update user onboarding status
+    await UserModel.findByIdAndUpdate(ownerId, { onboardingCompleted: true });
 
     return merchant;
   }

@@ -98,6 +98,12 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
         ? `Bienvenue ${user?.displayName || ''} !`
         : "Compte créé avec succès !");
       onClose();
+
+      if (user?.onboardingCompleted) {
+        navigate("/dashboard");
+      } else {
+        navigate("/onboarding");
+      }
     } catch (err: any) {
       toast.error(err.response?.data?.error || "Une erreur est survenue");
     } finally {

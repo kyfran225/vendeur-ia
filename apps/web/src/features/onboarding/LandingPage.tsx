@@ -249,7 +249,12 @@ function LandingHero({
 
   const handleActivate = () => {
     setSimulatorActive(true); // Ensure it's active for onboarding store
-    onAuth();
+    if (user) {
+      // If already logged in, go straight to onboarding
+      window.location.href = "/onboarding";
+    } else {
+      onAuth();
+    }
   };
 
   const handleMicClick = async () => {
@@ -439,8 +444,17 @@ function LandingHero({
                 disabled={!form.businessName || !form.address}
                 className="mt-4 flex h-14 items-center justify-center gap-3 rounded-2xl bg-emerald-300 px-6 text-sm font-black uppercase tracking-widest text-[#06130d] shadow-xl shadow-emerald-500/10 transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-30"
               >
-                Créer mon vendeurIa <ChevronRight size={18} />
+                {user ? "Lancer ma configuration" : "Créer mon vendeurIa"} <ChevronRight size={18} />
               </button>
+
+              {user && (
+                <button
+                  onClick={() => window.location.href = "/dashboard"}
+                  className="mt-2 flex h-14 items-center justify-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-6 text-sm font-black uppercase tracking-widest text-white transition-all hover:bg-white/10"
+                >
+                  <LayoutDashboard size={18} /> Mon Tableau de bord
+                </button>
+              )}
             </div>
           </div>
         ) : (

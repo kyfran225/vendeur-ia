@@ -58,6 +58,7 @@ function formatAmount(value: number) {
 import { SalesInbox } from "../inbox/SalesInbox";
 import { WhatsAppConnectionFlow } from "./components/WhatsAppConnectionFlow";
 import { PackProModal } from "./components/PackProModal";
+import { subscribeToPush } from "@/lib/pushUtils";
 
 export function SalesDashboard() {
   const [tab, setTab] = useState<"home" | "products" | "inbox" | "settings">("home");
@@ -563,6 +564,31 @@ function SettingsPanel({ merchant, systemSettings }: { merchant: any; systemSett
             />
           </div>
         </div>
+      </section>
+
+      {/* SECTION : NOTIFICATIONS */}
+      <section className="bg-vendeur-coal border border-white/10 p-8 rounded-[2.5rem] space-y-6">
+        <div className="flex items-center gap-3">
+           <Zap className="text-amber-400" size={24} />
+           <h2 className="text-xl font-black">Alertes Mobile</h2>
+        </div>
+        <p className="text-sm text-white/40 leading-relaxed">
+          Recevez une notification instantanée dès qu'un client paie ou demande une assistance humaine.
+        </p>
+        <button
+          onClick={async () => {
+            const permission = await Notification.requestPermission();
+            if (permission === "granted") {
+              await subscribeToPush(accessToken || "");
+              toast.success("Alertes activées ! 🔔");
+            } else {
+              toast.error("Permission refusée.");
+            }
+          }}
+          className="flex h-14 items-center justify-center gap-3 rounded-2xl bg-white/5 border border-white/10 px-8 text-[10px] font-black uppercase tracking-widest text-white hover:bg-white/10 transition-all"
+        >
+          <Bot size={18} /> Activer les Notifications Push
+        </button>
       </section>
 
       <section className="bg-vendeur-emerald/10 border border-vendeur-emerald/20 p-8 rounded-[2.5rem] flex items-center justify-between">

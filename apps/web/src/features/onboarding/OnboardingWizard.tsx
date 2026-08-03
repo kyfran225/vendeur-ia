@@ -48,6 +48,7 @@ export function OnboardingWizard() {
     const initMerchant = async () => {
       if (user && accessToken && tempData && !isMerchantCreated) {
         try {
+          console.log("[Onboarding] Attempting to create merchant...");
           await apiClient.post("/api/commerce/merchant", {
             ...tempData,
             city: tempData.city || "Abidjan"
@@ -56,10 +57,13 @@ export function OnboardingWizard() {
           console.log("[Onboarding] Merchant created successfully");
         } catch (err: any) {
           // If 409, it might already exist, which is fine
-          if (err.response?.status === 409) {
+          if (err.response?.status === 409 || err.message?.includes("E11000")) {
             setIsMerchantCreated(true);
+            console.log("[Onboarding] Merchant already exists");
           } else {
             console.error("[Onboarding] Failed to create merchant", err);
+            // Non-blocking but should notify user or retry
+            toast.error("Problème lors de l'initialisation de votre profil. Veuillez rafraîchir.");
           }
         }
       }

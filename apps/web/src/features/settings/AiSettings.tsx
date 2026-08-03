@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Mic, MessageSquare, Bot, Zap, Save, Loader2, DollarSign, Plus, Trash2 } from "lucide-react";
+import { Mic, MessageSquare, Bot, Zap, Save, Loader2, DollarSign, Plus, Trash2, Sparkles } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuthStore } from "@/stores/authStore";
 import { apiClient } from "@/lib/apiClient";
@@ -17,10 +17,16 @@ const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
 export function AiSettings() {
   const { accessToken } = useAuthStore();
   const queryClient = useQueryClient();
-  const [settings, setSettings] = useState<any>(null);
+  const [settings, setSettings] = useState<any>({
+    personality: "friendly",
+    responseStyle: "normal",
+    autoReply: true,
+    voiceMode: false,
+    localSlang: false
+  });
   const [payments, setPayments] = useState<any[]>([]);
 
-  const { data: dashboard, isLoading } = useQuery({
+  const { data: dashboard, isLoading: isDashboardLoading } = useQuery({
     queryKey: ["dashboard"],
     queryFn: async () => {
       const res = await apiClient.get("/api/commerce/dashboard");
@@ -28,7 +34,7 @@ export function AiSettings() {
     }
   });
 
-  const { data: knowledge } = useQuery({
+  const { data: knowledge, isLoading: isKnowledgeLoading } = useQuery({
     queryKey: ["knowledge"],
     queryFn: async () => {
       const res = await apiClient.get("/api/commerce/knowledge");
@@ -39,9 +45,18 @@ export function AiSettings() {
   useEffect(() => {
     if (dashboard?.merchant?.aiSettings) {
       setSettings(dashboard.merchant.aiSettings);
+    } else {
+      setSettings({
+        personality: "friendly",
+        responseStyle: "normal",
+        autoReply: true,
+        voiceMode: false
+      });
     }
     if (knowledge?.businessRules?.paymentMethods) {
       setPayments(knowledge.businessRules.paymentMethods);
+    } else {
+      setPayments([]);
     }
   }, [dashboard, knowledge]);
 
@@ -63,7 +78,7 @@ export function AiSettings() {
     onError: () => toast.error("Échec de la mise à jour")
   });
 
-  if (isLoading || !settings) {
+  if (isDashboardLoading || isKnowledgeLoading) {
     return (
       <div className="flex h-64 items-center justify-center">
         <Loader2 className="animate-spin text-vendeur-emerald" size={32} />
@@ -147,6 +162,30 @@ export function AiSettings() {
                   <p className="font-black text-white text-sm">Mode Vocal</p>
                   <p className="text-[10px] text-white/40 font-bold uppercase tracking-widest">Notes vocales</p>
                 </div>
+              </button>
+           </div>
+        </section>
+
+        <section className="bg-vendeur-coal border border-white/10 rounded-[2.5rem] p-8 space-y-6">
+           <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <h2 className="text-xl font-black text-white flex items-center gap-2">
+                  <Sparkles size={20} className="text-amber-400" />
+                  Ton Local (Slang)
+                </h2>
+                <p className="text-xs text-white/40 font-medium">L'IA utilisera des expressions locales (Nouchi/Wolof) pour plus de proximité.</p>
+              </div>
+              <button
+                onClick={() => setSettings({ ...settings, localSlang: !settings.localSlang })}
+                className={cn(
+                  "w-14 h-8 rounded-full relative transition-all duration-300",
+                  settings.localSlang ? "bg-vendeur-emerald" : "bg-white/10"
+                )}
+              >
+                <div className={cn(
+                  "absolute top-1 w-6 h-6 rounded-full bg-white transition-all duration-300 shadow-md",
+                  settings.localSlang ? "left-7" : "left-1"
+                )} />
               </button>
            </div>
         </section>

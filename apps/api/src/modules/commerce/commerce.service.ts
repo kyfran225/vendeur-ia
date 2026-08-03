@@ -10,6 +10,7 @@ import {
 import { aiAgentService } from "../../services/ai-agent.service.js";
 import { aiGrowthService } from "../../services/ai-growth.service.js";
 import { aiProvider } from "../../services/ai-provider.js";
+import { messagingService } from "../../services/messaging.service.js";
 import { env } from "../../config/env.js";
 import axios from "axios";
 
@@ -331,21 +332,24 @@ Réponds UNIQUEMENT avec le texte du message.`;
     const date = new Date(order.createdAt).toLocaleDateString("fr-FR");
     const time = new Date(order.createdAt).toLocaleTimeString("fr-FR", { hour: '2-digit', minute: '2-digit' });
 
-    let itemsStr = order.items.map(item => `${item.quantity}x ${item.name} - ${(item.price || 0) * item.quantity} ${order.currency}`).join("\n");
+    let itemsStr = order.items.map(item => `🔹 ${item.quantity}x ${item.name} - ${(item.price || 0) * item.quantity} ${order.currency}`).join("\n");
 
     const receipt = `
-🧾 *REÇU DE COMMANDE - ${merchant.businessName}*
----------------------------------------
-Date: ${date} à ${time}
-Client: ${customer.phone}
----------------------------------------
-DÉTAILS :
+✨ *REÇU DE COMMANDE - ${merchant.businessName}* ✨
+━━━━━━━━━━━━━━━━━━━━━
+📅 *Date:* ${date} à ${time}
+👤 *Client:* ${customer.phone}
+🆔 *Commande:* #${order._id.toString().slice(-6).toUpperCase()}
+━━━━━━━━━━━━━━━━━━━━━
+📦 *DÉTAILS :*
 ${itemsStr}
----------------------------------------
-*TOTAL : ${order.totalAmount} ${order.currency}*
----------------------------------------
-Merci de votre confiance ! ✨
-Points Fidélité gagnés: +${Math.floor(order.totalAmount / 1000)}
+━━━━━━━━━━━━━━━━━━━━━
+💰 *TOTAL : ${order.totalAmount.toLocaleString()} ${order.currency}*
+━━━━━━━━━━━━━━━━━━━━━
+✅ *Statut:* Payé
+
+Merci de votre confiance ! 🚀
+💎 *Points Fidélité gagnés:* +${Math.floor(order.totalAmount / 1000)}
     `.trim();
 
     return receipt;
@@ -383,7 +387,60 @@ Points Fidélité gagnés: +${Math.floor(order.totalAmount / 1000)}
       console.error("[Learning Error] Failed to extract knowledge:", err)
     );
 
+    // Send Receipt Automatically if linked to a merchant that has WhatsApp connection
+    this.sendReceiptAsync(order._id.toString()).catch(err =>
+      console.error("[Receipt Error] Failed to send receipt:", err)
+    );
+
     return order;
+  }
+
+  private async sendReceiptAsync(orderId: string) {
+    const order = await CommerceOrderModel.findById(orderId).populate("merchantId customerId");
+    if (!order) return;
+
+    const receipt = await this.generateDigitalReceipt(orderId);
+    const merchant = order.merchantId as any;
+    const customer = order.customerId as any;
+
+    if (merchant.whatsappConfig?.status === 'connected') {
+      await messagingService.sendMessage(merchant, "whatsapp", customer.phone, receipt);
+      console.log(`[Receipt] Automatically sent to ${customer.phone} for order ${orderId}`);
+    }
+  }
+
+  async linkPaymentToOrder(customerId: string, paymentInfo: any) {
+    // 1. Find the latest pending order for this customer
+    const order = await CommerceOrderModel.findOne({
+      customerId,
+      status: "pending"
+    }).sort({ createdAt: -1 });
+
+    if (!order) {
+      console.log(`[Payment Link] No pending order found for customer ${customerId}`);
+      return null;
+    }
+
+    // 2. Cross-verify amount (with a small margin for currency conversion or fees if applicable)
+    const orderAmount = order.totalAmount;
+    const detectedAmount = paymentInfo.amount;
+
+    if (Math.abs(orderAmount - detectedAmount) <= 100) { // Tolerate 100 XOF difference
+      console.log(`[Payment Link] Amount match! Marking order ${order._id} as paid.`);
+
+      // 3. Mark as paid
+      await this.confirmOrderPayment(order._id.toString());
+
+      // Update order with payment details
+      order.paymentMethod = paymentInfo.platform;
+      order.status = "paid";
+      await order.save();
+
+      return { orderId: order._id, matched: true, amount: detectedAmount };
+    } else {
+      console.warn(`[Payment Link] Amount mismatch: Order=${orderAmount}, Detected=${detectedAmount}`);
+      return { orderId: order._id, matched: false, expected: orderAmount, actual: detectedAmount };
+    }
   }
 
   async extractMerchantKnowledge(orderId: string) {

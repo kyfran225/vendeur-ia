@@ -48,7 +48,7 @@ router.get("/conversations", authenticate, async (req, res) => {
   try {
     const ownerId = (req as any).user.id;
     const merchant = await CommerceMerchantModel.findOne({ ownerId });
-    if (!merchant) return res.status(404).json({ error: "Merchant not found" });
+    if (!merchant) return res.json([]);
 
     const conversations = await CommerceConversationModel.find({ merchantId: merchant._id })
       .populate("customerId")
@@ -322,7 +322,19 @@ router.get("/knowledge", authenticate, async (req, res) => {
   try {
     const ownerId = (req as any).user.id;
     const merchant = await CommerceMerchantModel.findOne({ ownerId });
-    if (!merchant) return res.status(404).json({ error: "Merchant not found" });
+    if (!merchant) {
+      return res.json({
+        businessRules: {
+          deliveryZones: ["Abidjan"],
+          deliveryFees: [],
+          openingHours: "09:00 - 18:00",
+          returnPolicy: "Retours acceptés sous 48h.",
+          paymentMethods: []
+        },
+        faq: [],
+        customInstructions: ""
+      });
+    }
 
     const knowledge = await commerceService.getKnowledge(merchant._id.toString());
     res.json(knowledge);
@@ -348,7 +360,7 @@ router.get("/products", authenticate, async (req, res) => {
   try {
     const ownerId = (req as any).user.id;
     const merchant = await CommerceMerchantModel.findOne({ ownerId });
-    if (!merchant) return res.status(404).json({ error: "Merchant not found" });
+    if (!merchant) return res.json([]);
 
     const products = await CommerceProductModel.find({ merchantId: merchant._id });
     res.json(products);
@@ -472,7 +484,7 @@ router.get("/orders", authenticate, async (req, res) => {
   try {
     const ownerId = (req as any).user.id;
     const merchant = await CommerceMerchantModel.findOne({ ownerId });
-    if (!merchant) return res.status(404).json({ error: "Merchant not found" });
+    if (!merchant) return res.json([]);
 
     const orders = await CommerceOrderModel.find({ merchantId: merchant._id })
       .populate("customerId")

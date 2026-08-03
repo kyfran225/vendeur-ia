@@ -81,6 +81,17 @@ export function SalesInbox() {
       socket.on("ai:typing", (data: { conversationId: string; isTyping: boolean }) => {
         setTypingChats(prev => ({ ...prev, [data.conversationId]: data.isTyping }));
       });
+
+      socket.on("payment:detected", (data: any) => {
+        toast.success(`💰 Paiement détecté pour ${data.platform} (${data.amount} XOF) !`);
+        queryClient.invalidateQueries({ queryKey: ["conversations"] });
+        if (data.conversationId === selectedChat) {
+          queryClient.invalidateQueries({ queryKey: ["messages", selectedChat] });
+          if (data.linkResult?.matched) {
+             toast.success("Commande validée automatiquement ! ✨");
+          }
+        }
+      });
     }
     return () => {
       socket?.off("conversation:update");

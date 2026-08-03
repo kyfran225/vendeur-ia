@@ -27,7 +27,8 @@ const MerchantSchema = new Schema({
     personality: { type: String, default: "friendly" },
     responseStyle: { type: String, default: "normal" },
     autoReply: { type: Boolean, default: true },
-    voiceMode: { type: Boolean, default: false }
+    voiceMode: { type: Boolean, default: false },
+    localSlang: { type: Boolean, default: false }
   },
   whatsappConfig: {
     provider: { type: String, enum: ['baileys', 'meta'], default: 'baileys' },

@@ -34,6 +34,11 @@ export interface SalesMerchant {
   currency?: string;
   description?: string;
   paymentChannels?: any[];
+  aiSettings?: {
+    personality: string;
+    localSlang: boolean;
+    [key: string]: any;
+  } | null;
 }
 
 export class AIAgentService {
@@ -83,9 +88,17 @@ export class AIAgentService {
       : "Tarif à discuter selon la zone.";
 
     const isWestAfrica = merchant.country === "CI" || merchant.country === "SN" || merchant.country === "BF";
-    const localStyle = isWestAfrica
+    let localStyle = isWestAfrica
       ? `Style local d'Afrique de l'Ouest (chaleureux, direct, utilise des emojis comme ✨, 🚀, 👋).`
       : `Style professionnel, élégant et adapté à la culture de ${merchant.city}, ${merchant.country}.`;
+
+    if (merchant.aiSettings?.localSlang) {
+      if (merchant.country === "CI") {
+        localStyle += `\nTON LOCAL (NOUCHI) ACTIVÉ : Utilise modérément des expressions comme "Y'a foye", "C'est le travail", "On est ensemble", "Dja fou", "Boucantier". Sois le "vieux père" ou la "vieille mère" qui conseille bien le client.`;
+      } else if (merchant.country === "SN") {
+        localStyle += `\nTON LOCAL (WOLOF) ACTIVÉ : Utilise modérément des expressions comme "Jerejef", "Nangaadef", "Ba beneen yone", "Nice na". Sois chaleureux comme dans un marché de Dakar.`;
+      }
+    }
 
     const summaryStr = context.aiSummary ? `\n🧠 RAPPEL DES FAITS PRÉCÉDENTS (Mémoire Long Terme) :\n${context.aiSummary}\n` : "";
 
@@ -125,7 +138,11 @@ STRATÉGIE DE VENTE (AIDA) :
 
 DÉTECTION DE PAIEMENT :
 - Si le client dit qu'il a payé ou envoyé l'argent, remercie-le poliment.
-- Dis-lui que tu as bien reçu la preuve (si une image est détectée) mais précise que **seul le marchand peut valider définitivement la réception des fonds** pour valider la commande.
+- Dis-lui que tu as bien reçu la preuve (si une image est détectée) mais précise que **seul le marchand peut valider définitivement la réception des fonds** pour valider la commande (sauf si le système marque le paiement comme validé automatiquement dans le chat).
+
+INTENTIONS MULTIMODALES :
+- Si le message provient d'une transcription audio (souvent plus informel), sois particulièrement attentif aux noms de quartiers ou aux adjectifs de couleur/taille.
+- Si le client dit "Je veux celui-là" ou "C'est combien ?", il fait probablement référence à la photo qu'il vient d'envoyer ou à un produit dont vous venez de parler.
 
 GARDES-FOUS & SÉCURITÉ (CRITIQUE) :
 - INTERDICTION ABSOLUE de modifier les prix indiqués dans le catalogue.

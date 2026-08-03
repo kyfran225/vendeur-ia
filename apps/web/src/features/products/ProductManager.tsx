@@ -282,18 +282,18 @@ export function ProductManager() {
         </div>
       )}
 
-      <header className="flex items-center justify-between">
+      <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
         <div>
-          <h1 className="text-3xl font-black tracking-tight text-white">{config.title}</h1>
-          <p className="text-white/40">Gérez vos {config.itemLabel.toLowerCase()}s et laissez l'IA travailler.</p>
+          <h1 className="text-3xl md:text-5xl font-black tracking-tighter text-white uppercase">{config.title}</h1>
+          <p className="text-white/40 mt-1 md:text-lg">Gérez vos {config.itemLabel.toLowerCase()}s et laissez l'IA travailler.</p>
         </div>
-        <div className="flex gap-3">
+        <div className="flex flex-col xs:flex-row gap-3">
           {businessCategory !== "services" && (
             <button
               onClick={() => setIsScannerOpen(true)}
-              className="flex items-center gap-2 bg-sky-400 text-black px-6 py-3 rounded-2xl font-black uppercase tracking-widest text-xs shadow-lg hover:bg-sky-500 hover:scale-[1.02] active:scale-95 transition-all"
+              className="flex items-center justify-center gap-2 bg-sky-400 text-black px-6 py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] md:text-xs shadow-xl hover:bg-sky-500 hover:scale-[1.02] active:scale-95 transition-all w-full sm:w-auto"
             >
-              <Camera size={18} /> Scanner un produit
+              <Camera size={18} /> Scanner
             </button>
           )}
           <button
@@ -303,15 +303,15 @@ export function ProductManager() {
                  setIsAddingManual(true);
                }
             }}
-            className={`flex items-center gap-2 bg-${config.accent}-300 text-black px-6 py-3 rounded-2xl font-black uppercase tracking-widest text-xs shadow-lg hover:scale-[1.02] active:scale-95 transition-all`}
+            className={`flex items-center justify-center gap-2 bg-${config.accent}-300 text-black px-6 py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] md:text-xs shadow-xl hover:scale-[1.02] active:scale-95 transition-all w-full sm:w-auto`}
           >
             {businessCategory === "services" ? <Zap size={18} /> : <Plus size={18} />}
-            {businessCategory === "services" ? "Ajouter Service" : "Ajout Manuel"}
+            {businessCategory === "services" ? "Ajouter Service" : "Manuel"}
           </button>
         </div>
       </header>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {isLoading ? (
           <div className="col-span-full py-20 flex flex-col items-center justify-center gap-4 text-white/20">
             <Loader2 size={48} className="animate-spin" />

@@ -130,14 +130,14 @@ export function MarketingHub() {
   };
 
   return (
-    <div className="p-4 md:p-8 space-y-8 pb-24 animate-in fade-in duration-700">
-      <header className="flex items-center justify-between">
+    <div className="p-4 md:p-10 space-y-10 pb-24 md:pb-12 max-w-[1600px] mx-auto animate-in fade-in duration-700">
+      <header className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
-          <h1 className="text-3xl font-black tracking-tight text-white flex items-center gap-3">
-            <Megaphone className="text-sky-400" size={32} />
+          <h1 className="text-3xl md:text-5xl font-black tracking-tighter text-white uppercase flex items-center gap-4">
+            <Megaphone className="text-sky-400" size={40} />
             Hub Marketing
           </h1>
-          <p className="text-white/40">Faites savoir à vos clients que vous avez du nouveau.</p>
+          <p className="text-white/40 md:text-lg">Faites savoir à vos clients que vous avez du nouveau.</p>
         </div>
       </header>
 
@@ -208,7 +208,7 @@ export function MarketingHub() {
               Cible & Message
             </h2>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-3 gap-3 md:gap-4">
               {[
                 { id: 'vip', label: 'VIPs', count: segments?.vip || 0, icon: Sparkles, color: 'amber' },
                 { id: 'active', label: 'Actifs', count: segments?.active || 0, icon: Users, color: 'sky' },
@@ -218,16 +218,16 @@ export function MarketingHub() {
                   key={s.id}
                   onClick={() => handleSegmentSelect(s.id)}
                   className={cn(
-                    "p-6 rounded-3xl border-2 transition-all text-left space-y-2",
+                    "p-4 md:p-6 rounded-2xl md:rounded-3xl border-2 transition-all text-left space-y-2",
                     selectedSegment === s.id
-                      ? `bg-${s.color}-500/10 border-${s.color}-500/50`
+                      ? `bg-${s.color}-500/10 border-${s.color}-500/50 shadow-lg shadow-${s.color}-500/5`
                       : "bg-white/5 border-white/5 hover:bg-white/[0.08]"
                   )}
                 >
-                  <s.icon size={20} className={cn(selectedSegment === s.id ? `text-${s.color}-400` : "text-white/20")} />
+                  <s.icon size={18} className={cn("md:size-5", selectedSegment === s.id ? `text-${s.color}-400` : "text-white/20")} />
                   <div>
-                    <p className="text-lg font-black text-white">{s.count}</p>
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-white/40">{s.label}</p>
+                    <p className="text-base md:text-xl font-black text-white leading-tight">{s.count}</p>
+                    <p className="text-[8px] md:text-[10px] font-bold uppercase tracking-widest text-white/40 truncate">{s.label}</p>
                   </div>
                 </button>
               ))}

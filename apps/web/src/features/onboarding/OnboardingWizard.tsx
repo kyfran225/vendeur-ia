@@ -92,26 +92,26 @@ export function OnboardingWizard() {
   }, [tempData, setStep]);
 
   return (
-    <div className="min-h-screen bg-vendeur-coal flex flex-col items-center justify-center p-4 md:p-8">
+    <div className="min-h-screen bg-vendeur-coal flex flex-col items-center justify-center p-4 md:p-12 overflow-x-hidden">
       {/* Progress Bar */}
-      <div className="w-full max-w-2xl mb-12 flex items-center justify-between px-4">
+      <div className="w-full max-w-3xl mb-16 flex items-center justify-between px-6 relative">
         {steps.map((s, i) => (
-          <div key={i} className="flex flex-col items-center gap-2">
-            <div className={`h-8 w-8 rounded-full flex items-center justify-center text-xs font-black transition-all ${
-              i <= currentStep ? "bg-vendeur-emerald text-vendeur-coal" : "bg-white/5 text-white/20 border border-white/10"
+          <div key={i} className="flex flex-col items-center gap-3 z-10">
+            <div className={`h-10 w-10 md:h-12 md:w-12 rounded-2xl flex items-center justify-center text-xs md:text-sm font-black transition-all shadow-2xl ${
+              i <= currentStep ? "bg-vendeur-emerald text-vendeur-coal scale-110 shadow-vendeur-emerald/20" : "bg-white/5 text-white/20 border border-white/10"
             }`}>
-              {i < currentStep ? <Check size={16} /> : i + 1}
+              {i < currentStep ? <Check size={20} /> : i + 1}
             </div>
-            <span className={`text-[10px] font-black uppercase tracking-widest ${
+            <span className={`text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] ${
               i <= currentStep ? "text-vendeur-emerald" : "text-white/20"
             }`}>{s.title}</span>
           </div>
         ))}
         {/* Connection lines */}
-        <div className="absolute left-1/2 -translate-x-1/2 w-full max-w-xl h-[1px] bg-white/5 -z-10" />
+        <div className="absolute left-1/2 -translate-x-1/2 top-5 md:top-6 w-[80%] h-[2px] bg-white/5 -z-10" />
       </div>
 
-      <div className="w-full max-w-4xl relative">
+      <div className="w-full max-w-6xl relative">
         <AnimatePresence mode="wait">
           <motion.div
             key={currentStep}

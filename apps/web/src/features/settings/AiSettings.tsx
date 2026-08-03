@@ -91,17 +91,17 @@ export function AiSettings() {
   };
 
   return (
-    <div className="p-8 space-y-8 max-w-2xl animate-in fade-in duration-700">
-      <header>
-        <h1 className="text-3xl font-black tracking-tight text-white flex items-center gap-3">
-          <Bot className="text-vendeur-emerald" size={32} />
+    <div className="p-4 md:p-10 space-y-10 max-w-5xl mx-auto animate-in fade-in duration-700 pb-24 md:pb-12">
+      <header className="space-y-2">
+        <h1 className="text-3xl md:text-5xl font-black tracking-tighter uppercase text-white flex items-center gap-4">
+          <Bot className="text-vendeur-emerald" size={40} />
           Configuration IA
         </h1>
-        <p className="text-white/40">Personnalisez la façon dont votre IA interagit avec vos clients.</p>
+        <p className="text-white/40 md:text-lg">Personnalisez la façon dont votre IA interagit avec vos clients.</p>
       </header>
 
-      <div className="grid gap-6">
-        <section className="bg-vendeur-coal border border-white/10 rounded-[2.5rem] p-8 space-y-8">
+      <div className="grid gap-8">
+        <section className="bg-vendeur-coal/50 backdrop-blur-md border border-white/10 rounded-[2.5rem] md:rounded-[3rem] p-6 md:p-10 space-y-8 shadow-2xl">
            <div className="flex items-center justify-between">
               <div className="space-y-1">
                 <h2 className="text-xl font-black text-white flex items-center gap-2">

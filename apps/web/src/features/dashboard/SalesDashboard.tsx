@@ -52,9 +52,12 @@ const money = new Intl.NumberFormat("fr-FR", {
 });
 
 function formatAmount(value: number) {
-  return money.format(value);
+  return new Intl.NumberFormat("fr-FR", {
+    maximumFractionDigits: 0
+  }).format(value);
 }
 
+import { Link } from "react-router-dom";
 import { SalesInbox } from "../inbox/SalesInbox";
 import { WhatsAppConnectionFlow } from "./components/WhatsAppConnectionFlow";
 import { PackProModal } from "./components/PackProModal";
@@ -68,7 +71,7 @@ export function SalesDashboard() {
     (window as any).openPackPro = () => setIsPackProOpen(true);
   }, []);
 
-  const { accessToken, logout } = useAuthStore();
+  const { accessToken, logout, user } = useAuthStore();
   const socket = useSocket();
   const queryClient = useQueryClient();
 
@@ -110,48 +113,58 @@ export function SalesDashboard() {
   const merchant = dashboard?.merchant;
 
   return (
-    <div className="min-h-screen bg-vendeur-bg text-white pb-24">
+    <div className="min-h-screen bg-vendeur-bg text-white pb-24 md:pb-8">
       <PackProModal isOpen={isPackProOpen} onClose={() => setIsPackProOpen(false)} />
-      <header className="h-12 md:h-14 border-b border-white/5 bg-vendeur-bg/80 backdrop-blur-md flex items-center justify-between px-4 md:px-12 sticky top-0 z-40 w-full gap-4">
+      <header className="h-14 md:h-20 border-b border-white/5 bg-vendeur-bg/80 backdrop-blur-md flex items-center justify-between px-4 md:px-12 sticky top-0 z-40 w-full gap-4">
         {/* Connection Error Banner */}
         {merchant?.whatsappConfig?.status === 'error' && (
-          <div className="absolute top-full left-0 right-0 bg-red-500 py-2 px-4 flex items-center justify-center gap-3 animate-in slide-in-from-top duration-500">
+          <div className="absolute top-full left-0 right-0 bg-red-500 py-2 px-4 flex items-center justify-center gap-3 animate-in slide-in-from-top duration-500 shadow-lg">
             <AlertCircle size={14} className="text-white animate-pulse" />
             <p className="text-[10px] font-black uppercase tracking-widest text-white">Attention : Votre WhatsApp est déconnecté !</p>
             <button
               onClick={() => setTab("settings")}
-              className="px-3 py-1 bg-white text-red-500 rounded-lg text-[9px] font-black uppercase hover:bg-white/90 transition-all"
+              className="px-3 py-1 bg-white text-red-500 rounded-lg text-[9px] font-black uppercase hover:bg-white/90 transition-all shadow-sm"
             >
               Reconnecter
             </button>
           </div>
         )}
-        <div className="flex items-center gap-3 md:gap-4 flex-1 min-w-0">
-          <div className="h-7 w-7 md:h-8 md:w-8 rounded-xl bg-vendeur-emerald/10 flex items-center justify-center border border-vendeur-emerald/20 shrink-0">
-            <Bot className="text-vendeur-emerald" size={16} />
+        <div className="flex items-center gap-3 md:gap-5 flex-1 min-w-0">
+          <div className="md:hidden h-9 w-9 flex items-center justify-center overflow-hidden bg-white/5 rounded-xl p-1.5 border border-white/10 shrink-0">
+            <img src="/apple-touch-icon.png" alt="Logo" className="h-full w-full object-contain" />
+          </div>
+          <div className="hidden md:flex h-10 w-10 rounded-2xl bg-vendeur-emerald/10 items-center justify-center border border-vendeur-emerald/20 shrink-0">
+            <Bot className="text-vendeur-emerald" size={20} />
           </div>
           <div className="text-left min-w-0">
-            <p className="text-sm md:text-base font-black text-white uppercase tracking-tight truncate">{merchant?.businessName || "Mon Commerce"}</p>
-            <p className="text-[8px] md:text-[9px] uppercase tracking-[0.2em] text-vendeur-emerald/60 font-black leading-none truncate">AI Sales Machine</p>
+            <p className="text-base md:text-xl font-black text-white uppercase tracking-tight truncate leading-tight">{merchant?.businessName || "Mon Commerce"}</p>
+            <p className="text-[8px] md:text-[10px] uppercase tracking-[0.2em] text-vendeur-emerald/60 font-black leading-none truncate">AI Sales Machine</p>
           </div>
         </div>
-        <div className="flex items-center gap-2 md:gap-4 shrink-0">
-           <div className="h-7 w-7 md:h-8 md:w-8 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-white/60">
-             <User size={14} />
-           </div>
+        <div className="flex items-center gap-3 md:gap-6 shrink-0">
+           <Link
+             to="/settings"
+             className="h-9 w-9 md:h-12 md:w-12 rounded-xl md:rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-white/60 hover:bg-white/10 hover:border-vendeur-emerald/30 hover:text-vendeur-emerald transition-all overflow-hidden group shadow-lg"
+           >
+             {user?.avatarUrl ? (
+               <img src={user.avatarUrl} alt="Profil" className="h-full w-full object-cover group-hover:scale-110 transition-transform" />
+             ) : (
+               <User size={18} />
+             )}
+           </Link>
            <button
              onClick={logout}
-             className="h-7 w-7 md:h-8 md:w-auto md:px-4 rounded-xl border border-white/10 text-white/40 text-[10px] font-black uppercase hover:text-red-400 hover:border-red-400/20 transition-all flex items-center justify-center gap-2"
+             className="h-9 w-9 md:h-12 md:w-auto md:px-6 rounded-xl md:rounded-2xl border border-white/10 text-white/40 text-[10px] font-black uppercase hover:text-red-400 hover:border-red-400/20 hover:bg-red-400/5 transition-all flex items-center justify-center gap-2 shadow-lg"
              title="Déconnexion"
            >
-             <LogOut size={12} className="md:hidden" />
-             <span className="hidden md:inline">Déconnexion</span>
+             <LogOut size={14} className="md:hidden" />
+             <span className="hidden md:inline tracking-widest">Déconnexion</span>
            </button>
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto p-4 md:p-6 space-y-4">
-        <nav className="flex gap-2 p-1 bg-vendeur-coal rounded-2xl border border-white/5 w-fit">
+      <main className="max-w-6xl mx-auto p-4 md:p-10 space-y-8">
+        <nav className="flex gap-2 p-1.5 bg-vendeur-coal/80 backdrop-blur-md rounded-[1.5rem] border border-white/10 w-fit shadow-2xl overflow-x-auto no-scrollbar max-w-full">
           <TabButton active={tab === "home"} onClick={() => setTab("home")} icon={<LayoutDashboard size={18}/>} label="Stats" />
           <TabButton active={tab === "inbox"} onClick={() => setTab("inbox")} icon={<MessageCircle size={18}/>} label="Inbox" />
           <TabButton active={tab === "products"} onClick={() => setTab("products")} icon={<Package size={18}/>} label="Catalogue" />
@@ -189,22 +202,24 @@ function HomePanel({ dashboard }: { dashboard: any }) {
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-700">
       {/* AI GROWTH ADVISOR SECTION */}
-      <section className="relative overflow-hidden bg-vendeur-emerald/10 border border-vendeur-emerald/20 p-6 md:p-8 rounded-[2.5rem] group">
-        <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-110 transition-transform duration-700">
-           <Sparkles size={120} className="text-vendeur-emerald" />
+      <section className="relative overflow-hidden bg-vendeur-emerald/10 border border-vendeur-emerald/20 p-6 md:p-10 rounded-[2.5rem] md:rounded-[3.5rem] group shadow-2xl">
+        <div className="absolute top-0 right-0 p-8 md:p-12 opacity-10 group-hover:scale-110 transition-transform duration-700 pointer-events-none">
+           <Sparkles size={160} className="text-vendeur-emerald" />
         </div>
 
-        <div className="relative z-10 space-y-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-2xl bg-vendeur-emerald flex items-center justify-center text-vendeur-coal shadow-lg shadow-vendeur-emerald/20">
-                <Bot size={20} />
+        <div className="relative z-10 space-y-8">
+          <div className="flex items-center justify-center">
+            <div className="flex items-center gap-3 md:gap-5 max-w-full">
+              <div className="h-10 w-10 md:h-14 md:w-14 rounded-xl md:rounded-2xl bg-vendeur-emerald flex items-center justify-center text-vendeur-coal shadow-2xl shadow-vendeur-emerald/30 group-hover:rotate-6 transition-transform shrink-0">
+                <Bot size={22} className="md:size-32" />
               </div>
-              <div>
-                <h2 className="text-xl font-black text-white uppercase tracking-tighter">Conseiller de Croissance IA</h2>
-                <div className="flex items-center gap-2">
-                  <div className={cn("h-2 w-2 rounded-full animate-pulse", status === 'connected' ? "bg-vendeur-emerald" : "bg-red-500")} />
-                  <p className="text-[10px] font-black uppercase text-vendeur-emerald/60 tracking-widest">
+              <div className="min-w-0">
+                <h2 className="text-lg xs:text-xl md:text-3xl font-black text-white uppercase tracking-tighter leading-none truncate">
+                  Conseiller de Croissance IA
+                </h2>
+                <div className="flex items-center gap-2 mt-1 md:mt-2">
+                  <div className={cn("h-2 w-2 md:h-2.5 md:w-2.5 rounded-full animate-pulse", status === 'connected' ? "bg-vendeur-emerald" : "bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]")} />
+                  <p className="text-[10px] md:text-xs font-black uppercase text-vendeur-emerald/80 tracking-widest truncate">
                     {status === 'connected' ? "IA en ligne & active" : "IA en attente de connexion"}
                   </p>
                 </div>
@@ -225,8 +240,8 @@ function HomePanel({ dashboard }: { dashboard: any }) {
         </div>
       </section>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <MetricCard icon={<DollarSign className="text-vendeur-emerald" />} label="Revenu Jour" value={formatAmount(dashboard?.metrics?.revenueToday || 0)} />
+      <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+        <MetricCard icon={<DollarSign className="text-vendeur-emerald" />} label="Revenu Jour" value={formatAmount(dashboard?.metrics?.revenueToday || 0)} suffix="F CFA" />
         <MetricCard icon={<MessageCircle className="text-blue-400" />} label="Conversations" value={String(dashboard?.metrics?.conversationsToday || 0)} />
         <MetricCard icon={<Zap className="text-amber-400" />} label="Commandes" value={String(dashboard?.metrics?.ordersToday || 0)} />
         <MetricCard icon={<TrendingUp className="text-rose-400" />} label="Conversion" value={`${dashboard?.metrics?.conversionRate || 0}%`} />
@@ -607,13 +622,16 @@ function SettingsPanel({ merchant, systemSettings }: { merchant: any; systemSett
   );
 }
 
-function MetricCard({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
+function MetricCard({ icon, label, value, suffix }: { icon: React.ReactNode; label: string; value: string; suffix?: string }) {
   return (
-    <div className="bg-vendeur-coal border border-white/10 p-6 rounded-3xl space-y-4">
-      <div className="h-12 w-12 bg-white/5 rounded-2xl flex items-center justify-center">{icon}</div>
+    <div className="bg-vendeur-coal/50 backdrop-blur-sm border border-white/10 p-4 xs:p-5 md:p-6 rounded-[2rem] space-y-3 md:space-y-4 shadow-xl hover:border-white/20 transition-all group">
+      <div className="h-9 w-9 md:h-12 md:w-12 bg-white/5 rounded-xl md:rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">{icon}</div>
       <div>
-        <p className="text-[10px] font-black uppercase tracking-widest text-white/40">{label}</p>
-        <p className="text-2xl font-black">{value}</p>
+        <p className="text-[8px] md:text-[10px] font-black uppercase tracking-widest text-white/30 truncate">{label}</p>
+        <div className="flex items-baseline gap-1 mt-0.5 md:mt-1">
+          <p className="text-lg md:text-2xl font-black text-white">{value}</p>
+          {suffix && <span className="text-[9px] md:text-xs font-black text-white/20 uppercase">{suffix}</span>}
+        </div>
       </div>
     </div>
   );

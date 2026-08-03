@@ -64,17 +64,22 @@ export function KnowledgeSetup() {
   };
 
   return (
-    <div className="p-6 space-y-8 max-w-4xl animate-in fade-in duration-500">
-      <header>
-        <h1 className="text-3xl font-black tracking-tight">Cerveau IA</h1>
-        <p className="text-white/40">Enseignez les règles de votre boutique à votre IA.</p>
+    <div className="p-4 md:p-10 space-y-10 max-w-5xl mx-auto animate-in fade-in duration-500 pb-24 md:pb-12">
+      <header className="space-y-2">
+        <h1 className="text-3xl md:text-5xl font-black tracking-tighter uppercase text-white">Cerveau IA</h1>
+        <p className="text-white/40 md:text-lg">Enseignez les règles de votre boutique à votre IA.</p>
       </header>
 
       <div className="grid gap-6">
-        <section className="bg-vendeur-coal border border-white/10 rounded-[2.5rem] p-8 space-y-6">
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 bg-sky-500/10 rounded-xl flex items-center justify-center text-sky-400"><Truck size={20} /></div>
-            <h2 className="text-xl font-black">Grille de Livraison</h2>
+        <section className="bg-vendeur-coal/50 backdrop-blur-md border border-white/10 rounded-[2.5rem] md:rounded-[3rem] p-6 md:p-10 space-y-8 shadow-2xl">
+          <div className="flex items-center gap-4">
+            <div className="h-12 w-12 md:h-14 md:w-14 bg-sky-500/10 rounded-2xl flex items-center justify-center text-sky-400 border border-sky-500/20 shadow-lg shadow-sky-500/5">
+              <Truck size={24} />
+            </div>
+            <div>
+              <h2 className="text-xl md:text-2xl font-black uppercase text-white">Grille de Livraison</h2>
+              <p className="text-[10px] md:text-xs font-black uppercase tracking-widest text-white/30">Définissez vos tarifs par zone</p>
+            </div>
           </div>
 
           <div className="space-y-4">

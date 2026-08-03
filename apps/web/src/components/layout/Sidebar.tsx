@@ -23,9 +23,9 @@ export function Sidebar() {
   return (
     <>
       {/* Desktop Sidebar */}
-      <aside className="hidden md:flex w-24 bg-vendeur-coal border-r border-white/5 flex-col items-center py-8 space-y-12 shrink-0">
-        <div className="h-12 w-12 flex items-center justify-center overflow-hidden">
-          <img src="/apple-touch-icon.png" alt="Logo" className="h-full w-full object-contain" />
+      <aside className="hidden md:flex w-28 bg-vendeur-coal border-r border-white/5 flex-col items-center py-10 space-y-12 shrink-0">
+        <div className="h-16 w-16 flex items-center justify-center overflow-hidden bg-white/5 rounded-2xl p-2 border border-white/10 shadow-2xl">
+          <img src="/apple-touch-icon.png" alt="Logo" className="h-full w-full object-contain filter drop-shadow-lg" />
         </div>
 
         <nav className="flex-1 w-full flex flex-col items-center gap-6">

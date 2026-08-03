@@ -570,29 +570,33 @@ export function LandingPage() {
   const { user, logout } = useAuthStore();
 
   return (
-    <div className="min-h-screen bg-[#07100d] selection:bg-emerald-300/30 overflow-x-hidden text-left pt-12 md:pt-14 w-full">
-      <header className="fixed top-0 left-0 right-0 z-50 border-b border-white/5 bg-[#07100d]/80 backdrop-blur-md w-full h-12 md:h-14">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 h-full gap-4">
-          <div className="flex items-center gap-3 md:gap-4 flex-1 min-w-0">
-            <div className="flex h-8 w-8 md:h-9 md:w-9 shrink-0 items-center justify-center overflow-hidden">
+    <div className="min-h-screen bg-[#07100d] selection:bg-emerald-300/30 overflow-x-hidden text-left pt-14 md:pt-20 w-full">
+      <header className="fixed top-0 left-0 right-0 z-50 border-b border-white/5 bg-[#07100d]/80 backdrop-blur-md w-full h-14 md:h-20">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 h-full gap-4">
+          <div className="flex items-center gap-3 md:gap-5 flex-1 min-w-0">
+            <div className="flex h-9 w-9 md:h-12 md:w-12 shrink-0 items-center justify-center overflow-hidden bg-white/5 rounded-xl md:rounded-2xl p-1.5 border border-white/10 shadow-xl">
               <img src="/apple-touch-icon.png" alt="Logo" className="h-full w-full object-contain" />
             </div>
             <div className="min-w-0">
-              <p className="truncate text-sm md:text-base font-black text-white uppercase">{dynamicTitle}</p>
-              <p className="truncate text-[8px] md:text-[9px] uppercase tracking-[0.2em] text-emerald-300/60 font-black">AI Sales Machine</p>
+              <p className="truncate text-base md:text-xl font-black text-white uppercase leading-tight tracking-tight">{dynamicTitle}</p>
+              <p className="truncate text-[8px] md:text-[10px] uppercase tracking-[0.2em] text-emerald-300/60 font-black">AI Sales Machine</p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 md:gap-4 shrink-0">
+          <div className="flex items-center gap-3 md:gap-6 shrink-0">
             {user ? (
-              <div className="flex items-center gap-3">
-                <span className="hidden md:inline text-xs font-bold text-white/60">Salut, {user.displayName}</span>
-                <div className="h-9 w-9 md:h-10 md:w-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-white/60">
-                   <User size={18} />
+              <div className="flex items-center gap-3 md:gap-5">
+                <span className="hidden lg:inline text-xs font-black uppercase tracking-widest text-white/40">Salut, <span className="text-white">{user.displayName}</span></span>
+                <div className="h-9 w-9 md:h-12 md:w-12 rounded-xl md:rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-white/60 overflow-hidden shadow-lg">
+                   {user.avatarUrl ? (
+                     <img src={user.avatarUrl} className="h-full w-full object-cover" />
+                   ) : (
+                     <User size={20} />
+                   )}
                 </div>
                 <button
                   onClick={logout}
-                  className="h-9 px-3 md:px-4 rounded-xl border border-white/10 text-white/40 text-[10px] font-black uppercase hover:text-red-400 transition-colors hidden md:block"
+                  className="h-9 md:h-12 px-4 md:px-6 rounded-xl md:rounded-2xl border border-white/10 text-white/40 text-[10px] font-black uppercase hover:text-red-400 hover:border-red-400/20 hover:bg-red-400/5 transition-all hidden md:block tracking-widest"
                 >
                   Déconnexion
                 </button>
@@ -600,13 +604,13 @@ export function LandingPage() {
             ) : (
               <button
                 onClick={() => setIsAuthOpen(true)}
-                className="group relative flex h-10 items-center justify-center rounded-xl bg-white px-4 md:px-6 text-[10px] font-black uppercase tracking-[0.15em] text-black transition-all hover:bg-emerald-300 shadow-xl shadow-white/5"
+                className="group relative flex h-10 md:h-12 items-center justify-center rounded-xl md:rounded-2xl bg-white px-5 md:px-8 text-[10px] font-black uppercase tracking-[0.2em] text-black transition-all hover:bg-emerald-300 hover:scale-105 active:scale-95 shadow-2xl"
               >
                 <span className="hidden md:inline">Connexion</span>
-                <LogIn className="md:hidden" size={18} />
+                <LogIn className="md:hidden" size={20} />
 
                 {/* Subtle Glow Effect */}
-                <div className="absolute inset-0 rounded-xl bg-emerald-400/20 blur-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+                <div className="absolute inset-0 rounded-xl md:rounded-2xl bg-emerald-400/20 blur-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
               </button>
             )}
           </div>

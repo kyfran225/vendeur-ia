@@ -81,14 +81,14 @@ export function SettingsPage() {
   const systemSettings = dashboard?.systemSettings;
 
   return (
-    <div className="p-4 md:p-10 max-w-6xl mx-auto space-y-10 animate-in fade-in duration-700 pb-24">
+    <div className="p-4 md:p-10 max-w-6xl mx-auto space-y-8 md:space-y-10 animate-in fade-in duration-700 pb-24 overflow-x-hidden">
       <header className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div className="space-y-2">
-          <h1 className="text-3xl md:text-5xl font-black tracking-tighter uppercase text-white flex items-center gap-4">
-            <Settings className="text-vendeur-emerald" size={40} />
-            Centre de Contrôle
+          <h1 className="text-2xl md:text-5xl font-black tracking-tighter uppercase text-white flex items-center gap-3 md:gap-4">
+            <Settings className="text-vendeur-emerald shrink-0" size={32} />
+            <span className="truncate">Centre de Contrôle</span>
           </h1>
-          <p className="text-white/40 md:text-lg">Pilotez votre machine de vente et configurez votre IA.</p>
+          <p className="text-white/40 text-sm md:text-lg">Pilotez votre machine de vente et configurez votre IA.</p>
         </div>
 
         <button
@@ -156,7 +156,7 @@ function TabButton({ active, onClick, icon, label }: { active: boolean; onClick:
     <button
       onClick={onClick}
       className={cn(
-        "flex items-center gap-2 px-6 py-3 rounded-2xl text-xs font-black uppercase tracking-widest transition-all shrink-0",
+        "flex items-center gap-2 px-4 md:px-6 py-3 rounded-2xl text-xs font-black uppercase tracking-widest transition-all shrink-0 whitespace-nowrap",
         active ? "bg-vendeur-emerald text-vendeur-coal shadow-lg" : "text-white/40 hover:bg-white/5 hover:text-white"
       )}
     >
@@ -199,22 +199,22 @@ function BoutiqueTab({ merchant, initialKnowledge, accessToken }: { merchant: an
 
   return (
     <div className="space-y-8 animate-in slide-in-from-bottom-2 duration-500">
-      <section className="bg-vendeur-coal/50 backdrop-blur-md border border-white/10 p-8 md:p-10 rounded-[2.5rem] md:rounded-[3.5rem] space-y-8 shadow-2xl">
-        <div className="flex items-center justify-between">
+      <section className="bg-vendeur-coal/50 backdrop-blur-md border border-white/10 p-6 md:p-10 rounded-[2.5rem] md:rounded-[3.5rem] space-y-8 shadow-2xl overflow-hidden">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="space-y-1">
-            <h2 className="text-2xl font-black text-white flex items-center gap-3">
-              <Store size={24} className="text-vendeur-emerald" />
-              Profil de la Boutique
+            <h2 className="text-xl md:text-2xl font-black text-white flex items-center gap-3">
+              <Store size={22} className="text-vendeur-emerald shrink-0" />
+              <span className="whitespace-nowrap">Profil de la Boutique</span>
             </h2>
-            <p className="text-xs text-white/40 font-medium">L'IA utilise ces infos pour présenter votre business.</p>
+            <p className="text-[10px] md:text-xs text-white/40 font-medium">L'IA utilise ces infos pour présenter votre business.</p>
           </div>
           <button
             onClick={() => updateMutation.mutate()}
             disabled={updateMutation.isPending}
-            className="flex h-12 items-center justify-center gap-2 rounded-2xl bg-vendeur-emerald px-6 text-[10px] font-black uppercase text-vendeur-coal shadow-lg hover:scale-105 active:scale-95 transition-all disabled:opacity-50"
+            className="flex h-12 w-full sm:w-auto items-center justify-center gap-2 rounded-2xl bg-vendeur-emerald px-6 text-[10px] font-black uppercase text-vendeur-coal shadow-lg hover:scale-105 active:scale-95 transition-all disabled:opacity-50 whitespace-nowrap"
           >
             {updateMutation.isPending ? <Loader2 className="animate-spin" size={16} /> : <Save size={16} />}
-            Tout Enregistrer
+            Enregistrer
           </button>
         </div>
 
@@ -247,14 +247,14 @@ function BoutiqueTab({ merchant, initialKnowledge, accessToken }: { merchant: an
       </section>
 
       {/* Grille de Livraison */}
-      <section className="bg-vendeur-coal border border-white/10 p-8 md:p-10 rounded-[2.5rem] md:rounded-[3.5rem] space-y-8 shadow-2xl">
-        <div className="flex items-center gap-4">
-          <div className="h-14 w-14 bg-sky-500/10 rounded-2xl flex items-center justify-center text-sky-400 border border-sky-500/20">
-            <Truck size={28} />
+      <section className="bg-vendeur-coal border border-white/10 p-6 md:p-10 rounded-[2.5rem] md:rounded-[3.5rem] space-y-8 shadow-2xl overflow-hidden">
+        <div className="flex items-center gap-3 md:gap-4">
+          <div className="h-12 w-12 md:h-14 md:w-14 bg-sky-500/10 rounded-2xl flex items-center justify-center text-sky-400 border border-sky-500/20 shrink-0">
+            <Truck size={24} className="md:w-7 md:h-7" />
           </div>
           <div>
-            <h2 className="text-2xl font-black uppercase text-white leading-tight">Frais de Livraison</h2>
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/30">Ces tarifs seront communiqués aux clients.</p>
+            <h2 className="text-xl md:text-2xl font-black uppercase text-white leading-tight whitespace-nowrap">Frais de Livraison</h2>
+            <p className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.15em] md:tracking-[0.2em] text-white/30">Ces tarifs seront communiqués aux clients.</p>
           </div>
         </div>
 
@@ -306,13 +306,13 @@ function BoutiqueTab({ merchant, initialKnowledge, accessToken }: { merchant: an
       </section>
 
       {/* Moyens de Paiement */}
-      <section className="bg-vendeur-coal border border-white/10 p-8 rounded-[2.5rem] space-y-8 shadow-2xl">
+      <section className="bg-vendeur-coal border border-white/10 p-6 md:p-8 rounded-[2.5rem] space-y-8 shadow-2xl overflow-hidden">
          <div className="space-y-1">
-            <h2 className="text-2xl font-black text-white flex items-center gap-3">
-              <Banknote size={24} className="text-emerald-400" />
-              Moyens de Paiement
+            <h2 className="text-xl md:text-2xl font-black text-white flex items-center gap-3">
+              <Banknote size={22} className="text-emerald-400 shrink-0" />
+              <span className="whitespace-nowrap">Moyens de Paiement</span>
             </h2>
-            <p className="text-xs text-white/40">Coordonnées pour les transferts d'argent.</p>
+            <p className="text-[10px] md:text-xs text-white/40">Coordonnées pour les transferts d'argent.</p>
          </div>
 
          <div className="space-y-4">
@@ -368,14 +368,14 @@ function BoutiqueTab({ merchant, initialKnowledge, accessToken }: { merchant: an
       </section>
 
       {/* Alertes Push */}
-      <section className="bg-vendeur-coal border border-white/10 p-8 rounded-[2.5rem] space-y-6">
+      <section className="bg-vendeur-coal border border-white/10 p-6 md:p-8 rounded-[2.5rem] space-y-6 overflow-hidden">
         <div className="flex items-center gap-4">
-           <div className="h-12 w-12 bg-amber-500/10 rounded-2xl flex items-center justify-center text-amber-400 border border-amber-500/20 shadow-lg shadow-amber-500/5">
-              <Bell size={24} />
+           <div className="h-10 w-10 md:h-12 md:w-12 bg-amber-500/10 rounded-2xl flex items-center justify-center text-amber-400 border border-amber-500/20 shadow-lg shadow-amber-500/5 shrink-0">
+              <Bell size={20} className="md:w-6 md:h-6" />
            </div>
            <div>
-              <h2 className="text-xl font-black text-white">Alertes Push</h2>
-              <p className="text-xs text-white/40 font-medium leading-relaxed">Notifications en temps réel sur cet appareil.</p>
+              <h2 className="text-lg md:text-xl font-black text-white whitespace-nowrap">Alertes Push</h2>
+              <p className="text-[10px] md:text-xs text-white/40 font-medium leading-relaxed">Notifications en temps réel sur cet appareil.</p>
            </div>
         </div>
 
@@ -427,24 +427,24 @@ function SavoirTab({ initialKnowledge }: { initialKnowledge: any }) {
 
   return (
     <div className="space-y-8 animate-in slide-in-from-bottom-2 duration-500">
-      <section className="bg-vendeur-coal border border-white/10 p-8 md:p-10 rounded-[2.5rem] md:rounded-[3.5rem] space-y-8 shadow-2xl">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="h-14 w-14 bg-amber-500/10 rounded-2xl flex items-center justify-center text-amber-400 border border-amber-500/20">
-                <HelpCircle size={28} />
+      <section className="bg-vendeur-coal border border-white/10 p-6 md:p-10 rounded-[2.5rem] md:rounded-[3.5rem] space-y-8 shadow-2xl overflow-hidden">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-3 md:gap-4">
+              <div className="h-12 w-12 md:h-14 md:w-14 bg-amber-500/10 rounded-2xl flex items-center justify-center text-amber-400 border border-amber-500/20 shrink-0">
+                <HelpCircle size={24} className="md:w-7 md:h-7" />
               </div>
               <div>
-                <h2 className="text-2xl font-black uppercase text-white leading-tight">Mémoire de l'IA (FAQ)</h2>
-                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/30">Donnez des réponses précises à votre IA.</p>
+                <h2 className="text-xl md:text-2xl font-black uppercase text-white leading-tight whitespace-nowrap">Mémoire de l'IA (FAQ)</h2>
+                <p className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] text-white/30">Donnez des réponses précises à votre IA.</p>
               </div>
             </div>
             <button
               onClick={() => saveMutation.mutate(localData)}
               disabled={saveMutation.isPending}
-              className="flex h-12 items-center justify-center gap-2 rounded-2xl bg-white text-vendeur-coal px-8 text-[10px] font-black uppercase shadow-lg hover:scale-105 active:scale-95 transition-all disabled:opacity-50"
+              className="flex h-12 w-full sm:w-auto items-center justify-center gap-2 rounded-2xl bg-white text-vendeur-coal px-8 text-[10px] font-black uppercase shadow-lg hover:scale-105 active:scale-95 transition-all disabled:opacity-50 whitespace-nowrap"
             >
               {saveMutation.isPending ? <Loader2 className="animate-spin" size={16} /> : <Save size={16} />}
-              Enregistrer le Savoir
+              Enregistrer
             </button>
           </div>
 
@@ -521,19 +521,19 @@ function PersonnaliteTab({ merchant }: { merchant: any }) {
 
   return (
     <div className="space-y-8 animate-in slide-in-from-bottom-2 duration-500">
-      <section className="bg-vendeur-coal border border-white/10 p-8 md:p-10 rounded-[2.5rem] md:rounded-[3.5rem] space-y-10 shadow-2xl">
-         <div className="flex items-center justify-between">
+      <section className="bg-vendeur-coal border border-white/10 p-6 md:p-10 rounded-[2.5rem] md:rounded-[3.5rem] space-y-10 shadow-2xl overflow-hidden">
+         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="space-y-1">
-               <h2 className="text-2xl font-black text-white flex items-center gap-3">
-                 <Sparkles size={24} className="text-amber-400" />
-                 Style de Communication
+               <h2 className="text-xl md:text-2xl font-black text-white flex items-center gap-3">
+                 <Sparkles size={22} className="text-amber-400 shrink-0" />
+                 <span className="whitespace-nowrap">Style de Communication</span>
                </h2>
-               <p className="text-xs text-white/40">Définissez le caractère de votre IA.</p>
+               <p className="text-[10px] md:text-xs text-white/40">Définissez le caractère de votre IA.</p>
             </div>
             <button
                onClick={() => updateMutation.mutate()}
                disabled={updateMutation.isPending}
-               className="h-12 bg-vendeur-emerald text-vendeur-coal px-8 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-lg"
+               className="h-12 w-full sm:w-auto bg-vendeur-emerald text-vendeur-coal px-8 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-lg whitespace-nowrap"
             >
                {updateMutation.isPending ? <Loader2 className="animate-spin" size={16} /> : "Enregistrer"}
             </button>
@@ -630,15 +630,15 @@ function ConnexionsTab({ merchant, systemSettings, qrCode }: { merchant: any; sy
   });
 
   return (
-    <div className="space-y-10 animate-in slide-in-from-bottom-2 duration-500">
+    <div className="space-y-10 animate-in slide-in-from-bottom-2 duration-500 overflow-x-hidden">
       <section className="space-y-6">
         <div className="flex items-center gap-4">
-           <div className="h-14 w-14 bg-vendeur-emerald/10 rounded-2xl flex items-center justify-center text-vendeur-emerald border border-vendeur-emerald/20">
-              <Globe size={28} />
+           <div className="h-12 w-12 md:h-14 md:w-14 bg-vendeur-emerald/10 rounded-2xl flex items-center justify-center text-vendeur-emerald border border-vendeur-emerald/20 shrink-0">
+              <Globe size={24} className="md:w-7 md:h-7" />
            </div>
            <div>
-              <h2 className="text-2xl font-black text-white uppercase tracking-tighter leading-tight">Canaux Connectés</h2>
-              <p className="text-sm text-white/40">Gérez les plateformes où votre IA est active.</p>
+              <h2 className="text-xl md:text-2xl font-black text-white uppercase tracking-tighter leading-tight whitespace-nowrap">Canaux Connectés</h2>
+              <p className="text-xs md:text-sm text-white/40">Gérez les plateformes où votre IA est active.</p>
            </div>
         </div>
 
@@ -660,10 +660,10 @@ function ConnexionsTab({ merchant, systemSettings, qrCode }: { merchant: any; sy
         </div>
       </section>
 
-      <section className="bg-vendeur-coal border border-white/10 p-8 md:p-10 rounded-[2.5rem] md:rounded-[3.5rem] space-y-8 shadow-2xl">
+      <section className="bg-vendeur-coal border border-white/10 p-6 md:p-10 rounded-[2.5rem] md:rounded-[3.5rem] space-y-8 shadow-2xl overflow-hidden">
          <div className="space-y-1">
-            <h2 className="text-2xl font-black text-white">Liaison WhatsApp</h2>
-            <p className="text-xs text-white/40 uppercase tracking-[0.2em] font-black">Indispensable pour vos ventes automatisées.</p>
+            <h2 className="text-xl md:text-2xl font-black text-white whitespace-nowrap">Liaison WhatsApp</h2>
+            <p className="text-[10px] text-white/40 uppercase tracking-[0.15em] md:tracking-[0.2em] font-black">Indispensable pour vos ventes automatisées.</p>
          </div>
 
          <WhatsAppConnectionFlow
@@ -699,15 +699,15 @@ function CompteTab() {
   };
 
   return (
-    <div className="space-y-8 animate-in slide-in-from-bottom-2 duration-500 max-w-2xl">
-      <section className="bg-vendeur-coal/50 backdrop-blur-md border border-white/10 p-8 md:p-10 rounded-[2.5rem] md:rounded-[3.5rem] space-y-8 shadow-2xl">
-        <div className="flex items-center gap-4">
-          <div className="h-14 w-14 bg-vendeur-emerald/10 rounded-2xl flex items-center justify-center text-vendeur-emerald border border-vendeur-emerald/20">
-            <UserIcon size={28} />
+    <div className="space-y-8 animate-in slide-in-from-bottom-2 duration-500 max-w-2xl overflow-x-hidden">
+      <section className="bg-vendeur-coal/50 backdrop-blur-md border border-white/10 p-6 md:p-10 rounded-[2.5rem] md:rounded-[3.5rem] space-y-8 shadow-2xl overflow-hidden">
+        <div className="flex items-center gap-3 md:gap-4">
+          <div className="h-12 w-12 md:h-14 md:w-14 bg-vendeur-emerald/10 rounded-2xl flex items-center justify-center text-vendeur-emerald border border-vendeur-emerald/20 shrink-0">
+            <UserIcon size={24} className="md:w-7 md:h-7" />
           </div>
           <div>
-            <h2 className="text-2xl font-black uppercase text-white leading-tight">Mon Profil Personnel</h2>
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/30">Gérez vos informations de compte.</p>
+            <h2 className="text-xl md:text-2xl font-black uppercase text-white leading-tight whitespace-nowrap">Mon Profil Personnel</h2>
+            <p className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] text-white/30">Gérez vos informations de compte.</p>
           </div>
         </div>
 
@@ -775,11 +775,11 @@ function CompteTab() {
         <button
           onClick={handleUpdate}
           disabled={loading}
-          className="w-full h-14 bg-vendeur-emerald text-vendeur-coal font-black uppercase tracking-widest rounded-2xl flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50 mt-4 shadow-xl shadow-vendeur-emerald/20"
+          className="w-full h-14 bg-vendeur-emerald text-vendeur-coal font-black uppercase tracking-widest rounded-2xl flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50 mt-4 shadow-xl shadow-vendeur-emerald/20 whitespace-nowrap"
         >
           {loading ? <Loader2 className="animate-spin" size={20} /> : (
             <>
-              Enregistrer les modifications
+              Enregistrer
               <Save size={18} />
             </>
           )}

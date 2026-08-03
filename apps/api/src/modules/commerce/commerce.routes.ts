@@ -407,7 +407,11 @@ router.post("/products/vision", authenticate, aiLimiter, upload.single("image"),
 
     res.json(analysis);
   } catch (error: any) {
-    logger.error(`[Vision Error] ${error.message}`, { userId: (req as any).user.id });
+    logger.error(`[Vision Error] ${error.message}`, {
+      userId: (req as any).user.id,
+      stack: error.stack,
+      details: error.response?.data
+    });
     res.status(500).json({ error: error.message });
   }
 });

@@ -1,13 +1,15 @@
 import React, { useState, useMemo } from "react";
-import { Package, Sparkles, Trash2, Edit, Camera, X, Save, Zap, Utensils, Laptop, Palette, Hammer, ShoppingBag, Loader2, MessageSquareText, Plus } from "lucide-react";
+import { Package, Sparkles, Trash2, Edit, Camera, X, Save, Zap, Utensils, Laptop, Palette, Hammer, ShoppingBag, Loader2, MessageSquareText, Plus, Heart, Monitor, Home, ShoppingCart, Activity, Car, Box } from "lucide-react";
 import { ProductScanner } from "./components/ProductScanner";
 import { CaptionModal } from "./components/CaptionModal";
 import { ConfirmationModal } from "../../components/ui/ConfirmationModal";
 import { useOnboardingStore } from "@/stores/onboardingStore";
 import { useAuthStore } from "@/stores/authStore";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { compressImage } from "@/lib/imageUtils";
 import axios from "axios";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 const API_URL = import.meta.env.VITE_API_URL;
 if (!API_URL) console.warn("VITE_API_URL is not defined! Check your .env file.");
@@ -62,6 +64,62 @@ const BUSINESS_CONFIGS: Record<string, any> = {
     icon: <Hammer size={48} className="text-orange-500/20" />,
     accent: "orange",
     scannerHint: "Scannez vos créations uniques"
+  },
+  beauty: {
+    title: "Cosmétiques & Beauté",
+    itemLabel: "Produit",
+    stockLabel: "Stock",
+    icon: <Heart size={48} className="text-pink-500/20" />,
+    accent: "pink",
+    scannerHint: "Scannez vos produits de beauté"
+  },
+  electronics: {
+    title: "Stock High-Tech",
+    itemLabel: "Article",
+    stockLabel: "Stock",
+    icon: <Monitor size={48} className="text-blue-500/20" />,
+    accent: "blue",
+    scannerHint: "Scannez vos appareils électroniques"
+  },
+  home: {
+    title: "Maison & Déco",
+    itemLabel: "Article",
+    stockLabel: "Stock",
+    icon: <Home size={48} className="text-indigo-500/20" />,
+    accent: "indigo",
+    scannerHint: "Scannez vos articles de maison"
+  },
+  grocery: {
+    title: "Mon Épicerie",
+    itemLabel: "Produit",
+    stockLabel: "Stock",
+    icon: <ShoppingCart size={48} className="text-lime-500/20" />,
+    accent: "lime",
+    scannerHint: "Scannez vos produits alimentaires"
+  },
+  health: {
+    title: "Santé & Bien-être",
+    itemLabel: "Produit",
+    stockLabel: "Stock",
+    icon: <Activity size={48} className="text-red-500/20" />,
+    accent: "red",
+    scannerHint: "Scannez vos produits de santé"
+  },
+  auto: {
+    title: "Auto-Moto",
+    itemLabel: "Pièce",
+    stockLabel: "Stock",
+    icon: <Car size={48} className="text-slate-500/20" />,
+    accent: "slate",
+    scannerHint: "Scannez vos pièces ou accessoires"
+  },
+  other: {
+    title: "Mon Catalogue",
+    itemLabel: "Article",
+    stockLabel: "Stock",
+    icon: <Box size={48} className="text-gray-500/20" />,
+    accent: "gray",
+    scannerHint: "Scannez vos articles"
   }
 };
 
@@ -79,7 +137,14 @@ export function ProductManager() {
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [deletingProduct, setDeletingProduct] = useState<Product | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
-  const [newProduct, setNewProduct] = useState({ name: "", price: 0, stock: 1, category: businessCategory, description: "" });
+  const [newProduct, setNewProduct] = useState({
+    name: "",
+    price: 0,
+    stock: 1,
+    category: businessCategory,
+    description: "",
+    imageUrl: ""
+  });
   const [captionData, setCaptionData] = useState<{ isOpen: boolean; text: string; productName: string }>({
     isOpen: false,
     text: "",
@@ -204,7 +269,43 @@ export function ProductManager() {
 
   const handleVisionUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) visionMutation.mutate(file);
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const dataUrl = event.target?.result as string;
+        if (editingProduct) setEditingProduct({ ...editingProduct, imageUrl: dataUrl } as any);
+        else setNewProduct(prev => ({ ...prev, imageUrl: dataUrl }));
+      };
+      reader.readAsDataURL(file);
+      visionMutation.mutate(file);
+    }
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = async (event) => {
+        const dataUrl = event.target?.result as string;
+        try {
+          const compressedBlob = await compressImage(dataUrl, 1080, 0.7);
+          const compressedDataUrl = await new Promise<string>((resolve) => {
+            const r = new FileReader();
+            r.onload = () => resolve(r.result as string);
+            r.readAsDataURL(compressedBlob);
+          });
+
+          if (editingProduct) {
+            setEditingProduct({ ...editingProduct, imageUrl: compressedDataUrl } as any);
+          } else {
+            setNewProduct({ ...newProduct, imageUrl: compressedDataUrl });
+          }
+        } catch (error) {
+          toast.error("Erreur lors de la compression de l'image");
+        }
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const handleUpdate = (e: React.FormEvent) => {
@@ -220,7 +321,19 @@ export function ProductManager() {
       isService: businessCategory === "services"
     });
     setIsAddingManual(false);
-    setNewProduct({ name: "", price: 0, stock: 1, category: businessCategory });
+    setNewProduct({ name: "", price: 0, stock: 1, category: businessCategory, description: "", imageUrl: "" });
+  };
+
+  const handleScanComplete = (data: any) => {
+    createMutation.mutate({
+      name: data.name,
+      price: typeof data.price === "string" ? parseInt(data.price) : data.price,
+      category: data.category || businessCategory,
+      stock: 1,
+      description: data.description || "",
+      imageUrl: data.finalPoster,
+      isService: businessCategory === "services"
+    });
   };
 
   return (
@@ -267,7 +380,38 @@ export function ProductManager() {
             </div>
 
             <div className="space-y-4">
-              <div className="flex justify-center pb-4">
+              <div className="flex flex-col items-center gap-4 pb-4">
+                {/* Image Upload Area */}
+                <div className="relative group">
+                  <label className="relative flex flex-col items-center justify-center w-32 h-32 rounded-[2rem] bg-white/5 border-2 border-dashed border-white/10 hover:border-emerald-300/50 transition-all cursor-pointer overflow-hidden">
+                    {(editingProduct ? (editingProduct as any).imageUrl : newProduct.imageUrl) ? (
+                      <img
+                        src={editingProduct ? (editingProduct as any).imageUrl : newProduct.imageUrl}
+                        className="w-full h-full object-cover"
+                        alt="Preview"
+                      />
+                    ) : (
+                      <div className="flex flex-col items-center gap-2 text-white/20">
+                        <Camera size={24} />
+                        <span className="text-[8px] font-black uppercase tracking-widest">Photo</span>
+                      </div>
+                    )}
+                    <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
+                  </label>
+                  {(editingProduct ? (editingProduct as any).imageUrl : newProduct.imageUrl) && (
+                    <button
+                      type="button"
+                      onClick={() => editingProduct
+                        ? setEditingProduct({ ...editingProduct, imageUrl: "" } as any)
+                        : setNewProduct({ ...newProduct, imageUrl: "" })
+                      }
+                      className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-rose-500 text-white flex items-center justify-center shadow-lg hover:bg-rose-600 transition-all"
+                    >
+                      <X size={14} />
+                    </button>
+                  )}
+                </div>
+
                 <label className={cn(
                   "flex items-center gap-2 px-6 py-3 rounded-2xl bg-sky-400/10 border border-sky-400/20 text-sky-400 text-[10px] font-black uppercase tracking-widest hover:bg-sky-400/20 transition-all cursor-pointer shadow-lg shadow-sky-400/5",
                   analyzing && "opacity-50 cursor-wait"
@@ -290,7 +434,7 @@ export function ProductManager() {
                   required
                 />
               </label>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <label className="grid gap-2 text-xs font-black uppercase tracking-widest text-white/40">
                   Prix (FCFA)
                   <input

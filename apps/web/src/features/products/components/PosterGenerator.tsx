@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect, useMemo } from "react";
-import { Download, Share2, Palette, Type, ShoppingBag, ChevronLeft, Check, Sparkles, Image as ImageIcon, Utensils, Zap, Laptop, Hammer } from "lucide-react";
+import { Download, Share2, Palette, Type, ShoppingBag, ChevronLeft, Check, Sparkles, Image as ImageIcon, Utensils, Zap, Laptop, Hammer, Heart, Monitor, Home, ShoppingCart, Activity, Car, Box } from "lucide-react";
 import { toast } from "sonner";
 
 interface PosterGeneratorProps {
@@ -46,7 +46,71 @@ const CATEGORY_CONFIGS: Record<string, any> = {
     slogan: "L'art du fait main, chez vous.",
     icon: <Hammer size={24} />,
     font: "serif"
+  },
+  beauty: {
+    defaultColor: "#ec4899",
+    slogan: "Révélez votre beauté naturelle.",
+    icon: <Heart size={24} />,
+    font: "serif",
+    label: "Beauté"
+  },
+  electronics: {
+    defaultColor: "#3b82f6",
+    slogan: "La technologie au service de demain.",
+    icon: <Monitor size={24} />,
+    font: "mono",
+    label: "High-Tech"
+  },
+  home: {
+    defaultColor: "#6366f1",
+    slogan: "Votre foyer, votre style.",
+    icon: <Home size={24} />,
+    font: "serif",
+    label: "Maison"
+  },
+  grocery: {
+    defaultColor: "#84cc16",
+    slogan: "Le goût de la fraîcheur.",
+    icon: <ShoppingCart size={24} />,
+    font: "sans-serif",
+    label: "Épicerie"
+  },
+  health: {
+    defaultColor: "#ef4444",
+    slogan: "Prenez soin de vous.",
+    icon: <Activity size={24} />,
+    font: "sans-serif",
+    label: "Santé"
+  },
+  auto: {
+    defaultColor: "#64748b",
+    slogan: "La route en toute confiance.",
+    icon: <Car size={24} />,
+    font: "mono",
+    label: "Auto-Moto"
+  },
+  other: {
+    defaultColor: "#71717a",
+    slogan: "La qualité au meilleur prix.",
+    icon: <Box size={24} />,
+    font: "sans-serif",
+    label: "Boutique"
   }
+};
+
+const CATEGORY_LABELS: Record<string, string> = {
+  fashion: "Mode",
+  food: "Restauration",
+  services: "Services",
+  digital: "Digital",
+  artisan: "Artisanat",
+  beauty: "Beauté",
+  electronics: "High-Tech",
+  home: "Maison",
+  grocery: "Épicerie",
+  health: "Santé",
+  auto: "Auto-Moto",
+  other: "Boutique"
 };
 
 export function PosterGenerator({ productData, boutiqueName, businessCategory, logoUrl, onBack, onSave }: PosterGeneratorProps) {
@@ -164,6 +228,13 @@ export function PosterGenerator({ productData, boutiqueName, businessCategory, l
     }
   };
 
+  const handleFinalSave = () => {
+    const canvas = canvasRef.current;
+    if (canvas) {
+      onSave(canvas.toDataURL("image/png"));
+    }
+  };
+
   const handleShare = async () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -187,9 +258,9 @@ export function PosterGenerator({ productData, boutiqueName, businessCategory, l
       <div className="flex-1 flex items-center justify-center p-6 bg-black/40 relative">
         <div className="relative w-full max-w-[420px] aspect-[4/5] bg-white rounded-[2.5rem] overflow-hidden shadow-[0_0_100px_rgba(0,0,0,0.5)] border border-white/5">
           <canvas ref={canvasRef} className="w-full h-full object-contain" />
-          <div className="absolute top-6 left-6 flex items-center gap-2 bg-black/20 backdrop-blur-md px-3 py-1.5 rounded-full">
-            <div className="text-emerald-400">{config.icon}</div>
-            <span className="text-[10px] font-black text-white uppercase tracking-widest">{businessCategory} Mode</span>
+          <div className="absolute top-4 left-4 flex items-center gap-1.5 bg-black/40 backdrop-blur-md px-2.5 py-1 rounded-full z-10 border border-white/10">
+            <div className="text-emerald-400 scale-90">{config.icon}</div>
+            <span className="text-[8px] font-black text-white uppercase tracking-widest">{CATEGORY_LABELS[businessCategory] || "Boutique"}</span>
           </div>
         </div>
       </div>
@@ -238,10 +309,13 @@ export function PosterGenerator({ productData, boutiqueName, businessCategory, l
         </section>
 
         <footer className="mt-auto pt-8 flex flex-col gap-4">
-           <button onClick={handleShare} className="h-16 rounded-[2rem] bg-[#25D366] text-white font-black uppercase tracking-widest flex items-center justify-center gap-3 shadow-xl hover:scale-[1.02] active:scale-95 transition-all">
-             <Share2 size={20} /> Diffuser sur WhatsApp
+           <button onClick={handleFinalSave} className="h-16 rounded-[2rem] bg-emerald-400 text-black font-black uppercase tracking-widest flex items-center justify-center gap-3 shadow-xl hover:scale-[1.02] active:scale-95 transition-all">
+             <Check size={20} /> Valider et Ajouter
            </button>
-           <button onClick={handleDownload} className="h-14 rounded-2xl border border-white/10 text-white/40 text-[10px] font-black uppercase tracking-widest hover:text-white transition-all">
+           <button onClick={handleShare} className="h-14 rounded-2xl bg-[#25D366]/10 border border-[#25D366]/20 text-[#25D366] font-black uppercase tracking-widest flex items-center justify-center gap-3 hover:bg-[#25D366]/20 transition-all">
+             <Share2 size={20} /> Partager WhatsApp
+           </button>
+           <button onClick={handleDownload} className="h-12 rounded-xl border border-white/10 text-white/40 text-[10px] font-black uppercase tracking-widest hover:text-white transition-all">
              Enregistrer Image HD
            </button>
         </footer>

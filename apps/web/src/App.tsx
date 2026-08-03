@@ -34,11 +34,7 @@ function App() {
       <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
         <BrowserRouter>
           <Routes>
-            <Route path="/" element={
-              user
-                ? <Navigate to={tempData ? "/onboarding" : "/dashboard"} />
-                : <LandingPage />
-            } />
+            <Route path="/" element={<LandingPage />} />
 
             <Route path="/onboarding" element={
               user ? <OnboardingWizard /> : <Navigate to="/" />

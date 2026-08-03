@@ -24,6 +24,8 @@ import axios from "axios";
 import { useSocket } from "@/hooks/useSocket";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { CountrySelector, COUNTRIES } from "./components/CountrySelector";
+import { AddressAutocomplete } from "./components/AddressAutocomplete";
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -142,12 +144,33 @@ function WelcomeStep({ onNext, onBack }: { onNext: () => void; onBack: () => voi
     whatsappNumber: ""
   });
 
+  const [selectedCountry, setSelectedCountry] = useState(
+    COUNTRIES.find(c => c.code === (form.country || "CI")) || COUNTRIES[0]
+  );
+
+  // Extract local phone from whatsappNumber if it already has the dialCode
+  const initialLocalPhone = form.whatsappNumber?.startsWith(selectedCountry.dialCode)
+    ? form.whatsappNumber.replace(selectedCountry.dialCode, "")
+    : form.whatsappNumber || "";
+
+  const [localPhone, setLocalPhone] = useState(initialLocalPhone);
+
+  useEffect(() => {
+    if (selectedCountry) {
+      setForm(prev => ({
+        ...prev,
+        country: selectedCountry.code,
+        whatsappNumber: `${selectedCountry.dialCode}${localPhone}`
+      }));
+    }
+  }, [localPhone, selectedCountry]);
+
   const handleNext = () => {
-    if (form.businessName && form.whatsappNumber) {
+    if (form.businessName && form.whatsappNumber && form.address) {
       setTempData(form);
       onNext();
     } else {
-      toast.error("Veuillez remplir les champs obligatoires (Nom et WhatsApp).");
+      toast.error("Veuillez remplir tous les champs obligatoires (Nom, WhatsApp et Adresse).");
     }
   };
 
@@ -168,7 +191,7 @@ function WelcomeStep({ onNext, onBack }: { onNext: () => void; onBack: () => voi
         </div>
 
         <div className="relative w-full lg:w-auto">
-          <div className="relative rounded-[2.5rem] border border-white/10 bg-[#0c0f0d] p-8 text-left w-full lg:min-w-[500px] shadow-2xl">
+          <div className="relative rounded-[2.5rem] border border-white/10 bg-[#0c0f0d] p-8 text-left w-full lg:min-w-[600px] shadow-2xl">
             <div className="mb-8 flex items-center gap-4 relative z-10">
               <div className="grid h-12 w-12 place-items-center rounded-2xl bg-vendeur-emerald/10 text-vendeur-emerald border border-vendeur-emerald/20">
                 <Store size={24} />
@@ -183,45 +206,64 @@ function WelcomeStep({ onNext, onBack }: { onNext: () => void; onBack: () => voi
                <label className="grid gap-2">
                 <span className="text-[10px] font-black uppercase tracking-widest text-white/20 ml-1">Nom du commerce</span>
                 <input
-                   className="h-12 rounded-xl border border-white/10 bg-black/20 px-4 text-white outline-none focus:border-vendeur-emerald transition-all"
+                   className="h-12 rounded-xl border border-white/10 bg-black/40 px-4 text-white outline-none focus:border-vendeur-emerald transition-all"
                    value={form.businessName}
                    onChange={(e) => setForm({ ...form, businessName: e.target.value })}
                    placeholder="Ex: Aicha Mode"
                 />
               </label>
 
-              <div className="grid grid-cols-2 gap-4">
-                <label className="grid gap-2">
+              <div className="flex flex-col sm:flex-row gap-4">
+                <label className="flex-1 min-w-0 grid gap-2">
                   <span className="text-[10px] font-black uppercase tracking-widest text-white/20 ml-1">Catégorie</span>
-                  <select
-                    className="h-12 rounded-xl border border-white/10 bg-black/20 px-4 text-white outline-none focus:border-vendeur-emerald transition-all appearance-none cursor-pointer"
-                    value={form.category}
-                    onChange={(e) => setForm({ ...form, category: e.target.value })}
-                  >
-                    <option value="fashion">👗 Mode & Beauté</option>
-                    <option value="food">🍔 Restauration</option>
-                    <option value="services">💼 Services</option>
-                    <option value="beauty">💄 Soins & Cosmétiques</option>
-                    <option value="electronics">📱 Électronique</option>
-                    <option value="other">📦 Autre</option>
-                  </select>
+                  <div className="relative">
+                    <select
+                      className="h-12 w-full rounded-xl border border-white/10 bg-black/20 px-4 text-white outline-none focus:border-vendeur-emerald transition-all appearance-none cursor-pointer"
+                      value={form.category}
+                      onChange={(e) => setForm({ ...form, category: e.target.value })}
+                    >
+                      <option value="fashion">👗 Mode & Beauté</option>
+                      <option value="food">🍔 Restauration</option>
+                      <option value="services">💼 Services</option>
+                      <option value="beauty">💄 Soins & Cosmétiques</option>
+                      <option value="electronics">📱 Électronique</option>
+                      <option value="other">📦 Autre</option>
+                    </select>
+                    <ChevronRight size={16} className="absolute right-4 top-1/2 -translate-y-1/2 rotate-90 text-white/30 pointer-events-none" />
+                  </div>
                 </label>
-                <label className="grid gap-2">
+                <label className="flex-1 min-w-0 grid gap-2">
                   <span className="text-[10px] font-black uppercase tracking-widest text-white/20 ml-1">WhatsApp Business</span>
-                  <input
-                    className="h-12 rounded-xl border border-white/10 bg-black/20 px-4 text-white outline-none focus:border-vendeur-emerald transition-all"
-                    value={form.whatsappNumber}
-                    onChange={(e) => setForm({ ...form, whatsappNumber: e.target.value })}
-                    placeholder="22507000000"
-                    type="tel"
-                  />
+                  <div className="flex gap-2 items-center w-full">
+                    <CountrySelector
+                      selected={selectedCountry}
+                      onSelect={(c) => setSelectedCountry(c)}
+                    />
+                    <div className="flex-1 min-w-0">
+                      <input
+                        className="h-12 w-full rounded-xl border border-white/10 bg-black/40 px-4 text-white outline-none focus:border-vendeur-emerald transition-all placeholder:text-white/10 text-sm"
+                        value={localPhone}
+                        onChange={(e) => setLocalPhone(e.target.value.replace(/\D/g, ""))}
+                        placeholder="07 00 00 00 00"
+                        type="tel"
+                      />
+                    </div>
+                  </div>
                 </label>
               </div>
 
               <label className="grid gap-2">
+                <span className="text-[10px] font-black uppercase tracking-widest text-white/20 ml-1">Adresse précise</span>
+                <AddressAutocomplete
+                  value={form.address}
+                  onChange={(value) => setForm({ ...form, address: value })}
+                />
+              </label>
+
+              <label className="grid gap-2">
                 <span className="text-[10px] font-black uppercase tracking-widest text-white/20 ml-1">Ce que vous vendez / Instructions</span>
                 <textarea
-                  className="min-h-[100px] rounded-xl border border-white/10 bg-black/20 p-4 text-white outline-none focus:border-vendeur-emerald transition-all resize-none text-sm"
+                  className="min-h-[100px] rounded-xl border border-white/10 bg-black/40 p-4 text-white outline-none focus:border-vendeur-emerald transition-all resize-none text-sm"
                   value={form.description}
                   onChange={(e) => setForm({ ...form, description: e.target.value })}
                   placeholder="Ex: Je vends des sacs de luxe. Livraison à Abidjan sous 2h."

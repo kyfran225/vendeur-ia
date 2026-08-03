@@ -3,7 +3,7 @@ import {
   LayoutDashboard,
   Users,
   Settings,
-  DollarSign,
+  Banknote,
   MessageSquare,
   ShieldCheck,
   Smartphone,
@@ -158,7 +158,7 @@ function OverviewPanel({ stats, failedJobs, statsLoading }: { stats: any; failed
       <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
         <StatCard label="Total Marchands" value={stats?.totalMerchants || 0} icon={<Users className="text-amber-500" />} />
         <StatCard label="Sessions Actives" value={stats?.activeSessions || 0} icon={<Smartphone className="text-vendeur-emerald" />} />
-        <StatCard label="Abonnements (CA)" value={`${(stats?.totalRevenue || 0).toLocaleString()} XOF`} icon={<DollarSign className="text-amber-500" />} />
+        <StatCard label="Abonnements (CA)" value={`${(stats?.totalRevenue || 0).toLocaleString()} XOF`} icon={<Banknote className="text-amber-500" />} />
         <StatCard label="GMV (Ventes IA)" value={`${(stats?.totalGMV || 0).toLocaleString()} XOF`} icon={<ShoppingBag className="text-emerald-400" />} />
         <StatCard label="Messages IA" value={stats?.totalConversations || 0} icon={<MessageSquare className="text-blue-400" />} />
         <StatCard label="Coûts IA (Est.)" value={`$${(stats?.totalAiCost || 0).toFixed(2)}`} icon={<Bot className="text-rose-400" />} />
@@ -195,7 +195,7 @@ function OverviewPanel({ stats, failedJobs, statsLoading }: { stats: any; failed
                     <div key={t._id} className="flex items-center justify-between p-4 bg-black/40 rounded-2xl border border-white/5">
                         <div className="flex items-center gap-4">
                             <div className="h-10 w-10 rounded-xl bg-amber-500/10 flex items-center justify-center">
-                                <DollarSign size={18} className="text-amber-500" />
+                                <Banknote size={18} className="text-amber-500" />
                             </div>
                             <div>
                                 <p className="text-xs font-black uppercase tracking-tight">{t.merchantId?.businessName || 'Marchand Inconnu'}</p>

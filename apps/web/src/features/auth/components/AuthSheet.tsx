@@ -41,11 +41,11 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
           token: tokenResponse.access_token,
         });
         setSession(res.data);
-        toast.success("Bienvenue ! ✨");
+        const user = res.data.user;
+        toast.success(`Bienvenue ${user?.displayName || ''} ! ✨`);
         onClose();
 
         // Use the returned user data to determine where to go
-        const user = res.data.user;
         if (user?.onboardingCompleted) {
           navigate("/dashboard");
         } else {
@@ -93,7 +93,10 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
 
       // Assume backend returns { accessToken, refreshToken, user }
       setSession(res.data);
-      toast.success(mode === "login" ? "Bienvenue !" : "Compte créé avec succès !");
+      const user = res.data.user;
+      toast.success(mode === "login"
+        ? `Bienvenue ${user?.displayName || ''} !`
+        : "Compte créé avec succès !");
       onClose();
     } catch (err: any) {
       toast.error(err.response?.data?.error || "Une erreur est survenue");

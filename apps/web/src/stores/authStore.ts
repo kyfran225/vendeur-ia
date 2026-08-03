@@ -16,6 +16,7 @@ interface AuthState {
   refreshToken: string | null;
   setSession: (session: { user: AuthUser; accessToken: string; refreshToken: string }) => void;
   logout: () => void;
+  updateUser: (userData: Partial<AuthUser>) => void;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -30,6 +31,9 @@ export const useAuthStore = create<AuthState>()(
         refreshToken: session.refreshToken
       }),
       logout: () => set({ user: null, accessToken: null, refreshToken: null }),
+      updateUser: (userData) => set((state) => ({
+        user: state.user ? { ...state.user, ...userData } : null
+      })),
     }),
     {
       name: "vendeur-ia-auth",

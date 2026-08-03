@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import { ShoppingCart, Package, Clock, CheckCircle2, XCircle, Truck, DollarSign, User, Calendar, Loader2, Search, Filter, MoreVertical, ExternalLink } from "lucide-react";
+import { ShoppingCart, Package, Clock, CheckCircle2, XCircle, Truck, Banknote, User, Calendar, Loader2, Search, Filter, MoreVertical, ExternalLink } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/apiClient";
 import { useAuthStore } from "@/stores/authStore";
@@ -31,7 +31,7 @@ const statusLabels: Record<string, string> = {
 const statusIcons: Record<string, React.ReactNode> = {
   pending: <Clock size={14} />,
   confirmed: <Package size={14} />,
-  paid: <DollarSign size={14} />,
+  paid: <Banknote size={14} />,
   delivered: <Truck size={14} />,
   cancelled: <XCircle size={14} />,
 };
@@ -190,7 +190,7 @@ export function OrderManager() {
                         className="h-10 w-10 rounded-xl bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 flex items-center justify-center hover:bg-emerald-500 hover:text-black transition-all"
                         title="Confirmer le paiement"
                       >
-                        <DollarSign size={18} />
+                        <Banknote size={18} />
                       </button>
                     )}
                     {order.status !== "delivered" && order.status !== "cancelled" && (

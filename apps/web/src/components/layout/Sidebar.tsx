@@ -9,11 +9,10 @@ export function Sidebar() {
 
   const links = [
     { to: "/dashboard", icon: LayoutDashboard, label: "Stats" },
-    { to: "/products", icon: Package, label: "Stock" },
+    { to: "/products", icon: Package, label: "Catalogue" },
     { to: "/orders", icon: ShoppingCart, label: "Commandes" },
     { to: "/inbox", icon: MessageCircle, label: "Messages" },
     { to: "/marketing", icon: Megaphone, label: "Marketing" },
-    { to: "/knowledge", icon: Brain, label: "IA" },
     { to: "/settings", icon: Settings, label: "Réglages" },
   ];
 

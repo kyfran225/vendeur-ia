@@ -218,6 +218,24 @@ export class AuthService {
     user.emailVerificationExpiresAt = undefined;
     await user.save();
   }
+
+  async updateProfile(userId: string, data: { displayName?: string; avatarUrl?: string }) {
+    const user = await UserModel.findByIdAndUpdate(
+      userId,
+      { $set: data },
+      { new: true }
+    );
+    if (!user) throw new Error("User not found");
+
+    return {
+      id: user._id.toString(),
+      email: user.email,
+      displayName: user.displayName,
+      avatarUrl: user.avatarUrl,
+      roles: user.roles,
+      onboardingCompleted: !!user.onboardingCompleted
+    };
+  }
 }
 
 export const authService = new AuthService();

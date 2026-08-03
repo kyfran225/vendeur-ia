@@ -78,7 +78,8 @@ export function ProductManager() {
   const [isAddingManual, setIsAddingManual] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [deletingProduct, setDeletingProduct] = useState<Product | null>(null);
-  const [newProduct, setNewProduct] = useState({ name: "", price: 0, stock: 1, category: businessCategory });
+  const [analyzing, setAnalyzing] = useState(false);
+  const [newProduct, setNewProduct] = useState({ name: "", price: 0, stock: 1, category: businessCategory, description: "" });
   const [captionData, setCaptionData] = useState<{ isOpen: boolean; text: string; productName: string }>({
     isOpen: false,
     text: "",
@@ -162,15 +163,48 @@ export function ProductManager() {
     }
   });
 
-  const handleScanComplete = (data: any) => {
-    createMutation.mutate({
-      name: data.name,
-      price: data.price,
-      stock: 1,
-      category: data.category || businessCategory,
-      description: data.description,
-      imageUrl: data.finalPoster || data.image
-    });
+  const visionMutation = useMutation({
+    mutationFn: async (file: File) => {
+      setAnalyzing(true);
+      const formData = new FormData();
+      formData.append("image", file);
+      const res = await axios.post(`${API_URL}/api/commerce/products/vision`, formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+          Authorization: `Bearer ${accessToken}`
+        }
+      });
+      return res.data;
+    },
+    onSuccess: (data) => {
+      if (editingProduct) {
+        setEditingProduct({
+          ...editingProduct,
+          name: data.name || editingProduct.name,
+          price: data.price || editingProduct.price
+        });
+      } else {
+        setNewProduct(prev => ({
+          ...prev,
+          name: data.name || prev.name,
+          price: data.price || prev.price,
+          description: data.description || prev.description
+        }));
+        setIsAddingManual(true);
+      }
+      toast.success("Analyse terminée ! ✨");
+    },
+    onError: () => {
+      toast.error("Échec de l'analyse de l'image.");
+    },
+    onSettled: () => {
+      setAnalyzing(false);
+    }
+  });
+
+  const handleVisionUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) visionMutation.mutate(file);
   };
 
   const handleUpdate = (e: React.FormEvent) => {
@@ -233,10 +267,21 @@ export function ProductManager() {
             </div>
 
             <div className="space-y-4">
+              <div className="flex justify-center pb-4">
+                <label className={cn(
+                  "flex items-center gap-2 px-6 py-3 rounded-2xl bg-sky-400/10 border border-sky-400/20 text-sky-400 text-[10px] font-black uppercase tracking-widest hover:bg-sky-400/20 transition-all cursor-pointer shadow-lg shadow-sky-400/5",
+                  analyzing && "opacity-50 cursor-wait"
+                )}>
+                   {analyzing ? <Loader2 className="animate-spin" size={14} /> : <Camera size={14} />}
+                   Remplir par IA Vision
+                   <input type="file" accept="image/*" className="hidden" onChange={handleVisionUpload} disabled={analyzing} />
+                </label>
+              </div>
+
               <label className="grid gap-2 text-xs font-black uppercase tracking-widest text-white/40">
                 Nom {config.itemLabel.toLowerCase() === "service" ? "de la prestation" : "de l'article"}
                 <input
-                  className="h-12 rounded-xl bg-white/5 border border-white/10 px-4 text-white outline-none focus:border-emerald-300"
+                  className="h-12 rounded-xl bg-white/5 border border-white/10 px-4 text-white outline-none focus:border-emerald-300 transition-all"
                   value={editingProduct ? editingProduct.name : newProduct.name}
                   onChange={e => editingProduct
                     ? setEditingProduct({...editingProduct, name: e.target.value})
@@ -250,7 +295,7 @@ export function ProductManager() {
                   Prix (FCFA)
                   <input
                     type="number"
-                    className="h-12 rounded-xl bg-white/5 border border-white/10 px-4 text-white outline-none focus:border-emerald-300"
+                    className="h-12 rounded-xl bg-white/5 border border-white/10 px-4 text-white outline-none focus:border-emerald-300 transition-all"
                     value={editingProduct ? editingProduct.price : newProduct.price}
                     onChange={e => editingProduct
                       ? setEditingProduct({...editingProduct, price: parseInt(e.target.value)})
@@ -263,7 +308,7 @@ export function ProductManager() {
                   {config.stockLabel}
                   <input
                     type="number"
-                    className="h-12 rounded-xl bg-white/5 border border-white/10 px-4 text-white outline-none focus:border-emerald-300"
+                    className="h-12 rounded-xl bg-white/5 border border-white/10 px-4 text-white outline-none focus:border-emerald-300 transition-all"
                     value={editingProduct ? editingProduct.stock : newProduct.stock}
                     onChange={e => editingProduct
                       ? setEditingProduct({...editingProduct, stock: parseInt(e.target.value)})
@@ -272,6 +317,18 @@ export function ProductManager() {
                   />
                 </label>
               </div>
+              <label className="grid gap-2 text-xs font-black uppercase tracking-widest text-white/40">
+                Description
+                <textarea
+                  className="min-h-[100px] rounded-xl bg-white/5 border border-white/10 p-4 text-white outline-none focus:border-emerald-300 transition-all resize-none"
+                  value={editingProduct ? (editingProduct as any).description : newProduct.description}
+                  onChange={e => editingProduct
+                    ? setEditingProduct({...editingProduct, description: e.target.value} as any)
+                    : setNewProduct({...newProduct, description: e.target.value})
+                  }
+                  placeholder="Détails du produit..."
+                />
+              </label>
             </div>
 
             <button type="submit" className="w-full h-14 bg-emerald-300 text-black font-black uppercase tracking-widest rounded-2xl flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all">

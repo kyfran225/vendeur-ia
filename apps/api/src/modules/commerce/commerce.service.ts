@@ -246,15 +246,8 @@ Réponds UNIQUEMENT avec le JSON. Sois précis sur les détails techniques (mati
       }
     }
 
-    // 2. Fallback: Smart Default (Vision is exclusive to Gemini for now,
-    // but we return a valid structure so the merchant can edit it)
-    return {
-      name: "Nouveau Produit",
-      price: 0,
-      description: "Analyse d'image temporairement indisponible. Veuillez saisir les détails manuellement.",
-      category: "Divers",
-      tags: ["ia_fallback"]
-    };
+    // 2. Fallback: No silent default if Gemini is configured but fails
+    throw new Error("L'analyse de l'image a échoué. Veuillez réessayer ou saisir les détails manuellement.");
   }
 
   async generateProductCaption(productId: string) {

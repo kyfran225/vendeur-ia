@@ -56,10 +56,10 @@ export class AIProvider {
             responseText = await this.generateWithGroq(request);
           } catch (groqError) {
             console.error("[AI Provider] Groq failed too:", (groqError as any).message);
-            responseText = this.getSmartMockResponse(request);
+            throw new Error("Toutes les IA (Gemini & Groq) ont échoué.");
           }
         } else {
-          responseText = this.getSmartMockResponse(request);
+          throw new Error("Gemini a échoué et Groq n'est pas configuré.");
         }
       }
     } else if (env.GROQ_API_KEY) {
@@ -67,10 +67,10 @@ export class AIProvider {
       try {
         responseText = await this.generateWithGroq(request);
       } catch (error) {
-        responseText = this.getSmartMockResponse(request);
+        throw new Error("Groq a échoué.");
       }
     } else {
-      responseText = this.getSmartMockResponse(request);
+      throw new Error("Aucun fournisseur d'IA (Gemini ou Groq) n'est configuré.");
     }
 
     // 2. Save to Cache
@@ -163,9 +163,6 @@ export class AIProvider {
     }
   }
 
-  private getSmartMockResponse(request: AIRequest): string {
-    return `✨ Bonjour ! Nous sommes ravis de vous servir. Nos articles sont de haute qualité et très demandés. Pourriez-vous nous dire ce qui vous intéresse particulièrement ? 🚀`;
-  }
 
   async transcribeAudio(audioBuffer: Buffer, mimeType: string, context?: string): Promise<string> {
     // 1. Try Gemini (Local-aware transcription)

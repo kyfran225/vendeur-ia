@@ -373,14 +373,26 @@ function VisionStep({ onNext, onBack }: { onNext: () => void; onBack: () => void
                <div className="p-8 space-y-4">
                   <div>
                     <h3 className="text-sm font-black text-white/40 uppercase tracking-widest mb-1">Nom suggéré</h3>
-                    <p className="text-xl font-bold text-white">{result.name}</p>
+                    <input
+                      className="w-full bg-transparent border-b border-white/10 text-xl font-bold text-white outline-none focus:border-vendeur-emerald transition-colors"
+                      value={result.name}
+                      onChange={(e) => setResult({ ...result, name: e.target.value })}
+                    />
                   </div>
-                  <div className="flex justify-between items-end">
-                    <div>
+                  <div className="flex justify-between items-end gap-4">
+                    <div className="flex-1">
                       <h3 className="text-sm font-black text-white/40 uppercase tracking-widest mb-1">Prix suggéré</h3>
-                      <p className="text-2xl font-black text-vendeur-emerald">{result.price} FCFA</p>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="number"
+                          className="w-full bg-transparent border-b border-white/10 text-2xl font-black text-vendeur-emerald outline-none focus:border-vendeur-emerald transition-colors"
+                          value={result.price}
+                          onChange={(e) => setResult({ ...result, price: Number(e.target.value) })}
+                        />
+                        <span className="text-xl font-black text-vendeur-emerald">FCFA</span>
+                      </div>
                     </div>
-                    <button onClick={onNext} className="h-12 px-6 rounded-xl bg-vendeur-emerald text-vendeur-coal font-black uppercase tracking-widest text-xs">
+                    <button onClick={onNext} className="h-12 px-6 rounded-xl bg-vendeur-emerald text-vendeur-coal font-black uppercase tracking-widest text-xs shrink-0">
                       Confirmer
                     </button>
                   </div>

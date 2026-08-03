@@ -1,14 +1,17 @@
 import React, { useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
-import { LayoutDashboard, Package, MessageCircle, Brain, Settings, Megaphone, ShoppingCart, MoreHorizontal, X } from "lucide-react";
+import { LayoutDashboard, Package, MessageCircle, Brain, Settings, Megaphone, ShoppingCart, MoreHorizontal, X, Shield } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuthStore } from "@/stores/authStore";
 
 export function Sidebar() {
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
+  const { user } = useAuthStore();
 
   const links = [
     { to: "/dashboard", icon: LayoutDashboard, label: "Stats" },
+    ...(user?.roles.includes("admin") ? [{ to: "/admin", icon: Shield, label: "Admin" }] : []),
     { to: "/products", icon: Package, label: "Catalogue" },
     { to: "/orders", icon: ShoppingCart, label: "Commandes" },
     { to: "/inbox", icon: MessageCircle, label: "Messages" },

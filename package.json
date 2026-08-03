@@ -15,6 +15,7 @@
     "build": "turbo build",
     "lint": "turbo lint",
     "typecheck": "turbo typecheck",
+    "db:reset": "pnpm --filter @vendeur-ia/api db:reset",
     "db:backup": "pnpm --filter @vendeur-ia/api db:backup"
   },
   "devDependencies": {

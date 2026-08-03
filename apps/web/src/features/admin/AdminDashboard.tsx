@@ -101,31 +101,33 @@ export function AdminDashboard() {
   return (
     <div className="min-h-screen bg-vendeur-bg text-white pb-24">
       {/* Admin Header */}
-      <header className="h-16 border-b border-white/5 bg-vendeur-bg/80 backdrop-blur-md flex items-center justify-between px-8 sticky top-0 z-50">
-        <div className="flex items-center gap-4">
-          <div className="h-10 w-10 rounded-2xl bg-amber-500/10 flex items-center justify-center border border-amber-500/20">
-            <ShieldCheck className="text-amber-500" size={20} />
+      <header className="h-16 border-b border-white/5 bg-vendeur-bg/80 backdrop-blur-md flex items-center justify-between px-4 md:px-8 sticky top-0 z-50">
+        <div className="flex items-center gap-3 md:gap-4">
+          <div className="h-9 w-9 md:h-10 md:w-10 rounded-xl md:rounded-2xl bg-amber-500/10 flex items-center justify-center border border-amber-500/20 shrink-0">
+            <ShieldCheck className="text-amber-500" size={18} />
           </div>
-          <div>
-            <h1 className="text-lg font-black uppercase tracking-tighter">Master Control</h1>
-            <p className="text-[9px] uppercase tracking-[0.2em] text-white/40 font-black leading-none">Vendeur IA Platform Governance</p>
+          <div className="min-w-0">
+            <h1 className="text-sm md:text-lg font-black uppercase tracking-tighter truncate">Master Control</h1>
+            <p className="text-[8px] md:text-[9px] uppercase tracking-[0.2em] text-white/40 font-black leading-none truncate">Governance</p>
           </div>
         </div>
 
         <div className="flex items-center gap-4">
-            <div className="px-4 py-1.5 rounded-full bg-white/5 border border-white/10 text-[10px] font-black uppercase tracking-widest text-white/40">
-                Mode Cofondateur
+            <div className="px-3 md:px-4 py-1.5 rounded-full bg-white/5 border border-white/10 text-[8px] md:text-[10px] font-black uppercase tracking-widest text-white/40 whitespace-nowrap">
+                Cofondateur
             </div>
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto p-8 space-y-8">
+      <main className="max-w-7xl mx-auto p-4 md:p-8 space-y-6 md:space-y-8">
         {/* Admin Navigation */}
-        <nav className="flex gap-2 p-1 bg-vendeur-coal rounded-2xl border border-white/5 w-fit">
-          <AdminTabButton active={activeTab === "overview"} onClick={() => setActiveTab("overview")} icon={<LayoutDashboard size={18}/>} label="Vue d'ensemble" />
-          <AdminTabButton active={activeTab === "merchants"} onClick={() => setActiveTab("merchants")} icon={<Users size={18}/>} label="Marchands" />
-          <AdminTabButton active={activeTab === "settings"} onClick={() => setActiveTab("settings")} icon={<Settings size={18}/>} label="Système" />
-        </nav>
+        <div className="overflow-x-auto no-scrollbar -mx-4 px-4 md:mx-0 md:px-0">
+          <nav className="flex gap-2 p-1 bg-vendeur-coal rounded-2xl border border-white/5 w-max md:w-fit">
+            <AdminTabButton active={activeTab === "overview"} onClick={() => setActiveTab("overview")} icon={<LayoutDashboard size={18}/>} label="Vue d'ensemble" />
+            <AdminTabButton active={activeTab === "merchants"} onClick={() => setActiveTab("merchants")} icon={<Users size={18}/>} label="Marchands" />
+            <AdminTabButton active={activeTab === "settings"} onClick={() => setActiveTab("settings")} icon={<Settings size={18}/>} label="Système" />
+          </nav>
+        </div>
 
         {activeTab === "overview" && <OverviewPanel stats={stats} failedJobs={failedJobs} statsLoading={statsLoading} />}
         {activeTab === "merchants" && <MerchantsPanel merchants={merchants} loading={merchantsLoading} />}
@@ -140,7 +142,7 @@ function AdminTabButton({ active, onClick, icon, label }: { active: boolean; onC
     <button
       onClick={onClick}
       className={cn(
-        "flex items-center gap-2 px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all",
+        "flex items-center gap-2 px-4 md:px-6 py-2.5 md:py-3 rounded-xl text-[10px] md:text-xs font-black uppercase tracking-widest transition-all whitespace-nowrap",
         active ? "bg-amber-500 text-vendeur-coal shadow-lg shadow-amber-500/20" : "text-white/40 hover:bg-white/5 hover:text-white"
       )}
     >
@@ -154,41 +156,41 @@ function OverviewPanel({ stats, failedJobs, statsLoading }: { stats: any; failed
   const transactions = stats?.recentTransactions || [];
 
   return (
-    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-700">
-      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
+    <div className="space-y-6 md:space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-700">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
         <StatCard label="Total Marchands" value={stats?.totalMerchants || 0} icon={<Users className="text-amber-500" />} />
         <StatCard label="Sessions Actives" value={stats?.activeSessions || 0} icon={<Smartphone className="text-vendeur-emerald" />} />
-        <StatCard label="Abonnements (CA)" value={`${(stats?.totalRevenue || 0).toLocaleString()} XOF`} icon={<Banknote className="text-amber-500" />} />
-        <StatCard label="GMV (Ventes IA)" value={`${(stats?.totalGMV || 0).toLocaleString()} XOF`} icon={<ShoppingBag className="text-emerald-400" />} />
+        <StatCard label="Abonnements" value={`${(stats?.totalRevenue || 0).toLocaleString()} XOF`} icon={<Banknote className="text-amber-500" />} />
+        <StatCard label="GMV (Ventes)" value={`${(stats?.totalGMV || 0).toLocaleString()} XOF`} icon={<ShoppingBag className="text-emerald-400" />} />
         <StatCard label="Messages IA" value={stats?.totalConversations || 0} icon={<MessageSquare className="text-blue-400" />} />
-        <StatCard label="Coûts IA (Est.)" value={`$${(stats?.totalAiCost || 0).toFixed(2)}`} icon={<Bot className="text-rose-400" />} />
+        <StatCard label="Coûts IA" value={`$${(stats?.totalAiCost || 0).toFixed(2)}`} icon={<Bot className="text-rose-400" />} />
       </div>
 
       {/* --- QUEUE MONITORING SECTION --- */}
-      <section className="bg-vendeur-coal border border-white/10 rounded-[2.5rem] p-8 space-y-6">
+      <section className="bg-vendeur-coal border border-white/10 rounded-[2rem] md:rounded-[2.5rem] p-5 md:p-8 space-y-6">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-black flex items-center gap-2">
-                <Activity className="text-vendeur-emerald" size={24} />
-                Santé des Files d'Attente (BullMQ)
+            <h2 className="text-lg md:text-xl font-black flex items-center gap-2">
+                <Activity className="text-vendeur-emerald" size={20} md:size={24} />
+                Files BullMQ
             </h2>
-            <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-white/40">
-                <RefreshCw className={cn("animate-spin", statsLoading && "opacity-100")} size={12} /> Temps Réel
+            <div className="flex items-center gap-2 text-[8px] md:text-[10px] font-black uppercase tracking-widest text-white/40">
+                <RefreshCw className={cn("animate-spin", statsLoading && "opacity-100")} size={10} md:size={12} /> Live
             </div>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
-            <QueueStat label="En Attente" value={stats?.queue?.waiting} icon={<Clock size={14}/>} color="amber" />
-            <QueueStat label="Actifs" value={stats?.queue?.active} icon={<Zap size={14}/>} color="sky" />
-            <QueueStat label="Terminés" value={stats?.queue?.completed} icon={<CheckCircle2 size={14}/>} color="emerald" />
-            <QueueStat label="Échecs" value={stats?.queue?.failed} icon={<XCircle size={14}/>} color="rose" />
-            <QueueStat label="Différés" value={stats?.queue?.delayed} icon={<ExternalLink size={14}/>} color="purple" />
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4">
+            <QueueStat label="Attente" value={stats?.queue?.waiting} icon={<Clock size={12}/>} color="amber" />
+            <QueueStat label="Actifs" value={stats?.queue?.active} icon={<Zap size={12}/>} color="sky" />
+            <QueueStat label="Terminés" value={stats?.queue?.completed} icon={<CheckCircle2 size={12}/>} color="emerald" />
+            <QueueStat label="Échecs" value={stats?.queue?.failed} icon={<XCircle size={12}/>} color="rose" />
+            <QueueStat label="Différés" value={stats?.queue?.delayed} icon={<ExternalLink size={12}/>} color="purple" />
           </div>
       </section>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div className="bg-vendeur-coal border border-white/5 rounded-[2.5rem] p-8">
-            <h2 className="text-xl font-black mb-6 uppercase tracking-tighter">Derniers Paiements</h2>
-            <div className="space-y-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
+        <div className="bg-vendeur-coal border border-white/5 rounded-[2rem] md:rounded-[2.5rem] p-5 md:p-8">
+            <h2 className="text-lg md:text-xl font-black mb-6 uppercase tracking-tighter">Paiements</h2>
+            <div className="space-y-3">
                 {transactions.length === 0 ? (
                     <div className="text-center py-8 text-white/20 uppercase text-[10px] font-black tracking-widest">Aucune transaction</div>
                 ) : transactions.map((t: any) => (
@@ -247,16 +249,28 @@ function OverviewPanel({ stats, failedJobs, statsLoading }: { stats: any; failed
 }
 
 function MerchantsPanel({ merchants, loading }: { merchants: any[], loading: boolean }) {
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const filteredMerchants = merchants?.filter(m =>
+    m.businessName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    m.ownerId?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   return (
-    <div className="bg-vendeur-coal border border-white/5 rounded-[2.5rem] overflow-hidden animate-in fade-in duration-700">
-      <div className="p-8 border-b border-white/5 flex items-center justify-between">
-        <h2 className="text-xl font-black uppercase tracking-tighter">Gestion des Marchands</h2>
-        <div className="flex gap-4">
-            <div className="relative">
+    <div className="bg-vendeur-coal border border-white/5 rounded-[2rem] md:rounded-[2.5rem] overflow-hidden animate-in fade-in duration-700">
+      <div className="p-6 md:p-8 border-b border-white/5 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <h2 className="text-lg md:text-xl font-black uppercase tracking-tighter">Marchands</h2>
+        <div className="flex gap-2 md:gap-4 w-full md:w-full lg:w-auto">
+            <div className="relative flex-1 md:w-full lg:w-[500px]">
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" size={16} />
-                <input className="bg-black/40 border border-white/10 rounded-xl pl-10 pr-4 py-2 text-xs focus:border-amber-500 outline-none w-64" placeholder="Rechercher un marchand..." />
+                <input
+                  className="w-full bg-black/40 border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-xs focus:border-amber-500 outline-none transition-all"
+                  placeholder="Rechercher..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
             </div>
-            <button className="p-2 bg-white/5 rounded-xl text-white/40 hover:text-white transition-colors">
+            <button className="p-2.5 bg-white/5 rounded-xl text-white/40 hover:text-white transition-colors">
                 <Filter size={18} />
             </button>
         </div>
@@ -276,7 +290,9 @@ function MerchantsPanel({ merchants, loading }: { merchants: any[], loading: boo
           <tbody className="divide-y divide-white/5">
             {loading ? (
                 <tr><td colSpan={5} className="p-12 text-center text-white/20 uppercase font-black tracking-widest">Chargement...</td></tr>
-            ) : merchants?.map((m) => (
+            ) : filteredMerchants?.length === 0 ? (
+                <tr><td colSpan={5} className="p-12 text-center text-white/20 uppercase font-black tracking-widest">Aucun marchand trouvé</td></tr>
+            ) : filteredMerchants?.map((m) => (
               <tr key={m._id} className="hover:bg-white/[0.02] transition-colors group">
                 <td className="px-8 py-6">
                   <div className="flex items-center gap-3">
@@ -450,11 +466,11 @@ function QueueStat({ label, value, icon, color }: any) {
 
 function StatCard({ label, value, icon }: { label: string; value: number | string; icon: React.ReactNode }) {
   return (
-    <div className="bg-vendeur-coal border border-white/10 p-8 rounded-[2.5rem] space-y-4 group hover:border-white/20 transition-all">
-      <div className="h-14 w-14 bg-white/5 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">{icon}</div>
+    <div className="bg-vendeur-coal border border-white/10 p-5 md:p-8 rounded-[2rem] md:rounded-[2.5rem] space-y-3 md:space-y-4 group hover:border-white/20 transition-all">
+      <div className="h-10 w-10 md:h-14 md:w-14 bg-white/5 rounded-xl md:rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform shrink-0">{icon}</div>
       <div>
-        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40">{label}</p>
-        <p className="text-4xl font-black mt-1">{value}</p>
+        <p className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] text-white/40">{label}</p>
+        <p className="text-2xl md:text-4xl font-black mt-1 break-words">{value}</p>
       </div>
     </div>
   );

@@ -506,9 +506,18 @@ function WhatsAppStep({ onNext, onBack }: { onNext: () => void; onBack: () => vo
             </div>
           </div>
 
-          <button onClick={onBack} className="mt-12 text-white/20 text-[10px] font-black uppercase tracking-widest hover:text-white transition-colors">
-            Retour à l'étape précédente
-          </button>
+          <div className="flex flex-col items-center gap-6 mt-12">
+            <button
+              onClick={onNext}
+              className="h-14 px-8 rounded-2xl border border-vendeur-emerald/30 bg-vendeur-emerald/5 text-vendeur-emerald text-sm font-black uppercase tracking-widest hover:bg-vendeur-emerald/10 transition-all"
+            >
+              Terminer et connecter plus tard
+            </button>
+
+            <button onClick={onBack} className="text-white/20 text-[10px] font-black uppercase tracking-widest hover:text-white transition-colors">
+              Retour à l'étape précédente
+            </button>
+          </div>
         </>
       ) : (
         <div className="py-12">

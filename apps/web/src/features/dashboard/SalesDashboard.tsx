@@ -10,7 +10,7 @@ import {
   Zap,
 } from "lucide-react";
 
-import { useQuery, useSocket } from "@/hooks/useSocket"; // NOTE: I see useSocket used but useQuery was imported from tanstack/react-query in original
+import { useSocket } from "@/hooks/useSocket";
 import { useQuery as useTanstackQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuthStore } from "@/stores/authStore";
 import { toast } from "sonner";

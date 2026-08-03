@@ -604,13 +604,12 @@ export function LandingPage() {
             ) : (
               <button
                 onClick={() => setIsAuthOpen(true)}
-                className="group relative flex h-10 md:h-12 items-center justify-center rounded-xl md:rounded-2xl bg-white px-5 md:px-8 text-[10px] font-black uppercase tracking-[0.2em] text-black transition-all hover:bg-emerald-300 hover:scale-105 active:scale-95 shadow-2xl"
+                className="h-9 w-9 md:h-12 md:w-12 rounded-xl md:rounded-2xl bg-white/5 border border-emerald-300/20 md:border-white/10 flex items-center justify-center text-emerald-300 md:text-white/60 hover:bg-white/10 hover:border-emerald-300/30 hover:text-emerald-300 transition-all shadow-lg group relative overflow-hidden"
               >
-                <span className="hidden md:inline">Connexion</span>
-                <LogIn className="md:hidden" size={20} />
+                <User size={20} className="group-hover:scale-110 transition-transform" />
 
-                {/* Subtle Glow Effect */}
-                <div className="absolute inset-0 rounded-xl md:rounded-2xl bg-emerald-400/20 blur-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+                {/* Subtle Glow Effect - Visible by default on mobile, hover only on desktop */}
+                <div className="absolute inset-0 bg-emerald-300/5 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
               </button>
             )}
           </div>

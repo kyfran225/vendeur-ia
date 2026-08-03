@@ -75,21 +75,13 @@ export function OnboardingWizard() {
   const handleBack = () => setStep(currentStep - 1);
 
   const steps = [
-    { title: "Bienvenue", component: <WelcomeStep onNext={handleNext} /> },
-    { title: "Abonnement", component: <SubscriptionStep onNext={handleNext} onBack={handleBack} /> },
-    { title: "IA Vision", component: <VisionStep onNext={handleNext} /> },
+    { title: "Bienvenue", component: <WelcomeStep onNext={handleNext} onBack={() => navigate("/")} /> },
+    { title: "IA Vision", component: <VisionStep onNext={handleNext} onBack={handleBack} /> },
     { title: "Connexion", component: <WhatsAppStep onNext={() => {
       clearOnboarding();
       navigate("/dashboard");
-    }} /> },
+    }} onBack={handleBack} /> },
   ];
-
-  // Jump to Subscription step if coming from Simulator (avoiding double welcome)
-  useEffect(() => {
-    if (tempData && currentStep === 0) {
-      setStep(1);
-    }
-  }, [tempData, setStep]);
 
   return (
     <div className="min-h-screen bg-vendeur-coal flex flex-col items-center justify-center p-4 md:p-12 overflow-x-hidden">
@@ -129,7 +121,7 @@ export function OnboardingWizard() {
   );
 }
 
-function WelcomeStep({ onNext }: { onNext: () => void }) {
+function WelcomeStep({ onNext, onBack }: { onNext: () => void; onBack: () => void }) {
   const { tempData } = useOnboardingStore();
   const { user } = useAuthStore();
 
@@ -203,6 +195,10 @@ function WelcomeStep({ onNext }: { onNext: () => void }) {
               >
                 <Rocket size={18} /> Activer ma machine de vente
               </button>
+
+              <button onClick={onBack} className="mt-4 text-white/20 text-[10px] font-black uppercase tracking-widest hover:text-white transition-colors text-center w-full">
+                Retour à l'accueil
+              </button>
             </div>
           </div>
         </div>
@@ -211,90 +207,7 @@ function WelcomeStep({ onNext }: { onNext: () => void }) {
   );
 }
 
-function SubscriptionStep({ onNext, onBack }: { onNext: () => void; onBack: () => void }) {
-  return (
-    <div className="space-y-8">
-      <div className="text-center mb-12">
-        <h2 className="text-3xl font-black text-white uppercase tracking-tighter">Choisissez votre puissance</h2>
-        <p className="text-white/40 mt-2">Activez les fonctionnalités réelles de votre agent IA.</p>
-      </div>
-
-      <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-        {/* Free Plan */}
-        <div className="group relative bg-white/5 border border-white/10 rounded-[2.5rem] p-8 hover:border-white/20 transition-all flex flex-col">
-          <div className="mb-6">
-            <h3 className="text-xl font-black text-white uppercase">Explorer</h3>
-            <p className="text-vendeur-emerald font-black text-2xl mt-1">Gratuit</p>
-          </div>
-          <ul className="space-y-4 mb-12 flex-1">
-            <li className="flex items-center gap-3 text-white/60 text-sm">
-              <Check className="text-vendeur-emerald shrink-0" size={18} />
-              50 conversations / mois
-            </li>
-            <li className="flex items-center gap-3 text-white/60 text-sm">
-              <Check className="text-vendeur-emerald shrink-0" size={18} />
-              Catalogue IA (3 produits)
-            </li>
-            <li className="flex items-center gap-3 text-white/60 text-sm opacity-40">
-              <Zap className="shrink-0" size={18} />
-              Mode Agent Standard
-            </li>
-          </ul>
-          <button
-            onClick={onNext}
-            className="w-full h-14 rounded-xl border border-white/10 text-white/60 font-black uppercase tracking-widest text-xs hover:bg-white/5 transition-all"
-          >
-            Explorer d'abord
-          </button>
-        </div>
-
-        {/* Premium Plan */}
-        <div className="group relative bg-vendeur-emerald/5 border-2 border-vendeur-emerald/30 rounded-[2.5rem] p-8 shadow-2xl shadow-vendeur-emerald/5 flex flex-col">
-          <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-vendeur-emerald text-vendeur-coal px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">
-            Recommandé
-          </div>
-          <div className="mb-6">
-            <h3 className="text-xl font-black text-white uppercase">Vendeur Pro</h3>
-            <p className="text-vendeur-emerald font-black text-2xl mt-1">5 000 FCFA <span className="text-[10px] text-white/40 font-normal">/ mois</span></p>
-          </div>
-          <ul className="space-y-4 mb-12 flex-1">
-            <li className="flex items-center gap-3 text-white/90 text-sm">
-              <Sparkles className="text-vendeur-emerald shrink-0" size={18} />
-              Conversations Illimitées
-            </li>
-            <li className="flex items-center gap-3 text-white/90 text-sm">
-              <Check className="text-vendeur-emerald shrink-0" size={18} />
-              IA Vision Illimitée
-            </li>
-            <li className="flex items-center gap-3 text-white/90 text-sm">
-              <Check className="text-vendeur-emerald shrink-0" size={18} />
-              Vocal IA & Local Slang
-            </li>
-            <li className="flex items-center gap-3 text-white/90 text-sm">
-              <ShieldCheck className="text-vendeur-emerald shrink-0" size={18} />
-              Support Prioritaire
-            </li>
-          </ul>
-          <button
-            onClick={() => {
-              toast.info("Redirection vers le paiement...");
-              onNext();
-            }}
-            className="w-full h-14 rounded-xl bg-vendeur-emerald text-vendeur-coal font-black uppercase tracking-widest text-xs hover:scale-[1.02] transition-all shadow-xl shadow-vendeur-emerald/20"
-          >
-            Activer Premium
-          </button>
-        </div>
-      </div>
-
-      <button onClick={onBack} className="block mx-auto text-white/20 text-[10px] font-black uppercase tracking-widest hover:text-white transition-colors">
-        Retour aux informations
-      </button>
-    </div>
-  );
-}
-
-function VisionStep({ onNext }: { onNext: () => void }) {
+function VisionStep({ onNext, onBack }: { onNext: () => void; onBack: () => void }) {
   const [file, setFile] = useState<File | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
   const [result, setResult] = useState<any>(null);
@@ -396,16 +309,21 @@ function VisionStep({ onNext }: { onNext: () => void }) {
         </div>
       </div>
 
-      {!result && !analyzing && (
-        <button onClick={onNext} className="mt-12 block mx-auto text-white/20 text-[10px] font-black uppercase tracking-widest hover:text-white transition-colors">
-          Passer cette étape
+      <div className="mt-12 flex flex-col items-center gap-6">
+        {!result && !analyzing && (
+          <button onClick={onNext} className="text-white/40 text-[10px] font-black uppercase tracking-widest hover:text-white transition-colors">
+            Passer cette étape
+          </button>
+        )}
+        <button onClick={onBack} className="text-white/20 text-[10px] font-black uppercase tracking-widest hover:text-white transition-colors">
+          Retour aux informations
         </button>
-      )}
+      </div>
     </div>
   );
 }
 
-function WhatsAppStep({ onNext }: { onNext: () => void }) {
+function WhatsAppStep({ onNext, onBack }: { onNext: () => void; onBack: () => void }) {
   const { accessToken } = useAuthStore();
   const socket = useSocket();
   const [qrCode, setQrCode] = useState<string | null>(null);
@@ -494,6 +412,10 @@ function WhatsAppStep({ onNext }: { onNext: () => void }) {
               </ul>
             </div>
           </div>
+
+          <button onClick={onBack} className="mt-12 text-white/20 text-[10px] font-black uppercase tracking-widest hover:text-white transition-colors">
+            Retour à l'étape précédente
+          </button>
         </>
       ) : (
         <div className="py-12">

@@ -132,8 +132,24 @@ export function OnboardingWizard() {
 }
 
 function WelcomeStep({ onNext, onBack }: { onNext: () => void; onBack: () => void }) {
-  const { tempData } = useOnboardingStore();
-  const { user } = useAuthStore();
+  const { tempData, setTempData } = useOnboardingStore();
+  const [form, setForm] = useState(tempData || {
+    businessName: "",
+    category: "fashion",
+    description: "",
+    country: "CI",
+    address: "",
+    whatsappNumber: ""
+  });
+
+  const handleNext = () => {
+    if (form.businessName && form.whatsappNumber) {
+      setTempData(form);
+      onNext();
+    } else {
+      toast.error("Veuillez remplir les champs obligatoires (Nom et WhatsApp).");
+    }
+  };
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-700 w-full max-w-7xl mx-auto">
@@ -143,11 +159,11 @@ function WelcomeStep({ onNext, onBack }: { onNext: () => void; onBack: () => voi
             <Rocket className="text-vendeur-emerald" size={32} />
           </div>
           <h1 className="text-4xl md:text-5xl font-black text-white mb-6 uppercase tracking-tighter leading-tight">
-            Dernière étape pour <br/>
-            <span className="text-vendeur-emerald">lancer vos ventes.</span>
+            {tempData?.businessName ? "Vérifiez votre" : "Lancez votre"} <br/>
+            <span className="text-vendeur-emerald">machine de vente.</span>
           </h1>
           <p className="text-lg text-white/50 mb-8 max-w-xl leading-relaxed font-medium">
-            Remplissez ces quelques informations pour que votre IA commence à travailler. Vous pourrez modifier tout cela plus tard dans les réglages.
+            Ces informations permettent à l'IA de personnaliser ses réponses et de vendre vos produits avec votre propre style.
           </p>
         </div>
 
@@ -159,7 +175,7 @@ function WelcomeStep({ onNext, onBack }: { onNext: () => void; onBack: () => voi
               </div>
               <div>
                 <h2 className="text-xl font-black text-white">Profil du commerce</h2>
-                <p className="text-xs text-white/40 font-medium">Ceci aidera l'IA à mieux répondre.</p>
+                <p className="text-xs text-white/40 font-medium">Ceci aidera l'IA à mieux vendre pour vous.</p>
               </div>
             </div>
 
@@ -167,43 +183,56 @@ function WelcomeStep({ onNext, onBack }: { onNext: () => void; onBack: () => voi
                <label className="grid gap-2">
                 <span className="text-[10px] font-black uppercase tracking-widest text-white/20 ml-1">Nom du commerce</span>
                 <input
-                   readOnly
-                   className="h-12 rounded-xl border border-white/5 bg-black/20 px-4 text-white/40 outline-none cursor-not-allowed"
-                   value={tempData?.businessName}
+                   className="h-12 rounded-xl border border-white/10 bg-black/20 px-4 text-white outline-none focus:border-vendeur-emerald transition-all"
+                   value={form.businessName}
+                   onChange={(e) => setForm({ ...form, businessName: e.target.value })}
+                   placeholder="Ex: Aicha Mode"
                 />
               </label>
 
               <div className="grid grid-cols-2 gap-4">
                 <label className="grid gap-2">
                   <span className="text-[10px] font-black uppercase tracking-widest text-white/20 ml-1">Catégorie</span>
-                  <div className="h-12 rounded-xl border border-white/5 bg-black/20 px-4 text-white/40 flex items-center text-sm capitalize">
-                    {tempData?.category === 'fashion' ? '👗 Mode & Beauté' :
-                     tempData?.category === 'food' ? '🍔 Restauration' :
-                     tempData?.category === 'services' ? '💼 Services' : '📦 Autre'}
-                  </div>
+                  <select
+                    className="h-12 rounded-xl border border-white/10 bg-black/20 px-4 text-white outline-none focus:border-vendeur-emerald transition-all appearance-none cursor-pointer"
+                    value={form.category}
+                    onChange={(e) => setForm({ ...form, category: e.target.value })}
+                  >
+                    <option value="fashion">👗 Mode & Beauté</option>
+                    <option value="food">🍔 Restauration</option>
+                    <option value="services">💼 Services</option>
+                    <option value="beauty">💄 Soins & Cosmétiques</option>
+                    <option value="electronics">📱 Électronique</option>
+                    <option value="other">📦 Autre</option>
+                  </select>
                 </label>
                 <label className="grid gap-2">
-                  <span className="text-[10px] font-black uppercase tracking-widest text-white/20 ml-1">Ville</span>
-                  <div className="h-12 rounded-xl border border-white/5 bg-black/20 px-4 text-white/40 flex items-center text-sm">
-                    {tempData?.city || 'Abidjan'}
-                  </div>
+                  <span className="text-[10px] font-black uppercase tracking-widest text-white/20 ml-1">WhatsApp Business</span>
+                  <input
+                    className="h-12 rounded-xl border border-white/10 bg-black/20 px-4 text-white outline-none focus:border-vendeur-emerald transition-all"
+                    value={form.whatsappNumber}
+                    onChange={(e) => setForm({ ...form, whatsappNumber: e.target.value })}
+                    placeholder="22507000000"
+                    type="tel"
+                  />
                 </label>
               </div>
 
               <label className="grid gap-2">
-                <span className="text-[10px] font-black uppercase tracking-widest text-white/20 ml-1">Ce que vous vendez</span>
+                <span className="text-[10px] font-black uppercase tracking-widest text-white/20 ml-1">Ce que vous vendez / Instructions</span>
                 <textarea
-                  readOnly
-                  className="min-h-[100px] rounded-xl border border-white/5 bg-black/20 p-4 text-white/40 outline-none resize-none text-sm italic"
-                  value={tempData?.description}
+                  className="min-h-[100px] rounded-xl border border-white/10 bg-black/20 p-4 text-white outline-none focus:border-vendeur-emerald transition-all resize-none text-sm"
+                  value={form.description}
+                  onChange={(e) => setForm({ ...form, description: e.target.value })}
+                  placeholder="Ex: Je vends des sacs de luxe. Livraison à Abidjan sous 2h."
                 />
               </label>
 
               <button
-                onClick={onNext}
+                onClick={handleNext}
                 className="mt-4 flex h-16 items-center justify-center gap-3 rounded-2xl bg-vendeur-emerald px-8 text-sm font-black uppercase tracking-widest text-vendeur-coal shadow-xl shadow-vendeur-emerald/10 transition-all hover:scale-[1.02] active:scale-95"
               >
-                <Rocket size={18} /> Activer ma machine de vente
+                <Sparkles size={18} /> Continuer vers l'IA Vision
               </button>
 
               <button onClick={onBack} className="mt-4 text-white/20 text-[10px] font-black uppercase tracking-widest hover:text-white transition-colors text-center w-full">

@@ -63,6 +63,10 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
       toast.error("Échec de la connexion Google");
       setGoogleLoading(false);
     },
+    onNonOAuthError: (error) => {
+      console.error("Google Non-OAuth Error:", error);
+      setGoogleLoading(false);
+    },
   });
 
   if (!isOpen) return null;

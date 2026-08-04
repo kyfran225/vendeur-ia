@@ -6,6 +6,7 @@ import {
   Banknote,
   MessageSquare,
   ShieldCheck,
+  Sparkles,
   Smartphone,
   AlertTriangle,
   Save,
@@ -29,13 +30,14 @@ import { apiClient } from "@/lib/apiClient";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { toast } from "sonner";
+import { AIControlCenter } from "./components/AIControlCenter";
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
 export function AdminDashboard() {
-  const [activeTab, setActiveTab] = useState<"overview" | "merchants" | "settings">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "merchants" | "settings" | "ai">("overview");
   const { accessToken } = useAuthStore();
   const queryClient = useQueryClient();
 
@@ -93,7 +95,7 @@ export function AdminDashboard() {
   if (statsLoading || settingsLoading) {
     return (
       <div className="flex h-screen items-center justify-center bg-vendeur-bg">
-        <Loader2 className="animate-spin text-vendeur-emerald" size={48} />
+        <Sparkles className="animate-spin text-vendeur-emerald" size={48} />
       </div>
     );
   }
@@ -125,6 +127,7 @@ export function AdminDashboard() {
           <nav className="flex gap-2 p-1 bg-vendeur-coal rounded-2xl border border-white/5 w-max md:w-fit">
             <AdminTabButton active={activeTab === "overview"} onClick={() => setActiveTab("overview")} icon={<LayoutDashboard size={18}/>} label="Vue d'ensemble" />
             <AdminTabButton active={activeTab === "merchants"} onClick={() => setActiveTab("merchants")} icon={<Users size={18}/>} label="Marchands" />
+            <AdminTabButton active={activeTab === "ai"} onClick={() => setActiveTab("ai")} icon={<Bot size={18}/>} label="IA & Cerveau" />
             <AdminTabButton active={activeTab === "settings"} onClick={() => setActiveTab("settings")} icon={<Settings size={18}/>} label="Système" />
           </nav>
         </div>
@@ -132,6 +135,7 @@ export function AdminDashboard() {
         {activeTab === "overview" && <OverviewPanel stats={stats} failedJobs={failedJobs} statsLoading={statsLoading} />}
         {activeTab === "merchants" && <MerchantsPanel merchants={merchants} loading={merchantsLoading} />}
         {activeTab === "settings" && <SettingsPanel settings={settings} onUpdate={(data) => updateSettingsMutation.mutate(data)} isUpdating={updateSettingsMutation.isPending} />}
+        {activeTab === "ai" && <AIControlCenter />}
       </main>
     </div>
   );

@@ -15,6 +15,8 @@ import { messagingService } from "../../services/messaging.service.js";
 import { env } from "../../config/env.js";
 import axios from "axios";
 
+import { SystemSettingsModel } from "./admin.model.js";
+
 export class CommerceService {
   async getDashboard(ownerId: string) {
     const merchant = await CommerceMerchantModel.findOne({ ownerId });
@@ -211,10 +213,9 @@ Réponds UNIQUEMENT avec le JSON. Si ce n'est pas une preuve de paiement, mets i
   }
 
   async analyzeProductImage(imageBuffer: Buffer, mimeType: string) {
-    // 1. Primary: Gemini Vision
-    if (env.GEMINI_API_KEY) {
-      try {
-        const prompt = `Analyse cette image de produit et extrait les informations suivantes au format JSON :
+    // 1. Primary: Dynamic Vision Provider
+    try {
+      const prompt = `Analyse cette image de produit et extrait les informations suivantes au format JSON :
 {
   "name": "Nom accrocheur du produit",
   "price": number (prix estimé ou 0 si inconnu, en FCFA),
@@ -224,30 +225,51 @@ Réponds UNIQUEMENT avec le JSON. Si ce n'est pas une preuve de paiement, mets i
 }
 Réponds UNIQUEMENT avec le JSON. Sois précis sur les détails techniques (matières, variantes).`;
 
-        const response = await axios.post(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${env.GEMINI_API_KEY}`, {
+      const settings = await SystemSettingsModel.findOne();
+      const provider = settings?.aiConfig?.defaultVisionProvider || 'gemini';
+
+      if (provider === 'gemini') {
+        const apiKey = settings?.aiConfig?.providers?.find(p => p.name === 'gemini')?.apiKey || env.GEMINI_API_KEY;
+        if (!apiKey) throw new Error("Clé Gemini manquante");
+
+        const response = await axios.post(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
           contents: [{
-            parts: [
-              { text: prompt },
-              {
-                inlineData: {
-                  mimeType,
-                  data: imageBuffer.toString("base64")
-                }
-              }
-            ]
+            parts: [{ text: prompt }, { inlineData: { mimeType, data: imageBuffer.toString("base64") } }]
           }]
         });
 
         const text = response.data.candidates[0].content.parts[0].text;
         const jsonMatch = text.match(/\{[\s\S]*\}/);
         if (jsonMatch) return JSON.parse(jsonMatch[0]);
-      } catch (error: any) {
-        console.warn("[Product Vision] Gemini failed, falling back to smart defaults:", error.message);
+      } else if (provider === 'openai') {
+        const apiKey = settings?.aiConfig?.providers?.find(p => p.name === 'openai')?.apiKey || env.OPENAI_API_KEY;
+        if (!apiKey) throw new Error("Clé OpenAI manquante");
+
+        const response = await axios.post("https://api.openai.com/v1/chat/completions", {
+          model: "gpt-4o-mini",
+          messages: [
+            {
+              role: "user",
+              content: [
+                { type: "text", text: prompt },
+                { type: "image_url", image_url: { url: `data:${mimeType};base64,${imageBuffer.toString("base64")}` } }
+              ]
+            }
+          ]
+        }, {
+          headers: { "Authorization": `Bearer ${apiKey}` }
+        });
+
+        const text = response.data.choices[0].message.content;
+        const jsonMatch = text.match(/\{[\s\S]*\}/);
+        if (jsonMatch) return JSON.parse(jsonMatch[0]);
       }
+    } catch (error: any) {
+      console.warn("[Product Vision] Analysis failed:", error.message);
     }
 
     // 2. Fallback: No silent default if Gemini is configured but fails
-    throw new Error("L'analyse de l'image a échoué. Veuillez réessayer ou saisir les détails manuellement.");
+    throw new Error("L'analyse de l'image a échoué. Veuillez vérifier vos clés API IA dans le dashboard Admin.");
   }
 
   async generateProductCaption(productId: string) {

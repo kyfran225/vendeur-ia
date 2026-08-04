@@ -3,6 +3,7 @@ import { env } from "../config/env.js";
 import { Redis } from "ioredis";
 import { getRedisClient } from "../config/redis.js";
 import crypto from "crypto";
+import { SystemSettingsModel } from "../modules/commerce/admin.model.js";
 
 export interface AIRequest {
   systemPrompt: string;
@@ -13,11 +14,49 @@ export interface AIRequest {
 }
 
 export class AIProvider {
-  private static readonly GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent";
+  private static readonly GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models";
   private redis: Redis | null;
 
   constructor() {
     this.redis = getRedisClient();
+  }
+
+  private async getDynamicConfig() {
+    try {
+      const settings = await SystemSettingsModel.findOne();
+      return settings?.aiConfig;
+    } catch (error) {
+      console.error("[AI Provider] Failed to fetch dynamic config:", error);
+      return null;
+    }
+  }
+
+  private getProviderKey(config: any, providerName: string): string | undefined {
+    const provider = config?.providers?.find((p: any) => p.name === providerName && p.isActive);
+    if (provider?.apiKey) return provider.apiKey;
+
+    // Fallback to env
+    switch (providerName) {
+      case 'gemini': return env.GEMINI_API_KEY;
+      case 'openai': return env.OPENAI_API_KEY;
+      case 'groq': return env.GROQ_API_KEY;
+      case 'elevenlabs': return env.ELEVENLABS_API_KEY;
+      default: return undefined;
+    }
+  }
+
+  private getModel(config: any, providerName: string, type: 'text' | 'vision' | 'audio'): string {
+    const provider = config?.providers?.find((p: any) => p.name === providerName);
+    if (provider?.models?.[type]) return provider.models[type];
+
+    // Defaults
+    switch (providerName) {
+      case 'gemini': return type === 'vision' ? 'gemini-1.5-flash' : 'gemini-1.5-flash';
+      case 'groq': return 'llama-3.3-70b-versatile';
+      case 'openai': return type === 'audio' ? 'whisper-1' : 'gpt-4o-mini';
+      case 'elevenlabs': return 'eleven_multilingual_v2';
+      default: return "";
+    }
   }
 
   private generateCacheKey(request: AIRequest): string {
@@ -31,7 +70,10 @@ export class AIProvider {
   }
 
   async generateText(request: AIRequest): Promise<string> {
-    // 1. Try Semantic Cache (MD5 hash of context for now)
+    const config = await this.getDynamicConfig();
+    const primaryProvider = config?.defaultTextProvider || 'gemini';
+
+    // 1. Try Semantic Cache
     const cacheKey = this.generateCacheKey(request);
     if (this.redis) {
       const cached = await this.redis.get(cacheKey);
@@ -43,59 +85,49 @@ export class AIProvider {
 
     let responseText: string;
 
-    // 1. Try Gemini (Primary)
-    if (env.GEMINI_API_KEY) {
-      try {
-        responseText = await this.generateWithGemini(request);
-      } catch (error) {
-        console.warn("[AI Provider] Gemini failed, falling back to Groq:", (error as any).message);
+    // Try Primary
+    try {
+      responseText = await this.generateWithProvider(primaryProvider, request, config);
+    } catch (error) {
+      console.warn(`[AI Provider] ${primaryProvider} failed, trying fallback:`, (error as any).message);
 
-        // 2. Try Groq (Backup using Free Quota)
-        if (env.GROQ_API_KEY) {
-          try {
-            responseText = await this.generateWithGroq(request);
-          } catch (groqError) {
-            console.error("[AI Provider] Groq failed too:", (groqError as any).message);
-            throw new Error("Toutes les IA (Gemini & Groq) ont échoué.");
-          }
-        } else {
-          throw new Error("Gemini a échoué et Groq n'est pas configuré.");
-        }
-      }
-    } else if (env.GROQ_API_KEY) {
-      // Direct to Groq if Gemini is not configured
+      const fallbackProvider = primaryProvider === 'gemini' ? 'groq' : 'gemini';
       try {
-        responseText = await this.generateWithGroq(request);
-      } catch (error) {
-        throw new Error("Groq a échoué.");
+        responseText = await this.generateWithProvider(fallbackProvider, request, config);
+      } catch (fallbackError) {
+        console.error("[AI Provider] Fallback failed too:", (fallbackError as any).message);
+        throw new Error("Tous les fournisseurs d'IA ont échoué.");
       }
-    } else {
-      throw new Error("Aucun fournisseur d'IA (Gemini ou Groq) n'est configuré.");
     }
 
     // 2. Save to Cache
     if (this.redis) {
-      await this.redis.set(cacheKey, responseText, 'EX', 3600); // 1 hour cache
+      await this.redis.set(cacheKey, responseText, 'EX', 3600);
     }
 
     return responseText;
   }
 
-  private async generateWithGemini(request: AIRequest): Promise<string> {
+  private async generateWithProvider(providerName: string, request: AIRequest, config: any): Promise<string> {
+    const apiKey = this.getProviderKey(config, providerName);
+    if (!apiKey) throw new Error(`API Key for ${providerName} not configured`);
+
+    if (providerName === 'gemini') {
+      return this.generateWithGemini(request, apiKey, this.getModel(config, 'gemini', 'text'));
+    } else if (providerName === 'groq') {
+      return this.generateWithGroq(request, apiKey, this.getModel(config, 'groq', 'text'));
+    } else if (providerName === 'openai') {
+      return this.generateWithOpenAI(request, apiKey, this.getModel(config, 'openai', 'text'));
+    }
+
+    throw new Error(`Provider ${providerName} not supported for text generation`);
+  }
+
+  private async generateWithGemini(request: AIRequest, apiKey: string, model: string): Promise<string> {
     const contents = [];
+    contents.push({ role: "user", parts: [{ text: `SYSTEM INSTRUCTIONS: ${request.systemPrompt}` }] });
+    contents.push({ role: "model", parts: [{ text: "Compris. Je suis prêt à agir selon ces instructions." }] });
 
-    // System prompt as first message (or integrated into parts depending on API version)
-    // For 1.5-flash, we can use system_instruction if supported, or just a pre-message
-    contents.push({
-      role: "user",
-      parts: [{ text: `SYSTEM INSTRUCTIONS: ${request.systemPrompt}` }]
-    });
-    contents.push({
-      role: "model",
-      parts: [{ text: "Compris. Je suis prêt à agir selon ces instructions." }]
-    });
-
-    // History
     if (request.history) {
       for (const msg of request.history) {
         contents.push({
@@ -104,199 +136,172 @@ export class AIProvider {
         });
       }
     }
-
-    // Current message
-    contents.push({
-      role: "user",
-      parts: [{ text: request.userMessage }]
-    });
+    contents.push({ role: "user", parts: [{ text: request.userMessage }] });
 
     try {
-      const response = await axios.post(`${AIProvider.GEMINI_URL}?key=${env.GEMINI_API_KEY}`, {
+      const response = await axios.post(`${AIProvider.GEMINI_URL}/${model}:generateContent?key=${apiKey}`, {
         contents,
         generationConfig: {
           maxOutputTokens: request.maxTokens || 200,
           temperature: request.temperature || 0.7,
         }
       });
-
       return response.data.candidates[0].content.parts[0].text.trim();
     } catch (error: any) {
       console.error("Gemini API Error:", error.response?.data || error.message);
-      throw new Error("Failed to generate AI response");
+      throw new Error("Gemini failed");
     }
   }
 
-  private async generateWithGroq(request: AIRequest): Promise<string> {
-    const messages = [];
-
-    messages.push({ role: "system", content: request.systemPrompt });
-
+  private async generateWithGroq(request: AIRequest, apiKey: string, model: string): Promise<string> {
+    const messages = [{ role: "system", content: request.systemPrompt }];
     if (request.history) {
       for (const msg of request.history) {
-        messages.push({
-          role: msg.role === "customer" ? "user" : "assistant",
-          content: msg.text
-        });
+        messages.push({ role: msg.role === "customer" ? "user" : "assistant", content: msg.text });
       }
     }
-
     messages.push({ role: "user", content: request.userMessage });
 
     try {
       const response = await axios.post("https://api.groq.com/openai/v1/chat/completions", {
-        model: "llama-3.3-70b-versatile",
+        model,
         messages,
         max_tokens: request.maxTokens || 250,
         temperature: request.temperature || 0.7,
       }, {
-        headers: {
-          "Authorization": `Bearer ${env.GROQ_API_KEY}`,
-          "Content-Type": "application/json"
-        }
+        headers: { "Authorization": `Bearer ${apiKey}`, "Content-Type": "application/json" }
       });
-
       return response.data.choices[0].message.content.trim();
     } catch (error: any) {
       console.error("Groq API Error:", error.response?.data || error.message);
-      throw new Error("Failed to generate Groq response");
+      throw new Error("Groq failed");
     }
   }
 
+  private async generateWithOpenAI(request: AIRequest, apiKey: string, model: string): Promise<string> {
+    const messages = [{ role: "system", content: request.systemPrompt }];
+    if (request.history) {
+      for (const msg of request.history) {
+        messages.push({ role: msg.role === "customer" ? "user" : "assistant", content: msg.text });
+      }
+    }
+    messages.push({ role: "user", content: request.userMessage });
+
+    try {
+      const response = await axios.post("https://api.openai.com/v1/chat/completions", {
+        model,
+        messages,
+        max_tokens: request.maxTokens || 250,
+        temperature: request.temperature || 0.7,
+      }, {
+        headers: { "Authorization": `Bearer ${apiKey}`, "Content-Type": "application/json" }
+      });
+      return response.data.choices[0].message.content.trim();
+    } catch (error: any) {
+      console.error("OpenAI API Error:", error.response?.data || error.message);
+      throw new Error("OpenAI failed");
+    }
+  }
+
+  async testConnectivity(providerName: string): Promise<{ success: boolean; message: string }> {
+    const config = await this.getDynamicConfig();
+    const apiKey = this.getProviderKey(config, providerName);
+    if (!apiKey) return { success: false, message: "Clé API non configurée" };
+
+    try {
+      if (providerName === 'gemini') {
+        await axios.get(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
+      } else if (providerName === 'groq') {
+        await axios.get("https://api.groq.com/openai/v1/models", {
+          headers: { "Authorization": `Bearer ${apiKey}` }
+        });
+      } else if (providerName === 'openai') {
+        await axios.get("https://api.openai.com/v1/models", {
+          headers: { "Authorization": `Bearer ${apiKey}` }
+        });
+      } else if (providerName === 'elevenlabs') {
+        await axios.get("https://api.elevenlabs.io/v1/voices", {
+          headers: { "xi-api-key": apiKey }
+        });
+      }
+      return { success: true, message: "Connexion réussie" };
+    } catch (error: any) {
+      return { success: false, message: error.response?.data?.error?.message || error.message };
+    }
+  }
 
   async transcribeAudio(audioBuffer: Buffer, mimeType: string, context?: string): Promise<string> {
-    // 1. Try Gemini (Local-aware transcription)
-    if (env.GEMINI_API_KEY) {
-      try {
-        const prompt = `Tu es une IA de transcription pour un commerce local.
-Context du marchand : ${context || "Inconnu"}
-Écoute attentivement cet audio et transcris-le fidèlement en texte.
-Si l'utilisateur parle une langue locale ou utilise de l'argot (comme le Nouchi), transcris-le tel quel mais assure-toi que le sens est clair.
-Réponds UNIQUEMENT avec le texte transcrit.`;
+    const config = await this.getDynamicConfig();
+    const geminiKey = this.getProviderKey(config, 'gemini');
 
-        const response = await axios.post(`${AIProvider.GEMINI_URL}?key=${env.GEMINI_API_KEY}`, {
+    if (geminiKey) {
+      try {
+        const model = this.getModel(config, 'gemini', 'text');
+        const prompt = `Tu es une IA de transcription. Context: ${context || "Inconnu"}. Transcris fidèlement.`;
+        const response = await axios.post(`${AIProvider.GEMINI_URL}/${model}:generateContent?key=${geminiKey}`, {
           contents: [{
-            parts: [
-              { text: prompt },
-              {
-                inlineData: {
-                  mimeType,
-                  data: audioBuffer.toString("base64")
-                }
-              }
-            ]
+            parts: [{ text: prompt }, { inlineData: { mimeType, data: audioBuffer.toString("base64") } }]
           }]
         });
-
-        const transcription = response.data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
-        if (transcription) {
-          console.log(`[Vocal Brain] Gemini transcription success: "${transcription}"`);
-          return transcription;
-        }
+        return response.data.candidates[0].content.parts[0].text.trim();
       } catch (error: any) {
-        console.warn("[Vocal Brain] Gemini transcription failed, falling back to OpenAI Whisper:", error.message);
+        console.warn("[AI Provider] Gemini transcription failed, trying Whisper");
       }
     }
 
-    // 2. Fallback to OpenAI Whisper
-    if (env.OPENAI_API_KEY) {
+    const openAIKey = this.getProviderKey(config, 'openai');
+    if (openAIKey) {
       try {
         const formData = new FormData();
         const blob = new Blob([new Uint8Array(audioBuffer)], { type: "audio/ogg" });
         formData.append("file", blob, "audio.ogg");
         formData.append("model", "whisper-1");
-        formData.append("prompt", context || "");
-
         const response = await axios.post("https://api.openai.com/v1/audio/transcriptions", formData, {
-          headers: {
-            "Authorization": `Bearer ${env.OPENAI_API_KEY}`,
-          }
+          headers: { "Authorization": `Bearer ${openAIKey}` }
         });
-
-        const transcription = response.data.text;
-        console.log(`[Vocal Brain] Whisper transcription success: "${transcription}"`);
-        return transcription;
+        return response.data.text;
       } catch (error: any) {
-        console.error("[Vocal Brain] Whisper fallback failed too:", error.message);
+        console.error("[AI Provider] Whisper failed");
       }
     }
 
-    throw new Error("Échec de la transcription audio par tous les fournisseurs.");
+    throw new Error("Échec de la transcription.");
   }
 
   async generateSpeech(text: string): Promise<Buffer> {
-    // 1. Try ElevenLabs (Premium Quality)
-    if (env.ELEVENLABS_API_KEY) {
+    const config = await this.getDynamicConfig();
+    const provider = config?.defaultAudioProvider || 'elevenlabs';
+    const apiKey = this.getProviderKey(config, provider);
+
+    if (provider === 'elevenlabs' && apiKey) {
       try {
-        console.log("[AI Provider] Attempting ElevenLabs TTS...");
-        return await this.generateWithElevenLabs(text);
+        const voiceId = env.ELEVENLABS_VOICE_ID || "21m00Tcm4TlvDq8ikWAM";
+        const response = await axios.post(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
+          text, model_id: "eleven_multilingual_v2"
+        }, {
+          headers: { "xi-api-key": apiKey }, responseType: "arraybuffer"
+        });
+        return Buffer.from(response.data);
       } catch (error) {
-        console.error("[AI Provider] ElevenLabs failed, falling back to OpenAI:", error);
+        console.warn("[AI Provider] ElevenLabs failed, trying OpenAI");
       }
     }
 
-    // 2. Try OpenAI (Reliable Backup)
-    if (env.OPENAI_API_KEY) {
+    const openAIKey = this.getProviderKey(config, 'openai');
+    if (openAIKey) {
       try {
-        console.log("[AI Provider] Attempting OpenAI TTS...");
-        return await this.generateWithOpenAI(text);
+        const response = await axios.post("https://api.openai.com/v1/audio/speech", {
+          model: "tts-1", input: text, voice: "shimmer"
+        }, {
+          headers: { "Authorization": `Bearer ${openAIKey}` }, responseType: "arraybuffer"
+        });
+        return Buffer.from(response.data);
       } catch (error) {
-        console.error("[AI Provider] OpenAI failed too:", error);
+        console.error("[AI Provider] OpenAI TTS failed");
       }
     }
 
-    throw new Error("Toutes les méthodes de synthèse vocale ont échoué.");
-  }
-
-  private async generateWithElevenLabs(text: string): Promise<Buffer> {
-    const voiceId = env.ELEVENLABS_VOICE_ID || "21m00Tcm4TlvDq8ikWAM"; // Default Rachel
-    try {
-      const response = await axios.post(
-        `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`,
-        {
-          text,
-          model_id: "eleven_multilingual_v2",
-          voice_settings: {
-            stability: 0.5,
-            similarity_boost: 0.75
-          }
-        },
-        {
-          headers: {
-            "xi-api-key": env.ELEVENLABS_API_KEY,
-            "Content-Type": "application/json"
-          },
-          responseType: "arraybuffer"
-        }
-      );
-      return Buffer.from(response.data);
-    } catch (error: any) {
-      throw error;
-    }
-  }
-
-  private async generateWithOpenAI(text: string): Promise<Buffer> {
-    try {
-      const response = await axios.post(
-        "https://api.openai.com/v1/audio/speech",
-        {
-          model: "tts-1",
-          input: text,
-          voice: "shimmer",
-          response_format: "opus"
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${env.OPENAI_API_KEY}`,
-            "Content-Type": "application/json"
-          },
-          responseType: "arraybuffer"
-        }
-      );
-      return Buffer.from(response.data);
-    } catch (error: any) {
-      throw error;
-    }
+    throw new Error("Échec TTS.");
   }
 }
 

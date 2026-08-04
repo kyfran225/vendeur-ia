@@ -4,6 +4,7 @@ import { SystemSettingsModel } from "./admin.model.js";
 import { CommerceMerchantModel, CommerceConversationModel, CommerceMessageModel, CommerceOrderModel } from "./commerce.model.js";
 import { TransactionModel } from "./transaction.model.js";
 import { aiQueue } from "../../services/ai-queue.service.js";
+import { aiProvider } from "../../services/ai-provider.js";
 
 const router = Router();
 
@@ -38,6 +39,33 @@ router.patch("/settings", authenticate, isAdmin, async (req, res) => {
       { new: true, upsert: true }
     );
     res.json(settings);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// GET AI Status & Connectivity
+router.get("/ai/status", authenticate, isAdmin, async (req, res) => {
+  try {
+    const providers = ['gemini', 'openai', 'groq', 'elevenlabs'];
+    const results = await Promise.all(providers.map(p => aiProvider.testConnectivity(p)));
+
+    const status = providers.map((p, i) => ({
+      name: p,
+      ...results[i]
+    }));
+
+    res.json(status);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// TEST SPECIFIC PROVIDER
+router.post("/ai/test/:provider", authenticate, isAdmin, async (req, res) => {
+  try {
+    const result = await aiProvider.testConnectivity(req.params.provider);
+    res.json(result);
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }

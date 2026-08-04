@@ -15,6 +15,26 @@ const SystemSettingsSchema = new Schema({
       accessToken: String
     }
   },
+  aiConfig: {
+    providers: [{
+      name: { type: String, enum: ['gemini', 'openai', 'groq', 'elevenlabs', 'openrouter'], required: true },
+      apiKey: String,
+      isActive: { type: Boolean, default: true },
+      models: {
+        text: { type: String, default: "" },
+        vision: { type: String, default: "" },
+        audio: { type: String, default: "" }
+      },
+      quota: {
+        limit: { type: Number, default: 0 },
+        used: { type: Number, default: 0 },
+        resetDate: Date
+      }
+    }],
+    defaultTextProvider: { type: String, default: 'gemini' },
+    defaultVisionProvider: { type: String, default: 'gemini' },
+    defaultAudioProvider: { type: String, default: 'elevenlabs' }
+  },
   maintenanceMode: { type: Boolean, default: false }
 }, { timestamps: true });
 

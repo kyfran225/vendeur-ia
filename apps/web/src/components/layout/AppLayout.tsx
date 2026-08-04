@@ -11,7 +11,7 @@ export function AppLayout() {
       <Sidebar />
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <ShellHeader />
-        <main className="flex-1 overflow-y-auto no-scrollbar pb-16 md:pb-0 scroll-smooth">
+        <main className="flex-1 overflow-y-auto pb-16 md:pb-0 scroll-smooth">
           <div className="max-w-[1600px] mx-auto w-full min-h-full">
             <Outlet />
           </div>

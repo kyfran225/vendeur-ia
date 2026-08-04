@@ -12,8 +12,11 @@ Avant tout déploiement, configurez les variables suivantes sur vos plateformes 
 - `MONGODB_URI` : URL de votre instance MongoDB Atlas.
 - `JWT_SECRET` : Une chaîne aléatoire forte.
 - `PAYSTACK_SECRET_KEY` : Votre clé secrète de test ou prod Paystack.
-- `GEMINI_API_KEY` or `OPENAI_API_KEY` : Pour le cerveau de l'agent.
 - `CLIENT_URL` : L'URL finale de votre frontend (ex: `https://vendeur-ia.vercel.app`).
+- `REDIS_URL` : L'URL de votre instance Redis (interne ou externe).
+
+> [!NOTE]
+> Les clés API IA (**Gemini, OpenAI, Groq, OpenRouter, ElevenLabs**) ne sont plus gérées via les variables d'environnement. Elles doivent être configurées directement dans le panneau **Master Control** de l'interface Admin une fois l'application déployée.
 
 ### Web (Frontend)
 - `VITE_API_URL` : L'URL finale de votre API (ex: `https://vendeur-ia-api.onrender.com`).

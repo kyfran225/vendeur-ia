@@ -12,7 +12,10 @@ import {
   Shield,
   Save,
   ChevronDown,
-  Sparkles
+  Sparkles,
+  Eye,
+  EyeOff,
+  Copy
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/apiClient";
@@ -24,10 +27,36 @@ function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+const DEFAULT_PROVIDERS = [
+  { name: 'gemini', apiKey: '', isActive: true },
+  { name: 'openai', apiKey: '', isActive: true },
+  { name: 'groq', apiKey: '', isActive: true },
+  { name: 'openrouter', apiKey: '', isActive: true },
+  { name: 'elevenlabs', apiKey: '', isActive: true }
+];
+
+const mergeProviders = (existing: any[] = []) => {
+  return DEFAULT_PROVIDERS.map(def => {
+    const found = existing.find(p => p.name === def.name);
+    return found ? { ...def, ...found } : def;
+  });
+};
+
 export function AIControlCenter() {
   const queryClient = useQueryClient();
   const [isEditing, setIsEditing] = useState(false);
   const [localAiConfig, setLocalAiConfig] = useState<any>(null);
+  const [visibleKeys, setVisibleKeys] = useState<Record<string, boolean>>({});
+
+  const toggleKeyVisibility = (name: string) => {
+    setVisibleKeys(prev => ({ ...prev, [name]: !prev[name] }));
+  };
+
+  const copyToClipboard = (text: string) => {
+    if (!text) return;
+    navigator.clipboard.writeText(text);
+    toast.success("Clé copiée !");
+  };
 
   // 1. Fetch AI Status
   const { data: aiStatus, isLoading: statusLoading, refetch: refetchStatus } = useQuery({
@@ -47,6 +76,15 @@ export function AIControlCenter() {
     }
   });
 
+  // 3. Fetch Real Usage Stats
+  const { data: adminStats } = useQuery({
+    queryKey: ["admin:stats"],
+    queryFn: async () => {
+      const res = await apiClient.get("/api/admin/stats");
+      return res.data;
+    }
+  });
+
   const updateSettingsMutation = useMutation({
     mutationFn: async (newSettings: any) => {
       const res = await apiClient.patch("/api/admin/settings", newSettings);
@@ -56,22 +94,18 @@ export function AIControlCenter() {
       toast.success("Configuration IA mise à jour !");
       setIsEditing(false);
       queryClient.invalidateQueries({ queryKey: ["admin:settings"] });
+      queryClient.invalidateQueries({ queryKey: ["admin:ai:status"] });
     }
   });
 
   const handleEditClick = () => {
     if (!isEditing) {
-      setLocalAiConfig(settings?.aiConfig || {
-        providers: [
-          { name: 'gemini', apiKey: '', isActive: true },
-          { name: 'openai', apiKey: '', isActive: true },
-          { name: 'groq', apiKey: '', isActive: true },
-          { name: 'openrouter', apiKey: '', isActive: true },
-          { name: 'elevenlabs', apiKey: '', isActive: true }
-        ],
-        defaultTextProvider: 'gemini',
-        defaultVisionProvider: 'gemini',
-        defaultAudioProvider: 'elevenlabs'
+      setLocalAiConfig({
+        ...(settings?.aiConfig || {}),
+        providers: mergeProviders(settings?.aiConfig?.providers || []),
+        defaultTextProvider: settings?.aiConfig?.defaultTextProvider || 'gemini',
+        defaultVisionProvider: settings?.aiConfig?.defaultVisionProvider || 'gemini',
+        defaultAudioProvider: settings?.aiConfig?.defaultAudioProvider || 'elevenlabs'
       });
     }
     setIsEditing(!isEditing);
@@ -96,17 +130,12 @@ export function AIControlCenter() {
     return <div className="flex h-48 items-center justify-center"><Sparkles className="animate-spin text-vendeur-emerald" size={32} /></div>;
   }
 
-  const aiConfig = settings?.aiConfig || {
-    providers: [
-      { name: 'gemini', apiKey: '', isActive: true },
-      { name: 'openai', apiKey: '', isActive: true },
-      { name: 'groq', apiKey: '', isActive: true },
-      { name: 'openrouter', apiKey: '', isActive: true },
-      { name: 'elevenlabs', apiKey: '', isActive: true }
-    ],
-    defaultTextProvider: 'gemini',
-    defaultVisionProvider: 'gemini',
-    defaultAudioProvider: 'elevenlabs'
+  const aiConfig = {
+    ...(settings?.aiConfig || {}),
+    providers: mergeProviders(settings?.aiConfig?.providers || []),
+    defaultTextProvider: settings?.aiConfig?.defaultTextProvider || 'gemini',
+    defaultVisionProvider: settings?.aiConfig?.defaultVisionProvider || 'gemini',
+    defaultAudioProvider: settings?.aiConfig?.defaultAudioProvider || 'elevenlabs'
   };
 
   return (
@@ -159,7 +188,7 @@ export function AIControlCenter() {
       <div className="bg-vendeur-coal border border-white/5 rounded-[2.5rem] overflow-hidden">
         <div className="p-6 md:p-8 border-b border-white/5 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="flex items-center gap-4">
-            <div className="h-12 w-12 bg-amber-500/10 rounded-2xl flex items-center justify-center text-amber-500 border border-amber-500/20 shrink-0">
+            <div className="h-12 w-12 bg-vendeur-emerald/10 rounded-2xl flex items-center justify-center text-vendeur-emerald border border-vendeur-emerald/20 shrink-0">
               <Shield size={24} />
             </div>
             <div>
@@ -215,7 +244,7 @@ export function AIControlCenter() {
                 <div className="flex-1 w-full relative">
                   <Key size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" />
                   <input
-                    type="password"
+                    type={visibleKeys[p.name] ? "text" : "password"}
                     disabled={!isEditing}
                     value={p.apiKey || ""}
                     onChange={(e) => {
@@ -225,8 +254,24 @@ export function AIControlCenter() {
                       setLocalAiConfig({ ...localAiConfig, providers: newProviders });
                     }}
                     placeholder="sk-••••••••••••••••••••••••"
-                    className="w-full h-12 bg-black/20 border border-white/10 rounded-xl pl-12 pr-4 text-xs font-mono text-white/60 focus:border-amber-500 outline-none transition-all disabled:opacity-50"
+                    className="w-full h-12 bg-black/20 border border-white/10 rounded-xl pl-12 pr-24 text-xs font-mono text-white/60 focus:border-vendeur-emerald outline-none transition-all disabled:opacity-50"
                   />
+                  <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                    <button
+                      onClick={() => toggleKeyVisibility(p.name)}
+                      className="p-2 hover:bg-white/5 rounded-lg text-white/40 hover:text-white transition-all"
+                      title={visibleKeys[p.name] ? "Masquer" : "Afficher"}
+                    >
+                      {visibleKeys[p.name] ? <EyeOff size={14} /> : <Eye size={14} />}
+                    </button>
+                    <button
+                      onClick={() => copyToClipboard(p.apiKey)}
+                      className="p-2 hover:bg-white/5 rounded-lg text-white/40 hover:text-white transition-all"
+                      title="Copier"
+                    >
+                      <Copy size={14} />
+                    </button>
+                  </div>
                 </div>
 
                 <div className="flex items-center gap-4 w-full md:w-auto justify-end">
@@ -241,7 +286,7 @@ export function AIControlCenter() {
                         newProviders[idx] = { ...newProviders[idx], isActive: e.target.checked };
                         setLocalAiConfig({ ...localAiConfig, providers: newProviders });
                       }}
-                      className="w-4 h-4 rounded border-white/10 bg-black/40 text-amber-500 focus:ring-amber-500"
+                      className="w-4 h-4 rounded border-white/10 bg-black/40 text-vendeur-emerald focus:ring-vendeur-emerald"
                     />
                     <span className="text-[10px] font-black uppercase text-white/40">Actif</span>
                   </label>
@@ -255,7 +300,7 @@ export function AIControlCenter() {
               <button
                 onClick={() => updateSettingsMutation.mutate({ aiConfig: localAiConfig })}
                 disabled={updateSettingsMutation.isPending}
-                className="w-full md:w-auto min-w-[240px] px-8 h-14 bg-amber-500 text-vendeur-coal font-black uppercase tracking-widest rounded-2xl flex items-center justify-center gap-3 hover:scale-[1.02] active:scale-95 transition-all shadow-xl shadow-amber-500/20 disabled:opacity-50"
+                className="w-full md:w-auto min-w-[240px] px-8 h-14 bg-vendeur-emerald text-vendeur-coal font-black uppercase tracking-widest rounded-2xl flex items-center justify-center gap-3 hover:scale-[1.02] active:scale-95 transition-all shadow-xl shadow-vendeur-emerald/20 disabled:opacity-50"
               >
                 {updateSettingsMutation.isPending ? (
                   <RefreshCw className="animate-spin" size={20} />
@@ -277,28 +322,146 @@ export function AIControlCenter() {
               Utilisation (Tokens)
             </h2>
             <div className="space-y-6">
-               <UsageBar label="Gemini 1.5 Flash" used={450000} total={1000000} color="emerald" />
-               <UsageBar label="Groq Llama 3" used={120000} total={500000} color="sky" />
-               <UsageBar label="OpenRouter (Llama 3.3)" used={25000} total={500000} color="indigo" />
-               <UsageBar label="ElevenLabs Audio" used={8500} total={10000} color="amber" />
+               <RealUsageBar
+                 label="Gemini 1.5 Flash"
+                 provider="gemini"
+                 usageData={adminStats?.providerUsage}
+                 total={1000000}
+                 color="emerald"
+               />
+               <RealUsageBar
+                 label="Groq Llama 3"
+                 provider="groq"
+                 usageData={adminStats?.providerUsage}
+                 total={500000}
+                 color="sky"
+               />
+               <RealUsageBar
+                 label="OpenRouter (Llama 3.3)"
+                 provider="openrouter"
+                 usageData={adminStats?.providerUsage}
+                 total={500000}
+                 color="indigo"
+               />
+               <RealUsageBar
+                 label="ElevenLabs Audio"
+                 provider="elevenlabs"
+                 usageData={adminStats?.providerUsage}
+                 total={10000}
+                 color="vendeur"
+               />
             </div>
           </div>
 
           <div className="bg-vendeur-coal border border-white/5 p-8 rounded-[2.5rem] space-y-6">
              <div className="flex items-center justify-between">
                 <h2 className="text-xl font-black uppercase tracking-tighter flex items-center gap-3">
-                  <Zap className="text-amber-500" size={24} />
+                  <Zap className="text-vendeur-emerald" size={24} />
                   Dernières Erreurs
                 </h2>
                 <span className="text-[10px] font-black text-white/20 uppercase tracking-widest">Temps Réel</span>
              </div>
-             <div className="space-y-3">
-                <ErrorLog time="23:45" provider="Gemini" error="Quota Exceeded (RPM)" />
-                <ErrorLog time="22:12" provider="ElevenLabs" error="Invalid Voice ID" />
-                <ErrorLog time="19:05" provider="Vision" error="Unsupported image format" />
+             <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2 no-scrollbar">
+                {settings?.aiConfig?.lastErrors?.length > 0 ? (
+                  settings.aiConfig.lastErrors.map((err: any, i: number) => (
+                    <ErrorLog
+                      key={i}
+                      time={new Date(err.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      provider={err.provider}
+                      error={err.message}
+                    />
+                  ))
+                ) : (
+                  <div className="text-center py-8 text-white/20 uppercase text-[10px] font-black tracking-widest italic">
+                    Aucune erreur détectée ✨
+                  </div>
+                )}
              </div>
           </div>
       </div>
+
+      {/* 4. NOTIFICATION SETTINGS */}
+      <div className="bg-vendeur-coal border border-white/5 rounded-[2.5rem] p-8 space-y-8">
+        <div className="flex items-center gap-4">
+          <div className="h-12 w-12 bg-indigo-500/10 rounded-2xl flex items-center justify-center text-indigo-400 border border-indigo-500/20 shrink-0">
+            <Sparkles size={24} />
+          </div>
+          <div>
+            <h2 className="text-lg md:text-xl font-black uppercase tracking-tighter leading-tight">Alertes & Notifications</h2>
+            <p className="text-[10px] text-white/40 uppercase tracking-widest font-black">Supervision Critique</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="space-y-4">
+            <h3 className="text-xs font-black uppercase tracking-[0.2em] text-white/60 mb-4">Canaux d'alerte</h3>
+
+            <NotificationToggle
+              label="Notifications Push Web"
+              description="Recevoir une alerte immédiate sur votre navigateur/mobile."
+              checked={isEditing ? localAiConfig?.notificationSettings?.enablePush : settings?.aiConfig?.notificationSettings?.enablePush}
+              onChange={(v: boolean) => isEditing && setLocalAiConfig({
+                ...localAiConfig,
+                notificationSettings: { ...localAiConfig.notificationSettings, enablePush: v }
+              })}
+              disabled={!isEditing}
+            />
+
+            <NotificationToggle
+              label="Alertes Email"
+              description="Envoyer un rapport d'erreur sur l'email des administrateurs."
+              checked={isEditing ? localAiConfig?.notificationSettings?.enableEmail : settings?.aiConfig?.notificationSettings?.enableEmail}
+              onChange={(v: boolean) => isEditing && setLocalAiConfig({
+                ...localAiConfig,
+                notificationSettings: { ...localAiConfig.notificationSettings, enableEmail: v }
+              })}
+              disabled={!isEditing}
+            />
+          </div>
+
+          <div className="space-y-4">
+            <h3 className="text-xs font-black uppercase tracking-[0.2em] text-white/60 mb-4">Fréquence des alertes</h3>
+            <div className="p-6 bg-black/40 rounded-3xl border border-white/5 space-y-4">
+               <select
+                 disabled={!isEditing}
+                 value={isEditing ? localAiConfig?.notificationSettings?.alertThreshold : settings?.aiConfig?.notificationSettings?.alertThreshold}
+                 onChange={(e) => isEditing && setLocalAiConfig({
+                   ...localAiConfig,
+                   notificationSettings: { ...localAiConfig.notificationSettings, alertThreshold: e.target.value }
+                 })}
+                 className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-xs font-bold text-white outline-none focus:border-vendeur-emerald transition-all disabled:opacity-50"
+               >
+                 <option value="always">Toujours notifier (Chaque erreur)</option>
+                 <option value="high_frequency" disabled>Seulement en cas de panne répétée (Bientôt)</option>
+               </select>
+               <p className="text-[9px] text-white/20 uppercase font-bold leading-relaxed italic">
+                 Note : Les notifications Push nécessitent que vous ayez autorisé les notifications dans votre navigateur.
+               </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function NotificationToggle({ label, description, checked, onChange, disabled }: any) {
+  return (
+    <div className="flex items-center justify-between p-6 bg-black/40 rounded-3xl border border-white/5 group">
+      <div className="space-y-1">
+        <p className="text-xs font-black uppercase tracking-tight text-white/80 group-hover:text-white transition-colors">{label}</p>
+        <p className="text-[10px] text-white/30 font-medium leading-tight max-w-[200px]">{description}</p>
+      </div>
+      <label className="relative inline-flex items-center cursor-pointer">
+        <input
+          type="checkbox"
+          className="sr-only peer"
+          checked={checked}
+          onChange={(e) => onChange(e.target.checked)}
+          disabled={disabled}
+        />
+        <div className="w-11 h-6 bg-white/5 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white/20 after:border-transparent after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-vendeur-emerald peer-checked:after:bg-white"></div>
+      </label>
     </div>
   );
 }
@@ -312,11 +475,43 @@ function RoutingSelect({ label, value, onChange, options, disabled }: any) {
           disabled={disabled}
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="w-full h-14 bg-black/40 border border-white/10 rounded-2xl px-6 text-xs font-black uppercase tracking-widest text-white outline-none focus:border-amber-500 appearance-none disabled:opacity-50 cursor-pointer"
+          className="w-full h-14 bg-black/40 border border-white/10 rounded-2xl px-6 text-xs font-black uppercase tracking-widest text-white outline-none focus:border-vendeur-emerald appearance-none disabled:opacity-50 cursor-pointer"
         >
           {options.map((o: string) => <option key={o} value={o}>{o}</option>)}
         </select>
         <ChevronDown size={16} className="absolute right-4 top-1/2 -translate-y-1/2 text-white/20 pointer-events-none" />
+      </div>
+    </div>
+  );
+}
+
+function RealUsageBar({ label, provider, usageData, total, color }: any) {
+  const usage = usageData?.find((u: any) => u.provider === provider);
+  const used = usage?.tokens || 0;
+  const percent = Math.min(100, (used / total) * 100);
+
+  const colors: any = {
+    emerald: "bg-vendeur-emerald",
+    sky: "bg-sky-500",
+    indigo: "bg-indigo-500",
+    vendeur: "bg-vendeur-emerald"
+  };
+
+  return (
+    <div className="space-y-2">
+      <div className="flex justify-between text-[10px] font-black uppercase tracking-widest">
+        <span className="text-white/40">{label}</span>
+        <span className="text-white">{Math.round(percent)}%</span>
+      </div>
+      <div className="h-2 bg-white/5 rounded-full overflow-hidden">
+        <div
+          className={cn("h-full transition-all duration-1000", colors[color])}
+          style={{ width: `${percent}%` }}
+        />
+      </div>
+      <div className="flex justify-between text-[8px] font-bold text-white/20 uppercase">
+        <span>{Math.round(used).toLocaleString()} tokens used</span>
+        <span>{total.toLocaleString()} limit</span>
       </div>
     </div>
   );
@@ -328,7 +523,7 @@ function UsageBar({ label, used, total, color }: any) {
     emerald: "bg-vendeur-emerald",
     sky: "bg-sky-500",
     indigo: "bg-indigo-500",
-    amber: "bg-amber-500"
+    amber: "bg-vendeur-emerald"
   };
   return (
     <div className="space-y-2">
@@ -352,13 +547,13 @@ function UsageBar({ label, used, total, color }: any) {
 
 function ErrorLog({ time, provider, error }: any) {
   return (
-    <div className="flex items-center gap-4 p-4 bg-black/40 rounded-2xl border border-white/5 hover:border-rose-500/20 transition-colors group">
-      <div className="text-[10px] font-black text-white/20 group-hover:text-rose-500/40">{time}</div>
-      <div className="flex-1">
+    <div className="flex items-start gap-4 p-4 bg-black/40 rounded-2xl border border-white/5 hover:border-rose-500/20 transition-colors group">
+      <div className="text-[10px] font-black text-white/20 group-hover:text-rose-500/40 mt-0.5">{time}</div>
+      <div className="flex-1 min-w-0">
         <p className="text-[10px] font-black uppercase text-white/60 tracking-tight">{provider}</p>
-        <p className="text-[11px] font-medium text-rose-400/80">{error}</p>
+        <p className="text-[11px] font-medium text-rose-400/80 break-words leading-normal">{error}</p>
       </div>
-      <AlertTriangle size={14} className="text-rose-500/40" />
+      <AlertTriangle size={14} className="text-rose-500/40 shrink-0 mt-0.5" />
     </div>
   );
 }

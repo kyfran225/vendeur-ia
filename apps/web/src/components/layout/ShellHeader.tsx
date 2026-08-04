@@ -52,7 +52,7 @@ export function ShellHeader() {
         </div>
         <div className="text-left min-w-0">
           <p className="text-base md:text-xl font-black text-white uppercase tracking-tight truncate leading-tight">
-            {merchant?.businessName || "Mon Commerce"}
+            {merchant?.businessName || "SYSTEM CORE"}
           </p>
           <p className="text-[8px] md:text-[10px] uppercase tracking-[0.2em] text-vendeur-emerald/60 font-black leading-none truncate">
             AI Sales Machine

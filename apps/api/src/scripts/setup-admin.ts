@@ -34,7 +34,7 @@ async function setup() {
       console.log('Creating default merchant profile...');
       merchant = await CommerceMerchantModel.create({
         ownerId: user._id,
-        businessName: 'Maat Admin Store',
+        businessName: 'SYSTEM CORE',
         category: 'services',
         city: 'Abidjan',
         country: 'CI',
@@ -52,11 +52,14 @@ async function setup() {
             { provider: 'Wave', number: '+2250700000000', label: 'Wave' }
           ]
         },
-        customInstructions: 'Vends avec passion les produits de Maat Admin Store.'
+        customInstructions: 'Vends avec passion les produits de SYSTEM CORE.'
       });
       console.log('Merchant profile created.');
     } else {
-        console.log('Merchant profile already exists.');
+        console.log('Updating merchant businessName to SYSTEM CORE...');
+        merchant.businessName = 'SYSTEM CORE';
+        await merchant.save();
+        console.log('Merchant profile updated.');
     }
 
     console.log('✨ SUCCESS: Admin account and Merchant setup complete!');

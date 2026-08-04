@@ -78,12 +78,24 @@ router.get("/stats", authenticate, isAdmin, async (req, res) => {
     const activeSessions = await CommerceMerchantModel.countDocuments({ "whatsappConfig.status": "connected" });
     const totalConversations = await CommerceConversationModel.countDocuments();
 
-    // AI Costs aggregation
-    const aiCostStats = await CommerceMessageModel.aggregate([
+    // AI Costs & Tokens aggregation
+    const aiStats = await CommerceMessageModel.aggregate([
       { $match: { sender: "ai" } },
-      { $group: { _id: null, totalCost: { $sum: "$aiMetadata.cost" }, totalTokens: { $sum: "$aiMetadata.tokensUsed" } } }
+      {
+        $group: {
+          _id: "$aiMetadata.provider",
+          totalCost: { $sum: "$aiMetadata.cost" },
+          totalTokens: { $sum: "$aiMetadata.tokensUsed" }
+        }
+      }
     ]);
-    const totalAiCost = aiCostStats[0]?.totalCost || 0;
+
+    const totalAiCost = aiStats.reduce((acc, curr) => acc + (curr.totalCost || 0), 0);
+    const providerUsage = aiStats.map(s => ({
+      provider: s._id || 'unknown',
+      tokens: s.totalTokens || 0,
+      cost: s.totalCost || 0
+    }));
 
     // Gross Merchandise Value (GMV) of all merchants
     const gmvStats = await CommerceOrderModel.aggregate([
@@ -121,6 +133,7 @@ router.get("/stats", authenticate, isAdmin, async (req, res) => {
       totalAiCost,
       totalGMV,
       recentTransactions,
+      providerUsage,
       queue: {
         waiting,
         active,

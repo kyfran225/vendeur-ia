@@ -4,6 +4,8 @@ import { Redis } from "ioredis";
 import { getRedisClient } from "../config/redis.js";
 import crypto from "crypto";
 import { SystemSettingsModel } from "../modules/commerce/admin.model.js";
+import { pushService } from "./push.service.js";
+import { UserModel } from "../modules/auth/user.model.js";
 
 export interface AIRequest {
   systemPrompt: string;
@@ -52,7 +54,7 @@ export class AIProvider {
 
     // Defaults
     switch (providerName) {
-      case 'gemini': return type === 'vision' ? 'gemini-1.5-flash' : 'gemini-1.5-flash';
+      case 'gemini': return 'gemini-1.5-flash';
       case 'groq': return 'llama-3.3-70b-versatile';
       case 'openai': return type === 'audio' ? 'whisper-1' : 'gpt-4o-mini';
       case 'openrouter': return 'meta-llama/llama-3.3-70b-instruct';
@@ -69,6 +71,47 @@ export class AIProvider {
       history: request.history?.slice(-6)
     });
     return `ai_cache:${crypto.createHash('md5').update(data).digest('hex')}`;
+  }
+
+  private async logProviderError(provider: string, message: string) {
+    try {
+      const settings = await SystemSettingsModel.findOneAndUpdate(
+        {},
+        {
+          $push: {
+            "aiConfig.lastErrors": {
+              $each: [{ provider, message, timestamp: new Date() }],
+              $slice: -10, // Keep only last 10 errors
+              $sort: { timestamp: -1 }
+            }
+          }
+        },
+        { upsert: true, new: true }
+      );
+
+      // Trigger Notifications to Admins
+      if (settings?.aiConfig?.notificationSettings?.enablePush) {
+        this.notifyAdminsOfError(provider, message);
+      }
+    } catch (err) {
+      console.error("[AI Provider] Failed to log error:", err);
+    }
+  }
+
+  private async notifyAdminsOfError(provider: string, message: string) {
+    try {
+      const admins = await UserModel.find({ roles: "admin" });
+      for (const admin of admins) {
+        await pushService.sendNotification(admin._id.toString(), {
+          title: `⚠️ Erreur Critique IA : ${provider.toUpperCase()}`,
+          body: message.length > 100 ? message.substring(0, 97) + '...' : message,
+          icon: "/apple-touch-icon.png",
+          data: { url: "/admin" }
+        });
+      }
+    } catch (err) {
+      console.warn("[AI Provider] Failed to send admin push notification:", err);
+    }
   }
 
   async generateText(request: AIRequest): Promise<string> {
@@ -132,6 +175,10 @@ export class AIProvider {
     throw new Error(`Provider ${providerName} not supported for text generation`);
   }
 
+  private getGeminiModelId(model: string): string {
+    return model.startsWith('models/') ? model.replace('models/', '') : model;
+  }
+
   private async generateWithGemini(request: AIRequest, apiKey: string, model: string): Promise<string> {
     const contents = [];
     contents.push({ role: "user", parts: [{ text: `SYSTEM INSTRUCTIONS: ${request.systemPrompt}` }] });
@@ -148,16 +195,24 @@ export class AIProvider {
     contents.push({ role: "user", parts: [{ text: request.userMessage }] });
 
     try {
-      const response = await axios.post(`${AIProvider.GEMINI_URL}/${model}:generateContent?key=${apiKey}`, {
+      const modelId = this.getGeminiModelId(model);
+      const response = await axios.post(`${AIProvider.GEMINI_URL}/${modelId}:generateContent?key=${apiKey}`, {
         contents,
         generationConfig: {
-          maxOutputTokens: request.maxTokens || 200,
+          maxOutputTokens: request.maxTokens || 1000,
           temperature: request.temperature || 0.7,
         }
       });
+
+      if (!response.data.candidates?.[0]?.content?.parts?.[0]?.text) {
+        throw new Error("Réponse vide de Gemini");
+      }
+
       return response.data.candidates[0].content.parts[0].text.trim();
     } catch (error: any) {
-      console.error("Gemini API Error:", error.response?.data || error.message);
+      const msg = error.response?.data?.error?.message || error.message;
+      console.error("Gemini API Error:", msg);
+      this.logProviderError('gemini', msg);
       throw new Error("Gemini failed");
     }
   }
@@ -182,7 +237,9 @@ export class AIProvider {
       });
       return response.data.choices[0].message.content.trim();
     } catch (error: any) {
-      console.error("Groq API Error:", error.response?.data || error.message);
+      const msg = error.response?.data?.error?.message || error.message;
+      console.error("Groq API Error:", msg);
+      this.logProviderError('groq', msg);
       throw new Error("Groq failed");
     }
   }
@@ -207,7 +264,9 @@ export class AIProvider {
       });
       return response.data.choices[0].message.content.trim();
     } catch (error: any) {
-      console.error("OpenAI API Error:", error.response?.data || error.message);
+      const msg = error.response?.data?.error?.message || error.message;
+      console.error("OpenAI API Error:", msg);
+      this.logProviderError('openai', msg);
       throw new Error("OpenAI failed");
     }
   }
@@ -237,7 +296,9 @@ export class AIProvider {
       });
       return response.data.choices[0].message.content.trim();
     } catch (error: any) {
-      console.error("OpenRouter API Error:", error.response?.data || error.message);
+      const msg = error.response?.data?.error?.message || error.message;
+      console.error("OpenRouter API Error:", msg);
+      this.logProviderError('openrouter', msg);
       throw new Error("OpenRouter failed");
     }
   }
@@ -249,7 +310,8 @@ export class AIProvider {
 
     try {
       if (providerName === 'gemini') {
-        await axios.get(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
+        // We use the models list endpoint which is model-agnostic to verify the API key
+        await axios.get(`${AIProvider.GEMINI_URL}?key=${apiKey}`);
       } else if (providerName === 'groq') {
         await axios.get("https://api.groq.com/openai/v1/models", {
           headers: { "Authorization": `Bearer ${apiKey}` }
@@ -263,13 +325,15 @@ export class AIProvider {
           headers: { "Authorization": `Bearer ${apiKey}` }
         });
       } else if (providerName === 'elevenlabs') {
-        await axios.get("https://api.elevenlabs.io/v1/voices", {
+        await axios.get("https://api.elevenlabs.io/v1/user", {
           headers: { "xi-api-key": apiKey }
         });
       }
       return { success: true, message: "Connexion réussie" };
     } catch (error: any) {
-      return { success: false, message: error.response?.data?.error?.message || error.message };
+      const msg = error.response?.data?.error?.message || error.message;
+      this.logProviderError(providerName, msg);
+      return { success: false, message: msg };
     }
   }
 
@@ -325,8 +389,10 @@ export class AIProvider {
           headers: { "xi-api-key": apiKey }, responseType: "arraybuffer"
         });
         return Buffer.from(response.data);
-      } catch (error) {
+      } catch (error: any) {
+        const msg = error.response?.data?.error?.message || error.message;
         console.warn("[AI Provider] ElevenLabs failed, trying OpenAI");
+        this.logProviderError('elevenlabs', msg);
       }
     }
 

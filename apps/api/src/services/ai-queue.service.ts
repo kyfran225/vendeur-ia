@@ -180,7 +180,8 @@ export const aiWorker = new Worker(
         content: reply,
         mediaUrl: audioUrl,
         aiMetadata: {
-          tokensUsed: reply.length / 4, // Rough estimation (4 chars per token)
+          provider: context.provider || 'gemini',
+          tokensUsed: reply.length / 4, // Rough estimation
           cost: (reply.length / 4) * 0.00002 // Estimated cost in USD
         }
       });

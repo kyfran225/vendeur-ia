@@ -33,7 +33,17 @@ const SystemSettingsSchema = new Schema({
     }],
     defaultTextProvider: { type: String, default: 'gemini' },
     defaultVisionProvider: { type: String, default: 'gemini' },
-    defaultAudioProvider: { type: String, default: 'elevenlabs' }
+    defaultAudioProvider: { type: String, default: 'elevenlabs' },
+    lastErrors: [{
+      provider: String,
+      message: String,
+      timestamp: { type: Date, default: Date.now }
+    }],
+    notificationSettings: {
+      enablePush: { type: Boolean, default: true },
+      enableEmail: { type: Boolean, default: false },
+      alertThreshold: { type: String, enum: ['always', 'high_frequency'], default: 'always' }
+    }
   },
   maintenanceMode: { type: Boolean, default: false }
 }, { timestamps: true });

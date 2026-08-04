@@ -114,8 +114,8 @@ export function AdminDashboard() {
         </div>
 
         <div className="hidden lg:flex items-center gap-4 ml-4">
-            <div className="px-4 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-[10px] font-black uppercase tracking-widest text-amber-500 whitespace-nowrap">
-                Master Control
+            <div className="px-4 py-1.5 rounded-full bg-vendeur-emerald/10 border border-vendeur-emerald/20 text-[10px] font-black uppercase tracking-widest text-vendeur-emerald whitespace-nowrap">
+                MASTER CONTROL
             </div>
         </div>
       </header>
@@ -156,7 +156,7 @@ function AdminTabButton({ active, onClick, icon, label }: { active: boolean; onC
       onClick={onClick}
       className={cn(
         "flex-1 md:flex-none flex flex-col md:flex-row items-center justify-center gap-1 md:gap-2 px-1 md:px-6 py-2 md:py-3 rounded-xl transition-all whitespace-nowrap",
-        active ? "bg-amber-500 text-vendeur-coal shadow-lg shadow-amber-500/20" : "text-white/40 hover:bg-white/5 hover:text-white"
+        active ? "bg-vendeur-emerald text-vendeur-coal shadow-lg shadow-vendeur-emerald/20" : "text-white/40 hover:bg-white/5 hover:text-white"
       )}
     >
       <div className="shrink-0">{icon}</div>
@@ -173,32 +173,32 @@ function OverviewPanel({ stats, failedJobs, statsLoading }: { stats: any; failed
   return (
     <div className="space-y-6 md:space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-700">
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-        <StatCard label="Total Marchands" value={stats?.totalMerchants || 0} icon={<Users className="text-amber-500" />} />
+        <StatCard label="Total Marchands" value={stats?.totalMerchants || 0} icon={<Users className="text-vendeur-emerald" />} />
         <StatCard label="Sessions Actives" value={stats?.activeSessions || 0} icon={<Smartphone className="text-vendeur-emerald" />} />
-        <StatCard label="Abonnements" value={`${(stats?.totalRevenue || 0).toLocaleString()} XOF`} icon={<Banknote className="text-amber-500" />} />
-        <StatCard label="GMV (Ventes)" value={`${(stats?.totalGMV || 0).toLocaleString()} XOF`} icon={<ShoppingBag className="text-emerald-400" />} />
-        <StatCard label="Messages IA" value={stats?.totalConversations || 0} icon={<MessageSquare className="text-blue-400" />} />
-        <StatCard label="Coûts IA" value={`$${(stats?.totalAiCost || 0).toFixed(2)}`} icon={<Bot className="text-rose-400" />} />
+        <StatCard label="Abonnements" value={`${(stats?.totalRevenue || 0).toLocaleString()} XOF`} icon={<Banknote className="text-vendeur-emerald" />} />
+        <StatCard label="GMV (Ventes)" value={`${(stats?.totalGMV || 0).toLocaleString()} XOF`} icon={<ShoppingBag className="text-vendeur-emerald" />} />
+        <StatCard label="Messages IA" value={stats?.totalConversations || 0} icon={<MessageSquare className="text-vendeur-emerald" />} />
+        <StatCard label="Coûts IA" value={`$${(stats?.totalAiCost || 0).toFixed(2)}`} icon={<Bot className="text-vendeur-emerald" />} />
       </div>
 
       {/* --- QUEUE MONITORING SECTION --- */}
       <section className="bg-vendeur-coal border border-white/10 rounded-[2rem] md:rounded-[2.5rem] p-5 md:p-8 space-y-6">
           <div className="flex items-center justify-between">
             <h2 className="text-lg md:text-xl font-black flex items-center gap-2">
-                <Activity className="text-vendeur-emerald" size={20} md:size={24} />
+                <Activity className="text-vendeur-emerald w-5 h-5 md:w-6 md:h-6" />
                 Files BullMQ
             </h2>
             <div className="flex items-center gap-2 text-[8px] md:text-[10px] font-black uppercase tracking-widest text-white/40">
-                <RefreshCw className={cn("animate-spin", statsLoading && "opacity-100")} size={10} md:size={12} /> Live
+                <RefreshCw className={cn("animate-spin w-2.5 h-2.5 md:w-3 md:h-3", statsLoading && "opacity-100")} /> Live
             </div>
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4">
-            <QueueStat label="Attente" value={stats?.queue?.waiting} icon={<Clock size={12}/>} color="amber" />
-            <QueueStat label="Actifs" value={stats?.queue?.active} icon={<Zap size={12}/>} color="sky" />
+            <QueueStat label="Attente" value={stats?.queue?.waiting} icon={<Clock size={12}/>} color="emerald" />
+            <QueueStat label="Actifs" value={stats?.queue?.active} icon={<Zap size={12}/>} color="emerald" />
             <QueueStat label="Terminés" value={stats?.queue?.completed} icon={<CheckCircle2 size={12}/>} color="emerald" />
             <QueueStat label="Échecs" value={stats?.queue?.failed} icon={<XCircle size={12}/>} color="rose" />
-            <QueueStat label="Différés" value={stats?.queue?.delayed} icon={<ExternalLink size={12}/>} color="purple" />
+            <QueueStat label="Différés" value={stats?.queue?.delayed} icon={<ExternalLink size={12}/>} color="emerald" />
           </div>
       </section>
 
@@ -211,8 +211,8 @@ function OverviewPanel({ stats, failedJobs, statsLoading }: { stats: any; failed
                 ) : transactions.map((t: any) => (
                     <div key={t._id} className="flex items-center justify-between p-4 bg-black/40 rounded-2xl border border-white/5">
                         <div className="flex items-center gap-4">
-                            <div className="h-10 w-10 rounded-xl bg-amber-500/10 flex items-center justify-center">
-                                <Banknote size={18} className="text-amber-500" />
+                            <div className="h-10 w-10 rounded-xl bg-vendeur-emerald/10 flex items-center justify-center">
+                                <Banknote size={18} className="text-vendeur-emerald" />
                             </div>
                             <div>
                                 <p className="text-xs font-black uppercase tracking-tight">{t.merchantId?.businessName || 'Marchand Inconnu'}</p>
@@ -220,7 +220,7 @@ function OverviewPanel({ stats, failedJobs, statsLoading }: { stats: any; failed
                             </div>
                         </div>
                         <div className="text-right">
-                            <p className="text-sm font-black text-amber-500">{t.amount?.toLocaleString()} {t.currency}</p>
+                            <p className="text-sm font-black text-vendeur-emerald">{t.amount?.toLocaleString()} {t.currency}</p>
                             <p className="text-[9px] text-white/20 uppercase font-bold">{new Date(t.paidAt || t.createdAt).toLocaleDateString()}</p>
                         </div>
                     </div>
@@ -279,7 +279,7 @@ function MerchantsPanel({ merchants, loading }: { merchants: any[], loading: boo
             <div className="relative flex-1 md:w-full lg:w-[500px]">
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" size={16} />
                 <input
-                  className="w-full bg-black/40 border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-xs focus:border-amber-500 outline-none transition-all"
+                  className="w-full bg-black/40 border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-xs focus:border-vendeur-emerald outline-none transition-all"
                   placeholder="Rechercher..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
@@ -311,7 +311,7 @@ function MerchantsPanel({ merchants, loading }: { merchants: any[], loading: boo
               <tr key={m._id} className="hover:bg-white/[0.02] transition-colors group">
                 <td className="px-8 py-6">
                   <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-xl bg-amber-500/10 flex items-center justify-center font-black text-amber-500 uppercase">
+                    <div className="h-10 w-10 rounded-xl bg-vendeur-emerald/10 flex items-center justify-center font-black text-vendeur-emerald uppercase">
                       {m.businessName?.charAt(0)}
                     </div>
                     <div>
@@ -333,7 +333,7 @@ function MerchantsPanel({ merchants, loading }: { merchants: any[], loading: boo
                     {m.whatsappConfig?.status === 'connected' ? (
                       <><CheckCircle2 size={12} className="text-vendeur-emerald" /> <span className="text-[10px] font-black uppercase text-vendeur-emerald">Actif</span></>
                     ) : m.whatsappConfig?.status === 'error' ? (
-                      <><AlertTriangle size={12} className="text-amber-500 animate-pulse" /> <span className="text-[10px] font-black uppercase text-amber-500">Erreur</span></>
+                      <><AlertTriangle size={12} className="text-vendeur-emerald animate-pulse" /> <span className="text-[10px] font-black uppercase text-vendeur-emerald">Erreur</span></>
                     ) : (
                       <><XCircle size={12} className="text-red-500" /> <span className="text-[10px] font-black uppercase text-red-500">Inactif</span></>
                     )}
@@ -369,7 +369,7 @@ function SettingsPanel({ settings, onUpdate, isUpdating }: { settings: any, onUp
     <div className="max-w-2xl space-y-8 animate-in fade-in duration-700 pb-12">
       <section className="bg-vendeur-coal border border-white/5 p-8 rounded-[2.5rem] space-y-8">
         <h2 className="text-xl font-black uppercase tracking-tighter flex items-center gap-3">
-            <Settings size={24} className="text-amber-500" />
+            <Settings size={24} className="text-vendeur-emerald" />
             Paramètres Plateforme
         </h2>
 
@@ -377,7 +377,7 @@ function SettingsPanel({ settings, onUpdate, isUpdating }: { settings: any, onUp
           <div className="space-y-2">
             <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Numéro WhatsApp Support (Pack Pro)</label>
             <input
-              className="w-full h-14 bg-black/40 border border-white/10 rounded-2xl px-6 text-white focus:border-amber-500 outline-none transition-all font-bold"
+              className="w-full h-14 bg-black/40 border border-white/10 rounded-2xl px-6 text-white focus:border-vendeur-emerald outline-none transition-all font-bold"
               value={formData.supportWhatsApp}
               onChange={e => setFormData({...formData, supportWhatsApp: e.target.value})}
               placeholder="+2250700000000"
@@ -391,7 +391,7 @@ function SettingsPanel({ settings, onUpdate, isUpdating }: { settings: any, onUp
                 <div className="relative">
                     <input
                         type="number"
-                        className="w-full h-14 bg-black/40 border border-white/10 rounded-2xl pl-6 pr-12 text-white focus:border-amber-500 outline-none font-bold"
+                        className="w-full h-14 bg-black/40 border border-white/10 rounded-2xl pl-6 pr-12 text-white focus:border-vendeur-emerald outline-none font-bold"
                         value={formData["pricing.ramContributionFee"]}
                         onChange={e => setFormData({...formData, "pricing.ramContributionFee": Number(e.target.value)})}
                     />
@@ -403,7 +403,7 @@ function SettingsPanel({ settings, onUpdate, isUpdating }: { settings: any, onUp
                 <div className="relative">
                     <input
                         type="number"
-                        className="w-full h-14 bg-black/40 border border-white/10 rounded-2xl pl-6 pr-12 text-white focus:border-amber-500 outline-none font-bold"
+                        className="w-full h-14 bg-black/40 border border-white/10 rounded-2xl pl-6 pr-12 text-white focus:border-vendeur-emerald outline-none font-bold"
                         value={formData["pricing.packProFee"]}
                         onChange={e => setFormData({...formData, "pricing.packProFee": Number(e.target.value)})}
                     />
@@ -422,7 +422,7 @@ function SettingsPanel({ settings, onUpdate, isUpdating }: { settings: any, onUp
             <div className="space-y-2">
                 <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Default Phone Number ID</label>
                 <input
-                    className="w-full h-14 bg-black/40 border border-white/10 rounded-2xl px-6 text-white focus:border-amber-500 outline-none transition-all font-mono text-[10px]"
+                    className="w-full h-14 bg-black/40 border border-white/10 rounded-2xl px-6 text-white focus:border-vendeur-emerald outline-none transition-all font-mono text-[10px]"
                     value={formData["metaConfig.whatsappDefaults.phoneNumberId"]}
                     onChange={e => setFormData({...formData, "metaConfig.whatsappDefaults.phoneNumberId": e.target.value})}
                     placeholder="Ex: 106345..."
@@ -432,7 +432,7 @@ function SettingsPanel({ settings, onUpdate, isUpdating }: { settings: any, onUp
             <div className="space-y-2">
                 <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Default System Access Token</label>
                 <textarea
-                    className="w-full min-h-[100px] bg-black/40 border border-white/10 rounded-2xl p-6 text-white focus:border-amber-500 outline-none transition-all font-mono text-[10px] resize-none"
+                    className="w-full min-h-[100px] bg-black/40 border border-white/10 rounded-2xl p-6 text-white focus:border-vendeur-emerald outline-none transition-all font-mono text-[10px] resize-none"
                     value={formData["metaConfig.whatsappDefaults.accessToken"]}
                     onChange={e => setFormData({...formData, "metaConfig.whatsappDefaults.accessToken": e.target.value})}
                     placeholder="EAAG..."
@@ -444,7 +444,7 @@ function SettingsPanel({ settings, onUpdate, isUpdating }: { settings: any, onUp
           <button
             onClick={() => onUpdate(formData)}
             disabled={isUpdating}
-            className="w-full h-16 bg-amber-500 text-vendeur-coal font-black uppercase tracking-widest rounded-[2rem] flex items-center justify-center gap-3 hover:scale-[1.02] active:scale-95 transition-all mt-4 disabled:opacity-50 shadow-xl shadow-amber-500/20"
+            className="w-full h-16 bg-vendeur-emerald text-vendeur-coal font-black uppercase tracking-widest rounded-[2rem] flex items-center justify-center gap-3 hover:scale-[1.02] active:scale-95 transition-all mt-4 disabled:opacity-50 shadow-xl shadow-vendeur-emerald/20"
           >
             {isUpdating ? <RefreshCw className="animate-spin" size={20} /> : <Save size={20} />}
             Enregistrer les Modifications
@@ -452,9 +452,9 @@ function SettingsPanel({ settings, onUpdate, isUpdating }: { settings: any, onUp
         </div>
       </section>
 
-      <div className="bg-amber-500/5 border border-amber-500/20 p-6 rounded-[2rem] flex items-center gap-4">
-        <Bot className="text-amber-500 shrink-0" size={24} />
-        <p className="text-[10px] text-amber-500/60 font-bold leading-relaxed uppercase tracking-wider">
+      <div className="bg-vendeur-emerald/5 border border-vendeur-emerald/20 p-6 rounded-[2rem] flex items-center gap-4">
+        <Bot className="text-vendeur-emerald shrink-0" size={24} />
+        <p className="text-[10px] text-vendeur-emerald/60 font-bold leading-relaxed uppercase tracking-wider">
             Attention : Toute modification ici impacte immédiatement l'ensemble des commerçants et la rentabilité de la plateforme.
         </p>
       </div>
@@ -466,12 +466,13 @@ function QueueStat({ label, value, icon, color }: any) {
   const colors: any = {
     emerald: "text-emerald-400 bg-emerald-500/10 border-emerald-500/20",
     sky: "text-sky-400 bg-sky-500/10 border-sky-500/20",
-    amber: "text-amber-500 bg-amber-500/10 border-amber-500/20",
+    amber: "text-vendeur-emerald bg-vendeur-emerald/10 border-vendeur-emerald/20",
     rose: "text-rose-500 bg-rose-500/10 border-rose-500/20",
     purple: "text-purple-400 bg-purple-500/10 border-purple-500/20",
+    vendeur: "text-vendeur-emerald bg-vendeur-emerald/10 border-vendeur-emerald/20",
   };
   return (
-    <div className={cn("p-4 rounded-2xl border text-center space-y-1", colors[color])}>
+    <div className={cn("p-4 rounded-2xl border text-center space-y-1", color === 'emerald' ? colors.vendeur : colors[color])}>
        <div className="flex justify-center opacity-40">{icon}</div>
        <p className="text-xl font-black leading-none">{value || 0}</p>
        <p className="text-[8px] font-black uppercase tracking-tighter opacity-60">{label}</p>

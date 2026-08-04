@@ -1,5 +1,6 @@
 import axios from "axios";
 import { env } from "../config/env.js";
+import { GEMINI_DEFAULT_TEXT_MODEL, resolveGeminiModel } from "../config/gemini.js";
 import { Redis } from "ioredis";
 import { getRedisClient } from "../config/redis.js";
 import crypto from "crypto";
@@ -13,6 +14,8 @@ export interface AIRequest {
   history?: { role: "customer" | "ai"; text: string }[];
   temperature?: number;
   maxTokens?: number;
+  jsonMode?: boolean;
+  thinkingLevel?: "minimal" | "low" | "medium" | "high";
 }
 
 export class AIProvider {
@@ -54,7 +57,7 @@ export class AIProvider {
 
     // Defaults
     switch (providerName) {
-      case 'gemini': return 'gemini-1.5-flash';
+      case 'gemini': return GEMINI_DEFAULT_TEXT_MODEL;
       case 'groq': return 'llama-3.3-70b-versatile';
       case 'openai': return type === 'audio' ? 'whisper-1' : 'gpt-4o-mini';
       case 'openrouter': return 'meta-llama/llama-3.3-70b-instruct';
@@ -176,7 +179,26 @@ export class AIProvider {
   }
 
   private getGeminiModelId(model: string): string {
-    return model.startsWith('models/') ? model.replace('models/', '') : model;
+    return resolveGeminiModel(model);
+  }
+
+  private extractGeminiText(data: any): string {
+    const parts = data?.candidates?.[0]?.content?.parts;
+    if (!parts?.length) throw new Error("Réponse vide de Gemini");
+
+    const answerParts = parts
+      .filter((p: { text?: string; thought?: boolean }) => p.text && !p.thought)
+      .map((p: { text: string }) => p.text);
+
+    if (answerParts.length) return answerParts.join("").trim();
+
+    const fallbackParts = parts
+      .filter((p: { text?: string }) => p.text)
+      .map((p: { text: string }) => p.text);
+
+    if (fallbackParts.length) return fallbackParts.join("").trim();
+
+    throw new Error("Réponse vide de Gemini");
   }
 
   private async generateWithGemini(request: AIRequest, apiKey: string, model: string): Promise<string> {
@@ -196,19 +218,25 @@ export class AIProvider {
 
     try {
       const modelId = this.getGeminiModelId(model);
-      const response = await axios.post(`${AIProvider.GEMINI_URL}/${modelId}:generateContent?key=${apiKey}`, {
-        contents,
-        generationConfig: {
-          maxOutputTokens: request.maxTokens || 1000,
-          temperature: request.temperature || 0.7,
-        }
-      });
+      const generationConfig: Record<string, unknown> = {
+        maxOutputTokens: request.maxTokens || 1000,
+        temperature: request.temperature ?? 0.7,
+      };
 
-      if (!response.data.candidates?.[0]?.content?.parts?.[0]?.text) {
-        throw new Error("Réponse vide de Gemini");
+      if (request.jsonMode) {
+        generationConfig.responseMimeType = "application/json";
       }
 
-      return response.data.candidates[0].content.parts[0].text.trim();
+      if (request.thinkingLevel) {
+        generationConfig.thinkingConfig = { thinkingLevel: request.thinkingLevel };
+      }
+
+      const response = await axios.post(`${AIProvider.GEMINI_URL}/${modelId}:generateContent?key=${apiKey}`, {
+        contents,
+        generationConfig,
+      });
+
+      return this.extractGeminiText(response.data);
     } catch (error: any) {
       const msg = error.response?.data?.error?.message || error.message;
       console.error("Gemini API Error:", msg);
@@ -343,7 +371,7 @@ export class AIProvider {
 
     if (geminiKey) {
       try {
-        const model = this.getModel(config, 'gemini', 'text');
+        const model = this.getGeminiModelId(this.getModel(config, 'gemini', 'text'));
         const prompt = `Tu es une IA de transcription. Context: ${context || "Inconnu"}. Transcris fidèlement.`;
         const response = await axios.post(`${AIProvider.GEMINI_URL}/${model}:generateContent?key=${geminiKey}`, {
           contents: [{

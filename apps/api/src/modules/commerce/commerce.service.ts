@@ -13,6 +13,7 @@ import { aiGrowthService } from "../../services/ai-growth.service.js";
 import { aiProvider } from "../../services/ai-provider.js";
 import { messagingService } from "../../services/messaging.service.js";
 import { env } from "../../config/env.js";
+import { GEMINI_DEFAULT_VISION_MODEL, resolveGeminiModel } from "../../config/gemini.js";
 import axios from "axios";
 
 import { SystemSettingsModel } from "./admin.model.js";
@@ -187,7 +188,7 @@ export class CommerceService {
 Réponds UNIQUEMENT avec le JSON. Si ce n'est pas une preuve de paiement, mets isPaymentProof à false.`;
 
     try {
-      const response = await axios.post(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${env.GEMINI_API_KEY}`, {
+      const response = await axios.post(`https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_DEFAULT_VISION_MODEL}:generateContent?key=${env.GEMINI_API_KEY}`, {
         contents: [{
           parts: [
             { text: prompt },
@@ -232,7 +233,10 @@ Réponds UNIQUEMENT avec le JSON. Sois précis sur les détails techniques (mati
         const apiKey = settings?.aiConfig?.providers?.find(p => p.name === 'gemini')?.apiKey || env.GEMINI_API_KEY;
         if (!apiKey) throw new Error("Clé Gemini manquante");
 
-        const response = await axios.post(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+        const geminiProvider = settings?.aiConfig?.providers?.find(p => p.name === 'gemini');
+        const model = resolveGeminiModel(geminiProvider?.models?.vision, GEMINI_DEFAULT_VISION_MODEL);
+
+        const response = await axios.post(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
           contents: [{
             parts: [{ text: prompt }, { inlineData: { mimeType, data: imageBuffer.toString("base64") } }]
           }]

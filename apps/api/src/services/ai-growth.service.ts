@@ -1,5 +1,6 @@
 import { CommerceProductModel, CommerceConversationModel, CommerceMessageModel, CommerceMerchantModel } from "../modules/commerce/commerce.model.js";
 import { aiProvider } from "./ai-provider.js";
+import { parseJsonFromAI } from "../utils/parse-ai-json.js";
 
 export class AIGrowthService {
   async generateGrowthAdvice(merchantId: string) {
@@ -50,14 +51,18 @@ export class AIGrowthService {
       const response = await aiProvider.generateText({
         systemPrompt: "Tu es un coach en croissance pour vendeurs WhatsApp.",
         userMessage: `${context}\n\n${prompt}`,
-        maxTokens: 200,
-        temperature: 0.7
+        maxTokens: 512,
+        temperature: 0.7,
+        jsonMode: true,
+        thinkingLevel: "low",
       });
 
-      const jsonMatch = response.match(/\{[\s\S]*\}/);
-      if (!jsonMatch) throw new Error("Failed to parse AI advice");
+      const parsed = parseJsonFromAI<{ tips: string[] }>(response);
+      if (!Array.isArray(parsed.tips) || parsed.tips.length === 0) {
+        throw new Error("Invalid AI advice format");
+      }
 
-      return JSON.parse(jsonMatch[0]);
+      return parsed;
     } catch (error) {
       console.error("[AI Growth Service] Error:", error);
       return {

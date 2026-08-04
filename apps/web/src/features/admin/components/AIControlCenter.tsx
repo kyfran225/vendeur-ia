@@ -323,7 +323,7 @@ export function AIControlCenter() {
             </h2>
             <div className="space-y-6">
                <RealUsageBar
-                 label="Gemini 1.5 Flash"
+                 label="Gemini 3.6 Flash"
                  provider="gemini"
                  usageData={adminStats?.providerUsage}
                  total={1000000}

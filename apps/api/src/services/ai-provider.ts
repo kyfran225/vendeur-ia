@@ -40,6 +40,7 @@ export class AIProvider {
       case 'gemini': return env.GEMINI_API_KEY;
       case 'openai': return env.OPENAI_API_KEY;
       case 'groq': return env.GROQ_API_KEY;
+      case 'openrouter': return env.OPENROUTER_API_KEY;
       case 'elevenlabs': return env.ELEVENLABS_API_KEY;
       default: return undefined;
     }
@@ -54,6 +55,7 @@ export class AIProvider {
       case 'gemini': return type === 'vision' ? 'gemini-1.5-flash' : 'gemini-1.5-flash';
       case 'groq': return 'llama-3.3-70b-versatile';
       case 'openai': return type === 'audio' ? 'whisper-1' : 'gpt-4o-mini';
+      case 'openrouter': return 'meta-llama/llama-3.3-70b-instruct';
       case 'elevenlabs': return 'eleven_multilingual_v2';
       default: return "";
     }
@@ -95,8 +97,13 @@ export class AIProvider {
       try {
         responseText = await this.generateWithProvider(fallbackProvider, request, config);
       } catch (fallbackError) {
-        console.error("[AI Provider] Fallback failed too:", (fallbackError as any).message);
-        throw new Error("Tous les fournisseurs d'IA ont échoué.");
+        console.warn("[AI Provider] Secondary fallback failed, trying OpenRouter:", (fallbackError as any).message);
+        try {
+          responseText = await this.generateWithProvider('openrouter', request, config);
+        } catch (openRouterError) {
+          console.error("[AI Provider] All fallbacks failed:", (openRouterError as any).message);
+          throw new Error("Tous les fournisseurs d'IA ont échoué.");
+        }
       }
     }
 
@@ -118,6 +125,8 @@ export class AIProvider {
       return this.generateWithGroq(request, apiKey, this.getModel(config, 'groq', 'text'));
     } else if (providerName === 'openai') {
       return this.generateWithOpenAI(request, apiKey, this.getModel(config, 'openai', 'text'));
+    } else if (providerName === 'openrouter') {
+      return this.generateWithOpenRouter(request, apiKey, this.getModel(config, 'openrouter', 'text'));
     }
 
     throw new Error(`Provider ${providerName} not supported for text generation`);
@@ -203,6 +212,36 @@ export class AIProvider {
     }
   }
 
+  private async generateWithOpenRouter(request: AIRequest, apiKey: string, model: string): Promise<string> {
+    const messages = [{ role: "system", content: request.systemPrompt }];
+    if (request.history) {
+      for (const msg of request.history) {
+        messages.push({ role: msg.role === "customer" ? "user" : "assistant", content: msg.text });
+      }
+    }
+    messages.push({ role: "user", content: request.userMessage });
+
+    try {
+      const response = await axios.post("https://openrouter.ai/api/v1/chat/completions", {
+        model,
+        messages,
+        max_tokens: request.maxTokens || 250,
+        temperature: request.temperature || 0.7,
+      }, {
+        headers: {
+          "Authorization": `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+          "HTTP-Referer": "https://vendeuria.com",
+          "X-Title": "Vendeur IA"
+        }
+      });
+      return response.data.choices[0].message.content.trim();
+    } catch (error: any) {
+      console.error("OpenRouter API Error:", error.response?.data || error.message);
+      throw new Error("OpenRouter failed");
+    }
+  }
+
   async testConnectivity(providerName: string): Promise<{ success: boolean; message: string }> {
     const config = await this.getDynamicConfig();
     const apiKey = this.getProviderKey(config, providerName);
@@ -217,6 +256,10 @@ export class AIProvider {
         });
       } else if (providerName === 'openai') {
         await axios.get("https://api.openai.com/v1/models", {
+          headers: { "Authorization": `Bearer ${apiKey}` }
+        });
+      } else if (providerName === 'openrouter') {
+        await axios.get("https://openrouter.ai/api/v1/models", {
           headers: { "Authorization": `Bearer ${apiKey}` }
         });
       } else if (providerName === 'elevenlabs') {

@@ -47,7 +47,7 @@ router.patch("/settings", authenticate, isAdmin, async (req, res) => {
 // GET AI Status & Connectivity
 router.get("/ai/status", authenticate, isAdmin, async (req, res) => {
   try {
-    const providers = ['gemini', 'openai', 'groq', 'elevenlabs'];
+    const providers = ['gemini', 'openai', 'groq', 'openrouter', 'elevenlabs'];
     const results = await Promise.all(providers.map(p => aiProvider.testConnectivity(p)));
 
     const status = providers.map((p, i) => ({

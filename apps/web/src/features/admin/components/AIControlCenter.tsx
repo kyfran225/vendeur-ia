@@ -27,6 +27,7 @@ function cn(...inputs: ClassValue[]) {
 export function AIControlCenter() {
   const queryClient = useQueryClient();
   const [isEditing, setIsEditing] = useState(false);
+  const [localAiConfig, setLocalAiConfig] = useState<any>(null);
 
   // 1. Fetch AI Status
   const { data: aiStatus, isLoading: statusLoading, refetch: refetchStatus } = useQuery({
@@ -58,6 +59,24 @@ export function AIControlCenter() {
     }
   });
 
+  const handleEditClick = () => {
+    if (!isEditing) {
+      setLocalAiConfig(settings?.aiConfig || {
+        providers: [
+          { name: 'gemini', apiKey: '', isActive: true },
+          { name: 'openai', apiKey: '', isActive: true },
+          { name: 'groq', apiKey: '', isActive: true },
+          { name: 'openrouter', apiKey: '', isActive: true },
+          { name: 'elevenlabs', apiKey: '', isActive: true }
+        ],
+        defaultTextProvider: 'gemini',
+        defaultVisionProvider: 'gemini',
+        defaultAudioProvider: 'elevenlabs'
+      });
+    }
+    setIsEditing(!isEditing);
+  };
+
   const testProviderMutation = useMutation({
     mutationFn: async (provider: string) => {
       const res = await apiClient.post(`/api/admin/ai/test/${provider}`);
@@ -82,6 +101,7 @@ export function AIControlCenter() {
       { name: 'gemini', apiKey: '', isActive: true },
       { name: 'openai', apiKey: '', isActive: true },
       { name: 'groq', apiKey: '', isActive: true },
+      { name: 'openrouter', apiKey: '', isActive: true },
       { name: 'elevenlabs', apiKey: '', isActive: true }
     ],
     defaultTextProvider: 'gemini',
@@ -92,7 +112,7 @@ export function AIControlCenter() {
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
       {/* 1. PROVIDER STATUS GRID */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
         {aiStatus?.map((p: any) => (
           <div key={p.name} className="bg-vendeur-coal border border-white/5 p-6 rounded-[2rem] space-y-4">
             <div className="flex items-center justify-between">
@@ -137,45 +157,45 @@ export function AIControlCenter() {
 
       {/* 2. CONFIGURATION PANEL */}
       <div className="bg-vendeur-coal border border-white/5 rounded-[2.5rem] overflow-hidden">
-        <div className="p-8 border-b border-white/5 flex items-center justify-between">
+        <div className="p-6 md:p-8 border-b border-white/5 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="flex items-center gap-4">
-            <div className="h-12 w-12 bg-amber-500/10 rounded-2xl flex items-center justify-center text-amber-500 border border-amber-500/20">
+            <div className="h-12 w-12 bg-amber-500/10 rounded-2xl flex items-center justify-center text-amber-500 border border-amber-500/20 shrink-0">
               <Shield size={24} />
             </div>
             <div>
-              <h2 className="text-xl font-black uppercase tracking-tighter">Cerveau & API Keys</h2>
+              <h2 className="text-lg md:text-xl font-black uppercase tracking-tighter leading-tight">Cerveau & API Keys</h2>
               <p className="text-[10px] text-white/40 uppercase tracking-widest font-black">Governance IA</p>
             </div>
           </div>
           <button
-            onClick={() => setIsEditing(!isEditing)}
-            className="px-6 py-3 bg-white/5 hover:bg-white/10 rounded-xl text-xs font-black uppercase tracking-widest transition-all"
+            onClick={handleEditClick}
+            className="w-full md:w-auto px-6 py-3 bg-white/5 hover:bg-white/10 rounded-xl text-xs font-black uppercase tracking-widest transition-all"
           >
             {isEditing ? "Annuler" : "Modifier la Config"}
           </button>
         </div>
 
-        <div className="p-8 space-y-8">
+        <div className="p-6 md:p-8 space-y-8">
           {/* Default Routing */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <RoutingSelect
               label="Cerveau Texte (Chat)"
-              value={aiConfig.defaultTextProvider}
-              onChange={(v) => isEditing && updateSettingsMutation.mutate({ "aiConfig.defaultTextProvider": v })}
-              options={['gemini', 'openai', 'groq']}
+              value={isEditing ? localAiConfig?.defaultTextProvider : aiConfig.defaultTextProvider}
+              onChange={(v: string) => isEditing && setLocalAiConfig({ ...localAiConfig, defaultTextProvider: v })}
+              options={['gemini', 'openai', 'groq', 'openrouter']}
               disabled={!isEditing}
             />
             <RoutingSelect
               label="Cerveau Vision (Images)"
-              value={aiConfig.defaultVisionProvider}
-              onChange={(v) => isEditing && updateSettingsMutation.mutate({ "aiConfig.defaultVisionProvider": v })}
+              value={isEditing ? localAiConfig?.defaultVisionProvider : aiConfig.defaultVisionProvider}
+              onChange={(v: string) => isEditing && setLocalAiConfig({ ...localAiConfig, defaultVisionProvider: v })}
               options={['gemini', 'openai']}
               disabled={!isEditing}
             />
             <RoutingSelect
               label="Cerveau Audio (TTS)"
-              value={aiConfig.defaultAudioProvider}
-              onChange={(v) => isEditing && updateSettingsMutation.mutate({ "aiConfig.defaultAudioProvider": v })}
+              value={isEditing ? localAiConfig?.defaultAudioProvider : aiConfig.defaultAudioProvider}
+              onChange={(v: string) => isEditing && setLocalAiConfig({ ...localAiConfig, defaultAudioProvider: v })}
               options={['elevenlabs', 'openai']}
               disabled={!isEditing}
             />
@@ -183,8 +203,8 @@ export function AIControlCenter() {
 
           {/* Providers List */}
           <div className="space-y-4 pt-4">
-            {aiConfig.providers.map((p: any, idx: number) => (
-              <div key={p.name} className="flex flex-col md:flex-row items-center gap-4 p-6 bg-black/40 rounded-3xl border border-white/5 group">
+            {(isEditing ? localAiConfig?.providers : aiConfig.providers).map((p: any, idx: number) => (
+              <div key={p.name} className="flex flex-col md:flex-row items-center gap-4 p-4 md:p-6 bg-black/40 rounded-3xl border border-white/5 group">
                 <div className="flex items-center gap-4 w-full md:w-48">
                   <div className="h-10 w-10 bg-white/5 rounded-xl flex items-center justify-center text-white/40 font-black uppercase text-[10px]">
                     {p.name.charAt(0)}
@@ -199,21 +219,28 @@ export function AIControlCenter() {
                     disabled={!isEditing}
                     value={p.apiKey || ""}
                     onChange={(e) => {
-                      const newProviders = [...aiConfig.providers];
-                      newProviders[idx].apiKey = e.target.value;
-                      // Local state update would be better but for now we use mutation on blur or button
+                      if (!isEditing) return;
+                      const newProviders = [...localAiConfig.providers];
+                      newProviders[idx] = { ...newProviders[idx], apiKey: e.target.value };
+                      setLocalAiConfig({ ...localAiConfig, providers: newProviders });
                     }}
                     placeholder="sk-••••••••••••••••••••••••"
                     className="w-full h-12 bg-black/20 border border-white/10 rounded-xl pl-12 pr-4 text-xs font-mono text-white/60 focus:border-amber-500 outline-none transition-all disabled:opacity-50"
                   />
                 </div>
 
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-4 w-full md:w-auto justify-end">
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input
                       type="checkbox"
                       disabled={!isEditing}
                       checked={p.isActive}
+                      onChange={(e) => {
+                        if (!isEditing) return;
+                        const newProviders = [...localAiConfig.providers];
+                        newProviders[idx] = { ...newProviders[idx], isActive: e.target.checked };
+                        setLocalAiConfig({ ...localAiConfig, providers: newProviders });
+                      }}
                       className="w-4 h-4 rounded border-white/10 bg-black/40 text-amber-500 focus:ring-amber-500"
                     />
                     <span className="text-[10px] font-black uppercase text-white/40">Actif</span>
@@ -224,12 +251,20 @@ export function AIControlCenter() {
           </div>
 
           {isEditing && (
-            <button
-              onClick={() => updateSettingsMutation.mutate({ aiConfig })}
-              className="w-full h-16 bg-amber-500 text-vendeur-coal font-black uppercase tracking-widest rounded-2xl flex items-center justify-center gap-3 hover:scale-[1.01] active:scale-95 transition-all shadow-xl shadow-amber-500/20"
-            >
-              <Save size={20} /> Enregistrer la Configuration Globale
-            </button>
+            <div className="flex justify-center pt-4">
+              <button
+                onClick={() => updateSettingsMutation.mutate({ aiConfig: localAiConfig })}
+                disabled={updateSettingsMutation.isPending}
+                className="w-full md:w-auto min-w-[240px] px-8 h-14 bg-amber-500 text-vendeur-coal font-black uppercase tracking-widest rounded-2xl flex items-center justify-center gap-3 hover:scale-[1.02] active:scale-95 transition-all shadow-xl shadow-amber-500/20 disabled:opacity-50"
+              >
+                {updateSettingsMutation.isPending ? (
+                  <RefreshCw className="animate-spin" size={20} />
+                ) : (
+                  <Save size={20} />
+                )}
+                Sauvegarder
+              </button>
+            </div>
           )}
         </div>
       </div>
@@ -244,6 +279,7 @@ export function AIControlCenter() {
             <div className="space-y-6">
                <UsageBar label="Gemini 1.5 Flash" used={450000} total={1000000} color="emerald" />
                <UsageBar label="Groq Llama 3" used={120000} total={500000} color="sky" />
+               <UsageBar label="OpenRouter (Llama 3.3)" used={25000} total={500000} color="indigo" />
                <UsageBar label="ElevenLabs Audio" used={8500} total={10000} color="amber" />
             </div>
           </div>
@@ -291,6 +327,7 @@ function UsageBar({ label, used, total, color }: any) {
   const colors: any = {
     emerald: "bg-vendeur-emerald",
     sky: "bg-sky-500",
+    indigo: "bg-indigo-500",
     amber: "bg-amber-500"
   };
   return (

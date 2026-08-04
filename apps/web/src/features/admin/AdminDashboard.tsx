@@ -102,29 +102,10 @@ export function AdminDashboard() {
 
   return (
     <div className="min-h-screen bg-vendeur-bg text-white pb-24">
-      {/* Admin Header */}
-      <header className="h-16 border-b border-white/5 bg-vendeur-bg/80 backdrop-blur-md flex items-center justify-between px-4 md:px-8 sticky top-0 z-50">
-        <div className="flex items-center gap-3 md:gap-4">
-          <div className="h-9 w-9 md:h-10 md:w-10 rounded-xl md:rounded-2xl bg-amber-500/10 flex items-center justify-center border border-amber-500/20 shrink-0">
-            <ShieldCheck className="text-amber-500" size={18} />
-          </div>
-          <div className="min-w-0">
-            <h1 className="text-sm md:text-lg font-black uppercase tracking-tighter truncate">Master Control</h1>
-            <p className="text-[8px] md:text-[9px] uppercase tracking-[0.2em] text-white/40 font-black leading-none truncate">Governance</p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-4">
-            <div className="px-3 md:px-4 py-1.5 rounded-full bg-white/5 border border-white/10 text-[8px] md:text-[10px] font-black uppercase tracking-widest text-white/40 whitespace-nowrap">
-                Cofondateur
-            </div>
-        </div>
-      </header>
-
-      <main className="max-w-7xl mx-auto p-4 md:p-8 space-y-6 md:space-y-8">
-        {/* Admin Navigation */}
-        <div className="overflow-x-auto no-scrollbar -mx-4 px-4 md:mx-0 md:px-0">
-          <nav className="flex gap-2 p-1 bg-vendeur-coal rounded-2xl border border-white/5 w-max md:w-fit">
+      {/* Admin Header / Navigation */}
+      <header className="h-16 md:h-20 border-b border-white/5 bg-vendeur-bg/80 backdrop-blur-md flex items-center justify-between px-4 md:px-8 sticky top-0 z-50">
+        <div className="flex-1 max-w-2xl">
+          <nav className="flex gap-1.5 md:gap-2 p-1 bg-white/5 rounded-2xl border border-white/5 w-full md:w-fit">
             <AdminTabButton active={activeTab === "overview"} onClick={() => setActiveTab("overview")} icon={<LayoutDashboard size={18}/>} label="Vue d'ensemble" />
             <AdminTabButton active={activeTab === "merchants"} onClick={() => setActiveTab("merchants")} icon={<Users size={18}/>} label="Marchands" />
             <AdminTabButton active={activeTab === "ai"} onClick={() => setActiveTab("ai")} icon={<Bot size={18}/>} label="IA & Cerveau" />
@@ -132,10 +113,38 @@ export function AdminDashboard() {
           </nav>
         </div>
 
-        {activeTab === "overview" && <OverviewPanel stats={stats} failedJobs={failedJobs} statsLoading={statsLoading} />}
-        {activeTab === "merchants" && <MerchantsPanel merchants={merchants} loading={merchantsLoading} />}
-        {activeTab === "settings" && <SettingsPanel settings={settings} onUpdate={(data) => updateSettingsMutation.mutate(data)} isUpdating={updateSettingsMutation.isPending} />}
-        {activeTab === "ai" && <AIControlCenter />}
+        <div className="hidden lg:flex items-center gap-4 ml-4">
+            <div className="px-4 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-[10px] font-black uppercase tracking-widest text-amber-500 whitespace-nowrap">
+                Master Control
+            </div>
+        </div>
+      </header>
+
+      <main className="max-w-7xl mx-auto p-4 md:p-8 space-y-6 md:space-y-8">
+        {activeTab === "overview" && (
+          <div className="space-y-6">
+            <h2 className="text-2xl md:text-3xl font-black uppercase tracking-tighter">Vue d'ensemble</h2>
+            <OverviewPanel stats={stats} failedJobs={failedJobs} statsLoading={statsLoading} />
+          </div>
+        )}
+        {activeTab === "merchants" && (
+          <div className="space-y-6">
+            <h2 className="text-2xl md:text-3xl font-black uppercase tracking-tighter">Marchands</h2>
+            <MerchantsPanel merchants={merchants} loading={merchantsLoading} />
+          </div>
+        )}
+        {activeTab === "settings" && (
+          <div className="space-y-6">
+            <h2 className="text-2xl md:text-3xl font-black uppercase tracking-tighter">Système</h2>
+            <SettingsPanel settings={settings} onUpdate={(data) => updateSettingsMutation.mutate(data)} isUpdating={updateSettingsMutation.isPending} />
+          </div>
+        )}
+        {activeTab === "ai" && (
+          <div className="space-y-6">
+            <h2 className="text-2xl md:text-3xl font-black uppercase tracking-tighter">IA & Cerveau</h2>
+            <AIControlCenter />
+          </div>
+        )}
       </main>
     </div>
   );
@@ -146,12 +155,14 @@ function AdminTabButton({ active, onClick, icon, label }: { active: boolean; onC
     <button
       onClick={onClick}
       className={cn(
-        "flex items-center gap-2 px-4 md:px-6 py-2.5 md:py-3 rounded-xl text-[10px] md:text-xs font-black uppercase tracking-widest transition-all whitespace-nowrap",
+        "flex-1 md:flex-none flex flex-col md:flex-row items-center justify-center gap-1 md:gap-2 px-1 md:px-6 py-2 md:py-3 rounded-xl transition-all whitespace-nowrap",
         active ? "bg-amber-500 text-vendeur-coal shadow-lg shadow-amber-500/20" : "text-white/40 hover:bg-white/5 hover:text-white"
       )}
     >
-      {icon}
-      <span>{label}</span>
+      <div className="shrink-0">{icon}</div>
+      <span className="text-[7px] md:text-xs font-black uppercase tracking-[0.05em] md:tracking-widest leading-none">
+        {label}
+      </span>
     </button>
   );
 }

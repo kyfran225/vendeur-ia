@@ -243,12 +243,21 @@ export function SalesInbox() {
                       <span className="text-[9px] font-black bg-vendeur-emerald text-vendeur-coal px-1.5 rounded uppercase tracking-tighter">VIP</span>
                     )}
                   </div>
-                  <p className="text-[10px] text-vendeur-emerald font-black uppercase tracking-widest flex items-center gap-1">
-                    {activeChatData?.platform === 'instagram' && <Instagram size={10} />}
-                    {activeChatData?.platform === 'facebook' && <Facebook size={10} className="text-blue-500" />}
-                    {activeChatData?.platform === 'tiktok' && <TikTokIcon size={10} />}
-                    {(!activeChatData?.platform || activeChatData?.platform === 'whatsapp') && <MessageCircle size={10} />}
-                    {activeChatData?.platform || 'WhatsApp'} • En ligne
+                  <p className={cn(
+                    "text-[10px] font-black uppercase tracking-widest flex items-center gap-1 transition-all duration-300",
+                    typingChats[selectedChat] ? "text-white/40 italic animate-pulse" : "text-vendeur-emerald"
+                  )}>
+                    {typingChats[selectedChat] ? (
+                      <>L'IA est en train d'écrire...</>
+                    ) : (
+                      <>
+                        {activeChatData?.platform === 'instagram' && <Instagram size={10} />}
+                        {activeChatData?.platform === 'facebook' && <Facebook size={10} className="text-blue-500" />}
+                        {activeChatData?.platform === 'tiktok' && <TikTokIcon size={10} />}
+                        {(!activeChatData?.platform || activeChatData?.platform === 'whatsapp') && <MessageCircle size={10} />}
+                        {activeChatData?.platform || 'WhatsApp'} • En ligne
+                      </>
+                    )}
                   </p>
                 </div>
               </div>

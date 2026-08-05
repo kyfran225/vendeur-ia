@@ -469,7 +469,12 @@ function LandingHero({
                 </div>
                 <div>
                   <p className="text-[15px] font-bold text-white leading-tight">{form.businessName}</p>
-                  <p className="text-[11px] text-emerald-400 font-medium">en ligne</p>
+                  <p className={cn(
+                    "text-[11px] font-medium transition-all duration-300",
+                    isReplying ? "text-white/50 italic animate-pulse" : "text-emerald-400"
+                  )}>
+                    {isReplying ? "en train d'écrire..." : "en ligne"}
+                  </p>
                 </div>
               </div>
               <div className="flex items-center gap-5 text-[#aebac1]">

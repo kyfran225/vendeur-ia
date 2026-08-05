@@ -24,6 +24,8 @@ import axios from "axios";
 import { useSocket } from "@/hooks/useSocket";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { CountrySelector, COUNTRIES } from "./components/CountrySelector";
+import { AddressAutocomplete } from "./components/AddressAutocomplete";
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -48,18 +50,26 @@ export function OnboardingWizard() {
     const initMerchant = async () => {
       if (user && accessToken && tempData && !isMerchantCreated) {
         try {
+          console.log("[Onboarding] Attempting to create merchant...");
           await apiClient.post("/api/commerce/merchant", {
             ...tempData,
-            city: tempData.city || "Abidjan"
+            city: tempData.city || ""
           });
           setIsMerchantCreated(true);
           console.log("[Onboarding] Merchant created successfully");
         } catch (err: any) {
           // If 409, it might already exist, which is fine
-          if (err.response?.status === 409) {
+          const isDuplicate = err.response?.status === 409 ||
+                            JSON.stringify(err.response?.data)?.includes("E11000") ||
+                            err.message?.includes("E11000");
+
+          if (isDuplicate) {
             setIsMerchantCreated(true);
+            console.log("[Onboarding] Merchant already exists");
           } else {
             console.error("[Onboarding] Failed to create merchant", err);
+            // Non-blocking but should notify user or retry
+            toast.error("Problème lors de l'initialisation de votre profil. Veuillez rafraîchir.");
           }
         }
       }
@@ -71,43 +81,45 @@ export function OnboardingWizard() {
   const handleBack = () => setStep(currentStep - 1);
 
   const steps = [
-    { title: "Bienvenue", component: <WelcomeStep onNext={handleNext} /> },
-    { title: "Abonnement", component: <SubscriptionStep onNext={handleNext} onBack={handleBack} /> },
-    { title: "IA Vision", component: <VisionStep onNext={handleNext} /> },
+    { title: "Bienvenue", component: <WelcomeStep onNext={handleNext} onBack={() => navigate("/")} /> },
+    { title: "IA Vision", component: <VisionStep onNext={handleNext} onBack={handleBack} /> },
     { title: "Connexion", component: <WhatsAppStep onNext={() => {
       clearOnboarding();
       navigate("/dashboard");
-    }} /> },
+    }} onBack={handleBack} /> },
   ];
 
-  // Jump to Subscription step if coming from Simulator (avoiding double welcome)
+  // Safety check: if currentStep is out of bounds (e.g. after removing a step), reset to 0 or last valid step
   useEffect(() => {
-    if (tempData && currentStep === 0) {
-      setStep(1);
+    if (currentStep >= steps.length) {
+      setStep(steps.length - 1);
     }
-  }, [tempData, setStep]);
+  }, [currentStep, steps.length, setStep]);
+
+  // Pre-render check to avoid crash
+  if (!steps[currentStep]) return null;
 
   return (
-    <div className="min-h-screen bg-vendeur-coal flex flex-col items-center justify-center p-4 md:p-8">
+    <div className="min-h-screen bg-vendeur-coal flex flex-col items-center justify-center p-4 md:p-12 overflow-x-hidden">
       {/* Progress Bar */}
-      <div className="w-full max-w-2xl mb-12 flex items-center justify-between px-4">
+      <div className="w-full max-w-3xl mb-16 flex items-center justify-between px-6 relative">
         {steps.map((s, i) => (
-          <div key={i} className="flex flex-col items-center gap-2">
-            <div className={`h-8 w-8 rounded-full flex items-center justify-center text-xs font-black transition-all ${
-              i <= currentStep ? "bg-vendeur-emerald text-vendeur-coal" : "bg-white/5 text-white/20 border border-white/10"
+          <div key={i} className="flex flex-col items-center gap-3 z-10">
+            <div className={`h-10 w-10 md:h-12 md:w-12 rounded-2xl flex items-center justify-center text-xs md:text-sm font-black transition-all shadow-2xl ${
+              i <= currentStep ? "bg-vendeur-emerald text-vendeur-coal scale-110 shadow-vendeur-emerald/20" : "bg-white/5 text-white/20 border border-white/10"
             }`}>
-              {i < currentStep ? <Check size={16} /> : i + 1}
+              {i < currentStep ? <Check size={20} /> : i + 1}
             </div>
-            <span className={`text-[10px] font-black uppercase tracking-widest ${
+            <span className={`text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] ${
               i <= currentStep ? "text-vendeur-emerald" : "text-white/20"
             }`}>{s.title}</span>
           </div>
         ))}
         {/* Connection lines */}
-        <div className="absolute left-1/2 -translate-x-1/2 w-full max-w-xl h-[1px] bg-white/5 -z-10" />
+        <div className="absolute left-1/2 -translate-x-1/2 top-5 md:top-6 w-[80%] h-[2px] bg-white/5 -z-10" />
       </div>
 
-      <div className="w-full max-w-4xl relative">
+      <div className="w-full max-w-7xl relative">
         <AnimatePresence mode="wait">
           <motion.div
             key={currentStep}
@@ -125,9 +137,46 @@ export function OnboardingWizard() {
   );
 }
 
-function WelcomeStep({ onNext }: { onNext: () => void }) {
-  const { tempData } = useOnboardingStore();
-  const { user } = useAuthStore();
+function WelcomeStep({ onNext, onBack }: { onNext: () => void; onBack: () => void }) {
+  const { tempData, setTempData } = useOnboardingStore();
+  const [form, setForm] = useState(tempData || {
+    businessName: "",
+    category: "fashion",
+    description: "",
+    country: "CI",
+    address: "",
+    whatsappNumber: ""
+  });
+
+  const [selectedCountry, setSelectedCountry] = useState(
+    COUNTRIES.find(c => c.code === (form.country || "CI")) || COUNTRIES[0]
+  );
+
+  // Extract local phone from whatsappNumber if it already has the dialCode
+  const initialLocalPhone = form.whatsappNumber?.startsWith(selectedCountry.dialCode)
+    ? form.whatsappNumber.replace(selectedCountry.dialCode, "")
+    : form.whatsappNumber || "";
+
+  const [localPhone, setLocalPhone] = useState(initialLocalPhone);
+
+  useEffect(() => {
+    if (selectedCountry) {
+      setForm(prev => ({
+        ...prev,
+        country: selectedCountry.code,
+        whatsappNumber: `${selectedCountry.dialCode}${localPhone}`
+      }));
+    }
+  }, [localPhone, selectedCountry]);
+
+  const handleNext = () => {
+    if (form.businessName && form.whatsappNumber && form.address) {
+      setTempData(form);
+      onNext();
+    } else {
+      toast.error("Veuillez remplir tous les champs obligatoires (Nom, WhatsApp et Adresse).");
+    }
+  };
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-700 w-full max-w-7xl mx-auto">
@@ -137,23 +186,23 @@ function WelcomeStep({ onNext }: { onNext: () => void }) {
             <Rocket className="text-vendeur-emerald" size={32} />
           </div>
           <h1 className="text-4xl md:text-5xl font-black text-white mb-6 uppercase tracking-tighter leading-tight">
-            Dernière étape pour <br/>
-            <span className="text-vendeur-emerald">lancer vos ventes.</span>
+            {tempData?.businessName ? "Vérifiez votre" : "Lancez votre"} <br/>
+            <span className="text-vendeur-emerald">machine de vente.</span>
           </h1>
           <p className="text-lg text-white/50 mb-8 max-w-xl leading-relaxed font-medium">
-            Remplissez ces quelques informations pour que votre IA commence à travailler. Vous pourrez modifier tout cela plus tard dans les réglages.
+            Ces informations permettent à l'IA de personnaliser ses réponses et de vendre vos produits avec votre propre style.
           </p>
         </div>
 
         <div className="relative w-full lg:w-auto">
-          <div className="relative rounded-[2.5rem] border border-white/10 bg-[#0c0f0d] p-8 text-left w-full lg:min-w-[500px] shadow-2xl">
+          <div className="relative rounded-[2.5rem] border border-white/10 bg-[#0c0f0d] p-8 text-left w-full lg:min-w-[600px] shadow-2xl">
             <div className="mb-8 flex items-center gap-4 relative z-10">
               <div className="grid h-12 w-12 place-items-center rounded-2xl bg-vendeur-emerald/10 text-vendeur-emerald border border-vendeur-emerald/20">
                 <Store size={24} />
               </div>
               <div>
                 <h2 className="text-xl font-black text-white">Profil du commerce</h2>
-                <p className="text-xs text-white/40 font-medium">Ceci aidera l'IA à mieux répondre.</p>
+                <p className="text-xs text-white/40 font-medium">Ceci aidera l'IA à mieux vendre pour vous.</p>
               </div>
             </div>
 
@@ -161,43 +210,79 @@ function WelcomeStep({ onNext }: { onNext: () => void }) {
                <label className="grid gap-2">
                 <span className="text-[10px] font-black uppercase tracking-widest text-white/20 ml-1">Nom du commerce</span>
                 <input
-                   readOnly
-                   className="h-12 rounded-xl border border-white/5 bg-black/20 px-4 text-white/40 outline-none cursor-not-allowed"
-                   value={tempData?.businessName}
+                   className="h-12 rounded-xl border border-white/10 bg-black/40 px-4 text-white outline-none focus:border-vendeur-emerald transition-all"
+                   value={form.businessName}
+                   onChange={(e) => setForm({ ...form, businessName: e.target.value })}
+                   placeholder="Ex: Aicha Mode"
                 />
               </label>
 
-              <div className="grid grid-cols-2 gap-4">
-                <label className="grid gap-2">
+              <div className="flex flex-col sm:flex-row gap-4">
+                <label className="flex-1 min-w-0 grid gap-2">
                   <span className="text-[10px] font-black uppercase tracking-widest text-white/20 ml-1">Catégorie</span>
-                  <div className="h-12 rounded-xl border border-white/5 bg-black/20 px-4 text-white/40 flex items-center text-sm capitalize">
-                    {tempData?.category === 'fashion' ? '👗 Mode & Beauté' :
-                     tempData?.category === 'food' ? '🍔 Restauration' :
-                     tempData?.category === 'services' ? '💼 Services' : '📦 Autre'}
+                  <div className="relative">
+                    <select
+                      className="h-12 w-full rounded-xl border border-white/10 bg-black/20 px-4 text-white outline-none focus:border-vendeur-emerald transition-all appearance-none cursor-pointer"
+                      value={form.category}
+                      onChange={(e) => setForm({ ...form, category: e.target.value })}
+                    >
+                      <option value="fashion">👗 Mode & Beauté</option>
+                      <option value="food">🍔 Restauration</option>
+                      <option value="services">💼 Services</option>
+                      <option value="beauty">💄 Soins & Cosmétiques</option>
+                      <option value="electronics">📱 Électronique</option>
+                      <option value="other">📦 Autre</option>
+                    </select>
+                    <ChevronRight size={16} className="absolute right-4 top-1/2 -translate-y-1/2 rotate-90 text-white/30 pointer-events-none" />
                   </div>
                 </label>
-                <label className="grid gap-2">
-                  <span className="text-[10px] font-black uppercase tracking-widest text-white/20 ml-1">Ville</span>
-                  <div className="h-12 rounded-xl border border-white/5 bg-black/20 px-4 text-white/40 flex items-center text-sm">
-                    {tempData?.city || 'Abidjan'}
+                <label className="flex-1 min-w-0 grid gap-2">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-white/20 ml-1">WhatsApp Business</span>
+                  <div className="flex gap-2 items-center w-full">
+                    <CountrySelector
+                      selected={selectedCountry}
+                      onSelect={(c) => setSelectedCountry(c)}
+                    />
+                    <div className="flex-1 min-w-0">
+                      <input
+                        className="h-12 w-full rounded-xl border border-white/10 bg-black/40 px-4 text-white outline-none focus:border-vendeur-emerald transition-all placeholder:text-white/10 text-sm"
+                        value={localPhone}
+                        onChange={(e) => setLocalPhone(e.target.value.replace(/\D/g, ""))}
+                        placeholder="07 00 00 00 00"
+                        type="tel"
+                      />
+                    </div>
                   </div>
                 </label>
               </div>
 
               <label className="grid gap-2">
-                <span className="text-[10px] font-black uppercase tracking-widest text-white/20 ml-1">Ce que vous vendez</span>
+                <span className="text-[10px] font-black uppercase tracking-widest text-white/20 ml-1">Adresse précise</span>
+                <AddressAutocomplete
+                  value={form.address}
+                  onChange={(value) => setForm({ ...form, address: value })}
+                />
+              </label>
+
+              <label className="grid gap-2">
+                <span className="text-[10px] font-black uppercase tracking-widest text-white/20 ml-1">Ce que vous vendez / Instructions</span>
                 <textarea
-                  readOnly
-                  className="min-h-[100px] rounded-xl border border-white/5 bg-black/20 p-4 text-white/40 outline-none resize-none text-sm italic"
-                  value={tempData?.description}
+                  className="min-h-[100px] rounded-xl border border-white/10 bg-black/40 p-4 text-white outline-none focus:border-vendeur-emerald transition-all resize-none text-sm"
+                  value={form.description}
+                  onChange={(e) => setForm({ ...form, description: e.target.value })}
+                  placeholder="Ex: Je vends des sacs de luxe. Livraison partout sous 2h."
                 />
               </label>
 
               <button
-                onClick={onNext}
+                onClick={handleNext}
                 className="mt-4 flex h-16 items-center justify-center gap-3 rounded-2xl bg-vendeur-emerald px-8 text-sm font-black uppercase tracking-widest text-vendeur-coal shadow-xl shadow-vendeur-emerald/10 transition-all hover:scale-[1.02] active:scale-95"
               >
-                <Rocket size={18} /> Activer ma machine de vente
+                <Sparkles size={18} /> Continuer vers l'IA Vision
+              </button>
+
+              <button onClick={onBack} className="mt-4 text-white/20 text-[10px] font-black uppercase tracking-widest hover:text-white transition-colors text-center w-full">
+                Retour à l'accueil
               </button>
             </div>
           </div>
@@ -207,100 +292,26 @@ function WelcomeStep({ onNext }: { onNext: () => void }) {
   );
 }
 
-function SubscriptionStep({ onNext, onBack }: { onNext: () => void; onBack: () => void }) {
-  return (
-    <div className="space-y-8">
-      <div className="text-center mb-12">
-        <h2 className="text-3xl font-black text-white uppercase tracking-tighter">Choisissez votre puissance</h2>
-        <p className="text-white/40 mt-2">Activez les fonctionnalités réelles de votre agent IA.</p>
-      </div>
-
-      <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-        {/* Free Plan */}
-        <div className="group relative bg-white/5 border border-white/10 rounded-[2.5rem] p-8 hover:border-white/20 transition-all flex flex-col">
-          <div className="mb-6">
-            <h3 className="text-xl font-black text-white uppercase">Explorer</h3>
-            <p className="text-vendeur-emerald font-black text-2xl mt-1">Gratuit</p>
-          </div>
-          <ul className="space-y-4 mb-12 flex-1">
-            <li className="flex items-center gap-3 text-white/60 text-sm">
-              <Check className="text-vendeur-emerald shrink-0" size={18} />
-              50 conversations / mois
-            </li>
-            <li className="flex items-center gap-3 text-white/60 text-sm">
-              <Check className="text-vendeur-emerald shrink-0" size={18} />
-              Catalogue IA (3 produits)
-            </li>
-            <li className="flex items-center gap-3 text-white/60 text-sm opacity-40">
-              <Zap className="shrink-0" size={18} />
-              Mode Agent Standard
-            </li>
-          </ul>
-          <button
-            onClick={onNext}
-            className="w-full h-14 rounded-xl border border-white/10 text-white/60 font-black uppercase tracking-widest text-xs hover:bg-white/5 transition-all"
-          >
-            Explorer d'abord
-          </button>
-        </div>
-
-        {/* Premium Plan */}
-        <div className="group relative bg-vendeur-emerald/5 border-2 border-vendeur-emerald/30 rounded-[2.5rem] p-8 shadow-2xl shadow-vendeur-emerald/5 flex flex-col">
-          <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-vendeur-emerald text-vendeur-coal px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">
-            Recommandé
-          </div>
-          <div className="mb-6">
-            <h3 className="text-xl font-black text-white uppercase">Vendeur Pro</h3>
-            <p className="text-vendeur-emerald font-black text-2xl mt-1">5 000 FCFA <span className="text-[10px] text-white/40 font-normal">/ mois</span></p>
-          </div>
-          <ul className="space-y-4 mb-12 flex-1">
-            <li className="flex items-center gap-3 text-white/90 text-sm">
-              <Sparkles className="text-vendeur-emerald shrink-0" size={18} />
-              Conversations Illimitées
-            </li>
-            <li className="flex items-center gap-3 text-white/90 text-sm">
-              <Check className="text-vendeur-emerald shrink-0" size={18} />
-              IA Vision Illimitée
-            </li>
-            <li className="flex items-center gap-3 text-white/90 text-sm">
-              <Check className="text-vendeur-emerald shrink-0" size={18} />
-              Vocal IA & Local Slang
-            </li>
-            <li className="flex items-center gap-3 text-white/90 text-sm">
-              <ShieldCheck className="text-vendeur-emerald shrink-0" size={18} />
-              Support Prioritaire
-            </li>
-          </ul>
-          <button
-            onClick={() => {
-              toast.info("Redirection vers le paiement...");
-              onNext();
-            }}
-            className="w-full h-14 rounded-xl bg-vendeur-emerald text-vendeur-coal font-black uppercase tracking-widest text-xs hover:scale-[1.02] transition-all shadow-xl shadow-vendeur-emerald/20"
-          >
-            Activer Premium
-          </button>
-        </div>
-      </div>
-
-      <button onClick={onBack} className="block mx-auto text-white/20 text-[10px] font-black uppercase tracking-widest hover:text-white transition-colors">
-        Retour aux informations
-      </button>
-    </div>
-  );
-}
-
-function VisionStep({ onNext }: { onNext: () => void }) {
-  const [file, setFile] = useState<File | null>(null);
+function VisionStep({ onNext, onBack }: { onNext: () => void; onBack: () => void }) {
+  const { tempData, setTempData } = useOnboardingStore();
   const [analyzing, setAnalyzing] = useState(false);
-  const [result, setResult] = useState<any>(null);
+  const [result, setResult] = useState<any>(tempData?.firstProduct || null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(tempData?.productImage || null);
   const { accessToken } = useAuthStore();
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const selected = e.target.files?.[0];
     if (!selected) return;
 
-    setFile(selected);
+    // Create a preview and store it
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const base64String = reader.result as string;
+      setPreviewUrl(base64String);
+      setTempData({ productImage: base64String });
+    };
+    reader.readAsDataURL(selected);
+
     setAnalyzing(true);
 
     try {
@@ -312,6 +323,7 @@ function VisionStep({ onNext }: { onNext: () => void }) {
       });
 
       setResult(res.data);
+      setTempData({ firstProduct: res.data });
       toast.success("Produit analysé par l'IA ! ✨");
     } catch (err) {
       toast.error("Échec de l'analyse IA");
@@ -320,8 +332,14 @@ function VisionStep({ onNext }: { onNext: () => void }) {
     }
   };
 
+  const handleUpdateResult = (updates: any) => {
+    const newResult = { ...result, ...updates };
+    setResult(newResult);
+    setTempData({ firstProduct: newResult });
+  };
+
   return (
-    <div className="bg-white/5 border border-white/10 rounded-[3rem] p-8 md:p-12">
+    <div className="bg-white/5 border border-white/10 rounded-[3rem] p-4 md:p-8">
       <div className="flex flex-col md:flex-row gap-12 items-center">
         <div className="flex-1 space-y-6">
           <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-vendeur-emerald/10 border border-vendeur-emerald/20">
@@ -346,7 +364,7 @@ function VisionStep({ onNext }: { onNext: () => void }) {
           </div>
         </div>
 
-        <div className="w-full max-w-md">
+        <div className="w-full max-w-xl">
           {!result ? (
             <label className={`relative flex flex-col items-center justify-center aspect-square rounded-[2.5rem] border-2 border-dashed border-white/10 bg-black/40 hover:border-vendeur-emerald/40 transition-all cursor-pointer overflow-hidden ${analyzing ? "pointer-events-none" : ""}`}>
                {analyzing ? (
@@ -367,22 +385,34 @@ function VisionStep({ onNext }: { onNext: () => void }) {
           ) : (
             <div className="bg-black/40 border border-white/10 rounded-[2.5rem] overflow-hidden animate-in zoom-in-95 duration-300">
                <div className="aspect-video bg-white/5 relative">
-                  {file && <img src={URL.createObjectURL(file)} className="h-full w-full object-cover opacity-50" />}
+                  {previewUrl && <img src={previewUrl} className="h-full w-full object-cover opacity-50" />}
                   <div className="absolute inset-0 flex items-center justify-center">
                     <CheckCircle2 className="text-vendeur-emerald" size={48} />
                   </div>
                </div>
-               <div className="p-8 space-y-4">
+               <div className="p-4 md:p-6 space-y-4">
                   <div>
                     <h3 className="text-sm font-black text-white/40 uppercase tracking-widest mb-1">Nom suggéré</h3>
-                    <p className="text-xl font-bold text-white">{result.name}</p>
+                    <input
+                      className="w-full bg-transparent border-b border-white/10 text-xl font-bold text-white outline-none focus:border-vendeur-emerald transition-colors"
+                      value={result.name}
+                      onChange={(e) => handleUpdateResult({ name: e.target.value })}
+                    />
                   </div>
-                  <div className="flex justify-between items-end">
-                    <div>
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-6">
+                    <div className="flex-1">
                       <h3 className="text-sm font-black text-white/40 uppercase tracking-widest mb-1">Prix suggéré</h3>
-                      <p className="text-2xl font-black text-vendeur-emerald">{result.price} FCFA</p>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="number"
+                          className="w-full bg-transparent border-b border-white/10 text-2xl font-black text-vendeur-emerald outline-none focus:border-vendeur-emerald transition-colors"
+                          value={result.price}
+                          onChange={(e) => handleUpdateResult({ price: Number(e.target.value) })}
+                        />
+                        <span className="text-xl font-black text-vendeur-emerald">FCFA</span>
+                      </div>
                     </div>
-                    <button onClick={onNext} className="h-12 px-6 rounded-xl bg-vendeur-emerald text-vendeur-coal font-black uppercase tracking-widest text-xs">
+                    <button onClick={onNext} className="w-full sm:w-auto h-12 px-8 rounded-xl bg-vendeur-emerald text-vendeur-coal font-black uppercase tracking-widest text-xs shrink-0">
                       Confirmer
                     </button>
                   </div>
@@ -392,16 +422,21 @@ function VisionStep({ onNext }: { onNext: () => void }) {
         </div>
       </div>
 
-      {!result && !analyzing && (
-        <button onClick={onNext} className="mt-12 block mx-auto text-white/20 text-[10px] font-black uppercase tracking-widest hover:text-white transition-colors">
-          Passer cette étape
+      <div className="mt-12 flex flex-col items-center gap-6">
+        {!result && !analyzing && (
+          <button onClick={onNext} className="text-white/40 text-[10px] font-black uppercase tracking-widest hover:text-white transition-colors">
+            Passer cette étape
+          </button>
+        )}
+        <button onClick={onBack} className="text-white/20 text-[10px] font-black uppercase tracking-widest hover:text-white transition-colors">
+          Retour aux informations
         </button>
-      )}
+      </div>
     </div>
   );
 }
 
-function WhatsAppStep({ onNext }: { onNext: () => void }) {
+function WhatsAppStep({ onNext, onBack }: { onNext: () => void; onBack: () => void }) {
   const { accessToken } = useAuthStore();
   const socket = useSocket();
   const [qrCode, setQrCode] = useState<string | null>(null);
@@ -489,6 +524,19 @@ function WhatsAppStep({ onNext }: { onNext: () => void }) {
                 </li>
               </ul>
             </div>
+          </div>
+
+          <div className="flex flex-col items-center gap-6 mt-12">
+            <button
+              onClick={onNext}
+              className="h-14 px-8 rounded-2xl border border-vendeur-emerald/30 bg-vendeur-emerald/5 text-vendeur-emerald text-sm font-black uppercase tracking-widest hover:bg-vendeur-emerald/10 transition-all"
+            >
+              Terminer et connecter plus tard
+            </button>
+
+            <button onClick={onBack} className="text-white/20 text-[10px] font-black uppercase tracking-widest hover:text-white transition-colors">
+              Retour à l'étape précédente
+            </button>
           </div>
         </>
       ) : (

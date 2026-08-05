@@ -4,6 +4,7 @@ import { SystemSettingsModel } from "./admin.model.js";
 import { CommerceMerchantModel, CommerceConversationModel, CommerceMessageModel, CommerceOrderModel } from "./commerce.model.js";
 import { TransactionModel } from "./transaction.model.js";
 import { aiQueue } from "../../services/ai-queue.service.js";
+import { aiProvider } from "../../services/ai-provider.js";
 
 const router = Router();
 
@@ -43,6 +44,33 @@ router.patch("/settings", authenticate, isAdmin, async (req, res) => {
   }
 });
 
+// GET AI Status & Connectivity
+router.get("/ai/status", authenticate, isAdmin, async (req, res) => {
+  try {
+    const providers = ['gemini', 'openai', 'groq', 'openrouter', 'elevenlabs'];
+    const results = await Promise.all(providers.map(p => aiProvider.testConnectivity(p)));
+
+    const status = providers.map((p, i) => ({
+      name: p,
+      ...results[i]
+    }));
+
+    res.json(status);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// TEST SPECIFIC PROVIDER
+router.post("/ai/test/:provider", authenticate, isAdmin, async (req, res) => {
+  try {
+    const result = await aiProvider.testConnectivity(req.params.provider);
+    res.json(result);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // GET Global Stats
 router.get("/stats", authenticate, isAdmin, async (req, res) => {
   try {
@@ -50,12 +78,24 @@ router.get("/stats", authenticate, isAdmin, async (req, res) => {
     const activeSessions = await CommerceMerchantModel.countDocuments({ "whatsappConfig.status": "connected" });
     const totalConversations = await CommerceConversationModel.countDocuments();
 
-    // AI Costs aggregation
-    const aiCostStats = await CommerceMessageModel.aggregate([
-      { $match: { sender: "ai" } },
-      { $group: { _id: null, totalCost: { $sum: "$aiMetadata.cost" }, totalTokens: { $sum: "$aiMetadata.tokensUsed" } } }
+    // AI Costs & Tokens aggregation
+    const aiStats = await CommerceMessageModel.aggregate([
+      { $match: { sender: "ai", "aiMetadata.provider": { $exists: true } } },
+      {
+        $group: {
+          _id: "$aiMetadata.provider",
+          totalCost: { $sum: "$aiMetadata.cost" },
+          totalTokens: { $sum: "$aiMetadata.tokensUsed" }
+        }
+      }
     ]);
-    const totalAiCost = aiCostStats[0]?.totalCost || 0;
+
+    const totalAiCost = aiStats.reduce((acc, curr) => acc + (curr.totalCost || 0), 0);
+    const providerUsage = aiStats.map(s => ({
+      provider: s._id,
+      tokens: s.totalTokens || 0,
+      cost: s.totalCost || 0
+    }));
 
     // Gross Merchandise Value (GMV) of all merchants
     const gmvStats = await CommerceOrderModel.aggregate([
@@ -93,6 +133,7 @@ router.get("/stats", authenticate, isAdmin, async (req, res) => {
       totalAiCost,
       totalGMV,
       recentTransactions,
+      providerUsage,
       queue: {
         waiting,
         active,

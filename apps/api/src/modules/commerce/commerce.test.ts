@@ -50,6 +50,40 @@ describe('Commerce Module API', () => {
     });
   };
 
+  describe('Merchant Creation', () => {
+    it('should be idempotent and return 201 or handle existing', async () => {
+      const merchantData = {
+        businessName: "Idempotent Shop",
+        category: "fashion",
+        city: "Abidjan",
+        address: "Test Address",
+        whatsappNumber: "+22500000000"
+      };
+
+      // First call
+      const res1 = await request(app)
+        .post('/api/commerce/merchant')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send(merchantData);
+
+      expect([201, 200]).toContain(res1.status);
+      expect(res1.body.businessName).toBe(merchantData.businessName);
+
+      // Second call (should be idempotent)
+      const res2 = await request(app)
+        .post('/api/commerce/merchant')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send(merchantData);
+
+      expect([201, 200, 409]).toContain(res2.status);
+      if (res2.status === 409) {
+        expect(res2.body.error).toMatch(/exists/i);
+      } else {
+        expect(res2.body.businessName).toBe(merchantData.businessName);
+      }
+    });
+  });
+
   describe('Product Management', () => {
     it('should create and update a product', async () => {
       await setupMerchant();

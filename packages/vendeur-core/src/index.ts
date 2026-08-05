@@ -19,7 +19,7 @@ export const merchantSchema = z.object({
   category: z.enum(commerceCategories),
   description: z.string(),
   country: z.string().default("CI"),
-  city: z.string().default("Abidjan"),
+  city: z.string(),
   address: z.string(),
   phone: z.string(),
   whatsappNumber: z.string(),

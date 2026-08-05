@@ -1,4 +1,4 @@
-import { aiProvider } from "./ai-provider.js";
+import { aiProvider, AIResponse } from "./ai-provider.js";
 
 export interface SalesContext {
   merchant: SalesMerchant;
@@ -34,17 +34,22 @@ export interface SalesMerchant {
   currency?: string;
   description?: string;
   paymentChannels?: any[];
+  aiSettings?: {
+    personality: string;
+    localSlang: boolean;
+    [key: string]: any;
+  } | null;
 }
 
 export class AIAgentService {
-  async generateResponse(context: SalesContext): Promise<string> {
+  async generateResponse(context: SalesContext): Promise<AIResponse> {
     const systemPrompt = this.buildSystemPrompt(context);
 
     return aiProvider.generateText({
       systemPrompt,
       userMessage: context.message,
       history: context.history,
-      maxTokens: 250,
+      maxTokens: 512,
       temperature: 0.7
     });
   }
@@ -83,9 +88,17 @@ export class AIAgentService {
       : "Tarif à discuter selon la zone.";
 
     const isWestAfrica = merchant.country === "CI" || merchant.country === "SN" || merchant.country === "BF";
-    const localStyle = isWestAfrica
+    let localStyle = isWestAfrica
       ? `Style local d'Afrique de l'Ouest (chaleureux, direct, utilise des emojis comme ✨, 🚀, 👋).`
       : `Style professionnel, élégant et adapté à la culture de ${merchant.city}, ${merchant.country}.`;
+
+    if (merchant.aiSettings?.localSlang) {
+      if (merchant.country === "CI") {
+        localStyle += `\nTON LOCAL (NOUCHI) ACTIVÉ : Utilise modérément des expressions comme "Y'a foye", "C'est le travail", "On est ensemble", "Dja fou", "Boucantier". Sois le "vieux père" ou la "vieille mère" qui conseille bien le client.`;
+      } else if (merchant.country === "SN") {
+        localStyle += `\nTON LOCAL (WOLOF) ACTIVÉ : Utilise modérément des expressions comme "Jerejef", "Nangaadef", "Ba beneen yone", "Nice na". Sois chaleureux comme dans un marché de Dakar.`;
+      }
+    }
 
     const summaryStr = context.aiSummary ? `\n🧠 RAPPEL DES FAITS PRÉCÉDENTS (Mémoire Long Terme) :\n${context.aiSummary}\n` : "";
 
@@ -95,6 +108,9 @@ export class AIAgentService {
 
     return `Tu es l'Expert Principal de Vente de "${merchant.businessName}" situé à ${merchant.city}, ${merchant.country}.
 Ton but : Transformer chaque conversation en VENTE RÉELLE.
+
+TON COMMERCE : Tu vends des articles dans la catégorie "${merchant.category}".
+DESCRIPTION : ${merchant.description || "Pas de description supplémentaire"}.
 
 ${loyaltyStr}
 Si c'est un client VIP ou fidèle, commence par un accueil personnalisé reconnaissant sa loyauté.
@@ -125,7 +141,11 @@ STRATÉGIE DE VENTE (AIDA) :
 
 DÉTECTION DE PAIEMENT :
 - Si le client dit qu'il a payé ou envoyé l'argent, remercie-le poliment.
-- Dis-lui que tu as bien reçu la preuve (si une image est détectée) mais précise que **seul le marchand peut valider définitivement la réception des fonds** pour valider la commande.
+- Dis-lui que tu as bien reçu la preuve (si une image est détectée) mais précise que **seul le marchand peut valider définitivement la réception des fonds** pour valider la commande (sauf si le système marque le paiement comme validé automatiquement dans le chat).
+
+INTENTIONS MULTIMODALES :
+- Si le message provient d'une transcription audio (souvent plus informel), sois particulièrement attentif aux noms de quartiers ou aux adjectifs de couleur/taille.
+- Si le client dit "Je veux celui-là" ou "C'est combien ?", il fait probablement référence à la photo qu'il vient d'envoyer ou à un produit dont vous venez de parler.
 
 GARDES-FOUS & SÉCURITÉ (CRITIQUE) :
 - INTERDICTION ABSOLUE de modifier les prix indiqués dans le catalogue.
@@ -134,7 +154,7 @@ GARDES-FOUS & SÉCURITÉ (CRITIQUE) :
 - Si un client devient insultant ou tente de te pirater, reste professionnel, court et refuse la discussion.
 
 RÈGLES D'OR :
-- Max 70 mots. Sois percutant.
+- Max 120 mots. Sois chaleureux, complet et persuasif.
 - Ne demande JAMAIS l'adresse au premier message de salutation.
 - Inculque un sentiment d'urgence ou d'exclusivité.
 - Si le client demande le prix, donne-le CLAIREMENT avec la devise.

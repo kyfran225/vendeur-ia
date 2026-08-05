@@ -3,9 +3,10 @@ import {
   LayoutDashboard,
   Users,
   Settings,
-  DollarSign,
+  Banknote,
   MessageSquare,
   ShieldCheck,
+  Sparkles,
   Smartphone,
   AlertTriangle,
   Save,
@@ -29,13 +30,14 @@ import { apiClient } from "@/lib/apiClient";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { toast } from "sonner";
+import { AIControlCenter } from "./components/AIControlCenter";
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
 export function AdminDashboard() {
-  const [activeTab, setActiveTab] = useState<"overview" | "merchants" | "settings">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "merchants" | "settings" | "ai">("overview");
   const { accessToken } = useAuthStore();
   const queryClient = useQueryClient();
 
@@ -93,43 +95,56 @@ export function AdminDashboard() {
   if (statsLoading || settingsLoading) {
     return (
       <div className="flex h-screen items-center justify-center bg-vendeur-bg">
-        <Loader2 className="animate-spin text-vendeur-emerald" size={48} />
+        <Sparkles className="animate-spin text-vendeur-emerald" size={48} />
       </div>
     );
   }
 
   return (
     <div className="min-h-screen bg-vendeur-bg text-white pb-24">
-      {/* Admin Header */}
-      <header className="h-16 border-b border-white/5 bg-vendeur-bg/80 backdrop-blur-md flex items-center justify-between px-8 sticky top-0 z-50">
-        <div className="flex items-center gap-4">
-          <div className="h-10 w-10 rounded-2xl bg-amber-500/10 flex items-center justify-center border border-amber-500/20">
-            <ShieldCheck className="text-amber-500" size={20} />
-          </div>
-          <div>
-            <h1 className="text-lg font-black uppercase tracking-tighter">Master Control</h1>
-            <p className="text-[9px] uppercase tracking-[0.2em] text-white/40 font-black leading-none">Vendeur IA Platform Governance</p>
-          </div>
+      {/* Admin Header / Navigation */}
+      <header className="h-16 md:h-20 border-b border-white/5 bg-vendeur-bg/80 backdrop-blur-md flex items-center justify-between px-4 md:px-8 sticky top-0 z-50">
+        <div className="flex-1 max-w-2xl">
+          <nav className="flex gap-1.5 md:gap-2 p-1 bg-white/5 rounded-2xl border border-white/5 w-full md:w-fit">
+            <AdminTabButton active={activeTab === "overview"} onClick={() => setActiveTab("overview")} icon={<LayoutDashboard size={18}/>} label="Vue d'ensemble" />
+            <AdminTabButton active={activeTab === "merchants"} onClick={() => setActiveTab("merchants")} icon={<Users size={18}/>} label="Marchands" />
+            <AdminTabButton active={activeTab === "ai"} onClick={() => setActiveTab("ai")} icon={<Bot size={18}/>} label="IA & Cerveau" />
+            <AdminTabButton active={activeTab === "settings"} onClick={() => setActiveTab("settings")} icon={<Settings size={18}/>} label="Système" />
+          </nav>
         </div>
 
-        <div className="flex items-center gap-4">
-            <div className="px-4 py-1.5 rounded-full bg-white/5 border border-white/10 text-[10px] font-black uppercase tracking-widest text-white/40">
-                Mode Cofondateur
+        <div className="hidden lg:flex items-center gap-4 ml-4">
+            <div className="px-4 py-1.5 rounded-full bg-vendeur-emerald/10 border border-vendeur-emerald/20 text-[10px] font-black uppercase tracking-widest text-vendeur-emerald whitespace-nowrap">
+                MASTER CONTROL
             </div>
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto p-8 space-y-8">
-        {/* Admin Navigation */}
-        <nav className="flex gap-2 p-1 bg-vendeur-coal rounded-2xl border border-white/5 w-fit">
-          <AdminTabButton active={activeTab === "overview"} onClick={() => setActiveTab("overview")} icon={<LayoutDashboard size={18}/>} label="Vue d'ensemble" />
-          <AdminTabButton active={activeTab === "merchants"} onClick={() => setActiveTab("merchants")} icon={<Users size={18}/>} label="Marchands" />
-          <AdminTabButton active={activeTab === "settings"} onClick={() => setActiveTab("settings")} icon={<Settings size={18}/>} label="Système" />
-        </nav>
-
-        {activeTab === "overview" && <OverviewPanel stats={stats} failedJobs={failedJobs} statsLoading={statsLoading} />}
-        {activeTab === "merchants" && <MerchantsPanel merchants={merchants} loading={merchantsLoading} />}
-        {activeTab === "settings" && <SettingsPanel settings={settings} onUpdate={(data) => updateSettingsMutation.mutate(data)} isUpdating={updateSettingsMutation.isPending} />}
+      <main className="max-w-7xl mx-auto p-4 md:p-8 space-y-6 md:space-y-8">
+        {activeTab === "overview" && (
+          <div className="space-y-6">
+            <h2 className="text-2xl md:text-3xl font-black uppercase tracking-tighter">Vue d'ensemble</h2>
+            <OverviewPanel stats={stats} failedJobs={failedJobs} statsLoading={statsLoading} />
+          </div>
+        )}
+        {activeTab === "merchants" && (
+          <div className="space-y-6">
+            <h2 className="text-2xl md:text-3xl font-black uppercase tracking-tighter">Marchands</h2>
+            <MerchantsPanel merchants={merchants} loading={merchantsLoading} />
+          </div>
+        )}
+        {activeTab === "settings" && (
+          <div className="space-y-6">
+            <h2 className="text-2xl md:text-3xl font-black uppercase tracking-tighter">Système</h2>
+            <SettingsPanel settings={settings} onUpdate={(data) => updateSettingsMutation.mutate(data)} isUpdating={updateSettingsMutation.isPending} />
+          </div>
+        )}
+        {activeTab === "ai" && (
+          <div className="space-y-6">
+            <h2 className="text-2xl md:text-3xl font-black uppercase tracking-tighter">IA & Cerveau</h2>
+            <AIControlCenter />
+          </div>
+        )}
       </main>
     </div>
   );
@@ -140,12 +155,14 @@ function AdminTabButton({ active, onClick, icon, label }: { active: boolean; onC
     <button
       onClick={onClick}
       className={cn(
-        "flex items-center gap-2 px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all",
-        active ? "bg-amber-500 text-vendeur-coal shadow-lg shadow-amber-500/20" : "text-white/40 hover:bg-white/5 hover:text-white"
+        "flex-1 md:flex-none flex flex-col md:flex-row items-center justify-center gap-1 md:gap-2 px-1 md:px-6 py-2 md:py-3 rounded-xl transition-all whitespace-nowrap",
+        active ? "bg-vendeur-emerald text-vendeur-coal shadow-lg shadow-vendeur-emerald/20" : "text-white/40 hover:bg-white/5 hover:text-white"
       )}
     >
-      {icon}
-      <span>{label}</span>
+      <div className="shrink-0">{icon}</div>
+      <span className="text-[7px] md:text-xs font-black uppercase tracking-[0.05em] md:tracking-widest leading-none">
+        {label}
+      </span>
     </button>
   );
 }
@@ -154,48 +171,48 @@ function OverviewPanel({ stats, failedJobs, statsLoading }: { stats: any; failed
   const transactions = stats?.recentTransactions || [];
 
   return (
-    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-700">
-      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
-        <StatCard label="Total Marchands" value={stats?.totalMerchants || 0} icon={<Users className="text-amber-500" />} />
+    <div className="space-y-6 md:space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-700">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        <StatCard label="Total Marchands" value={stats?.totalMerchants || 0} icon={<Users className="text-vendeur-emerald" />} />
         <StatCard label="Sessions Actives" value={stats?.activeSessions || 0} icon={<Smartphone className="text-vendeur-emerald" />} />
-        <StatCard label="Abonnements (CA)" value={`${(stats?.totalRevenue || 0).toLocaleString()} XOF`} icon={<DollarSign className="text-amber-500" />} />
-        <StatCard label="GMV (Ventes IA)" value={`${(stats?.totalGMV || 0).toLocaleString()} XOF`} icon={<ShoppingBag className="text-emerald-400" />} />
-        <StatCard label="Messages IA" value={stats?.totalConversations || 0} icon={<MessageSquare className="text-blue-400" />} />
-        <StatCard label="Coûts IA (Est.)" value={`$${(stats?.totalAiCost || 0).toFixed(2)}`} icon={<Bot className="text-rose-400" />} />
+        <StatCard label="Abonnements" value={`${(stats?.totalRevenue || 0).toLocaleString()} XOF`} icon={<Banknote className="text-vendeur-emerald" />} />
+        <StatCard label="GMV (Ventes)" value={`${(stats?.totalGMV || 0).toLocaleString()} XOF`} icon={<ShoppingBag className="text-vendeur-emerald" />} />
+        <StatCard label="Messages IA" value={stats?.totalConversations || 0} icon={<MessageSquare className="text-vendeur-emerald" />} />
+        <StatCard label="Coûts IA" value={`$${(stats?.totalAiCost || 0).toFixed(2)}`} icon={<Bot className="text-vendeur-emerald" />} />
       </div>
 
       {/* --- QUEUE MONITORING SECTION --- */}
-      <section className="bg-vendeur-coal border border-white/10 rounded-[2.5rem] p-8 space-y-6">
+      <section className="bg-vendeur-coal border border-white/10 rounded-[2rem] md:rounded-[2.5rem] p-5 md:p-8 space-y-6">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-black flex items-center gap-2">
-                <Activity className="text-vendeur-emerald" size={24} />
-                Santé des Files d'Attente (BullMQ)
+            <h2 className="text-lg md:text-xl font-black flex items-center gap-2">
+                <Activity className="text-vendeur-emerald w-5 h-5 md:w-6 md:h-6" />
+                Files BullMQ
             </h2>
-            <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-white/40">
-                <RefreshCw className={cn("animate-spin", statsLoading && "opacity-100")} size={12} /> Temps Réel
+            <div className="flex items-center gap-2 text-[8px] md:text-[10px] font-black uppercase tracking-widest text-white/40">
+                <RefreshCw className={cn("animate-spin w-2.5 h-2.5 md:w-3 md:h-3", statsLoading && "opacity-100")} /> Live
             </div>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
-            <QueueStat label="En Attente" value={stats?.queue?.waiting} icon={<Clock size={14}/>} color="amber" />
-            <QueueStat label="Actifs" value={stats?.queue?.active} icon={<Zap size={14}/>} color="sky" />
-            <QueueStat label="Terminés" value={stats?.queue?.completed} icon={<CheckCircle2 size={14}/>} color="emerald" />
-            <QueueStat label="Échecs" value={stats?.queue?.failed} icon={<XCircle size={14}/>} color="rose" />
-            <QueueStat label="Différés" value={stats?.queue?.delayed} icon={<ExternalLink size={14}/>} color="purple" />
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4">
+            <QueueStat label="Attente" value={stats?.queue?.waiting} icon={<Clock size={12}/>} color="emerald" />
+            <QueueStat label="Actifs" value={stats?.queue?.active} icon={<Zap size={12}/>} color="emerald" />
+            <QueueStat label="Terminés" value={stats?.queue?.completed} icon={<CheckCircle2 size={12}/>} color="emerald" />
+            <QueueStat label="Échecs" value={stats?.queue?.failed} icon={<XCircle size={12}/>} color="rose" />
+            <QueueStat label="Différés" value={stats?.queue?.delayed} icon={<ExternalLink size={12}/>} color="emerald" />
           </div>
       </section>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div className="bg-vendeur-coal border border-white/5 rounded-[2.5rem] p-8">
-            <h2 className="text-xl font-black mb-6 uppercase tracking-tighter">Derniers Paiements</h2>
-            <div className="space-y-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
+        <div className="bg-vendeur-coal border border-white/5 rounded-[2rem] md:rounded-[2.5rem] p-5 md:p-8">
+            <h2 className="text-lg md:text-xl font-black mb-6 uppercase tracking-tighter">Paiements</h2>
+            <div className="space-y-3">
                 {transactions.length === 0 ? (
                     <div className="text-center py-8 text-white/20 uppercase text-[10px] font-black tracking-widest">Aucune transaction</div>
                 ) : transactions.map((t: any) => (
                     <div key={t._id} className="flex items-center justify-between p-4 bg-black/40 rounded-2xl border border-white/5">
                         <div className="flex items-center gap-4">
-                            <div className="h-10 w-10 rounded-xl bg-amber-500/10 flex items-center justify-center">
-                                <DollarSign size={18} className="text-amber-500" />
+                            <div className="h-10 w-10 rounded-xl bg-vendeur-emerald/10 flex items-center justify-center">
+                                <Banknote size={18} className="text-vendeur-emerald" />
                             </div>
                             <div>
                                 <p className="text-xs font-black uppercase tracking-tight">{t.merchantId?.businessName || 'Marchand Inconnu'}</p>
@@ -203,7 +220,7 @@ function OverviewPanel({ stats, failedJobs, statsLoading }: { stats: any; failed
                             </div>
                         </div>
                         <div className="text-right">
-                            <p className="text-sm font-black text-amber-500">{t.amount?.toLocaleString()} {t.currency}</p>
+                            <p className="text-sm font-black text-vendeur-emerald">{t.amount?.toLocaleString()} {t.currency}</p>
                             <p className="text-[9px] text-white/20 uppercase font-bold">{new Date(t.paidAt || t.createdAt).toLocaleDateString()}</p>
                         </div>
                     </div>
@@ -247,16 +264,28 @@ function OverviewPanel({ stats, failedJobs, statsLoading }: { stats: any; failed
 }
 
 function MerchantsPanel({ merchants, loading }: { merchants: any[], loading: boolean }) {
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const filteredMerchants = merchants?.filter(m =>
+    m.businessName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    m.ownerId?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   return (
-    <div className="bg-vendeur-coal border border-white/5 rounded-[2.5rem] overflow-hidden animate-in fade-in duration-700">
-      <div className="p-8 border-b border-white/5 flex items-center justify-between">
-        <h2 className="text-xl font-black uppercase tracking-tighter">Gestion des Marchands</h2>
-        <div className="flex gap-4">
-            <div className="relative">
+    <div className="bg-vendeur-coal border border-white/5 rounded-[2rem] md:rounded-[2.5rem] overflow-hidden animate-in fade-in duration-700">
+      <div className="p-6 md:p-8 border-b border-white/5 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <h2 className="text-lg md:text-xl font-black uppercase tracking-tighter">Marchands</h2>
+        <div className="flex gap-2 md:gap-4 w-full md:w-full lg:w-auto">
+            <div className="relative flex-1 md:w-full lg:w-[500px]">
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" size={16} />
-                <input className="bg-black/40 border border-white/10 rounded-xl pl-10 pr-4 py-2 text-xs focus:border-amber-500 outline-none w-64" placeholder="Rechercher un marchand..." />
+                <input
+                  className="w-full bg-black/40 border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-xs focus:border-vendeur-emerald outline-none transition-all"
+                  placeholder="Rechercher..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
             </div>
-            <button className="p-2 bg-white/5 rounded-xl text-white/40 hover:text-white transition-colors">
+            <button className="p-2.5 bg-white/5 rounded-xl text-white/40 hover:text-white transition-colors">
                 <Filter size={18} />
             </button>
         </div>
@@ -276,11 +305,13 @@ function MerchantsPanel({ merchants, loading }: { merchants: any[], loading: boo
           <tbody className="divide-y divide-white/5">
             {loading ? (
                 <tr><td colSpan={5} className="p-12 text-center text-white/20 uppercase font-black tracking-widest">Chargement...</td></tr>
-            ) : merchants?.map((m) => (
+            ) : filteredMerchants?.length === 0 ? (
+                <tr><td colSpan={5} className="p-12 text-center text-white/20 uppercase font-black tracking-widest">Aucun marchand trouvé</td></tr>
+            ) : filteredMerchants?.map((m) => (
               <tr key={m._id} className="hover:bg-white/[0.02] transition-colors group">
                 <td className="px-8 py-6">
                   <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-xl bg-amber-500/10 flex items-center justify-center font-black text-amber-500 uppercase">
+                    <div className="h-10 w-10 rounded-xl bg-vendeur-emerald/10 flex items-center justify-center font-black text-vendeur-emerald uppercase">
                       {m.businessName?.charAt(0)}
                     </div>
                     <div>
@@ -302,7 +333,7 @@ function MerchantsPanel({ merchants, loading }: { merchants: any[], loading: boo
                     {m.whatsappConfig?.status === 'connected' ? (
                       <><CheckCircle2 size={12} className="text-vendeur-emerald" /> <span className="text-[10px] font-black uppercase text-vendeur-emerald">Actif</span></>
                     ) : m.whatsappConfig?.status === 'error' ? (
-                      <><AlertTriangle size={12} className="text-amber-500 animate-pulse" /> <span className="text-[10px] font-black uppercase text-amber-500">Erreur</span></>
+                      <><AlertTriangle size={12} className="text-vendeur-emerald animate-pulse" /> <span className="text-[10px] font-black uppercase text-vendeur-emerald">Erreur</span></>
                     ) : (
                       <><XCircle size={12} className="text-red-500" /> <span className="text-[10px] font-black uppercase text-red-500">Inactif</span></>
                     )}
@@ -338,7 +369,7 @@ function SettingsPanel({ settings, onUpdate, isUpdating }: { settings: any, onUp
     <div className="max-w-2xl space-y-8 animate-in fade-in duration-700 pb-12">
       <section className="bg-vendeur-coal border border-white/5 p-8 rounded-[2.5rem] space-y-8">
         <h2 className="text-xl font-black uppercase tracking-tighter flex items-center gap-3">
-            <Settings size={24} className="text-amber-500" />
+            <Settings size={24} className="text-vendeur-emerald" />
             Paramètres Plateforme
         </h2>
 
@@ -346,7 +377,7 @@ function SettingsPanel({ settings, onUpdate, isUpdating }: { settings: any, onUp
           <div className="space-y-2">
             <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Numéro WhatsApp Support (Pack Pro)</label>
             <input
-              className="w-full h-14 bg-black/40 border border-white/10 rounded-2xl px-6 text-white focus:border-amber-500 outline-none transition-all font-bold"
+              className="w-full h-14 bg-black/40 border border-white/10 rounded-2xl px-6 text-white focus:border-vendeur-emerald outline-none transition-all font-bold"
               value={formData.supportWhatsApp}
               onChange={e => setFormData({...formData, supportWhatsApp: e.target.value})}
               placeholder="+2250700000000"
@@ -360,7 +391,7 @@ function SettingsPanel({ settings, onUpdate, isUpdating }: { settings: any, onUp
                 <div className="relative">
                     <input
                         type="number"
-                        className="w-full h-14 bg-black/40 border border-white/10 rounded-2xl pl-6 pr-12 text-white focus:border-amber-500 outline-none font-bold"
+                        className="w-full h-14 bg-black/40 border border-white/10 rounded-2xl pl-6 pr-12 text-white focus:border-vendeur-emerald outline-none font-bold"
                         value={formData["pricing.ramContributionFee"]}
                         onChange={e => setFormData({...formData, "pricing.ramContributionFee": Number(e.target.value)})}
                     />
@@ -372,7 +403,7 @@ function SettingsPanel({ settings, onUpdate, isUpdating }: { settings: any, onUp
                 <div className="relative">
                     <input
                         type="number"
-                        className="w-full h-14 bg-black/40 border border-white/10 rounded-2xl pl-6 pr-12 text-white focus:border-amber-500 outline-none font-bold"
+                        className="w-full h-14 bg-black/40 border border-white/10 rounded-2xl pl-6 pr-12 text-white focus:border-vendeur-emerald outline-none font-bold"
                         value={formData["pricing.packProFee"]}
                         onChange={e => setFormData({...formData, "pricing.packProFee": Number(e.target.value)})}
                     />
@@ -391,7 +422,7 @@ function SettingsPanel({ settings, onUpdate, isUpdating }: { settings: any, onUp
             <div className="space-y-2">
                 <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Default Phone Number ID</label>
                 <input
-                    className="w-full h-14 bg-black/40 border border-white/10 rounded-2xl px-6 text-white focus:border-amber-500 outline-none transition-all font-mono text-[10px]"
+                    className="w-full h-14 bg-black/40 border border-white/10 rounded-2xl px-6 text-white focus:border-vendeur-emerald outline-none transition-all font-mono text-[10px]"
                     value={formData["metaConfig.whatsappDefaults.phoneNumberId"]}
                     onChange={e => setFormData({...formData, "metaConfig.whatsappDefaults.phoneNumberId": e.target.value})}
                     placeholder="Ex: 106345..."
@@ -401,7 +432,7 @@ function SettingsPanel({ settings, onUpdate, isUpdating }: { settings: any, onUp
             <div className="space-y-2">
                 <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Default System Access Token</label>
                 <textarea
-                    className="w-full min-h-[100px] bg-black/40 border border-white/10 rounded-2xl p-6 text-white focus:border-amber-500 outline-none transition-all font-mono text-[10px] resize-none"
+                    className="w-full min-h-[100px] bg-black/40 border border-white/10 rounded-2xl p-6 text-white focus:border-vendeur-emerald outline-none transition-all font-mono text-[10px] resize-none"
                     value={formData["metaConfig.whatsappDefaults.accessToken"]}
                     onChange={e => setFormData({...formData, "metaConfig.whatsappDefaults.accessToken": e.target.value})}
                     placeholder="EAAG..."
@@ -413,7 +444,7 @@ function SettingsPanel({ settings, onUpdate, isUpdating }: { settings: any, onUp
           <button
             onClick={() => onUpdate(formData)}
             disabled={isUpdating}
-            className="w-full h-16 bg-amber-500 text-vendeur-coal font-black uppercase tracking-widest rounded-[2rem] flex items-center justify-center gap-3 hover:scale-[1.02] active:scale-95 transition-all mt-4 disabled:opacity-50 shadow-xl shadow-amber-500/20"
+            className="w-full h-16 bg-vendeur-emerald text-vendeur-coal font-black uppercase tracking-widest rounded-[2rem] flex items-center justify-center gap-3 hover:scale-[1.02] active:scale-95 transition-all mt-4 disabled:opacity-50 shadow-xl shadow-vendeur-emerald/20"
           >
             {isUpdating ? <RefreshCw className="animate-spin" size={20} /> : <Save size={20} />}
             Enregistrer les Modifications
@@ -421,9 +452,9 @@ function SettingsPanel({ settings, onUpdate, isUpdating }: { settings: any, onUp
         </div>
       </section>
 
-      <div className="bg-amber-500/5 border border-amber-500/20 p-6 rounded-[2rem] flex items-center gap-4">
-        <Bot className="text-amber-500 shrink-0" size={24} />
-        <p className="text-[10px] text-amber-500/60 font-bold leading-relaxed uppercase tracking-wider">
+      <div className="bg-vendeur-emerald/5 border border-vendeur-emerald/20 p-6 rounded-[2rem] flex items-center gap-4">
+        <Bot className="text-vendeur-emerald shrink-0" size={24} />
+        <p className="text-[10px] text-vendeur-emerald/60 font-bold leading-relaxed uppercase tracking-wider">
             Attention : Toute modification ici impacte immédiatement l'ensemble des commerçants et la rentabilité de la plateforme.
         </p>
       </div>
@@ -435,12 +466,13 @@ function QueueStat({ label, value, icon, color }: any) {
   const colors: any = {
     emerald: "text-emerald-400 bg-emerald-500/10 border-emerald-500/20",
     sky: "text-sky-400 bg-sky-500/10 border-sky-500/20",
-    amber: "text-amber-500 bg-amber-500/10 border-amber-500/20",
+    amber: "text-vendeur-emerald bg-vendeur-emerald/10 border-vendeur-emerald/20",
     rose: "text-rose-500 bg-rose-500/10 border-rose-500/20",
     purple: "text-purple-400 bg-purple-500/10 border-purple-500/20",
+    vendeur: "text-vendeur-emerald bg-vendeur-emerald/10 border-vendeur-emerald/20",
   };
   return (
-    <div className={cn("p-4 rounded-2xl border text-center space-y-1", colors[color])}>
+    <div className={cn("p-4 rounded-2xl border text-center space-y-1", color === 'emerald' ? colors.vendeur : colors[color])}>
        <div className="flex justify-center opacity-40">{icon}</div>
        <p className="text-xl font-black leading-none">{value || 0}</p>
        <p className="text-[8px] font-black uppercase tracking-tighter opacity-60">{label}</p>
@@ -450,11 +482,11 @@ function QueueStat({ label, value, icon, color }: any) {
 
 function StatCard({ label, value, icon }: { label: string; value: number | string; icon: React.ReactNode }) {
   return (
-    <div className="bg-vendeur-coal border border-white/10 p-8 rounded-[2.5rem] space-y-4 group hover:border-white/20 transition-all">
-      <div className="h-14 w-14 bg-white/5 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">{icon}</div>
+    <div className="bg-vendeur-coal border border-white/10 p-5 md:p-8 rounded-[2rem] md:rounded-[2.5rem] space-y-3 md:space-y-4 group hover:border-white/20 transition-all">
+      <div className="h-10 w-10 md:h-14 md:w-14 bg-white/5 rounded-xl md:rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform shrink-0">{icon}</div>
       <div>
-        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40">{label}</p>
-        <p className="text-4xl font-black mt-1">{value}</p>
+        <p className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] text-white/40">{label}</p>
+        <p className="text-2xl md:text-4xl font-black mt-1 break-words">{value}</p>
       </div>
     </div>
   );

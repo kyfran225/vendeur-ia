@@ -9,7 +9,7 @@ router.get("/active", authenticate, async (req, res) => {
   try {
     const ownerId = (req as any).user.id;
     const merchant = await CommerceMerchantModel.findOne({ ownerId });
-    if (!merchant) return res.status(404).json({ error: "Marchand non trouvé" });
+    if (!merchant) return res.json(null);
 
     const campaign = await MarketingCampaignModel.findOne({
       merchantId: merchant._id,
@@ -26,7 +26,7 @@ router.get("/segments", authenticate, async (req, res) => {
   try {
     const ownerId = (req as any).user.id;
     const merchant = await CommerceMerchantModel.findOne({ ownerId });
-    if (!merchant) return res.status(404).json({ error: "Marchand non trouvé" });
+    if (!merchant) return res.json({ vip: 0, active: 0, all: 0 });
 
     const segments = await marketingService.getSegments(merchant._id.toString());
     res.json(segments);
@@ -39,7 +39,7 @@ router.get("/campaigns", authenticate, async (req, res) => {
   try {
     const ownerId = (req as any).user.id;
     const merchant = await CommerceMerchantModel.findOne({ ownerId });
-    if (!merchant) return res.status(404).json({ error: "Marchand non trouvé" });
+    if (!merchant) return res.json([]);
 
     const campaigns = await marketingService.getCampaigns(merchant._id.toString());
     res.json(campaigns);

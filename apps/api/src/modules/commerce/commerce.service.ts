@@ -7,11 +7,16 @@ import {
   CommerceCustomerModel,
   CommerceOrderModel
 } from "./commerce.model.js";
+import { UserModel } from "../auth/user.model.js";
 import { aiAgentService } from "../../services/ai-agent.service.js";
 import { aiGrowthService } from "../../services/ai-growth.service.js";
 import { aiProvider } from "../../services/ai-provider.js";
+import { messagingService } from "../../services/messaging.service.js";
 import { env } from "../../config/env.js";
+import { GEMINI_DEFAULT_VISION_MODEL, resolveGeminiModel } from "../../config/gemini.js";
 import axios from "axios";
+
+import { SystemSettingsModel } from "./admin.model.js";
 
 export class CommerceService {
   async getDashboard(ownerId: string) {
@@ -84,22 +89,35 @@ export class CommerceService {
   }
 
   async createMerchant(ownerId: string, data: any) {
+    // Check if merchant already exists to make it idempotent
+    const existing = await CommerceMerchantModel.findOne({ ownerId });
+    if (existing) return existing;
+
     const merchant = await CommerceMerchantModel.create({
       ownerId,
       ...data
     });
 
-    // Initialize Knowledge Base
-    await CommerceKnowledgeModel.create({
-      merchantId: merchant._id,
-      businessRules: {
-        deliveryZones: [data.city || "Abidjan"],
-        openingHours: "09:00 - 18:00",
-        returnPolicy: "Retours acceptés sous 48h.",
-        paymentMethods: ["Mobile Money", "Cash"]
-      },
-      customInstructions: `Vends avec passion les produits de ${data.businessName}.`
-    });
+    // Initialize Knowledge Base if not exists
+    const existingKnowledge = await CommerceKnowledgeModel.findOne({ merchantId: merchant._id });
+    if (!existingKnowledge) {
+      await CommerceKnowledgeModel.create({
+        merchantId: merchant._id,
+        businessRules: {
+          deliveryZones: data.city ? [data.city] : [],
+          openingHours: "09:00 - 18:00",
+          returnPolicy: "Retours acceptés sous 48h.",
+          paymentMethods: [
+            { provider: "Wave", number: data.whatsappNumber || "", label: "Wave" },
+            { provider: "Orange Money", number: data.whatsappNumber || "", label: "Orange Money" }
+          ]
+        },
+        customInstructions: `Vends avec passion les produits de ${data.businessName}.`
+      });
+    }
+
+    // Update user onboarding status
+    await UserModel.findByIdAndUpdate(ownerId, { onboardingCompleted: true });
 
     return merchant;
   }
@@ -117,13 +135,17 @@ export class CommerceService {
   async getKnowledge(merchantId: string) {
     let knowledge = await CommerceKnowledgeModel.findOne({ merchantId });
     if (!knowledge) {
+      const merchant = await CommerceMerchantModel.findById(merchantId);
       knowledge = await CommerceKnowledgeModel.create({
         merchantId,
         businessRules: {
-          deliveryZones: ["Abidjan"],
+          deliveryZones: merchant?.city ? [merchant.city] : [],
           openingHours: "09:00 - 18:00",
           returnPolicy: "Retours acceptés sous 48h.",
-          paymentMethods: ["Mobile Money", "Cash"]
+          paymentMethods: [
+            { provider: "Mobile Money", number: merchant?.phone || "", label: "Mobile Money" },
+            { provider: "Cash", number: "", label: "Cash" }
+          ]
         }
       });
     }
@@ -177,7 +199,7 @@ export class CommerceService {
 Réponds UNIQUEMENT avec le JSON. Si ce n'est pas une preuve de paiement, mets isPaymentProof à false.`;
 
     try {
-      const response = await axios.post(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${env.GEMINI_API_KEY}`, {
+      const response = await axios.post(`https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_DEFAULT_VISION_MODEL}:generateContent?key=${env.GEMINI_API_KEY}`, {
         contents: [{
           parts: [
             { text: prompt },
@@ -203,10 +225,9 @@ Réponds UNIQUEMENT avec le JSON. Si ce n'est pas une preuve de paiement, mets i
   }
 
   async analyzeProductImage(imageBuffer: Buffer, mimeType: string) {
-    // 1. Primary: Gemini Vision
-    if (env.GEMINI_API_KEY) {
-      try {
-        const prompt = `Analyse cette image de produit et extrait les informations suivantes au format JSON :
+    // 1. Primary: Dynamic Vision Provider
+    try {
+      const prompt = `Analyse cette image de produit et extrait les informations suivantes au format JSON :
 {
   "name": "Nom accrocheur du produit",
   "price": number (prix estimé ou 0 si inconnu, en FCFA),
@@ -216,37 +237,56 @@ Réponds UNIQUEMENT avec le JSON. Si ce n'est pas une preuve de paiement, mets i
 }
 Réponds UNIQUEMENT avec le JSON. Sois précis sur les détails techniques (matières, variantes).`;
 
-        const response = await axios.post(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${env.GEMINI_API_KEY}`, {
+      const settings = await SystemSettingsModel.findOne();
+      const provider = settings?.aiConfig?.defaultVisionProvider || 'gemini';
+
+      if (provider === 'gemini') {
+        const apiKey = settings?.aiConfig?.providers?.find(p => p.name === 'gemini')?.apiKey || env.GEMINI_API_KEY;
+        if (!apiKey) throw new Error("Clé Gemini manquante");
+
+        const geminiProvider = settings?.aiConfig?.providers?.find(p => p.name === 'gemini');
+        const model = resolveGeminiModel(geminiProvider?.models?.vision, GEMINI_DEFAULT_VISION_MODEL);
+
+        const response = await axios.post(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
           contents: [{
-            parts: [
-              { text: prompt },
-              {
-                inlineData: {
-                  mimeType,
-                  data: imageBuffer.toString("base64")
-                }
-              }
-            ]
+            parts: [{ text: prompt }, { inlineData: { mimeType, data: imageBuffer.toString("base64") } }]
           }]
         });
 
         const text = response.data.candidates[0].content.parts[0].text;
         const jsonMatch = text.match(/\{[\s\S]*\}/);
         if (jsonMatch) return JSON.parse(jsonMatch[0]);
-      } catch (error: any) {
-        console.warn("[Product Vision] Gemini failed, falling back to smart defaults:", error.message);
+      } else if (provider === 'openai') {
+        const apiKey = settings?.aiConfig?.providers?.find(p => p.name === 'openai')?.apiKey || env.OPENAI_API_KEY;
+        if (!apiKey) throw new Error("Clé OpenAI manquante");
+
+        const response = await axios.post("https://api.openai.com/v1/chat/completions", {
+          model: "gpt-4o-mini",
+          messages: [
+            {
+              role: "user",
+              content: [
+                { type: "text", text: prompt },
+                { type: "image_url", image_url: { url: `data:${mimeType};base64,${imageBuffer.toString("base64")}` } }
+              ]
+            }
+          ]
+        }, {
+          headers: { "Authorization": `Bearer ${apiKey}` }
+        });
+
+        const text = response.data.choices[0].message.content;
+        const jsonMatch = text.match(/\{[\s\S]*\}/);
+        if (jsonMatch) return JSON.parse(jsonMatch[0]);
       }
+    } catch (error: any) {
+      const status = error.response?.status;
+      const data = error.response?.data;
+      console.warn(`[Product Vision] Analysis failed (${status || 'unknown'}):`, error.message, data ? JSON.stringify(data) : "");
     }
 
-    // 2. Fallback: Smart Default (Vision is exclusive to Gemini for now,
-    // but we return a valid structure so the merchant can edit it)
-    return {
-      name: "Nouveau Produit",
-      price: 0,
-      description: "Analyse d'image temporairement indisponible. Veuillez saisir les détails manuellement.",
-      category: "Divers",
-      tags: ["ia_fallback"]
-    };
+    // 2. Fallback: No silent default if Gemini is configured but fails
+    throw new Error("L'analyse de l'image a échoué. Veuillez vérifier vos clés API IA dans le dashboard Admin.");
   }
 
   async generateProductCaption(productId: string) {
@@ -271,12 +311,14 @@ Format de réponse attendu (JSON uniquement) :
 
 Le ton doit être adapté à une audience d'Afrique de l'Ouest (chaleureux et direct).`;
 
-    const result = await aiProvider.generateText({
+    const response = await aiProvider.generateText({
       systemPrompt: "Tu es un expert en marketing digital et copywriting spécialisé dans la vente sur les réseaux sociaux.",
       userMessage: prompt,
       temperature: 0.8,
       maxTokens: 800
     });
+
+    const result = response.text;
 
     try {
       const jsonMatch = result.match(/\{[\s\S]*\}/);
@@ -311,14 +353,14 @@ Le message doit être :
 
 Réponds UNIQUEMENT avec le texte du message.`;
 
-    const followup = await aiProvider.generateText({
+    const response = await aiProvider.generateText({
       systemPrompt: "Tu es un vendeur expert spécialisé dans la relance client bienveillante.",
       userMessage: prompt,
       temperature: 0.7,
       maxTokens: 150
     });
 
-    return { followup };
+    return { followup: response.text };
   }
 
   async generateDigitalReceipt(orderId: string) {
@@ -331,21 +373,24 @@ Réponds UNIQUEMENT avec le texte du message.`;
     const date = new Date(order.createdAt).toLocaleDateString("fr-FR");
     const time = new Date(order.createdAt).toLocaleTimeString("fr-FR", { hour: '2-digit', minute: '2-digit' });
 
-    let itemsStr = order.items.map(item => `${item.quantity}x ${item.name} - ${(item.price || 0) * item.quantity} ${order.currency}`).join("\n");
+    let itemsStr = order.items.map(item => `🔹 ${item.quantity}x ${item.name} - ${(item.price || 0) * item.quantity} ${order.currency}`).join("\n");
 
     const receipt = `
-🧾 *REÇU DE COMMANDE - ${merchant.businessName}*
----------------------------------------
-Date: ${date} à ${time}
-Client: ${customer.phone}
----------------------------------------
-DÉTAILS :
+✨ *REÇU DE COMMANDE - ${merchant.businessName}* ✨
+━━━━━━━━━━━━━━━━━━━━━
+📅 *Date:* ${date} à ${time}
+👤 *Client:* ${customer.phone}
+🆔 *Commande:* #${order._id.toString().slice(-6).toUpperCase()}
+━━━━━━━━━━━━━━━━━━━━━
+📦 *DÉTAILS :*
 ${itemsStr}
----------------------------------------
-*TOTAL : ${order.totalAmount} ${order.currency}*
----------------------------------------
-Merci de votre confiance ! ✨
-Points Fidélité gagnés: +${Math.floor(order.totalAmount / 1000)}
+━━━━━━━━━━━━━━━━━━━━━
+💰 *TOTAL : ${order.totalAmount.toLocaleString()} ${order.currency}*
+━━━━━━━━━━━━━━━━━━━━━
+✅ *Statut:* Payé
+
+Merci de votre confiance ! 🚀
+💎 *Points Fidélité gagnés:* +${Math.floor(order.totalAmount / 1000)}
     `.trim();
 
     return receipt;
@@ -383,7 +428,60 @@ Points Fidélité gagnés: +${Math.floor(order.totalAmount / 1000)}
       console.error("[Learning Error] Failed to extract knowledge:", err)
     );
 
+    // Send Receipt Automatically if linked to a merchant that has WhatsApp connection
+    this.sendReceiptAsync(order._id.toString()).catch(err =>
+      console.error("[Receipt Error] Failed to send receipt:", err)
+    );
+
     return order;
+  }
+
+  private async sendReceiptAsync(orderId: string) {
+    const order = await CommerceOrderModel.findById(orderId).populate("merchantId customerId");
+    if (!order) return;
+
+    const receipt = await this.generateDigitalReceipt(orderId);
+    const merchant = order.merchantId as any;
+    const customer = order.customerId as any;
+
+    if (merchant.whatsappConfig?.status === 'connected') {
+      await messagingService.sendMessage(merchant, "whatsapp", customer.phone, receipt);
+      console.log(`[Receipt] Automatically sent to ${customer.phone} for order ${orderId}`);
+    }
+  }
+
+  async linkPaymentToOrder(customerId: string, paymentInfo: any) {
+    // 1. Find the latest pending order for this customer
+    const order = await CommerceOrderModel.findOne({
+      customerId,
+      status: "pending"
+    }).sort({ createdAt: -1 });
+
+    if (!order) {
+      console.log(`[Payment Link] No pending order found for customer ${customerId}`);
+      return null;
+    }
+
+    // 2. Cross-verify amount (with a small margin for currency conversion or fees if applicable)
+    const orderAmount = order.totalAmount;
+    const detectedAmount = paymentInfo.amount;
+
+    if (Math.abs(orderAmount - detectedAmount) <= 100) { // Tolerate 100 XOF difference
+      console.log(`[Payment Link] Amount match! Marking order ${order._id} as paid.`);
+
+      // 3. Mark as paid
+      await this.confirmOrderPayment(order._id.toString());
+
+      // Update order with payment details
+      order.paymentMethod = paymentInfo.platform;
+      order.status = "paid";
+      await order.save();
+
+      return { orderId: order._id, matched: true, amount: detectedAmount };
+    } else {
+      console.warn(`[Payment Link] Amount mismatch: Order=${orderAmount}, Detected=${detectedAmount}`);
+      return { orderId: order._id, matched: false, expected: orderAmount, actual: detectedAmount };
+    }
   }
 
   async extractMerchantKnowledge(orderId: string) {
@@ -414,14 +512,14 @@ Format JSON :
 }
 Réponds UNIQUEMENT avec le JSON.`;
 
-    const result = await aiProvider.generateText({
+    const response = await aiProvider.generateText({
       systemPrompt: "Tu es un consultant en stratégie commerciale expert en social commerce.",
       userMessage: prompt,
       temperature: 0.5
     });
 
     try {
-      const jsonMatch = result.match(/\{[\s\S]*\}/);
+      const jsonMatch = response.text.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
         const insightData = JSON.parse(jsonMatch[0]);
         await CommerceKnowledgeModel.findOneAndUpdate(
@@ -498,14 +596,14 @@ ${historyText}
 
 Résumé actuel :`;
 
-    const summary = await aiProvider.generateText({
+    const response = await aiProvider.generateText({
       systemPrompt: "Tu es un assistant de gestion de relation client ultra-précis.",
       userMessage: prompt,
       temperature: 0.3
     });
 
     await CommerceConversationModel.findByIdAndUpdate(conversationId, {
-      $set: { aiSummary: summary }
+      $set: { aiSummary: response.text }
     });
     console.log(`[Summary] Conversation ${conversationId} updated.`);
   }

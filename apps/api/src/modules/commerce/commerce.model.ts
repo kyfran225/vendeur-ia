@@ -7,7 +7,7 @@ const MerchantSchema = new Schema({
   category: { type: String, required: true },
   description: { type: String, default: "" },
   country: { type: String, default: "CI" },
-  city: { type: String, default: "Abidjan" },
+  city: { type: String, default: "" },
   address: { type: String, default: "" },
   phone: { type: String, default: "" },
   whatsappNumber: { type: String, default: "" },
@@ -27,7 +27,8 @@ const MerchantSchema = new Schema({
     personality: { type: String, default: "friendly" },
     responseStyle: { type: String, default: "normal" },
     autoReply: { type: Boolean, default: true },
-    voiceMode: { type: Boolean, default: false }
+    voiceMode: { type: Boolean, default: false },
+    localSlang: { type: Boolean, default: false }
   },
   whatsappConfig: {
     provider: { type: String, enum: ['baileys', 'meta'], default: 'baileys' },
@@ -130,6 +131,7 @@ const MessageSchema = new Schema({
   content: { type: String, required: true },
   mediaUrl: String,
   aiMetadata: {
+    provider: { type: String, default: 'unknown' },
     tokensUsed: { type: Number, default: 0 },
     cost: { type: Number, default: 0 }
   },

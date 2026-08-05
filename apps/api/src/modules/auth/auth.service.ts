@@ -98,6 +98,11 @@ export class AuthService {
 
     if (!payload || !payload.email) throw new Error("Invalid Google token payload");
 
+    // Check if email is verified (only if using ID Token which usually includes this)
+    if ((payload as any).email_verified === false) {
+      throw new Error("Google email not verified");
+    }
+
     let user = await UserModel.findOne({ email: payload.email });
     if (!user) {
       user = await UserModel.create({
@@ -106,11 +111,24 @@ export class AuthService {
         displayName: payload.name || "Utilisateur Google",
         avatarUrl: payload.picture,
         onboardingCompleted: false,
+        emailVerifiedAt: new Date(), // Google emails are considered verified
       });
-    } else if (!user.googleId) {
-      user.googleId = payload.sub;
-      user.avatarUrl = payload.picture;
-      await user.save();
+    } else {
+      // Sync Google info if not already present
+      let changed = false;
+      if (!user.googleId) {
+        user.googleId = payload.sub;
+        changed = true;
+      }
+      if (!user.avatarUrl && payload.picture) {
+        user.avatarUrl = payload.picture;
+        changed = true;
+      }
+      if (!user.emailVerifiedAt) {
+        user.emailVerifiedAt = new Date();
+        changed = true;
+      }
+      if (changed) await user.save();
     }
 
     return this.generateTokens(user);
@@ -199,6 +217,24 @@ export class AuthService {
     user.emailVerificationTokenHash = undefined;
     user.emailVerificationExpiresAt = undefined;
     await user.save();
+  }
+
+  async updateProfile(userId: string, data: { displayName?: string; avatarUrl?: string }) {
+    const user = await UserModel.findByIdAndUpdate(
+      userId,
+      { $set: data },
+      { new: true }
+    );
+    if (!user) throw new Error("User not found");
+
+    return {
+      id: user._id.toString(),
+      email: user.email,
+      displayName: user.displayName,
+      avatarUrl: user.avatarUrl,
+      roles: user.roles,
+      onboardingCompleted: !!user.onboardingCompleted
+    };
   }
 }
 

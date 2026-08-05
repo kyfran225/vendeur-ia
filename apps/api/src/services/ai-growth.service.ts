@@ -1,5 +1,6 @@
 import { CommerceProductModel, CommerceConversationModel, CommerceMessageModel, CommerceMerchantModel } from "../modules/commerce/commerce.model.js";
 import { aiProvider } from "./ai-provider.js";
+import { parseJsonFromAI } from "../utils/parse-ai-json.js";
 
 export class AIGrowthService {
   async generateGrowthAdvice(merchantId: string) {
@@ -35,13 +36,15 @@ export class AIGrowthService {
       const prompt = `
         En tant qu'expert en stratégie de vente e-commerce omnicanal, analyse ces données et donne 3 conseils ultra-courts (max 15 mots chacun).
         Si Instagram ou TikTok n'est pas lié, suggère-le fortement comme levier de croissance.
-        Utilise des emojis.
+
+        IMPORTANT : Ne mets PAS d'emoji au début ou à la fin du texte.
+        Chaque conseil doit avoir une action associée parmi : "/products", "/settings?tab=connexions", "/settings?tab=boutique", "/inbox", "/marketing", "/orders".
+
         Réponds au format JSON uniquement :
         {
           "tips": [
-            "✨ Conseil 1",
-            "🚀 Conseil 2",
-            "💡 Conseil 3"
+            { "text": "Conseil sans emoji", "action": "/path" },
+            ...
           ]
         }
       `;
@@ -50,21 +53,25 @@ export class AIGrowthService {
       const response = await aiProvider.generateText({
         systemPrompt: "Tu es un coach en croissance pour vendeurs WhatsApp.",
         userMessage: `${context}\n\n${prompt}`,
-        maxTokens: 200,
-        temperature: 0.7
+        maxTokens: 512,
+        temperature: 0.7,
+        jsonMode: true,
+        thinkingLevel: "low",
       });
 
-      const jsonMatch = response.match(/\{[\s\S]*\}/);
-      if (!jsonMatch) throw new Error("Failed to parse AI advice");
+      const parsed = parseJsonFromAI<{ tips: { text: string; action: string }[] }>(response.text);
+      if (!Array.isArray(parsed.tips) || parsed.tips.length === 0) {
+        throw new Error("Invalid AI advice format");
+      }
 
-      return JSON.parse(jsonMatch[0]);
+      return parsed;
     } catch (error) {
       console.error("[AI Growth Service] Error:", error);
       return {
         tips: [
-          "✨ Ajoutez plus de photos à vos produits pour attirer l'attention.",
-          "🚀 Partagez votre lien WhatsApp sur vos réseaux sociaux.",
-          "💡 Répondez rapidement aux clients pour maximiser les conversions."
+          { text: "Ajoutez vos premiers produits pour créer votre catalogue.", action: "/products" },
+          { text: "Reliez Instagram pour générer du trafic et vos premières ventes.", action: "/settings?tab=connexions" },
+          { text: "Configurez vos moyens de paiement pour encaisser vos gains.", action: "/settings?tab=boutique" }
         ]
       };
     }

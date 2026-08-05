@@ -1,19 +1,21 @@
 import React, { useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
-import { LayoutDashboard, Package, MessageCircle, Brain, Settings, Megaphone, ShoppingCart, MoreHorizontal, X } from "lucide-react";
+import { LayoutDashboard, Package, MessageCircle, Brain, Settings, Megaphone, ShoppingCart, MoreHorizontal, X, Shield } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuthStore } from "@/stores/authStore";
 
 export function Sidebar() {
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
+  const { user } = useAuthStore();
 
   const links = [
     { to: "/dashboard", icon: LayoutDashboard, label: "Stats" },
-    { to: "/products", icon: Package, label: "Stock" },
+    ...(user?.roles.includes("admin") ? [{ to: "/admin", icon: Shield, label: "Admin" }] : []),
+    { to: "/products", icon: Package, label: "Catalogue" },
     { to: "/orders", icon: ShoppingCart, label: "Commandes" },
     { to: "/inbox", icon: MessageCircle, label: "Messages" },
     { to: "/marketing", icon: Megaphone, label: "Marketing" },
-    { to: "/knowledge", icon: Brain, label: "IA" },
     { to: "/settings", icon: Settings, label: "Réglages" },
   ];
 
@@ -23,9 +25,9 @@ export function Sidebar() {
   return (
     <>
       {/* Desktop Sidebar */}
-      <aside className="hidden md:flex w-24 bg-vendeur-coal border-r border-white/5 flex-col items-center py-8 space-y-12 shrink-0">
-        <div className="h-12 w-12 flex items-center justify-center overflow-hidden">
-          <img src="/apple-touch-icon.png" alt="Logo" className="h-full w-full object-contain" />
+      <aside className="hidden md:flex w-28 bg-vendeur-coal border-r border-white/5 flex-col items-center py-10 space-y-12 shrink-0">
+        <div className="h-16 w-16 flex items-center justify-center overflow-hidden bg-white/5 rounded-2xl p-2 border border-white/10 shadow-2xl">
+          <img src="/apple-touch-icon.png" alt="Logo" className="h-full w-full object-contain filter drop-shadow-lg" />
         </div>
 
         <nav className="flex-1 w-full flex flex-col items-center gap-6">

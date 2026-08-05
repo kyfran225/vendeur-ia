@@ -53,4 +53,24 @@ describe('authStore', () => {
     expect(state.accessToken).toBeNull();
     expect(state.refreshToken).toBeNull();
   });
+
+  it('should update user correctly', () => {
+    const session = {
+      user: {
+        id: '123',
+        email: 'test@example.com',
+        displayName: 'Test User',
+        roles: ['user'],
+      },
+      accessToken: 'access-token',
+      refreshToken: 'refresh-token',
+    };
+
+    useAuthStore.getState().setSession(session);
+    useAuthStore.getState().updateUser({ displayName: 'New Name' });
+
+    const state = useAuthStore.getState();
+    expect(state.user?.displayName).toBe('New Name');
+    expect(state.user?.email).toBe('test@example.com');
+  });
 });

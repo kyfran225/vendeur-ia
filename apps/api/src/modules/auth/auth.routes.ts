@@ -97,4 +97,14 @@ router.post("/resend-verification", authenticate, async (req, res) => {
   }
 });
 
+router.patch("/me", authenticate, async (req, res) => {
+  try {
+    const userId = (req as any).user.id;
+    const user = await authService.updateProfile(userId, req.body);
+    res.json(user);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 export default router;

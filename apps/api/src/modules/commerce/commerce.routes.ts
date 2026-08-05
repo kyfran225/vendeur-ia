@@ -48,7 +48,7 @@ router.get("/conversations", authenticate, async (req, res) => {
   try {
     const ownerId = (req as any).user.id;
     const merchant = await CommerceMerchantModel.findOne({ ownerId });
-    if (!merchant) return res.status(404).json({ error: "Merchant not found" });
+    if (!merchant) return res.json([]);
 
     const conversations = await CommerceConversationModel.find({ merchantId: merchant._id })
       .populate("customerId")
@@ -303,6 +303,9 @@ router.post("/merchant", authenticate, async (req, res) => {
     const merchant = await commerceService.createMerchant(ownerId, req.body);
     res.status(201).json(merchant);
   } catch (error: any) {
+    if (error.code === 11000) {
+      return res.status(409).json({ error: "Merchant already exists" });
+    }
     res.status(500).json({ error: error.message });
   }
 });
@@ -322,7 +325,19 @@ router.get("/knowledge", authenticate, async (req, res) => {
   try {
     const ownerId = (req as any).user.id;
     const merchant = await CommerceMerchantModel.findOne({ ownerId });
-    if (!merchant) return res.status(404).json({ error: "Merchant not found" });
+    if (!merchant) {
+      return res.json({
+        businessRules: {
+          deliveryZones: [],
+          deliveryFees: [],
+          openingHours: "09:00 - 18:00",
+          returnPolicy: "Retours acceptés sous 48h.",
+          paymentMethods: []
+        },
+        faq: [],
+        customInstructions: ""
+      });
+    }
 
     const knowledge = await commerceService.getKnowledge(merchant._id.toString());
     res.json(knowledge);
@@ -348,7 +363,7 @@ router.get("/products", authenticate, async (req, res) => {
   try {
     const ownerId = (req as any).user.id;
     const merchant = await CommerceMerchantModel.findOne({ ownerId });
-    if (!merchant) return res.status(404).json({ error: "Merchant not found" });
+    if (!merchant) return res.json([]);
 
     const products = await CommerceProductModel.find({ merchantId: merchant._id });
     res.json(products);
@@ -395,7 +410,11 @@ router.post("/products/vision", authenticate, aiLimiter, upload.single("image"),
 
     res.json(analysis);
   } catch (error: any) {
-    logger.error(`[Vision Error] ${error.message}`, { userId: (req as any).user.id });
+    logger.error(`[Vision Error] ${error.message}`, {
+      userId: (req as any).user.id,
+      stack: error.stack,
+      details: error.response?.data
+    });
     res.status(500).json({ error: error.message });
   }
 });
@@ -472,7 +491,7 @@ router.get("/orders", authenticate, async (req, res) => {
   try {
     const ownerId = (req as any).user.id;
     const merchant = await CommerceMerchantModel.findOne({ ownerId });
-    if (!merchant) return res.status(404).json({ error: "Merchant not found" });
+    if (!merchant) return res.json([]);
 
     const orders = await CommerceOrderModel.find({ merchantId: merchant._id })
       .populate("customerId")
@@ -593,9 +612,9 @@ router.post("/demo/process", async (req, res) => {
       products: [], // Demo starts with no products, or we could add mock ones
       knowledge: {
         businessRules: {
-          deliveryZones: merchantInstructions ? [merchantInstructions] : ["Abidjan"]
+          deliveryZones: merchantInstructions ? [merchantInstructions] : (city ? [city] : [])
         },
-        customInstructions: "Ceci est une démonstration. Sois ultra-convaincant pour que l'utilisateur veuille activer sa machine."
+        customInstructions: `Ceci est une démonstration pour un commerce de type "${category}". Sois ultra-convaincant. Même si le catalogue est vide, parle avec passion de ton expertise en "${category}" pour que l'utilisateur veuille activer sa machine. Ne dis jamais que tu ne sais pas ce que tu vends.`
       },
       history: history.map((h: any) => ({
         role: h.role === "customer" ? "customer" : "ai",

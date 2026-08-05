@@ -18,12 +18,22 @@ export const PushSubscriptionModel = mongoose.model('PushSubscription', PushSubs
 
 export class PushService {
   constructor() {
-    if (process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
+    this.init();
+  }
+
+  private init() {
+    const publicKey = env.VAPID_PUBLIC_KEY;
+    const privateKey = env.VAPID_PRIVATE_KEY;
+
+    if (publicKey && privateKey) {
       webpush.setVapidDetails(
         'mailto:support@vendeur-ia.com',
-        process.env.VAPID_PUBLIC_KEY,
-        process.env.VAPID_PRIVATE_KEY
+        publicKey,
+        privateKey
       );
+      console.log("[Push Service] VAPID keys configured successfully. ✅");
+    } else {
+      console.warn("[Push Service] VAPID keys missing. Push notifications will not be sent. ⚠️");
     }
   }
 

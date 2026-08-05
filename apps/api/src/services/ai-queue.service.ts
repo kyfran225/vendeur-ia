@@ -143,7 +143,8 @@ export const aiWorker = new Worker(
       }
 
       // Generate AI response
-      const reply = await aiAgentService.generateResponse({ ...context, platform } as any);
+      const aiResponse = await aiAgentService.generateResponse({ ...context, platform } as any);
+      const reply = aiResponse.text;
 
       const merchant = await CommerceMerchantModel.findById(context.merchant._id);
       let voiceMode = merchant?.aiSettings?.voiceMode && platform === 'whatsapp';
@@ -180,8 +181,9 @@ export const aiWorker = new Worker(
         content: reply,
         mediaUrl: audioUrl,
         aiMetadata: {
-          tokensUsed: reply.length / 4, // Rough estimation (4 chars per token)
-          cost: (reply.length / 4) * 0.00002 // Estimated cost in USD
+          provider: aiResponse.provider,
+          tokensUsed: aiResponse.usage.totalTokens,
+          cost: aiResponse.usage.totalTokens * 0.000002 // Estimated cost
         }
       });
 

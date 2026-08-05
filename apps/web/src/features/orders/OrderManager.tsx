@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import { ShoppingCart, Package, Clock, CheckCircle2, XCircle, Truck, DollarSign, User, Calendar, Loader2, Search, Filter, MoreVertical, ExternalLink } from "lucide-react";
+import { ShoppingCart, Package, Clock, CheckCircle2, XCircle, Truck, Banknote, User, Calendar, Loader2, Search, Filter, MoreVertical, ExternalLink } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/apiClient";
 import { useAuthStore } from "@/stores/authStore";
@@ -31,7 +31,7 @@ const statusLabels: Record<string, string> = {
 const statusIcons: Record<string, React.ReactNode> = {
   pending: <Clock size={14} />,
   confirmed: <Package size={14} />,
-  paid: <DollarSign size={14} />,
+  paid: <Banknote size={14} />,
   delivered: <Truck size={14} />,
   cancelled: <XCircle size={14} />,
 };
@@ -94,23 +94,23 @@ export function OrderManager() {
   }, [orders, filter, search]);
 
   return (
-    <div className="p-6 space-y-8 animate-in fade-in duration-700">
-      <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div className="p-4 md:p-10 space-y-10 max-w-[1600px] mx-auto animate-in fade-in duration-700 pb-24 md:pb-12">
+      <header className="flex flex-col xl:flex-row xl:items-center justify-between gap-6">
         <div>
-          <h1 className="text-3xl font-black text-white">{config.ordersLabel}</h1>
-          <p className="text-white/40">Suivez vos ventes et gérez le cycle de vie de vos {config.ordersLabel.toLowerCase()}.</p>
+          <h1 className="text-3xl md:text-5xl font-black tracking-tighter uppercase text-white">{config.ordersLabel}</h1>
+          <p className="text-white/40 md:text-lg">Suivez vos ventes et gérez le cycle de vie de vos {config.ordersLabel.toLowerCase()}.</p>
         </div>
 
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-2.5">
           {["all", "pending", "paid", "delivered", "cancelled"].map((s) => (
             <button
               key={s}
               onClick={() => setFilter(s)}
               className={cn(
-                "px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all",
+                "px-5 py-2.5 rounded-xl text-[10px] md:text-xs font-black uppercase tracking-widest border transition-all shadow-sm",
                 filter === s
-                  ? "bg-white text-black border-white shadow-lg"
-                  : "bg-white/5 text-white/40 border-white/10 hover:border-white/20"
+                  ? "bg-white text-black border-white shadow-xl scale-105"
+                  : "bg-white/5 text-white/40 border-white/10 hover:border-white/20 hover:bg-white/10"
               )}
             >
               {s === "all" ? "Tous" : statusLabels[s]}
@@ -190,7 +190,7 @@ export function OrderManager() {
                         className="h-10 w-10 rounded-xl bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 flex items-center justify-center hover:bg-emerald-500 hover:text-black transition-all"
                         title="Confirmer le paiement"
                       >
-                        <DollarSign size={18} />
+                        <Banknote size={18} />
                       </button>
                     )}
                     {order.status !== "delivered" && order.status !== "cancelled" && (

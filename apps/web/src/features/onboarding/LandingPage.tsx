@@ -145,6 +145,7 @@ function LandingHero({
     category: "fashion",
     description: "",
     country: "CI",
+    city: "Abidjan",
     address: "",
     whatsappNumber: ""
   });
@@ -152,7 +153,7 @@ function LandingHero({
     COUNTRIES.find(c => c.code === (tempData?.country || "CI")) || COUNTRIES[0]
   );
   const [localPhone, setLocalPhone] = useState(tempData?.whatsappNumber?.replace(selectedCountry.dialCode, "") || "");
-  const { accessToken } = useAuthStore();
+  const { user, accessToken } = useAuthStore();
 
   const recorderRef = useRef<AudioRecorder | null>(null);
   const [isRecording, setIsRecording] = useState(false);
@@ -183,7 +184,7 @@ function LandingHero({
   const handleCreateVendeur = async () => {
     if (form.businessName && form.address && form.whatsappNumber) {
       // 1. Save to local store
-      setTempData({ ...form, city: "Abidjan" });
+      setTempData({ ...form, city: form.city || "Abidjan" });
       setSimulatorActive(true);
 
       // 2. Persist to Backend if authenticated
@@ -195,7 +196,7 @@ function LandingHero({
             description: form.description,
             address: form.address,
             whatsappNumber: form.whatsappNumber,
-            city: "Abidjan",
+            city: form.city || "Abidjan",
             country: form.country
           });
           toast.success("Boutique configurée avec succès !");
@@ -207,20 +208,13 @@ function LandingHero({
 
       onFormUpdate(form.businessName);
       setStep("simulator");
-      // ... rest of the flow
-
-      setHistory([{
-        role: "ai",
-        text: `Bonjour ! ✨ Bienvenue chez ${form.businessName}. Nous préparons votre assistant personnalisé...`,
-        time: getTime()
-      }]);
 
       setIsReplying(true);
 
       try {
         const response = await axios.post(`${API_URL}/api/commerce/demo/process`, {
           businessName: form.businessName,
-          city: "Abidjan",
+          city: form.city || "Abidjan",
           category: form.category,
           description: form.description,
           message: "SYSTEM_INITIAL_GREETING",
@@ -249,7 +243,12 @@ function LandingHero({
 
   const handleActivate = () => {
     setSimulatorActive(true); // Ensure it's active for onboarding store
-    onAuth();
+    if (user) {
+      // If already logged in, go straight to onboarding
+      window.location.href = "/onboarding";
+    } else {
+      onAuth();
+    }
   };
 
   const handleMicClick = async () => {
@@ -305,7 +304,7 @@ function LandingHero({
     try {
       const response = await axios.post(`${API_URL}/api/commerce/demo/process`, {
         businessName: form.businessName,
-        city: "Abidjan",
+        city: form.city || "Abidjan",
         category: form.category,
         description: form.description,
         message: currentInput,
@@ -414,6 +413,10 @@ function LandingHero({
                 <AddressAutocomplete
                   value={form.address}
                   onChange={(value) => setForm({ ...form, address: value })}
+                  onSelectSuggestion={(suggestion) => {
+                    const city = suggestion.context?.place?.name || suggestion.context?.region?.name || "Abidjan";
+                    setForm(prev => ({ ...prev, city }));
+                  }}
                 />
               </label>
 
@@ -439,8 +442,17 @@ function LandingHero({
                 disabled={!form.businessName || !form.address}
                 className="mt-4 flex h-14 items-center justify-center gap-3 rounded-2xl bg-emerald-300 px-6 text-sm font-black uppercase tracking-widest text-[#06130d] shadow-xl shadow-emerald-500/10 transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-30"
               >
-                Créer mon vendeurIa <ChevronRight size={18} />
+                {user ? "Lancer ma configuration" : "Créer mon vendeurIa"} <ChevronRight size={18} />
               </button>
+
+              {user && (
+                <button
+                  onClick={() => window.location.href = "/dashboard"}
+                  className="mt-2 flex h-14 items-center justify-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-6 text-sm font-black uppercase tracking-widest text-white transition-all hover:bg-white/10"
+                >
+                  <LayoutDashboard size={18} /> Mon Tableau de bord
+                </button>
+              )}
             </div>
           </div>
         ) : (
@@ -570,29 +582,33 @@ export function LandingPage() {
   const { user, logout } = useAuthStore();
 
   return (
-    <div className="min-h-screen bg-[#07100d] selection:bg-emerald-300/30 overflow-x-hidden text-left pt-12 md:pt-14 w-full">
-      <header className="fixed top-0 left-0 right-0 z-50 border-b border-white/5 bg-[#07100d]/80 backdrop-blur-md w-full h-12 md:h-14">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 h-full gap-4">
-          <div className="flex items-center gap-3 md:gap-4 flex-1 min-w-0">
-            <div className="flex h-8 w-8 md:h-9 md:w-9 shrink-0 items-center justify-center overflow-hidden">
+    <div className="min-h-screen bg-[#07100d] selection:bg-emerald-300/30 overflow-x-hidden text-left pt-14 md:pt-20 w-full">
+      <header className="fixed top-0 left-0 right-0 z-50 border-b border-white/5 bg-[#07100d]/80 backdrop-blur-md w-full h-14 md:h-20">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 h-full gap-4">
+          <div className="flex items-center gap-3 md:gap-5 flex-1 min-w-0">
+            <div className="flex h-9 w-9 md:h-12 md:w-12 shrink-0 items-center justify-center overflow-hidden bg-white/5 rounded-xl md:rounded-2xl p-1.5 border border-white/10 shadow-xl">
               <img src="/apple-touch-icon.png" alt="Logo" className="h-full w-full object-contain" />
             </div>
             <div className="min-w-0">
-              <p className="truncate text-sm md:text-base font-black text-white uppercase">{dynamicTitle}</p>
-              <p className="truncate text-[8px] md:text-[9px] uppercase tracking-[0.2em] text-emerald-300/60 font-black">AI Sales Machine</p>
+              <p className="truncate text-base md:text-xl font-black text-white uppercase leading-tight tracking-tight">{dynamicTitle}</p>
+              <p className="truncate text-[8px] md:text-[10px] uppercase tracking-[0.2em] text-emerald-300/60 font-black">AI Sales Machine</p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 md:gap-4 shrink-0">
+          <div className="flex items-center gap-3 md:gap-6 shrink-0">
             {user ? (
-              <div className="flex items-center gap-3">
-                <span className="hidden md:inline text-xs font-bold text-white/60">Salut, {user.displayName}</span>
-                <div className="h-9 w-9 md:h-10 md:w-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-white/60">
-                   <User size={18} />
+              <div className="flex items-center gap-3 md:gap-5">
+                <span className="hidden lg:inline text-xs font-black uppercase tracking-widest text-white/40">Salut, <span className="text-white">{user.displayName}</span></span>
+                <div className="h-9 w-9 md:h-12 md:w-12 rounded-xl md:rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-white/60 overflow-hidden shadow-lg">
+                   {user.avatarUrl ? (
+                     <img src={user.avatarUrl} className="h-full w-full object-cover" />
+                   ) : (
+                     <User size={20} />
+                   )}
                 </div>
                 <button
                   onClick={logout}
-                  className="h-9 px-3 md:px-4 rounded-xl border border-white/10 text-white/40 text-[10px] font-black uppercase hover:text-red-400 transition-colors hidden md:block"
+                  className="h-9 md:h-12 px-4 md:px-6 rounded-xl md:rounded-2xl border border-white/10 text-white/40 text-[10px] font-black uppercase hover:text-red-400 hover:border-red-400/20 hover:bg-red-400/5 transition-all hidden md:block tracking-widest"
                 >
                   Déconnexion
                 </button>
@@ -600,13 +616,12 @@ export function LandingPage() {
             ) : (
               <button
                 onClick={() => setIsAuthOpen(true)}
-                className="group relative flex h-10 items-center justify-center rounded-xl bg-white px-4 md:px-6 text-[10px] font-black uppercase tracking-[0.15em] text-black transition-all hover:bg-emerald-300 shadow-xl shadow-white/5"
+                className="h-9 w-9 md:h-12 md:w-12 rounded-xl md:rounded-2xl bg-white/5 border border-emerald-300/20 md:border-white/10 flex items-center justify-center text-emerald-300 md:text-white/60 hover:bg-white/10 hover:border-emerald-300/30 hover:text-emerald-300 transition-all shadow-lg group relative overflow-hidden"
               >
-                <span className="hidden md:inline">Connexion</span>
-                <LogIn className="md:hidden" size={18} />
+                <User size={20} className="group-hover:scale-110 transition-transform" />
 
-                {/* Subtle Glow Effect */}
-                <div className="absolute inset-0 rounded-xl bg-emerald-400/20 blur-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+                {/* Subtle Glow Effect - Visible by default on mobile, hover only on desktop */}
+                <div className="absolute inset-0 bg-emerald-300/5 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
               </button>
             )}
           </div>

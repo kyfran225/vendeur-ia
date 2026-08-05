@@ -51,14 +51,14 @@ Le message doit être :
 
 Réponds UNIQUEMENT avec le texte du message.`;
 
-    const preview = await aiProvider.generateText({
+    const response = await aiProvider.generateText({
       systemPrompt: "Tu es un expert en marketing WhatsApp spécialisé dans la vente directe.",
       userMessage: prompt,
       temperature: 0.8,
       maxTokens: 200
     });
 
-    return { preview };
+    return { preview: response.text };
   }
 
   async launchBroadcast(merchantId: string, productId: string, segment: string, customText?: string) {

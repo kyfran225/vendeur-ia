@@ -9,8 +9,7 @@ import { ProductManager } from "./features/products/ProductManager";
 import { OrderManager } from "./features/orders/OrderManager";
 import { SalesInbox } from "./features/inbox/SalesInbox";
 import { MarketingHub } from "./features/marketing/MarketingHub";
-import { KnowledgeSetup } from "./features/settings/KnowledgeSetup";
-import { AiSettings } from "./features/settings/AiSettings";
+import { SettingsPage } from "./features/settings/SettingsPage";
 import { AdminDashboard } from "./features/admin/AdminDashboard";
 import { AppLayout } from "./components/layout/AppLayout";
 import { useAuthStore } from "./stores/authStore";
@@ -35,25 +34,20 @@ function App() {
       <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
         <BrowserRouter>
           <Routes>
-            <Route path="/" element={
-              user
-                ? <Navigate to={tempData ? "/onboarding" : "/dashboard"} />
-                : <LandingPage />
-            } />
+            <Route path="/" element={<LandingPage />} />
 
             <Route path="/onboarding" element={
               user ? <OnboardingWizard /> : <Navigate to="/" />
             } />
 
-            <Route element={<AppLayout />}>
+            <Route element={user ? <AppLayout /> : <Navigate to="/" />}>
               <Route path="/dashboard" element={<SalesDashboard />} />
               <Route path="/admin" element={<AdminDashboard />} />
               <Route path="/products" element={<ProductManager />} />
               <Route path="/orders" element={<OrderManager />} />
               <Route path="/inbox" element={<SalesInbox />} />
               <Route path="/marketing" element={<MarketingHub />} />
-              <Route path="/knowledge" element={<KnowledgeSetup />} />
-              <Route path="/settings" element={<AiSettings />} />
+              <Route path="/settings" element={<SettingsPage />} />
             </Route>
           </Routes>
           <Toaster theme="dark" position="top-center" />

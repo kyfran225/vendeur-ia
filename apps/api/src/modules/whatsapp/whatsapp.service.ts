@@ -7,6 +7,7 @@ import { CommerceMerchantModel, CommerceConversationModel, CommerceMessageModel,
 import { emitToUser } from "../../realtime/socketServer.js";
 import axios from "axios";
 import { addAIJob } from "../../services/ai-queue.service.js";
+import { pushService } from "../../services/push.service.js";
 import { whatsappMediaService } from "./whatsapp-media.service.js";
 import { aiProvider } from "../../services/ai-provider.js";
 import { smsService } from "../../services/sms.service.js";
@@ -199,11 +200,38 @@ class WhatsAppService {
         const paymentInfo = await commerceService.validatePaymentProof(buffer, 'image/jpeg');
 
         if (paymentInfo && paymentInfo.isPaymentProof) {
+          // Automatic linking to order
+          const linkResult = await commerceService.linkPaymentToOrder(customer._id.toString(), paymentInfo);
+
           emitToUser(userId, "payment:detected", {
             conversationId: conversation._id,
+            linkResult,
             ...paymentInfo
           });
-          text = `[PREUVE DE PAIEMENT DÉTECTÉE: ${paymentInfo.platform} - ${paymentInfo.amount} XOF]`;
+
+          // Push Notification to Merchant
+          pushService.sendNotification(userId, {
+            title: linkResult?.matched ? "💰 Paiement Reçu & Validé !" : "📸 Preuve de Paiement Reçue",
+            body: linkResult?.matched
+              ? `Le client ${customer.phone} a payé ${paymentInfo.amount} XOF. Commande validée.`
+              : `Une capture d'écran de ${paymentInfo.amount} XOF a été reçue pour ${customer.phone}.`,
+            data: { conversationId: conversation._id.toString() }
+          }).catch((err: any) => console.error("[WhatsApp] Push notification error:", err));
+
+          if (linkResult?.matched) {
+             text = `[PAIEMENT VALIDÉ AUTOMATIQUEMENT: ${paymentInfo.platform} - ${paymentInfo.amount} XOF]`;
+
+             // Send digital receipt automatically
+             const receipt = await commerceService.generateDigitalReceipt(linkResult.orderId.toString());
+             const sock = this.activeSessions.get(userId);
+             if (sock) {
+               await sock.sendMessage(from, { text: receipt });
+             }
+          } else if (linkResult) {
+             text = `[PREUVE DÉTECTÉE MAIS MONTANT INCORRECT: Attendu ${linkResult.expected} XOF, Reçu ${linkResult.actual} XOF]`;
+          } else {
+             text = `[PREUVE DE PAIEMENT DÉTECTÉE: ${paymentInfo.platform} - ${paymentInfo.amount} XOF]`;
+          }
         } else {
           text = "[Image / Capture d'écran reçue]";
         }
@@ -354,13 +382,14 @@ class WhatsAppService {
   async handleMetaIncomingMessage(from: string, text: string, phoneId: string, media?: { mediaId: string, mediaType: string }) {
     // 1. Find the merchant associated with this Phone ID (Dedicated number)
     let merchant = await CommerceMerchantModel.findOne({ "whatsappConfig.meta.phoneNumberId": phoneId });
+    let latestConversation: any = null;
 
     // 2. If not found, it might be a shared system number
     if (!merchant) {
       console.log(`[Meta WhatsApp] No dedicated merchant for PhoneID ${phoneId}, searching via conversation history...`);
 
       // Find the most recent active conversation with this customer phone number
-      const latestConversation = await CommerceConversationModel.findOne({
+      latestConversation = await CommerceConversationModel.findOne({
         status: { $in: ["active", "needs_human"] },
         platform: "whatsapp"
       })
@@ -374,6 +403,16 @@ class WhatsAppService {
         merchant = await CommerceMerchantModel.findById(latestConversation.merchantId);
         console.log(`[Meta WhatsApp] Routed shared message to merchant: ${merchant?.businessName}`);
       }
+    } else {
+       // Merchant found directly by PhoneID, fetch latest conversation for payment events
+       latestConversation = await CommerceConversationModel.findOne({
+         merchantId: merchant._id,
+         status: { $in: ["active", "needs_human"] },
+         platform: "whatsapp"
+       }).populate({
+         path: "customerId",
+         match: { phone: from }
+       }).sort({ lastMessageAt: -1 });
     }
 
     if (!merchant) {
@@ -399,7 +438,40 @@ class WhatsAppService {
 
           const paymentInfo = await commerceService.validatePaymentProof(buffer, 'image/jpeg');
           if (paymentInfo && paymentInfo.isPaymentProof) {
-            text = `[PREUVE DE PAIEMENT DÉTECTÉE: ${paymentInfo.platform} - ${paymentInfo.amount} XOF]`;
+            // Find or create customer to get the ID for linking
+            let customer = await CommerceCustomerModel.findOne({ merchantId: merchant._id, phone: from });
+            if (!customer) {
+              customer = await CommerceCustomerModel.create({ merchantId: merchant._id, phone: from });
+            }
+
+            const linkResult = await commerceService.linkPaymentToOrder(customer._id.toString(), paymentInfo);
+
+            emitToUser(merchant.ownerId, "payment:detected", {
+               conversationId: latestConversation?._id,
+               linkResult,
+               ...paymentInfo
+            });
+
+            // Push Notification via Meta flow
+            pushService.sendNotification(merchant.ownerId, {
+              title: linkResult?.matched ? "💰 Paiement Reçu & Validé ! (API)" : "📸 Preuve de Paiement Reçue (API)",
+              body: linkResult?.matched
+                ? `Le client ${customer.phone} a payé ${paymentInfo.amount} XOF. Commande validée.`
+                : `Une capture d'écran de ${paymentInfo.amount} XOF a été reçue for ${customer.phone}.`,
+              data: { conversationId: latestConversation?._id?.toString() }
+            }).catch((err: any) => console.error("[WhatsApp Meta] Push notification error:", err));
+
+            if (linkResult?.matched) {
+               text = `[PAIEMENT VALIDÉ AUTOMATIQUEMENT: ${paymentInfo.platform} - ${paymentInfo.amount} XOF]`;
+
+               // Send digital receipt automatically via Meta
+               const receipt = await commerceService.generateDigitalReceipt(linkResult.orderId.toString());
+               await this.sendMetaMessage(merchant, from, receipt);
+            } else if (linkResult) {
+               text = `[PREUVE DÉTECTÉE MAIS MONTANT INCORRECT: Attendu ${linkResult.expected} XOF, Reçu ${linkResult.actual} XOF]`;
+            } else {
+               text = `[PREUVE DE PAIEMENT DÉTECTÉE: ${paymentInfo.platform} - ${paymentInfo.amount} XOF]`;
+            }
             msg.message.conversation = text;
           }
         } else if (media.mediaType === 'audio') {

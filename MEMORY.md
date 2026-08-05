@@ -14,9 +14,13 @@ Le produit doit être utilisable par un commerçant sans formation technique en 
 2. **Local Context First**: Every prompt must enforce local city/country context and tone.
 3. **Automated Everything**: Receipts, follow-ups, stock alerts must be automated, not manual "workflows".
 
-## Ongoing Phase: Phase 8 - Marketing Hub
-- **Objective**: Let the merchant broadcast offers without complexity.
-- **Rule**: No complex segmentation editor. Just "Send to VIPs" or "Send to all active customers".
+## Documents Opérationnels
+- **[ROADMAP.md](file:///C:/Users/Franck/web-apps/vendeur-ia/ROADMAP.md)** : Plan de finalisation détaillé étape par étape pour passer en production (110% fonctionnel).
+- **[PROTOCOL.md](file:///C:/Users/Franck/web-apps/vendeur-ia/PROTOCOL.md)** : Règles de qualité et standards IA.
+
+## Bugs Bloquants Identifiés
+- **Indefinite Spinner (Configuration IA)** : Le composant frontend `AiSettings` boucle indéfiniment si `aiSettings` n'est pas initialisé ou est manquant.
+- **Erreurs de Navigation** : Menu cassé sur certaines pages n'ayant pas de repli propre lorsque le profil marchand n'existe pas.
 
 ## Architectural Decisions
 - **WhatsApp Multi-Tenancy**: Implemented a fallback system for Meta Cloud API. 

@@ -34,7 +34,8 @@ async function testBrain() {
 
   try {
     console.log("Query: ", mockContext.message);
-    const reply = await aiAgentService.generateResponse(mockContext as any);
+    const response = await aiAgentService.generateResponse(mockContext as any);
+    const reply = response.text;
     console.log("\nAI Response:\n", reply);
 
     if (reply.includes("25.000") || reply.includes("25 000")) {
@@ -51,15 +52,16 @@ async function testBrain() {
 
     // Test Multi-language
     console.log("\n--- Testing Multi-language (English) ---");
-    const engReply = await aiAgentService.generateResponse({
+    const engResponse = await aiAgentService.generateResponse({
         ...mockContext,
         message: "Hello, do you have gold sandals?"
     } as any);
+    const engReply = engResponse.text;
     console.log("AI Response (English):\n", engReply);
 
     // Test Global Adaptation (Paris)
     console.log("\n--- Testing Global Adaptation (Paris, France) ---");
-    const parisReply = await aiAgentService.generateResponse({
+    const parisResponse = await aiAgentService.generateResponse({
         ...mockContext,
         merchant: {
             ...mockContext.merchant,
@@ -69,6 +71,7 @@ async function testBrain() {
         },
         message: "Bonjour, j'aimerais commander la robe de gala."
     } as any);
+    const parisReply = parisResponse.text;
     console.log("AI Response (Paris):\n", parisReply);
 
   } catch (error) {

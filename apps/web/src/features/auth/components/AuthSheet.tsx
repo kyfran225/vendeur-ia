@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { X, Mail, Lock, User, LogIn, Sparkles, ChevronRight, Bot } from "lucide-react";
+import { X, Mail, Lock, User, LogIn, Sparkles, ChevronRight, Bot, Loader2 } from "lucide-react";
 import { useAuthStore } from "@/stores/authStore";
 import { useGoogleLogin } from "@react-oauth/google";
 import { toast } from "sonner";
@@ -21,6 +21,7 @@ const GoogleIcon = () => (
 export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const [mode, setMode] = useState<"login" | "register" | "forgot">("login");
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const { setSession } = useAuthStore();
   const navigate = useNavigate();
 
@@ -34,29 +35,38 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
 
   const loginWithGoogle = useGoogleLogin({
     onSuccess: async (tokenResponse) => {
-      setLoading(true);
+      setGoogleLoading(true);
       try {
         const res = await apiClient.post("/api/auth/google", {
           token: tokenResponse.access_token,
         });
         setSession(res.data);
-        toast.success("Bienvenue !");
+        const user = res.data.user;
+        toast.success(`Bienvenue ${user?.displayName || ''} ! ✨`);
         onClose();
 
         // Use the returned user data to determine where to go
-        const user = res.data.user;
         if (user?.onboardingCompleted) {
           navigate("/dashboard");
         } else {
           navigate("/onboarding");
         }
       } catch (err: any) {
-        toast.error("Erreur d'authentification Google");
+        console.error("Google Auth Error:", err);
+        toast.error(err.response?.data?.error || "Erreur d'authentification Google");
       } finally {
-        setLoading(false);
+        setGoogleLoading(false);
       }
     },
-    onError: () => toast.error("Échec de la connexion Google"),
+    onError: (error) => {
+      console.error("Google Login Failed:", error);
+      toast.error("Échec de la connexion Google");
+      setGoogleLoading(false);
+    },
+    onNonOAuthError: (error) => {
+      console.error("Google Non-OAuth Error:", error);
+      setGoogleLoading(false);
+    },
   });
 
   if (!isOpen) return null;
@@ -66,6 +76,7 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
       toast.error("Connexion Google non configurée sur ce serveur.");
       return;
     }
+    setGoogleLoading(true);
     loginWithGoogle();
   };
 
@@ -86,8 +97,17 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
 
       // Assume backend returns { accessToken, refreshToken, user }
       setSession(res.data);
-      toast.success(mode === "login" ? "Bienvenue !" : "Compte créé avec succès !");
+      const user = res.data.user;
+      toast.success(mode === "login"
+        ? `Bienvenue ${user?.displayName || ''} !`
+        : "Compte créé avec succès !");
       onClose();
+
+      if (user?.onboardingCompleted) {
+        navigate("/dashboard");
+      } else {
+        navigate("/onboarding");
+      }
     } catch (err: any) {
       toast.error(err.response?.data?.error || "Une erreur est survenue");
     } finally {
@@ -122,9 +142,10 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
               <button
                 type="button"
                 onClick={handleGoogleAuth}
-                className="w-full h-12 bg-white text-black font-bold rounded-xl flex items-center justify-center gap-3 hover:bg-gray-100 transition-all border border-black/5 shadow-sm mb-6"
+                disabled={googleLoading || loading}
+                className="w-full h-12 bg-white text-black font-bold rounded-xl flex items-center justify-center gap-3 hover:bg-gray-100 transition-all border border-black/5 shadow-sm mb-6 disabled:opacity-50"
               >
-                <GoogleIcon />
+                {googleLoading ? <Loader2 className="animate-spin" size={20} /> : <GoogleIcon />}
                 {mode === "login" ? "Continuer avec Google" : "S'inscrire avec Google"}
               </button>
 

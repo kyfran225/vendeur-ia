@@ -10,6 +10,14 @@ export interface OnboardingData {
   whatsappNumber: string;
   city?: string;
   paymentMethods?: string[];
+  firstProduct?: {
+    name: string;
+    price: number;
+    description?: string;
+    category?: string;
+    tags?: string[];
+  };
+  productImage?: string; // Data URL or URL
 }
 
 interface OnboardingState {

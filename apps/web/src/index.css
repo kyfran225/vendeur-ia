@@ -11,19 +11,36 @@
     width: 100%;
   }
 
+  /* Custom Emerald Scrollbar */
+  ::-webkit-scrollbar {
+    width: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #07100d;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #10B981; /* vendeur-emerald */
+    border-radius: 10px;
+    border: 2px solid #07100d;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #0F5A4F; /* vendeur-green */
+  }
+
+  /* Hide scrollbar on mobile */
+  @media (max-width: 768px) {
+    ::-webkit-scrollbar {
+      display: none;
+      width: 0;
+    }
+    * {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+  }
+
   #root {
     width: 100%;
     overflow-x: hidden;
-  }
-
-  /* Hide scrollbar on mobile but keep functionality */
-  @media (max-width: 768px) {
-    * {
-      -ms-overflow-style: none; /* IE and Edge */
-      scrollbar-width: none; /* Firefox */
-    }
-    *::-webkit-scrollbar {
-      display: none; /* Chrome, Safari and Opera */
-    }
   }
 }

@@ -110,34 +110,34 @@ export function WhatsAppConnectionFlow({ merchant, qrCode, onRefreshMerchant }: 
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 overflow-x-hidden">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* MODE EXPRESS (QR CODE) */}
         <div className={cn(
-          "relative group bg-vendeur-coal border border-white/5 rounded-[2.5rem] p-8 overflow-hidden transition-all hover:border-vendeur-emerald/30",
+          "relative group bg-vendeur-coal border border-white/5 rounded-[2.5rem] p-6 md:p-8 overflow-hidden transition-all hover:border-vendeur-emerald/30",
           isBaileysActive && "ring-2 ring-vendeur-emerald border-transparent"
         )}>
           {isBaileysActive && (
-             <div className="absolute top-6 right-6 h-6 px-3 rounded-full bg-vendeur-emerald text-vendeur-coal text-[8px] font-black uppercase flex items-center gap-1">
-               <ShieldCheck size={10} /> Connecté
+             <div className="absolute top-4 right-4 md:top-6 md:right-6 h-6 px-3 rounded-full bg-vendeur-emerald text-vendeur-coal text-[8px] font-black uppercase flex items-center gap-1">
+               <ShieldCheck size={10} /> <span className="whitespace-nowrap">Connecté</span>
              </div>
           )}
 
           <div className="space-y-6">
-            <div className="h-14 w-14 rounded-2xl bg-white/5 flex items-center justify-center text-white/60 group-hover:bg-vendeur-emerald/10 group-hover:text-vendeur-emerald transition-colors">
-              <QrCode size={28} />
+            <div className="h-12 w-12 md:h-14 md:w-14 rounded-2xl bg-white/5 flex items-center justify-center text-white/60 group-hover:bg-vendeur-emerald/10 group-hover:text-vendeur-emerald transition-colors shrink-0">
+              <QrCode size={24} className="md:w-7 md:h-7" />
             </div>
             <div>
-              <h3 className="text-xl font-black text-white">Mode Express</h3>
-              <p className="text-sm text-white/40 mt-1">Lien direct par QR Code. Simple et immédiat.</p>
+              <h3 className="text-lg md:text-xl font-black text-white whitespace-nowrap">Mode Express</h3>
+              <p className="text-xs md:text-sm text-white/40 mt-1">Lien direct par QR Code. Simple et immédiat.</p>
             </div>
 
             <div className="space-y-3">
-              <div className="flex items-center gap-2 text-[10px] font-black uppercase text-vendeur-emerald/60">
-                <Check size={12} /> Zéro configuration Meta
+              <div className="flex items-center gap-2 text-[9px] md:text-[10px] font-black uppercase text-vendeur-emerald/60 whitespace-nowrap">
+                <Check size={12} className="shrink-0" /> Zéro configuration Meta
               </div>
-              <div className="flex items-center gap-2 text-[10px] font-black uppercase text-vendeur-emerald/60">
-                <Check size={12} /> Utilise ton numéro actuel
+              <div className="flex items-center gap-2 text-[9px] md:text-[10px] font-black uppercase text-vendeur-emerald/60 whitespace-nowrap">
+                <Check size={12} className="shrink-0" /> Utilise ton numéro actuel
               </div>
             </div>
 
@@ -145,47 +145,47 @@ export function WhatsAppConnectionFlow({ merchant, qrCode, onRefreshMerchant }: 
               onClick={handlePaystackPayment}
               disabled={loading || isBaileysActive}
               className={cn(
-                "w-full h-14 rounded-2xl font-black uppercase tracking-widest text-[10px] flex items-center justify-center gap-2 transition-all",
+                "w-full h-14 rounded-2xl font-black uppercase tracking-widest text-[10px] flex items-center justify-center gap-2 transition-all whitespace-nowrap",
                 isBaileysActive
                   ? "bg-vendeur-emerald/10 text-vendeur-emerald border border-vendeur-emerald/20"
                   : "bg-white text-vendeur-coal hover:bg-vendeur-emerald active:scale-95"
               )}
             >
               {loading ? <Loader2 className="animate-spin" size={16} /> : <Zap size={16} />}
-              {isBaileysActive ? "Session Active" : "Connecter (Contribution RAM)"}
+              {isBaileysActive ? "Session Active" : "Connecter (RAM)"}
             </button>
           </div>
         </div>
 
         {/* MODE PRO (META API) */}
         <div className={cn(
-          "relative group bg-vendeur-coal border border-white/5 rounded-[2.5rem] p-8 overflow-hidden transition-all hover:border-blue-500/30",
+          "relative group bg-vendeur-coal border border-white/5 rounded-[2.5rem] p-6 md:p-8 overflow-hidden transition-all hover:border-blue-500/30",
           isMetaActive && "ring-2 ring-blue-500 border-transparent"
         )}>
           {isMetaActive && (
-             <div className="absolute top-6 right-6 h-6 px-3 rounded-full bg-blue-500 text-white text-[8px] font-black uppercase flex items-center gap-1">
-               <ShieldCheck size={10} /> {isUsingCustomMeta ? "Custom Pro" : "System Pro"}
+             <div className="absolute top-4 right-4 md:top-6 md:right-6 h-6 px-3 rounded-full bg-blue-500 text-white text-[8px] font-black uppercase flex items-center gap-1">
+               <ShieldCheck size={10} /> <span className="whitespace-nowrap">{isUsingCustomMeta ? "Custom Pro" : "System Pro"}</span>
              </div>
           )}
 
            <div className="space-y-6">
-            <div className="h-14 w-14 rounded-2xl bg-white/5 flex items-center justify-center text-white/60 group-hover:bg-blue-500/10 group-hover:text-blue-400 transition-colors">
-              <Bot size={28} />
+            <div className="h-12 w-12 md:h-14 md:w-14 rounded-2xl bg-white/5 flex items-center justify-center text-white/60 group-hover:bg-blue-500/10 group-hover:text-blue-400 transition-colors shrink-0">
+              <Bot size={24} className="md:w-7 md:h-7" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="text-xl font-black text-white">Mode Pro</h3>
+                <h3 className="text-lg md:text-xl font-black text-white whitespace-nowrap">Mode Pro</h3>
                 <span className="px-2 py-0.5 rounded-lg bg-blue-500/10 text-blue-400 text-[8px] font-black uppercase border border-blue-500/20">100k+</span>
               </div>
-              <p className="text-sm text-white/40 mt-1">API Meta Cloud. Stabilité absolue & scalabilité.</p>
+              <p className="text-xs md:text-sm text-white/40 mt-1">API Meta Cloud. Stabilité absolue & scalabilité.</p>
             </div>
 
             <div className="space-y-3">
-              <div className="flex items-center gap-2 text-[10px] font-black uppercase text-blue-400/60">
-                <Check size={12} /> Pas besoin de téléphone allumé
+              <div className="flex items-center gap-2 text-[9px] md:text-[10px] font-black uppercase text-blue-400/60 whitespace-nowrap">
+                <Check size={12} className="shrink-0" /> Pas besoin de téléphone allumé
               </div>
-              <div className="flex items-center gap-2 text-[10px] font-black uppercase text-blue-400/60">
-                <Check size={12} /> Support client multi-agents
+              <div className="flex items-center gap-2 text-[9px] md:text-[10px] font-black uppercase text-blue-400/60 whitespace-nowrap">
+                <Check size={12} className="shrink-0" /> Support client multi-agents
               </div>
             </div>
 
@@ -194,14 +194,14 @@ export function WhatsAppConnectionFlow({ merchant, qrCode, onRefreshMerchant }: 
                 onClick={handleActivateMeta}
                 disabled={loading || isMetaActive}
                 className={cn(
-                  "w-full h-14 rounded-2xl font-black uppercase tracking-widest text-[10px] flex items-center justify-center gap-2 transition-all",
+                  "w-full h-14 rounded-2xl font-black uppercase tracking-widest text-[10px] flex items-center justify-center gap-2 transition-all whitespace-nowrap",
                   isMetaActive
                     ? "bg-blue-500/10 text-blue-400 border border-blue-500/20"
                     : "bg-white text-vendeur-coal hover:bg-blue-500 hover:text-white active:scale-95"
                 )}
               >
                 {loading ? <Loader2 className="animate-spin" size={16} /> : <LogIn size={16} />}
-                {isMetaActive ? "Mode Pro Actif" : "Activer via Vendeur IA"}
+                {isMetaActive ? "Mode Pro Actif" : "Activer"}
               </button>
 
               <div className="space-y-2">

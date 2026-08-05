@@ -131,6 +131,7 @@ const MessageSchema = new Schema({
   content: { type: String, required: true },
   mediaUrl: String,
   aiMetadata: {
+    provider: { type: String, default: 'unknown' },
     tokensUsed: { type: Number, default: 0 },
     cost: { type: Number, default: 0 }
   },

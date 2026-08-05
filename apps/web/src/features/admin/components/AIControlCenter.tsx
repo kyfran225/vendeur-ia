@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import {
   Bot,
-  Cpu,
   Activity,
   Key,
   RefreshCw,
@@ -146,12 +145,6 @@ export function AIControlCenter() {
           <div key={p.name} className="bg-vendeur-coal border border-white/5 p-6 rounded-[2rem] space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className={cn(
-                  "h-10 w-10 rounded-xl flex items-center justify-center border",
-                  p.success ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400" : "bg-rose-500/10 border-rose-500/20 text-rose-400"
-                )}>
-                  <Cpu size={20} />
-                </div>
                 <h3 className="font-black uppercase tracking-tighter text-sm">{p.name}</h3>
               </div>
               <button
@@ -235,9 +228,6 @@ export function AIControlCenter() {
             {(isEditing ? localAiConfig?.providers : aiConfig.providers).map((p: any, idx: number) => (
               <div key={p.name} className="flex flex-col md:flex-row items-center gap-4 p-4 md:p-6 bg-black/40 rounded-3xl border border-white/5 group">
                 <div className="flex items-center gap-4 w-full md:w-48">
-                  <div className="h-10 w-10 bg-white/5 rounded-xl flex items-center justify-center text-white/40 font-black uppercase text-[10px]">
-                    {p.name.charAt(0)}
-                  </div>
                   <span className="font-black uppercase tracking-widest text-xs">{p.name}</span>
                 </div>
 

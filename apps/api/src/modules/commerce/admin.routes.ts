@@ -80,7 +80,7 @@ router.get("/stats", authenticate, isAdmin, async (req, res) => {
 
     // AI Costs & Tokens aggregation
     const aiStats = await CommerceMessageModel.aggregate([
-      { $match: { sender: "ai" } },
+      { $match: { sender: "ai", "aiMetadata.provider": { $exists: true } } },
       {
         $group: {
           _id: "$aiMetadata.provider",
@@ -92,7 +92,7 @@ router.get("/stats", authenticate, isAdmin, async (req, res) => {
 
     const totalAiCost = aiStats.reduce((acc, curr) => acc + (curr.totalCost || 0), 0);
     const providerUsage = aiStats.map(s => ({
-      provider: s._id || 'unknown',
+      provider: s._id,
       tokens: s.totalTokens || 0,
       cost: s.totalCost || 0
     }));

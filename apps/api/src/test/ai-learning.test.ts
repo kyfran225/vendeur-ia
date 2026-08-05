@@ -48,10 +48,14 @@ describe('AI Learning & Memory Audit Tests', () => {
         sort: vi.fn().mockResolvedValue([{ sender: 'customer', content: 'Je veux du bleu' }])
     } as any);
 
-    vi.spyOn(aiProvider, 'generateText').mockResolvedValue(JSON.stringify({
-      insight: "Le bleu est très demandé",
-      type: "product"
-    }));
+    vi.spyOn(aiProvider, 'generateText').mockResolvedValue({
+      text: JSON.stringify({
+        insight: "Le bleu est très demandé",
+        type: "product"
+      }),
+      provider: 'gemini',
+      usage: { promptTokens: 0, completionTokens: 0, totalTokens: 0 }
+    });
 
     const updateSpy = vi.spyOn(CommerceKnowledgeModel, 'findOneAndUpdate').mockResolvedValue({} as any);
 
@@ -69,7 +73,11 @@ describe('AI Learning & Memory Audit Tests', () => {
         ])
     } as any);
 
-    vi.spyOn(aiProvider, 'generateText').mockResolvedValue("Lieu: Cocody");
+    vi.spyOn(aiProvider, 'generateText').mockResolvedValue({
+      text: "Lieu: Cocody",
+      provider: 'gemini',
+      usage: { promptTokens: 0, completionTokens: 0, totalTokens: 0 }
+    });
     const updateSpy = vi.spyOn(CommerceConversationModel, 'findByIdAndUpdate').mockResolvedValue({} as any);
 
     await commerceService.updateConversationSummary("conv_1");

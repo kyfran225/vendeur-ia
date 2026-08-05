@@ -311,12 +311,14 @@ Format de réponse attendu (JSON uniquement) :
 
 Le ton doit être adapté à une audience d'Afrique de l'Ouest (chaleureux et direct).`;
 
-    const result = await aiProvider.generateText({
+    const response = await aiProvider.generateText({
       systemPrompt: "Tu es un expert en marketing digital et copywriting spécialisé dans la vente sur les réseaux sociaux.",
       userMessage: prompt,
       temperature: 0.8,
       maxTokens: 800
     });
+
+    const result = response.text;
 
     try {
       const jsonMatch = result.match(/\{[\s\S]*\}/);
@@ -351,14 +353,14 @@ Le message doit être :
 
 Réponds UNIQUEMENT avec le texte du message.`;
 
-    const followup = await aiProvider.generateText({
+    const response = await aiProvider.generateText({
       systemPrompt: "Tu es un vendeur expert spécialisé dans la relance client bienveillante.",
       userMessage: prompt,
       temperature: 0.7,
       maxTokens: 150
     });
 
-    return { followup };
+    return { followup: response.text };
   }
 
   async generateDigitalReceipt(orderId: string) {
@@ -510,14 +512,14 @@ Format JSON :
 }
 Réponds UNIQUEMENT avec le JSON.`;
 
-    const result = await aiProvider.generateText({
+    const response = await aiProvider.generateText({
       systemPrompt: "Tu es un consultant en stratégie commerciale expert en social commerce.",
       userMessage: prompt,
       temperature: 0.5
     });
 
     try {
-      const jsonMatch = result.match(/\{[\s\S]*\}/);
+      const jsonMatch = response.text.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
         const insightData = JSON.parse(jsonMatch[0]);
         await CommerceKnowledgeModel.findOneAndUpdate(
@@ -594,14 +596,14 @@ ${historyText}
 
 Résumé actuel :`;
 
-    const summary = await aiProvider.generateText({
+    const response = await aiProvider.generateText({
       systemPrompt: "Tu es un assistant de gestion de relation client ultra-précis.",
       userMessage: prompt,
       temperature: 0.3
     });
 
     await CommerceConversationModel.findByIdAndUpdate(conversationId, {
-      $set: { aiSummary: summary }
+      $set: { aiSummary: response.text }
     });
     console.log(`[Summary] Conversation ${conversationId} updated.`);
   }

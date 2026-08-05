@@ -59,7 +59,7 @@ export class AIGrowthService {
         thinkingLevel: "low",
       });
 
-      const parsed = parseJsonFromAI<{ tips: { text: string; action: string }[] }>(response);
+      const parsed = parseJsonFromAI<{ tips: { text: string; action: string }[] }>(response.text);
       if (!Array.isArray(parsed.tips) || parsed.tips.length === 0) {
         throw new Error("Invalid AI advice format");
       }

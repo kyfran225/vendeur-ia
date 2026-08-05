@@ -20,7 +20,9 @@ async function test() {
     const response = await aiProvider.generateText(request);
 
     console.log("\n--- Résultat du Test ---");
-    console.log("IA a répondu :", response);
+    console.log("Provider :", response.provider);
+    console.log("Tokens   :", response.usage.totalTokens);
+    console.log("Réponse  :", response.text);
     console.log("\nStatut : OPÉRATIONNEL (Grâce au double cerveau)");
   } catch (error) {
     console.error("❌ Test fatalement échoué:", error);

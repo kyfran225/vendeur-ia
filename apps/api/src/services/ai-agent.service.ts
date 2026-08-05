@@ -1,4 +1,4 @@
-import { aiProvider } from "./ai-provider.js";
+import { aiProvider, AIResponse } from "./ai-provider.js";
 
 export interface SalesContext {
   merchant: SalesMerchant;
@@ -42,7 +42,7 @@ export interface SalesMerchant {
 }
 
 export class AIAgentService {
-  async generateResponse(context: SalesContext): Promise<string> {
+  async generateResponse(context: SalesContext): Promise<AIResponse> {
     const systemPrompt = this.buildSystemPrompt(context);
 
     return aiProvider.generateText({

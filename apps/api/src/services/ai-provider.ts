@@ -18,6 +18,16 @@ export interface AIRequest {
   thinkingLevel?: "minimal" | "low" | "medium" | "high";
 }
 
+export interface AIResponse {
+  text: string;
+  provider: string;
+  usage: {
+    promptTokens: number;
+    completionTokens: number;
+    totalTokens: number;
+  };
+}
+
 export class AIProvider {
   private static readonly GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models";
   private redis: Redis | null;
@@ -117,7 +127,7 @@ export class AIProvider {
     }
   }
 
-  async generateText(request: AIRequest): Promise<string> {
+  async generateText(request: AIRequest): Promise<AIResponse> {
     const config = await this.getDynamicConfig();
     const primaryProvider = config?.defaultTextProvider || 'gemini';
 
@@ -126,26 +136,31 @@ export class AIProvider {
     if (this.redis) {
       const cached = await this.redis.get(cacheKey);
       if (cached) {
-        console.log("[AI Provider] Cache Hit ✨");
-        return cached;
+        try {
+          const parsed = JSON.parse(cached);
+          console.log("[AI Provider] Cache Hit ✨");
+          return parsed;
+        } catch (e) {
+          // If cache was just string (old version), continue
+        }
       }
     }
 
-    let responseText: string;
+    let response: AIResponse;
 
     // Try Primary
     try {
-      responseText = await this.generateWithProvider(primaryProvider, request, config);
+      response = await this.generateWithProvider(primaryProvider, request, config);
     } catch (error) {
       console.warn(`[AI Provider] ${primaryProvider} failed, trying fallback:`, (error as any).message);
 
       const fallbackProvider = primaryProvider === 'gemini' ? 'groq' : 'gemini';
       try {
-        responseText = await this.generateWithProvider(fallbackProvider, request, config);
+        response = await this.generateWithProvider(fallbackProvider, request, config);
       } catch (fallbackError) {
         console.warn("[AI Provider] Secondary fallback failed, trying OpenRouter:", (fallbackError as any).message);
         try {
-          responseText = await this.generateWithProvider('openrouter', request, config);
+          response = await this.generateWithProvider('openrouter', request, config);
         } catch (openRouterError) {
           console.error("[AI Provider] All fallbacks failed:", (openRouterError as any).message);
           throw new Error("Tous les fournisseurs d'IA ont échoué.");
@@ -155,13 +170,13 @@ export class AIProvider {
 
     // 2. Save to Cache
     if (this.redis) {
-      await this.redis.set(cacheKey, responseText, 'EX', 3600);
+      await this.redis.set(cacheKey, JSON.stringify(response), 'EX', 3600);
     }
 
-    return responseText;
+    return response;
   }
 
-  private async generateWithProvider(providerName: string, request: AIRequest, config: any): Promise<string> {
+  private async generateWithProvider(providerName: string, request: AIRequest, config: any): Promise<AIResponse> {
     const apiKey = this.getProviderKey(config, providerName);
     if (!apiKey) throw new Error(`API Key for ${providerName} not configured`);
 
@@ -201,7 +216,7 @@ export class AIProvider {
     throw new Error("Réponse vide de Gemini");
   }
 
-  private async generateWithGemini(request: AIRequest, apiKey: string, model: string): Promise<string> {
+  private async generateWithGemini(request: AIRequest, apiKey: string, model: string): Promise<AIResponse> {
     const modelId = this.getGeminiModelId(model);
     const isNewModel = modelId.includes("1.5") || modelId.includes("2.0") || modelId.includes("exp");
 
@@ -245,8 +260,18 @@ export class AIProvider {
 
     try {
       const response = await axios.post(`${AIProvider.GEMINI_URL}/${modelId}:generateContent?key=${apiKey}`, payload);
+      const text = this.extractGeminiText(response.data);
+      const usageMetadata = response.data.usageMetadata || {};
 
-      return this.extractGeminiText(response.data);
+      return {
+        text,
+        provider: 'gemini',
+        usage: {
+          promptTokens: usageMetadata.promptTokenCount || 0,
+          completionTokens: usageMetadata.candidatesTokenCount || 0,
+          totalTokens: usageMetadata.totalTokenCount || (usageMetadata.promptTokenCount + usageMetadata.candidatesTokenCount) || Math.ceil(text.length / 4)
+        }
+      };
     } catch (error: any) {
       const msg = error.response?.data?.error?.message || error.message;
       console.error("Gemini API Error:", msg);
@@ -255,7 +280,7 @@ export class AIProvider {
     }
   }
 
-  private async generateWithGroq(request: AIRequest, apiKey: string, model: string): Promise<string> {
+  private async generateWithGroq(request: AIRequest, apiKey: string, model: string): Promise<AIResponse> {
     const messages = [{ role: "system", content: request.systemPrompt }];
     if (request.history) {
       for (const msg of request.history) {
@@ -273,7 +298,17 @@ export class AIProvider {
       }, {
         headers: { "Authorization": `Bearer ${apiKey}`, "Content-Type": "application/json" }
       });
-      return response.data.choices[0].message.content.trim();
+
+      const usage = response.data.usage || {};
+      return {
+        text: response.data.choices[0].message.content.trim(),
+        provider: 'groq',
+        usage: {
+          promptTokens: usage.prompt_tokens || 0,
+          completionTokens: usage.completion_tokens || 0,
+          totalTokens: usage.total_tokens || 0
+        }
+      };
     } catch (error: any) {
       const msg = error.response?.data?.error?.message || error.message;
       console.error("Groq API Error:", msg);
@@ -282,7 +317,7 @@ export class AIProvider {
     }
   }
 
-  private async generateWithOpenAI(request: AIRequest, apiKey: string, model: string): Promise<string> {
+  private async generateWithOpenAI(request: AIRequest, apiKey: string, model: string): Promise<AIResponse> {
     const messages = [{ role: "system", content: request.systemPrompt }];
     if (request.history) {
       for (const msg of request.history) {
@@ -300,7 +335,17 @@ export class AIProvider {
       }, {
         headers: { "Authorization": `Bearer ${apiKey}`, "Content-Type": "application/json" }
       });
-      return response.data.choices[0].message.content.trim();
+
+      const usage = response.data.usage || {};
+      return {
+        text: response.data.choices[0].message.content.trim(),
+        provider: 'openai',
+        usage: {
+          promptTokens: usage.prompt_tokens || 0,
+          completionTokens: usage.completion_tokens || 0,
+          totalTokens: usage.total_tokens || 0
+        }
+      };
     } catch (error: any) {
       const msg = error.response?.data?.error?.message || error.message;
       console.error("OpenAI API Error:", msg);
@@ -309,7 +354,7 @@ export class AIProvider {
     }
   }
 
-  private async generateWithOpenRouter(request: AIRequest, apiKey: string, model: string): Promise<string> {
+  private async generateWithOpenRouter(request: AIRequest, apiKey: string, model: string): Promise<AIResponse> {
     const messages = [{ role: "system", content: request.systemPrompt }];
     if (request.history) {
       for (const msg of request.history) {
@@ -332,7 +377,17 @@ export class AIProvider {
           "X-Title": "Vendeur IA"
         }
       });
-      return response.data.choices[0].message.content.trim();
+
+      const usage = response.data.usage || {};
+      return {
+        text: response.data.choices[0].message.content.trim(),
+        provider: 'openrouter',
+        usage: {
+          promptTokens: usage.prompt_tokens || 0,
+          completionTokens: usage.completion_tokens || 0,
+          totalTokens: usage.total_tokens || 0
+        }
+      };
     } catch (error: any) {
       const msg = error.response?.data?.error?.message || error.message;
       console.error("OpenRouter API Error:", msg);

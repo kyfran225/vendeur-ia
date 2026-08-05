@@ -607,6 +607,9 @@ router.post("/demo/process", async (req, res) => {
     // Refined instructions to PRIORITIZE user description over generic mocks
     const customInstructions = `Ceci est une démonstration pour un commerce de type "${category}".
 
+    LIEU DE VENTE / LIVRAISON : Ton commerce est situé à ${city}, précisément à "${req.body.address || city}".
+    IMPORTANT : Si la ville saisie est différente d'Abidjan (ex: Kaolack, Bouaké, Dakar, San Pedro), tu dois ABSOLUMENT te situer dans CETTE ville. Ne mentionne JAMAIS Abidjan si l'utilisateur a spécifié une autre ville.
+
     IMPORTANT : L'utilisateur a décrit précisément ce qu'il vend : "${description || "Pas de description spécifiée"}".
     SI l'utilisateur a mentionné des produits spécifiques (ex: "Tchep", "Thieboudienne", "Attiéké", "Robes rouges"), tu dois ABSOLUMENT parler de CES produits en priorité.
     Les produits du catalogue mocké (ex: Burgers, Sneakers) ne sont que des EXEMPLES génériques. Ne les utilise PAS si l'utilisateur a spécifié ses propres articles.
@@ -614,9 +617,6 @@ router.post("/demo/process", async (req, res) => {
     TON BUT : Faire croire à l'utilisateur que tu as lu et compris SA description.
     Si il dit qu'il vend du "Tchep", parle avec passion de son Tchep, demande s'il veut du piment ou du poisson.
     Invente des prix réalistes (en XOF) et des stocks pour les produits mentionnés par l'utilisateur.
-
-    LIEU DE VENTE / LIVRAISON : Ton commerce est situé à ${city}, précisément à "${req.body.address || city}".
-    Mentionne ce quartier si le client demande où tu es.
 
     Personnalisation maximale : ignore les mocks si ils contredisent la description de l'utilisateur.`;
 

@@ -262,6 +262,10 @@ function WelcomeStep({ onNext, onBack }: { onNext: () => void; onBack: () => voi
                 <AddressAutocomplete
                   value={form.address}
                   onChange={(value) => setForm({ ...form, address: value })}
+                  onSelectSuggestion={(suggestion) => {
+                    const city = suggestion.context?.place?.name || suggestion.context?.region?.name || suggestion.place_formatted?.split(',')[1]?.trim() || "Abidjan";
+                    setForm(prev => ({ ...prev, city }));
+                  }}
                 />
               </label>
 

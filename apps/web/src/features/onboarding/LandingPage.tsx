@@ -420,7 +420,7 @@ function LandingHero({
                   value={form.address}
                   onChange={(value) => setForm({ ...form, address: value })}
                   onSelectSuggestion={(suggestion) => {
-                    const city = suggestion.context?.place?.name || suggestion.context?.region?.name || "Abidjan";
+                    const city = suggestion.context?.place?.name || suggestion.context?.region?.name || suggestion.place_formatted?.split(',')[1]?.trim() || "Abidjan";
                     setForm(prev => ({ ...prev, city }));
                   }}
                 />

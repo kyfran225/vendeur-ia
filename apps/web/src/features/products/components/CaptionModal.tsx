@@ -12,15 +12,16 @@ interface CaptionModalProps {
 
 export function CaptionModal({ isOpen, onClose, caption, productName }: CaptionModalProps) {
   const [copied, setCopied] = React.useState<string | null>(null);
-  const [activeStyle, setActiveStyle] = React.useState<string>("viral");
+  const [activeStyle, setActiveStyle] = React.useState<"viral" | "professional" | "urgent">("viral");
 
   const captionsMap = React.useMemo(() => {
-    if (!caption) return { viral: "Légende en cours...", professional: "Légende en cours...", urgent: "Légende en cours..." };
+    const defaultVal = { viral: "Légende en cours...", professional: "Légende en cours...", urgent: "Légende en cours..." };
+    if (!caption) return defaultVal;
     if (typeof caption === 'string') return { viral: caption, professional: caption, urgent: caption };
     return {
-      viral: caption.viral || "Légende non disponible",
-      professional: caption.professional || "Légende non disponible",
-      urgent: caption.urgent || "Légende non disponible"
+      viral: (caption as any).viral || "Légende non disponible",
+      professional: (caption as any).professional || "Légende non disponible",
+      urgent: (caption as any).urgent || "Légende non disponible"
     };
   }, [caption]);
 
@@ -53,7 +54,7 @@ export function CaptionModal({ isOpen, onClose, caption, productName }: CaptionM
         </div>
 
         <div className="flex gap-2">
-          {["viral", "professional", "urgent"].map(style => (
+          {(["viral", "professional", "urgent"] as const).map(style => (
             <button
               key={style}
               onClick={() => setActiveStyle(style)}

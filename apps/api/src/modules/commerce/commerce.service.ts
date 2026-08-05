@@ -59,6 +59,28 @@ export class CommerceService {
       ? Math.round((ordersToday / conversationsToday) * 100)
       : 0;
 
+    // --- SETUP STATUS CALCULATION ---
+    const knowledge = await CommerceKnowledgeModel.findOne({ merchantId: merchant._id });
+
+    const hasProducts = (products?.length || 0) > 0;
+    const isWhatsAppConnected = merchant.whatsappConfig?.status === 'connected';
+
+    // Check if user has actually ADDED payment methods (not just the default empty ones)
+    const hasPaymentMethods = (knowledge?.businessRules?.paymentMethods?.length || 0) > 0 &&
+                             knowledge?.businessRules?.paymentMethods?.some(m => m.number && m.number.trim() !== "");
+
+    const hasDeliveryFees = (knowledge?.businessRules?.deliveryFees?.length || 0) > 0;
+
+    const setupSteps = [
+      { id: 'whatsapp', label: 'Connecter WhatsApp', completed: isWhatsAppConnected, weight: 40 },
+      { id: 'products', label: 'Ajouter des produits', completed: hasProducts, weight: 30 },
+      { id: 'payments', label: 'Modes de paiement', completed: hasPaymentMethods, weight: 15 },
+      { id: 'delivery', label: 'Tarifs de livraison', completed: hasDeliveryFees, weight: 15 }
+    ];
+
+    const setupScore = setupSteps.reduce((acc, step) => acc + (step.completed ? step.weight : 0), 0);
+    const isFullyOperational = setupScore === 100;
+
     // --- PRODUCT PERFORMANCE ---
     const topProducts = await CommerceOrderModel.aggregate([
       { $match: { merchantId: merchant._id, status: "paid" } },
@@ -76,6 +98,12 @@ export class CommerceService {
     return {
       merchant,
       products,
+      knowledge,
+      setupStatus: {
+        score: setupScore,
+        isFullyOperational,
+        steps: setupSteps
+      },
       metrics: {
         revenueToday,
         conversationsToday,
@@ -107,10 +135,7 @@ export class CommerceService {
           deliveryZones: data.city ? [data.city] : [],
           openingHours: "09:00 - 18:00",
           returnPolicy: "Retours acceptés sous 48h.",
-          paymentMethods: [
-            { provider: "Wave", number: data.whatsappNumber || "", label: "Wave" },
-            { provider: "Orange Money", number: data.whatsappNumber || "", label: "Orange Money" }
-          ]
+          paymentMethods: [] // Start with an empty list so user MUST add their own
         },
         customInstructions: `Vends avec passion les produits de ${data.businessName}.`
       });
@@ -142,10 +167,7 @@ export class CommerceService {
           deliveryZones: merchant?.city ? [merchant.city] : [],
           openingHours: "09:00 - 18:00",
           returnPolicy: "Retours acceptés sous 48h.",
-          paymentMethods: [
-            { provider: "Mobile Money", number: merchant?.phone || "", label: "Mobile Money" },
-            { provider: "Cash", number: "", label: "Cash" }
-          ]
+          paymentMethods: [] // No defaults here either
         }
       });
     }

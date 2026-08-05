@@ -18,6 +18,7 @@ import { toast } from "sonner";
 import { apiClient } from "@/lib/apiClient";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { SetupGuide } from "./components/SetupGuide";
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -79,9 +80,18 @@ export function SalesDashboard() {
 function HomePanel({ dashboard }: { dashboard: any }) {
   const tips = dashboard?.aiGrowthAdvice?.tips || [];
   const status = dashboard?.merchant?.whatsappConfig?.status || 'disconnected';
+  const setupStatus = dashboard?.setupStatus;
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-700">
+      {/* INTELLIGENT SETUP GUIDE */}
+      {setupStatus && !setupStatus.isFullyOperational && (
+        <SetupGuide
+          setupStatus={setupStatus}
+          businessName={dashboard?.merchant?.businessName || "Votre boutique"}
+        />
+      )}
+
       {/* AI GROWTH ADVISOR SECTION */}
       <section className="relative overflow-hidden bg-vendeur-emerald/10 border border-vendeur-emerald/20 p-6 md:p-10 rounded-[2.5rem] md:rounded-[3.5rem] group shadow-2xl">
         <div className="absolute top-0 right-0 p-8 md:p-12 opacity-10 group-hover:scale-110 transition-transform duration-700 pointer-events-none">

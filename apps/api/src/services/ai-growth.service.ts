@@ -13,6 +13,7 @@ export class AIGrowthService {
 
       const isInstagramLinked = !!merchant?.instagramConfig?.accessToken;
       const isTikTokLinked = !!merchant?.tiktokConfig?.accessToken;
+      const isWhatsAppConnected = merchant?.whatsappConfig?.status === 'connected';
 
       const last7Days = new Date();
       last7Days.setDate(last7Days.getDate() - 7);
@@ -25,7 +26,9 @@ export class AIGrowthService {
       // 2. Prepare context for AI analysis
       const context = `
         Données du commerce :
+        - Nom : ${merchant?.businessName}
         - Nombre total de produits : ${totalProducts}
+        - WhatsApp connecté : ${isWhatsAppConnected ? 'Oui' : 'Non'}
         - Produits en stock faible : ${lowStockProducts.join(', ') || 'Aucun'}
         - Conversations ces 7 derniers jours : ${recentConversations}
         - Instagram lié : ${isInstagramLinked ? 'Oui' : 'Non'}
@@ -34,8 +37,14 @@ export class AIGrowthService {
       `;
 
       const prompt = `
-        En tant qu'expert en stratégie de vente e-commerce omnicanal, analyse ces données et donne 3 conseils ultra-courts (max 15 mots chacun).
+        En tant qu'expert en stratégie de vente e-commerce et "Lead Guide" pour nouveaux vendeurs, analyse ces données.
 
+        SI le commerce n'est pas encore 100% opérationnel (manque WhatsApp ou produits) :
+        - Tes conseils doivent porter PRIORITAIREMENT sur ces étapes critiques.
+        - Ton ton doit être celui d'un cofondateur expert qui guide le user pour réussir son lancement.
+        - Sois très encourageant et pragmatique.
+
+        CONSEILS : donne 3 conseils ultra-courts (max 15 mots chacun).
         IMPORTANT : Ne mets PAS d'emoji au début ou à la fin du texte.
         Chaque conseil doit avoir une action associée parmi : "/products", "/settings?tab=connexions", "/settings?tab=boutique", "/inbox", "/marketing", "/orders".
 

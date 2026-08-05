@@ -31,7 +31,7 @@ app.use(helmet({
   crossOriginEmbedderPolicy: false,
 }));
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
 
 // NoSQL Injection Protection
 app.use((req, res, next) => {

@@ -129,8 +129,8 @@ export function PosterGenerator({ productData, boutiqueName, businessCategory, l
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    canvas.width = 1080;
-    canvas.height = 1350;
+    canvas.width = 800;
+    canvas.height = 1000;
 
     // 1. Background Logic based on Template
     if (template === "luxe") {
@@ -231,7 +231,7 @@ export function PosterGenerator({ productData, boutiqueName, businessCategory, l
   const handleFinalSave = () => {
     const canvas = canvasRef.current;
     if (canvas) {
-      onSave(canvas.toDataURL("image/png"));
+      onSave(canvas.toDataURL("image/jpeg", 0.8));
     }
   };
 

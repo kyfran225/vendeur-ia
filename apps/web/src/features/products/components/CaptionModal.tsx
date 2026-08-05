@@ -14,11 +14,17 @@ export function CaptionModal({ isOpen, onClose, caption, productName }: CaptionM
   const [copied, setCopied] = React.useState<string | null>(null);
   const [activeStyle, setActiveStyle] = React.useState<string>("viral");
 
-  if (!isOpen) return null;
+  const captionsMap = React.useMemo(() => {
+    if (!caption) return { viral: "Légende en cours...", professional: "Légende en cours...", urgent: "Légende en cours..." };
+    if (typeof caption === 'string') return { viral: caption, professional: caption, urgent: caption };
+    return {
+      viral: caption.viral || "Légende non disponible",
+      professional: caption.professional || "Légende non disponible",
+      urgent: caption.urgent || "Légende non disponible"
+    };
+  }, [caption]);
 
-  const captionsMap = typeof caption === 'string'
-    ? { viral: caption, professional: caption, urgent: caption }
-    : caption;
+  if (!isOpen) return null;
 
   const handleCopy = (text: string, id: string) => {
     navigator.clipboard.writeText(text);

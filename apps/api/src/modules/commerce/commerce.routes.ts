@@ -24,7 +24,7 @@ router.use((req, res, next) => {
   if (req.path === "/webhooks/paystack") {
     next();
   } else {
-    express.json()(req, res, next);
+    express.json({ limit: '10mb' })(req, res, next);
   }
 });
 
@@ -624,7 +624,7 @@ router.post("/demo/process", async (req, res) => {
       customerPhone: phone
     });
 
-    res.json({ reply });
+    res.json({ reply: reply.text });
   } catch (error) {
     console.error("Demo AI Error:", error);
     res.status(500).json({ error: "ai_demo_error" });

@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import { Package, Sparkles, Trash2, Edit, Camera, X, Save, Zap, Utensils, Laptop, Palette, Hammer, ShoppingBag, Loader2, MessageSquareText, Plus, Heart, Monitor, Home, ShoppingCart, Activity, Car, Box } from "lucide-react";
+import { Package, Sparkles, Trash2, Edit, Camera, X, Save, Zap, Utensils, Laptop, Palette, Hammer, ShoppingBag, Loader2, MessageSquareText, Plus, Minus, Heart, Monitor, Home, ShoppingCart, Activity, Car, Box } from "lucide-react";
 import { ProductScanner } from "./components/ProductScanner";
 import { CaptionModal } from "./components/CaptionModal";
 import { ConfirmationModal } from "../../components/ui/ConfirmationModal";
@@ -210,6 +210,19 @@ export function ProductManager() {
     }
   });
 
+  const updateStockMutation = useMutation({
+    mutationFn: ({ id, stock }: { id: string; stock: number }) =>
+      axios.patch(`${API_URL}/api/commerce/products/${id}`, { stock }, {
+        headers: { Authorization: `Bearer ${accessToken}` }
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["products"] });
+    },
+    onError: () => {
+      toast.error("Échec de la mise à jour du stock.");
+    }
+  });
+
   const generateCaptionMutation = useMutation({
     mutationFn: (productId: string) =>
       axios.post(`${API_URL}/api/commerce/products/${productId}/caption`, {}, {
@@ -219,7 +232,7 @@ export function ProductManager() {
       const product = products.find(p => p._id === productId);
       setCaptionData({
         isOpen: true,
-        text: response.data.caption,
+        text: response.data,
         productName: product?.name || ""
       });
     },
@@ -242,17 +255,18 @@ export function ProductManager() {
       return res.data;
     },
     onSuccess: (data) => {
+      const sanitizedPrice = isNaN(parseInt(data.price)) ? 0 : parseInt(data.price);
       if (editingProduct) {
         setEditingProduct({
           ...editingProduct,
           name: data.name || editingProduct.name,
-          price: data.price || editingProduct.price
+          price: sanitizedPrice || editingProduct.price
         });
       } else {
         setNewProduct(prev => ({
           ...prev,
           name: data.name || prev.name,
-          price: data.price || prev.price,
+          price: sanitizedPrice || prev.price,
           description: data.description || prev.description
         }));
         setIsAddingManual(true);
@@ -440,11 +454,13 @@ export function ProductManager() {
                   <input
                     type="number"
                     className="h-12 rounded-xl bg-white/5 border border-white/10 px-4 text-white outline-none focus:border-emerald-300 transition-all"
-                    value={editingProduct ? editingProduct.price : newProduct.price}
-                    onChange={e => editingProduct
-                      ? setEditingProduct({...editingProduct, price: parseInt(e.target.value)})
-                      : setNewProduct({...newProduct, price: parseInt(e.target.value)})
-                    }
+                    value={editingProduct ? (isNaN(editingProduct.price) ? "" : editingProduct.price) : (isNaN(newProduct.price) ? "" : newProduct.price)}
+                    onChange={e => {
+                      const val = e.target.value === "" ? 0 : parseInt(e.target.value);
+                      editingProduct
+                        ? setEditingProduct({...editingProduct, price: isNaN(val) ? 0 : val})
+                        : setNewProduct({...newProduct, price: isNaN(val) ? 0 : val});
+                    }}
                     required
                   />
                 </label>
@@ -453,11 +469,13 @@ export function ProductManager() {
                   <input
                     type="number"
                     className="h-12 rounded-xl bg-white/5 border border-white/10 px-4 text-white outline-none focus:border-emerald-300 transition-all"
-                    value={editingProduct ? editingProduct.stock : newProduct.stock}
-                    onChange={e => editingProduct
-                      ? setEditingProduct({...editingProduct, stock: parseInt(e.target.value)})
-                      : setNewProduct({...newProduct, stock: parseInt(e.target.value)})
-                    }
+                    value={editingProduct ? (isNaN(editingProduct.stock) ? "" : editingProduct.stock) : (isNaN(newProduct.stock) ? "" : newProduct.stock)}
+                    onChange={e => {
+                      const val = e.target.value === "" ? 0 : parseInt(e.target.value);
+                      editingProduct
+                        ? setEditingProduct({...editingProduct, stock: isNaN(val) ? 0 : val})
+                        : setNewProduct({...newProduct, stock: isNaN(val) ? 0 : val});
+                    }}
                   />
                 </label>
               </div>
@@ -544,9 +562,37 @@ export function ProductManager() {
                   <p className={`font-black text-${config.accent}-400`}>{p.price.toLocaleString()} FCFA</p>
                 </div>
                 <div className="flex items-center justify-between pt-4 border-t border-white/5">
-                  <p className="text-xs font-bold text-white/60">
-                    {config.stockLabel}: <span className="text-white">{p.stock}</span>
-                  </p>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-white/60">{config.stockLabel}:</span>
+                    <div className="flex items-center bg-white/5 rounded-lg border border-white/10 px-1 py-0.5">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          updateStockMutation.mutate({ id: p._id, stock: Math.max(0, p.stock - 1) });
+                        }}
+                        disabled={updateStockMutation.isPending}
+                        className="p-1 hover:text-rose-400 transition-colors disabled:opacity-30"
+                      >
+                        <Minus size={12} />
+                      </button>
+                      <span className="w-8 text-center text-xs font-black text-white">
+                        {updateStockMutation.isPending && updateStockMutation.variables?.id === p._id
+                          ? <Loader2 size={10} className="animate-spin inline" />
+                          : p.stock
+                        }
+                      </span>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          updateStockMutation.mutate({ id: p._id, stock: p.stock + 1 });
+                        }}
+                        disabled={updateStockMutation.isPending}
+                        className="p-1 hover:text-emerald-400 transition-colors disabled:opacity-30"
+                      >
+                        <Plus size={12} />
+                      </button>
+                    </div>
+                  </div>
                   <div className="flex gap-2">
                     <button
                       onClick={() => generateCaptionMutation.mutate(p._id)}

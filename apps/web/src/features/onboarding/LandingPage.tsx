@@ -222,9 +222,10 @@ function LandingHero({
           history: []
         });
 
+        const replyText = typeof response.data.reply === 'object' ? response.data.reply.text : response.data.reply;
         setHistory([{
           role: "ai",
-          text: response.data.reply,
+          text: replyText,
           time: getTime()
         }]);
       } catch (error) {
@@ -312,9 +313,10 @@ function LandingHero({
         history: history.slice(-4)
       });
 
+      const replyText = typeof response.data.reply === 'object' ? response.data.reply.text : response.data.reply;
       setHistory(prev => [...prev, {
         role: "ai",
-        text: response.data.reply,
+        text: replyText,
         time: getTime()
       }]);
       setAiResponseCount(prev => prev + 1);
@@ -326,8 +328,8 @@ function LandingHero({
   };
 
   return (
-    <section className="w-full px-0 py-4 md:py-8 flex flex-col lg:flex-row items-center justify-center gap-12 lg:gap-24 text-left max-w-6xl mx-auto">
-      <div className="animate-in fade-in slide-in-from-left-4 duration-700 w-full lg:max-w-lg">
+    <section className="w-full px-0 py-2 md:py-4 lg:py-6 flex flex-col lg:flex-row items-start justify-center gap-8 lg:gap-16 text-left max-w-6xl mx-auto">
+      <div className="animate-in fade-in slide-in-from-left-4 duration-700 w-full lg:max-w-lg lg:pt-12">
         <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-emerald-300/20 bg-emerald-300/10 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-emerald-300">
           <Sparkles size={12} />
           vendeurIa™
@@ -345,30 +347,30 @@ function LandingHero({
         <div className="absolute -inset-4 bg-emerald-300/5 blur-[100px] rounded-full pointer-events-none" />
 
         {step === "form" ? (
-          <div className="relative rounded-[2.5rem] border border-white/10 bg-[#0c0f0d] p-4 md:p-8 animate-in fade-in zoom-in-95 duration-300 text-left w-full lg:min-w-[600px]">
+          <div className="relative rounded-[2.5rem] border border-white/10 bg-[#0c0f0d] p-4 md:p-6 lg:p-7 animate-in fade-in zoom-in-95 duration-300 text-left w-full lg:min-w-[600px]">
             <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-300/5 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none" />
 
-            <div className="mb-8 flex items-center gap-4 relative z-10">
-              <div className="grid h-12 w-12 place-items-center rounded-2xl bg-emerald-300 text-[#06130d] shadow-lg shadow-emerald-500/20">
-                <Store size={24} />
+            <div className="mb-6 flex items-center gap-4 relative z-10">
+              <div className="grid h-10 w-10 place-items-center rounded-2xl bg-emerald-300 text-[#06130d] shadow-lg shadow-emerald-500/20">
+                <Store size={20} />
               </div>
               <div>
-                <h2 className="text-xl font-black text-white">Prêt à vendre ?</h2>
-                <p className="text-xs text-white/50">Lancez votre machine de vente en 2 minutes.</p>
+                <h2 className="text-xl font-black text-white leading-tight">Prêt à vendre ?</h2>
+                <p className="text-[10px] text-white/50">Lancez votre machine de vente en 2 minutes.</p>
               </div>
             </div>
 
-            <div className="grid gap-5 relative z-10">
-              <label className="grid gap-2">
+            <div className="grid gap-4 relative z-10">
+              <label className="grid gap-1.5">
                 <span className="text-[10px] font-black uppercase tracking-widest text-white/40">Nom de votre commerce</span>
-                <input className="h-12 rounded-xl border border-white/10 bg-black/40 px-4 text-white outline-none focus:border-emerald-300 transition-all placeholder:text-white/10" value={form.businessName} onChange={(e) => setForm({ ...form, businessName: e.target.value })} placeholder="Aicha Mode, Koffi Restaurant..." />
+                <input className="h-11 rounded-xl border border-white/10 bg-black/40 px-4 text-white outline-none focus:border-emerald-300 transition-all placeholder:text-white/10 text-sm" value={form.businessName} onChange={(e) => setForm({ ...form, businessName: e.target.value })} placeholder="Aicha Mode, Koffi Restaurant..." />
               </label>
 
               <div className="flex flex-col sm:flex-row gap-4">
-                <label className="flex-1 min-w-0 grid gap-2">
+                <label className="flex-1 min-w-0 grid gap-1.5">
                   <span className="text-[10px] font-black uppercase tracking-widest text-white/40">Catégorie</span>
                   <div className="relative">
-                    <select className="h-12 w-full rounded-xl border border-white/10 bg-black/40 px-4 text-white outline-none focus:border-emerald-300 transition-all appearance-none cursor-pointer" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value as any })}>
+                    <select className="h-11 w-full rounded-xl border border-white/10 bg-black/40 px-4 text-white outline-none focus:border-emerald-300 transition-all appearance-none cursor-pointer text-sm" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value as any })}>
                       <option value="fashion">👗 Mode & Beauté</option>
                       <option value="food">🍔 Restauration & Food</option>
                       <option value="beauty">💄 Soins & Cosmétiques</option>
@@ -382,10 +384,10 @@ function LandingHero({
                       <option value="auto">🚗 Auto-Moto & Pièces</option>
                       <option value="other">📦 Autre Commerce</option>
                     </select>
-                    <ChevronRight size={16} className="absolute right-4 top-1/2 -translate-y-1/2 rotate-90 text-white/30 pointer-events-none" />
+                    <ChevronRight size={14} className="absolute right-4 top-1/2 -translate-y-1/2 rotate-90 text-white/30 pointer-events-none" />
                   </div>
                 </label>
-                <label className="flex-1 min-w-0 grid gap-2">
+                <label className="flex-1 min-w-0 grid gap-1.5">
                   <span className="text-[10px] font-black uppercase tracking-widest text-white/40">WhatsApp Business</span>
                   <div className="flex gap-2 items-center w-full">
                     <CountrySelector
@@ -397,7 +399,7 @@ function LandingHero({
                     />
                     <div className="flex-1 min-w-0">
                       <input
-                        className="h-12 w-full rounded-xl border border-white/10 bg-black/40 px-4 text-white outline-none focus:border-emerald-300 transition-all placeholder:text-white/10 text-sm"
+                        className="h-11 w-full rounded-xl border border-white/10 bg-black/40 px-4 text-white outline-none focus:border-emerald-300 transition-all placeholder:text-white/10 text-sm"
                         value={localPhone}
                         onChange={(e) => setLocalPhone(e.target.value.replace(/\D/g, ""))}
                         placeholder="07 00 00 00 00"
@@ -408,7 +410,7 @@ function LandingHero({
                 </label>
               </div>
 
-              <label className="grid gap-2">
+              <label className="grid gap-1.5">
                 <span className="text-[10px] font-black uppercase tracking-widest text-white/40">Adresse précise (La ville sera détectée)</span>
                 <AddressAutocomplete
                   value={form.address}
@@ -420,10 +422,10 @@ function LandingHero({
                 />
               </label>
 
-              <label className="grid gap-2">
+              <label className="grid gap-1.5">
                 <span className="text-[10px] font-black uppercase tracking-widest text-white/40">Ce que vous vendez / Instructions de livraison</span>
                 <textarea
-                  className="min-h-[120px] rounded-xl border border-white/10 bg-black/40 p-4 text-white outline-none focus:border-emerald-300 transition-all resize-none placeholder:text-white/10"
+                  className="min-h-[100px] rounded-xl border border-white/10 bg-black/40 p-4 text-white outline-none focus:border-emerald-300 transition-all resize-none placeholder:text-white/10 text-sm"
                   value={form.description}
                   onChange={(e) => setForm({ ...form, description: e.target.value })}
                   placeholder="Ex: Robes, chaussures. Livraison partout sous 2h."
@@ -440,7 +442,7 @@ function LandingHero({
               <button
                 onClick={handleCreateVendeur}
                 disabled={!form.businessName || !form.address}
-                className="mt-4 flex h-14 items-center justify-center gap-3 rounded-2xl bg-emerald-300 px-6 text-sm font-black uppercase tracking-widest text-[#06130d] shadow-xl shadow-emerald-500/10 transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-30"
+                className="mt-2 flex h-12 items-center justify-center gap-3 rounded-2xl bg-emerald-300 px-6 text-sm font-black uppercase tracking-widest text-[#06130d] shadow-xl shadow-emerald-500/10 transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-30"
               >
                 {user ? "Lancer ma configuration" : "Créer mon vendeurIa"} <ChevronRight size={18} />
               </button>
@@ -448,7 +450,7 @@ function LandingHero({
               {user && (
                 <button
                   onClick={() => window.location.href = "/dashboard"}
-                  className="mt-2 flex h-14 items-center justify-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-6 text-sm font-black uppercase tracking-widest text-white transition-all hover:bg-white/10"
+                  className="mt-1 flex h-12 items-center justify-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-6 text-sm font-black uppercase tracking-widest text-white transition-all hover:bg-white/10"
                 >
                   <LayoutDashboard size={18} /> Mon Tableau de bord
                 </button>

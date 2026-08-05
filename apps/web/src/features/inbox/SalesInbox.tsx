@@ -218,8 +218,8 @@ export function SalesInbox() {
         !showMobileChat ? "hidden md:flex" : "flex"
       )}>
         {selectedChat ? (
-          <>
-            <header className="p-4 md:p-6 border-b border-white/5 flex items-center justify-between bg-vendeur-bg/80 backdrop-blur-md sticky top-0 z-30">
+          <div className="flex-1 flex flex-col h-full max-w-[500px] mx-auto w-full border-x border-white/5 bg-[#0b141a] relative">
+            <header className="p-4 md:p-4 border-b border-white/5 flex items-center justify-between bg-[#202c33] sticky top-0 z-30">
               <div className="flex items-center gap-3">
                 <button
                   onClick={() => setShowMobileChat(false)}
@@ -309,7 +309,11 @@ export function SalesInbox() {
               </div>
             </header>
 
-            <div ref={scrollRef} className="flex-1 p-4 md:p-8 space-y-6 overflow-y-auto bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]">
+            <div
+              ref={scrollRef}
+              className="flex-1 p-4 md:p-4 space-y-4 overflow-y-auto bg-repeat opacity-95"
+              style={{ backgroundImage: "url('https://static.whatsapp.net/rsrc.php/v3/y6/r/wa669ae5qee.png')", backgroundSize: "400px" }}
+            >
               {loadingMessages ? (
                 <div className="flex justify-center"><Loader2 className="animate-spin text-white/10" /></div>
               ) : (
@@ -386,7 +390,7 @@ export function SalesInbox() {
                 </button>
               </div>
             </footer>
-          </>
+          </div>
         ) : (
           <div className="flex-1 flex flex-col items-center justify-center text-center p-12 opacity-20">
             <MessageCircle size={64} className="mb-4" />
@@ -590,17 +594,12 @@ function ChatBubble({ role, text, time, type, mediaUrl }: any) {
   return (
     <div className={cn("flex w-full animate-in slide-in-from-bottom-2 duration-300", isCustomer ? "justify-start" : "justify-end")}>
       <div className={cn(
-        "max-w-[80%] p-4 rounded-3xl shadow-lg relative",
+        "max-w-[85%] p-3 rounded-xl shadow-md relative",
         isCustomer
-          ? "bg-vendeur-coal border border-white/10 rounded-tl-none text-white"
-          : "bg-vendeur-emerald text-vendeur-coal rounded-tr-none font-bold",
+          ? "bg-[#202c33] border border-white/5 rounded-tl-none text-white"
+          : "bg-[#005c4b] text-white rounded-tr-none font-medium",
         isPaymentDetected && "ring-4 ring-amber-500/50 border-amber-500 bg-amber-900/20"
       )}>
-        <div className="flex items-center gap-2 mb-1 opacity-40">
-           {role === "ai" ? <Bot size={12}/> : <User size={12}/>}
-           <span className="text-[9px] font-black uppercase tracking-widest">{role}</span>
-        </div>
-
         {isPaymentDetected && (
           <div className="flex items-center gap-2 mb-2 px-2 py-1 bg-amber-500 text-black rounded-lg text-[10px] font-black uppercase">
             <ShieldCheck size={12} /> Paiement à valider
@@ -613,12 +612,16 @@ function ChatBubble({ role, text, time, type, mediaUrl }: any) {
             <p className="text-[10px] italic opacity-60 line-clamp-2">{text}</p>
           </div>
         ) : (
-          <p className="text-sm leading-relaxed">{text}</p>
+          <p className="text-[14px] leading-relaxed whitespace-pre-wrap">{text}</p>
         )}
 
-        <div className="flex items-center justify-end gap-1 mt-2 opacity-50">
+        <div className="flex items-center justify-end gap-1 mt-1 opacity-50">
           <span className="text-[9px] font-bold">{time}</span>
-          {!isCustomer && <CheckCheck size={12} />}
+          {!isCustomer && (
+            <div className="flex -space-x-1">
+              <CheckCheck size={12} className="text-[#53bdeb]" />
+            </div>
+          )}
         </div>
       </div>
     </div>

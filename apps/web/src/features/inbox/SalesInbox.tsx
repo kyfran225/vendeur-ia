@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import {
   MessageCircle, Search, MoreVertical, CheckCheck, ShieldCheck,
-  Send, User, Bot, Loader2, Sparkles, X, Instagram,
+  Send, User, Bot, Loader2, Sparkles, X, Instagram, Facebook,
   ShoppingCart, Plus, Minus, Package, ChevronLeft
 } from "lucide-react";
 
@@ -245,6 +245,7 @@ export function SalesInbox() {
                   </div>
                   <p className="text-[10px] text-vendeur-emerald font-black uppercase tracking-widest flex items-center gap-1">
                     {activeChatData?.platform === 'instagram' && <Instagram size={10} />}
+                    {activeChatData?.platform === 'facebook' && <Facebook size={10} className="text-blue-500" />}
                     {activeChatData?.platform === 'tiktok' && <TikTokIcon size={10} />}
                     {(!activeChatData?.platform || activeChatData?.platform === 'whatsapp') && <MessageCircle size={10} />}
                     {activeChatData?.platform || 'WhatsApp'} • En ligne
@@ -553,6 +554,7 @@ function ChatListItem({ name, lastMsg, time, unread, active, platform, onClick }
         <User className="text-white/20" size={20} />
         <div className="absolute -bottom-1 -right-1 bg-vendeur-bg rounded-full p-1 border border-white/10">
            {platform === 'instagram' && <Instagram size={10} className="text-pink-500" />}
+           {platform === 'facebook' && <Facebook size={10} className="text-blue-500" />}
            {platform === 'tiktok' && <TikTokIcon size={10} className="text-white" />}
            {(!platform || platform === 'whatsapp') && <MessageCircle size={10} className="text-vendeur-emerald" />}
         </div>

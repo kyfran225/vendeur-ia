@@ -17,7 +17,7 @@ export interface SalesContext {
   };
   history: { role: "customer" | "ai"; text: string }[];
   message: string;
-  platform?: "whatsapp" | "instagram" | "tiktok";
+  platform?: "whatsapp" | "instagram" | "tiktok" | "facebook";
   customerPhone?: string;
   customerLoyalty?: {
     points: number;
@@ -60,6 +60,7 @@ export class AIAgentService {
     const platformInstructions = {
       whatsapp: "Le client est sur WhatsApp. Si tu as besoin de son adresse, demande-lui de t'envoyer sa localisation WhatsApp ou son quartier précis.",
       instagram: "Le client est sur Instagram. Tu peux mentionner 'le lien dans ma bio' pour plus de photos ou le catalogue complet. Encourage le partage en story s'il est ravi.",
+      facebook: "Le client est sur Facebook Messenger. Réponds aux questions sur les articles en vente. Sois très précis sur la disponibilité et le lieu de retrait/livraison.",
       tiktok: "Le client est sur TikTok. Utilise un ton encore plus dynamique et court. Mentionne que tes produits sont 'ceux de la vidéo' s'il pose des questions sur un post."
     };
 

@@ -51,6 +51,11 @@ const MerchantSchema = new Schema({
     accessToken: String,
     refreshToken: String,
     status: { type: String, enum: ['disconnected', 'connected', 'error'], default: 'disconnected' }
+  },
+  facebookConfig: {
+    pageId: String,
+    accessToken: String,
+    status: { type: String, enum: ['disconnected', 'connected', 'error'], default: 'disconnected' }
   }
 }, { timestamps: true });
 
@@ -104,7 +109,7 @@ const ProductSchema = new Schema({
 const CustomerSchema = new Schema({
   merchantId: { type: Schema.Types.ObjectId, ref: "CommerceMerchant", required: true, index: true },
   phone: { type: String, required: true, index: true },
-  platform: { type: String, enum: ["whatsapp", "instagram", "tiktok"], default: "whatsapp" },
+  platform: { type: String, enum: ["whatsapp", "instagram", "tiktok", "facebook"], default: "whatsapp" },
   platformId: { type: String }, // For non-phone IDs like Instagram Scoped ID
   name: String,
   location: String,
@@ -116,7 +121,7 @@ const CustomerSchema = new Schema({
 const ConversationSchema = new Schema({
   merchantId: { type: Schema.Types.ObjectId, ref: "CommerceMerchant", required: true, index: true },
   customerId: { type: Schema.Types.ObjectId, ref: "CommerceCustomer", required: true },
-  platform: { type: String, enum: ["whatsapp", "instagram", "tiktok"], default: "whatsapp" },
+  platform: { type: String, enum: ["whatsapp", "instagram", "tiktok", "facebook"], default: "whatsapp" },
   status: { type: String, enum: ["active", "needs_human", "converted", "closed"], default: "active" },
   lastMessageAt: { type: Date, default: Date.now },
   messagesCount: { type: Number, default: 0 },

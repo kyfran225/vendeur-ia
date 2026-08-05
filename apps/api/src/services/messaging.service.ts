@@ -11,6 +11,8 @@ export class MessagingService {
         return this.sendWhatsApp(merchant, remoteId, content, options);
       case 'instagram':
         return this.sendInstagram(merchant, remoteId, content);
+      case 'facebook':
+        return this.sendFacebook(merchant, remoteId, content);
       case 'tiktok':
         return this.sendTikTok(merchant, remoteId, content);
       default:
@@ -53,7 +55,7 @@ export class MessagingService {
     }
 
     try {
-      const url = `https://graph.facebook.com/v19.0/me/messages?access_token=${config.accessToken}`;
+      const url = `https://graph.facebook.com/v20.0/me/messages?access_token=${config.accessToken}`;
       await axios.post(url, {
         recipient: { id: remoteId },
         message: { text: content },
@@ -61,6 +63,26 @@ export class MessagingService {
       });
     } catch (error: any) {
       console.error("[MessagingService] Instagram send error:", error.response?.data || error.message);
+      throw error;
+    }
+  }
+
+  private async sendFacebook(merchant: any, remoteId: string, content: string) {
+    const config = merchant.facebookConfig;
+    if (!config?.accessToken || !config?.pageId) {
+      throw new Error("Facebook not configured for this merchant");
+    }
+
+    try {
+      // Facebook uses the same Messenger API as Instagram
+      const url = `https://graph.facebook.com/v20.0/me/messages?access_token=${config.accessToken}`;
+      await axios.post(url, {
+        recipient: { id: remoteId },
+        message: { text: content },
+        messaging_type: "RESPONSE"
+      });
+    } catch (error: any) {
+      console.error("[MessagingService] Facebook send error:", error.response?.data || error.message);
       throw error;
     }
   }

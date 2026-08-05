@@ -18,6 +18,9 @@ Le produit doit être utilisable par un commerçant sans formation technique en 
 - **[ROADMAP.md](file:///C:/Users/Franck/web-apps/vendeur-ia/ROADMAP.md)** : Plan de finalisation détaillé étape par étape pour passer en production (110% fonctionnel).
 - **[PROTOCOL.md](file:///C:/Users/Franck/web-apps/vendeur-ia/PROTOCOL.md)** : Règles de qualité et standards IA.
 
+## Dernières Interventions
+- **Intégration Facebook (2026-08-05)** : Ajout du support complet Facebook Messenger (Pages) avec redirection Marketplace Pro vers Pack Pro (25.000 FCFA). Mise à jour des contrats Core, API et Web.
+
 ## Bugs Bloquants Identifiés
 - **Indefinite Spinner (Configuration IA)** : Le composant frontend `AiSettings` boucle indéfiniment si `aiSettings` n'est pas initialisé ou est manquant.
 - **Erreurs de Navigation** : Menu cassé sur certaines pages n'ayant pas de repli propre lorsque le profil marchand n'existe pas.

@@ -41,6 +41,11 @@ export const merchantSchema = z.object({
     responseStyle: z.enum(commerceResponseStyles).default("normal"),
     autoReply: z.boolean().default(true)
   }),
+  facebookConfig: z.object({
+    pageId: z.string().optional(),
+    accessToken: z.string().optional(),
+    status: z.enum(['disconnected', 'connected', 'error']).default('disconnected')
+  }).optional(),
   createdAt: z.string(),
   updatedAt: z.string()
 });
@@ -101,6 +106,7 @@ export const conversationSchema = z.object({
   id: z.string(),
   merchantId: z.string(),
   customerId: z.string(),
+  platform: z.enum(["whatsapp", "instagram", "tiktok", "facebook"]).default("whatsapp"),
   status: z.enum(["active", "needs_human", "converted", "closed"]),
   lastMessageAt: z.string(),
   createdAt: z.string()

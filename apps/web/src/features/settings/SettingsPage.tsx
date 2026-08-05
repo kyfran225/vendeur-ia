@@ -15,6 +15,7 @@ import {
   Loader2,
   Globe,
   Instagram,
+  Facebook,
   Bell,
   HelpCircle,
   Truck,
@@ -31,6 +32,9 @@ import { toast } from "sonner";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { WhatsAppConnectionFlow } from "./components/WhatsAppConnectionFlow";
+import { FacebookConnectionModal } from "./components/fb/FacebookConnectionModal";
+import { MarketplaceGuideModal } from "./components/fb/MarketplaceGuideModal";
+import { PackProModal } from "../dashboard/components/PackProModal";
 import { subscribeToPush } from "@/lib/pushUtils";
 
 function cn(...inputs: ClassValue[]) {
@@ -630,6 +634,9 @@ function PersonnaliteTab({ merchant }: { merchant: any }) {
 // --- ONGLET 4 : CONNEXIONS ---
 function ConnexionsTab({ merchant, systemSettings, qrCode }: { merchant: any; systemSettings: any; qrCode: string | null }) {
   const queryClient = useQueryClient();
+  const [isFacebookModalOpen, setIsFacebookModalOpen] = useState(false);
+  const [isMarketplaceGuideOpen, setIsMarketplaceGuideOpen] = useState(false);
+  const [isPackProOpen, setIsPackProOpen] = useState(false);
 
   const connectMutation = useMutation({
     mutationFn: async () => {
@@ -669,6 +676,14 @@ function ConnexionsTab({ merchant, systemSettings, qrCode }: { merchant: any; sy
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
            <SocialCard
+              icon={<Facebook size={24} />}
+              name="Facebook Messenger"
+              status={merchant?.facebookConfig?.pageId ? "Actif" : "Non configuré"}
+              active={!!merchant?.facebookConfig?.pageId}
+              color="bg-[#1877F2]"
+              onClick={() => setIsFacebookModalOpen(true)}
+           />
+           <SocialCard
               icon={<InstagramIcon size={24} />}
               name="Instagram Business"
               status={merchant?.instagramConfig?.pageId ? "Actif" : "Non configuré"}
@@ -684,6 +699,25 @@ function ConnexionsTab({ merchant, systemSettings, qrCode }: { merchant: any; sy
            />
         </div>
       </section>
+
+      <FacebookConnectionModal
+         isOpen={isFacebookModalOpen}
+         onClose={() => setIsFacebookModalOpen(false)}
+         merchant={merchant}
+         onRefresh={() => queryClient.invalidateQueries({ queryKey: ["dashboard"] })}
+         onOpenMarketplaceGuide={() => setIsMarketplaceGuideOpen(true)}
+      />
+
+      <MarketplaceGuideModal
+         isOpen={isMarketplaceGuideOpen}
+         onClose={() => setIsMarketplaceGuideOpen(false)}
+         onOpenPackPro={() => setIsPackProOpen(true)}
+      />
+
+      <PackProModal
+         isOpen={isPackProOpen}
+         onClose={() => setIsPackProOpen(false)}
+      />
     </div>
   );
 }
@@ -851,7 +885,7 @@ function ToggleButton({ active, onToggle, color }: any) {
   );
 }
 
-function SocialCard({ icon, name, status, active, color }: any) {
+function SocialCard({ icon, name, status, active, color, onClick }: any) {
   return (
     <div className={cn(
       "p-8 rounded-[2.5rem] border transition-all flex items-center justify-between group",
@@ -866,10 +900,14 @@ function SocialCard({ icon, name, status, active, color }: any) {
              <p className="text-[10px] font-black uppercase tracking-widest text-white/30">{status}</p>
           </div>
        </div>
-       <button className={cn(
-         "h-10 px-6 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all",
-         active ? "bg-white/5 text-white/60 hover:bg-white/10" : "bg-white/10 text-white/20 cursor-not-allowed"
-       )}>
+       <button
+         onClick={onClick}
+         disabled={!onClick && !active}
+         className={cn(
+           "h-10 px-6 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all",
+           active ? "bg-white/5 text-white/60 hover:bg-white/10" : "bg-white/10 text-white/20 hover:bg-white/20 cursor-pointer"
+         )}
+       >
           {active ? "Détails" : "Lier"}
        </button>
     </div>

@@ -4,6 +4,7 @@ import {
   Camera, ChevronLeft, Sparkles, User, ShieldCheck
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import * as Portal from "@radix-ui/react-portal";
 import { apiClient } from "@/lib/apiClient";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
@@ -79,15 +80,16 @@ export function BriefingRoom({ isOpen, onClose, businessName }: { isOpen: boolea
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-0 md:p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-300">
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95, y: 20 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.95, y: 20 }}
-        className="relative bg-[#0b141a] w-full max-w-[450px] h-full md:h-[800px] md:rounded-[3rem] shadow-2xl flex flex-col overflow-hidden border border-white/10"
-      >
-        {/* Header - Simulated WhatsApp Mobile */}
-        <header className="bg-[#202c33] px-4 py-4 flex items-center justify-between border-b border-white/5 z-20 shrink-0">
+    <Portal.Root>
+      <div className="fixed inset-0 z-[9999] flex items-center justify-center p-0 md:p-8 bg-[#07100d]/95 backdrop-blur-xl animate-in fade-in duration-300">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.95, y: 20 }}
+          className="relative bg-[#0b141a] w-full max-w-[420px] h-full md:h-[85vh] md:rounded-[3rem] shadow-[0_0_100px_rgba(0,0,0,0.8)] flex flex-col overflow-hidden border border-white/10 ring-1 ring-white/5"
+        >
+          {/* Header - Simulated WhatsApp Mobile */}
+          <header className="bg-[#202c33] px-4 py-4 flex items-center justify-between border-b border-white/5 z-20 shrink-0">
           <div className="flex items-center gap-3">
             <button onClick={onClose} className="md:hidden text-white/40 hover:text-white">
               <ChevronLeft size={24} />

@@ -215,6 +215,7 @@ function LandingHero({
         const response = await axios.post(`${API_URL}/api/commerce/demo/process`, {
           businessName: form.businessName,
           city: form.city || "Abidjan",
+          address: form.address,
           category: form.category,
           description: form.description,
           message: "SYSTEM_INITIAL_GREETING",
@@ -306,6 +307,7 @@ function LandingHero({
       const response = await axios.post(`${API_URL}/api/commerce/demo/process`, {
         businessName: form.businessName,
         city: form.city || "Abidjan",
+        address: form.address,
         category: form.category,
         description: form.description,
         message: currentInput,

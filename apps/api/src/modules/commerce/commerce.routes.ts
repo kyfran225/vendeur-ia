@@ -12,6 +12,7 @@ import { CreateProductSchema, UpdateMerchantSchema, UpdateProductSchema, CreateO
 import { CommerceMerchantModel, CommerceProductModel, CommerceConversationModel, CommerceMessageModel, CommerceCustomerModel, CommerceOrderModel } from "./commerce.model.js";
 import { TransactionModel } from "./transaction.model.js";
 import { SystemSettingsModel } from "./admin.model.js";
+import { CATEGORY_MOCKS } from "./demo.data.js";
 import axios from "axios";
 import multer from "multer";
 
@@ -600,21 +601,44 @@ router.post("/demo/process", async (req, res) => {
       return { label: label?.trim(), number: number?.trim() };
     }).filter((p: any) => p.label && p.number) || [];
 
+    // Get mock products for the selected category
+    const mockProducts = CATEGORY_MOCKS[category] || CATEGORY_MOCKS["other"];
+
+    // Refined instructions to PRIORITIZE user description over generic mocks
+    const customInstructions = `Ceci est une démonstration pour un commerce de type "${category}".
+
+    IMPORTANT : L'utilisateur a décrit précisément ce qu'il vend : "${description || "Pas de description spécifiée"}".
+    SI l'utilisateur a mentionné des produits spécifiques (ex: "Tchep", "Thieboudienne", "Attiéké", "Robes rouges"), tu dois ABSOLUMENT parler de CES produits en priorité.
+    Les produits du catalogue mocké (ex: Burgers, Sneakers) ne sont que des EXEMPLES génériques. Ne les utilise PAS si l'utilisateur a spécifié ses propres articles.
+
+    TON BUT : Faire croire à l'utilisateur que tu as lu et compris SA description.
+    Si il dit qu'il vend du "Tchep", parle avec passion de son Tchep, demande s'il veut du piment ou du poisson.
+    Invente des prix réalistes (en XOF) et des stocks pour les produits mentionnés par l'utilisateur.
+
+    LIEU DE VENTE / LIVRAISON : Ton commerce est situé à ${city}, précisément à "${req.body.address || city}".
+    Mentionne ce quartier si le client demande où tu es.
+
+    Personnalisation maximale : ignore les mocks si ils contredisent la description de l'utilisateur.`;
+
     const reply = await aiAgentService.generateResponse({
       merchant: {
         businessName,
         category,
         city,
         country: "CI", // Default for demo
-        description: merchantInstructions,
+        description: description,
         paymentChannels
       },
-      products: [], // Demo starts with no products, or we could add mock ones
+      products: mockProducts,
       knowledge: {
         businessRules: {
-          deliveryZones: merchantInstructions ? [merchantInstructions] : (city ? [city] : [])
+          deliveryZones: [city, req.body.address].filter(Boolean),
+          paymentMethods: paymentChannels.length > 0 ? paymentChannels : [
+            { provider: "Orange Money", number: "07 00 00 00 00" },
+            { provider: "Wave", number: "05 00 00 00 00" }
+          ]
         },
-        customInstructions: `Ceci est une démonstration pour un commerce de type "${category}". Sois ultra-convaincant. Même si le catalogue est vide, parle avec passion de ton expertise en "${category}" pour que l'utilisateur veuille activer sa machine. Ne dis jamais que tu ne sais pas ce que tu vends.`
+        customInstructions: customInstructions
       },
       history: history.map((h: any) => ({
         role: h.role === "customer" ? "customer" : "ai",

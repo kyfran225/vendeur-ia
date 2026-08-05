@@ -681,4 +681,57 @@ router.post("/push/subscribe", authenticate, async (req, res) => {
   }
 });
 
+// Briefing Room Route (Merchant training their AI)
+router.post("/briefing", authenticate, async (req, res) => {
+  try {
+    const ownerId = (req as any).user.id;
+    const { message, history } = req.body;
+
+    const merchant = await CommerceMerchantModel.findOne({ ownerId });
+    if (!merchant) return res.status(404).json({ error: "Merchant not found" });
+
+    const products = await CommerceProductModel.find({ merchantId: merchant._id });
+    const knowledge = await CommerceKnowledgeModel.findOne({ merchantId: merchant._id });
+
+    // Specialized Briefing Prompt
+    const systemPrompt = `Tu es l'Employé Numérique Vendeur de "${merchant.businessName}".
+    TU PARLES DIRECTEMENT À TON PATRON (le marchand).
+
+    TON RÔLE :
+    - Écouter ses instructions, ses critiques et ses conseils.
+    - Confirmer que tu as compris comment il veut que tu vendes.
+    - Répondre avec respect, enthousiasme et professionnalisme (sois un employé modèle).
+
+    CONTEXTE ACTUEL :
+    - Ville : ${merchant.city}
+    - Catégorie : ${merchant.category}
+    - Produits enregistrés : ${products.length}
+
+    INSTRUCTIONS DU PATRON :
+    - Si le patron te donne une nouvelle consigne (ex: "Sois plus drôle", "Le prix du Tchep est 2000"), confirme que c'est noté.
+    - Ne sois pas un robot froid. Dis "Oui Chef", "C'est noté Patron", "Je m'occupe de ça immédiatement".
+
+    RÉPONSE : Courte, impactante et confirmant l'apprentissage.`;
+
+    const reply = await aiAgentService.generateResponse({
+      merchant: merchant.toObject() as any,
+      products: products.map(p => p.toObject()),
+      knowledge: knowledge ? (knowledge.toObject() as any) : { businessRules: {} },
+      history: history.map((h: any) => ({
+        role: h.role === "customer" ? "customer" : "ai",
+        text: h.text
+      })),
+      message,
+      customerPhone: "BOSS",
+      platform: "whatsapp",
+      aiSummary: `Briefing en cours avec le propriétaire de ${merchant.businessName}.`
+    });
+
+    res.json({ reply: reply.text });
+  } catch (error) {
+    console.error("Briefing Error:", error);
+    res.status(500).json({ error: "briefing_error" });
+  }
+});
+
 export default router;

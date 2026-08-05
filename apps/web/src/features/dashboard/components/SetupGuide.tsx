@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   CheckCircle2,
@@ -7,11 +7,14 @@ import {
   Sparkles,
   Bot,
   Zap,
-  ArrowRight
+  ArrowRight,
+  ShieldCheck,
+  MessageSquareQuote
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { BriefingRoom } from "./BriefingRoom";
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -25,6 +28,7 @@ interface Step {
 }
 
 export function SetupGuide({ setupStatus, businessName, dashboard }: { setupStatus: any, businessName: string, dashboard?: any }) {
+  const [isBriefingOpen, setIsBriefingOpen] = useState(false);
   const { score, steps, isFullyOperational } = setupStatus;
 
   // Find the first uncompleted step to highlight it
@@ -80,7 +84,21 @@ export function SetupGuide({ setupStatus, businessName, dashboard }: { setupStat
             <p className="text-sm md:text-base text-white/80 leading-relaxed italic">
               {aiMessage}
             </p>
+
+            <button
+              onClick={() => setIsBriefingOpen(true)}
+              className="mt-6 flex items-center gap-3 px-5 py-2.5 rounded-xl bg-vendeur-emerald/10 border border-vendeur-emerald/30 text-vendeur-emerald text-[10px] font-black uppercase tracking-widest hover:bg-vendeur-emerald/20 transition-all group"
+            >
+              <MessageSquareQuote size={16} className="group-hover:rotate-12 transition-transform" />
+              Briefing Room : Donner des instructions
+            </button>
           </div>
+
+          <BriefingRoom
+            isOpen={isBriefingOpen}
+            onClose={() => setIsBriefingOpen(false)}
+            businessName={businessName}
+          />
 
           <div className="space-y-2">
             <div className="flex justify-between items-end mb-1">

@@ -70,18 +70,20 @@ const API_URL = (import.meta as any).env.VITE_API_URL || "http://localhost:3001"
 function WhatsAppBubble({ role, text, time }: { role: string; text: string; time: string }) {
   const isAi = role === "ai";
   return (
-    <div className={isAi ? "flex justify-start mb-4" : "flex justify-end mb-4"}>
-      <div className={isAi
-        ? "bg-[#202c33] text-white p-3 rounded-2xl rounded-tl-none max-w-[85%] border border-white/5 shadow-sm relative"
-        : "bg-[#005c4b] text-white p-3 rounded-2xl rounded-tr-none max-w-[85%] shadow-sm relative"
-      }>
-        <p className="text-[15px] leading-tight whitespace-pre-wrap">{text}</p>
-        <div className="flex items-center justify-end gap-1 mt-1.5 opacity-60">
-           <span className="text-[9px] font-medium">{time}</span>
-           {role === "ai" && (
-             <div className="flex -space-x-1.5">
-               <Check size={14} className="text-[#53bdeb]" />
-               <Check size={14} className="text-[#53bdeb]" />
+    <div className={isAi ? "flex justify-start mb-3" : "flex justify-end mb-3"}>
+      <div className={cn(
+        "p-2.5 px-3 rounded-xl shadow-sm relative text-[14px] leading-[1.4]",
+        isAi
+          ? "bg-[#202c33] text-white rounded-tl-none max-w-[90%] border border-white/5"
+          : "bg-[#005c4b] text-white rounded-tr-none max-w-[90%]"
+      )}>
+        <p className="whitespace-pre-wrap">{text}</p>
+        <div className="flex items-center justify-end gap-1 mt-1 opacity-50">
+           <span className="text-[10px]">{time}</span>
+           {role !== "ai" && (
+             <div className="flex -space-x-1">
+               <Check size={12} className="text-[#53bdeb]" />
+               <Check size={12} className="text-[#53bdeb]" />
              </div>
            )}
         </div>
@@ -345,11 +347,11 @@ function LandingHero({
         </p>
       </div>
 
-      <div className="relative w-full lg:w-auto px-2">
+      <div className="relative w-full lg:w-auto px-2 flex justify-center">
         <div className="absolute -inset-4 bg-emerald-300/5 blur-[100px] rounded-full pointer-events-none" />
 
         {step === "form" ? (
-          <div className="relative rounded-[2.5rem] border border-white/10 bg-[#0c0f0d] p-4 md:p-6 lg:p-7 animate-in fade-in zoom-in-95 duration-300 text-left w-full lg:min-w-[600px]">
+          <div className="relative rounded-[2.5rem] border border-white/10 bg-[#0c0f0d] p-4 md:p-6 lg:p-7 animate-in fade-in zoom-in-95 duration-300 text-left w-full lg:min-w-[550px] max-w-xl">
             <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-300/5 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none" />
 
             <div className="mb-6 flex items-center gap-4 relative z-10">
@@ -460,7 +462,7 @@ function LandingHero({
             </div>
           </div>
         ) : (
-          <div className="relative rounded-[2.5rem] border border-[#2a2f32] bg-[#0b141a] shadow-3xl overflow-hidden animate-in slide-in-from-bottom-4 fade-in duration-400 flex flex-col h-[720px] scale-[1.02]">
+          <div className="relative rounded-[3rem] border border-[#2a2f32] bg-[#0b141a] shadow-3xl overflow-hidden animate-in slide-in-from-bottom-4 fade-in duration-400 flex flex-col h-[750px] w-full max-w-[400px] mx-auto scale-[1.02] ring-8 ring-black/20">
             {/* WhatsApp Header */}
             <div className="bg-[#202c33] px-4 py-3.5 flex items-center justify-between border-b border-white/5 z-20">
               <div className="flex items-center gap-3">

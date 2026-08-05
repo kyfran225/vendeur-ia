@@ -50,26 +50,19 @@ export function OnboardingWizard() {
     const initMerchant = async () => {
       if (user && accessToken && tempData && !isMerchantCreated) {
         try {
-          console.log("[Onboarding] Attempting to create merchant...");
+          console.log("[Onboarding] Attempting to create/update merchant with complete data...");
           await apiClient.post("/api/commerce/merchant", {
             ...tempData,
-            city: tempData.city || ""
+            city: tempData.city || "Abidjan" // Default to Abidjan if not detected
           });
           setIsMerchantCreated(true);
-          console.log("[Onboarding] Merchant created successfully");
+          console.log("[Onboarding] Merchant data persisted successfully");
         } catch (err: any) {
-          // If 409, it might already exist, which is fine
-          const isDuplicate = err.response?.status === 409 ||
-                            JSON.stringify(err.response?.data)?.includes("E11000") ||
-                            err.message?.includes("E11000");
-
+          const isDuplicate = err.response?.status === 409;
           if (isDuplicate) {
             setIsMerchantCreated(true);
-            console.log("[Onboarding] Merchant already exists");
           } else {
-            console.error("[Onboarding] Failed to create merchant", err);
-            // Non-blocking but should notify user or retry
-            toast.error("Problème lors de l'initialisation de votre profil. Veuillez rafraîchir.");
+            console.error("[Onboarding] Failed to persist data", err);
           }
         }
       }
@@ -83,7 +76,15 @@ export function OnboardingWizard() {
   const steps = [
     { title: "Bienvenue", component: <WelcomeStep onNext={handleNext} onBack={() => navigate("/")} /> },
     { title: "IA Vision", component: <VisionStep onNext={handleNext} onBack={handleBack} /> },
-    { title: "Connexion", component: <WhatsAppStep onNext={() => {
+    { title: "Connexion", component: <WhatsAppStep onNext={async () => {
+      // Final sync before dashboard
+      try {
+        if (tempData) {
+          await apiClient.post("/api/commerce/merchant", tempData);
+        }
+      } catch (err) {
+        console.warn("[Onboarding] Final sync failed", err);
+      }
       clearOnboarding();
       navigate("/dashboard");
     }} onBack={handleBack} /> },

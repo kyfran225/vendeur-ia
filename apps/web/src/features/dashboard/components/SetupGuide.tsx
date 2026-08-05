@@ -24,20 +24,11 @@ interface Step {
   weight: number;
 }
 
-interface SetupGuideProps {
-  setupStatus: {
-    score: number;
-    isFullyOperational: boolean;
-    steps: Step[];
-  };
-  businessName: string;
-}
-
-export function SetupGuide({ setupStatus, businessName }: SetupGuideProps) {
+export function SetupGuide({ setupStatus, businessName, dashboard }: { setupStatus: any, businessName: string, dashboard?: any }) {
   const { score, steps, isFullyOperational } = setupStatus;
 
   // Find the first uncompleted step to highlight it
-  const nextStep = steps.find(s => !s.completed);
+  const nextStep = steps.find((s: any) => !s.completed);
 
   const getActionLink = (id: string) => {
     switch (id) {
@@ -50,6 +41,12 @@ export function SetupGuide({ setupStatus, businessName }: SetupGuideProps) {
   };
 
   if (isFullyOperational) return null;
+
+  // Dynamic AI guidance message
+  const firstProduct = dashboard?.products?.[0];
+  const aiMessage = firstProduct
+    ? `"Félicitations pour le lancement de ${businessName} ! Je connais déjà ton produit : ${firstProduct.name}. Pour que je puisse commencer à le vendre et encaisser tes paiements, il ne nous manque plus que quelques réglages. On s'en occupe ?"`
+    : `"Félicitations pour le lancement de ${businessName} ! Pour que je puisse vendre tes produits et encaisser tes paiements automatiquement, il nous manque encore quelques réglages. On s'en occupe ?"`;
 
   return (
     <motion.section
@@ -81,7 +78,7 @@ export function SetupGuide({ setupStatus, businessName }: SetupGuideProps) {
           <div className="bg-black/40 border border-white/5 rounded-3xl p-6 relative">
             <div className="absolute -left-2 top-6 w-4 h-4 bg-black/40 border-l border-t border-white/5 rotate-45" />
             <p className="text-sm md:text-base text-white/80 leading-relaxed italic">
-              "Félicitations pour le lancement de <span className="text-vendeur-emerald font-bold">{businessName}</span> ! Pour que je puisse vendre vos produits et encaisser vos paiements automatiquement, il nous manque encore quelques réglages. On s'en occupe ?"
+              {aiMessage}
             </p>
           </div>
 
@@ -103,7 +100,7 @@ export function SetupGuide({ setupStatus, businessName }: SetupGuideProps) {
 
         {/* Right Side: Step List */}
         <div className="w-full md:w-[400px] space-y-3">
-          {steps.map((step) => (
+          {steps.map((step: any) => (
             <Link
               key={step.id}
               to={getActionLink(step.id)}
@@ -137,11 +134,15 @@ export function SetupGuide({ setupStatus, businessName }: SetupGuideProps) {
           {nextStep && (
             <Link
               to={getActionLink(nextStep.id)}
-              className="mt-6 flex items-center justify-center gap-2 w-full min-h-[3rem] px-4 rounded-2xl bg-vendeur-emerald text-vendeur-coal font-black uppercase text-[10px] md:text-xs tracking-widest hover:scale-105 active:scale-95 transition-all shadow-xl shadow-vendeur-emerald/20"
+              className="mt-6 flex items-center justify-center gap-3 w-full min-h-[4rem] px-6 rounded-2xl bg-vendeur-emerald text-vendeur-coal font-black uppercase text-xs tracking-[0.15em] hover:scale-105 active:scale-95 transition-all shadow-xl shadow-vendeur-emerald/20 group"
             >
-              <Zap size={16} fill="currentColor" className="shrink-0" />
-              <span className="truncate text-center flex-1">Continuer : {nextStep.label}</span>
-              <ArrowRight size={16} className="shrink-0" />
+              <Zap size={18} fill="currentColor" className="shrink-0 animate-pulse text-vendeur-coal" />
+              <span className="flex-1 text-center font-black">
+                {nextStep.id === 'whatsapp' ? 'Brancher mon WhatsApp' :
+                 nextStep.id === 'products' ? 'Ajouter des prix' :
+                 nextStep.id === 'payments' ? 'Configurer mes paiements' : 'Action Requise'}
+              </span>
+              <ArrowRight size={18} className="shrink-0 group-hover:translate-x-1 transition-transform" />
             </Link>
           )}
         </div>

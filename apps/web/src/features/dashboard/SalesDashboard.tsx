@@ -89,6 +89,7 @@ function HomePanel({ dashboard }: { dashboard: any }) {
         <SetupGuide
           setupStatus={setupStatus}
           businessName={dashboard?.merchant?.businessName || "Votre boutique"}
+          dashboard={dashboard}
         />
       )}
 

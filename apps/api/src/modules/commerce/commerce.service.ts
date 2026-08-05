@@ -119,26 +119,81 @@ export class CommerceService {
   async createMerchant(ownerId: string, data: any) {
     // Check if merchant already exists to make it idempotent
     const existing = await CommerceMerchantModel.findOne({ ownerId });
-    if (existing) return existing;
 
-    const merchant = await CommerceMerchantModel.create({
-      ownerId,
-      ...data
-    });
+    let merchant;
+    if (existing) {
+      // Update existing if data is provided (onboarding retry)
+      merchant = await CommerceMerchantModel.findOneAndUpdate(
+        { ownerId },
+        {
+          $set: {
+            businessName: data.businessName || existing.businessName,
+            category: data.category || existing.category,
+            description: data.description || existing.description,
+            address: data.address || existing.address,
+            whatsappNumber: data.whatsappNumber || existing.whatsappNumber,
+            city: data.city || existing.city,
+            country: data.country || existing.country
+          }
+        },
+        { new: true }
+      );
+    } else {
+      merchant = await CommerceMerchantModel.create({
+        ownerId,
+        businessName: data.businessName,
+        category: data.category,
+        description: data.description,
+        address: data.address,
+        whatsappNumber: data.whatsappNumber,
+        city: data.city,
+        country: data.country
+      });
+    }
+
+    if (!merchant) throw new Error("Failed to create or update merchant");
 
     // Initialize Knowledge Base if not exists
-    const existingKnowledge = await CommerceKnowledgeModel.findOne({ merchantId: merchant._id });
-    if (!existingKnowledge) {
-      await CommerceKnowledgeModel.create({
+    let knowledge = await CommerceKnowledgeModel.findOne({ merchantId: merchant._id });
+    if (!knowledge) {
+      knowledge = await CommerceKnowledgeModel.create({
         merchantId: merchant._id,
         businessRules: {
           deliveryZones: data.city ? [data.city] : [],
+          deliveryFees: data.city ? [{ zone: data.city, price: 1000 }] : [], // Proactive delivery fee
           openingHours: "09:00 - 18:00",
           returnPolicy: "Retours acceptés sous 48h.",
-          paymentMethods: [] // Start with an empty list so user MUST add their own
+          paymentMethods: []
         },
         customInstructions: `Vends avec passion les produits de ${data.businessName}.`
       });
+    } else if (data.city && knowledge.businessRules.deliveryFees.length === 0) {
+      // Proactively add delivery fee if missing
+      knowledge.businessRules.deliveryFees = [{ zone: data.city, price: 1000 }];
+      await knowledge.save();
+    }
+
+    // Handle First Product from Onboarding
+    if (data.firstProduct && data.firstProduct.name) {
+      const existingProduct = await CommerceProductModel.findOne({
+        merchantId: merchant._id,
+        name: data.firstProduct.name
+      });
+
+      if (!existingProduct) {
+        await CommerceProductModel.create({
+          merchantId: merchant._id,
+          name: data.firstProduct.name,
+          price: data.firstProduct.price || 0,
+          description: data.firstProduct.description || "",
+          category: data.firstProduct.category || data.category,
+          images: data.productImage ? [data.productImage] : [],
+          stock: 10,
+          aiMetadata: {
+            tags: data.firstProduct.tags || []
+          }
+        });
+      }
     }
 
     // Update user onboarding status

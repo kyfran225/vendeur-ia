@@ -12,6 +12,7 @@ import {
 
 import { useSocket } from "@/hooks/useSocket";
 import { useQuery as useTanstackQuery, useQueryClient } from "@tanstack/react-query";
+import { useNavigate, Link } from "react-router-dom";
 import { useAuthStore } from "@/stores/authStore";
 import { toast } from "sonner";
 import { apiClient } from "@/lib/apiClient";
@@ -108,10 +109,14 @@ function HomePanel({ dashboard }: { dashboard: any }) {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {tips.map((tip: string, i: number) => (
-              <div key={i} className="bg-black/40 backdrop-blur-md border border-white/5 p-4 rounded-2xl text-xs font-medium leading-relaxed hover:border-vendeur-emerald/30 transition-colors">
-                {tip}
-              </div>
+            {tips.map((tip: any, i: number) => (
+              <Link
+                key={i}
+                to={tip.action || "#"}
+                className="bg-black/40 backdrop-blur-md border border-white/5 p-4 rounded-2xl text-xs font-medium leading-relaxed hover:border-vendeur-emerald/40 hover:bg-black/60 transition-all active:scale-[0.98]"
+              >
+                {tip.text || tip}
+              </Link>
             ))}
             {tips.length === 0 && (
                <div className="col-span-3 text-white/40 text-xs italic">Analyse de votre business en cours...</div>

@@ -24,6 +24,7 @@ import {
   LogOut
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useSearchParams } from "react-router-dom";
 import { useAuthStore } from "@/stores/authStore";
 import { apiClient } from "@/lib/apiClient";
 import { toast } from "sonner";
@@ -45,7 +46,9 @@ const TikTokIcon = ({ size = 16, className = "" }: { size?: number; className?: 
 type SettingsTab = "boutique" | "savoir" | "personnalite" | "connexions" | "compte";
 
 export function SettingsPage() {
-  const [activeTab, setActiveTab] = useState<SettingsTab>("boutique");
+  const [searchParams] = useSearchParams();
+  const initialTab = (searchParams.get("tab") as SettingsTab) || "boutique";
+  const [activeTab, setActiveTab] = useState<SettingsTab>(initialTab);
   const { accessToken, logout } = useAuthStore();
   const queryClient = useQueryClient();
 

@@ -202,9 +202,14 @@ export class AIProvider {
   }
 
   private async generateWithGemini(request: AIRequest, apiKey: string, model: string): Promise<string> {
+    const modelId = this.getGeminiModelId(model);
+    const isNewModel = modelId.includes("1.5") || modelId.includes("2.0") || modelId.includes("exp");
+
     const contents = [];
-    contents.push({ role: "user", parts: [{ text: `SYSTEM INSTRUCTIONS: ${request.systemPrompt}` }] });
-    contents.push({ role: "model", parts: [{ text: "Compris. Je suis prêt à agir selon ces instructions." }] });
+    if (!isNewModel) {
+      contents.push({ role: "user", parts: [{ text: `SYSTEM INSTRUCTIONS: ${request.systemPrompt}` }] });
+      contents.push({ role: "model", parts: [{ text: "Compris. Je suis prêt à agir selon ces instructions." }] });
+    }
 
     if (request.history) {
       for (const msg of request.history) {
@@ -216,25 +221,30 @@ export class AIProvider {
     }
     contents.push({ role: "user", parts: [{ text: request.userMessage }] });
 
+    const generationConfig: Record<string, unknown> = {
+      maxOutputTokens: request.maxTokens || 1000,
+      temperature: request.temperature ?? 0.7,
+    };
+
+    if (request.jsonMode) {
+      generationConfig.responseMimeType = "application/json";
+    }
+
+    if (request.thinkingLevel) {
+      generationConfig.thinkingConfig = { thinkingLevel: request.thinkingLevel };
+    }
+
+    const payload: any = {
+      contents,
+      generationConfig,
+    };
+
+    if (isNewModel) {
+      payload.systemInstruction = { parts: [{ text: request.systemPrompt }] };
+    }
+
     try {
-      const modelId = this.getGeminiModelId(model);
-      const generationConfig: Record<string, unknown> = {
-        maxOutputTokens: request.maxTokens || 1000,
-        temperature: request.temperature ?? 0.7,
-      };
-
-      if (request.jsonMode) {
-        generationConfig.responseMimeType = "application/json";
-      }
-
-      if (request.thinkingLevel) {
-        generationConfig.thinkingConfig = { thinkingLevel: request.thinkingLevel };
-      }
-
-      const response = await axios.post(`${AIProvider.GEMINI_URL}/${modelId}:generateContent?key=${apiKey}`, {
-        contents,
-        generationConfig,
-      });
+      const response = await axios.post(`${AIProvider.GEMINI_URL}/${modelId}:generateContent?key=${apiKey}`, payload);
 
       return this.extractGeminiText(response.data);
     } catch (error: any) {
@@ -258,7 +268,7 @@ export class AIProvider {
       const response = await axios.post("https://api.groq.com/openai/v1/chat/completions", {
         model,
         messages,
-        max_tokens: request.maxTokens || 250,
+        max_tokens: request.maxTokens || 1000,
         temperature: request.temperature || 0.7,
       }, {
         headers: { "Authorization": `Bearer ${apiKey}`, "Content-Type": "application/json" }
@@ -285,7 +295,7 @@ export class AIProvider {
       const response = await axios.post("https://api.openai.com/v1/chat/completions", {
         model,
         messages,
-        max_tokens: request.maxTokens || 250,
+        max_tokens: request.maxTokens || 1000,
         temperature: request.temperature || 0.7,
       }, {
         headers: { "Authorization": `Bearer ${apiKey}`, "Content-Type": "application/json" }
@@ -312,7 +322,7 @@ export class AIProvider {
       const response = await axios.post("https://openrouter.ai/api/v1/chat/completions", {
         model,
         messages,
-        max_tokens: request.maxTokens || 250,
+        max_tokens: request.maxTokens || 1000,
         temperature: request.temperature || 0.7,
       }, {
         headers: {

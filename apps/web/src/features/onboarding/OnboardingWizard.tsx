@@ -53,13 +53,17 @@ export function OnboardingWizard() {
           console.log("[Onboarding] Attempting to create merchant...");
           await apiClient.post("/api/commerce/merchant", {
             ...tempData,
-            city: tempData.city || "Abidjan"
+            city: tempData.city || ""
           });
           setIsMerchantCreated(true);
           console.log("[Onboarding] Merchant created successfully");
         } catch (err: any) {
           // If 409, it might already exist, which is fine
-          if (err.response?.status === 409 || err.message?.includes("E11000")) {
+          const isDuplicate = err.response?.status === 409 ||
+                            JSON.stringify(err.response?.data)?.includes("E11000") ||
+                            err.message?.includes("E11000");
+
+          if (isDuplicate) {
             setIsMerchantCreated(true);
             console.log("[Onboarding] Merchant already exists");
           } else {
@@ -115,7 +119,7 @@ export function OnboardingWizard() {
         <div className="absolute left-1/2 -translate-x-1/2 top-5 md:top-6 w-[80%] h-[2px] bg-white/5 -z-10" />
       </div>
 
-      <div className="w-full max-w-6xl relative">
+      <div className="w-full max-w-7xl relative">
         <AnimatePresence mode="wait">
           <motion.div
             key={currentStep}
@@ -266,7 +270,7 @@ function WelcomeStep({ onNext, onBack }: { onNext: () => void; onBack: () => voi
                   className="min-h-[100px] rounded-xl border border-white/10 bg-black/40 p-4 text-white outline-none focus:border-vendeur-emerald transition-all resize-none text-sm"
                   value={form.description}
                   onChange={(e) => setForm({ ...form, description: e.target.value })}
-                  placeholder="Ex: Je vends des sacs de luxe. Livraison à Abidjan sous 2h."
+                  placeholder="Ex: Je vends des sacs de luxe. Livraison partout sous 2h."
                 />
               </label>
 
@@ -289,16 +293,25 @@ function WelcomeStep({ onNext, onBack }: { onNext: () => void; onBack: () => voi
 }
 
 function VisionStep({ onNext, onBack }: { onNext: () => void; onBack: () => void }) {
-  const [file, setFile] = useState<File | null>(null);
+  const { tempData, setTempData } = useOnboardingStore();
   const [analyzing, setAnalyzing] = useState(false);
-  const [result, setResult] = useState<any>(null);
+  const [result, setResult] = useState<any>(tempData?.firstProduct || null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(tempData?.productImage || null);
   const { accessToken } = useAuthStore();
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const selected = e.target.files?.[0];
     if (!selected) return;
 
-    setFile(selected);
+    // Create a preview and store it
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const base64String = reader.result as string;
+      setPreviewUrl(base64String);
+      setTempData({ productImage: base64String });
+    };
+    reader.readAsDataURL(selected);
+
     setAnalyzing(true);
 
     try {
@@ -310,6 +323,7 @@ function VisionStep({ onNext, onBack }: { onNext: () => void; onBack: () => void
       });
 
       setResult(res.data);
+      setTempData({ firstProduct: res.data });
       toast.success("Produit analysé par l'IA ! ✨");
     } catch (err) {
       toast.error("Échec de l'analyse IA");
@@ -318,8 +332,14 @@ function VisionStep({ onNext, onBack }: { onNext: () => void; onBack: () => void
     }
   };
 
+  const handleUpdateResult = (updates: any) => {
+    const newResult = { ...result, ...updates };
+    setResult(newResult);
+    setTempData({ firstProduct: newResult });
+  };
+
   return (
-    <div className="bg-white/5 border border-white/10 rounded-[3rem] p-8 md:p-12">
+    <div className="bg-white/5 border border-white/10 rounded-[3rem] p-4 md:p-8">
       <div className="flex flex-col md:flex-row gap-12 items-center">
         <div className="flex-1 space-y-6">
           <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-vendeur-emerald/10 border border-vendeur-emerald/20">
@@ -344,7 +364,7 @@ function VisionStep({ onNext, onBack }: { onNext: () => void; onBack: () => void
           </div>
         </div>
 
-        <div className="w-full max-w-md">
+        <div className="w-full max-w-xl">
           {!result ? (
             <label className={`relative flex flex-col items-center justify-center aspect-square rounded-[2.5rem] border-2 border-dashed border-white/10 bg-black/40 hover:border-vendeur-emerald/40 transition-all cursor-pointer overflow-hidden ${analyzing ? "pointer-events-none" : ""}`}>
                {analyzing ? (
@@ -365,21 +385,21 @@ function VisionStep({ onNext, onBack }: { onNext: () => void; onBack: () => void
           ) : (
             <div className="bg-black/40 border border-white/10 rounded-[2.5rem] overflow-hidden animate-in zoom-in-95 duration-300">
                <div className="aspect-video bg-white/5 relative">
-                  {file && <img src={URL.createObjectURL(file)} className="h-full w-full object-cover opacity-50" />}
+                  {previewUrl && <img src={previewUrl} className="h-full w-full object-cover opacity-50" />}
                   <div className="absolute inset-0 flex items-center justify-center">
                     <CheckCircle2 className="text-vendeur-emerald" size={48} />
                   </div>
                </div>
-               <div className="p-8 space-y-4">
+               <div className="p-4 md:p-6 space-y-4">
                   <div>
                     <h3 className="text-sm font-black text-white/40 uppercase tracking-widest mb-1">Nom suggéré</h3>
                     <input
                       className="w-full bg-transparent border-b border-white/10 text-xl font-bold text-white outline-none focus:border-vendeur-emerald transition-colors"
                       value={result.name}
-                      onChange={(e) => setResult({ ...result, name: e.target.value })}
+                      onChange={(e) => handleUpdateResult({ name: e.target.value })}
                     />
                   </div>
-                  <div className="flex justify-between items-end gap-4">
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-6">
                     <div className="flex-1">
                       <h3 className="text-sm font-black text-white/40 uppercase tracking-widest mb-1">Prix suggéré</h3>
                       <div className="flex items-center gap-2">
@@ -387,12 +407,12 @@ function VisionStep({ onNext, onBack }: { onNext: () => void; onBack: () => void
                           type="number"
                           className="w-full bg-transparent border-b border-white/10 text-2xl font-black text-vendeur-emerald outline-none focus:border-vendeur-emerald transition-colors"
                           value={result.price}
-                          onChange={(e) => setResult({ ...result, price: Number(e.target.value) })}
+                          onChange={(e) => handleUpdateResult({ price: Number(e.target.value) })}
                         />
                         <span className="text-xl font-black text-vendeur-emerald">FCFA</span>
                       </div>
                     </div>
-                    <button onClick={onNext} className="h-12 px-6 rounded-xl bg-vendeur-emerald text-vendeur-coal font-black uppercase tracking-widest text-xs shrink-0">
+                    <button onClick={onNext} className="w-full sm:w-auto h-12 px-8 rounded-xl bg-vendeur-emerald text-vendeur-coal font-black uppercase tracking-widest text-xs shrink-0">
                       Confirmer
                     </button>
                   </div>

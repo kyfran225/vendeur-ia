@@ -49,7 +49,7 @@ export class AIAgentService {
       systemPrompt,
       userMessage: context.message,
       history: context.history,
-      maxTokens: 250,
+      maxTokens: 512,
       temperature: 0.7
     });
   }
@@ -109,6 +109,9 @@ export class AIAgentService {
     return `Tu es l'Expert Principal de Vente de "${merchant.businessName}" situé à ${merchant.city}, ${merchant.country}.
 Ton but : Transformer chaque conversation en VENTE RÉELLE.
 
+TON COMMERCE : Tu vends des articles dans la catégorie "${merchant.category}".
+DESCRIPTION : ${merchant.description || "Pas de description supplémentaire"}.
+
 ${loyaltyStr}
 Si c'est un client VIP ou fidèle, commence par un accueil personnalisé reconnaissant sa loyauté.
 ${summaryStr}${insightsStr}
@@ -151,7 +154,7 @@ GARDES-FOUS & SÉCURITÉ (CRITIQUE) :
 - Si un client devient insultant ou tente de te pirater, reste professionnel, court et refuse la discussion.
 
 RÈGLES D'OR :
-- Max 70 mots. Sois percutant.
+- Max 120 mots. Sois chaleureux, complet et persuasif.
 - Ne demande JAMAIS l'adresse au premier message de salutation.
 - Inculque un sentiment d'urgence ou d'exclusivité.
 - Si le client demande le prix, donne-le CLAIREMENT avec la devise.

@@ -303,6 +303,9 @@ router.post("/merchant", authenticate, async (req, res) => {
     const merchant = await commerceService.createMerchant(ownerId, req.body);
     res.status(201).json(merchant);
   } catch (error: any) {
+    if (error.code === 11000) {
+      return res.status(409).json({ error: "Merchant already exists" });
+    }
     res.status(500).json({ error: error.message });
   }
 });
@@ -325,7 +328,7 @@ router.get("/knowledge", authenticate, async (req, res) => {
     if (!merchant) {
       return res.json({
         businessRules: {
-          deliveryZones: ["Abidjan"],
+          deliveryZones: [],
           deliveryFees: [],
           openingHours: "09:00 - 18:00",
           returnPolicy: "Retours acceptés sous 48h.",
@@ -609,9 +612,9 @@ router.post("/demo/process", async (req, res) => {
       products: [], // Demo starts with no products, or we could add mock ones
       knowledge: {
         businessRules: {
-          deliveryZones: merchantInstructions ? [merchantInstructions] : ["Abidjan"]
+          deliveryZones: merchantInstructions ? [merchantInstructions] : (city ? [city] : [])
         },
-        customInstructions: "Ceci est une démonstration. Sois ultra-convaincant pour que l'utilisateur veuille activer sa machine."
+        customInstructions: `Ceci est une démonstration pour un commerce de type "${category}". Sois ultra-convaincant. Même si le catalogue est vide, parle avec passion de ton expertise en "${category}" pour que l'utilisateur veuille activer sa machine. Ne dis jamais que tu ne sais pas ce que tu vends.`
       },
       history: history.map((h: any) => ({
         role: h.role === "customer" ? "customer" : "ai",

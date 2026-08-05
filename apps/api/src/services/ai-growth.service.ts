@@ -36,13 +36,15 @@ export class AIGrowthService {
       const prompt = `
         En tant qu'expert en stratégie de vente e-commerce omnicanal, analyse ces données et donne 3 conseils ultra-courts (max 15 mots chacun).
         Si Instagram ou TikTok n'est pas lié, suggère-le fortement comme levier de croissance.
-        Utilise des emojis.
+
+        IMPORTANT : Ne mets PAS d'emoji au début ou à la fin du texte.
+        Chaque conseil doit avoir une action associée parmi : "/products", "/settings?tab=connexions", "/settings?tab=boutique", "/inbox", "/marketing", "/orders".
+
         Réponds au format JSON uniquement :
         {
           "tips": [
-            "✨ Conseil 1",
-            "🚀 Conseil 2",
-            "💡 Conseil 3"
+            { "text": "Conseil sans emoji", "action": "/path" },
+            ...
           ]
         }
       `;
@@ -57,7 +59,7 @@ export class AIGrowthService {
         thinkingLevel: "low",
       });
 
-      const parsed = parseJsonFromAI<{ tips: string[] }>(response);
+      const parsed = parseJsonFromAI<{ tips: { text: string; action: string }[] }>(response);
       if (!Array.isArray(parsed.tips) || parsed.tips.length === 0) {
         throw new Error("Invalid AI advice format");
       }
@@ -67,9 +69,9 @@ export class AIGrowthService {
       console.error("[AI Growth Service] Error:", error);
       return {
         tips: [
-          "✨ Ajoutez plus de photos à vos produits pour attirer l'attention.",
-          "🚀 Partagez votre lien WhatsApp sur vos réseaux sociaux.",
-          "💡 Répondez rapidement aux clients pour maximiser les conversions."
+          { text: "Ajoutez vos premiers produits pour créer votre catalogue.", action: "/products" },
+          { text: "Reliez Instagram pour générer du trafic et vos premières ventes.", action: "/settings?tab=connexions" },
+          { text: "Configurez vos moyens de paiement pour encaisser vos gains.", action: "/settings?tab=boutique" }
         ]
       };
     }

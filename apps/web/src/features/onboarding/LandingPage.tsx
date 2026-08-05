@@ -145,6 +145,7 @@ function LandingHero({
     category: "fashion",
     description: "",
     country: "CI",
+    city: "Abidjan",
     address: "",
     whatsappNumber: ""
   });
@@ -183,7 +184,7 @@ function LandingHero({
   const handleCreateVendeur = async () => {
     if (form.businessName && form.address && form.whatsappNumber) {
       // 1. Save to local store
-      setTempData({ ...form, city: "Abidjan" });
+      setTempData({ ...form, city: form.city || "Abidjan" });
       setSimulatorActive(true);
 
       // 2. Persist to Backend if authenticated
@@ -195,7 +196,7 @@ function LandingHero({
             description: form.description,
             address: form.address,
             whatsappNumber: form.whatsappNumber,
-            city: "Abidjan",
+            city: form.city || "Abidjan",
             country: form.country
           });
           toast.success("Boutique configurée avec succès !");
@@ -207,20 +208,13 @@ function LandingHero({
 
       onFormUpdate(form.businessName);
       setStep("simulator");
-      // ... rest of the flow
-
-      setHistory([{
-        role: "ai",
-        text: `Bonjour ! ✨ Bienvenue chez ${form.businessName}. Nous préparons votre assistant personnalisé...`,
-        time: getTime()
-      }]);
 
       setIsReplying(true);
 
       try {
         const response = await axios.post(`${API_URL}/api/commerce/demo/process`, {
           businessName: form.businessName,
-          city: "Abidjan",
+          city: form.city || "Abidjan",
           category: form.category,
           description: form.description,
           message: "SYSTEM_INITIAL_GREETING",
@@ -310,7 +304,7 @@ function LandingHero({
     try {
       const response = await axios.post(`${API_URL}/api/commerce/demo/process`, {
         businessName: form.businessName,
-        city: "Abidjan",
+        city: form.city || "Abidjan",
         category: form.category,
         description: form.description,
         message: currentInput,
@@ -419,6 +413,10 @@ function LandingHero({
                 <AddressAutocomplete
                   value={form.address}
                   onChange={(value) => setForm({ ...form, address: value })}
+                  onSelectSuggestion={(suggestion) => {
+                    const city = suggestion.context?.place?.name || suggestion.context?.region?.name || "Abidjan";
+                    setForm(prev => ({ ...prev, city }));
+                  }}
                 />
               </label>
 

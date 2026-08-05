@@ -12,11 +12,13 @@ function cn(...inputs: ClassValue[]) {
 export function AddressAutocomplete({
   value,
   onChange,
+  onSelectSuggestion,
   placeholder = "Ex: Rue 12, Plateaux, face à...",
   className
 }: {
   value: string;
   onChange: (value: string) => void;
+  onSelectSuggestion?: (suggestion: any) => void;
   placeholder?: string;
   className?: string;
 }) {
@@ -106,6 +108,7 @@ export function AddressAutocomplete({
   const handleSelect = (suggestion: any) => {
     const selectedAddress = suggestion.full_address || suggestion.place_name || suggestion.name;
     onChange(selectedAddress);
+    onSelectSuggestion?.(suggestion);
     setShowSuggestions(false);
   };
 

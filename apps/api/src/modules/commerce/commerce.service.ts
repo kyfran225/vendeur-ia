@@ -89,25 +89,32 @@ export class CommerceService {
   }
 
   async createMerchant(ownerId: string, data: any) {
+    // Check if merchant already exists to make it idempotent
+    const existing = await CommerceMerchantModel.findOne({ ownerId });
+    if (existing) return existing;
+
     const merchant = await CommerceMerchantModel.create({
       ownerId,
       ...data
     });
 
-    // Initialize Knowledge Base
-    await CommerceKnowledgeModel.create({
-      merchantId: merchant._id,
-      businessRules: {
-        deliveryZones: [data.city || "Abidjan"],
-        openingHours: "09:00 - 18:00",
-        returnPolicy: "Retours acceptés sous 48h.",
-        paymentMethods: [
-          { provider: "Wave", number: data.whatsappNumber || "", label: "Wave" },
-          { provider: "Orange Money", number: data.whatsappNumber || "", label: "Orange Money" }
-        ]
-      },
-      customInstructions: `Vends avec passion les produits de ${data.businessName}.`
-    });
+    // Initialize Knowledge Base if not exists
+    const existingKnowledge = await CommerceKnowledgeModel.findOne({ merchantId: merchant._id });
+    if (!existingKnowledge) {
+      await CommerceKnowledgeModel.create({
+        merchantId: merchant._id,
+        businessRules: {
+          deliveryZones: data.city ? [data.city] : [],
+          openingHours: "09:00 - 18:00",
+          returnPolicy: "Retours acceptés sous 48h.",
+          paymentMethods: [
+            { provider: "Wave", number: data.whatsappNumber || "", label: "Wave" },
+            { provider: "Orange Money", number: data.whatsappNumber || "", label: "Orange Money" }
+          ]
+        },
+        customInstructions: `Vends avec passion les produits de ${data.businessName}.`
+      });
+    }
 
     // Update user onboarding status
     await UserModel.findByIdAndUpdate(ownerId, { onboardingCompleted: true });
@@ -128,13 +135,17 @@ export class CommerceService {
   async getKnowledge(merchantId: string) {
     let knowledge = await CommerceKnowledgeModel.findOne({ merchantId });
     if (!knowledge) {
+      const merchant = await CommerceMerchantModel.findById(merchantId);
       knowledge = await CommerceKnowledgeModel.create({
         merchantId,
         businessRules: {
-          deliveryZones: ["Abidjan"],
+          deliveryZones: merchant?.city ? [merchant.city] : [],
           openingHours: "09:00 - 18:00",
           returnPolicy: "Retours acceptés sous 48h.",
-          paymentMethods: ["Mobile Money", "Cash"]
+          paymentMethods: [
+            { provider: "Mobile Money", number: merchant?.phone || "", label: "Mobile Money" },
+            { provider: "Cash", number: "", label: "Cash" }
+          ]
         }
       });
     }
@@ -269,7 +280,9 @@ Réponds UNIQUEMENT avec le JSON. Sois précis sur les détails techniques (mati
         if (jsonMatch) return JSON.parse(jsonMatch[0]);
       }
     } catch (error: any) {
-      console.warn("[Product Vision] Analysis failed:", error.message);
+      const status = error.response?.status;
+      const data = error.response?.data;
+      console.warn(`[Product Vision] Analysis failed (${status || 'unknown'}):`, error.message, data ? JSON.stringify(data) : "");
     }
 
     // 2. Fallback: No silent default if Gemini is configured but fails

@@ -7,7 +7,7 @@ const MerchantSchema = new Schema({
   category: { type: String, required: true },
   description: { type: String, default: "" },
   country: { type: String, default: "CI" },
-  city: { type: String, default: "Abidjan" },
+  city: { type: String, default: "" },
   address: { type: String, default: "" },
   phone: { type: String, default: "" },
   whatsappNumber: { type: String, default: "" },

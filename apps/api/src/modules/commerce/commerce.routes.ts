@@ -693,25 +693,42 @@ router.post("/briefing", authenticate, async (req, res) => {
     const products = await CommerceProductModel.find({ merchantId: merchant._id });
     const knowledge = await CommerceKnowledgeModel.findOne({ merchantId: merchant._id });
 
-    // Specialized Briefing Prompt
-    const systemPrompt = `Tu es l'Employé Numérique Vendeur de "${merchant.businessName}".
+    // --- RECENT DATA FOR REPORTING ---
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const ordersToday = await CommerceOrderModel.find({
+      merchantId: merchant._id,
+      createdAt: { $gte: today }
+    });
+    const revenueToday = ordersToday
+      .filter(o => o.status === 'paid')
+      .reduce((acc, o) => acc + o.totalAmount, 0);
+
+    const lowStockProducts = products.filter(p => p.stock <= 5);
+
+    // Specialized Briefing & Reporting Prompt
+    const systemPrompt = `Tu es l'Employé Numérique Vendeur et Consultant Business de "${merchant.businessName}".
     TU PARLES DIRECTEMENT À TON PATRON (le marchand).
 
     TON RÔLE :
-    - Écouter ses instructions, ses critiques et ses conseils.
-    - Confirmer que tu as compris comment il veut que tu vendes.
-    - Répondre avec respect, enthousiasme et professionnalisme (sois un employé modèle).
+    1. Écouter ses instructions (ex: "Change le prix de X").
+    2. RÉPONDRE À SES QUESTIONS SUR LES CHIFFRES, LES STOCKS ET LA STRATÉGIE.
+    3. Confirmer que tu as compris comment il veut que tu vendes.
 
-    CONTEXTE ACTUEL :
-    - Ville : ${merchant.city}
-    - Catégorie : ${merchant.category}
-    - Produits enregistrés : ${products.length}
+    CHIFFRES DU JOUR :
+    - Commandes aujourd'hui : ${ordersToday.length}
+    - Revenu encaissé : ${revenueToday} XOF
+
+    STOCKS & CATALOGUE :
+    - Nombre total de produits : ${products.length}
+    - Alerte stock bas : ${lowStockProducts.map(p => `${p.name} (${p.stock} restants)`).join(', ') || "Aucune alerte"}
+    - Liste complète : ${products.map(p => `${p.name}: ${p.price} XOF (Stock: ${p.stock})`).join(' | ')}
 
     INSTRUCTIONS DU PATRON :
-    - Si le patron te donne une nouvelle consigne (ex: "Sois plus drôle", "Le prix du Tchep est 2000"), confirme que c'est noté.
-    - Ne sois pas un robot froid. Dis "Oui Chef", "C'est noté Patron", "Je m'occupe de ça immédiatement".
+    - Sois un bras droit intelligent et respectueux. Dis "Oui Chef", "C'est noté Patron".
+    - Si le patron te demande "On en est où ?", donne-lui les stats du jour et les alertes stock.
 
-    RÉPONSE : Courte, impactante et confirmant l'apprentissage.`;
+    RÉPONSE : Courte, impactante et basée sur les DONNÉES réelles ci-dessus.`;
 
     const reply = await aiAgentService.generateResponse({
       merchant: merchant.toObject() as any,
@@ -724,7 +741,7 @@ router.post("/briefing", authenticate, async (req, res) => {
       message,
       customerPhone: "BOSS",
       platform: "whatsapp",
-      aiSummary: `Briefing en cours avec le propriétaire de ${merchant.businessName}.`
+      aiSummary: `Briefing et Reporting en cours avec le propriétaire de ${merchant.businessName}.`
     });
 
     res.json({ reply: reply.text });

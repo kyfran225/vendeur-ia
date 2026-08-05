@@ -8,6 +8,7 @@
     "test": "vitest run",
     "build": "tsc",
     "db:reset": "tsx src/scripts/reset-dev-db.ts",
+    "db:purge": "tsx src/scripts/purge-non-admins.ts",
     "db:backup": "tsx src/scripts/cloud-backup.ts"
   },
   "dependencies": {

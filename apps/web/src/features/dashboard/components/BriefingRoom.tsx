@@ -177,5 +177,6 @@ export function BriefingRoom({ isOpen, onClose, businessName }: { isOpen: boolea
         </footer>
       </motion.div>
     </div>
+    </Portal.Root>
   );
 }

@@ -37,9 +37,17 @@ function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-const TikTokIcon = ({ size = 16, className = "" }: { size?: number; className?: string }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-    <path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5" />
+const TikTokIcon = ({ size = 20, className = "" }: { size?: number; className?: string }) => (
+  <svg width={size} height={size} fill="currentColor" viewBox="0 0 16 16" className={className}>
+    <path d="M9 0h1.98c.144.715.54 1.617 1.235 2.512C12.895 3.38 13.797 4 15 4v2c-1.753 0-3.07-.814-4-1.829V11a5 5 0 1 1-5-5v2a3 3 0 1 0 3 3z"/>
+  </svg>
+);
+
+const InstagramIcon = ({ size = 22, className = "" }: { size?: number; className?: string }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
+    <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
+    <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/>
   </svg>
 );
 
@@ -634,6 +642,20 @@ function ConnexionsTab({ merchant, systemSettings, qrCode }: { merchant: any; sy
 
   return (
     <div className="space-y-10 animate-in slide-in-from-bottom-2 duration-500 overflow-x-hidden">
+      <section className="bg-vendeur-coal border border-white/10 p-6 md:p-10 rounded-[2.5rem] md:rounded-[3.5rem] space-y-8 shadow-2xl overflow-hidden">
+         <div className="space-y-1">
+            <h2 className="text-xl md:text-2xl font-black text-white whitespace-nowrap">Liaison WhatsApp</h2>
+            <p className="text-[10px] text-white/40 uppercase tracking-[0.15em] md:tracking-[0.2em] font-black">Indispensable pour vos ventes automatisées.</p>
+         </div>
+
+         <WhatsAppConnectionFlow
+           merchant={{ ...merchant, systemSettings }}
+           qrCode={qrCode}
+           onInitBaileys={() => connectMutation.mutate()}
+           onRefreshMerchant={() => queryClient.invalidateQueries({ queryKey: ["dashboard"] })}
+         />
+      </section>
+
       <section className="space-y-6">
         <div className="flex items-center gap-4">
            <div className="h-12 w-12 md:h-14 md:w-14 bg-vendeur-emerald/10 rounded-2xl flex items-center justify-center text-vendeur-emerald border border-vendeur-emerald/20 shrink-0">
@@ -647,34 +669,20 @@ function ConnexionsTab({ merchant, systemSettings, qrCode }: { merchant: any; sy
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
            <SocialCard
-              icon={<Instagram size={24} />}
+              icon={<InstagramIcon size={24} />}
               name="Instagram Business"
               status={merchant?.instagramConfig?.pageId ? "Actif" : "Non configuré"}
               active={!!merchant?.instagramConfig?.pageId}
-              color="bg-pink-500"
+              color="bg-gradient-to-tr from-[#f09433] via-[#e6683c] via-[#dc2743] via-[#cc2366] to-[#bc1888]"
            />
            <SocialCard
               icon={<TikTokIcon size={24} />}
               name="TikTok Shop"
               status="En développement 🚀"
               active={false}
-              color="bg-white"
+              color="bg-black"
            />
         </div>
-      </section>
-
-      <section className="bg-vendeur-coal border border-white/10 p-6 md:p-10 rounded-[2.5rem] md:rounded-[3.5rem] space-y-8 shadow-2xl overflow-hidden">
-         <div className="space-y-1">
-            <h2 className="text-xl md:text-2xl font-black text-white whitespace-nowrap">Liaison WhatsApp</h2>
-            <p className="text-[10px] text-white/40 uppercase tracking-[0.15em] md:tracking-[0.2em] font-black">Indispensable pour vos ventes automatisées.</p>
-         </div>
-
-         <WhatsAppConnectionFlow
-           merchant={{ ...merchant, systemSettings }}
-           qrCode={qrCode}
-           onInitBaileys={() => connectMutation.mutate()}
-           onRefreshMerchant={() => queryClient.invalidateQueries({ queryKey: ["dashboard"] })}
-         />
       </section>
     </div>
   );

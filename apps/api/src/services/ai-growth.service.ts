@@ -35,7 +35,6 @@ export class AIGrowthService {
 
       const prompt = `
         En tant qu'expert en stratégie de vente e-commerce omnicanal, analyse ces données et donne 3 conseils ultra-courts (max 15 mots chacun).
-        Si Instagram ou TikTok n'est pas lié, suggère-le fortement comme levier de croissance.
 
         IMPORTANT : Ne mets PAS d'emoji au début ou à la fin du texte.
         Chaque conseil doit avoir une action associée parmi : "/products", "/settings?tab=connexions", "/settings?tab=boutique", "/inbox", "/marketing", "/orders".
@@ -69,8 +68,8 @@ export class AIGrowthService {
       console.error("[AI Growth Service] Error:", error);
       return {
         tips: [
-          { text: "Ajoutez vos premiers produits pour créer votre catalogue.", action: "/products" },
-          { text: "Reliez Instagram pour générer du trafic et vos premières ventes.", action: "/settings?tab=connexions" },
+          { text: "Optimisez vos descriptions produits pour mieux vendre.", action: "/products" },
+          { text: "Répondez rapidement à vos messages dans l'Inbox.", action: "/inbox" },
           { text: "Configurez vos moyens de paiement pour encaisser vos gains.", action: "/settings?tab=boutique" }
         ]
       };

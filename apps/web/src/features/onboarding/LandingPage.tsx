@@ -577,7 +577,7 @@ function LandingHero({
 }
 
 export function LandingPage() {
-  const [dynamicTitle, setDynamicTitle] = useState("MAAT Commerce AI");
+  const [dynamicTitle, setDynamicTitle] = useState("Vendeur IA");
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const { user, logout } = useAuthStore();
 

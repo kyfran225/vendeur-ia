@@ -117,60 +117,50 @@ export class CommerceService {
   }
 
   async createMerchant(ownerId: string, data: any) {
-    // Check if merchant already exists to make it idempotent
-    const existing = await CommerceMerchantModel.findOne({ ownerId });
-
-    let merchant;
-    if (existing) {
-      // Update existing if data is provided (onboarding retry)
-      merchant = await CommerceMerchantModel.findOneAndUpdate(
-        { ownerId },
-        {
-          $set: {
-            businessName: data.businessName || existing.businessName,
-            category: data.category || existing.category,
-            description: data.description || existing.description,
-            address: data.address || existing.address,
-            whatsappNumber: data.whatsappNumber || existing.whatsappNumber,
-            city: data.city || existing.city,
-            country: data.country || existing.country
-          }
-        },
-        { new: true }
-      );
-    } else {
-      merchant = await CommerceMerchantModel.create({
-        ownerId,
-        businessName: data.businessName,
-        category: data.category,
-        description: data.description,
-        address: data.address,
-        whatsappNumber: data.whatsappNumber,
-        city: data.city,
-        country: data.country
-      });
-    }
+    // 1. Atomic Upsert for Merchant
+    const merchant = await CommerceMerchantModel.findOneAndUpdate(
+      { ownerId },
+      {
+        $set: {
+          businessName: data.businessName,
+          category: data.category,
+          description: data.description,
+          address: data.address,
+          whatsappNumber: data.whatsappNumber,
+          city: data.city,
+          country: data.country
+        }
+      },
+      { new: true, upsert: true, runValidators: true }
+    );
 
     if (!merchant) throw new Error("Failed to create or update merchant");
 
-    // Initialize Knowledge Base if not exists
-    let knowledge = await CommerceKnowledgeModel.findOne({ merchantId: merchant._id });
-    if (!knowledge) {
-      knowledge = await CommerceKnowledgeModel.create({
-        merchantId: merchant._id,
-        businessRules: {
-          deliveryZones: data.city ? [data.city] : [],
-          deliveryFees: data.city ? [{ zone: data.city, price: 1000 }] : [], // Proactive delivery fee
-          openingHours: "09:00 - 18:00",
-          returnPolicy: "Retours acceptés sous 48h.",
-          paymentMethods: []
-        },
-        customInstructions: `Vends avec passion les produits de ${data.businessName}.`
-      });
-    } else if (data.city && knowledge.businessRules.deliveryFees.length === 0) {
-      // Proactively add delivery fee if missing
-      knowledge.businessRules.deliveryFees = [{ zone: data.city, price: 1000 }];
-      await knowledge.save();
+    // 2. Atomic Initialization for Knowledge Base
+    await CommerceKnowledgeModel.findOneAndUpdate(
+      { merchantId: merchant._id },
+      {
+        $setOnInsert: {
+          merchantId: merchant._id,
+          businessRules: {
+            deliveryZones: data.city ? [data.city] : [],
+            deliveryFees: data.city ? [{ zone: data.city, price: 1000 }] : [],
+            openingHours: "09:00 - 18:00",
+            returnPolicy: "Retours acceptés sous 48h.",
+            paymentMethods: []
+          },
+          customInstructions: `Vends avec passion les produits de ${data.businessName}.`
+        }
+      },
+      { upsert: true, new: true }
+    );
+
+    // Proactively add delivery fee if missing (for update case)
+    if (data.city) {
+      await CommerceKnowledgeModel.findOneAndUpdate(
+        { merchantId: merchant._id, "businessRules.deliveryFees": { $size: 0 } },
+        { $set: { "businessRules.deliveryFees": [{ zone: data.city, price: 1000 }] } }
+      );
     }
 
     // Handle First Product from Onboarding

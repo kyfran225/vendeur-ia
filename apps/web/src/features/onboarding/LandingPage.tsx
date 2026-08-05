@@ -189,24 +189,8 @@ function LandingHero({
       setTempData({ ...form, city: form.city || "Abidjan" });
       setSimulatorActive(true);
 
-      // 2. Persist to Backend if authenticated
-      if (accessToken) {
-        try {
-          await apiClient.post("/api/commerce/merchant", {
-            businessName: form.businessName,
-            category: form.category,
-            description: form.description,
-            address: form.address,
-            whatsappNumber: form.whatsappNumber,
-            city: form.city || "Abidjan",
-            country: form.country
-          });
-          toast.success("Boutique configurée avec succès !");
-        } catch (error) {
-          console.error("Merchant Creation Error:", error);
-          // Non-blocking for demo, but logged
-        }
-      }
+      // 2. We no longer persist to backend here.
+      // This is now exclusively handled by OnboardingWizard to avoid redundant calls.
 
       onFormUpdate(form.businessName);
       setStep("simulator");

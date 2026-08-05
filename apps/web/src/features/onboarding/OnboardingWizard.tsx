@@ -20,6 +20,7 @@ import { useAuthStore } from "@/stores/authStore";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { apiClient } from "@/lib/apiClient";
+import { useRef } from "react";
 import axios from "axios";
 import { useSocket } from "@/hooks/useSocket";
 import { clsx, type ClassValue } from "clsx";
@@ -38,6 +39,7 @@ export function OnboardingWizard() {
   const { user, accessToken } = useAuthStore();
   const navigate = useNavigate();
   const [isMerchantCreated, setIsMerchantCreated] = useState(false);
+  const creationStarted = useRef(false);
 
   // Redirect if no temp data and no user (should be handled by App.tsx guard but safe check)
   if (!tempData && !user) {
@@ -48,7 +50,8 @@ export function OnboardingWizard() {
   // Create real merchant record as soon as the wizard starts if not already done
   useEffect(() => {
     const initMerchant = async () => {
-      if (user && accessToken && tempData && !isMerchantCreated) {
+      if (user && accessToken && tempData && !isMerchantCreated && !creationStarted.current) {
+        creationStarted.current = true;
         try {
           console.log("[Onboarding] Attempting to create/update merchant with complete data...");
           await apiClient.post("/api/commerce/merchant", {
@@ -62,6 +65,7 @@ export function OnboardingWizard() {
           if (isDuplicate) {
             setIsMerchantCreated(true);
           } else {
+            creationStarted.current = false; // Allow retry if it wasn't a 409
             console.error("[Onboarding] Failed to persist data", err);
           }
         }

@@ -9,7 +9,7 @@ import { aiLimiter } from "../../middleware/rate-limiter.js";
 import { logger } from "../../services/logger.service.js";
 import { validate } from "../../middleware/validate.js";
 import { CreateProductSchema, UpdateMerchantSchema, UpdateProductSchema, CreateOrderSchema } from "./commerce.schema.js";
-import { CommerceMerchantModel, CommerceProductModel, CommerceConversationModel, CommerceMessageModel, CommerceCustomerModel, CommerceOrderModel } from "./commerce.model.js";
+import { CommerceMerchantModel, CommerceProductModel, CommerceConversationModel, CommerceMessageModel, CommerceCustomerModel, CommerceOrderModel, CommerceKnowledgeModel } from "./commerce.model.js";
 import { TransactionModel } from "./transaction.model.js";
 import { SystemSettingsModel } from "./admin.model.js";
 import { CATEGORY_MOCKS } from "./demo.data.js";

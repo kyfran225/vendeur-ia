@@ -61,7 +61,7 @@ const InstagramIcon = ({ size = 22, className = "" }: { size?: number; className
 
 import { Gift } from "lucide-react";
 
-type SettingsTab = "boutique" | "savoir" | "personnalite" | "connexions" | "billing" | "referral" | "compte"; | "billing";
+type SettingsTab = "boutique" | "savoir" | "personnalite" | "connexions" | "billing" | "referral" | "compte";
 
 export function SettingsPage() {
   const [searchParams] = useSearchParams();

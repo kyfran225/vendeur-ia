@@ -8,6 +8,9 @@ import {
 } from "../modules/commerce/commerce.model.js";
 import { aiProvider } from "./ai-provider.js";
 import { aiQueue } from "./ai-queue.service.js";
+import { messagingService } from "./messaging.service.js";
+import { pushService } from "./push.service.js";
+import { env } from "../config/env.js";
 
 export class MarketingService {
   async getSegments(merchantId: string) {
@@ -122,6 +125,60 @@ Réponds UNIQUEMENT avec le texte du message.`;
     }
 
     return { count: customers.length, campaignId: campaign._id };
+  }
+
+  async generateReconquestMessage(merchantId: string) {
+    const merchant = await CommerceMerchantModel.findById(merchantId);
+    if (!merchant) throw new Error("Marchand non trouvé");
+
+    // 1. Gather "Fear of Missing Out" (FOMO) Stats
+    const now = new Date();
+    const sevenDaysAgo = new Date(now);
+    sevenDaysAgo.setDate(now.getDate() - 7);
+
+    // Count missed opportunities (active conversations that were abandoned)
+    const activeConvs = await CommerceConversationModel.countDocuments({
+      merchantId,
+      updatedAt: { $gte: sevenDaysAgo }
+    });
+
+    const prompt = `Génère un message de reconquête WhatsApp pour un marchand suspendu depuis 7 jours.
+Boutique : ${merchant.businessName}
+Activité manquée : Environ ${activeConvs > 0 ? activeConvs : 5} conversations clients ont eu lieu ou auraient pu aboutir récemment.
+
+Le message doit :
+- Être bienveillant mais montrer ce que le marchand perd (FOMO).
+- Utiliser un ton d'assistant business dévoué ("Chef", "Patron").
+- Mentionner que l'IA attend ses instructions pour reprendre le travail.
+- Inclure un lien vers le renouvellement : ${env.CLIENT_URL}/settings?tab=billing
+- Utiliser des expressions ivoiriennes/locales discrètes (ex: "On est ensemble", "Ça bouge pas").
+
+Réponds UNIQUEMENT avec le texte du message.`;
+
+    const response = await aiProvider.generateText({
+      systemPrompt: "Tu es le consultant business IA de la plateforme Vendeur IA.",
+      userMessage: prompt,
+      temperature: 0.7
+    });
+
+    return response.text;
+  }
+
+  async sendReconquestNotification(merchantId: string) {
+    const merchant = await CommerceMerchantModel.findById(merchantId);
+    if (!merchant) return;
+
+    const message = await this.generateReconquestMessage(merchantId);
+
+    // 1. WhatsApp
+    await messagingService.sendMessage(merchant, 'whatsapp', merchant.whatsappNumber || "", message);
+
+    // 2. Push
+    await pushService.sendNotification(merchant.ownerId, {
+      title: "Votre IA vous attend ! 🤖",
+      body: "Ne laissez pas vos clients sans réponse. Réactivez votre service en un clic.",
+      data: { type: "billing", action: "renew" }
+    });
   }
 }
 

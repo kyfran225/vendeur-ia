@@ -37,7 +37,7 @@ function cn(...inputs: ClassValue[]) {
 }
 
 export function AdminDashboard() {
-  const [activeTab, setActiveTab] = useState<"overview" | "merchants" | "settings" | "ai">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "merchants" | "settings" | "ai" | "billing">("overview");
   const { accessToken } = useAuthStore();
   const queryClient = useQueryClient();
 
@@ -50,6 +50,16 @@ export function AdminDashboard() {
     },
     enabled: !!accessToken,
     refetchInterval: 10000 // Refresh every 10s
+  });
+
+  // 1b. Fetch Billing Stats
+  const { data: billingStats, isLoading: billingLoading } = useQuery({
+    queryKey: ["admin:billing"],
+    queryFn: async () => {
+      const res = await apiClient.get("/api/admin/billing/stats");
+      return res.data;
+    },
+    enabled: !!accessToken && activeTab === "billing"
   });
 
   const { data: failedJobs } = useQuery({
@@ -105,11 +115,12 @@ export function AdminDashboard() {
       {/* Admin Header / Navigation */}
       <header className="h-16 md:h-20 border-b border-white/5 bg-vendeur-bg/80 backdrop-blur-md flex items-center justify-between px-4 md:px-8 sticky top-0 z-50">
         <div className="flex-1 max-w-2xl">
-          <nav className="flex gap-1.5 md:gap-2 p-1 bg-white/5 rounded-2xl border border-white/5 w-full md:w-fit">
-            <AdminTabButton active={activeTab === "overview"} onClick={() => setActiveTab("overview")} icon={<LayoutDashboard size={18}/>} label="Vue d'ensemble" />
-            <AdminTabButton active={activeTab === "merchants"} onClick={() => setActiveTab("merchants")} icon={<Users size={18}/>} label="Marchands" />
-            <AdminTabButton active={activeTab === "ai"} onClick={() => setActiveTab("ai")} icon={<Bot size={18}/>} label="IA & Cerveau" />
-            <AdminTabButton active={activeTab === "settings"} onClick={() => setActiveTab("settings")} icon={<Settings size={18}/>} label="Système" />
+          <nav className="flex gap-1.5 md:gap-2 p-1 bg-white/5 rounded-2xl border border-white/5 w-full md:w-fit overflow-x-auto scrollbar-hide">
+            <AdminTabButton active={activeTab === "overview"} onClick={() => setActiveTab("overview")} icon={<LayoutDashboard size={18}/>} label="Overview" />
+            <AdminTabButton active={activeTab === "merchants"} onClick={() => setActiveTab("merchants")} icon={<Users size={18}/>} label="Merchants" />
+            <AdminTabButton active={activeTab === "billing"} onClick={() => setActiveTab("billing")} icon={<Banknote size={18}/>} label="Finance" />
+            <AdminTabButton active={activeTab === "ai"} onClick={() => setActiveTab("ai")} icon={<Bot size={18}/>} label="AI Brain" />
+            <AdminTabButton active={activeTab === "settings"} onClick={() => setActiveTab("settings")} icon={<Settings size={18}/>} label="System" />
           </nav>
         </div>
 
@@ -143,6 +154,12 @@ export function AdminDashboard() {
           <div className="space-y-6">
             <h2 className="text-2xl md:text-3xl font-black uppercase tracking-tighter">IA & Cerveau</h2>
             <AIControlCenter />
+          </div>
+        )}
+        {activeTab === "billing" && (
+          <div className="space-y-6">
+            <h2 className="text-2xl md:text-3xl font-black uppercase tracking-tighter">Finance & Abonnements</h2>
+            <BillingPanel data={billingStats} loading={billingLoading} />
           </div>
         )}
       </main>
@@ -502,4 +519,124 @@ function HealthItem({ label, status }: { label: string; status: "operational" | 
             </div>
         </div>
     );
+}
+
+function BillingPanel({ data, loading }: { data: any, loading: boolean }) {
+  if (loading) return <div className="p-20 text-center"><Loader2 className="animate-spin inline-block mr-2" /> Chargement des données financières...</div>;
+
+  return (
+    <div className="space-y-8 animate-in fade-in duration-700">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <StatCard label="Estimated MRR" value={`${(data?.estimatedMRR || 0).toLocaleString()} F`} icon={<TrendingUp className="text-vendeur-emerald" />} />
+        <StatCard label="Abonnés Actifs" value={(data?.planStats?.premium || 0) + (data?.planStats?.business || 0)} icon={<Zap className="text-amber-400" />} />
+        <StatCard label="Churn (En retard)" value={data?.planStats?.pastDue || 0} icon={<AlertTriangle className="text-rose-500" />} />
+        <StatCard label="Reconquête IA" value={data?.planStats?.reconquestReady || 0} icon={<RefreshCw className="text-sky-400" />} />
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-2 bg-vendeur-coal border border-white/5 rounded-[2.5rem] p-8">
+          <h3 className="text-xl font-black mb-6 uppercase tracking-tight flex items-center gap-2">
+            <Activity size={20} className="text-vendeur-emerald" />
+            Revenus Mensuels (6 derniers mois)
+          </h3>
+          <div className="space-y-4">
+            {data?.revenueByMonth?.map((m: any) => (
+              <div key={m._id} className="flex items-center gap-4">
+                <div className="w-24 text-[10px] font-black uppercase text-white/40">{m._id}</div>
+                <div className="flex-1 h-3 bg-white/5 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-vendeur-emerald transition-all duration-1000"
+                    style={{ width: `${Math.min(100, (m.total / (data.estimatedMRR || 1)) * 100)}%` }}
+                  />
+                </div>
+                <div className="w-32 text-right font-black text-sm">{m.total.toLocaleString()} F</div>
+              </div>
+            ))}
+            {(!data?.revenueByMonth || data.revenueByMonth.length === 0) && (
+              <div className="text-center py-8 text-white/20 italic font-bold">Données insuffisantes pour l'historique</div>
+            )}
+          </div>
+        </div>
+
+        <div className="bg-vendeur-coal border border-white/5 rounded-[2.5rem] p-8">
+          <h3 className="text-xl font-black mb-6 uppercase tracking-tight">Répartition Plans</h3>
+          <div className="space-y-6">
+            <PlanRatio label="Starter / Trial" value={data?.planStats?.starter + data?.planStats?.trial} total={data?.planStats?.starter + data?.planStats?.trial + data?.planStats?.premium + data?.planStats?.business} color="bg-white/10" />
+            <PlanRatio label="Premium" value={data?.planStats?.premium} total={data?.planStats?.starter + data?.planStats?.trial + data?.planStats?.premium + data?.planStats?.business} color="bg-amber-400" />
+            <PlanRatio label="Business" value={data?.planStats?.business} total={data?.planStats?.starter + data?.planStats?.trial + data?.planStats?.premium + data?.planStats?.business} color="bg-blue-400" />
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-vendeur-coal border border-white/5 rounded-[2.5rem] p-8">
+        <h3 className="text-xl font-black mb-6 uppercase tracking-tight">Historique Transactions Récent</h3>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left">
+            <thead>
+              <tr className="border-b border-white/5 text-[10px] font-black uppercase tracking-widest text-white/20">
+                <th className="pb-4">Marchand</th>
+                <th className="pb-4">Type</th>
+                <th className="pb-4">Montant</th>
+                <th className="pb-4">Statut</th>
+                <th className="pb-4">Date</th>
+              </tr>
+            </thead>
+            <tbody className="text-xs">
+              {data?.recentTransactions?.map((t: any) => (
+                <tr key={t._id} className="border-b border-white/5 hover:bg-white/[0.02]">
+                  <td className="py-4 font-black uppercase">{t.merchantId?.businessName || "Inconnu"}</td>
+                  <td className="py-4 opacity-60 uppercase font-bold">{t.type}</td>
+                  <td className="py-4 font-black text-vendeur-emerald">{t.amount.toLocaleString()} {t.currency}</td>
+                  <td className="py-4">
+                    <span className={cn(
+                      "px-2 py-0.5 rounded text-[8px] font-black uppercase",
+                      t.status === 'success' ? "bg-emerald-500/10 text-emerald-400" : "bg-rose-500/10 text-rose-400"
+                    )}>
+                      {t.status}
+                    </span>
+                  </td>
+                  <td className="py-4 text-white/20">{new Date(t.paidAt || t.createdAt).toLocaleDateString()}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PlanRatio({ label, value, total, color }: any) {
+  const percentage = total > 0 ? (value / total) * 100 : 0;
+  return (
+    <div className="space-y-2">
+      <div className="flex justify-between text-[10px] font-black uppercase tracking-widest">
+        <span>{label}</span>
+        <span>{Math.round(percentage)}%</span>
+      </div>
+      <div className="h-2 bg-white/5 rounded-full overflow-hidden">
+        <div className={cn("h-full transition-all duration-1000", color)} style={{ width: `${percentage}%` }} />
+      </div>
+    </div>
+  );
+}
+
+function TrendingUp(props: any) {
+  return (
+    <svg
+      {...props}
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <polyline points="22 7 13.5 15.5 8.5 10.5 2 17" />
+      <polyline points="16 7 22 7 22 13" />
+    </svg>
+  );
 }

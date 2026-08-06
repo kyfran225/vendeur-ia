@@ -147,6 +147,76 @@ router.get("/stats", authenticate, isAdmin, async (req, res) => {
   }
 });
 
+// GET Billing Details (MRR, Plans, etc.)
+router.get("/billing/stats", authenticate, isAdmin, async (req, res) => {
+  try {
+    const merchants = await CommerceMerchantModel.find();
+
+    const planStats = {
+      starter: 0,
+      premium: 0,
+      business: 0,
+      trial: 0,
+      pastDue: 0,
+      reconquestReady: 0
+    };
+
+    let estimatedMRR = 0;
+    const monthlyPrices: any = {
+      starter: 0,
+      premium: 5000,
+      business: 25000
+    };
+
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+    merchants.forEach(m => {
+      const plan = m.subscription?.plan || "starter";
+      const status = m.subscription?.status || "trial";
+      const expiresAt = m.subscription?.expiresAt;
+
+      if (status === "active") {
+        (planStats as any)[plan]++;
+        estimatedMRR += monthlyPrices[plan] || 0;
+      } else if (status === "trial") {
+        planStats.trial++;
+      } else if (status === "past_due") {
+        planStats.pastDue++;
+        if (expiresAt && new Date(expiresAt) <= sevenDaysAgo) {
+          planStats.reconquestReady++;
+        }
+      }
+    });
+
+    const recentTransactions = await TransactionModel.find()
+      .populate("merchantId", "businessName")
+      .sort({ createdAt: -1 })
+      .limit(20);
+
+    const revenueByMonth = await TransactionModel.aggregate([
+      { $match: { status: "success" } },
+      {
+        $group: {
+          _id: { $dateToString: { format: "%Y-%m", date: "$paidAt" } },
+          total: { $sum: "$amount" }
+        }
+      },
+      { $sort: { "_id": -1 } },
+      { $limit: 6 }
+    ]);
+
+    res.json({
+      planStats,
+      estimatedMRR,
+      revenueByMonth,
+      recentTransactions
+    });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // GET Failed Jobs Details
 router.get("/queue/failed", authenticate, isAdmin, async (req, res) => {
   try {

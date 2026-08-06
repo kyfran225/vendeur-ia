@@ -98,7 +98,7 @@ Comment souhaitez-vous que nous fassions progresser ${businessName} aujourd'hui 
           {/* Header - Simulated WhatsApp Mobile */}
           <header className="bg-[#202c33] px-4 py-4 flex items-center justify-between border-b border-white/5 z-20 shrink-0">
           <div className="flex items-center gap-3">
-            <button onClick={onClose} className="md:hidden text-white/40 hover:text-white">
+            <button onClick={onClose} className="text-white/40 hover:text-white shrink-0 transition-colors">
               <ChevronLeft size={24} />
             </button>
             <div className="h-11 w-11 rounded-full bg-vendeur-emerald/20 flex items-center justify-center text-vendeur-emerald border border-vendeur-emerald/30 shadow-inner">
@@ -114,11 +114,9 @@ Comment souhaitez-vous que nous fassions progresser ${businessName} aujourd'hui 
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-4 text-[#aebac1]">
-            <button onClick={onClose} className="hover:text-white transition-colors">
-              <X size={24} />
-            </button>
-          </div>
+          <button onClick={onClose} className="hidden md:block text-white/10 hover:text-white/40 transition-all duration-300">
+            <X size={20} />
+          </button>
         </header>
 
         {/* Info Banner */}

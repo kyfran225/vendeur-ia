@@ -47,11 +47,7 @@ export function SetupGuide({ setupStatus, businessName, dashboard }: { setupStat
 
   if (isFullyOperational) return null;
 
-  // Dynamic AI guidance message
   const firstProduct = dashboard?.products?.[0];
-  const aiMessage = firstProduct
-    ? `"Félicitations pour le lancement de ${businessName} ! Je connais déjà ton produit : ${firstProduct.name}. Pour que je puisse commencer à le vendre et encaisser tes paiements, il ne nous manque plus que quelques réglages. On s'en occupe ?"`
-    : `"Félicitations pour le lancement de ${businessName} ! Pour que je puisse vendre tes produits et encaisser tes paiements automatiquement, il nous manque encore quelques réglages. On s'en occupe ?"`;
 
   return (
     <motion.section
@@ -83,7 +79,12 @@ export function SetupGuide({ setupStatus, businessName, dashboard }: { setupStat
           <div className="bg-black/40 border border-white/5 rounded-3xl p-6 relative">
             <div className="absolute -left-2 top-6 w-4 h-4 bg-black/40 border-l border-t border-white/5 rotate-45" />
             <p className="text-sm md:text-base text-white/80 leading-relaxed italic">
-              {aiMessage}
+              "Félicitations pour le lancement de{" "}
+              <span className="text-vendeur-emerald font-black not-italic">{businessName}</span> !{" "}
+              {firstProduct
+                ? `Je connais déjà ton produit : ${firstProduct.name}. Pour que je puisse commencer à le vendre et encaisser tes paiements, il ne nous manque plus que quelques réglages. On s'en occupe ?`
+                : "Pour que je puisse vendre tes produits et encaisser tes paiements automatiquement, il nous manque encore quelques réglages. On s'en occupe ?"
+              }"
             </p>
 
             <button

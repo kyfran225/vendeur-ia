@@ -64,11 +64,56 @@ import { Gift } from "lucide-react";
 type SettingsTab = "boutique" | "savoir" | "personnalite" | "connexions" | "billing" | "referral" | "compte";
 
 export function SettingsPage() {
-  const [searchParams] = useSearchParams();
-  const initialTab = (searchParams.get("tab") as SettingsTab) || "boutique";
-  const [activeTab, setActiveTab] = useState<SettingsTab>(initialTab);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tabsRef = React.useRef<HTMLDivElement>(null);
+  const [showLeftScroll, setShowLeftScroll] = useState(false);
+  const [showRightScroll, setShowRightScroll] = useState(false);
+
+  const handleScroll = () => {
+    if (tabsRef.current) {
+      const { scrollLeft, scrollWidth, clientWidth } = tabsRef.current;
+      setShowLeftScroll(scrollLeft > 10);
+      setShowRightScroll(scrollLeft < scrollWidth - clientWidth - 10);
+    }
+  };
+
+  useEffect(() => {
+    handleScroll();
+    const currentRef = tabsRef.current;
+    if (currentRef) {
+      currentRef.addEventListener("scroll", handleScroll);
+    }
+    window.addEventListener("resize", handleScroll);
+    return () => {
+      if (currentRef) {
+        currentRef.removeEventListener("scroll", handleScroll);
+      }
+      window.removeEventListener("resize", handleScroll);
+    };
+  }, []);
+
+  const activeTab = (searchParams.get("tab") as SettingsTab) || "boutique";
+  const setActiveTab = (tab: SettingsTab) => {
+    setSearchParams({ tab });
+  };
+
   const { accessToken, logout } = useAuthStore();
   const queryClient = useQueryClient();
+
+  useEffect(() => {
+    if (tabsRef.current) {
+      const activeBtn = tabsRef.current.querySelector('[data-active="true"]');
+      if (activeBtn) {
+        activeBtn.scrollIntoView({
+          behavior: "smooth",
+          block: "nearest",
+          inline: "center",
+        });
+      }
+      // Re-check scroll after auto-scroll animation
+      setTimeout(handleScroll, 400);
+    }
+  }, [activeTab]);
 
   const { data: dashboard, isLoading: isDashboardLoading } = useQuery({
     queryKey: ["dashboard"],
@@ -135,49 +180,66 @@ export function SettingsPage() {
       </header>
 
       {/* Navigation Onglets */}
-      <div className="flex gap-2 p-1.5 bg-vendeur-coal/80 backdrop-blur-md rounded-[2rem] border border-white/10 w-fit shadow-2xl overflow-x-auto no-scrollbar max-w-full">
-        <TabButton
-          active={activeTab === "boutique"}
-          onClick={() => setActiveTab("boutique")}
-          icon={<Store size={18} />}
-          label="Boutique"
-        />
-        <TabButton
-          active={activeTab === "savoir"}
-          onClick={() => setActiveTab("savoir")}
-          icon={<Brain size={18} />}
-          label="Savoir IA"
-        />
-        <TabButton
-          active={activeTab === "personnalite"}
-          onClick={() => setActiveTab("personnalite")}
-          icon={<Bot size={18} />}
-          label="Personnalité"
-        />
-        <TabButton
-          active={activeTab === "connexions"}
-          onClick={() => setActiveTab("connexions")}
-          icon={<Globe size={18} />}
-          label="Connexions"
-        />
-        <TabButton
-          active={activeTab === "billing"}
-          onClick={() => setActiveTab("billing")}
-          icon={<Banknote size={18} />}
-          label="Facturation"
-        />
-        <TabButton
-          active={activeTab === "referral"}
-          onClick={() => setActiveTab("referral")}
-          icon={<Gift size={18} />}
-          label="Parrainage"
-        />
-        <TabButton
-          active={activeTab === "compte"}
-          onClick={() => setActiveTab("compte")}
-          icon={<UserIcon size={18} />}
-          label="Mon Profil"
-        />
+      <div className="sticky top-0 z-30 -mx-4 px-4 py-3 bg-vendeur-bg/95 backdrop-blur-xl">
+        <div className="relative max-w-full w-full group">
+          {/* Indicateurs de Scroll */}
+          <div className={cn(
+            "absolute left-0 top-0 bottom-0 w-12 z-10 bg-gradient-to-r from-vendeur-coal to-transparent pointer-events-none rounded-l-2xl md:rounded-l-3xl transition-opacity duration-300",
+            showLeftScroll ? "opacity-100" : "opacity-0"
+          )} />
+          <div className={cn(
+            "absolute right-0 top-0 bottom-0 w-12 z-10 bg-gradient-to-l from-vendeur-coal to-transparent pointer-events-none rounded-r-2xl md:rounded-r-3xl transition-opacity duration-300",
+            showRightScroll ? "opacity-100" : "opacity-0"
+          )} />
+
+          <div
+            ref={tabsRef}
+            className="flex gap-2 p-1.5 bg-vendeur-coal/80 backdrop-blur-md rounded-2xl md:rounded-3xl border border-white/10 w-fit shadow-2xl overflow-x-auto no-scrollbar max-w-full relative"
+          >
+            <TabButton
+              active={activeTab === "boutique"}
+              onClick={() => setActiveTab("boutique")}
+              icon={<Store size={18} />}
+              label="Boutique"
+            />
+            <TabButton
+              active={activeTab === "savoir"}
+              onClick={() => setActiveTab("savoir")}
+              icon={<Brain size={18} />}
+              label="Savoir IA"
+            />
+            <TabButton
+              active={activeTab === "personnalite"}
+              onClick={() => setActiveTab("personnalite")}
+              icon={<Bot size={18} />}
+              label="Personnalité"
+            />
+            <TabButton
+              active={activeTab === "connexions"}
+              onClick={() => setActiveTab("connexions")}
+              icon={<Globe size={18} />}
+              label="Connexions"
+            />
+            <TabButton
+              active={activeTab === "billing"}
+              onClick={() => setActiveTab("billing")}
+              icon={<Banknote size={18} />}
+              label="Facturation"
+            />
+            <TabButton
+              active={activeTab === "referral"}
+              onClick={() => setActiveTab("referral")}
+              icon={<Gift size={18} />}
+              label="Parrainage"
+            />
+            <TabButton
+              active={activeTab === "compte"}
+              onClick={() => setActiveTab("compte")}
+              icon={<UserIcon size={18} />}
+              label="Mon Profil"
+            />
+          </div>
+        </div>
       </div>
 
       <div className="mt-8">
@@ -203,13 +265,16 @@ function TabButton({ active, onClick, icon, label }: { active: boolean; onClick:
   return (
     <button
       onClick={onClick}
+      data-active={active}
       className={cn(
-        "flex items-center gap-2 px-4 md:px-6 py-3 rounded-2xl text-xs font-black uppercase tracking-widest transition-all shrink-0 whitespace-nowrap",
+        "flex items-center justify-center gap-2 px-4 md:px-5 h-12 rounded-xl md:rounded-2xl text-[10px] md:text-[11px] font-black uppercase tracking-tight transition-all shrink-0 whitespace-nowrap",
         active ? "bg-vendeur-emerald text-vendeur-coal shadow-lg" : "text-white/40 hover:bg-white/5 hover:text-white"
       )}
     >
-      {icon}
-      <span>{label}</span>
+      <div className="shrink-0">
+        {React.isValidElement(icon) ? React.cloneElement(icon as React.ReactElement, { size: 16 }) : icon}
+      </div>
+      <span className="leading-none">{label}</span>
     </button>
   );
 }

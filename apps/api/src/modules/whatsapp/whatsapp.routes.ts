@@ -46,12 +46,12 @@ router.patch("/config", authenticate, async (req, res) => {
       if (meta.phoneNumberId) update["whatsappConfig.meta.phoneNumberId"] = meta.phoneNumberId;
       if (meta.accessToken) update["whatsappConfig.meta.accessToken"] = meta.accessToken;
       if (meta.wabaId) update["whatsappConfig.meta.wabaId"] = meta.wabaId;
+    }
 
-      // If switching to meta, we might want to mark it as connected if we assume credentials are valid,
-      // or 'error' if we want to force a test. For now let's set 'connected' to enable it.
-      if (provider === 'meta') {
-        update["whatsappConfig.status"] = 'connected';
-      }
+    // If switching to meta, we mark it as connected to enable the provider.
+    // This allows using the system-wide Meta configuration if no custom keys are provided.
+    if (provider === 'meta') {
+      update["whatsappConfig.status"] = 'connected';
     }
 
     const merchant = await CommerceMerchantModel.findOneAndUpdate(

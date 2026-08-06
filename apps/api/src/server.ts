@@ -16,6 +16,17 @@ async function start() {
     import("./modules/whatsapp/whatsapp.service.js").then(({ whatsappService }) => {
       whatsappService.bootSessions();
     });
+
+    // Run Billing Check daily (or every 12h)
+    import("./services/billing.service.js").then(({ billingService }) => {
+      // Run once at startup
+      billingService.checkExpirations().catch(err => logger.error("[Server] Initial billing check failed:", err));
+
+      // Schedule every 24 hours
+      setInterval(() => {
+        billingService.checkExpirations().catch(err => logger.error("[Server] Scheduled billing check failed:", err));
+      }, 24 * 60 * 60 * 1000);
+    });
   });
 }
 

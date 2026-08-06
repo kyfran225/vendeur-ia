@@ -51,7 +51,12 @@ async function test() {
 
   // 3. Run Billing Check
   console.log("⏳ Running Billing Check...");
-  await billingService.checkExpirations();
+  try {
+    await billingService.checkExpirations();
+    console.log("✅ checkExpirations() finished");
+  } catch (err) {
+    console.error("❌ checkExpirations() failed:", err);
+  }
 
   // 4. Verify results
   const updatedExpired = await CommerceMerchantModel.findOne({ ownerId: "test-expired-user" });

@@ -52,7 +52,10 @@ const MerchantSchema: Schema = new Schema({
   subscription: {
     plan: { type: String, enum: ["starter", "premium", "business"], default: "starter" },
     status: { type: String, enum: ["trial", "active", "past_due", "cancelled"], default: "trial" },
-    expiresAt: { type: Date, default: null }
+    expiresAt: { type: Date, default: null },
+    subscriptionCode: { type: String, default: null },
+    emailToken: { type: String, default: null },
+    nextPaymentDate: { type: Date, default: null }
   },
   aiSettings: {
     personality: { type: String, enum: commerceAgentTones, default: "friendly" },

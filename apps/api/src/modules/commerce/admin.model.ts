@@ -5,7 +5,14 @@ const SystemSettingsSchema = new Schema({
   pricing: {
     ramContributionFee: { type: Number, default: 5000 },
     packProFee: { type: Number, default: 25000 },
-    premiumSubscriptionMonthly: { type: Number, default: 5000 }
+    premiumSubscriptionMonthly: { type: Number, default: 5000 },
+    regional: [{
+      currency: { type: String, required: true },
+      premiumMonthly: { type: Number, required: true },
+      businessMonthly: { type: Number, required: true },
+      packPro: { type: Number, required: true },
+      ramFee: { type: Number, required: true }
+    }]
   },
   metaConfig: {
     globalAppId: String,

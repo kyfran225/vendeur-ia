@@ -15,6 +15,7 @@ import { messagingService } from "../../services/messaging.service.js";
 import { env } from "../../config/env.js";
 import { GEMINI_DEFAULT_VISION_MODEL, resolveGeminiModel } from "../../config/gemini.js";
 import axios from "axios";
+import crypto from "crypto";
 
 import { SystemSettingsModel } from "./admin.model.js";
 
@@ -130,6 +131,10 @@ export class CommerceService {
           whatsappNumber: data.whatsappNumber,
           city: data.city,
           country: data.country
+        },
+        $setOnInsert: {
+          referralCode: this.generateReferralCode(),
+          referredBy: data.referredByCode ? await this.getMerchantIdByCode(data.referredByCode) : undefined
         }
       },
       { new: true, upsert: true, runValidators: true }
@@ -674,6 +679,52 @@ Résumé actuel :`;
       $set: { aiSummary: response.text }
     });
     console.log(`[Summary] Conversation ${conversationId} updated.`);
+  }
+
+  // --- REFERRAL LOGIC ---
+
+  private generateReferralCode() {
+    return crypto.randomBytes(3).toString("hex").toUpperCase();
+  }
+
+  private async getMerchantIdByCode(code: string) {
+    const m = await CommerceMerchantModel.findOne({ referralCode: code });
+    return m ? m._id : undefined;
+  }
+
+  async processReferralReward(newMerchantId: string) {
+    const newMerchant = await CommerceMerchantModel.findById(newMerchantId);
+    if (!newMerchant || !newMerchant.referredBy) return;
+
+    const referrer = await CommerceMerchantModel.findById(newMerchant.referredBy);
+    if (!referrer) return;
+
+    console.log(`[Referral] Rewarding ${referrer.businessName} for referring ${newMerchant.businessName}`);
+
+    // Extend subscription by 30 days
+    const currentExpiry = referrer.subscription?.expiresAt || new Date();
+    const newExpiry = new Date(currentExpiry);
+    newExpiry.setDate(newExpiry.getDate() + 30);
+
+    await CommerceMerchantModel.findByIdAndUpdate(referrer._id, {
+      $inc: { "referralStats.count": 1, "referralStats.earnedMonths": 1 },
+      $set: { "subscription.expiresAt": newExpiry, "subscription.status": "active" }
+    });
+
+    // Notify Referrer
+    const waMessage = `🎁 *Cadeau Ambassadeur !* 🎁\n\nFélicitations ! Votre filleul *${newMerchant.businessName}* vient de s'abonner.\n\n` +
+      `En récompense, nous venons d'offrir *1 MOIS GRATUIT* à votre boutique. 🚀\n\n` +
+      `Nouvelle expiration : *${newExpiry.toLocaleDateString()}*.\n\n` +
+      `Continuez à partager votre code : *${referrer.referralCode}* !`;
+
+    await messagingService.sendMessage(referrer, 'whatsapp', referrer.whatsappNumber || "", waMessage);
+
+    // Push Notification
+    pushService.sendNotification(referrer.ownerId, {
+      title: "1 Mois Offert ! 🎁",
+      body: `Félicitations ! Votre parrainage de ${newMerchant.businessName} a réussi.`,
+      data: { type: "referral", action: "reward" }
+    }).catch(err => console.error("[Referral] Push failed:", err));
   }
 }
 

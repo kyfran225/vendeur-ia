@@ -65,7 +65,11 @@ export const billingWorker = new Worker(
             ? `Cliquez ici pour renouveler par Mobile Money (${merchant.currency || "XOF"}) :\n👉 ${renewalLink}`
             : `Votre prélèvement automatique par carte aura lieu le ${merchant.subscription?.expiresAt?.toLocaleDateString()}.`);
 
-        await messagingService.sendMessage(merchant, 'whatsapp', merchant.whatsappNumber || "", waMessage);
+        try {
+          await messagingService.sendMessage(merchant, 'whatsapp', merchant.whatsappNumber || "", waMessage);
+        } catch (waErr) {
+          logger.error(`[BillingQueue] Failed to send WhatsApp reminder to ${businessName}:`, waErr);
+        }
 
         // 2. Push Notification
         await pushService.sendNotification(merchant.ownerId, {
@@ -90,7 +94,11 @@ export const billingWorker = new Worker(
           `Votre abonnement a expiré. Votre IA est désormais inactive.\n\n` +
           `Pour réactiver immédiatement votre service, cliquez ici :\n👉 ${env.CLIENT_URL}/settings?tab=billing`;
 
-        await messagingService.sendMessage(merchant, 'whatsapp', merchant.whatsappNumber || "", waMessage);
+        try {
+          await messagingService.sendMessage(merchant, 'whatsapp', merchant.whatsappNumber || "", waMessage);
+        } catch (waErr) {
+          logger.error(`[BillingQueue] Failed to send WhatsApp suspension notice to ${businessName}:`, waErr);
+        }
 
         await pushService.sendNotification(merchant.ownerId, {
           title: "Service Suspendu 🛑",

@@ -31,9 +31,26 @@ export interface AIResponse {
 export class AIProvider {
   private static readonly GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models";
   private redis: Redis | null;
+  private degradedProviders: Map<string, number> = new Map();
+  private static readonly CIRCUIT_BREAKER_DURATION = 300 * 1000; // 300 seconds (5 minutes)
 
   constructor() {
     this.redis = getRedisClient();
+  }
+
+  private isDegraded(provider: string): boolean {
+    const expiry = this.degradedProviders.get(provider);
+    if (!expiry) return false;
+    if (Date.now() > expiry) {
+      this.degradedProviders.delete(provider);
+      return false;
+    }
+    return true;
+  }
+
+  private markDegraded(provider: string) {
+    console.warn(`[AI Provider] Marking ${provider} as degraded for 300s`);
+    this.degradedProviders.set(provider, Date.now() + AIProvider.CIRCUIT_BREAKER_DURATION);
   }
 
   private async getDynamicConfig() {
@@ -129,7 +146,7 @@ export class AIProvider {
 
   async generateText(request: AIRequest): Promise<AIResponse> {
     const config = await this.getDynamicConfig();
-    const primaryProvider = config?.defaultTextProvider || 'gemini';
+    let primaryProvider = config?.defaultTextProvider || 'gemini';
 
     // 1. Try Semantic Cache
     const cacheKey = this.generateCacheKey(request);
@@ -146,24 +163,51 @@ export class AIProvider {
       }
     }
 
+    // Check if primary is degraded, if so, switch to fallback immediately
+    if (this.isDegraded(primaryProvider)) {
+      console.log(`[AI Provider] ${primaryProvider} is degraded, skipping to fallback...`);
+      primaryProvider = primaryProvider === 'gemini' ? 'groq' : 'gemini';
+    }
+
     let response: AIResponse;
 
-    // Try Primary
+    // Try Current Provider
     try {
       response = await this.generateWithProvider(primaryProvider, request, config);
-    } catch (error) {
-      console.warn(`[AI Provider] ${primaryProvider} failed, trying fallback:`, (error as any).message);
+    } catch (error: any) {
+      const errorMsg = error.message || "";
+      const isQuotaError = errorMsg.includes("quota") || errorMsg.includes("429") || errorMsg.includes("limit");
+
+      if (isQuotaError) {
+        this.markDegraded(primaryProvider);
+      }
+
+      console.warn(`[AI Provider] ${primaryProvider} failed, trying fallback:`, errorMsg);
 
       const fallbackProvider = primaryProvider === 'gemini' ? 'groq' : 'gemini';
-      try {
-        response = await this.generateWithProvider(fallbackProvider, request, config);
-      } catch (fallbackError) {
-        console.warn("[AI Provider] Secondary fallback failed, trying OpenRouter:", (fallbackError as any).message);
+
+      if (this.isDegraded(fallbackProvider)) {
+        console.warn(`[AI Provider] Fallback ${fallbackProvider} also degraded, trying OpenRouter...`);
         try {
           response = await this.generateWithProvider('openrouter', request, config);
-        } catch (openRouterError) {
-          console.error("[AI Provider] All fallbacks failed:", (openRouterError as any).message);
+        } catch (openRouterError: any) {
+          console.error("[AI Provider] All fallbacks failed:", openRouterError.message);
           throw new Error("Tous les fournisseurs d'IA ont échoué.");
+        }
+      } else {
+        try {
+          response = await this.generateWithProvider(fallbackProvider, request, config);
+        } catch (fallbackError: any) {
+          if (fallbackError.message?.includes("quota") || fallbackError.message?.includes("429")) {
+            this.markDegraded(fallbackProvider);
+          }
+          console.warn("[AI Provider] Secondary fallback failed, trying OpenRouter:", fallbackError.message);
+          try {
+            response = await this.generateWithProvider('openrouter', request, config);
+          } catch (openRouterError: any) {
+            console.error("[AI Provider] All fallbacks failed:", openRouterError.message);
+            throw new Error("Tous les fournisseurs d'IA ont échoué.");
+          }
         }
       }
     }

@@ -15,12 +15,13 @@ import { SystemSettingsModel } from "../commerce/admin.model.js";
 
 class WhatsAppService {
   private activeSessions: Map<string, any> = new Map();
+  private pendingInitializations: Map<string, Promise<void>> = new Map();
 
   async bootSessions() {
     console.log("[WhatsApp] Booting sessions for active merchants...");
     try {
       const activeMerchants = await CommerceMerchantModel.find({
-        "whatsappConfig.status": "connected",
+        "whatsappConfig.status": { $in: ["connected", "error"] },
         "whatsappConfig.provider": "baileys"
       });
 
@@ -35,78 +36,102 @@ class WhatsAppService {
     }
   }
 
-  async initSession(userId: string) {
+  async initSession(userId: string): Promise<void> {
     if (this.activeSessions.has(userId)) return;
+    if (this.pendingInitializations.has(userId)) return this.pendingInitializations.get(userId);
 
-    const { state, saveCreds } = await useMultiFileAuthState(`storage/whatsapp/session-${userId}`);
-    const { version } = await fetchLatestBaileysVersion();
+    const initPromise = (async () => {
+      try {
+        const { state, saveCreds } = await useMultiFileAuthState(`storage/whatsapp/session-${userId}`);
+        const { version } = await fetchLatestBaileysVersion();
 
-    const sock = makeWASocket({
-      version,
-      auth: state,
-      printQRInTerminal: false,
-    });
+        const sock = makeWASocket({
+          version,
+          auth: state,
+          printQRInTerminal: false,
+        });
 
-    this.activeSessions.set(userId, sock);
+        this.activeSessions.set(userId, sock);
 
-    sock.ev.on("connection.update", async (update) => {
-      const { connection, lastDisconnect, qr } = update;
+        return new Promise<void>((resolve, reject) => {
+          let resolved = false;
 
-      if (qr) {
-        const qrCodeData = await QRCode.toDataURL(qr);
-        emitToUser(userId, "whatsapp:qr", { qrCodeData });
-        console.log(`[WhatsApp] QR Code generated for user ${userId}`);
-      }
+          sock.ev.on("connection.update", async (update) => {
+            const { connection, lastDisconnect, qr } = update;
 
-      if (connection === "open") {
-        await CommerceMerchantModel.findOneAndUpdate(
-          { ownerId: userId },
-          {
-            $set: {
-              "whatsappConfig.status": "connected",
-              "whatsappConfig.provider": "baileys"
+            if (qr) {
+              const qrCodeData = await QRCode.toDataURL(qr);
+              emitToUser(userId, "whatsapp:qr", { qrCodeData });
+              console.log(`[WhatsApp] QR Code generated for user ${userId}`);
             }
-          }
-        );
-        emitToUser(userId, "whatsapp:connected", {});
-        console.log(`[WhatsApp] User ${userId} connected`);
+
+            if (connection === "open") {
+              await CommerceMerchantModel.findOneAndUpdate(
+                { ownerId: userId },
+                {
+                  $set: {
+                    "whatsappConfig.status": "connected",
+                    "whatsappConfig.provider": "baileys"
+                  }
+                }
+              );
+              emitToUser(userId, "whatsapp:connected", {});
+              console.log(`[WhatsApp] User ${userId} connected`);
+              if (!resolved) {
+                resolved = true;
+                resolve();
+              }
+            }
+
+            if (connection === "close") {
+              const shouldReconnect = (lastDisconnect?.error as Boom)?.output?.statusCode !== DisconnectReason.loggedOut;
+
+              await CommerceMerchantModel.findOneAndUpdate(
+                { ownerId: userId },
+                { $set: { "whatsappConfig.status": shouldReconnect ? "error" : "disconnected" } }
+              );
+
+              if (shouldReconnect) {
+                console.warn(`[WhatsApp] Critical disconnection for user ${userId}. Reconnecting...`);
+                this.activeSessions.delete(userId);
+                const merchant = await CommerceMerchantModel.findOne({ ownerId: userId });
+                if (merchant?.whatsappNumber) {
+                  smsService.sendAlert(
+                    merchant.whatsappNumber,
+                    `Chef, votre Vendeur IA est déconnecté ! Vérifiez votre téléphone ou votre connexion.`
+                  );
+                }
+                this.initSession(userId).catch(err => console.error(`[WhatsApp] Auto-reconnect failed for ${userId}:`, err));
+              } else {
+                this.activeSessions.delete(userId);
+              }
+
+              if (!resolved) {
+                resolved = true;
+                reject(new Error(`Connection closed: ${lastDisconnect?.error?.message || "Unknown error"}`));
+              }
+            }
+          });
+
+          sock.ev.on("creds.update", saveCreds);
+
+          sock.ev.on("messages.upsert", async (m) => {
+            if (m.type === "notify") {
+              for (const msg of m.messages) {
+                if (!msg.key.fromMe) {
+                  await this.handleIncomingMessage(userId, msg);
+                }
+              }
+            }
+          });
+        });
+      } finally {
+        this.pendingInitializations.delete(userId);
       }
+    })();
 
-      if (connection === "close") {
-        const shouldReconnect = (lastDisconnect?.error as Boom)?.output?.statusCode !== DisconnectReason.loggedOut;
-
-        await CommerceMerchantModel.findOneAndUpdate(
-          { ownerId: userId },
-          { $set: { "whatsappConfig.status": shouldReconnect ? "error" : "disconnected" } }
-        );
-
-        if (shouldReconnect) {
-          console.warn(`[WhatsApp] Critical disconnection for user ${userId}. Sending alert...`);
-          const merchant = await CommerceMerchantModel.findOne({ ownerId: userId });
-          if (merchant?.whatsappNumber) {
-            smsService.sendAlert(
-              merchant.whatsappNumber,
-              `Chef, votre Vendeur IA est déconnecté ! Vérifiez votre téléphone ou votre connexion.`
-            );
-          }
-          this.initSession(userId);
-        } else {
-          this.activeSessions.delete(userId);
-        }
-      }
-    });
-
-    sock.ev.on("creds.update", saveCreds);
-
-    sock.ev.on("messages.upsert", async (m) => {
-      if (m.type === "notify") {
-        for (const msg of m.messages) {
-          if (!msg.key.fromMe) {
-            await this.handleIncomingMessage(userId, msg);
-          }
-        }
-      }
-    });
+    this.pendingInitializations.set(userId, initPromise);
+    return initPromise;
   }
 
   private async getMetaConfig(merchant: any) {
@@ -513,7 +538,14 @@ class WhatsAppService {
     if (merchant.whatsappConfig?.provider === 'meta') {
       return this.sendMetaMessage(merchant, to, text);
     } else {
-      const sock = this.activeSessions.get(userId);
+      let sock = this.activeSessions.get(userId);
+
+      if (!sock && (merchant.whatsappConfig?.status === 'connected' || merchant.whatsappConfig?.status === 'error')) {
+        console.log(`[WhatsApp] On-demand session init for ${userId}`);
+        await this.initSession(userId);
+        sock = this.activeSessions.get(userId);
+      }
+
       if (sock) {
         return sock.sendMessage(to, { text });
       } else {

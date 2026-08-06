@@ -118,34 +118,34 @@ export function SetupGuide({ setupStatus, businessName, dashboard }: { setupStat
         </div>
 
         {/* Right Side: Step List */}
-        <div className="w-full md:w-[400px] space-y-3">
+        <div className="w-full md:w-[380px] space-y-2">
           {steps.map((step: any) => (
             <Link
               key={step.id}
               to={getActionLink(step.id)}
               className={cn(
-                "flex items-center gap-4 p-4 rounded-2xl border transition-all group",
+                "flex items-center gap-3 p-3 rounded-2xl border transition-all group",
                 step.completed
                   ? "bg-vendeur-emerald/5 border-vendeur-emerald/20 opacity-60"
                   : step.id === nextStep?.id
-                    ? "bg-vendeur-emerald/10 border-vendeur-emerald/40 scale-[1.02] shadow-xl"
+                    ? "bg-vendeur-emerald/10 border-vendeur-emerald/40 scale-[1.01] shadow-xl"
                     : "bg-white/5 border-white/5 hover:border-white/20"
               )}
             >
               <div className={cn(
-                "h-6 w-6 rounded-full flex items-center justify-center shrink-0",
+                "h-5 w-5 rounded-full flex items-center justify-center shrink-0",
                 step.completed ? "text-vendeur-emerald" : "text-white/20"
               )}>
-                {step.completed ? <CheckCircle2 size={20} /> : <Circle size={20} />}
+                {step.completed ? <CheckCircle2 size={18} /> : <Circle size={18} />}
               </div>
               <span className={cn(
-                "flex-1 text-sm font-bold",
+                "flex-1 text-xs font-bold",
                 step.completed ? "text-white/40 line-through" : "text-white"
               )}>
                 {step.label}
               </span>
               {!step.completed && (
-                <ChevronRight size={16} className="text-white/20 group-hover:text-vendeur-emerald transition-colors" />
+                <ChevronRight size={14} className="text-white/20 group-hover:text-vendeur-emerald transition-colors" />
               )}
             </Link>
           ))}
@@ -153,15 +153,15 @@ export function SetupGuide({ setupStatus, businessName, dashboard }: { setupStat
           {nextStep && (
             <Link
               to={getActionLink(nextStep.id)}
-              className="mt-6 flex items-center justify-center gap-3 w-full min-h-[4rem] px-6 rounded-2xl bg-vendeur-emerald text-vendeur-coal font-black uppercase text-xs tracking-[0.15em] hover:scale-105 active:scale-95 transition-all shadow-xl shadow-vendeur-emerald/20 group"
+              className="mt-4 flex items-center justify-center gap-3 w-full min-h-[3.5rem] px-6 rounded-2xl bg-vendeur-emerald text-vendeur-coal font-black uppercase text-xs tracking-[0.15em] hover:scale-102 active:scale-95 transition-all shadow-xl shadow-vendeur-emerald/20 group"
             >
-              <Zap size={18} fill="currentColor" className="shrink-0 animate-pulse text-vendeur-coal" />
+              <Zap size={16} fill="currentColor" className="shrink-0 animate-pulse text-vendeur-coal" />
               <span className="flex-1 text-center font-black">
                 {nextStep.id === 'whatsapp' ? 'Brancher mon WhatsApp' :
                  nextStep.id === 'products' ? 'Ajouter des prix' :
                  nextStep.id === 'payments' ? 'Configurer mes paiements' : 'Action Requise'}
               </span>
-              <ArrowRight size={18} className="shrink-0 group-hover:translate-x-1 transition-transform" />
+              <ArrowRight size={16} className="shrink-0 group-hover:translate-x-1 transition-transform" />
             </Link>
           )}
         </div>

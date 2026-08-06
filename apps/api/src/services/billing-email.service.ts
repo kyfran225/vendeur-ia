@@ -1,4 +1,4 @@
-import { env } from "../../config/env.js";
+import { env } from "../config/env.js";
 import axios from "axios";
 
 type BillingEmailTemplate = {

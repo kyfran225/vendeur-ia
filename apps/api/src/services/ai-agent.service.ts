@@ -27,6 +27,7 @@ export interface SalesContext {
 }
 
 export interface SalesMerchant {
+  _id?: string;
   businessName: string;
   category: string;
   city: string;
@@ -34,6 +35,10 @@ export interface SalesMerchant {
   currency?: string;
   description?: string;
   paymentChannels?: any[];
+  subscription?: {
+    status: string;
+    expiresAt: Date | null;
+  };
   aiSettings?: {
     personality: string;
     localSlang: boolean;
@@ -43,6 +48,15 @@ export interface SalesMerchant {
 
 export class AIAgentService {
   async generateResponse(context: SalesContext, customSystemPrompt?: string): Promise<AIResponse> {
+    // Check subscription status
+    if (context.merchant.subscription && context.merchant.subscription.status === "past_due") {
+      return {
+        text: "Bonjour ! Désolé, le service d'assistance IA de cette boutique est temporairement suspendu pour des raisons de maintenance technique ou d'abonnement expiré. Le propriétaire a été notifié.",
+        provider: "internal",
+        usage: { promptTokens: 0, completionTokens: 0, totalTokens: 0 }
+      };
+    }
+
     const systemPrompt = customSystemPrompt || this.buildSystemPrompt(context);
 
     return aiProvider.generateText({

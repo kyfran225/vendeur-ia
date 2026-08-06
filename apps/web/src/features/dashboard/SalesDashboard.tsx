@@ -19,6 +19,7 @@ import { apiClient } from "@/lib/apiClient";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { SetupGuide } from "./components/SetupGuide";
+import { SubscriptionBanner } from "./components/SubscriptionBanner";
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -81,9 +82,16 @@ function HomePanel({ dashboard }: { dashboard: any }) {
   const tips = dashboard?.aiGrowthAdvice?.tips || [];
   const status = dashboard?.merchant?.whatsappConfig?.status || 'disconnected';
   const setupStatus = dashboard?.setupStatus;
+  const subscription = dashboard?.merchant?.subscription;
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-700">
+      {/* SUBSCRIPTION STATUS BANNER */}
+      <SubscriptionBanner
+        status={subscription?.status}
+        expiresAt={subscription?.expiresAt}
+      />
+
       {/* INTELLIGENT SETUP GUIDE */}
       {setupStatus && !setupStatus.isFullyOperational && (
         <SetupGuide

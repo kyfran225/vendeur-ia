@@ -5,7 +5,7 @@ import { UserModel } from '../modules/auth/user.model.js';
 import { messagingService } from './messaging.service.js';
 import { pushService } from './push.service.js';
 import { billingEmailService } from './billing-email.service.js';
-import { paystackService } from './paystack.service.ts';
+import { paystackService } from './paystack.service.js';
 import { logger } from './logger.service.js';
 import { marketingService } from './marketing.service.js';
 import { SystemSettingsModel } from '../modules/commerce/admin.model.js';
@@ -87,8 +87,10 @@ export const billingWorker = new Worker(
       if (action === 'suspend-merchant') {
         logger.warn(`[BillingQueue] Suspending merchant ${businessName}`);
 
-        merchant.subscription.status = "past_due";
-        await merchant.save();
+        if (merchant.subscription) {
+          merchant.subscription.status = "past_due";
+          await merchant.save();
+        }
 
         const waMessage = `🛑 *Service Suspendu - ${businessName}*\n\n` +
           `Votre abonnement a expiré. Votre IA est désormais inactive.\n\n` +

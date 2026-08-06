@@ -3,6 +3,7 @@ import { X, Sparkles, Check, Rocket, ShieldCheck, Loader2 } from "lucide-react";
 import { apiClient } from "@/lib/apiClient";
 import { toast } from "sonner";
 import { useAuthStore } from "@/stores/authStore";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface PackProModalProps {
   isOpen: boolean;
@@ -12,6 +13,7 @@ interface PackProModalProps {
 export function PackProModal({ isOpen, onClose }: PackProModalProps) {
   const [loading, setLoading] = React.useState(false);
   const { user } = useAuthStore();
+  const queryClient = useQueryClient();
 
   if (!isOpen) return null;
 
@@ -19,7 +21,20 @@ export function PackProModal({ isOpen, onClose }: PackProModalProps) {
     setLoading(true);
     try {
       const res = await apiClient.post("/api/commerce/buy-pack-pro", { email: user?.email });
-      if (res.data.authorization_url) {
+      if (res.data.access_code) {
+        const paystack = new (window as any).PaystackPop();
+        paystack.checkout({
+          accessCode: res.data.access_code,
+          onSuccess: (transaction: any) => {
+            toast.success("Pack Pro activé !");
+            queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+            onClose();
+          },
+          onCancel: () => {
+            toast.info("Paiement annulé");
+          }
+        });
+      } else if (res.data.authorization_url) {
         window.location.href = res.data.authorization_url;
       }
     } catch (err) {

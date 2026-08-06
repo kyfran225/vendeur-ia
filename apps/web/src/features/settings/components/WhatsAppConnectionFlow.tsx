@@ -21,6 +21,8 @@ import { toast } from "sonner";
 import { apiClient } from "@/lib/apiClient";
 import { useAuthStore } from "@/stores/authStore";
 
+import { OffersModal } from "./OffersModal";
+
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
@@ -36,6 +38,7 @@ export function WhatsAppConnectionFlow({ merchant, qrCode, onRefreshMerchant }: 
   const [showHelp, setShowHelp] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [showOffers, setShowOffers] = useState(false);
   const [metaConfig, setMetaConfig] = useState({
     phoneNumberId: merchant?.whatsappConfig?.meta?.phoneNumberId || "",
     accessToken: merchant?.whatsappConfig?.meta?.accessToken || ""
@@ -61,6 +64,20 @@ export function WhatsAppConnectionFlow({ merchant, qrCode, onRefreshMerchant }: 
   };
 
   const handleActivateMeta = async () => {
+    if (isMetaActive) {
+      toast.info("Le Mode Pro est déjà actif.");
+      return;
+    }
+
+    // If no custom config, check for contribution/subscription
+    const hasCustomConfig = metaConfig.phoneNumberId && metaConfig.accessToken;
+    const hasActiveSubscription = merchant?.whatsappConfig?.status === 'connected' || merchant?.subscription?.status === 'active';
+
+    if (!hasCustomConfig && !hasActiveSubscription) {
+      setShowOffers(true);
+      return;
+    }
+
     setLoading(true);
     try {
       await apiClient.patch("/api/whatsapp/config", {
@@ -78,6 +95,7 @@ export function WhatsAppConnectionFlow({ merchant, qrCode, onRefreshMerchant }: 
   const isBaileysActive = merchant?.whatsappConfig?.provider === 'baileys' && merchant?.whatsappConfig?.status === 'connected';
   const isMetaActive = merchant?.whatsappConfig?.provider === 'meta' && merchant?.whatsappConfig?.status === 'connected';
   const isUsingCustomMeta = merchant?.whatsappConfig?.meta?.phoneNumberId && merchant?.whatsappConfig?.meta?.accessToken;
+  const hasPaidContribution = !!merchant?.whatsappConfig?.lastBillingDate;
 
   const handlePackProLead = () => {
     const businessName = merchant?.businessName || "ma boutique";
@@ -96,7 +114,19 @@ export function WhatsAppConnectionFlow({ merchant, qrCode, onRefreshMerchant }: 
         userId: user?.id
       });
 
-      if (res.data.authorization_url) {
+      if (res.data.access_code) {
+        const paystack = new (window as any).PaystackPop();
+        paystack.checkout({
+          accessCode: res.data.access_code,
+          onSuccess: (transaction: any) => {
+            toast.success("Contribution RAM validée !");
+            onRefreshMerchant();
+          },
+          onCancel: () => {
+            toast.info("Paiement annulé");
+          }
+        });
+      } else if (res.data.authorization_url) {
         window.location.href = res.data.authorization_url;
       } else {
         throw new Error("Lien de paiement non reçu");
@@ -106,6 +136,14 @@ export function WhatsAppConnectionFlow({ merchant, qrCode, onRefreshMerchant }: 
       console.error(error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleExpressConnect = () => {
+    if (hasPaidContribution) {
+      onInitBaileys();
+    } else {
+      setShowOffers(true);
     }
   };
 
@@ -142,7 +180,7 @@ export function WhatsAppConnectionFlow({ merchant, qrCode, onRefreshMerchant }: 
             </div>
 
             <button
-              onClick={handlePaystackPayment}
+              onClick={handleExpressConnect}
               disabled={loading || isBaileysActive}
               className={cn(
                 "w-full h-14 rounded-2xl font-black uppercase tracking-widest text-[10px] flex items-center justify-center gap-2 transition-all whitespace-nowrap",
@@ -152,7 +190,7 @@ export function WhatsAppConnectionFlow({ merchant, qrCode, onRefreshMerchant }: 
               )}
             >
               {loading ? <Loader2 className="animate-spin" size={16} /> : <Zap size={16} />}
-              {isBaileysActive ? "Session Active" : "Connecter (RAM)"}
+              {isBaileysActive ? "Session Active" : hasPaidContribution ? "Générer QR Code" : "Connecter (RAM)"}
             </button>
           </div>
         </div>
@@ -160,10 +198,10 @@ export function WhatsAppConnectionFlow({ merchant, qrCode, onRefreshMerchant }: 
         {/* MODE PRO (META API) */}
         <div className={cn(
           "relative group bg-vendeur-coal border border-white/5 rounded-[2.5rem] p-6 md:p-8 overflow-hidden transition-all hover:border-blue-500/30",
-          isMetaActive && "ring-2 ring-blue-500 border-transparent"
+          isMetaActive && "border-blue-500 shadow-[0_0_30px_rgba(59,130,246,0.1)]"
         )}>
           {isMetaActive && (
-             <div className="absolute top-4 right-4 md:top-6 md:right-6 h-6 px-3 rounded-full bg-blue-500 text-white text-[8px] font-black uppercase flex items-center gap-1">
+             <div className="absolute top-4 right-4 md:top-6 md:right-6 h-6 px-3 rounded-full bg-blue-500 text-white text-[8px] font-black uppercase flex items-center gap-1 shadow-lg shadow-blue-500/20">
                <ShieldCheck size={10} /> <span className="whitespace-nowrap">{isUsingCustomMeta ? "Custom Pro" : "System Pro"}</span>
              </div>
           )}
@@ -190,65 +228,67 @@ export function WhatsAppConnectionFlow({ merchant, qrCode, onRefreshMerchant }: 
             </div>
 
             <div className="space-y-4 pt-2">
+              {!isMetaActive && (
+                <div className="bg-blue-500/5 border border-blue-500/20 rounded-3xl p-6 space-y-4 mb-4">
+                  <div className="flex items-center gap-3">
+                     <Settings size={18} className="text-blue-400" />
+                     <h4 className="text-[10px] font-black uppercase text-white tracking-widest">Configuration API Cloud</h4>
+                  </div>
+                  <div className="grid grid-cols-1 gap-3">
+                     <div className="space-y-1">
+                        <label className="text-[8px] font-black uppercase text-white/40 ml-1">Phone Number ID</label>
+                        <input
+                          className="w-full h-10 bg-black/40 border border-white/5 rounded-xl px-4 text-[10px] text-white focus:border-blue-500 outline-none transition-all font-mono"
+                          value={metaConfig.phoneNumberId}
+                          onChange={e => setMetaConfig({...metaConfig, phoneNumberId: e.target.value})}
+                          placeholder="Ex: 1063..."
+                        />
+                     </div>
+                     <div className="space-y-1">
+                        <label className="text-[8px] font-black uppercase text-white/40 ml-1">Access Token</label>
+                        <input
+                          className="w-full h-10 bg-black/40 border border-white/5 rounded-xl px-4 text-[10px] text-white focus:border-blue-500 outline-none transition-all font-mono"
+                          value={metaConfig.accessToken}
+                          onChange={e => setMetaConfig({...metaConfig, accessToken: e.target.value})}
+                          placeholder="EAAG..."
+                        />
+                     </div>
+                  </div>
+                  { (metaConfig.phoneNumberId || metaConfig.accessToken) && (
+                     <button
+                       onClick={handleSaveMetaConfig}
+                       disabled={loading}
+                       className="w-full py-2 bg-blue-500/20 text-blue-400 rounded-lg text-[9px] font-black uppercase hover:bg-blue-500 hover:text-white transition-all border border-blue-500/30"
+                     >
+                       {loading ? <Loader2 className="animate-spin mx-auto" size={12} /> : "Enregistrer les clés"}
+                     </button>
+                  )}
+                  <p className="text-[8px] text-white/20 text-center uppercase font-bold">
+                    Laisse vide pour utiliser notre serveur partagé.
+                  </p>
+                </div>
+              )}
+
               <button
                 onClick={handleActivateMeta}
                 disabled={loading || isMetaActive}
                 className={cn(
-                  "w-full h-14 rounded-2xl font-black uppercase tracking-widest text-[10px] flex items-center justify-center gap-2 transition-all whitespace-nowrap",
+                  "w-full h-14 rounded-2xl font-black uppercase tracking-widest text-[10px] flex items-center justify-center gap-2 transition-all whitespace-nowrap shadow-lg",
                   isMetaActive
-                    ? "bg-blue-500/10 text-blue-400 border border-blue-500/20"
+                    ? "bg-blue-500 text-white border-transparent shadow-blue-500/20"
                     : "bg-white text-vendeur-coal hover:bg-blue-500 hover:text-white active:scale-95"
                 )}
               >
-                {loading ? <Loader2 className="animate-spin" size={16} /> : <LogIn size={16} />}
-                {isMetaActive ? "Mode Pro Actif" : "Activer"}
+                {loading ? <Loader2 className="animate-spin" size={16} /> : isMetaActive ? <ShieldCheck size={16} /> : <LogIn size={16} />}
+                {isMetaActive ? "Mode Pro Actif 🚀" : "Activer"}
               </button>
-
-              <div className="space-y-2">
-                <button
-                  onClick={() => setShowAdvanced(!showAdvanced)}
-                  className="w-full text-[10px] font-black uppercase text-white/20 hover:text-white/40 flex items-center justify-center gap-2 transition-colors py-2"
-                >
-                  <Settings size={14} /> Configuration Personnalisée
-                </button>
-
-                {showAdvanced && (
-                  <div className="p-6 bg-black/40 border border-white/5 rounded-3xl space-y-4 animate-in slide-in-from-top-2 duration-300">
-                    <div className="space-y-2">
-                      <label className="text-[9px] font-black uppercase text-white/40 ml-1">Phone Number ID</label>
-                      <input
-                        className="w-full h-12 bg-vendeur-coal border border-white/10 rounded-xl px-4 text-xs text-white focus:border-blue-500 outline-none transition-all font-mono"
-                        value={metaConfig.phoneNumberId}
-                        onChange={e => setMetaConfig({...metaConfig, phoneNumberId: e.target.value})}
-                        placeholder="Ex: 1063..."
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-[9px] font-black uppercase text-white/40 ml-1">Access Token</label>
-                      <textarea
-                        className="w-full h-24 bg-vendeur-coal border border-white/10 rounded-xl p-4 text-[10px] text-white focus:border-blue-500 outline-none transition-all font-mono resize-none"
-                        value={metaConfig.accessToken}
-                        onChange={e => setMetaConfig({...metaConfig, accessToken: e.target.value})}
-                        placeholder="EAAG..."
-                      />
-                    </div>
-                    <button
-                      onClick={handleSaveMetaConfig}
-                      disabled={loading || !metaConfig.phoneNumberId || !metaConfig.accessToken}
-                      className="w-full h-12 bg-blue-500 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-600 transition-all disabled:opacity-50"
-                    >
-                      {loading ? <Loader2 className="animate-spin mx-auto" size={16} /> : "Enregistrer les clés"}
-                    </button>
-                    <p className="text-[8px] text-white/20 text-center uppercase font-bold px-2">
-                      Laisse vide pour utiliser le serveur mutualisé gratuit.
-                    </p>
-                  </div>
-                )}
-              </div>
             </div>
           </div>
         </div>
       </div>
+
+      {/* OFFERS MODAL */}
+      <OffersModal isOpen={showOffers} onClose={() => setShowOffers(false)} />
 
       {/* QR CODE DISPLAY (If Baileys selected) */}
       {qrCode && (
@@ -316,6 +356,14 @@ export function WhatsAppConnectionFlow({ merchant, qrCode, onRefreshMerchant }: 
 }
 
 function HelpOption({ icon, title, desc, onClick, highlight = false }: { icon: React.ReactNode; title: string; desc: string; onClick?: () => void; highlight?: boolean }) {
+  const handleExpressConnect = () => {
+    if (hasPaidContribution) {
+      onInitBaileys();
+    } else {
+      setShowOffers(true);
+    }
+  };
+
   return (
     <button
       onClick={onClick}

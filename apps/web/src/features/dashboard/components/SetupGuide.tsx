@@ -36,6 +36,7 @@ export function SetupGuide({ setupStatus, businessName, dashboard }: { setupStat
 
   const getActionLink = (id: string) => {
     switch (id) {
+      case 'identity': return "/settings?tab=boutique";
       case 'whatsapp': return "/settings?tab=connexions";
       case 'products': return "/products";
       case 'payments': return "/settings?tab=boutique";

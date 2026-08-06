@@ -72,8 +72,9 @@ export class CommerceService {
     const hasDeliveryFees = (knowledge?.businessRules?.deliveryFees?.length || 0) > 0;
 
     const setupSteps = [
-      { id: 'whatsapp', label: 'Connecter WhatsApp', completed: isWhatsAppConnected, weight: 40 },
-      { id: 'products', label: 'Ajouter des produits', completed: hasProducts, weight: 30 },
+      { id: 'identity', label: 'Identité du Commerce', completed: true, weight: 10 }, // New step
+      { id: 'whatsapp', label: 'Connecter WhatsApp', completed: isWhatsAppConnected, weight: 35 },
+      { id: 'products', label: 'Ajouter des produits', completed: hasProducts, weight: 25 },
       { id: 'payments', label: 'Modes de paiement', completed: hasPaymentMethods, weight: 15 },
       { id: 'delivery', label: 'Tarifs de livraison', completed: hasDeliveryFees, weight: 15 }
     ];

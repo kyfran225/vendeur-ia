@@ -21,7 +21,11 @@ const MerchantSchema = new Schema({
   subscription: {
     plan: { type: String, default: "starter" },
     status: { type: String, default: "trial" },
-    expiresAt: { type: Date, default: null }
+    expiresAt: { type: Date, default: null },
+    subscriptionCode: { type: String, default: null },
+    emailToken: { type: String, default: null },
+    nextPaymentDate: { type: Date, default: null },
+    paymentMethod: { type: String, enum: ['card', 'mobile_money', 'unknown'], default: 'unknown' }
   },
   aiSettings: {
     personality: { type: String, default: "friendly" },
@@ -56,6 +60,12 @@ const MerchantSchema = new Schema({
     pageId: String,
     accessToken: String,
     status: { type: String, enum: ['disconnected', 'connected', 'error'], default: 'disconnected' }
+  },
+  referralCode: { type: String, unique: true, sparse: true, index: true },
+  referredBy: { type: Schema.Types.ObjectId, ref: "CommerceMerchant", index: true },
+  referralStats: {
+    count: { type: Number, default: 0 },
+    earnedMonths: { type: Number, default: 0 }
   }
 }, { timestamps: true });
 

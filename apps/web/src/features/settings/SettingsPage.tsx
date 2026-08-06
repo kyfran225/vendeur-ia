@@ -35,7 +35,11 @@ import { WhatsAppConnectionFlow } from "./components/WhatsAppConnectionFlow";
 import { FacebookConnectionModal } from "./components/fb/FacebookConnectionModal";
 import { MarketplaceGuideModal } from "./components/fb/MarketplaceGuideModal";
 import { PackProModal } from "../dashboard/components/PackProModal";
+import { BillingTab } from "./components/BillingTab";
+import { ReferralCard } from "./components/ReferralCard";
 import { subscribeToPush } from "@/lib/pushUtils";
+
+import { useSocket } from "@/hooks/useSocket";
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -55,7 +59,9 @@ const InstagramIcon = ({ size = 22, className = "" }: { size?: number; className
   </svg>
 );
 
-type SettingsTab = "boutique" | "savoir" | "personnalite" | "connexions" | "compte";
+import { Gift } from "lucide-react";
+
+type SettingsTab = "boutique" | "savoir" | "personnalite" | "connexions" | "billing" | "referral" | "compte"; | "billing";
 
 export function SettingsPage() {
   const [searchParams] = useSearchParams();
@@ -82,7 +88,20 @@ export function SettingsPage() {
     enabled: !!accessToken
   });
 
-  const qrCode = queryClient.getQueryData<string>(["whatsapp:qr"]);
+  const qrCodeData = queryClient.getQueryData<string>(["whatsapp:qr"]);
+  const [localQrCode, setLocalQrCode] = useState<string | null>(qrCodeData || null);
+  const socket = useSocket();
+
+  useEffect(() => {
+    if (!socket) return;
+    socket.on("whatsapp:qr", (data: { qrCodeData: string }) => {
+      setLocalQrCode(data.qrCodeData);
+      queryClient.setQueryData(["whatsapp:qr"], data.qrCodeData);
+    });
+    return () => {
+      socket.off("whatsapp:qr");
+    };
+  }, [socket, queryClient]);
 
   if (isDashboardLoading || isKnowledgeLoading) {
     return (
@@ -142,6 +161,18 @@ export function SettingsPage() {
           label="Connexions"
         />
         <TabButton
+          active={activeTab === "billing"}
+          onClick={() => setActiveTab("billing")}
+          icon={<Banknote size={18} />}
+          label="Facturation"
+        />
+        <TabButton
+          active={activeTab === "referral"}
+          onClick={() => setActiveTab("referral")}
+          icon={<Gift size={18} />}
+          label="Parrainage"
+        />
+        <TabButton
           active={activeTab === "compte"}
           onClick={() => setActiveTab("compte")}
           icon={<UserIcon size={18} />}
@@ -157,9 +188,11 @@ export function SettingsPage() {
           <ConnexionsTab
             merchant={merchant}
             systemSettings={systemSettings}
-            qrCode={qrCode || null}
+            qrCode={localQrCode}
           />
         )}
+        {activeTab === "billing" && <BillingTab merchant={merchant} />}
+        {activeTab === "referral" && <ReferralCard merchant={merchant} />}
         {activeTab === "compte" && <CompteTab />}
       </div>
     </div>
@@ -255,6 +288,21 @@ function BoutiqueTab({ merchant, initialKnowledge, accessToken }: { merchant: an
               <option value="health">💊 Santé & Bien-être</option>
               <option value="auto">🚗 Auto-Moto & Pièces</option>
               <option value="other">📦 Autre Commerce</option>
+            </select>
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Devise de Facturation</label>
+            <select
+              className="w-full h-14 rounded-2xl bg-black/40 border border-white/10 px-4 text-white focus:border-vendeur-emerald outline-none transition-all appearance-none cursor-pointer"
+              value={localMerchant?.currency || "XOF"}
+              onChange={e => setLocalMerchant({...localMerchant, currency: e.target.value})}
+            >
+              <option value="XOF">FCFA (XOF)</option>
+              <option value="GHS">Cedi (GHS)</option>
+              <option value="NGN">Naira (NGN)</option>
+              <option value="USD">Dollar (USD)</option>
+              <option value="KES">Shilling (KES)</option>
+              <option value="ZAR">Rand (ZAR)</option>
             </select>
           </div>
           <InputGroup label="Adresse / Zone" value={localMerchant?.address} onChange={v => setLocalMerchant({...localMerchant, address: v})} placeholder="Ex: Cocody, Abidjan" />

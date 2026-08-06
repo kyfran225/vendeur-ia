@@ -42,14 +42,15 @@ export interface SalesMerchant {
 }
 
 export class AIAgentService {
-  async generateResponse(context: SalesContext): Promise<AIResponse> {
-    const systemPrompt = this.buildSystemPrompt(context);
+  async generateResponse(context: SalesContext, customSystemPrompt?: string): Promise<AIResponse> {
+    const systemPrompt = customSystemPrompt || this.buildSystemPrompt(context);
 
     return aiProvider.generateText({
       systemPrompt,
       userMessage: context.message,
       history: context.history,
       maxTokens: 512,
+      thinkingLevel: "low", // Enable thinking for better sales reasoning
       temperature: 0.7
     });
   }

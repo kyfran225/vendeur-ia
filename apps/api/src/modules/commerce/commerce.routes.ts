@@ -742,7 +742,7 @@ router.post("/briefing", authenticate, async (req, res) => {
       customerPhone: "BOSS",
       platform: "whatsapp",
       aiSummary: `Briefing et Reporting en cours avec le propriétaire de ${merchant.businessName}.`
-    });
+    }, systemPrompt); // Pass the specialized system prompt
 
     res.json({ reply: reply.text });
   } catch (error) {

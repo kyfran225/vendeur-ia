@@ -20,6 +20,9 @@ export function ProductScanner({ onClose, onScanComplete, boutiqueName }: Produc
   const { accessToken } = useAuthStore();
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const isMountedRef = useRef(false);
+  const activeRequestRef = useRef(0);
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [scanStep, setScanStep] = useState<"idle" | "capturing" | "processing" | "analyzing" | "studio" | "complete">("idle");
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -28,28 +31,59 @@ export function ProductScanner({ onClose, onScanComplete, boutiqueName }: Produc
   // Filter values for "Auto-Enhance"
   const filters = "saturate(1.2) brightness(1.1) contrast(1.05)";
 
+  const stopCamera = useCallback(() => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+    setStream(null);
+  }, []);
+
   const startCamera = useCallback(async () => {
+    const requestId = ++activeRequestRef.current;
     try {
+      // Stop any existing stream before starting a new one
+      stopCamera();
+
       const mediaStream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: "environment", width: { ideal: 1080 }, height: { ideal: 1080 } },
         audio: false,
       });
+
+      // RACE CONDITION CHECK:
+      // If the component was unmounted or a new request was started while waiting for getUserMedia
+      if (!isMountedRef.current || requestId !== activeRequestRef.current) {
+        mediaStream.getTracks().forEach(track => track.stop());
+        return;
+      }
+
+      streamRef.current = mediaStream;
       setStream(mediaStream);
+
       if (videoRef.current) {
         videoRef.current.srcObject = mediaStream;
       }
     } catch (err) {
-      console.error("Error accessing camera:", err);
-      toast.error("Impossible d'accéder à la caméra. Vérifiez les permissions.");
+      if (isMountedRef.current && requestId === activeRequestRef.current) {
+        console.error("Error accessing camera:", err);
+        toast.error("Impossible d'accéder à la caméra. Vérifiez les permissions.");
+      }
     }
-  }, []);
+  }, [stopCamera]);
 
   useEffect(() => {
+    isMountedRef.current = true;
     startCamera();
     return () => {
-      stream?.getTracks().forEach(track => track.stop());
+      isMountedRef.current = false;
+      stopCamera();
     };
-  }, [startCamera]);
+  }, [startCamera, stopCamera]);
+
+  const handleClose = useCallback(() => {
+    stopCamera();
+    onClose();
+  }, [stopCamera, onClose]);
 
   const capturePhoto = async () => {
     if (!videoRef.current || !canvasRef.current) return;
@@ -73,7 +107,7 @@ export function ProductScanner({ onClose, onScanComplete, boutiqueName }: Produc
     setPreviewUrl(imageData);
 
     // Stop stream to save battery
-    stream?.getTracks().forEach(track => track.stop());
+    stopCamera();
 
     // 2. Real AI Analysis call with Compression
     setScanStep("analyzing");
@@ -124,7 +158,7 @@ export function ProductScanner({ onClose, onScanComplete, boutiqueName }: Produc
         }}
         onSave={(img) => {
           onScanComplete({ ...detectedData, finalPoster: img });
-          onClose();
+          handleClose();
         }}
       />
     );
@@ -135,7 +169,7 @@ export function ProductScanner({ onClose, onScanComplete, boutiqueName }: Produc
       {/* Header */}
       <div className="absolute top-0 left-0 right-0 p-6 flex justify-between items-center z-50">
         <button
-          onClick={onClose}
+          onClick={handleClose}
           className="h-12 w-12 rounded-2xl bg-black/20 backdrop-blur-xl border border-white/10 flex items-center justify-center text-white"
         >
           <X size={24} />
@@ -222,7 +256,7 @@ export function ProductScanner({ onClose, onScanComplete, boutiqueName }: Produc
 
         {scanStep === "complete" && (
           <button
-            onClick={onClose}
+            onClick={handleClose}
             className="h-16 px-12 rounded-2xl bg-white text-black font-black uppercase tracking-widest text-sm shadow-xl active:scale-95 transition-all"
           >
             Voir la fiche

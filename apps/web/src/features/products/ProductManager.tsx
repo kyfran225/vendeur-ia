@@ -139,7 +139,7 @@ export function ProductManager() {
   const [analyzing, setAnalyzing] = useState(false);
   const [newProduct, setNewProduct] = useState({
     name: "",
-    price: 0,
+    price: NaN,
     stock: 1,
     category: businessCategory,
     description: "",
@@ -255,18 +255,18 @@ export function ProductManager() {
       return res.data;
     },
     onSuccess: (data) => {
-      const sanitizedPrice = isNaN(parseInt(data.price)) ? 0 : parseInt(data.price);
+      const sanitizedPrice = isNaN(parseInt(data.price)) ? NaN : parseInt(data.price);
       if (editingProduct) {
         setEditingProduct({
           ...editingProduct,
           name: data.name || editingProduct.name,
-          price: sanitizedPrice || editingProduct.price
+          price: isNaN(sanitizedPrice) ? editingProduct.price : sanitizedPrice
         });
       } else {
         setNewProduct(prev => ({
           ...prev,
           name: data.name || prev.name,
-          price: sanitizedPrice || prev.price,
+          price: sanitizedPrice,
           description: data.description || prev.description
         }));
         setIsAddingManual(true);
@@ -331,11 +331,13 @@ export function ProductManager() {
     e.preventDefault();
     createMutation.mutate({
       ...newProduct,
+      price: isNaN(newProduct.price) ? 0 : newProduct.price,
+      stock: isNaN(newProduct.stock) ? 0 : newProduct.stock,
       category: newProduct.category || businessCategory,
       isService: businessCategory === "services"
     });
     setIsAddingManual(false);
-    setNewProduct({ name: "", price: 0, stock: 1, category: businessCategory, description: "", imageUrl: "" });
+    setNewProduct({ name: "", price: NaN, stock: 1, category: businessCategory, description: "", imageUrl: "" });
   };
 
   const handleScanComplete = (data: any) => {
@@ -456,11 +458,12 @@ export function ProductManager() {
                     className="h-12 rounded-xl bg-white/5 border border-white/10 px-4 text-white outline-none focus:border-emerald-300 transition-all"
                     value={editingProduct ? (isNaN(editingProduct.price) ? "" : editingProduct.price) : (isNaN(newProduct.price) ? "" : newProduct.price)}
                     onChange={e => {
-                      const val = e.target.value === "" ? 0 : parseInt(e.target.value);
+                      const val = e.target.value === "" ? NaN : parseInt(e.target.value);
                       editingProduct
-                        ? setEditingProduct({...editingProduct, price: isNaN(val) ? 0 : val})
-                        : setNewProduct({...newProduct, price: isNaN(val) ? 0 : val});
+                        ? setEditingProduct({...editingProduct, price: val})
+                        : setNewProduct({...newProduct, price: val});
                     }}
+                    placeholder="0"
                     required
                   />
                 </label>
@@ -471,11 +474,12 @@ export function ProductManager() {
                     className="h-12 rounded-xl bg-white/5 border border-white/10 px-4 text-white outline-none focus:border-emerald-300 transition-all"
                     value={editingProduct ? (isNaN(editingProduct.stock) ? "" : editingProduct.stock) : (isNaN(newProduct.stock) ? "" : newProduct.stock)}
                     onChange={e => {
-                      const val = e.target.value === "" ? 0 : parseInt(e.target.value);
+                      const val = e.target.value === "" ? NaN : parseInt(e.target.value);
                       editingProduct
-                        ? setEditingProduct({...editingProduct, stock: isNaN(val) ? 0 : val})
-                        : setNewProduct({...newProduct, stock: isNaN(val) ? 0 : val});
+                        ? setEditingProduct({...editingProduct, stock: val})
+                        : setNewProduct({...newProduct, stock: val});
                     }}
+                    placeholder="0"
                   />
                 </label>
               </div>

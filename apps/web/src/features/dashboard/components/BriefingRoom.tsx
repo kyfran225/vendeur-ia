@@ -29,11 +29,18 @@ export function BriefingRoom({ isOpen, onClose, businessName }: { isOpen: boolea
     if (isOpen && messages.length === 0) {
       setMessages([{
         role: "ai",
-        text: `Bonjour Patron ! ✨ Je suis prêt pour mon briefing. Comment souhaitez-vous que je vende vos produits aujourd'hui ?`,
+        text: `Bonjour Patron ! ✨ Je suis prêt pour notre séance de travail.
+
+Voici comment je peux vous aider ici :
+1️⃣ **M'instruire** : Donnez-moi vos consignes de vente, changez mon ton ou mes priorités.
+2️⃣ **Me questionner** : Demandez-moi vos stats de vente, votre chiffre d'affaires ou l'état de vos stocks.
+3️⃣ **Piloter** : Demandez-moi quels produits se vendent le mieux ou lesquels sont bientôt épuisés.
+
+Comment souhaitez-vous que nous fassions progresser ${businessName} aujourd'hui ?`,
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       }]);
     }
-  }, [isOpen]);
+  }, [isOpen, businessName]);
 
   useEffect(() => {
     if (scrollRef.current) {

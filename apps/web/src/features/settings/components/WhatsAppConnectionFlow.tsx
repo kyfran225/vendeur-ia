@@ -34,7 +34,7 @@ interface WhatsAppConnectionFlowProps {
   onRefreshMerchant: () => void;
 }
 
-export function WhatsAppConnectionFlow({ merchant, qrCode, onRefreshMerchant }: WhatsAppConnectionFlowProps) {
+export function WhatsAppConnectionFlow({ merchant, qrCode, onInitBaileys, onRefreshMerchant }: WhatsAppConnectionFlowProps) {
   const [showHelp, setShowHelp] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
@@ -356,14 +356,6 @@ export function WhatsAppConnectionFlow({ merchant, qrCode, onRefreshMerchant }: 
 }
 
 function HelpOption({ icon, title, desc, onClick, highlight = false }: { icon: React.ReactNode; title: string; desc: string; onClick?: () => void; highlight?: boolean }) {
-  const handleExpressConnect = () => {
-    if (hasPaidContribution) {
-      onInitBaileys();
-    } else {
-      setShowOffers(true);
-    }
-  };
-
   return (
     <button
       onClick={onClick}

@@ -35,7 +35,7 @@ export function ShellHeader() {
           <AlertCircle size={14} className="text-white animate-pulse" />
           <p className="text-[10px] font-black uppercase tracking-widest text-white">Attention : Votre WhatsApp est déconnecté !</p>
           <Link
-            to="/settings"
+            to="/settings?tab=connexions"
             className="px-3 py-1 bg-white text-red-500 rounded-lg text-[9px] font-black uppercase hover:bg-white/90 transition-all shadow-sm"
           >
             Reconnecter

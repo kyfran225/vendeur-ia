@@ -104,7 +104,12 @@ export function WhatsAppConnectionFlow({ merchant, qrCode, onInitBaileys, onRefr
   const isBaileysActive = merchant?.whatsappConfig?.provider === 'baileys' && merchant?.whatsappConfig?.status === 'connected';
   const isMetaActive = merchant?.whatsappConfig?.provider === 'meta' && merchant?.whatsappConfig?.status === 'connected';
   const isUsingCustomMeta = merchant?.whatsappConfig?.meta?.phoneNumberId && merchant?.whatsappConfig?.meta?.accessToken;
-  const hasPaidContribution = !!merchant?.whatsappConfig?.lastBillingDate;
+
+  // A subscription is considered valid if it's 'active' and not expired
+  const isSubscriptionActive = merchant?.subscription?.status === 'active' &&
+    (!merchant?.subscription?.expiresAt || new Date(merchant.subscription.expiresAt) > new Date());
+
+  const hasPaidContribution = !!merchant?.whatsappConfig?.lastBillingDate && isSubscriptionActive;
 
   const handlePackProLead = () => {
     const businessName = merchant?.businessName || "ma boutique";
@@ -200,7 +205,13 @@ export function WhatsAppConnectionFlow({ merchant, qrCode, onInitBaileys, onRefr
                 )}
               >
                 {loading ? <Loader2 className="animate-spin" size={16} /> : <Zap size={16} />}
-                {isBaileysActive ? "Session Active" : hasPaidContribution ? "Générer QR Code" : "Connecter (RAM)"}
+                {isBaileysActive
+                  ? "Session Active"
+                  : hasPaidContribution
+                    ? "Générer QR Code"
+                    : merchant?.subscription?.status === 'past_due'
+                      ? "Réactiver (RAM)"
+                      : "Connecter (RAM)"}
               </button>
             </div>
           </div>

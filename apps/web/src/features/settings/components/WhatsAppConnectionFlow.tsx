@@ -345,7 +345,10 @@ export function WhatsAppConnectionFlow({ merchant, qrCode, onInitBaileys, onRefr
                 icon={<ArrowRight size={18} />}
                 title="Utiliser le Mode Express"
                 desc="Commencer sans page Facebook maintenant."
-                onClick={() => setShowHelp(false)}
+                onClick={() => {
+                  setShowHelp(false);
+                  handleExpressConnect();
+                }}
               />
             </div>
           </div>

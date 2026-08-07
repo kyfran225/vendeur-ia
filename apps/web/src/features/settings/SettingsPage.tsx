@@ -251,6 +251,10 @@ export function SettingsPage() {
             merchant={merchant}
             systemSettings={systemSettings}
             qrCode={localQrCode}
+            onCancelScan={() => {
+              setLocalQrCode(null);
+              queryClient.setQueryData(["whatsapp:qr"], null);
+            }}
           />
         )}
         {activeTab === "billing" && <BillingTab merchant={merchant} />}
@@ -745,7 +749,7 @@ function PersonnaliteTab({ merchant }: { merchant: any }) {
 }
 
 // --- ONGLET 4 : CONNEXIONS ---
-function ConnexionsTab({ merchant, systemSettings, qrCode }: { merchant: any; systemSettings: any; qrCode: string | null }) {
+function ConnexionsTab({ merchant, systemSettings, qrCode, onCancelScan }: { merchant: any; systemSettings: any; qrCode: string | null; onCancelScan: () => void }) {
   const queryClient = useQueryClient();
   const [isFacebookModalOpen, setIsFacebookModalOpen] = useState(false);
   const [isMarketplaceGuideOpen, setIsMarketplaceGuideOpen] = useState(false);
@@ -773,6 +777,7 @@ function ConnexionsTab({ merchant, systemSettings, qrCode }: { merchant: any; sy
            qrCode={qrCode}
            onInitBaileys={() => connectMutation.mutate()}
            onRefreshMerchant={() => queryClient.invalidateQueries({ queryKey: ["dashboard"] })}
+           onCancelScan={onCancelScan}
          />
       </section>
 

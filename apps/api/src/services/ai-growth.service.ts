@@ -24,6 +24,8 @@ export class AIGrowthService {
       });
 
       // 2. Prepare context for AI analysis
+      const catalogueContext = products.slice(0, 20).map(p => `${p.name} (${p.price} XOF)`).join(', ');
+
       const context = `
         Données du commerce :
         - Nom : ${merchant?.businessName}
@@ -33,7 +35,7 @@ export class AIGrowthService {
         - Conversations ces 7 derniers jours : ${recentConversations}
         - Instagram lié : ${isInstagramLinked ? 'Oui' : 'Non'}
         - TikTok lié : ${isTikTokLinked ? 'Oui' : 'Non'}
-        - Catalogue : ${products.map(p => `${p.name} (${p.price} XOF)`).join(', ')}
+        - Catalogue (aperçu) : ${catalogueContext}${totalProducts > 20 ? '... (et d\'autres)' : ''}
       `;
 
       const prompt = `
@@ -61,20 +63,34 @@ export class AIGrowthService {
       const response = await aiProvider.generateText({
         systemPrompt: "Tu es un coach en croissance pour vendeurs WhatsApp.",
         userMessage: `${context}\n\n${prompt}`,
-        maxTokens: 512,
+        maxTokens: 1024,
         temperature: 0.7,
         jsonMode: true,
         thinkingLevel: "low",
       });
 
       const parsed = parseJsonFromAI<{ tips: { text: string; action: string }[] }>(response.text);
-      if (!Array.isArray(parsed.tips) || parsed.tips.length === 0) {
-        throw new Error("Invalid AI advice format");
+
+      // Secondary validation of the tips structure
+      if (!parsed || typeof parsed !== 'object' || !Array.isArray(parsed.tips)) {
+        console.error("[AI Growth Service] Invalid tips structure:", parsed);
+        throw new Error("Invalid AI advice structure");
+      }
+
+      // Filter out invalid tips
+      parsed.tips = parsed.tips.filter(tip =>
+        tip && typeof tip.text === 'string' && tip.text.length > 0 &&
+        typeof tip.action === 'string' && tip.action.startsWith('/')
+      );
+
+      if (parsed.tips.length === 0) {
+        throw new Error("No valid tips found in AI response");
       }
 
       return parsed;
     } catch (error) {
-      console.error("[AI Growth Service] Error:", error);
+      console.error("[AI Growth Service] Error generating advice:", error);
+      // Fallback tips if AI fails completely or returns invalid data
       return {
         tips: [
           { text: "Optimisez vos descriptions produits pour mieux vendre.", action: "/products" },

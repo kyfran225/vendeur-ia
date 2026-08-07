@@ -48,8 +48,16 @@ export class PaystackService {
       payload.plan = metadata.planCode;
     }
 
-    const response = await axios.post(`${PAYSTACK_URL}/transaction/initialize`, payload, { headers: this.headers });
-    return response.data.data;
+    console.log(`[Paystack] Initializing transaction for ${email}: ${amount} ${currency} (Subunits: ${payload.amount})`);
+
+    try {
+      const response = await axios.post(`${PAYSTACK_URL}/transaction/initialize`, payload, { headers: this.headers });
+      return response.data.data;
+    } catch (error: any) {
+      const msg = error.response?.data?.message || error.message;
+      console.error(`[Paystack] Initialization failed for ${email}:`, msg);
+      throw new Error(`Erreur Paystack: ${msg}`);
+    }
   }
 
   async cancelSubscription(subscriptionCode: string, emailToken: string) {

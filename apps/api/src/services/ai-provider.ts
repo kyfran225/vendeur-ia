@@ -334,12 +334,18 @@ export class AIProvider {
     messages.push({ role: "user", content: request.userMessage });
 
     try {
-      const response = await axios.post("https://api.groq.com/openai/v1/chat/completions", {
+      const payload: any = {
         model,
         messages,
         max_tokens: request.maxTokens || 1000,
         temperature: request.temperature || 0.7,
-      }, {
+      };
+
+      if (request.jsonMode) {
+        payload.response_format = { type: "json_object" };
+      }
+
+      const response = await axios.post("https://api.groq.com/openai/v1/chat/completions", payload, {
         headers: { "Authorization": `Bearer ${apiKey}`, "Content-Type": "application/json" }
       });
 
@@ -371,12 +377,18 @@ export class AIProvider {
     messages.push({ role: "user", content: request.userMessage });
 
     try {
-      const response = await axios.post("https://api.openai.com/v1/chat/completions", {
+      const payload: any = {
         model,
         messages,
         max_tokens: request.maxTokens || 1000,
         temperature: request.temperature || 0.7,
-      }, {
+      };
+
+      if (request.jsonMode) {
+        payload.response_format = { type: "json_object" };
+      }
+
+      const response = await axios.post("https://api.openai.com/v1/chat/completions", payload, {
         headers: { "Authorization": `Bearer ${apiKey}`, "Content-Type": "application/json" }
       });
 

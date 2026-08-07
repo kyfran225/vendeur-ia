@@ -16,6 +16,62 @@ import { SystemSettingsModel } from "../commerce/admin.model.js";
 class WhatsAppService {
   private activeSessions: Map<string, any> = new Map();
   private pendingInitializations: Map<string, Promise<void>> = new Map();
+  private heartbeatInterval: NodeJS.Timeout | null = null;
+
+  constructor() {
+    this.startHeartbeat();
+  }
+
+  private startHeartbeat() {
+    if (this.heartbeatInterval) return;
+
+    // Check sessions every 30 minutes
+    this.heartbeatInterval = setInterval(async () => {
+      console.log("[WhatsApp Heartbeat] Checking session health...");
+      await this.checkSessionsHealth();
+    }, 30 * 60 * 1000);
+  }
+
+  async checkSessionsHealth() {
+    for (const [userId, sock] of this.activeSessions.entries()) {
+      try {
+        const merchant = await CommerceMerchantModel.findOne({ ownerId: userId });
+        if (!merchant) continue;
+
+        // Skip if not Baileys or already marked as error/disconnected
+        if (merchant.whatsappConfig?.provider !== 'baileys' || merchant.whatsappConfig?.status !== 'connected') {
+          continue;
+        }
+
+        // Test the socket with a simple presence check or by checking if the state is still valid
+        // onWhatsApp check is a good way to verify if the connection is really alive
+        const testNumber = merchant.whatsappNumber?.replace(/\+/g, '') || "123456789";
+        const [result] = await sock.onWhatsApp(testNumber);
+
+        if (!result) {
+          console.warn(`[WhatsApp Heartbeat] Session for ${userId} seems stale. Reconnecting...`);
+          await this.repairSession(userId);
+        }
+      } catch (err: any) {
+        console.error(`[WhatsApp Heartbeat] Error checking session for ${userId}:`, err.message);
+        // If the error indicates a closed connection, repair it
+        if (err.message?.includes("closed") || err.message?.includes("connection")) {
+          await this.repairSession(userId);
+        }
+      }
+    }
+  }
+
+  async repairSession(userId: string) {
+    console.log(`[WhatsApp Repair] Attempting to fix session for ${userId}...`);
+    this.activeSessions.delete(userId);
+    try {
+      await this.initSession(userId);
+      console.log(`[WhatsApp Repair] Session for ${userId} restored successfully.`);
+    } catch (err) {
+      console.error(`[WhatsApp Repair] Failed to restore session for ${userId}:`, err);
+    }
+  }
 
   async bootSessions() {
     console.log("[WhatsApp] Booting sessions for active merchants...");
@@ -73,7 +129,8 @@ class WhatsAppService {
                 {
                   $set: {
                     "whatsappConfig.status": "connected",
-                    "whatsappConfig.provider": "baileys"
+                    "whatsappConfig.provider": "baileys",
+                    "whatsappConfig.reconnectAttempts": 0 // Reset attempts on success
                   }
                 }
               );
@@ -95,17 +152,41 @@ class WhatsAppService {
 
               if (shouldReconnect) {
                 console.warn(`[WhatsApp] Critical disconnection for user ${userId}. Reconnecting...`);
-                this.activeSessions.delete(userId);
-                const merchant = await CommerceMerchantModel.findOne({ ownerId: userId });
-                if (merchant?.whatsappNumber) {
-                  smsService.sendAlert(
-                    merchant.whatsappNumber,
-                    `Chef, votre Vendeur IA est déconnecté ! Vérifiez votre téléphone ou votre connexion.`
+
+                // Track reconnection attempts in the model
+                const merchant = await CommerceMerchantModel.findOneAndUpdate(
+                  { ownerId: userId },
+                  { $inc: { "whatsappConfig.reconnectAttempts": 1 } },
+                  { new: true }
+                );
+
+                const attempts = merchant?.whatsappConfig?.reconnectAttempts || 0;
+
+                if (attempts <= 3) {
+                  this.activeSessions.delete(userId);
+                  console.log(`[WhatsApp] Reconnection attempt ${attempts}/3 for ${userId}`);
+                  this.initSession(userId).catch(err => console.error(`[WhatsApp] Auto-reconnect failed for ${userId}:`, err));
+                } else {
+                  console.error(`[WhatsApp] Max reconnection attempts reached for ${userId}. Alerting merchant.`);
+                  await CommerceMerchantModel.findOneAndUpdate(
+                    { ownerId: userId },
+                    { $set: { "whatsappConfig.status": "error" } }
                   );
+
+                  if (merchant?.whatsappNumber) {
+                    smsService.sendAlert(
+                      merchant.whatsappNumber,
+                      `🛑 Chef, votre Vendeur IA a un problème de connexion persistant. Veuillez vous reconnecter manuellement sur votre tableau de bord.`
+                    );
+                  }
                 }
-                this.initSession(userId).catch(err => console.error(`[WhatsApp] Auto-reconnect failed for ${userId}:`, err));
               } else {
                 this.activeSessions.delete(userId);
+                // Reset attempts on intentional logout
+                await CommerceMerchantModel.findOneAndUpdate(
+                  { ownerId: userId },
+                  { $set: { "whatsappConfig.reconnectAttempts": 0 } }
+                );
               }
 
               if (!resolved) {

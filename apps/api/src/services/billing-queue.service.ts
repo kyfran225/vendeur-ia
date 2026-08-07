@@ -67,8 +67,12 @@ export const billingWorker = new Worker(
 
         try {
           await messagingService.sendMessage(merchant, 'whatsapp', merchant.whatsappNumber || "", waMessage);
-        } catch (waErr) {
-          logger.error(`[BillingQueue] Failed to send WhatsApp reminder to ${businessName}:`, waErr);
+        } catch (waErr: any) {
+          if (waErr.message === "WhatsApp session not active") {
+            logger.warn(`[BillingQueue] Could not send WhatsApp reminder to ${businessName}: WhatsApp session not active`);
+          } else {
+            logger.error(`[BillingQueue] Failed to send WhatsApp reminder to ${businessName}:`, waErr);
+          }
         }
 
         // 2. Push Notification
@@ -98,8 +102,12 @@ export const billingWorker = new Worker(
 
         try {
           await messagingService.sendMessage(merchant, 'whatsapp', merchant.whatsappNumber || "", waMessage);
-        } catch (waErr) {
-          logger.error(`[BillingQueue] Failed to send WhatsApp suspension notice to ${businessName}:`, waErr);
+        } catch (waErr: any) {
+          if (waErr.message === "WhatsApp session not active") {
+            logger.warn(`[BillingQueue] Could not send WhatsApp suspension notice to ${businessName}: WhatsApp session not active`);
+          } else {
+            logger.error(`[BillingQueue] Failed to send WhatsApp suspension notice to ${businessName}:`, waErr);
+          }
         }
 
         await pushService.sendNotification(merchant.ownerId, {

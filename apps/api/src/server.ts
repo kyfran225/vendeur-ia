@@ -9,24 +9,32 @@ async function start() {
   await connectRedis();
 
   const port = parseInt(env.PORT, 10);
-  httpServer.listen(port, "0.0.0.0", () => {
+  httpServer.listen(port, "0.0.0.0", async () => {
     logger.info(`🚀 Vendeur IA OS API running on http://localhost:${port}`);
 
     // Boot WhatsApp Sessions
-    import("./modules/whatsapp/whatsapp.service.js").then(({ whatsappService }) => {
-      whatsappService.bootSessions();
-    });
+    try {
+      const { whatsappService } = await import("./modules/whatsapp/whatsapp.service.js");
+      await whatsappService.bootSessions();
+    } catch (err) {
+      logger.error("[Server] WhatsApp boot sessions failed:", err);
+    }
 
     // Run Billing Check daily (or every 12h)
-    import("./services/billing.service.js").then(({ billingService }) => {
-      // Run once at startup
-      billingService.checkExpirations().catch(err => logger.error("[Server] Initial billing check failed:", err));
+    setTimeout(async () => {
+      try {
+        const { billingService } = await import("./services/billing.service.js");
+        // Run once at startup
+        billingService.checkExpirations().catch(err => logger.error("[Server] Initial billing check failed:", err));
 
-      // Schedule every 24 hours
-      setInterval(() => {
-        billingService.checkExpirations().catch(err => logger.error("[Server] Scheduled billing check failed:", err));
-      }, 24 * 60 * 60 * 1000);
-    });
+        // Schedule every 24 hours
+        setInterval(() => {
+          billingService.checkExpirations().catch(err => logger.error("[Server] Scheduled billing check failed:", err));
+        }, 24 * 60 * 60 * 1000);
+      } catch (err) {
+        logger.error("[Server] Billing service setup failed:", err);
+      }
+    }, 5000); // Wait 5 seconds after WhatsApp boot for stability
   });
 }
 

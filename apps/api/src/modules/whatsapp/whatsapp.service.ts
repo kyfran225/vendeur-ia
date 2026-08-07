@@ -25,12 +25,14 @@ class WhatsAppService {
         "whatsappConfig.provider": "baileys"
       });
 
-      for (const merchant of activeMerchants) {
+      const bootPromises = activeMerchants.map(merchant => {
         console.log(`[WhatsApp] Auto-reconnecting session for user: ${merchant.ownerId}`);
-        this.initSession(merchant.ownerId).catch(err =>
+        return this.initSession(merchant.ownerId).catch(err =>
           console.error(`[WhatsApp] Failed to boot session for ${merchant.ownerId}:`, err)
         );
-      }
+      });
+
+      await Promise.allSettled(bootPromises);
     } catch (err) {
       console.error("[WhatsApp] Error during bootSessions:", err);
     }
@@ -539,6 +541,17 @@ class WhatsAppService {
       return this.sendMetaMessage(merchant, to, text);
     } else {
       let sock = this.activeSessions.get(userId);
+
+      // Wait for pending initialization if any
+      const pending = this.pendingInitializations.get(userId);
+      if (pending) {
+        console.log(`[WhatsApp] Waiting for pending session init for ${userId}...`);
+        await Promise.race([
+          pending,
+          new Promise(resolve => setTimeout(resolve, 10000)) // 10s timeout
+        ]).catch(() => {});
+        sock = this.activeSessions.get(userId);
+      }
 
       if (!sock && (merchant.whatsappConfig?.status === 'connected' || merchant.whatsappConfig?.status === 'error')) {
         console.log(`[WhatsApp] On-demand session init for ${userId}`);

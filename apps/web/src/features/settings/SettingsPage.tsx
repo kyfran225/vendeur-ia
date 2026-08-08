@@ -428,46 +428,40 @@ function BoutiqueTab({ merchant, initialKnowledge, accessToken }: { merchant: an
           </div>
         </div>
 
-        <div className="space-y-4">
-           <div className="hidden md:grid grid-cols-2 gap-4 px-4 text-[10px] font-black uppercase tracking-[0.3em] text-white/20">
+        <div className="space-y-3 md:space-y-4">
+           <div className="grid grid-cols-2 gap-4 px-4 text-[10px] font-black uppercase tracking-[0.3em] text-white/20">
               <span>Zone / Commune</span>
               <span className="text-[10px] font-black uppercase tracking-widest text-white/40">Tarif ({localMerchant?.currency || "XOF"})</span>
            </div>
 
            {deliveryFees.map((fee: any, idx: number) => (
-              <div key={idx} className="flex flex-col md:flex-row gap-3 md:gap-4 items-stretch md:items-center p-4 md:p-0 bg-white/5 md:bg-transparent rounded-2xl md:rounded-none animate-in slide-in-from-left-2 duration-200">
-                 <div className="flex-1 space-y-1.5">
-                    <label className="md:hidden text-[9px] font-black uppercase text-white/20 ml-1">Zone / Commune</label>
-                    <input
-                        className="w-full h-14 bg-black/40 border border-white/10 rounded-2xl px-5 text-sm text-white focus:border-sky-500 transition-all outline-none"
-                        placeholder="Ex: Riviera 3"
-                        value={fee.zone}
-                        onChange={(e) => {
-                          const next = [...deliveryFees];
-                          next[idx].zone = e.target.value;
-                          setDeliveryFees(next);
-                        }}
-                    />
-                 </div>
-                 <div className="w-full md:w-32 space-y-1.5">
-                    <label className="md:hidden text-[9px] font-black uppercase text-white/20 ml-1">Tarif ({localMerchant?.currency || "XOF"})</label>
-                    <input
-                        type="number"
-                        className="w-full h-14 bg-black/40 border border-white/10 rounded-2xl px-5 text-sm text-white focus:border-sky-500 transition-all outline-none font-mono"
-                        placeholder="1500"
-                        value={fee.price}
-                        onChange={(e) => {
-                          const next = [...deliveryFees];
-                          next[idx].price = parseInt(e.target.value) || 0;
-                          setDeliveryFees(next);
-                        }}
-                    />
-                 </div>
+              <div key={idx} className="flex flex-row gap-2 items-center animate-in slide-in-from-left-2 duration-200">
+                 <input
+                    className="flex-1 h-12 md:h-14 bg-black/40 border border-white/10 rounded-xl md:rounded-2xl px-3 md:px-5 text-xs md:text-sm text-white focus:border-sky-500 transition-all outline-none"
+                    placeholder="Ex: Riviera 3"
+                    value={fee.zone}
+                    onChange={(e) => {
+                       const next = [...deliveryFees];
+                       next[idx].zone = e.target.value;
+                       setDeliveryFees(next);
+                    }}
+                 />
+                 <input
+                    type="number"
+                    className="w-20 md:w-32 h-12 md:h-14 bg-black/40 border border-white/10 rounded-xl md:rounded-2xl px-2 md:px-5 text-xs md:text-sm text-white focus:border-sky-500 transition-all outline-none font-mono"
+                    placeholder="1500"
+                    value={fee.price}
+                    onChange={(e) => {
+                       const next = [...deliveryFees];
+                       next[idx].price = parseInt(e.target.value) || 0;
+                       setDeliveryFees(next);
+                    }}
+                 />
                  <button
                     onClick={() => setDeliveryFees(deliveryFees.filter((_: any, i: number) => i !== idx))}
-                    className="self-end md:self-center p-3 text-white/20 hover:text-rose-500 transition-colors bg-white/5 rounded-xl"
+                    className="p-2 md:p-3 text-white/20 hover:text-rose-500 transition-colors bg-white/5 rounded-xl shrink-0"
                  >
-                    <Trash2 size={18} />
+                    <Trash2 size={16} md:size={18} />
                  </button>
               </div>
            ))}
@@ -508,14 +502,13 @@ function BoutiqueTab({ merchant, initialKnowledge, accessToken }: { merchant: an
             <p className="text-[10px] md:text-xs text-white/40">Coordonnées pour les transferts d'argent.</p>
          </div>
 
-         <div className="space-y-4">
+         <div className="space-y-3 md:space-y-4">
             {payments.map((p: any, idx: number) => (
-              <div key={idx} className="flex flex-col md:flex-row gap-4 items-stretch md:items-end p-5 md:p-0 bg-white/5 md:bg-transparent rounded-[2rem] md:rounded-none animate-in slide-in-from-left-2 duration-300">
-                 <div className="w-full md:flex-1 space-y-1.5">
-                    <label className="text-[9px] font-black uppercase text-white/20 ml-1">Opérateur</label>
+              <div key={idx} className="flex flex-row gap-2 items-center animate-in slide-in-from-left-2 duration-300">
+                 <div className="w-[35%] md:flex-1">
                     <div className="relative">
                       <select
-                        className="w-full h-12 bg-black/40 border border-white/10 rounded-xl px-4 text-xs text-white focus:border-emerald-500 outline-none transition-all appearance-none cursor-pointer"
+                        className="w-full h-12 md:h-14 bg-black/40 border border-white/10 rounded-xl md:rounded-2xl px-2 md:px-4 text-[10px] md:text-xs text-white focus:border-emerald-500 outline-none transition-all appearance-none cursor-pointer"
                         value={p.provider}
                         onChange={(e) => {
                           const next = [...payments];
@@ -529,13 +522,12 @@ function BoutiqueTab({ merchant, initialKnowledge, accessToken }: { merchant: an
                         <option value="Virement Bancaire">Virement</option>
                         <option value="Espèces">Espèces</option>
                       </select>
-                      <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-white/20 pointer-events-none md:hidden" size={14} />
+                      <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 text-white/20 pointer-events-none hidden md:block" size={14} />
                     </div>
                  </div>
-                 <div className="w-full md:flex-[1.5] space-y-1.5">
-                    <label className="text-[9px] font-black uppercase text-white/20 ml-1">Numéro / Détails</label>
+                 <div className="flex-1">
                     <input
-                      className="w-full h-12 bg-black/40 border border-white/10 rounded-xl px-5 text-xs text-white focus:border-emerald-500 outline-none transition-all font-mono"
+                      className="w-full h-12 md:h-14 bg-black/40 border border-white/10 rounded-xl md:rounded-2xl px-3 md:px-5 text-xs text-white focus:border-emerald-500 outline-none transition-all font-mono"
                       value={p.number}
                       onChange={(e) => {
                          const next = [...payments];
@@ -547,9 +539,9 @@ function BoutiqueTab({ merchant, initialKnowledge, accessToken }: { merchant: an
                  </div>
                  <button
                    onClick={() => setPayments(payments.filter((_: any, i: number) => i !== idx))}
-                   className="h-12 w-12 self-end md:self-auto flex items-center justify-center bg-white/5 rounded-xl text-white/20 hover:text-rose-500 hover:bg-rose-500/10 transition-all"
+                   className="h-10 w-10 md:h-12 md:w-12 flex items-center justify-center bg-white/5 rounded-xl text-white/20 hover:text-rose-500 hover:bg-rose-500/10 transition-all shrink-0"
                  >
-                    <Trash2 size={18} />
+                    <Trash2 size={16} md:size={18} />
                  </button>
               </div>
             ))}

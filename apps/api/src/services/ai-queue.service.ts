@@ -44,20 +44,20 @@ export const aiWorker = new Worker(
 
     try {
       if (job.name === 'broadcast-message') {
-        const { content, merchantId, customerId, remoteJid, personalization, campaignId } = job.data;
+        const { content, merchantId, customerId, remoteJid, personalization, campaignId, imageUrl, productDetails } = job.data;
         const merchant = await CommerceMerchantModel.findById(merchantId);
         if (!merchant) return;
 
-        console.log(`[AI Queue] Processing broadcast for ${remoteJid} (Mode: ${personalization})`);
+        console.log(`[AI Queue] Processing visual broadcast for ${remoteJid} (Mode: ${personalization}, Media: ${!!imageUrl})`);
 
         let finalContent = content;
 
-        // --- STEP 1: AI PERSONALIZATION (The Growth Engine) ---
+        // --- STEP 1: AI PERSONALIZATION (Visual Context Aware) ---
         if (personalization === 'ai_creative') {
            try {
               const customer = await CommerceCustomerModel.findById(customerId);
 
-              // Fetch some context about this customer to make it relevant
+              // Fetch context
               const lastConvs = await CommerceConversationModel.find({ customerId }).sort({ updatedAt: -1 }).limit(1);
               let contextSnippet = "";
               if (lastConvs.length > 0) {
@@ -66,28 +66,27 @@ export const aiWorker = new Worker(
               }
 
               const prompt = `Tu es l'Expert Marketing de "${merchant.businessName}".
-Ton but : Transformer cette annonce de boutique en un message WhatsApp irrésistible et UNIQUE pour ce client.
+Ton but : Transformer cette annonce en un message WhatsApp irrésistible qui FAIT RÉFÉRENCE À L'IMAGE ENVOYÉE.
 
-L'ANNONCE : "${content}"
+L'ANNONCE DU PATRON : "${content}"
+LE PRODUIT DANS L'IMAGE : "${productDetails || 'Produit de la boutique'}"
 
 INFOS CLIENT :
 - Nom : ${customer?.name || 'cher client'}
 - Ville : ${customer?.location || merchant.city}
 - Points fidélité : ${customer?.loyaltyPoints || 0}
-- Historique récent :
-${contextSnippet || 'Nouveau client'}
+- Historique récent : ${contextSnippet || 'Nouveau client'}
 
-DIRECTIVES :
-1. Sois extrêmement chaleureux et personnel.
-2. Utilise des emojis ✨.
-3. Si le client a des points, mentionne-les comme un avantage.
-4. Fais en sorte que le message ne ressemble PAS à un message de masse.
-5. Max 60 mots.
+DIRECTIVES CRITIQUES :
+1. Tu DOIS mentionner l'image que le client vient de recevoir (ex: "Regarde cette pépite en photo", "Je t'ai joint l'image du nouveau modèle").
+2. Sois extrêmement personnel et chaleureux.
+3. Utilise des emojis ✨.
+4. Max 60 mots.
 
-Réponds UNIQUEMENT avec le texte final du message WhatsApp.`;
+Réponds UNIQUEMENT avec le texte final du message.`;
 
               const aiRes = await aiProvider.generateText({
-                systemPrompt: "Tu es un génie du copywriting social commerce.",
+                systemPrompt: "Tu es un génie du visual social commerce.",
                 userMessage: prompt,
                 temperature: 0.8
               });
@@ -96,7 +95,6 @@ Réponds UNIQUEMENT avec le texte final du message WhatsApp.`;
               console.warn("[AI Queue] Personalization failed, using raw content:", aiErr);
            }
         } else {
-           // Basic personalization
            const customer = await CommerceCustomerModel.findById(customerId);
            finalContent = content.replace(/{{name}}/g, customer?.name || "cher client");
         }
@@ -110,7 +108,9 @@ Réponds UNIQUEMENT avec le texte final du message WhatsApp.`;
         const aiMsg = await CommerceMessageModel.create({
           conversationId: conversation._id,
           sender: 'ai',
-          content: finalContent
+          type: imageUrl ? 'image' : 'text',
+          content: finalContent,
+          mediaUrl: imageUrl || ""
         });
 
         await CommerceConversationModel.findByIdAndUpdate(conversation._id, { updatedAt: new Date() });
@@ -140,10 +140,13 @@ Réponds UNIQUEMENT avec le texte final du message WhatsApp.`;
           message: aiMsg,
         });
 
-        // --- STEP 3: SENDING ---
-        await messagingService.sendMessage(merchant, 'whatsapp', remoteJid, finalContent);
+        // --- STEP 3: SENDING (Media + Text) ---
+        await messagingService.sendMessage(merchant, 'whatsapp', remoteJid, finalContent, {
+           mediaUrl: imageUrl || undefined,
+           type: imageUrl ? 'image' : 'text'
+        });
 
-        return { status: 'broadcast_sent', personalization };
+        return { status: 'visual_broadcast_sent', personalization };
       }
 
       console.log(`[AI Queue] Processing job ${job.id} for user ${userId} on ${platform}`);

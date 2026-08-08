@@ -82,6 +82,17 @@ Réponds UNIQUEMENT avec le texte du message.`;
     const customers = await CommerceCustomerModel.find(query);
     if (customers.length === 0) throw new Error("Aucun client trouvé dans ce segment.");
 
+    // 1.2 Fetch Product Media if applicable
+    let imageUrl = "";
+    let productDetails = "";
+    if (productId) {
+      const product = await CommerceProductModel.findById(productId);
+      if (product) {
+        imageUrl = product.images?.[0] || "";
+        productDetails = `Produit: ${product.name}, Prix: ${product.price} ${product.currency}, Description: ${product.description}`;
+      }
+    }
+
     // 1.5 Quota Check
     await broadcastLimiter.checkQuota(merchantId, customers.length);
 
@@ -115,6 +126,8 @@ Réponds UNIQUEMENT avec le texte du message.`;
             customerId: customer._id.toString(),
             remoteJid: customer.phone,
             content: customText, // Raw idea, AI worker will personalize it
+            imageUrl, // Attach product image
+            productDetails, // Provide context for AI personalization
             personalization,
             campaignId: campaign._id.toString()
         }, {

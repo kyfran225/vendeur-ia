@@ -234,11 +234,81 @@ router.get("/queue/failed", authenticate, isAdmin, async (req, res) => {
   }
 });
 
-// LIST ALL MERCHANTS
+// LIST ALL MERCHANTS with status and usage
 router.get("/merchants", authenticate, isAdmin, async (req, res) => {
   try {
-    const merchants = await CommerceMerchantModel.find().sort({ createdAt: -1 });
-    res.json(merchants);
+    const merchants = await CommerceMerchantModel.find().sort({ createdAt: -1 }).lean();
+
+    // Enrich with usage and last message data
+    const enrichedMerchants = await Promise.all(merchants.map(async (m) => {
+      const lastMessage = await CommerceMessageModel.findOne({
+        conversationId: { $in: await CommerceConversationModel.find({ merchantId: m._id }).distinct("_id") }
+      }).sort({ timestamp: -1 }).limit(1);
+
+      const aiUsage = await CommerceMessageModel.aggregate([
+        { $match: {
+          sender: "ai",
+          conversationId: { $in: await CommerceConversationModel.find({ merchantId: m._id }).distinct("_id") }
+        } },
+        { $group: { _id: null, tokens: { $sum: "$aiMetadata.tokensUsed" }, cost: { $sum: "$aiMetadata.cost" } } }
+      ]);
+
+      return {
+        ...m,
+        lastActiveAt: lastMessage?.timestamp,
+        usage: {
+          tokens: aiUsage[0]?.tokens || 0,
+          cost: aiUsage[0]?.cost || 0
+        }
+      };
+    }));
+
+    res.json(enrichedMerchants);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// GET MERCHANT AUDIT (Last 10 AI responses)
+router.get("/merchants/:id/audit", authenticate, isAdmin, async (req, res) => {
+  try {
+    const conversations = await CommerceConversationModel.find({ merchantId: req.params.id }).distinct("_id");
+    const logs = await CommerceMessageModel.find({
+      conversationId: { $in: conversations },
+      sender: "ai"
+    })
+    .sort({ timestamp: -1 })
+    .limit(10)
+    .populate({
+      path: "conversationId",
+      populate: { path: "customerId", select: "phone name" }
+    });
+
+    res.json(logs);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// FORCE REACTIVATE MERCHANT
+router.post("/merchants/:id/reactivate", authenticate, isAdmin, async (req, res) => {
+  try {
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 30);
+
+    const merchant = await CommerceMerchantModel.findByIdAndUpdate(
+      req.params.id,
+      {
+        $set: {
+          "subscription.status": "active",
+          "subscription.expiresAt": expiresAt,
+          "whatsappConfig.status": "connected" // Try to force status to allow boot
+        }
+      },
+      { new: true }
+    );
+
+    res.json({ message: "Marchand réactivé avec succès pour 30 jours", merchant });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }

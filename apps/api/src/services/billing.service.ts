@@ -51,19 +51,38 @@ export class BillingService {
       });
     }
 
-    // 3. Expiration & Suspension (D-0)
+    // 3. Expiration & Suspension (D-0 with 24h Grace Period)
+    const gracePeriodThreshold = new Date(now);
+    gracePeriodThreshold.setHours(now.getHours() - 24); // 24h Grace Period
+
     const expiredMerchants = await CommerceMerchantModel.find({
-      "subscription.status": { $in: ["active", "past_due"] },
-      "subscription.expiresAt": { $lte: now }
+      "subscription.status": "active",
+      "subscription.expiresAt": { $lte: gracePeriodThreshold }
     });
 
     for (const merchant of expiredMerchants) {
-      if (merchant.subscription.status !== "past_due") {
-        await billingQueue.add('suspend-merchant', {
-            action: 'suspend-merchant',
-            merchantId: merchant._id.toString()
-        });
-      }
+      await billingQueue.add('suspend-merchant', {
+          action: 'suspend-merchant',
+          merchantId: merchant._id.toString()
+      });
+    }
+
+    // 3.5 Grace Period Notice (D-0 to D+1)
+    const merchantsInGrace = await CommerceMerchantModel.find({
+       "subscription.status": "active",
+       "subscription.expiresAt": {
+         $gt: gracePeriodThreshold,
+         $lte: now
+       }
+    });
+
+    for (const merchant of merchantsInGrace) {
+       await billingQueue.add('send-reminder', {
+         action: 'send-reminder',
+         merchantId: merchant._id.toString(),
+         daysLeft: 0, // 0 means Grace Period
+         isGracePeriod: true
+       });
     }
 
     // 4. Marketing Reconquest (D+7)

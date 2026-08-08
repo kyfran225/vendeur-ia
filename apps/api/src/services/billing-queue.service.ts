@@ -19,7 +19,7 @@ export const billingQueue = new Queue('billing-tasks', {
 export const billingWorker = new Worker(
   'billing-tasks',
   async (job: Job) => {
-    const { action, merchantId, daysLeft } = job.data;
+    const { action, merchantId, daysLeft, isGracePeriod } = job.data;
 
     try {
       const merchant = await CommerceMerchantModel.findById(merchantId);
@@ -30,10 +30,10 @@ export const billingWorker = new Worker(
       const isMobileMoney = merchant.subscription?.paymentMethod === 'mobile_money';
 
       if (action === 'send-reminder') {
-        logger.info(`[BillingQueue] Sending D-${daysLeft} reminder to ${businessName}`);
+        logger.info(`[BillingQueue] Sending D-${daysLeft} reminder to ${businessName} (Grace: ${!!isGracePeriod})`);
 
         let renewalLink = "";
-        if (isMobileMoney) {
+        if (isMobileMoney || isGracePeriod) {
           // 1. Fetch Regional Pricing
           const settings = await SystemSettingsModel.findOne();
           const currency = merchant.currency || "XOF";
@@ -44,7 +44,7 @@ export const billingWorker = new Worker(
             amount = merchant.subscription?.plan === 'business' ? regionalPricing.businessMonthly : regionalPricing.premiumMonthly;
           }
 
-          // 2. Generate a payment link for Mobile Money users
+          // 2. Generate a payment link for Mobile Money / Grace Period users
           const paymentData = await paystackService.initializeSubscription(
             user?.email || "billing@vendeur-ia.com",
             amount,
@@ -59,11 +59,18 @@ export const billingWorker = new Worker(
         }
 
         // 1. WhatsApp Notification
-        const waMessage = `⚠️ *Rappel Réabonnement - ${businessName}*\n\n` +
-          `Votre abonnement expire dans *${daysLeft} jour(s)*.\n\n` +
-          (isMobileMoney
-            ? `Cliquez ici pour renouveler par Mobile Money (${merchant.currency || "XOF"}) :\n👉 ${renewalLink}`
-            : `Votre prélèvement automatique par carte aura lieu le ${merchant.subscription?.expiresAt?.toLocaleDateString()}.`);
+        let waMessage = "";
+        if (isGracePeriod) {
+          waMessage = `🎁 *Délai de Grâce Activé - ${businessName}*\n\n` +
+            `Votre abonnement a expiré, mais nous avons maintenu votre IA active pour *24h supplémentaires* afin de ne pas interrompre vos ventes.\n\n` +
+            `⚠️ Réactivez maintenant pour éviter la coupure demain :\n👉 ${renewalLink || env.CLIENT_URL + '/settings?tab=billing'}`;
+        } else {
+          waMessage = `⚠️ *Rappel Réabonnement - ${businessName}*\n\n` +
+            `Votre abonnement expire dans *${daysLeft} jour(s)*.\n\n` +
+            (isMobileMoney
+              ? `Cliquez ici pour renouveler par Mobile Money (${merchant.currency || "XOF"}) :\n👉 ${renewalLink}`
+              : `Votre prélèvement automatique par carte aura lieu le ${merchant.subscription?.expiresAt?.toLocaleDateString()}.`);
+        }
 
         try {
           await messagingService.sendMessage(merchant, 'whatsapp', merchant.whatsappNumber || "", waMessage);
@@ -77,8 +84,10 @@ export const billingWorker = new Worker(
 
         // 2. Push Notification
         await pushService.sendNotification(merchant.ownerId, {
-          title: "Réabonnement imminent ⏳",
-          body: `Votre abonnement expire dans ${daysLeft} jour(s). Cliquez pour renouveler.`,
+          title: isGracePeriod ? "Délai de Grâce Offert ! 🎁" : "Réabonnement imminent ⏳",
+          body: isGracePeriod
+            ? "Votre abonnement est fini, mais l'IA reste active encore 24h pour vous. Cliquez ici pour recharger."
+            : `Votre abonnement expire dans ${daysLeft} jour(s). Cliquez pour renouveler.`,
           data: { type: "billing", url: renewalLink || "/settings?tab=billing" }
         });
 

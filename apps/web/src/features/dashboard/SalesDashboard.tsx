@@ -8,6 +8,8 @@ import {
   Bot,
   Sparkles,
   Zap,
+  Share2,
+  ExternalLink
 } from "lucide-react";
 
 import { useSocket } from "@/hooks/useSocket";
@@ -71,8 +73,43 @@ export function SalesDashboard() {
     );
   }
 
+  const handleShareShop = () => {
+     const url = `${window.location.origin}/shop/${dashboard?.merchant?._id}`;
+     navigator.clipboard.writeText(url);
+     toast.success("Lien de votre vitrine copié ! 🚀");
+  };
+
   return (
-    <main className="max-w-6xl mx-auto p-4 md:p-10 space-y-8 pb-24 md:pb-8">
+    <main className="max-w-6xl mx-auto p-4 md:p-10 space-y-8 pb-24 md:pb-8 animate-in fade-in duration-700">
+      <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-2">
+        <div className="space-y-1">
+          <h1 className="text-3xl md:text-5xl font-black tracking-tighter uppercase text-white flex items-center gap-4">
+            <LayoutDashboard className="text-vendeur-emerald" size={36} />
+            Tableau de Bord
+          </h1>
+          <p className="text-white/40 text-sm md:text-lg">Gérez votre croissance et suivez vos performances.</p>
+        </div>
+
+        <div className="flex gap-3">
+          <button
+            onClick={handleShareShop}
+            className="h-12 px-6 rounded-2xl bg-white/5 border border-white/10 text-white text-[10px] font-black uppercase tracking-widest hover:bg-white/10 transition-all flex items-center gap-2"
+          >
+            <Share2 size={16} />
+            Partager ma vitrine
+          </button>
+
+          <Link
+            to={`/shop/${dashboard?.merchant?._id}`}
+            target="_blank"
+            className="h-12 px-6 rounded-2xl bg-vendeur-emerald text-vendeur-coal text-[10px] font-black uppercase tracking-widest hover:scale-105 active:scale-95 transition-all flex items-center gap-2 shadow-lg shadow-vendeur-emerald/20"
+          >
+            <ExternalLink size={16} />
+            Voir ma boutique
+          </Link>
+        </div>
+      </header>
+
       <HomePanel dashboard={dashboard} />
     </main>
   );

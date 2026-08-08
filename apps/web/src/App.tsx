@@ -11,6 +11,7 @@ import { SalesInbox } from "./features/inbox/SalesInbox";
 import { MarketingHub } from "./features/marketing/MarketingHub";
 import { SettingsPage } from "./features/settings/SettingsPage";
 import { AdminDashboard } from "./features/admin/AdminDashboard";
+import { PublicShopPage } from "./features/shop/PublicShopPage";
 import { AppLayout } from "./components/layout/AppLayout";
 import { useAuthStore } from "./stores/authStore";
 import { useOnboardingStore } from "./stores/onboardingStore";
@@ -49,6 +50,8 @@ function App() {
               <Route path="/marketing" element={<MarketingHub />} />
               <Route path="/settings" element={<SettingsPage />} />
             </Route>
+
+            <Route path="/shop/:merchantId" element={<PublicShopPage />} />
           </Routes>
           <Toaster theme="dark" position="top-center" />
         </BrowserRouter>

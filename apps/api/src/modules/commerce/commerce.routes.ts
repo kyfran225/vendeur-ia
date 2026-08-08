@@ -45,6 +45,23 @@ router.get("/dashboard", authenticate, async (req, res) => {
   });
 });
 
+// PUBLIC SHOP ENDPOINT
+router.get("/public/shop/:merchantId", async (req, res) => {
+  try {
+    const merchant = await CommerceMerchantModel.findById(req.params.merchantId);
+    if (!merchant) return res.status(404).json({ error: "Boutique non trouvée" });
+
+    const products = await CommerceProductModel.find({
+      merchantId: merchant._id,
+      availability: { $ne: "hidden" }
+    }).sort({ createdAt: -1 });
+
+    res.json({ merchant, products });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 router.get("/conversations", authenticate, async (req, res) => {
   try {
     const ownerId = (req as any).user.id;

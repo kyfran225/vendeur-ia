@@ -614,11 +614,22 @@ class WhatsAppService {
     }
   }
 
-  async sendMessage(userId: string, to: string, text: string) {
+  async sendMessage(userId: string, to: string, text: string, options?: { type?: 'text' | 'audio' }) {
     const merchant = await CommerceMerchantModel.findOne({ ownerId: userId });
     if (!merchant) throw new Error("Merchant not found");
 
+    const useAudio = options?.type === 'audio' || (merchant.aiSettings?.voiceMode && text.length < 300);
+
     if (merchant.whatsappConfig?.provider === 'meta') {
+      if (useAudio) {
+        try {
+          const audioBuffer = await aiProvider.generateSpeech(text);
+          return this.sendMetaAudio(merchant, to, audioBuffer);
+        } catch (err) {
+          console.warn("[WhatsApp Meta] Failed to generate speech, falling back to text:", err);
+          return this.sendMetaMessage(merchant, to, text);
+        }
+      }
       return this.sendMetaMessage(merchant, to, text);
     } else {
       let sock = this.activeSessions.get(userId);
@@ -641,6 +652,20 @@ class WhatsAppService {
       }
 
       if (sock) {
+        if (useAudio) {
+          try {
+            const audioBuffer = await aiProvider.generateSpeech(text);
+            // Baileys audio message: we need to handle the conversion if needed or send as PTT
+            return sock.sendMessage(to, {
+              audio: audioBuffer,
+              mimetype: 'audio/mp4',
+              ptt: true
+            });
+          } catch (err) {
+            console.warn("[WhatsApp Baileys] Failed to generate speech, falling back to text:", err);
+            return sock.sendMessage(to, { text });
+          }
+        }
         return sock.sendMessage(to, { text });
       } else {
         throw new Error("WhatsApp session not active");

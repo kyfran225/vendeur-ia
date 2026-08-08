@@ -18,10 +18,13 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/apiClient";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { io, Socket } from "socket.io-client";
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
+
+const API_URL = (import.meta as any).env.VITE_API_URL || "http://localhost:3001";
 
 interface Message {
   id: string;
@@ -36,6 +39,7 @@ export function WebChatWidget({ merchant }: { merchant: any }) {
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const socketRef = useRef<Socket | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // Initialize Session ID (Anonymous Tracking)
@@ -47,6 +51,25 @@ export function WebChatWidget({ merchant }: { merchant: any }) {
     }
     setSessionId(id);
 
+    // Socket Connection
+    if (!socketRef.current) {
+      socketRef.current = io(API_URL);
+      socketRef.current.emit("join_session", id);
+
+      socketRef.current.on("message:new", (data: any) => {
+        setMessages(prev => {
+          // Prevent duplicates if API also returns the same message
+          const exists = prev.find(m => m.text === data.text && Math.abs(new Date(m.timestamp).getTime() - new Date(data.timestamp).getTime()) < 1000);
+          if (exists) return prev;
+
+          return [...prev, {
+            ...data,
+            timestamp: new Date(data.timestamp)
+          }];
+        });
+      });
+    }
+
     // Initial Welcome Message
     if (messages.length === 0) {
       setMessages([{
@@ -56,6 +79,13 @@ export function WebChatWidget({ merchant }: { merchant: any }) {
         timestamp: new Date()
       }]);
     }
+
+    return () => {
+      if (socketRef.current) {
+        socketRef.current.disconnect();
+        socketRef.current = null;
+      }
+    };
   }, [merchant._id]);
 
   useEffect(() => {
@@ -125,11 +155,15 @@ export function WebChatWidget({ merchant }: { merchant: any }) {
       {/* Chat Window */}
       {isOpen && (
         <div className={cn(
-          "fixed bottom-8 right-8 z-[200] w-full max-w-[400px] bg-vendeur-coal border border-white/10 rounded-[2.5rem] shadow-2xl flex flex-col overflow-hidden transition-all animate-in slide-in-from-bottom-8 duration-500",
-          isMinimized ? "h-20" : "h-[600px] max-h-[80vh]"
+          "fixed z-[200] bg-vendeur-coal flex flex-col overflow-hidden transition-all animate-in slide-in-from-bottom-8 duration-500",
+          // Mobile: Full screen
+          "inset-0 w-full h-full rounded-none",
+          // Desktop: Floating bubble
+          "md:inset-auto md:bottom-8 md:right-8 md:w-[400px] md:h-[600px] md:max-h-[80vh] md:rounded-[2.5rem] md:border md:border-white/10 md:shadow-2xl",
+          isMinimized && "h-20 md:h-20"
         )}>
            {/* Header */}
-           <header className="p-5 bg-vendeur-bg/80 backdrop-blur-xl border-b border-white/5 flex items-center justify-between">
+           <header className="p-3 md:p-5 bg-vendeur-bg/80 backdrop-blur-xl border-b border-white/5 flex items-center justify-between">
               <div className="flex items-center gap-3">
                  <div className="h-10 w-10 rounded-xl bg-vendeur-emerald/10 border border-vendeur-emerald/20 flex items-center justify-center text-vendeur-emerald">
                     <Bot size={22} />
@@ -145,7 +179,7 @@ export function WebChatWidget({ merchant }: { merchant: any }) {
               <div className="flex items-center gap-1">
                  <button
                    onClick={() => setIsMinimized(!isMinimized)}
-                   className="p-2 text-white/20 hover:text-white transition-colors"
+                   className="hidden md:block p-2 text-white/20 hover:text-white transition-colors"
                  >
                     {isMinimized ? <Maximize2 size={18} /> : <Minimize2 size={18} />}
                  </button>
@@ -163,18 +197,18 @@ export function WebChatWidget({ merchant }: { merchant: any }) {
                {/* Messages Area */}
                <div
                  ref={scrollRef}
-                 className="flex-1 overflow-y-auto p-6 space-y-6 scrollbar-hide bg-black/20"
+                 className="flex-1 overflow-y-auto p-3 md:p-6 space-y-3 md:space-y-6 scrollbar-hide bg-black/20"
                >
                   {messages.map((msg) => (
                     <div
                       key={msg.id}
                       className={cn(
-                        "flex flex-col max-w-[85%] animate-in slide-in-from-bottom-2 duration-300",
+                        "flex flex-col max-w-[90%] md:max-w-[85%] animate-in slide-in-from-bottom-2 duration-300",
                         msg.role === 'customer' ? "ml-auto items-end" : "items-start"
                       )}
                     >
                        <div className={cn(
-                         "p-4 rounded-3xl text-sm font-medium leading-relaxed",
+                         "px-3 py-2 md:p-4 rounded-2xl md:rounded-3xl text-sm font-medium leading-relaxed",
                          msg.role === 'customer'
                            ? "bg-vendeur-emerald text-vendeur-coal rounded-tr-none"
                            : "bg-white/5 border border-white/10 text-white rounded-tl-none"
@@ -190,15 +224,15 @@ export function WebChatWidget({ merchant }: { merchant: any }) {
                     <div className="flex justify-start">
                        <div className="bg-white/5 border border-white/5 px-4 py-3 rounded-2xl flex items-center gap-3">
                           <Loader2 size={14} className="animate-spin text-vendeur-emerald" />
-                          <span className="text-[10px] font-black text-vendeur-emerald uppercase tracking-widest">L\u0027IA réfléchit...</span>
+                          <span className="text-[10px] font-black text-vendeur-emerald uppercase tracking-widest">L'IA réfléchit...</span>
                        </div>
                     </div>
                   )}
                </div>
 
                {/* Footer / Input */}
-               <footer className="p-6 bg-vendeur-bg/80 border-t border-white/5 space-y-4">
-                  <div className="flex items-center gap-3 bg-white/5 border border-white/10 rounded-2xl px-4 h-14 focus-within:border-vendeur-emerald transition-all shadow-inner">
+               <footer className="p-3 md:p-6 bg-vendeur-bg/80 border-t border-white/5 space-y-3 md:space-y-4">
+                  <div className="flex items-center gap-3 bg-white/5 border border-white/10 rounded-2xl px-4 h-12 md:h-14 focus-within:border-vendeur-emerald transition-all shadow-inner">
                      <input
                        className="flex-1 bg-transparent outline-none text-sm text-white"
                        placeholder="Posez votre question..."
@@ -209,7 +243,7 @@ export function WebChatWidget({ merchant }: { merchant: any }) {
                      <button
                        onClick={handleSend}
                        disabled={!input.trim() || chatMutation.isPending}
-                       className="h-10 w-10 bg-vendeur-emerald text-vendeur-coal rounded-xl flex items-center justify-center hover:scale-105 active:scale-95 disabled:opacity-20 transition-all shadow-lg"
+                       className="h-9 w-9 md:h-10 md:w-10 bg-vendeur-emerald text-vendeur-coal rounded-xl flex items-center justify-center hover:scale-105 active:scale-95 disabled:opacity-20 transition-all shadow-lg"
                      >
                         <Send size={18} />
                      </button>

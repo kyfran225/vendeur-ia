@@ -37,6 +37,7 @@ export function SalesInbox() {
   const [searchQuery, setSearchQuery] = useState("");
   const [followupData, setFollowupData] = useState<{ text: string; isOpen: boolean }>({ text: "", isOpen: false });
   const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
+  const [onlineSessions, setOnlineSessions] = useState<Set<string>>(new Set());
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // Fetch Conversations
@@ -92,10 +93,20 @@ export function SalesInbox() {
           }
         }
       });
+
+      socket.on("session:status", (data: { sessionId: string; status: "online" | "offline" }) => {
+        setOnlineSessions(prev => {
+          const next = new Set(prev);
+          if (data.status === "online") next.add(data.sessionId);
+          else next.delete(data.sessionId);
+          return next;
+        });
+      });
     }
     return () => {
       socket?.off("conversation:update");
       socket?.off("ai:typing");
+      socket?.off("session:status");
     };
   }, [socket, selectedChat, queryClient]);
 
@@ -205,6 +216,7 @@ export function SalesInbox() {
                 platform={chat.platform || 'whatsapp'}
                 time={new Date(chat.lastMessageAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 active={selectedChat === chat._id}
+                isOnline={chat.platform === 'web' && onlineSessions.has(chat.customerId?.platformId)}
                 onClick={() => handleChatSelect(chat._id)}
               />
             ))
@@ -218,7 +230,7 @@ export function SalesInbox() {
         !showMobileChat ? "hidden md:flex" : "flex"
       )}>
         {selectedChat ? (
-          <div className="flex-1 flex flex-col h-full max-w-[500px] mx-auto w-full border-x border-white/5 bg-[#0b141a] relative">
+          <div className="flex-1 flex flex-col h-full max-w-6xl mx-auto w-full border-x border-white/5 bg-[#0b141a] relative">
             <header className="p-4 md:p-4 border-b border-white/5 flex items-center justify-between bg-[#202c33] sticky top-0 z-30">
               <div className="flex items-center gap-3">
                 <button
@@ -251,12 +263,16 @@ export function SalesInbox() {
                       <>L'IA est en train d'écrire...</>
                     ) : (
                       <>
-                        {activeChatData?.platform === 'instagram' && <Instagram size={10} />}
-                        {activeChatData?.platform === 'facebook' && <Facebook size={10} className="text-blue-500" />}
-                        {activeChatData?.platform === 'tiktok' && <TikTokIcon size={10} />}
-                        {activeChatData?.platform === 'web' && <Globe size={10} className="text-sky-400" />}
-                        {(!activeChatData?.platform || activeChatData?.platform === 'whatsapp') && <MessageCircle size={10} />}
-                        {activeChatData?.platform || 'WhatsApp'} • En ligne
+                        {activeChatData?.platform === 'instagram' && <Instagram size={14} />}
+                        {activeChatData?.platform === 'facebook' && <Facebook size={14} className="text-blue-500" />}
+                        {activeChatData?.platform === 'tiktok' && <TikTokIcon size={14} />}
+                        {activeChatData?.platform === 'web' && <Globe size={14} className="text-sky-400" />}
+                        {(!activeChatData?.platform || activeChatData?.platform === 'whatsapp') && <MessageCircle size={14} />}
+                        <span className="ml-1">
+                          {activeChatData?.platform === 'web'
+                            ? (onlineSessions.has(activeChatData?.customerId?.platformId) ? "En ligne" : "Hors ligne")
+                            : "En ligne"}
+                        </span>
                       </>
                     )}
                   </p>
@@ -555,7 +571,7 @@ function OrderCreationModal({ isOpen, onClose, products, customerId, conversatio
   );
 }
 
-function ChatListItem({ name, lastMsg, time, unread, active, platform, onClick }: any) {
+function ChatListItem({ name, lastMsg, time, unread, active, platform, isOnline, onClick }: any) {
   return (
     <div
       onClick={onClick}
@@ -566,12 +582,15 @@ function ChatListItem({ name, lastMsg, time, unread, active, platform, onClick }
     >
       <div className="h-12 w-12 rounded-2xl bg-white/5 flex items-center justify-center border border-white/5 relative">
         <User className="text-white/20" size={20} />
+        {isOnline && (
+          <div className="absolute -top-1 -right-1 h-3 w-3 bg-vendeur-emerald rounded-full border-2 border-vendeur-coal animate-pulse" />
+        )}
         <div className="absolute -bottom-1 -right-1 bg-vendeur-bg rounded-full p-1 border border-white/10">
-           {platform === 'instagram' && <Instagram size={10} className="text-pink-500" />}
-           {platform === 'facebook' && <Facebook size={10} className="text-blue-500" />}
-           {platform === 'tiktok' && <TikTokIcon size={10} className="text-white" />}
-           {platform === 'web' && <Globe size={10} className="text-sky-400" />}
-           {(!platform || platform === 'whatsapp') && <MessageCircle size={10} className="text-vendeur-emerald" />}
+           {platform === 'instagram' && <Instagram size={12} className="text-pink-500" />}
+           {platform === 'facebook' && <Facebook size={12} className="text-blue-500" />}
+           {platform === 'tiktok' && <TikTokIcon size={12} className="text-white" />}
+           {platform === 'web' && <Globe size={12} className="text-sky-400" />}
+           {(!platform || platform === 'whatsapp') && <MessageCircle size={12} className="text-vendeur-emerald" />}
         </div>
       </div>
       <div className="flex-1 min-w-0">

@@ -83,7 +83,7 @@ export function PublicShop() {
     <div className="min-h-screen bg-vendeur-bg text-white selection:bg-vendeur-emerald selection:text-vendeur-coal pb-24">
       {/* Header / Branding */}
       <header className="sticky top-0 z-50 bg-vendeur-bg/80 backdrop-blur-xl border-b border-white/5">
-        <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-4 md:px-6 h-20 flex items-center justify-between">
           <div className="flex items-center gap-4">
              <div className="h-10 w-10 md:h-12 md:w-12 rounded-xl bg-vendeur-emerald flex items-center justify-center text-vendeur-coal shadow-lg shadow-vendeur-emerald/20">
                 <ShoppingBag size={24} />
@@ -109,10 +109,10 @@ export function PublicShop() {
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-6 pt-10 space-y-12">
+      <main className="max-w-7xl mx-auto px-4 md:px-6 pt-10 space-y-12">
         {/* Hero Section */}
-        <section className="relative overflow-hidden rounded-[3rem] bg-vendeur-coal border border-white/5 p-8 md:p-20 flex flex-col md:flex-row items-center justify-between gap-12 group">
-           <div className="relative z-10 space-y-6 text-center md:text-left max-w-xl">
+        <section className="relative overflow-hidden rounded-3xl md:rounded-[3rem] bg-vendeur-coal border border-white/5 p-5 md:p-20 flex flex-col md:flex-row items-center justify-between gap-8 md:gap-12 group">
+           <div className="relative z-10 space-y-4 md:space-y-6 text-center md:text-left max-w-xl">
               <span className="px-4 py-2 bg-vendeur-emerald/10 border border-vendeur-emerald/20 rounded-full text-[10px] font-black uppercase tracking-widest text-vendeur-emerald">
                  Boutique Officielle
               </span>
@@ -167,11 +167,11 @@ export function PublicShop() {
            </div>
 
            {/* Products Grid */}
-           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-8">
               {filteredProducts.map((p: any) => (
                  <div
                     key={p._id}
-                    className="group bg-vendeur-coal border border-white/5 rounded-[2.5rem] overflow-hidden hover:border-vendeur-emerald/30 transition-all flex flex-col shadow-lg"
+                    className="group bg-vendeur-coal border border-white/5 rounded-3xl md:rounded-[2.5rem] overflow-hidden hover:border-vendeur-emerald/30 transition-all flex flex-col shadow-lg"
                  >
                     <div className="relative aspect-square overflow-hidden bg-black/40">
                        {p.images?.[0] ? (
@@ -206,14 +206,14 @@ export function PublicShop() {
                        </div>
                     </div>
 
-                    <div className="p-6 space-y-4 flex-1 flex flex-col justify-between">
+                    <div className="p-4 md:p-6 space-y-3 md:space-y-4 flex-1 flex flex-col justify-between">
                        <div>
                           <p className="text-[9px] font-black text-vendeur-emerald uppercase tracking-[0.2em] mb-1">{p.category || 'Article'}</p>
                           <h3 className="text-lg font-black uppercase tracking-tight line-clamp-1">{p.name}</h3>
                           <p className="text-white/40 text-xs mt-2 line-clamp-2 font-medium">{p.description || "Aucune description détaillée."}</p>
                        </div>
 
-                       <div className="flex items-center justify-between pt-4 border-t border-white/5">
+                       <div className="flex items-center justify-between pt-3 md:pt-4 border-t border-white/5">
                           <p className="text-xl font-black text-white">{p.price.toLocaleString()} <span className="text-[10px] text-white/40 ml-1">{p.currency || 'XOF'}</span></p>
                           <div className="flex items-center gap-1 text-amber-400">
                              <Star size={10} fill="currentColor" />
@@ -273,16 +273,16 @@ export function PublicShop() {
 
       {/* Product Quick View Modal */}
       {selectedProduct && (
-         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-vendeur-bg/95 backdrop-blur-2xl animate-in fade-in duration-300">
-            <div className="relative w-full max-w-5xl bg-vendeur-coal border border-white/10 rounded-[3rem] overflow-hidden shadow-2xl flex flex-col md:flex-row animate-in zoom-in-95 duration-300">
+         <div className="fixed inset-0 z-[100] flex items-center justify-center p-2 md:p-4 bg-vendeur-bg/95 backdrop-blur-2xl animate-in fade-in duration-300">
+            <div className="relative w-full max-w-5xl bg-vendeur-coal border border-white/10 rounded-3xl md:rounded-[3rem] overflow-hidden shadow-2xl flex flex-col md:flex-row animate-in zoom-in-95 duration-300">
                <button
                   onClick={() => setSelectedProduct(null)}
-                  className="absolute top-6 right-6 z-20 h-10 w-10 bg-black/40 text-white/40 hover:text-white rounded-full flex items-center justify-center backdrop-blur-xl border border-white/10 transition-colors"
+                  className="absolute top-4 right-4 md:top-6 md:right-6 z-20 h-10 w-10 bg-black/40 text-white/40 hover:text-white rounded-full flex items-center justify-center backdrop-blur-xl border border-white/10 transition-colors"
                >
                   <X size={20} />
                </button>
 
-               <div className="flex-1 bg-black/40 aspect-square md:aspect-auto h-[350px] md:h-[600px] overflow-hidden">
+               <div className="flex-1 bg-black/40 aspect-square md:aspect-auto h-[300px] md:h-[600px] overflow-hidden">
                   {selectedProduct.images?.[0] ? (
                      <img src={selectedProduct.images[0]} className="w-full h-full object-cover" alt="" />
                   ) : (
@@ -290,20 +290,20 @@ export function PublicShop() {
                   )}
                </div>
 
-               <div className="flex-1 p-8 md:p-12 space-y-8 flex flex-col justify-between overflow-y-auto">
-                  <div className="space-y-6">
+               <div className="flex-1 p-5 md:p-12 space-y-6 md:space-y-8 flex flex-col justify-between overflow-y-auto">
+                  <div className="space-y-4 md:space-y-6">
                      <div className="space-y-2">
                         <span className="text-[10px] font-black text-vendeur-emerald uppercase tracking-[0.3em]">{selectedProduct.category}</span>
-                        <h2 className="text-3xl md:text-5xl font-black uppercase tracking-tighter leading-none">{selectedProduct.name}</h2>
+                        <h2 className="text-2xl md:text-5xl font-black uppercase tracking-tighter leading-none">{selectedProduct.name}</h2>
                      </div>
-                     <p className="text-white/60 text-sm md:text-base leading-relaxed font-medium">
+                     <p className="text-white/60 text-xs md:text-base leading-relaxed font-medium">
                         {selectedProduct.description || "Cet article d\u0027exception est disponible dès maintenant dans notre catalogue. Contactez-nous sur WhatsApp pour valider votre commande et organiser la livraison."}
                      </p>
 
-                     <div className="flex items-center gap-8">
+                     <div className="flex items-center gap-6 md:gap-8">
                         <div>
                            <p className="text-[9px] font-black text-white/20 uppercase tracking-widest mb-1">Prix unitaire</p>
-                           <p className="text-3xl font-black text-white">{selectedProduct.price.toLocaleString()} <span className="text-xs text-white/40">{selectedProduct.currency || 'XOF'}</span></p>
+                           <p className="text-2xl md:text-3xl font-black text-white">{selectedProduct.price.toLocaleString()} <span className="text-xs text-white/40">{selectedProduct.currency || 'XOF'}</span></p>
                         </div>
                         {selectedProduct.stock > 0 ? (
                            <div>

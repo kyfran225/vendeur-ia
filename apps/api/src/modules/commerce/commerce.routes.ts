@@ -144,22 +144,19 @@ router.post("/conversations/:id/messages", authenticate, async (req, res) => {
       content
     });
 
-    // 2. Send via WhatsApp
+    // 2. Send via Platform Messaging
     const customer = conversation.customerId as any;
+    const platform = conversation.platform || "whatsapp";
+    const remoteId = platform === "web" ? (customer.platformId || "WEB_VISITOR") : customer.phone;
+
+    try {
+      await messagingService.sendMessage(merchant, platform, remoteId, content);
+    } catch (sendError: any) {
+      console.error(`[Messaging] Failed to send to ${platform}:`, sendError.message);
+      // Continue even if external send fails, as we saved it to DB
+    }
 
     // 3. Force "needs_human" status to stop AI from intervening
-    if (conversation.status !== "needs_human") {
-      await CommerceConversationModel.findByIdAndUpdate(conversation._id, { status: "needs_human" });
-    }
-
-    if (merchant.whatsappConfig?.provider === 'meta') {
-      await whatsappService.sendMetaMessage(merchant, customer.phone, content);
-    } else {
-      const sock = (whatsappService as any).activeSessions?.get(ownerId);
-      if (sock) {
-        await sock.sendMessage(customer.phone, { text: content });
-      }
-    }
 
     res.status(201).json(message);
   } catch (error: any) {

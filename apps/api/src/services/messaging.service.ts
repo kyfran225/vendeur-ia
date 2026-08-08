@@ -1,5 +1,6 @@
 import { whatsappService } from '../modules/whatsapp/whatsapp.service.js';
 import { CommerceMerchantModel } from '../modules/commerce/commerce.model.js';
+import { emitToSession } from '../realtime/socketServer.js';
 import axios from 'axios';
 
 export class MessagingService {
@@ -15,9 +16,21 @@ export class MessagingService {
         return this.sendFacebook(merchant, remoteId, content);
       case 'tiktok':
         return this.sendTikTok(merchant, remoteId, content);
+      case 'web':
+        return this.sendWeb(remoteId, content);
       default:
         throw new Error(`Unsupported platform: ${platform}`);
     }
+  }
+
+  private async sendWeb(sessionId: string, content: string) {
+    emitToSession(sessionId, "message:new", {
+      id: Date.now().toString(),
+      role: "ai", // Merchant messages are treated as AI/Agent replies in the widget
+      text: content,
+      timestamp: new Date()
+    });
+    return { success: true };
   }
 
   private async sendWhatsApp(merchant: any, remoteId: string, content: string, options: any) {

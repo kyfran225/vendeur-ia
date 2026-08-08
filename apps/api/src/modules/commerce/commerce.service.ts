@@ -759,8 +759,8 @@ Résumé actuel :`;
       // 1. Generate embedding for query
       const queryEmbedding = await aiProvider.generateEmbeddings(query);
 
-      // 2. Vector search using MongoDB aggregate
-      const relevantProducts = await CommerceProductModel.aggregate([
+      // 2. Hybrid Search Logic: Vector + Keyword
+      const vectorProducts = await CommerceProductModel.aggregate([
         { $match: {
           merchantId: new mongoose.Types.ObjectId(merchantId),
           stock: { $gt: 0 },
@@ -791,9 +791,28 @@ Résumé actuel :`;
         { $limit: limit }
       ]);
 
-      return relevantProducts;
+      // 3. Keyword Search Fallback/Boost
+      const keywords = query.split(' ').filter(k => k.length > 2);
+      const keywordProducts = await CommerceProductModel.find({
+        merchantId,
+        stock: { $gt: 0 },
+        $or: [
+          { name: { $regex: keywords.join('|'), $options: 'i' } },
+          { category: { $regex: keywords.join('|'), $options: 'i' } }
+        ]
+      }).limit(limit).lean();
+
+      // 4. Merge results (Set to remove duplicates)
+      const merged = [...vectorProducts];
+      for (const kp of keywordProducts) {
+        if (!merged.find(p => p._id.toString() === (kp as any)._id.toString())) {
+          merged.push(kp as any);
+        }
+      }
+
+      return merged.slice(0, limit);
     } catch (err) {
-      console.error("[Embedding Search] Error:", err);
+      console.error("[Hybrid Search] Error:", err);
       return CommerceProductModel.find({
         merchantId,
         stock: { $gt: 0 }

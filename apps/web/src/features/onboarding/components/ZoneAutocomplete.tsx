@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useMemo } from "react";
-import { MapPin, Loader2, X } from "lucide-react";
+import { MapPin, Loader2, X, Search } from "lucide-react";
 import { useSearchBoxCore } from "@mapbox/search-js-react";
 import * as Portal from "@radix-ui/react-portal";
 import { clsx, type ClassValue } from "clsx";
@@ -9,16 +9,18 @@ function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export function AddressAutocomplete({
+export function ZoneAutocomplete({
   value,
   onChange,
-  onSelectSuggestion,
-  placeholder = "Ex: Rue 12, Plateaux, face à...",
+  city,
+  countryCode,
+  placeholder = "Ex: Plateau, Cocody...",
   className
 }: {
   value: string;
   onChange: (value: string) => void;
-  onSelectSuggestion?: (suggestion: any) => void;
+  city?: string;
+  countryCode?: string;
   placeholder?: string;
   className?: string;
 }) {
@@ -31,7 +33,6 @@ export function AddressAutocomplete({
 
   const accessToken = (import.meta as any).env.VITE_MAPBOX_ACCESS_TOKEN;
 
-  // Create a session token for billing optimization
   const sessionToken = useMemo(() => {
     return Math.random().toString(36).substring(2, 15);
   }, []);
@@ -51,7 +52,6 @@ export function AddressAutocomplete({
     }
   };
 
-  // Handle clicks outside to close suggestions
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as Node;
@@ -84,18 +84,36 @@ export function AddressAutocomplete({
 
     if (!accessToken) return;
 
-    if (newValue.length > 2) {
+    if (newValue.length > 1) {
       setLoading(true);
       try {
+        // We use the city in the proximity search rather than the query string to avoid polluting it
         const response = await searchBox.suggest(newValue, {
           sessionToken,
-          language: "fr",
-          // Removed country restriction for global search
+          types: "district,neighborhood,locality,place",
+          country: countryCode?.toLowerCase(),
+          // Use city/place for hint if possible, otherwise we rely on search query
+          language: "fr"
         });
-        setSuggestions(response.suggestions || []);
+
+        let filtered = response.suggestions || [];
+
+        // If we have a city, we prioritize results that are in that city
+        if (city && newValue.length < 5) {
+          const cityLower = city.toLowerCase();
+          filtered = filtered.sort((a: any, b: any) => {
+            const aInCity = a.place_formatted?.toLowerCase().includes(cityLower) || a.full_address?.toLowerCase().includes(cityLower);
+            const bInCity = b.place_formatted?.toLowerCase().includes(cityLower) || b.full_address?.toLowerCase().includes(cityLower);
+            if (aInCity && !bInCity) return -1;
+            if (!aInCity && bInCity) return 1;
+            return 0;
+          });
+        }
+
+        setSuggestions(filtered);
         setShowSuggestions(true);
       } catch (err) {
-        console.error("Mapbox search error:", err);
+        console.error("Mapbox zone search error:", err);
       } finally {
         setLoading(false);
       }
@@ -105,39 +123,24 @@ export function AddressAutocomplete({
     }
   };
 
-  const handleSelect = async (suggestion: any) => {
-    const selectedAddress = suggestion.full_address || suggestion.place_name || suggestion.name;
-    onChange(selectedAddress);
-    setLoading(true);
-
-    try {
-      const result = await searchBox.retrieve(suggestion, {
-        sessionToken,
-      });
-      const feature = result.features[0];
-      onSelectSuggestion?.(feature);
-    } catch (err) {
-      console.error("Mapbox retrieve error:", err);
-      onSelectSuggestion?.(suggestion); // Fallback to basic suggestion
-    } finally {
-      setLoading(false);
-      setShowSuggestions(false);
-    }
+  const handleSelect = (suggestion: any) => {
+    onChange(suggestion.name);
+    setShowSuggestions(false);
   };
 
   return (
     <div className="relative w-full group" ref={containerRef}>
       <div className={cn(
         "absolute left-4 top-1/2 -translate-y-1/2 transition-colors z-10",
-        value ? "text-vendeur-emerald" : "text-white/20 group-focus-within:text-vendeur-emerald"
+        value ? "text-sky-500" : "text-white/20 group-focus-within:text-sky-500"
       )}>
-        {loading ? <Loader2 size={16} className="animate-spin" /> : <MapPin size={16} />}
+        {loading ? <Loader2 size={14} className="animate-spin" /> : <Search size={14} />}
       </div>
 
       <input
         type="text"
         className={cn(
-          "h-12 w-full rounded-xl border border-white/10 bg-black/40 pl-11 pr-10 text-white outline-none focus:border-vendeur-emerald transition-all placeholder:text-white/10",
+          "h-12 w-full rounded-xl border border-white/10 bg-black/40 pl-11 pr-10 text-white outline-none focus:border-sky-500 transition-all placeholder:text-white/10 text-xs",
           className
         )}
         value={value}
@@ -161,18 +164,17 @@ export function AddressAutocomplete({
           }}
           className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-white/20 hover:text-white transition-colors z-10"
         >
-          <X size={14} />
+          <X size={12} />
         </button>
       )}
 
-      {/* Suggestions Dropdown */}
       {showSuggestions && suggestions.length > 0 && (
         <Portal.Root>
           <div
             ref={portalRef}
             style={{
               position: 'fixed',
-              top: `${coords.top + 48 + 8}px`,
+              top: `${coords.top + 48 + 4}px`,
               left: `${coords.left}px`,
               width: `${coords.width}px`
             }}
@@ -183,13 +185,13 @@ export function AddressAutocomplete({
                 key={suggestion.mapbox_id}
                 type="button"
                 onClick={() => handleSelect(suggestion)}
-                className="flex w-full flex-col gap-0.5 rounded-lg px-4 py-3 text-left transition-colors hover:bg-white/5"
+                className="flex w-full flex-col gap-0.5 rounded-lg px-4 py-2.5 text-left transition-colors hover:bg-white/5"
               >
-                <span className="text-sm font-bold text-white leading-tight">
+                <span className="text-xs font-bold text-white leading-tight">
                   {suggestion.name}
                 </span>
-                <span className="text-[10px] text-white/40 truncate">
-                  {suggestion.full_address || suggestion.place_formatted}
+                <span className="text-[9px] text-white/40 truncate">
+                  {suggestion.place_formatted || suggestion.full_address}
                 </span>
               </button>
             ))}

@@ -41,9 +41,10 @@ import { ReferralCard } from "./components/ReferralCard";
 import { GrowthTab } from "./components/GrowthTab";
 import { subscribeToPush } from "@/lib/pushUtils";
 import { AddressAutocomplete } from "../onboarding/components/AddressAutocomplete";
+import { ZoneAutocomplete } from "../onboarding/components/ZoneAutocomplete";
 
 import { useSocket } from "@/hooks/useSocket";
-import { getProvidersForCountry, getZonesForCity } from "@vendeur-ia/core";
+import { getProvidersForCountry, getZonesForCity, getCountryByCode } from "@vendeur-ia/core";
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -418,6 +419,35 @@ function BoutiqueTab({ merchant, initialKnowledge, accessToken }: { merchant: an
              <AddressAutocomplete
                value={localMerchant?.address || ""}
                onChange={v => setLocalMerchant({...localMerchant, address: v})}
+               onSelectSuggestion={(feature) => {
+                 const props = feature.properties;
+                 const context = props.context || {};
+
+                 const city = props.place?.name || context.place?.name || props.name || "";
+                 const countryCode = context.country?.country_code || props.country_code || "";
+                 const district = props.district?.name || context.district?.name || "";
+                 const neighborhood = props.neighborhood?.name || context.neighborhood?.name || "";
+
+                 const updates: any = {
+                   address: props.full_address || props.name,
+                   city: city,
+                 };
+
+                 if (countryCode) {
+                   const country = getProvidersForCountry(countryCode); // This is just to check if country exists in our core
+                   updates.country = countryCode;
+                   // Logic to update currency could go here if we want to be aggressive
+                 }
+
+                 setLocalMerchant({ ...localMerchant, ...updates });
+
+                 // Automatically suggest adding the detected zone/commune if not already present
+                 const zoneName = neighborhood || district;
+                 if (zoneName && !deliveryFees.find((f: any) => f.zone.toLowerCase().includes(zoneName.toLowerCase()))) {
+                   setDeliveryFees([...deliveryFees, { zone: zoneName, price: 1000 }]);
+                   toast.info(`Zone "${zoneName}" ajoutée aux frais de livraison 🚚`);
+                 }
+               }}
                placeholder="Ex: Cocody, Abidjan"
                className="h-14 rounded-2xl"
              />
@@ -426,8 +456,8 @@ function BoutiqueTab({ merchant, initialKnowledge, accessToken }: { merchant: an
       </section>
 
       {/* Grille de Livraison */}
-      <section className="bg-vendeur-coal border border-white/10 px-4 py-6 md:px-4 md:py-10 rounded-[2.5rem] md:rounded-[3.5rem] space-y-8 shadow-2xl overflow-hidden">
-        <div className="flex items-center gap-3 md:gap-4">
+      <section className="bg-vendeur-coal border border-white/10 p-4 md:p-8 rounded-[2.5rem] md:rounded-[3.5rem] space-y-8 shadow-2xl overflow-hidden">
+        <div className="flex items-center gap-3 md:gap-4 px-2">
           <div className="h-12 w-12 md:h-14 md:w-14 bg-sky-500/10 rounded-2xl flex items-center justify-center text-sky-400 border border-sky-500/20 shrink-0">
             <Truck size={24} className="md:w-7 md:h-7" />
           </div>
@@ -437,41 +467,50 @@ function BoutiqueTab({ merchant, initialKnowledge, accessToken }: { merchant: an
           </div>
         </div>
 
-        <div className="space-y-3 md:space-y-4">
-           <div className="flex flex-row gap-2 px-1 text-[10px] font-black uppercase tracking-[0.2em] text-white/20">
-              <span className="flex-1 px-3">Zone / Commune</span>
-              <span className="w-20 md:w-32 px-2 text-white/40">Tarif ({localMerchant?.currency || "XOF"})</span>
-              <div className="w-10 md:w-12" /> {/* Spacer pour aligner avec le bouton supprimer */}
+        <div className="space-y-4">
+           <div className="flex flex-row gap-2 px-2 text-[10px] font-black uppercase tracking-[0.2em] text-white/20">
+              <span className="flex-1">Zone / Commune</span>
+              <span className="w-24 md:w-40 text-right pr-2">Tarif ({localMerchant?.currency || "XOF"})</span>
            </div>
 
            {deliveryFees.map((fee: any, idx: number) => (
-              <div key={idx} className="flex flex-row gap-2 items-center animate-in slide-in-from-left-2 duration-200">
-                 <input
-                    className="flex-1 h-12 md:h-14 bg-black/40 border border-white/10 rounded-xl md:rounded-2xl px-3 md:px-5 text-xs md:text-sm text-white focus:border-sky-500 transition-all outline-none"
-                    placeholder="Ex: Riviera 3"
-                    value={fee.zone}
-                    onChange={(e) => {
-                       const next = [...deliveryFees];
-                       next[idx].zone = e.target.value;
-                       setDeliveryFees(next);
-                    }}
-                 />
-                 <input
-                    type="number"
-                    className="w-20 md:w-32 h-12 md:h-14 bg-black/40 border border-white/10 rounded-xl md:rounded-2xl px-2 md:px-5 text-xs md:text-sm text-white focus:border-sky-500 transition-all outline-none font-mono"
-                    placeholder="1500"
-                    value={fee.price}
-                    onChange={(e) => {
-                       const next = [...deliveryFees];
-                       next[idx].price = parseInt(e.target.value) || 0;
-                       setDeliveryFees(next);
-                    }}
-                 />
+              <div key={idx} className="relative group animate-in slide-in-from-left-2 duration-200 py-1">
+                 <div className="flex flex-row gap-2 items-center">
+                    <ZoneAutocomplete
+                        value={fee.zone}
+                        city={localMerchant?.city}
+                        countryCode={localMerchant?.country}
+                        onChange={(val) => {
+                          const next = [...deliveryFees];
+                          next[idx].zone = val;
+                          setDeliveryFees(next);
+                        }}
+                        placeholder="Ex: Riviera 3"
+                        className="flex-1 h-14 text-sm font-bold"
+                    />
+                    <div className="relative w-24 md:w-40 shrink-0">
+                      <input
+                          type="number"
+                          className="w-full h-14 bg-black/40 border border-white/10 rounded-2xl px-3 text-sm text-vendeur-emerald font-black outline-none focus:border-sky-500 transition-all font-mono"
+                          placeholder="1500"
+                          value={fee.price}
+                          onChange={(e) => {
+                            const next = [...deliveryFees];
+                            next[idx].price = parseInt(e.target.value) || 0;
+                            setDeliveryFees(next);
+                          }}
+                      />
+                      <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[8px] font-black text-white/10 pointer-events-none uppercase">
+                        {localMerchant?.currency || "XOF"}
+                      </span>
+                    </div>
+                 </div>
+
                  <button
                     onClick={() => setDeliveryFees(deliveryFees.filter((_: any, i: number) => i !== idx))}
-                    className="p-2 md:p-3 text-white/20 hover:text-rose-500 transition-colors bg-white/5 rounded-xl shrink-0"
+                    className="absolute -right-2 -top-1 h-7 w-7 bg-rose-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all shadow-lg hover:scale-110 active:scale-95 z-10"
                  >
-                    <Trash2 size={16} md:size={18} />
+                    <Trash2 size={12} />
                  </button>
               </div>
            ))}
@@ -503,8 +542,8 @@ function BoutiqueTab({ merchant, initialKnowledge, accessToken }: { merchant: an
       </section>
 
       {/* Canal de paiement */}
-      <section className="bg-vendeur-coal border border-white/10 px-4 py-6 md:px-4 md:py-8 rounded-[2.5rem] space-y-8 shadow-2xl overflow-hidden">
-         <div className="space-y-1">
+      <section className="bg-vendeur-coal border border-white/10 p-4 md:p-8 rounded-[2.5rem] space-y-8 shadow-2xl overflow-hidden">
+         <div className="space-y-1 px-2">
             <h2 className="text-xl md:text-2xl font-black text-white flex items-center gap-3">
               <Banknote size={22} className="text-emerald-400 shrink-0" />
               <span className="whitespace-nowrap">Canal de paiement</span>
@@ -512,47 +551,81 @@ function BoutiqueTab({ merchant, initialKnowledge, accessToken }: { merchant: an
             <p className="text-[10px] md:text-xs text-white/40">Coordonnées pour les transferts d'argent.</p>
          </div>
 
-         <div className="space-y-3 md:space-y-4">
+         <div className="space-y-4">
             {payments.map((p: any, idx: number) => (
-              <div key={idx} className="flex flex-row gap-2 items-center animate-in slide-in-from-left-2 duration-300">
-                 <div className="w-[35%] md:flex-1">
-                    <div className="relative">
-                      <select
-                        className="w-full h-12 md:h-14 bg-black/40 border border-white/10 rounded-xl md:rounded-2xl px-2 md:px-4 text-[10px] md:text-xs text-white focus:border-emerald-500 outline-none transition-all appearance-none cursor-pointer"
-                        value={p.provider}
-                        onChange={(e) => {
-                          const next = [...payments];
-                          next[idx].provider = e.target.value;
-                          setPayments(next);
-                        }}
-                      >
-                        {getProvidersForCountry(localMerchant?.country || "CI").map(provider => (
-                          <option key={provider.id} value={provider.label}>{provider.label}</option>
-                        ))}
-                        <option value="Virement Bancaire">Virement</option>
-                        <option value="Espèces">Espèces</option>
-                      </select>
-                      <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 text-white/20 pointer-events-none hidden md:block" size={14} />
-                    </div>
-                 </div>
-                 <div className="flex-1">
+              <div key={idx} className="relative group space-y-2 animate-in slide-in-from-left-2 duration-300 py-1">
+                <div className="flex flex-row gap-2 items-center w-full">
+                  <div className="w-[35%] md:w-[25%] shrink-0">
+                      <div className="relative">
+                        <select
+                          className="w-full h-14 bg-black/40 border border-white/10 rounded-2xl px-2 text-[10px] font-black uppercase tracking-tight text-white focus:border-emerald-500 outline-none transition-all appearance-none cursor-pointer"
+                          value={p.provider}
+                          onChange={(e) => {
+                            const next = [...payments];
+                            next[idx].provider = e.target.value;
+                            setPayments(next);
+                          }}
+                        >
+                          {getProvidersForCountry(localMerchant?.country || "CI").map(provider => (
+                            <option key={provider.id} value={provider.label}>{provider.label}</option>
+                          ))}
+                        </select>
+                        <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 text-white/20 pointer-events-none" size={14} />
+                      </div>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                      <div className="relative">
+                        {p.provider !== "Espèces" && p.provider !== "Virement Bancaire" && p.provider !== "Bank Transfer" && p.provider !== "Carte Bancaire" && p.provider !== "Autre (Préciser)" && (
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-black text-white/30 font-mono">
+                            {getCountryByCode(localMerchant?.country || "CI")?.dialCode}
+                          </span>
+                        )}
+                        <input
+                          className={cn(
+                            "w-full h-14 bg-black/40 border border-white/10 rounded-2xl px-4 text-sm font-bold text-white focus:border-emerald-500 outline-none transition-all font-mono",
+                            (p.provider !== "Espèces" && p.provider !== "Virement Bancaire" && p.provider !== "Bank Transfer" && p.provider !== "Carte Bancaire" && p.provider !== "Autre (Préciser)") && "pl-12"
+                          )}
+                          value={p.number}
+                          onChange={(e) => {
+                            const next = [...payments];
+                            next[idx].number = e.target.value;
+                            setPayments(next);
+                          }}
+                          placeholder={
+                            p.provider === "Carte Bancaire"
+                              ? "Lien ou instructions"
+                              : p.provider === "Virement Bancaire" || p.provider === "Bank Transfer"
+                              ? "RIB / Détails bancaires"
+                              : p.provider === "Autre (Préciser)"
+                              ? "Détails"
+                              : "07 00 00 00 00"
+                          }
+                        />
+                      </div>
+                  </div>
+                </div>
+
+                {p.provider === "Autre (Préciser)" && (
+                  <div className="animate-in slide-in-from-top-1 duration-200">
                     <input
-                      className="w-full h-12 md:h-14 bg-black/40 border border-white/10 rounded-xl md:rounded-2xl px-3 md:px-5 text-xs text-white focus:border-emerald-500 outline-none transition-all font-mono"
-                      value={p.number}
+                      className="w-full md:w-2/3 h-10 bg-emerald-500/5 border border-emerald-500/10 rounded-xl px-4 text-[9px] font-black text-emerald-400 outline-none focus:border-emerald-500 transition-all uppercase tracking-widest"
+                      placeholder="NOM DU CANAL..."
+                      value={p.customLabel || ""}
                       onChange={(e) => {
-                         const next = [...payments];
-                         next[idx].number = e.target.value;
-                         setPayments(next);
+                        const next = [...payments];
+                        next[idx].customLabel = e.target.value;
+                        setPayments(next);
                       }}
-                      placeholder="Ex: 07 00 00 00 00"
                     />
-                 </div>
-                 <button
-                   onClick={() => setPayments(payments.filter((_: any, i: number) => i !== idx))}
-                   className="h-10 w-10 md:h-12 md:w-12 flex items-center justify-center bg-white/5 rounded-xl text-white/20 hover:text-rose-500 hover:bg-rose-500/10 transition-all shrink-0"
-                 >
-                    <Trash2 size={16} md:size={18} />
-                 </button>
+                  </div>
+                )}
+
+                <button
+                  onClick={() => setPayments(payments.filter((_: any, i: number) => i !== idx))}
+                  className="absolute -right-2 top-0 h-7 w-7 bg-rose-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all shadow-lg hover:scale-110 active:scale-95 z-10"
+                >
+                    <Trash2 size={12} />
+                </button>
               </div>
             ))}
 

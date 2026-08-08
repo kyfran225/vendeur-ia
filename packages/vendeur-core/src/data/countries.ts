@@ -124,6 +124,20 @@ export const COUNTRIES: CountryData[] = [
     ]
   },
   {
+    code: "GH",
+    name: "Ghana",
+    dialCode: "+233",
+    flag: "https://flagcdn.com/w40/gh.png",
+    currency: "GHS",
+    defaultCity: "Accra",
+    paymentProviders: [
+      { id: "mtn_ghana", label: "MTN MoMo", color: "bg-yellow-400", type: 'mobile_money' },
+      { id: "vodafone_cash", label: "Telecel Cash", color: "bg-red-600", type: 'mobile_money' },
+      { id: "airteltigo_money", label: "AT Money", color: "bg-blue-500", type: 'mobile_money' },
+      { id: "bank_transfer", label: "Bank Transfer", color: "bg-slate-500", type: 'bank' }
+    ]
+  },
+  {
     code: "CD",
     name: "Congo (RDC)",
     dialCode: "+243",
@@ -139,5 +153,21 @@ export const COUNTRIES: CountryData[] = [
   }
 ];
 
-export const getCountryByCode = (code: string) => COUNTRIES.find(c => c.code === code) || COUNTRIES[0];
-export const getProvidersForCountry = (code: string) => getCountryByCode(code).paymentProviders;
+export const getCountryByCode = (code: string) => COUNTRIES.find(c => c.code === code);
+
+export const getProvidersForCountry = (code: string) => {
+  const country = getCountryByCode(code);
+  const providers = country ? [...country.paymentProviders] : [
+    { id: "bank_transfer", label: "Virement Bancaire", color: "bg-slate-500", type: 'bank' as const },
+  ];
+
+  // Add universal providers
+  if (!providers.find(p => p.id === "card")) {
+    providers.push({ id: "card", label: "Carte Bancaire", color: "bg-emerald-500", type: 'card' as const });
+  }
+  if (!providers.find(p => p.id === "other")) {
+    providers.push({ id: "other", label: "Autre (Préciser)", color: "bg-slate-400", type: 'cash' as const });
+  }
+
+  return providers;
+};

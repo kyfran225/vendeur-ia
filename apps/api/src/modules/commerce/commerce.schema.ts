@@ -50,6 +50,14 @@ export const UpdateMerchantSchema = z.object({
     city: z.string().optional(),
     address: z.string().optional(),
     phone: z.string().optional(),
+    country: z.string().optional(),
+    currency: z.string().optional(),
+    paymentChannels: z.array(z.object({
+      provider: z.string(),
+      label: z.string().optional(),
+      number: z.string(),
+      customLabel: z.string().optional()
+    })).optional(),
     aiSettings: z.object({
       personality: z.enum(['friendly', 'professional', 'premium']).optional(),
       autoReply: z.boolean().optional(),

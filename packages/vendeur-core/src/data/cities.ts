@@ -77,14 +77,29 @@ export const CITY_SUGGESTIONS: Record<string, CityData> = {
       { name: "Fidjrossè", suggestedPrice: 1500 },
       { name: "Calavi", suggestedPrice: 3000 }
     ]
+  },
+  "Accra": {
+    name: "Accra",
+    countryCode: "GH",
+    zones: [
+      { name: "East Legon", suggestedPrice: 30 },
+      { name: "Osu", suggestedPrice: 20 },
+      { name: "Cantonments", suggestedPrice: 20 },
+      { name: "Airport Residential Area", suggestedPrice: 25 },
+      { name: "Spintex", suggestedPrice: 40 },
+      { name: "Dzworwulu", suggestedPrice: 25 }
+    ]
   }
 };
 
 export const getZonesForCity = (cityName: string): DeliveryZoneSuggestion[] => {
+  if (!cityName) return [];
+
   // Normalize city name to match keys
   const key = Object.keys(CITY_SUGGESTIONS).find(k =>
     k.toLowerCase() === cityName.toLowerCase() ||
-    cityName.toLowerCase().includes(k.toLowerCase())
+    cityName.toLowerCase().includes(k.toLowerCase()) ||
+    k.toLowerCase().includes(cityName.toLowerCase())
   );
   return key ? CITY_SUGGESTIONS[key].zones : [];
 };

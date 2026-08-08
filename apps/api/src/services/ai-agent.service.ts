@@ -123,9 +123,15 @@ export class AIAgentService {
     // Payment Methods from Knowledge (Source of truth)
     const paymentMethods = knowledge.businessRules?.paymentMethods || [];
     const paymentsStr = paymentMethods.length
-      ? (paymentMethods as any[]).map(c => `${c.provider}${c.label ? ` (${c.label})` : ""}: ${c.number}`).join(", ")
+      ? (paymentMethods as any[]).map(c => {
+          const provider = c.provider === "Autre (Préciser)" && c.customLabel ? c.customLabel : c.provider;
+          return `${provider}${c.label ? ` (${c.label})` : ""}: ${c.number}`;
+        }).join(", ")
       : (merchant.paymentChannels?.length
-          ? merchant.paymentChannels.map(c => `${c.label || c.provider}: ${c.number}`).join(", ")
+          ? merchant.paymentChannels.map(c => {
+              const provider = c.provider === "Autre (Préciser)" && c.customLabel ? c.customLabel : (c.label || c.provider);
+              return `${provider}: ${c.number}`;
+            }).join(", ")
           : "Contacter le marchand pour les détails de paiement.");
 
     const deliveryFeesStr = knowledge.businessRules?.deliveryFees?.length

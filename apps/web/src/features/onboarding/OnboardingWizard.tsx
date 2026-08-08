@@ -260,9 +260,27 @@ function WelcomeStep({ onNext, onBack }: { onNext: () => void; onBack: () => voi
                 <AddressAutocomplete
                   value={form.address}
                   onChange={(value) => setForm({ ...form, address: value })}
-                  onSelectSuggestion={(suggestion) => {
-                    const city = suggestion.context?.place?.name || suggestion.context?.region?.name || suggestion.place_formatted?.split(',')[1]?.trim() || "";
-                    setForm(prev => ({ ...prev, city }));
+                  onSelectSuggestion={(feature) => {
+                    const props = feature.properties;
+                    const context = props.context || {};
+                    const city = props.place?.name || context.place?.name || props.name || "";
+                    const countryCode = context.country?.country_code || props.country_code || "";
+
+                    const updates: any = {
+                      city: city,
+                      address: props.full_address || props.name
+                    };
+
+                    if (countryCode) {
+                      const countryData = COUNTRIES.find(c => c.code === countryCode);
+                      if (countryData) {
+                        setSelectedCountry(countryData);
+                        updates.country = countryCode;
+                        updates.currency = countryData.currency;
+                      }
+                    }
+
+                    setForm(prev => ({ ...prev, ...updates }));
                   }}
                 />
               </label>

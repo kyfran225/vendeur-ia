@@ -151,6 +151,7 @@ router.get("/stats", authenticate, isAdmin, async (req, res) => {
 router.get("/billing/stats", authenticate, isAdmin, async (req, res) => {
   try {
     const merchants = await CommerceMerchantModel.find();
+    const settings = await SystemSettingsModel.findOne();
 
     const planStats = {
       starter: 0,
@@ -162,10 +163,12 @@ router.get("/billing/stats", authenticate, isAdmin, async (req, res) => {
     };
 
     let estimatedMRR = 0;
-    const monthlyPrices: any = {
+
+    // Default prices
+    const defaultMonthlyPrices: any = {
       starter: 0,
-      premium: 5000,
-      business: 25000
+      premium: settings?.pricing?.premiumSubscriptionMonthly || 5000,
+      business: settings?.pricing?.ramContributionFee || 25000
     };
 
     const sevenDaysAgo = new Date();
@@ -175,10 +178,18 @@ router.get("/billing/stats", authenticate, isAdmin, async (req, res) => {
       const plan = m.subscription?.plan || "starter";
       const status = m.subscription?.status || "trial";
       const expiresAt = m.subscription?.expiresAt;
+      const currency = m.currency || "XOF";
 
       if (status === "active") {
         (planStats as any)[plan]++;
-        estimatedMRR += monthlyPrices[plan] || 0;
+
+        // Use regional pricing if available, else fallback to default
+        const regionalPricing = settings?.pricing?.regional?.find(r => r.currency === currency);
+        if (regionalPricing) {
+            estimatedMRR += plan === "business" ? regionalPricing.businessMonthly : regionalPricing.premiumMonthly;
+        } else {
+            estimatedMRR += defaultMonthlyPrices[plan] || 0;
+        }
       } else if (status === "trial") {
         planStats.trial++;
       } else if (status === "past_due") {
@@ -212,6 +223,29 @@ router.get("/billing/stats", authenticate, isAdmin, async (req, res) => {
       revenueByMonth,
       recentTransactions
     });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// EXPORT TRANSACTIONS AS CSV
+router.get("/billing/export", authenticate, isAdmin, async (req, res) => {
+  try {
+    const transactions = await TransactionModel.find()
+      .populate("merchantId", "businessName")
+      .sort({ createdAt: -1 });
+
+    let csv = "ID,Merchant,Type,Amount,Currency,Status,Date,Method,Reference\n";
+
+    transactions.forEach(t => {
+      const date = new Date(t.paidAt || t.createdAt).toISOString();
+      const merchant = (t.merchantId as any)?.businessName || "Unknown";
+      csv += `${t._id},"${merchant}",${t.type},${t.amount},${t.currency},${t.status},${date},${t.paymentMethod},${t.reference}\n`;
+    });
+
+    res.setHeader("Content-Type", "text/csv");
+    res.setHeader("Content-Disposition", "attachment; filename=vendeur-ia-transactions.csv");
+    res.status(200).send(csv);
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }

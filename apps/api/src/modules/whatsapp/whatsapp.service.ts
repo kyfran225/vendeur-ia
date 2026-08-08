@@ -7,6 +7,7 @@ import { CommerceMerchantModel, CommerceConversationModel, CommerceMessageModel,
 import { emitToUser } from "../../realtime/socketServer.js";
 import axios from "axios";
 import { addAIJob } from "../../services/ai-queue.service.js";
+import { scheduleRecovery } from "../../services/marketing-queue.service.js";
 import { pushService } from "../../services/push.service.js";
 import { whatsappMediaService } from "./whatsapp-media.service.js";
 import { aiProvider } from "../../services/ai-provider.js";
@@ -366,6 +367,11 @@ class WhatsAppService {
     // Update conversation metadata
     conversation.lastMessageAt = new Date();
     await conversation.save();
+
+    // --- SCHEDULE MARKETING RELANCE (2h) ---
+    scheduleRecovery(conversation._id.toString(), merchant._id.toString(), customer._id.toString()).catch(err =>
+      console.error("[Marketing] Failed to schedule recovery:", err)
+    );
 
     // Fetch conversation history
     const historyMessages = await CommerceMessageModel.find({ conversationId: conversation._id })

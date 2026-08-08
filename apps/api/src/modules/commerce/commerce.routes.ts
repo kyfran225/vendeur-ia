@@ -13,6 +13,7 @@ import { CommerceMerchantModel, CommerceProductModel, CommerceConversationModel,
 import { TransactionModel } from "./transaction.model.js";
 import { SystemSettingsModel } from "./admin.model.js";
 import { CATEGORY_MOCKS } from "./demo.data.js";
+import { billingReceiptService } from "../../services/billing-receipt.service.js";
 import axios from "axios";
 import multer from "multer";
 
@@ -170,11 +171,53 @@ router.post("/activate-premium", authenticate, async (req, res) => {
   const { email } = req.body;
   const userId = (req as any).user.id;
   try {
-    const data = await paystackService.initializeSubscription(email, 5000, {
+    const merchant = await CommerceMerchantModel.findOne({ ownerId: userId });
+    const currency = merchant?.currency || "XOF";
+    const settings = await SystemSettingsModel.findOne();
+
+    let amount = 5000;
+    const regional = settings?.pricing?.regional?.find(r => r.currency === currency);
+    if (regional) {
+      amount = regional.premiumMonthly;
+    } else if (settings?.pricing?.premiumSubscriptionMonthly) {
+      amount = settings.pricing.premiumSubscriptionMonthly;
+    }
+
+    const data = await paystackService.initializeSubscription(email, amount, {
       type: "subscription",
       plan: "premium",
-      planCode: env.PAYSTACK_PLAN_PREMIUM, // Enable recurring billing
-      userId
+      planCode: env.PAYSTACK_PLAN_PREMIUM,
+      userId,
+      currency
+    });
+    res.json(data);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.post("/activate-business", authenticate, async (req, res) => {
+  const { email } = req.body;
+  const userId = (req as any).user.id;
+  try {
+    const merchant = await CommerceMerchantModel.findOne({ ownerId: userId });
+    const currency = merchant?.currency || "XOF";
+    const settings = await SystemSettingsModel.findOne();
+
+    let amount = 25000;
+    const regional = settings?.pricing?.regional?.find(r => r.currency === currency);
+    if (regional) {
+      amount = regional.businessMonthly;
+    } else if (settings?.pricing?.packProFee) {
+      amount = settings.pricing.packProFee;
+    }
+
+    const data = await paystackService.initializeSubscription(email, amount, {
+      type: "subscription",
+      plan: "business",
+      planCode: env.PAYSTACK_PLAN_BUSINESS,
+      userId,
+      currency
     });
     res.json(data);
   } catch (error: any) {
@@ -286,8 +329,9 @@ router.post("/webhooks/paystack", express.raw({ type: 'application/json' }), asy
   const signature = req.headers['x-paystack-signature'] as string;
   const body = req.body instanceof Buffer ? req.body.toString() : JSON.stringify(req.body);
 
-  if (signature !== "mock-signature" && !paystackService.verifyWebhookSignature(body, signature)) {
-    return res.status(400).send('Invalid signature');
+  if (!paystackService.verifyWebhookSignature(body, signature)) {
+    console.error(`[Paystack Webhook] Invalid signature received.`);
+    return res.status(401).send('Invalid signature');
   }
 
   const event = JSON.parse(body);
@@ -346,43 +390,27 @@ router.post("/webhooks/paystack", express.raw({ type: 'application/json' }), asy
           await commerceService.processReferralReward(merchant._id.toString());
         }
 
-        await TransactionModel.findOneAndUpdate(
-          { reference: data.reference },
-          {
-            merchantId: merchant._id,
-            ownerId: userId,
-            reference: data.reference,
-            amount: data.amount / 100,
-            currency: data.currency,
-            type: type || 'subscription',
-            status: 'success',
-            paymentMethod: data.channel,
-            paidAt: new Date(data.paid_at)
-          },
-          { upsert: true }
-        );
-      }
-    }
-
-    if (type === 'pack_pro' && userId) {
-      console.log(`[Paystack Webhook] Pack Pro success for User: ${userId}`);
-      const merchant = await CommerceMerchantModel.findOneAndUpdate(
-        { ownerId: userId },
-        { $set: { "whatsappConfig.status": "connected" } }
-      );
-      if (merchant) {
-        await TransactionModel.create({
+      const newTransaction = await TransactionModel.findOneAndUpdate(
+        { reference: data.reference },
+        {
           merchantId: merchant._id,
           ownerId: userId,
           reference: data.reference,
           amount: data.amount / 100,
           currency: data.currency,
-          type: 'pack_pro',
+          type: type || 'subscription',
           status: 'success',
           paymentMethod: data.channel,
           paidAt: new Date(data.paid_at)
-        });
-      }
+        },
+        { upsert: true, new: true }
+      );
+
+      if (merchant && newTransaction) {
+        // Automatically send digital receipt
+        await billingReceiptService.sendDigitalReceipt(merchant._id.toString(), newTransaction);
+
+        // Automatically start the Baileys session
     }
   }
 
@@ -411,10 +439,24 @@ router.post("/webhooks/paystack", express.raw({ type: 'application/json' }), asy
     const { userId } = metadata || {};
     if (userId) {
       console.log(`[Paystack Webhook] Subscription Payment Failed for User: ${userId}`);
-      await CommerceMerchantModel.findOneAndUpdate(
+      const merchant = await CommerceMerchantModel.findOneAndUpdate(
         { ownerId: userId },
-        { $set: { "subscription.status": "past_due" } }
+        { $set: { "subscription.status": "past_due" } },
+        { new: true }
       );
+
+      if (merchant) {
+          // Send notification about failed payment
+          const waMessage = `⚠️ *Échec de paiement - ${merchant.businessName}*\n\n` +
+            `Le prélèvement automatique pour votre abonnement a échoué. Votre service risque d'être suspendu.\n\n` +
+            `Veuillez vérifier votre carte ici :\n👉 ${env.CLIENT_URL}/settings?tab=billing`;
+
+          try {
+              await messagingService.sendMessage(merchant, 'whatsapp', merchant.whatsappNumber || "", waMessage);
+          } catch (err) {
+              console.error("[Paystack Webhook] Failed to send payment failed notice", err);
+          }
+      }
     }
   }
 

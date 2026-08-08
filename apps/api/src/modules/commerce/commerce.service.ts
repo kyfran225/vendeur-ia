@@ -99,6 +99,23 @@ export class CommerceService {
       { $limit: 3 }
     ]);
 
+    // --- GROWTH METRICS ---
+    const totalPoints = await CommerceCustomerModel.aggregate([
+      { $match: { merchantId: merchant._id } },
+      { $group: { _id: null, total: { $sum: "$loyaltyPoints" } } }
+    ]);
+
+    const threshold = merchant.loyaltySettings?.threshold || 50;
+    const loyalCustomersCount = await CommerceCustomerModel.countDocuments({
+      merchantId: merchant._id,
+      loyaltyPoints: { $gte: threshold }
+    });
+
+    const aiRevenueStats = await CommerceOrderModel.aggregate([
+      { $match: { merchantId: merchant._id, status: "paid", recoveredByAi: true } },
+      { $group: { _id: null, total: { $sum: "$totalAmount" } } }
+    ]);
+
     return {
       merchant,
       products,
@@ -114,7 +131,10 @@ export class CommerceService {
         hotLeads,
         ordersToday,
         conversionRate,
-        topProducts
+        topProducts,
+        totalPoints: totalPoints[0]?.total || 0,
+        loyalCustomersCount,
+        aiRevenue: aiRevenueStats[0]?.total || 0
       },
       aiGrowthAdvice
     };
@@ -256,6 +276,8 @@ export class CommerceService {
       text: h.content
     }));
 
+    const customer = await CommerceCustomerModel.findOne({ merchantId, phone: customerPhone });
+
     return aiAgentService.generateResponse({
       merchant: merchant.toObject() as any,
       products: products.map(p => p.toObject()),
@@ -263,6 +285,12 @@ export class CommerceService {
       history: formattedHistory,
       message,
       customerPhone,
+      customerLoyalty: customer ? {
+        points: customer.loyaltyPoints || 0,
+        isVIP: (customer.loyaltyPoints || 0) >= (merchant.loyaltySettings?.threshold || 50),
+        threshold: merchant.loyaltySettings?.enabled ? merchant.loyaltySettings.threshold : undefined,
+        rewardDescription: merchant.loyaltySettings?.rewardDescription
+      } : undefined,
       platform: "whatsapp" // Default platform for this method
     });
   }
@@ -513,12 +541,19 @@ Merci de votre confiance ! 🚀
       }
     }
 
-    // 2. Loyalty Points Logic: 1 point per 1000 XOF
-    const pointsToAdd = Math.floor(order.totalAmount / 1000);
-    if (pointsToAdd > 0) {
-      await CommerceCustomerModel.findByIdAndUpdate(order.customerId, {
-        $inc: { loyaltyPoints: pointsToAdd }
-      });
+    // 2. Loyalty Points Logic: Reward points if loyalty program is enabled
+    const merchant = await CommerceMerchantModel.findById(order.merchantId);
+    if (merchant?.loyaltySettings?.enabled) {
+      const pointsPerOrder = merchant.loyaltySettings.pointsPerOrder || 10;
+      // You can also use amount-based: e.g. 1 point per 1000 XOF
+      const pointsToAdd = pointsPerOrder; // Simplify to fixed points per order for now or keep amount-based
+
+      if (pointsToAdd > 0) {
+        await CommerceCustomerModel.findByIdAndUpdate(order.customerId, {
+          $inc: { loyaltyPoints: pointsToAdd }
+        });
+        console.log(`[Loyalty] Added ${pointsToAdd} points to customer ${order.customerId} for order ${order._id}`);
+      }
     }
 
     // Trigger Knowledge Learning

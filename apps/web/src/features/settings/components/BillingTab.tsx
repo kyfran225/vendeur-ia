@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   Banknote,
   Calendar,
@@ -9,10 +9,13 @@ import {
   CreditCard,
   Smartphone,
   CheckCircle2,
-  AlertCircle
+  AlertCircle,
+  Loader2,
+  XCircle
 } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/apiClient";
+import { toast } from "sonner";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
@@ -21,6 +24,9 @@ function cn(...inputs: ClassValue[]) {
 }
 
 export function BillingTab({ merchant }: { merchant: any }) {
+  const queryClient = useQueryClient();
+  const [isCancelConfirmOpen, setIsCancelConfirmOpen] = useState(false);
+
   const { data: billingHistory } = useQuery({
     queryKey: ["billing-history"],
     queryFn: async () => {
@@ -29,10 +35,26 @@ export function BillingTab({ merchant }: { merchant: any }) {
     }
   });
 
+  const cancelSubscriptionMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiClient.post("/api/commerce/subscription/cancel");
+      return res.data;
+    },
+    onSuccess: () => {
+      toast.success("Votre abonnement ne sera pas renouvelé.");
+      queryClient.invalidateQueries({ queryKey: ["merchant:profile"] });
+      setIsCancelConfirmOpen(false);
+    },
+    onError: (err: any) => {
+      toast.error(err.response?.data?.error || "Une erreur est survenue.");
+    }
+  });
+
   const sub = merchant?.subscription;
   const isExpired = sub?.status === "past_due";
   const nextDate = sub?.nextPaymentDate || sub?.expiresAt;
   const isMobileMoney = sub?.paymentMethod === 'mobile_money';
+  const hasRecurring = !!sub?.subscriptionCode;
 
   return (
     <div className="space-y-8 animate-in slide-in-from-bottom-2 duration-500">
@@ -55,6 +77,11 @@ export function BillingTab({ merchant }: { merchant: any }) {
                   )}>
                     {sub?.status === 'active' ? "Actif" : "Suspendu"}
                   </span>
+                  {hasRecurring && (
+                    <span className="px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest border bg-blue-500/10 text-blue-400 border-blue-500/20">
+                      Auto-Renouvellement
+                    </span>
+                  )}
                 </div>
               </div>
             </div>
@@ -63,7 +90,7 @@ export function BillingTab({ merchant }: { merchant: any }) {
               <div className="space-y-1">
                 <p className="text-[10px] font-black uppercase text-white/30 tracking-widest flex items-center gap-2">
                   <Calendar size={12} />
-                  {isExpired ? "Expiré le" : "Prochaine échéance"}
+                  {isExpired ? "Expiré le" : (hasRecurring ? "Prochain prélèvement" : "Prochaine échéance")}
                 </p>
                 <p className="text-lg font-black text-white">
                   {nextDate ? new Date(nextDate).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) : 'N/A'}
@@ -93,15 +120,59 @@ export function BillingTab({ merchant }: { merchant: any }) {
                 <Zap size={20} className="text-vendeur-emerald" />
               </button>
             ) : (
-              <div className="p-4 rounded-2xl bg-white/5 border border-white/5 flex items-center gap-3">
-                <CheckCircle2 size={20} className="text-vendeur-emerald" />
-                <p className="text-[10px] font-bold text-white/60 uppercase leading-tight">
-                  Prélèvement automatique configuré
-                </p>
+              <div className="space-y-3">
+                <div className="p-4 rounded-2xl bg-white/5 border border-white/5 flex items-center gap-3">
+                  <CheckCircle2 size={20} className="text-vendeur-emerald" />
+                  <p className="text-[10px] font-bold text-white/60 uppercase leading-tight">
+                    {hasRecurring ? "Prélèvement automatique actif" : "Plan prépayé actif"}
+                  </p>
+                </div>
+                {hasRecurring && (
+                  <button
+                    onClick={() => setIsCancelConfirmOpen(true)}
+                    className="w-full text-[10px] font-black uppercase text-white/20 hover:text-rose-500 transition-colors py-2"
+                  >
+                    Désactiver le renouvellement
+                  </button>
+                )}
               </div>
             )}
           </div>
         </div>
+
+        {/* Modal de Confirmation d'annulation */}
+        {isCancelConfirmOpen && (
+          <div className="absolute inset-0 z-50 bg-vendeur-coal/95 backdrop-blur-md flex items-center justify-center p-8 animate-in fade-in zoom-in-95 duration-200">
+            <div className="text-center space-y-6 max-w-sm">
+              <div className="h-16 w-16 bg-rose-500/10 rounded-full flex items-center justify-center mx-auto text-rose-500">
+                <AlertCircle size={32} />
+              </div>
+              <div className="space-y-2">
+                <h3 className="text-xl font-black uppercase tracking-tight text-white">Arrêter l'IA ?</h3>
+                <p className="text-[10px] font-medium text-white/40 uppercase leading-relaxed">
+                  Votre service restera actif jusqu'au {nextDate ? new Date(nextDate).toLocaleDateString() : 'prochain terme'}.
+                  Ensuite, votre IA s'arrêtera et vos clients ne recevront plus de réponses.
+                </p>
+              </div>
+              <div className="flex gap-4">
+                <button
+                  onClick={() => setIsCancelConfirmOpen(false)}
+                  className="flex-1 h-12 bg-white/5 hover:bg-white/10 rounded-xl text-[10px] font-black uppercase tracking-widest text-white transition-all"
+                >
+                  Garder
+                </button>
+                <button
+                  onClick={() => cancelSubscriptionMutation.mutate()}
+                  disabled={cancelSubscriptionMutation.isPending}
+                  className="flex-1 h-12 bg-rose-500 hover:bg-rose-600 rounded-xl text-[10px] font-black uppercase tracking-widest text-white transition-all flex items-center justify-center gap-2"
+                >
+                  {cancelSubscriptionMutation.isPending ? <Loader2 size={16} className="animate-spin" /> : <XCircle size={16} />}
+                  Confirmer
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Background Accent */}
         <div className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/4 h-64 w-64 bg-vendeur-emerald/5 blur-[100px] rounded-full" />

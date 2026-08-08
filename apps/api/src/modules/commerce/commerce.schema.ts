@@ -54,6 +54,13 @@ export const UpdateMerchantSchema = z.object({
       personality: z.enum(['friendly', 'professional', 'premium']).optional(),
       autoReply: z.boolean().optional(),
       voiceMode: z.boolean().optional(),
+      localSlang: z.boolean().optional(),
+    }).optional(),
+    loyaltySettings: z.object({
+      enabled: z.boolean().optional(),
+      pointsPerOrder: z.number().optional(),
+      threshold: z.number().optional(),
+      rewardDescription: z.string().optional(),
     }).optional()
   })
 });

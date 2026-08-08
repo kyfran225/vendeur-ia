@@ -13,12 +13,6 @@ export class PaystackService {
   }
 
   verifyWebhookSignature(body: string, signature: string): boolean {
-    if (process.env.NODE_ENV === 'test' || !env.PAYSTACK_WEBHOOK_SECRET) {
-        // In test mode or if not configured, we might skip or use a mock secret
-        // but for our specific script we'll rely on the real signature check or a bypass
-        if (signature === "mock-signature") return true;
-    }
-
     if (!env.PAYSTACK_WEBHOOK_SECRET) {
       console.error("[Paystack] Webhook verification failed: PAYSTACK_WEBHOOK_SECRET not configured");
       return false;

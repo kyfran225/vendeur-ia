@@ -47,10 +47,15 @@ async function test() {
   };
 
   const body = JSON.stringify(payload);
-  // We'll use a bypass for the test script to ensure it works without the exact secret matching
-  const signature = "mock-signature";
+  // Security Fix Verification: generating a real HMAC signature for tests if secret is available
+  const secret = env.PAYSTACK_WEBHOOK_SECRET || "test-secret";
+  const signature = crypto
+    .createHmac("sha512", secret)
+    .update(body)
+    .digest("hex");
 
   console.log("⏳ Sending simulated charge.success webhook...");
+  console.log(`📡 Signature used: ${signature.substring(0, 10)}...`);
 
   try {
     const res = await axios.post(`${API_URL}/api/commerce/webhooks/paystack`, body, {

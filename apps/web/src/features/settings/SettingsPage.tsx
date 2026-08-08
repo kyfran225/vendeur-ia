@@ -37,6 +37,7 @@ import { MarketplaceGuideModal } from "./components/fb/MarketplaceGuideModal";
 import { PackProModal } from "../dashboard/components/PackProModal";
 import { BillingTab } from "./components/BillingTab";
 import { ReferralCard } from "./components/ReferralCard";
+import { GrowthTab } from "./components/GrowthTab";
 import { subscribeToPush } from "@/lib/pushUtils";
 
 import { useSocket } from "@/hooks/useSocket";
@@ -59,9 +60,9 @@ const InstagramIcon = ({ size = 22, className = "" }: { size?: number; className
   </svg>
 );
 
-import { Gift } from "lucide-react";
+import { Gift, TrendingUp } from "lucide-react";
 
-type SettingsTab = "boutique" | "savoir" | "personnalite" | "connexions" | "billing" | "referral" | "compte";
+type SettingsTab = "boutique" | "savoir" | "personnalite" | "connexions" | "growth" | "billing" | "referral" | "compte";
 
 export function SettingsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -221,6 +222,12 @@ export function SettingsPage() {
               label="Connexions"
             />
             <TabButton
+              active={activeTab === "growth"}
+              onClick={() => setActiveTab("growth")}
+              icon={<TrendingUp size={18} />}
+              label="Croissance"
+            />
+            <TabButton
               active={activeTab === "billing"}
               onClick={() => setActiveTab("billing")}
               icon={<Banknote size={18} />}
@@ -257,6 +264,7 @@ export function SettingsPage() {
             }}
           />
         )}
+        {activeTab === "growth" && <GrowthTab merchant={merchant} />}
         {activeTab === "billing" && <BillingTab merchant={merchant} />}
         {activeTab === "referral" && <ReferralCard merchant={merchant} />}
         {activeTab === "compte" && <CompteTab />}

@@ -69,6 +69,12 @@ const MerchantSchema = new Schema({
     count: { type: Number, default: 0 },
     earnedMonths: { type: Number, default: 0 }
   },
+  loyaltySettings: {
+    enabled: { type: Boolean, default: false },
+    pointsPerOrder: { type: Number, default: 10 },
+    threshold: { type: Number, default: 50 }, // e.g. 5 orders
+    rewardDescription: { type: String, default: "une surprise offerte sur votre prochaine commande" }
+  },
   lastWeeklyReportDate: { type: Date, default: null }
 }, { timestamps: true });
 

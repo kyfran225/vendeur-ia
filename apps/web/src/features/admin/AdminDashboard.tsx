@@ -22,7 +22,12 @@ import {
   Activity,
   Zap,
   Clock,
-  AlertCircle
+  AlertCircle,
+  Download,
+  FileSpreadsheet,
+  Globe,
+  Plus,
+  Trash2
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuthStore } from "@/stores/authStore";
@@ -378,12 +383,30 @@ function SettingsPanel({ settings, onUpdate, isUpdating }: { settings: any, onUp
     supportWhatsApp: settings?.supportWhatsApp || "",
     "pricing.ramContributionFee": settings?.pricing?.ramContributionFee || 5000,
     "pricing.packProFee": settings?.pricing?.packProFee || 25000,
+    "pricing.premiumSubscriptionMonthly": settings?.pricing?.premiumSubscriptionMonthly || 5000,
+    "pricing.regional": settings?.pricing?.regional || [],
     "metaConfig.whatsappDefaults.phoneNumberId": settings?.metaConfig?.whatsappDefaults?.phoneNumberId || "",
     "metaConfig.whatsappDefaults.accessToken": settings?.metaConfig?.whatsappDefaults?.accessToken || ""
   });
 
+  const addRegionalPricing = () => {
+    const newRegional = [...formData["pricing.regional"], { currency: "GHS", premiumMonthly: 100, businessMonthly: 500, packPro: 500, ramFee: 100 }];
+    setFormData({ ...formData, "pricing.regional": newRegional });
+  };
+
+  const removeRegionalPricing = (index: number) => {
+    const newRegional = formData["pricing.regional"].filter((_: any, i: number) => i !== index);
+    setFormData({ ...formData, "pricing.regional": newRegional });
+  };
+
+  const updateRegionalField = (index: number, field: string, value: any) => {
+    const newRegional = [...formData["pricing.regional"]];
+    newRegional[index] = { ...newRegional[index], [field]: value };
+    setFormData({ ...formData, "pricing.regional": newRegional });
+  };
+
   return (
-    <div className="max-w-2xl space-y-8 animate-in fade-in duration-700 pb-12">
+    <div className="max-w-4xl space-y-8 animate-in fade-in duration-700 pb-12">
       <section className="bg-vendeur-coal border border-white/5 p-8 rounded-[2.5rem] space-y-8">
         <h2 className="text-xl font-black uppercase tracking-tighter flex items-center gap-3">
             <Settings size={24} className="text-vendeur-emerald" />
@@ -399,34 +422,107 @@ function SettingsPanel({ settings, onUpdate, isUpdating }: { settings: any, onUp
               onChange={e => setFormData({...formData, supportWhatsApp: e.target.value})}
               placeholder="+2250700000000"
             />
-            <p className="text-[9px] text-white/20 ml-1 uppercase font-bold tracking-wider italic">Ce numéro recevra les leads "Pack Pro Clé en Main".</p>
           </div>
 
-          <div className="grid grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Premium (Base XOF)</label>
+                <input
+                    type="number"
+                    className="w-full h-14 bg-black/40 border border-white/10 rounded-2xl px-6 text-white focus:border-vendeur-emerald outline-none font-bold"
+                    value={formData["pricing.premiumSubscriptionMonthly"]}
+                    onChange={e => setFormData({...formData, "pricing.premiumSubscriptionMonthly": Number(e.target.value)})}
+                />
+            </div>
             <div className="space-y-2">
                 <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Frais RAM (Baileys)</label>
-                <div className="relative">
-                    <input
-                        type="number"
-                        className="w-full h-14 bg-black/40 border border-white/10 rounded-2xl pl-6 pr-12 text-white focus:border-vendeur-emerald outline-none font-bold"
-                        value={formData["pricing.ramContributionFee"]}
-                        onChange={e => setFormData({...formData, "pricing.ramContributionFee": Number(e.target.value)})}
-                    />
-                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-white/20">XOF</span>
-                </div>
+                <input
+                    type="number"
+                    className="w-full h-14 bg-black/40 border border-white/10 rounded-2xl px-6 text-white focus:border-vendeur-emerald outline-none font-bold"
+                    value={formData["pricing.ramContributionFee"]}
+                    onChange={e => setFormData({...formData, "pricing.ramContributionFee": Number(e.target.value)})}
+                />
             </div>
             <div className="space-y-2">
                 <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Prix Pack Pro</label>
-                <div className="relative">
-                    <input
-                        type="number"
-                        className="w-full h-14 bg-black/40 border border-white/10 rounded-2xl pl-6 pr-12 text-white focus:border-vendeur-emerald outline-none font-bold"
-                        value={formData["pricing.packProFee"]}
-                        onChange={e => setFormData({...formData, "pricing.packProFee": Number(e.target.value)})}
-                    />
-                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-white/20">XOF</span>
-                </div>
+                <input
+                    type="number"
+                    className="w-full h-14 bg-black/40 border border-white/10 rounded-2xl px-6 text-white focus:border-vendeur-emerald outline-none font-bold"
+                    value={formData["pricing.packProFee"]}
+                    onChange={e => setFormData({...formData, "pricing.packProFee": Number(e.target.value)})}
+                />
             </div>
+          </div>
+
+          {/* REGIONAL PRICING */}
+          <div className="pt-6 border-t border-white/5 space-y-6">
+             <div className="flex items-center justify-between">
+                <h3 className="text-xs font-black uppercase tracking-widest text-white/60 flex items-center gap-2">
+                    <Globe size={14} className="text-vendeur-emerald" />
+                    Tarification Régionale (Multi-Devises)
+                </h3>
+                <button
+                    onClick={addRegionalPricing}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-vendeur-emerald/10 text-vendeur-emerald rounded-lg text-[9px] font-black uppercase border border-vendeur-emerald/20 hover:bg-vendeur-emerald hover:text-vendeur-coal transition-all"
+                >
+                    <Plus size={12} /> Ajouter
+                </button>
+             </div>
+
+             <div className="space-y-4">
+                {formData["pricing.regional"].map((reg: any, idx: number) => (
+                    <div key={idx} className="p-6 bg-black/40 border border-white/5 rounded-2xl grid grid-cols-2 md:grid-cols-5 gap-4 relative group">
+                        <div className="space-y-1">
+                            <label className="text-[8px] font-black text-white/20 uppercase">Devise</label>
+                            <input
+                                className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs font-bold text-vendeur-emerald outline-none"
+                                value={reg.currency}
+                                onChange={e => updateRegionalField(idx, 'currency', e.target.value.toUpperCase())}
+                            />
+                        </div>
+                        <div className="space-y-1">
+                            <label className="text-[8px] font-black text-white/20 uppercase">Premium</label>
+                            <input
+                                type="number"
+                                className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs font-bold text-white outline-none"
+                                value={reg.premiumMonthly}
+                                onChange={e => updateRegionalField(idx, 'premiumMonthly', Number(e.target.value))}
+                            />
+                        </div>
+                        <div className="space-y-1">
+                            <label className="text-[8px] font-black text-white/20 uppercase">Business</label>
+                            <input
+                                type="number"
+                                className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs font-bold text-white outline-none"
+                                value={reg.businessMonthly}
+                                onChange={e => updateRegionalField(idx, 'businessMonthly', Number(e.target.value))}
+                            />
+                        </div>
+                        <div className="space-y-1">
+                            <label className="text-[8px] font-black text-white/20 uppercase">Pack Pro</label>
+                            <input
+                                type="number"
+                                className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs font-bold text-white outline-none"
+                                value={reg.packPro}
+                                onChange={e => updateRegionalField(idx, 'packPro', Number(e.target.value))}
+                            />
+                        </div>
+                        <div className="flex items-end pb-1">
+                            <button
+                                onClick={() => removeRegionalPricing(idx)}
+                                className="p-2 text-white/20 hover:text-rose-500 transition-colors"
+                            >
+                                <Trash2 size={18} />
+                            </button>
+                        </div>
+                    </div>
+                ))}
+                {formData["pricing.regional"].length === 0 && (
+                    <div className="text-center py-6 text-white/10 text-[10px] font-black uppercase tracking-widest border border-dashed border-white/5 rounded-2xl">
+                        Aucune règle régionale définie
+                    </div>
+                )}
+             </div>
           </div>
 
           {/* WhatsApp Cloud Defaults */}
@@ -524,8 +620,34 @@ function HealthItem({ label, status }: { label: string; status: "operational" | 
 function BillingPanel({ data, loading }: { data: any, loading: boolean }) {
   if (loading) return <div className="p-20 text-center"><Loader2 className="animate-spin inline-block mr-2" /> Chargement des données financières...</div>;
 
+  const handleExport = async () => {
+    try {
+        const res = await apiClient.get("/api/admin/billing/export", { responseType: 'blob' });
+        const url = window.URL.createObjectURL(new Blob([res.data]));
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', 'transactions-vendeur-ia.csv');
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        toast.success("Export CSV lancé !");
+    } catch (err) {
+        toast.error("Erreur lors de l'export.");
+    }
+  };
+
   return (
     <div className="space-y-8 animate-in fade-in duration-700">
+      <div className="flex justify-end">
+          <button
+            onClick={handleExport}
+            className="flex items-center gap-2 px-6 py-3 bg-white/5 border border-white/10 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-white/10 transition-all text-white/60 hover:text-white"
+          >
+              <FileSpreadsheet size={16} className="text-vendeur-emerald" />
+              Exporter (CSV)
+          </button>
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <StatCard label="Estimated MRR" value={`${(data?.estimatedMRR || 0).toLocaleString()} F`} icon={<TrendingUp className="text-vendeur-emerald" />} />
         <StatCard label="Abonnés Actifs" value={(data?.planStats?.premium || 0) + (data?.planStats?.business || 0)} icon={<Zap className="text-amber-400" />} />

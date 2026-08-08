@@ -23,6 +23,8 @@ export interface SalesContext {
   customerLoyalty?: {
     points: number;
     isVIP: boolean;
+    threshold?: number;
+    rewardDescription?: string;
   };
   aiSummary?: string;
 }
@@ -114,7 +116,7 @@ export class AIAgentService {
       : "";
 
     const loyaltyStr = customerLoyalty
-      ? `CLIENT : ${customerPhone}. Fidélité: ${customerLoyalty.points} points. Statut: ${customerLoyalty.isVIP ? "VIP (Très fidèle)" : "Habituel"}.`
+      ? `CLIENT : ${customerPhone}. Fidélité: ${customerLoyalty.points} points. Statut: ${customerLoyalty.isVIP ? "VIP (Très fidèle)" : "Habituel"}.${customerLoyalty.threshold && customerLoyalty.points >= customerLoyalty.threshold ? `\n🎉 RÉCOMPENSE DISPONIBLE : Le client a atteint le seuil de ${customerLoyalty.threshold} points. Tu DOIS lui proposer sa récompense : "${customerLoyalty.rewardDescription}".` : ""}`
       : `NOUVEAU CLIENT : ${customerPhone}.`;
 
     // Payment Methods from Knowledge (Source of truth)

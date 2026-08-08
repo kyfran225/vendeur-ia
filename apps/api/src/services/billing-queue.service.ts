@@ -141,6 +141,6 @@ export const billingWorker = new Worker(
   },
   {
     connection: { url: REDIS_URL },
-    concurrency: 2,
+    concurrency: 5, // Increased from 2 to 5 for better throughput
   }
 );

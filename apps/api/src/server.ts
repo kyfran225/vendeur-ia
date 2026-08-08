@@ -35,6 +35,16 @@ async function start() {
         logger.error("[Server] Billing service setup failed:", err);
       }
     }, 5000); // Wait 5 seconds after WhatsApp boot for stability
+
+    // Run Follow-Up Check every 1 hour
+    setInterval(async () => {
+      try {
+        const { followUpService } = await import("./services/followup.service.js");
+        await followUpService.checkPendingFollowUps();
+      } catch (err) {
+        logger.error("[Server] Follow-up check failed:", err);
+      }
+    }, 60 * 60 * 1000);
   });
 }
 

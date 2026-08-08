@@ -61,7 +61,7 @@ async function test() {
 
     // 4. Test Launch Broadcast (Queueing)
     console.log("\n--- Testing Broadcast Launch ---");
-    const result = await marketingService.launchBroadcast(merchantId, product._id.toString(), "all");
+    const result = await marketingService.launchBroadcast(merchantId, product._id.toString(), "all", "Découvrez notre nouveau produit en promotion !");
     console.log(`Launched to ${result.count} customers.`);
     console.log("Check ai-processing queue for results.");
 

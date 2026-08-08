@@ -342,7 +342,6 @@ router.post("/webhooks/paystack", express.raw({ type: 'application/json' }), asy
 
     if ((type === 'ram_contribution' || type === 'subscription') && userId) {
       console.log(`[Paystack Webhook] Charge Success for User: ${userId} (${type})`);
-      console.log(`[Paystack Webhook] Raw Data Keys: ${Object.keys(data).join(', ')}`);
       console.log(`[Paystack Webhook] Data Plan: ${data.plan}, Sub Code: ${data.subscription_code}`);
 
       const paymentMethod = data.channel === 'card' ? 'card' : 'mobile_money';
@@ -372,7 +371,6 @@ router.post("/webhooks/paystack", express.raw({ type: 'application/json' }), asy
       );
 
       if (merchant) {
-        // Automatically start the Baileys session
         try {
           await whatsappService.initSession(userId);
           console.log(`[Paystack Webhook] Baileys session initialized for User: ${userId}`);
@@ -380,7 +378,6 @@ router.post("/webhooks/paystack", express.raw({ type: 'application/json' }), asy
           console.error(`[Paystack Webhook] Failed to auto-init Baileys:`, err);
         }
 
-        // Referral Logic: Trigger reward if it's the first payment
         const successfulTransactions = await TransactionModel.countDocuments({
           merchantId: merchant._id,
           status: 'success'
@@ -390,27 +387,26 @@ router.post("/webhooks/paystack", express.raw({ type: 'application/json' }), asy
           await commerceService.processReferralReward(merchant._id.toString());
         }
 
-      const newTransaction = await TransactionModel.findOneAndUpdate(
-        { reference: data.reference },
-        {
-          merchantId: merchant._id,
-          ownerId: userId,
-          reference: data.reference,
-          amount: data.amount / 100,
-          currency: data.currency,
-          type: type || 'subscription',
-          status: 'success',
-          paymentMethod: data.channel,
-          paidAt: new Date(data.paid_at)
-        },
-        { upsert: true, new: true }
-      );
+        const newTransaction = await TransactionModel.findOneAndUpdate(
+          { reference: data.reference },
+          {
+            merchantId: merchant._id,
+            ownerId: userId,
+            reference: data.reference,
+            amount: data.amount / 100,
+            currency: data.currency,
+            type: type || 'subscription',
+            status: 'success',
+            paymentMethod: data.channel,
+            paidAt: new Date(data.paid_at)
+          },
+          { upsert: true, new: true }
+        );
 
-      if (merchant && newTransaction) {
-        // Automatically send digital receipt
-        await billingReceiptService.sendDigitalReceipt(merchant._id.toString(), newTransaction);
-
-        // Automatically start the Baileys session
+        if (newTransaction) {
+          await billingReceiptService.sendDigitalReceipt(merchant._id.toString(), newTransaction);
+        }
+      }
     }
   }
 
@@ -446,16 +442,15 @@ router.post("/webhooks/paystack", express.raw({ type: 'application/json' }), asy
       );
 
       if (merchant) {
-          // Send notification about failed payment
-          const waMessage = `⚠️ *Échec de paiement - ${merchant.businessName}*\n\n` +
-            `Le prélèvement automatique pour votre abonnement a échoué. Votre service risque d'être suspendu.\n\n` +
-            `Veuillez vérifier votre carte ici :\n👉 ${env.CLIENT_URL}/settings?tab=billing`;
+        const waMessage = `⚠️ *Échec de paiement - ${merchant.businessName}*\n\n` +
+          `Le prélèvement automatique pour votre abonnement a échoué. Votre service risque d'être suspendu.\n\n` +
+          `Veuillez vérifier votre carte ici :\n👉 ${env.CLIENT_URL}/settings?tab=billing`;
 
-          try {
-              await messagingService.sendMessage(merchant, 'whatsapp', merchant.whatsappNumber || "", waMessage);
-          } catch (err) {
-              console.error("[Paystack Webhook] Failed to send payment failed notice", err);
-          }
+        try {
+          await messagingService.sendMessage(merchant, 'whatsapp', merchant.whatsappNumber || "", waMessage);
+        } catch (err) {
+          console.error("[Paystack Webhook] Failed to send payment failed notice", err);
+        }
       }
     }
   }

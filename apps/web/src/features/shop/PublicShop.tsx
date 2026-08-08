@@ -66,7 +66,7 @@ export function PublicShop() {
 
   const { merchant, products } = data;
 
-  const categories = ["all", ...new Set(products.map((p: any) => p.category).filter(Boolean))];
+  const categories: string[] = ["all", ...Array.from(new Set(products.map((p: any) => p.category).filter(Boolean))) as string[]];
 
   const filteredProducts = products.filter((p: any) => {
     const matchesCategory = selectedCategory === "all" || p.category === selectedCategory;
@@ -321,7 +321,7 @@ export function PublicShop() {
 
                   <div className="pt-8 border-t border-white/5 grid grid-cols-2 gap-4">
                      <button
-                        onClick={() => window.open(`https://wa.me/${merchant.whatsappNumber?.replace(/\+/g, '')}?text=${encodeURIComponent(\`Bonjour, je souhaite plus d\u0027informations sur : \${selectedProduct.name}\`)}`, "_blank")}
+                        onClick={() => window.open(`https://wa.me/${merchant.whatsappNumber?.replace(/\+/g, '')}?text=${encodeURIComponent(`Bonjour, je souhaite plus d'informations sur : ${selectedProduct.name}`)}`, "_blank")}
                         className="h-16 rounded-2xl border border-white/10 text-white/60 hover:text-white hover:bg-white/5 transition-all text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2"
                      >
                         <MessageCircle size={18} />

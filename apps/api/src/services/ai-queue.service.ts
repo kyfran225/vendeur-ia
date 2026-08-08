@@ -218,7 +218,7 @@ Réponds UNIQUEMENT avec le texte final du message.`;
 
       // Emit to frontend via Socket.io
       emitToUser(userId, 'conversation:update', {
-        conversationId: conversation._id,
+        conversationId,
         message: aiMsg,
       });
 

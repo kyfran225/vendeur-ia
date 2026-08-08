@@ -4,8 +4,8 @@ import { emitToUser } from "../../realtime/socketServer.js";
 import { commerceService } from "../commerce/commerce.service.js";
 
 class InstagramService {
-  async handleIncomingMessage(pageId: string, senderId: string, text: string) {
-    console.log(`[Instagram] Message from ${senderId} to Page ${pageId}: ${text}`);
+  async handleIncomingMessage(pageId: string, senderId: string, text: string, attachments?: any[]) {
+    console.log(`[Instagram] Message from ${senderId} to Page ${pageId}: ${text || "[Media]"}`);
 
     const merchant = await CommerceMerchantModel.findOne({ "instagramConfig.pageId": pageId });
     if (!merchant) {
@@ -43,12 +43,25 @@ class InstagramService {
       });
     }
 
+    let finalContent = text || "";
+
+    // Handle Attachments
+    if (attachments && attachments.length > 0) {
+      for (const att of attachments) {
+        if (att.type === 'image') {
+          finalContent += ` [Image: ${att.payload.url}]`;
+        }
+      }
+    }
+
+    if (!finalContent) return;
+
     // Save message
     const message = await CommerceMessageModel.create({
       conversationId: conversation._id,
       sender: "customer",
-      type: "text",
-      content: text
+      type: attachments ? "image" : "text",
+      content: finalContent
     });
 
     // Update conversation

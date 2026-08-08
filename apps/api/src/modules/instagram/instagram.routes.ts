@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { instagramService } from "./instagram.service.js";
+import { metaDispatcher } from "../../services/meta-dispatcher.service.js";
 import { env } from "../../config/env.js";
 
 const router = Router();
@@ -20,30 +21,12 @@ router.get("/webhook", (req, res) => {
 });
 
 router.post("/webhook", async (req, res) => {
-  const body = req.body;
-
-  if (body.object === "instagram") {
-    try {
-      for (const entry of body.entry) {
-        for (const messaging of entry.messaging) {
-          if (messaging.message && !messaging.message.is_echo) {
-            const senderId = messaging.sender.id;
-            const pageId = entry.id;
-            const text = messaging.message.text;
-
-            if (text) {
-              await instagramService.handleIncomingMessage(pageId, senderId, text);
-            }
-          }
-        }
-      }
-      res.status(200).send("EVENT_RECEIVED");
-    } catch (error) {
-      console.error("[Instagram Webhook] Error:", error);
-      res.status(500).end();
-    }
-  } else {
-    res.status(404).end();
+  try {
+    await metaDispatcher.dispatch(req.body);
+    res.status(200).send("EVENT_RECEIVED");
+  } catch (error) {
+    console.error("[Meta Webhook Dispatcher] Error:", error);
+    res.status(500).end();
   }
 });
 

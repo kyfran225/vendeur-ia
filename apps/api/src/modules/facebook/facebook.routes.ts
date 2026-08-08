@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { facebookService } from "./facebook.service.js";
+import { metaDispatcher } from "../../services/meta-dispatcher.service.js";
 import { env } from "../../config/env.js";
 import { authenticate } from "../../middleware/authenticate.js";
 import { CommerceMerchantModel } from "../commerce/commerce.model.js";
@@ -20,30 +21,12 @@ router.get("/webhook", (req, res) => {
 });
 
 router.post("/webhook", async (req, res) => {
-  const body = req.body;
-
-  if (body.object === "page") {
-    try {
-      for (const entry of body.entry) {
-        for (const messaging of entry.messaging) {
-          if (messaging.message && !messaging.message.is_echo) {
-            const senderId = messaging.sender.id;
-            const pageId = entry.id;
-            const text = messaging.message.text;
-
-            if (text) {
-              await facebookService.handleIncomingMessage(pageId, senderId, text);
-            }
-          }
-        }
-      }
-      res.status(200).send("EVENT_RECEIVED");
-    } catch (error) {
-      console.error("[Facebook Webhook] Error:", error);
-      res.status(500).end();
-    }
-  } else {
-    res.status(404).end();
+  try {
+    await metaDispatcher.dispatch(req.body);
+    res.status(200).send("EVENT_RECEIVED");
+  } catch (error) {
+    console.error("[Meta Webhook Dispatcher] Error:", error);
+    res.status(500).end();
   }
 });
 

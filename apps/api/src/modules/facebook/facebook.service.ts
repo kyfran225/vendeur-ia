@@ -4,8 +4,8 @@ import { emitToUser } from "../../realtime/socketServer.js";
 import { commerceService } from "../commerce/commerce.service.js";
 
 class FacebookService {
-  async handleIncomingMessage(pageId: string, senderId: string, text: string) {
-    console.log(`[Facebook] Message from ${senderId} to Page ${pageId}: ${text}`);
+  async handleIncomingMessage(pageId: string, senderId: string, text: string, attachments?: any[]) {
+    console.log(`[Facebook] Message from ${senderId} to Page ${pageId}: ${text || "[Media]"}`);
 
     const merchant = await CommerceMerchantModel.findOne({ "facebookConfig.pageId": pageId });
     if (!merchant) {
@@ -18,6 +18,7 @@ class FacebookService {
     // Find or create customer
     let customer = await CommerceCustomerModel.findOne({ merchantId: merchant._id, platformId: senderId, platform: "facebook" });
     if (!customer) {
+      // Logic to sync FB customer info could go here later
       customer = await CommerceCustomerModel.create({
         merchantId: merchant._id,
         platformId: senderId,
@@ -25,6 +26,8 @@ class FacebookService {
         phone: "FB_" + senderId // Fallback identifier
       });
     }
+
+    // Unify multi-channel customer if possible (e.g. by name/phone match later)
 
     // Find or create conversation
     let conversation = await CommerceConversationModel.findOne({
@@ -43,12 +46,26 @@ class FacebookService {
       });
     }
 
+    let finalContent = text || "";
+
+    // Handle Attachments (Images for payment proof or catalog inquiry)
+    if (attachments && attachments.length > 0) {
+       for (const att of attachments) {
+         if (att.type === 'image') {
+           finalContent += ` [Image: ${att.payload.url}]`;
+           // To be implemented: analyze image for payment proof
+         }
+       }
+    }
+
+    if (!finalContent) return;
+
     // Save message
     const message = await CommerceMessageModel.create({
       conversationId: conversation._id,
       sender: "customer",
-      type: "text",
-      content: text
+      type: attachments ? "image" : "text",
+      content: finalContent
     });
 
     // Update conversation

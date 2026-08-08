@@ -203,12 +203,15 @@ export const CommerceOrderModel = mongoose.model("CommerceOrder", OrderSchema);
 const MarketingCampaignSchema = new Schema({
   merchantId: { type: Schema.Types.ObjectId, ref: "CommerceMerchant", required: true, index: true },
   productId: { type: Schema.Types.ObjectId, ref: "CommerceProduct" },
-  segment: { type: String, required: true },
-  content: { type: String, required: true },
+  name: { type: String, default: "Campagne Sans Nom" },
+  segment: { type: String, required: true }, // vip, inactive, all
+  content: { type: String, required: true }, // The core idea/offer
   targetCount: { type: Number, default: 0 },
   sentCount: { type: Number, default: 0 },
   failedCount: { type: Number, default: 0 },
-  status: { type: String, enum: ["pending", "active", "completed", "failed"], default: "pending" },
+  repliedCount: { type: Number, default: 0 }, // Engagement tracking
+  status: { type: String, enum: ["pending", "active", "completed", "failed", "paused"], default: "pending" },
+  personalizationLevel: { type: String, enum: ["basic", "ai_creative"], default: "basic" },
   createdAt: { type: Date, default: Date.now }
 }, { timestamps: true });
 

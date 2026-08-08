@@ -5,6 +5,7 @@ import {
   CommerceMessageModel,
   CommerceConversationModel,
   CommerceMerchantModel,
+  CommerceCustomerModel,
   MarketingCampaignModel
 } from '../modules/commerce/commerce.model.js';
 import { emitToUser } from '../realtime/socketServer.js';
@@ -43,86 +44,106 @@ export const aiWorker = new Worker(
 
     try {
       if (job.name === 'broadcast-message') {
-        const { content, merchantId, imageUrl, campaignId } = job.data;
+        const { content, merchantId, customerId, remoteJid, personalization, campaignId } = job.data;
         const merchant = await CommerceMerchantModel.findById(merchantId);
-        let voiceMode = merchant?.aiSettings?.voiceMode && platform === 'whatsapp';
+        if (!merchant) return;
 
-        console.log(`[AI Queue] Sending broadcast to ${remoteJid} on ${platform} (Voice: ${voiceMode}, Image: ${!!imageUrl}, Campaign: ${campaignId})`);
+        console.log(`[AI Queue] Processing broadcast for ${remoteJid} (Mode: ${personalization})`);
 
-        let audioUrl = "";
-        let audioBuffer: Buffer | null = null;
-        let ttsError = false;
+        let finalContent = content;
 
-        if (voiceMode) {
-          try {
-            audioBuffer = await aiProvider.generateSpeech(content);
-            const fileName = `broadcast-${Date.now()}.ogg`;
-            const filePath = path.join(process.cwd(), 'uploads', 'audio', fileName);
-            if (!fs.existsSync(path.join(process.cwd(), 'uploads', 'audio'))) {
-              fs.mkdirSync(path.join(process.cwd(), 'uploads', 'audio'), { recursive: true });
-            }
-            fs.writeFileSync(filePath, audioBuffer);
-            audioUrl = `${API_URL}/uploads/audio/${fileName}`;
-          } catch (err) {
-            console.warn("[AI Queue] Broadcast TTS failed, falling back to text:", err);
-            voiceMode = false;
-            ttsError = true;
-          }
+        // --- STEP 1: AI PERSONALIZATION (The Growth Engine) ---
+        if (personalization === 'ai_creative') {
+           try {
+              const customer = await CommerceCustomerModel.findById(customerId);
+
+              // Fetch some context about this customer to make it relevant
+              const lastConvs = await CommerceConversationModel.find({ customerId }).sort({ updatedAt: -1 }).limit(1);
+              let contextSnippet = "";
+              if (lastConvs.length > 0) {
+                 const msgs = await CommerceMessageModel.find({ conversationId: lastConvs[0]._id }).sort({ timestamp: -1 }).limit(5);
+                 contextSnippet = msgs.reverse().map(m => `${m.sender === 'customer' ? 'Client' : 'IA'}: ${m.content}`).join('\n');
+              }
+
+              const prompt = `Tu es l'Expert Marketing de "${merchant.businessName}".
+Ton but : Transformer cette annonce de boutique en un message WhatsApp irrésistible et UNIQUE pour ce client.
+
+L'ANNONCE : "${content}"
+
+INFOS CLIENT :
+- Nom : ${customer?.name || 'cher client'}
+- Ville : ${customer?.location || merchant.city}
+- Points fidélité : ${customer?.loyaltyPoints || 0}
+- Historique récent :
+${contextSnippet || 'Nouveau client'}
+
+DIRECTIVES :
+1. Sois extrêmement chaleureux et personnel.
+2. Utilise des emojis ✨.
+3. Si le client a des points, mentionne-les comme un avantage.
+4. Fais en sorte que le message ne ressemble PAS à un message de masse.
+5. Max 60 mots.
+
+Réponds UNIQUEMENT avec le texte final du message WhatsApp.`;
+
+              const aiRes = await aiProvider.generateText({
+                systemPrompt: "Tu es un génie du copywriting social commerce.",
+                userMessage: prompt,
+                temperature: 0.8
+              });
+              finalContent = aiRes.text;
+           } catch (aiErr) {
+              console.warn("[AI Queue] Personalization failed, using raw content:", aiErr);
+           }
+        } else {
+           // Basic personalization
+           const customer = await CommerceCustomerModel.findById(customerId);
+           finalContent = content.replace(/{{name}}/g, customer?.name || "cher client");
         }
 
-        // Save AI message to history
+        // --- STEP 2: LOGGING & TRACKING ---
+        let conversation = await CommerceConversationModel.findOne({ merchantId, customerId });
+        if (!conversation) {
+           conversation = await CommerceConversationModel.create({ merchantId, customerId, platform: 'whatsapp' });
+        }
+
         const aiMsg = await CommerceMessageModel.create({
-          conversationId,
+          conversationId: conversation._id,
           sender: 'ai',
-          type: voiceMode ? 'audio' : (imageUrl ? 'image' : 'text'),
-          content: content,
-          mediaUrl: voiceMode ? audioUrl : (imageUrl || "")
+          content: finalContent
         });
 
-        // Update conversation
-        await CommerceConversationModel.findByIdAndUpdate(conversationId, {
-          updatedAt: new Date(),
-        });
+        await CommerceConversationModel.findByIdAndUpdate(conversation._id, { updatedAt: new Date() });
 
-        // Track Campaign Progress
         if (campaignId) {
-          try {
-            const campaign = await MarketingCampaignModel.findByIdAndUpdate(
-              campaignId,
-              { $inc: { sentCount: 1 } },
-              { new: true }
-            );
+          const campaign = await MarketingCampaignModel.findByIdAndUpdate(
+            campaignId,
+            { $inc: { sentCount: 1 } },
+            { new: true }
+          );
 
-            if (campaign && campaign.sentCount >= campaign.targetCount) {
-              await MarketingCampaignModel.findByIdAndUpdate(campaignId, { status: "completed" });
-            }
-
-            // Emit Progress to Merchant
-            emitToUser(userId, 'marketing:progress', {
-              campaignId,
-              sentCount: campaign?.sentCount,
-              targetCount: campaign?.targetCount,
-              status: campaign?.status
-            });
-          } catch (err) {
-            console.error("[AI Queue] Failed to update campaign progress:", err);
+          if (campaign && campaign.sentCount >= campaign.targetCount) {
+             await MarketingCampaignModel.findByIdAndUpdate(campaignId, { status: "completed" });
           }
+
+          emitToUser(userId, 'marketing:progress', {
+            campaignId,
+            sentCount: campaign?.sentCount,
+            targetCount: campaign?.targetCount,
+            status: campaign?.status
+          });
         }
 
-        // Emit to frontend
+        // Emit message to merchant dashboard
         emitToUser(userId, 'conversation:update', {
-          conversationId,
+          conversationId: conversation._id,
           message: aiMsg,
         });
 
-        // SEND MESSAGE
-        await messagingService.sendMessage(merchant, platform, remoteJid, content, {
-          audioBuffer: audioBuffer || undefined,
-          mediaUrl: imageUrl || undefined,
-          type: imageUrl ? 'image' : 'text'
-        });
+        // --- STEP 3: SENDING ---
+        await messagingService.sendMessage(merchant, 'whatsapp', remoteJid, finalContent);
 
-        return { status: 'broadcast_sent', ttsFallback: ttsError };
+        return { status: 'broadcast_sent', personalization };
       }
 
       console.log(`[AI Queue] Processing job ${job.id} for user ${userId} on ${platform}`);
@@ -194,7 +215,7 @@ export const aiWorker = new Worker(
 
       // Emit to frontend via Socket.io
       emitToUser(userId, 'conversation:update', {
-        conversationId,
+        conversationId: conversation._id,
         message: aiMsg,
       });
 

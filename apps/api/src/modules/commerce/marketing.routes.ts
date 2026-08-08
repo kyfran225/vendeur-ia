@@ -68,8 +68,14 @@ router.post("/broadcast", authenticate, async (req, res) => {
     const merchant = await CommerceMerchantModel.findOne({ ownerId });
     if (!merchant) return res.status(404).json({ error: "Marchand non trouvé" });
 
-    const { productId, segment, customText } = req.body;
-    const result = await marketingService.launchBroadcast(merchant._id.toString(), productId, segment, customText);
+    const { productId, segment, customText, personalization } = req.body;
+    const result = await marketingService.launchBroadcast(
+      merchant._id.toString(),
+      productId,
+      segment,
+      customText,
+      personalization
+    );
     res.json(result);
   } catch (error: any) {
     res.status(500).json({ error: error.message });

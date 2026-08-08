@@ -10,6 +10,8 @@ import { aiProvider } from "./ai-provider.js";
 import { aiQueue } from "./ai-queue.service.js";
 import { messagingService } from "./messaging.service.js";
 import { pushService } from "./push.service.js";
+import { broadcastLimiter } from "./broadcast-limiter.service.js";
+import { logger } from "./logger.service.js";
 import { env } from "../config/env.js";
 
 export class MarketingService {
@@ -64,63 +66,61 @@ Réponds UNIQUEMENT avec le texte du message.`;
     return { preview: response.text };
   }
 
-  async launchBroadcast(merchantId: string, productId: string, segment: string, customText?: string) {
+  async launchBroadcast(merchantId: string, productId: string, segment: string, customText: string, personalization: "basic" | "ai_creative" = "basic") {
     const merchant = await CommerceMerchantModel.findById(merchantId);
-    const product = productId ? await CommerceProductModel.findById(productId) : null;
     if (!merchant) throw new Error("Marchand non trouvé");
 
-    // 1. Find targets
+    // 1. Precise Segmentation
     const query: any = { merchantId };
     if (segment === 'vip') query.loyaltyPoints = { $gte: 50 };
-    if (segment === 'active') {
+    if (segment === 'inactive') {
         const thirtyDaysAgo = new Date();
         thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-        query.updatedAt = { $gte: thirtyDaysAgo };
+        query.updatedAt = { $lt: thirtyDaysAgo };
     }
 
     const customers = await CommerceCustomerModel.find(query);
-    console.log(`[Marketing] Launching broadcast to ${customers.length} customers in segment ${segment}`);
+    if (customers.length === 0) throw new Error("Aucun client trouvé dans ce segment.");
 
-    // 2. Generate generic message if no custom text
-    let messageBody = customText;
-    if (!messageBody && product) {
-        const { preview } = await this.generateBroadcastPreview(merchantId, productId, segment);
-        messageBody = preview;
-    }
+    // 1.5 Quota Check
+    await broadcastLimiter.checkQuota(merchantId, customers.length);
 
-    if (!messageBody) throw new Error("Message vide");
-
-    // 2.1 Create Campaign for tracking
+    // 2. Create Campaign for detailed tracking
     const campaign = await MarketingCampaignModel.create({
         merchantId,
         productId,
         segment,
-        content: messageBody,
+        content: customText,
         targetCount: customers.length,
-        status: customers.length > 0 ? "active" : "completed"
+        personalizationLevel: personalization,
+        status: "active"
     });
 
-    // 3. Queue jobs with delay (e.g., 30s between each)
+    logger.info(`[Marketing] Launching ${personalization} broadcast to ${customers.length} customers for ${merchant.businessName}`);
+
+    // 3. Queue jobs with "Human Throttling" (Safe Delivery)
+    // Delay starts at 5s, increments randomly to avoid patterns
+    let currentDelay = 5000;
+
     for (let i = 0; i < customers.length; i++) {
         const customer = customers[i];
 
-        // Find or create conversation to log the marketing message
-        let conversation = await CommerceConversationModel.findOne({ merchantId, customerId: customer._id });
-        if (!conversation) {
-            conversation = await CommerceConversationModel.create({ merchantId, customerId: customer._id });
-        }
+        // Randomly add 20-45 seconds between messages
+        const throttleDelay = Math.floor(Math.random() * (45000 - 20000 + 1) + 20000);
+        currentDelay += throttleDelay;
 
         await aiQueue.add('broadcast-message', {
             userId: merchant.ownerId,
-            conversationId: conversation._id.toString(),
-            remoteJid: customer.phone,
-            content: messageBody.replace(/{{name}}/g, customer.name || "cher client"),
             merchantId: merchant._id.toString(),
-            imageUrl: product?.images?.[0] || "", // Send first product image if available
+            customerId: customer._id.toString(),
+            remoteJid: customer.phone,
+            content: customText, // Raw idea, AI worker will personalize it
+            personalization,
             campaignId: campaign._id.toString()
         }, {
-            delay: i * 30000, // 30 seconds interval
-            attempts: 2
+            delay: currentDelay,
+            attempts: 2,
+            removeOnComplete: true
         });
     }
 

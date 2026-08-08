@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Sparkles, Users, Megaphone, Loader2, CheckCircle2, ShoppingBag, History, TrendingUp } from "lucide-react";
+import { Sparkles, Users, Megaphone, Loader2, CheckCircle2, ShoppingBag, History, TrendingUp, Zap, MousePointer2 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuthStore } from "@/stores/authStore";
 import { apiClient } from "@/lib/apiClient";
@@ -16,6 +16,7 @@ export function MarketingHub() {
   const { accessToken } = useAuthStore();
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [selectedSegment, setSelectedSegment] = useState<string>("vip");
+  const [personalization, setPersonalization] = useState<"basic" | "ai_creative">("ai_creative");
   const [previewText, setPreviewText] = useState("");
   const [activeCampaign, setActiveCampaign] = useState<any>(null);
 
@@ -102,7 +103,8 @@ export function MarketingHub() {
       const res = await apiClient.post("/api/marketing/broadcast", {
         productId: selectedProduct?._id,
         segment: selectedSegment,
-        customText: previewText
+        customText: previewText,
+        personalization
       });
       return res.data;
     },
@@ -264,11 +266,38 @@ export function MarketingHub() {
                    <Loader2 className="animate-spin text-sky-400" size={32} />
                 </div>
               ) : previewText ? (
-                <textarea
-                  className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-sm leading-relaxed text-white/90 outline-none focus:border-sky-500 transition-all resize-none h-[200px]"
-                  value={previewText}
-                  onChange={(e) => setPreviewText(e.target.value)}
-                />
+                <div className="space-y-6">
+                  <div className="flex gap-2">
+                     <button
+                        onClick={() => setPersonalization('basic')}
+                        className={cn(
+                           "flex-1 py-3 rounded-xl border transition-all text-[9px] font-black uppercase tracking-widest flex items-center justify-center gap-2",
+                           personalization === 'basic' ? "bg-white/10 border-white/20 text-white" : "bg-transparent border-white/5 text-white/20"
+                        )}
+                     >
+                        Basique
+                     </button>
+                     <button
+                        onClick={() => setPersonalization('ai_creative')}
+                        className={cn(
+                           "flex-1 py-3 rounded-xl border transition-all text-[9px] font-black uppercase tracking-widest flex items-center justify-center gap-2",
+                           personalization === 'ai_creative' ? "bg-sky-500/10 border-sky-500/30 text-sky-400" : "bg-transparent border-white/5 text-white/20"
+                        )}
+                     >
+                        <Zap size={10} /> IA Créative
+                     </button>
+                  </div>
+                  <textarea
+                    className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-sm leading-relaxed text-white/90 outline-none focus:border-sky-500 transition-all resize-none h-[150px]"
+                    value={previewText}
+                    onChange={(e) => setPreviewText(e.target.value)}
+                  />
+                  {personalization === 'ai_creative' && (
+                     <div className="flex items-center gap-2 px-4 py-2 bg-sky-500/5 border border-sky-500/10 rounded-xl text-[9px] font-bold text-sky-400/60 italic">
+                        <Sparkles size={10} /> Chaque client recevra une version unique adaptée à son historique.
+                     </div>
+                  )}
+                </div>
               ) : (
                 <button
                   onClick={() => previewMutation.mutate()}

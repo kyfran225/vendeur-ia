@@ -6,6 +6,7 @@ export interface OnboardingData {
   category: string;
   description: string;
   country: string;
+  currency?: string;
   address: string;
   whatsappNumber: string;
   city?: string;

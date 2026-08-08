@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { X } from "lucide-react";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { getProvidersForCountry } from "@vendeur-ia/core";
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -9,18 +10,18 @@ function cn(...inputs: ClassValue[]) {
 
 export function PaymentMethodSelector({
   value,
+  countryCode,
   onChange
 }: {
   value: string;
+  countryCode?: string;
   onChange: (val: string) => void;
 }) {
-  const methods = [
-    { id: "wave", label: "Wave", color: "bg-sky-400" },
-    { id: "orange", label: "Orange", color: "bg-orange-500" },
-    { id: "mtn", label: "MTN", color: "bg-yellow-400" },
-    { id: "moov", label: "Moov", color: "bg-blue-600" },
-    { id: "visa", label: "Visa", color: "bg-slate-200" }
-  ];
+  const methods = getProvidersForCountry(countryCode || "CI").map(p => ({
+    id: p.id,
+    label: p.label,
+    color: p.color
+  }));
 
   const parsed = useMemo(() => {
     const map: Record<string, string> = {};

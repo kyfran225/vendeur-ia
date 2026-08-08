@@ -22,7 +22,8 @@ import {
   User as UserIcon,
   Mail,
   Camera,
-  LogOut
+  LogOut,
+  ChevronDown
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
@@ -41,6 +42,7 @@ import { GrowthTab } from "./components/GrowthTab";
 import { subscribeToPush } from "@/lib/pushUtils";
 
 import { useSocket } from "@/hooks/useSocket";
+import { getProvidersForCountry, getZonesForCity } from "@vendeur-ia/core";
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -346,8 +348,36 @@ function BoutiqueTab({ merchant, initialKnowledge, accessToken }: { merchant: an
         <div className="grid gap-6 md:grid-cols-2">
           <InputGroup label="Nom du commerce" value={localMerchant?.businessName} onChange={v => setLocalMerchant({...localMerchant, businessName: v})} placeholder="Ex: Ma Boutique Chic" />
           <InputGroup label="WhatsApp Business" value={localMerchant?.whatsappNumber} onChange={v => setLocalMerchant({...localMerchant, whatsappNumber: v})} placeholder="Ex: 07 00 00 00 00" />
+
+          <div className="space-y-1.5">
+            <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Devise du Commerce</label>
+            <div className="relative">
+              <select
+                className="w-full h-14 bg-black/40 border border-white/10 rounded-2xl px-5 text-sm text-white focus:border-vendeur-emerald outline-none transition-all appearance-none cursor-pointer"
+                value={localMerchant?.currency}
+                onChange={e => setLocalMerchant({...localMerchant, currency: e.target.value})}
+              >
+                <option value="XOF">Franc CFA (XOF) - UEMOA</option>
+                <option value="XAF">Franc CFA (XAF) - CEMAC</option>
+                <option value="GNF">Franc Guinéen (GNF)</option>
+                <option value="NGN">Naira (NGN)</option>
+                <option value="GHS">Cedi (GHS)</option>
+                <option value="KES">Shilling (KES)</option>
+                <option value="MAD">Dirham Marocain (MAD)</option>
+                <option value="DZD">Dinar Algérien (DZD)</option>
+                <option value="TND">Dinar Tunisien (TND)</option>
+                <option value="CDF">Franc Congolais (CDF)</option>
+                <option value="MRU">Ouguiya (MRU)</option>
+                <option value="EUR">Euro (€)</option>
+                <option value="USD">Dollar ($)</option>
+              </select>
+              <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 text-white/20 pointer-events-none" size={16} />
+            </div>
+          </div>
+
           <div className="space-y-1.5">
             <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Catégorie</label>
+
             <select
               className="w-full h-14 rounded-2xl bg-black/40 border border-white/10 px-4 text-white focus:border-vendeur-emerald outline-none transition-all appearance-none cursor-pointer"
               value={localMerchant?.category || ""}
@@ -436,6 +466,23 @@ function BoutiqueTab({ merchant, initialKnowledge, accessToken }: { merchant: an
               </div>
            ))}
 
+           {deliveryFees.length === 0 && localMerchant?.city && (
+             <div className="p-6 rounded-3xl bg-white/5 border border-dashed border-white/10 space-y-4">
+                <p className="text-[10px] font-black uppercase tracking-widest text-white/40 text-center">Suggestions pour {localMerchant.city}</p>
+                <div className="flex flex-wrap gap-2 justify-center">
+                   {getZonesForCity(localMerchant.city).map((suggestion, i) => (
+                      <button
+                        key={i}
+                        onClick={() => setDeliveryFees([...deliveryFees, { zone: suggestion.name, price: suggestion.suggestedPrice }])}
+                        className="px-4 py-2 rounded-xl bg-sky-500/10 border border-sky-500/20 text-sky-400 text-[10px] font-bold hover:bg-sky-500 hover:text-white transition-all"
+                      >
+                         + {suggestion.name} ({suggestion.suggestedPrice} {localMerchant.currency || "XOF"})
+                      </button>
+                   ))}
+                </div>
+             </div>
+           )}
+
            <button
               onClick={() => setDeliveryFees([...deliveryFees, { zone: "", price: 1000 }])}
               className="flex items-center gap-2 text-sky-400 text-xs font-black uppercase tracking-widest hover:underline px-4 pt-2"
@@ -469,11 +516,11 @@ function BoutiqueTab({ merchant, initialKnowledge, accessToken }: { merchant: an
                          setPayments(next);
                       }}
                     >
-                       <option value="Wave">Wave</option>
-                       <option value="Orange Money">Orange Money</option>
-                       <option value="MTN MoMo">MTN MoMo</option>
-                       <option value="Moov Money">Moov Money</option>
+                       {getProvidersForCountry(localMerchant?.country || "CI").map(provider => (
+                         <option key={provider.id} value={provider.label}>{provider.label}</option>
+                       ))}
                        <option value="Virement Bancaire">Virement</option>
+                       <option value="Espèces">Espèces</option>
                     </select>
                  </div>
                  <div className="flex-[1.5] space-y-1.5">

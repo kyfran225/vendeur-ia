@@ -93,7 +93,7 @@ export function SalesDashboard() {
         <div className="flex gap-3">
           <button
             onClick={handleShareShop}
-            className="h-12 px-6 rounded-2xl bg-white/5 border border-white/10 text-white text-[10px] font-black uppercase tracking-widest hover:bg-white/10 transition-all flex items-center gap-2"
+            className="h-12 px-6 rounded-2xl bg-white/5 border border-white/10 text-white text-[10px] font-black uppercase tracking-widest hover:bg-white/10 transition-all flex items-center justify-center text-center gap-2 flex-1 md:flex-none"
           >
             <Share2 size={16} />
             Partager ma vitrine
@@ -102,7 +102,7 @@ export function SalesDashboard() {
           <Link
             to={`/shop/${dashboard?.merchant?._id}`}
             target="_blank"
-            className="h-12 px-6 rounded-2xl bg-vendeur-emerald text-vendeur-coal text-[10px] font-black uppercase tracking-widest hover:scale-105 active:scale-95 transition-all flex items-center gap-2 shadow-lg shadow-vendeur-emerald/20"
+            className="h-12 px-6 rounded-2xl bg-vendeur-emerald text-vendeur-coal text-[10px] font-black uppercase tracking-widest hover:scale-105 active:scale-95 transition-all flex items-center justify-center text-center gap-2 shadow-lg shadow-vendeur-emerald/20 flex-1 md:flex-none"
           >
             <ExternalLink size={16} />
             Voir ma boutique

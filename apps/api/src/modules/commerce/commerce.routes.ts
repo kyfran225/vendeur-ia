@@ -771,11 +771,11 @@ router.post("/demo/process", async (req, res) => {
     // Get mock products for the selected category
     const mockProducts = CATEGORY_MOCKS[category] || CATEGORY_MOCKS["other"];
 
-    // Refined instructions to PRIORITIZE user description over generic mocks
+    // Refined instructions to PRIORITIZE user location
     const customInstructions = `Ceci est une démonstration pour un commerce de type "${category}".
 
-    LIEU DE VENTE / LIVRAISON : Ton commerce est situé à ${city}, précisément à "${req.body.address || city}".
-    IMPORTANT : Si la ville saisie est différente d'Abidjan (ex: Kaolack, Bouaké, Dakar, San Pedro), tu dois ABSOLUMENT te situer dans CETTE ville. Ne mentionne JAMAIS Abidjan si l'utilisateur a spécifié une autre ville.
+    LIEU DE VENTE / LIVRAISON : Ton commerce est situé à ${city || "sa ville"}, précisément à "${req.body.address || city || "son adresse"}".
+    IMPORTANT : Tu dois ABSOLUMENT te situer dans la ville spécifiée par l'utilisateur (${city || "sa ville"}). Ne mentionne JAMAIS une autre ville (comme Abidjan) par défaut.
 
     IMPORTANT : L'utilisateur a décrit précisément ce qu'il vend : "${description || "Pas de description spécifiée"}".
     SI l'utilisateur a mentionné des produits spécifiques (ex: "Tchep", "Thieboudienne", "Attiéké", "Robes rouges"), tu dois ABSOLUMENT parler de CES produits en priorité.
@@ -792,7 +792,8 @@ router.post("/demo/process", async (req, res) => {
         businessName,
         category,
         city,
-        country: "CI", // Default for demo
+        country: req.body.country || "CI",
+        currency: req.body.currency || "XOF",
         description: description,
         paymentChannels
       },

@@ -17,11 +17,12 @@ import { useAuthStore } from "./stores/authStore";
 import { useOnboardingStore } from "./stores/onboardingStore";
 import { ErrorBoundary } from "./components/ui/ErrorBoundary";
 import { subscribeToPush } from "./lib/pushUtils";
+import { Sparkles } from "lucide-react";
 
 const GOOGLE_CLIENT_ID = (import.meta as any).env.VITE_GOOGLE_CLIENT_ID;
 
 function App() {
-  const { user, accessToken } = useAuthStore();
+  const { user, accessToken, _hasHydrated } = useAuthStore();
   const { tempData } = useOnboardingStore();
 
   React.useEffect(() => {
@@ -29,6 +30,14 @@ function App() {
       subscribeToPush(accessToken);
     }
   }, [accessToken]);
+
+  if (!_hasHydrated) {
+    return (
+      <div className="min-h-screen bg-vendeur-coal flex items-center justify-center">
+        <Sparkles className="animate-spin text-vendeur-emerald" size={48} />
+      </div>
+    );
+  }
 
   return (
     <ErrorBoundary>

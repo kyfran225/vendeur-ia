@@ -131,6 +131,7 @@ function PillarSection() {
 }
 
 import { useOnboardingStore } from "@/stores/onboardingStore";
+import { useNavigate, Link } from "react-router-dom";
 
 // THE MAIN LANDING HERO (1:1 UI REPLICA)
 function LandingHero({
@@ -147,7 +148,7 @@ function LandingHero({
     category: "fashion",
     description: "",
     country: "CI",
-    city: "Abidjan",
+    city: "",
     address: "",
     whatsappNumber: ""
   });
@@ -186,7 +187,7 @@ function LandingHero({
   const handleCreateVendeur = async () => {
     if (form.businessName && form.address && form.whatsappNumber) {
       // 1. Save to local store
-      setTempData({ ...form, city: form.city || "Abidjan" });
+      setTempData({ ...form, city: form.city, country: selectedCountry.code, currency: selectedCountry.currency });
       setSimulatorActive(true);
 
       // 2. We no longer persist to backend here.
@@ -200,7 +201,9 @@ function LandingHero({
       try {
         const response = await axios.post(`${API_URL}/api/commerce/demo/process`, {
           businessName: form.businessName,
-          city: form.city || "Abidjan",
+          city: form.city || selectedCountry.defaultCity,
+          country: selectedCountry.code,
+          currency: selectedCountry.currency,
           address: form.address,
           category: form.category,
           description: form.description,
@@ -292,12 +295,14 @@ function LandingHero({
     try {
       const response = await axios.post(`${API_URL}/api/commerce/demo/process`, {
         businessName: form.businessName,
-        city: form.city || "Abidjan",
+        city: form.city || selectedCountry.defaultCity,
+        country: selectedCountry.code,
+        currency: selectedCountry.currency,
         address: form.address,
         category: form.category,
         description: form.description,
         message: currentInput,
-        phone: form.whatsappNumber || "22501010101",
+        phone: form.whatsappNumber || `${selectedCountry.dialCode.replace('+', '')}01010101`,
         history: history.slice(-4)
       });
 
@@ -404,7 +409,7 @@ function LandingHero({
                   value={form.address}
                   onChange={(value) => setForm({ ...form, address: value })}
                   onSelectSuggestion={(suggestion) => {
-                    const city = suggestion.context?.place?.name || suggestion.context?.region?.name || suggestion.place_formatted?.split(',')[1]?.trim() || "Abidjan";
+                    const city = suggestion.context?.place?.name || suggestion.context?.region?.name || suggestion.place_formatted?.split(',')[1]?.trim() || selectedCountry.defaultCity;
                     setForm(prev => ({ ...prev, city }));
                   }}
                 />
@@ -572,9 +577,16 @@ function LandingHero({
 }
 
 export function LandingPage() {
+  const navigate = useNavigate();
   const [dynamicTitle, setDynamicTitle] = useState("Vendeur IA");
   const [isAuthOpen, setIsAuthOpen] = useState(false);
-  const { user, logout } = useAuthStore();
+  const { user } = useAuthStore();
+
+  useEffect(() => {
+    if (user) {
+      navigate("/dashboard");
+    }
+  }, [user, navigate]);
 
   return (
     <div className="min-h-screen bg-[#07100d] selection:bg-emerald-300/30 overflow-x-hidden text-left pt-14 md:pt-20 w-full">
@@ -592,22 +604,12 @@ export function LandingPage() {
 
           <div className="flex items-center gap-3 md:gap-6 shrink-0">
             {user ? (
-              <div className="flex items-center gap-3 md:gap-5">
-                <span className="hidden lg:inline text-xs font-black uppercase tracking-widest text-white/40">Salut, <span className="text-white">{user.displayName}</span></span>
-                <div className="h-9 w-9 md:h-12 md:w-12 rounded-xl md:rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-white/60 overflow-hidden shadow-lg">
-                   {user.avatarUrl ? (
-                     <img src={user.avatarUrl} className="h-full w-full object-cover" />
-                   ) : (
-                     <User size={20} />
-                   )}
-                </div>
-                <button
-                  onClick={logout}
-                  className="h-9 md:h-12 px-4 md:px-6 rounded-xl md:rounded-2xl border border-white/10 text-white/40 text-[10px] font-black uppercase hover:text-red-400 hover:border-red-400/20 hover:bg-red-400/5 transition-all hidden md:block tracking-widest"
-                >
-                  Déconnexion
-                </button>
-              </div>
+              <Link
+                to="/dashboard"
+                className="h-9 md:h-12 px-6 rounded-xl md:rounded-2xl bg-vendeur-emerald text-vendeur-coal text-[10px] font-black uppercase tracking-widest flex items-center justify-center text-center gap-2 shadow-lg shadow-vendeur-emerald/20 transition-all hover:scale-105 active:scale-95"
+              >
+                Tableau de Bord
+              </Link>
             ) : (
               <button
                 onClick={() => setIsAuthOpen(true)}

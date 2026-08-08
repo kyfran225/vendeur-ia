@@ -1,5 +1,8 @@
 import { z } from "zod";
 
+export * from "./data/countries.js";
+export * from "./data/cities.js";
+
 // --- Enums & Constants ---
 
 export const commerceCategories = ["fashion", "food", "beauty", "electronics", "services", "digital", "artisan", "other"] as const;

@@ -14,6 +14,8 @@ interface AuthState {
   user: AuthUser | null;
   accessToken: string | null;
   refreshToken: string | null;
+  _hasHydrated: boolean;
+  setHasHydrated: (val: boolean) => void;
   setSession: (session: { user: AuthUser; accessToken: string; refreshToken: string }) => void;
   logout: () => void;
   updateUser: (userData: Partial<AuthUser>) => void;
@@ -25,6 +27,8 @@ export const useAuthStore = create<AuthState>()(
       user: null,
       accessToken: null,
       refreshToken: null,
+      _hasHydrated: false,
+      setHasHydrated: (val) => set({ _hasHydrated: val }),
       setSession: (session) => set({
         user: session.user,
         accessToken: session.accessToken,
@@ -37,6 +41,9 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: "vendeur-ia-auth",
+      onRehydrateStorage: (state) => {
+        return () => state.setHasHydrated(true);
+      }
     }
   )
 );

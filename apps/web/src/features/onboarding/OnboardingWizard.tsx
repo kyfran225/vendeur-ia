@@ -4,16 +4,12 @@ import {
   ChevronRight,
   Sparkles,
   Store,
-  Smartphone,
   Zap,
   Check,
-  ShieldCheck,
   Rocket,
   Image as ImageIcon,
   Loader2,
   CheckCircle2,
-  AlertCircle,
-  RefreshCw
 } from "lucide-react";
 import { useOnboardingStore } from "@/stores/onboardingStore";
 import { useAuthStore } from "@/stores/authStore";
@@ -21,8 +17,6 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { apiClient } from "@/lib/apiClient";
 import { useRef } from "react";
-import axios from "axios";
-import { useSocket } from "@/hooks/useSocket";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { CountrySelector, COUNTRIES } from "./components/CountrySelector";
@@ -56,7 +50,7 @@ export function OnboardingWizard() {
           console.log("[Onboarding] Attempting to create/update merchant with complete data...");
           await apiClient.post("/api/commerce/merchant", {
             ...tempData,
-            city: tempData.city || "Abidjan" // Default to Abidjan if not detected
+            city: tempData.city || "" // Ensure we don't force a default if we want to capture the merchant's real city
           });
           setIsMerchantCreated(true);
           console.log("[Onboarding] Merchant data persisted successfully");
@@ -79,8 +73,7 @@ export function OnboardingWizard() {
 
   const steps = [
     { title: "Bienvenue", component: <WelcomeStep onNext={handleNext} onBack={() => navigate("/")} /> },
-    { title: "IA Vision", component: <VisionStep onNext={handleNext} onBack={handleBack} /> },
-    { title: "Connexion", component: <WhatsAppStep onNext={async () => {
+    { title: "IA Vision", component: <VisionStep onNext={async () => {
       // Final sync before dashboard
       try {
         if (tempData) {
@@ -121,7 +114,7 @@ export function OnboardingWizard() {
           </div>
         ))}
         {/* Connection lines */}
-        <div className="absolute left-1/2 -translate-x-1/2 top-5 md:top-6 w-[80%] h-[2px] bg-white/5 -z-10" />
+        <div className="absolute left-1/2 -translate-x-1/2 top-5 md:top-6 w-[60%] h-[2px] bg-white/5 -z-10" />
       </div>
 
       <div className="w-full max-w-7xl relative">
@@ -268,7 +261,7 @@ function WelcomeStep({ onNext, onBack }: { onNext: () => void; onBack: () => voi
                   value={form.address}
                   onChange={(value) => setForm({ ...form, address: value })}
                   onSelectSuggestion={(suggestion) => {
-                    const city = suggestion.context?.place?.name || suggestion.context?.region?.name || suggestion.place_formatted?.split(',')[1]?.trim() || "Abidjan";
+                    const city = suggestion.context?.place?.name || suggestion.context?.region?.name || suggestion.place_formatted?.split(',')[1]?.trim() || "";
                     setForm(prev => ({ ...prev, city }));
                   }}
                 />
@@ -444,121 +437,6 @@ function VisionStep({ onNext, onBack }: { onNext: () => void; onBack: () => void
           Retour aux informations
         </button>
       </div>
-    </div>
-  );
-}
-
-function WhatsAppStep({ onNext, onBack }: { onNext: () => void; onBack: () => void }) {
-  const { accessToken } = useAuthStore();
-  const socket = useSocket();
-  const [qrCode, setQrCode] = useState<string | null>(null);
-  const [connected, setConnected] = useState(false);
-  const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    if (!socket) return;
-
-    socket.on("whatsapp:qr", (data: { qrCodeData: string }) => {
-      setQrCode(data.qrCodeData);
-      setLoading(false);
-    });
-
-    socket.on("whatsapp:connected", () => {
-      setConnected(true);
-      toast.success("WhatsApp connecté avec succès ! 🎉");
-      setTimeout(onNext, 2000);
-    });
-
-    return () => {
-      socket.off("whatsapp:qr");
-      socket.off("whatsapp:connected");
-    };
-  }, [socket, onNext]);
-
-  const startConnection = async () => {
-    setLoading(true);
-    try {
-      await apiClient.post("/api/whatsapp/connect", {});
-    } catch (err) {
-      toast.error("Échec du lancement de la connexion");
-      setLoading(false);
-    }
-  };
-
-  return (
-    <div className="bg-white/5 border border-white/10 rounded-[3rem] p-8 md:p-12 text-center">
-      <div className={`inline-flex h-20 w-20 items-center justify-center rounded-3xl mb-8 transition-colors ${connected ? "bg-emerald-500/10 border-emerald-500/20" : "bg-[#25d366]/10 border-[#25d366]/20"}`}>
-        {connected ? <CheckCircle2 className="text-emerald-500" size={40} /> : <Smartphone className="text-[#25d366]" size={40} />}
-      </div>
-
-      <h2 className="text-3xl md:text-4xl font-black text-white mb-4 uppercase tracking-tighter">
-        {connected ? "WhatsApp Connecté !" : "Liez votre WhatsApp"}
-      </h2>
-
-      {!connected ? (
-        <>
-          <p className="text-lg text-white/50 mb-12 max-w-xl mx-auto">
-            Scannez le code QR avec votre téléphone pour activer votre agent vendeur.
-          </p>
-
-          <div className="flex flex-col items-center justify-center gap-8">
-            <div className="relative h-64 w-64 bg-white rounded-3xl p-4 flex items-center justify-center shadow-2xl">
-               {qrCode ? (
-                 <img src={qrCode} alt="WhatsApp QR Code" className="w-full h-full object-contain" />
-               ) : (
-                 <div className="flex flex-col items-center gap-4 text-vendeur-coal">
-                   {loading ? (
-                     <Loader2 className="animate-spin text-vendeur-emerald" size={48} />
-                   ) : (
-                     <button onClick={startConnection} className="flex flex-col items-center gap-2 group">
-                        <RefreshCw className="text-vendeur-emerald group-hover:rotate-180 transition-transform duration-500" size={48} />
-                        <span className="text-[10px] font-black uppercase tracking-widest">Générer QR Code</span>
-                     </button>
-                   )}
-                 </div>
-               )}
-            </div>
-
-            <div className="max-w-md w-full bg-black/40 border border-white/5 rounded-2xl p-6 text-left">
-              <h4 className="text-[10px] font-black text-vendeur-emerald uppercase tracking-widest mb-4">Marche à suivre</h4>
-              <ul className="space-y-4">
-                <li className="flex gap-4 text-xs text-white/60">
-                  <span className="h-5 w-5 rounded-full bg-white/5 flex items-center justify-center text-[10px] font-bold shrink-0">1</span>
-                  Ouvrez WhatsApp sur votre téléphone.
-                </li>
-                <li className="flex gap-4 text-xs text-white/60">
-                  <span className="h-5 w-5 rounded-full bg-white/5 flex items-center justify-center text-[10px] font-bold shrink-0">2</span>
-                  Allez dans Réglages {">"} Appareils connectés.
-                </li>
-                <li className="flex gap-4 text-xs text-white/60">
-                  <span className="h-5 w-5 rounded-full bg-white/5 flex items-center justify-center text-[10px] font-bold shrink-0">3</span>
-                  Appuyez sur "Connecter un appareil" et scannez le code.
-                </li>
-              </ul>
-            </div>
-          </div>
-
-          <div className="flex flex-col items-center gap-6 mt-12">
-            <button
-              onClick={onNext}
-              className="h-14 px-8 rounded-2xl border border-vendeur-emerald/30 bg-vendeur-emerald/5 text-vendeur-emerald text-sm font-black uppercase tracking-widest hover:bg-vendeur-emerald/10 transition-all"
-            >
-              Terminer et connecter plus tard
-            </button>
-
-            <button onClick={onBack} className="text-white/20 text-[10px] font-black uppercase tracking-widest hover:text-white transition-colors">
-              Retour à l'étape précédente
-            </button>
-          </div>
-        </>
-      ) : (
-        <div className="py-12">
-           <div className="animate-bounce mb-8">
-             <Rocket className="text-vendeur-emerald mx-auto" size={64} />
-           </div>
-           <p className="text-xl text-white/70 font-bold">Initialisation de votre machine de vente...</p>
-        </div>
-      )}
     </div>
   );
 }

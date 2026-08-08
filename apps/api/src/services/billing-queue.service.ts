@@ -36,7 +36,7 @@ export const billingWorker = new Worker(
         if (isMobileMoney || isGracePeriod) {
           // 1. Fetch Regional Pricing
           const settings = await SystemSettingsModel.findOne();
-          const currency = merchant.currency || "XOF";
+          const currency = merchant.billingCurrency || merchant.currency || "XOF";
           const regionalPricing = settings?.pricing?.regional?.find((r: any) => r.currency === currency);
 
           let amount = merchant.subscription?.plan === 'business' ? 25000 : 5000;

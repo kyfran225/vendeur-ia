@@ -4,7 +4,7 @@ import { apiClient } from "@/lib/apiClient";
 import { toast } from "sonner";
 import { useAuthStore } from "@/stores/authStore";
 import { useQueryClient } from "@tanstack/react-query";
-import { useMerchantCurrency } from "@/hooks/useMerchantCurrency";
+import { useBillingCurrency } from "@/hooks/useBillingCurrency";
 
 interface PackProModalProps {
   isOpen: boolean;
@@ -15,7 +15,7 @@ export function PackProModal({ isOpen, onClose }: PackProModalProps) {
   const [loading, setLoading] = React.useState(false);
   const { user } = useAuthStore();
   const queryClient = useQueryClient();
-  const currency = useMerchantCurrency();
+  const currency = useBillingCurrency();
 
   if (!isOpen) return null;
 

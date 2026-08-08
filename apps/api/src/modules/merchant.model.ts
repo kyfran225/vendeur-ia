@@ -12,6 +12,7 @@ export interface IMerchant extends Document {
   phone: string;
   whatsappNumber: string;
   currency: string;
+  billingCurrency: string;
   language: string;
   paymentChannels: Array<{
     provider: string;
@@ -43,6 +44,7 @@ const MerchantSchema: Schema = new Schema({
   phone: { type: String, default: "" },
   whatsappNumber: { type: String, default: "" },
   currency: { type: String, default: "XOF" },
+  billingCurrency: { type: String, default: "XOF" },
   language: { type: String, enum: commerceLanguages, default: "fr" },
   paymentChannels: [{
     provider: { type: String, enum: commercePaymentProviders },

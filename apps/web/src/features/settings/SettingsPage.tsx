@@ -40,6 +40,7 @@ import { BillingTab } from "./components/BillingTab";
 import { ReferralCard } from "./components/ReferralCard";
 import { GrowthTab } from "./components/GrowthTab";
 import { subscribeToPush } from "@/lib/pushUtils";
+import { AddressAutocomplete } from "../onboarding/components/AddressAutocomplete";
 
 import { useSocket } from "@/hooks/useSocket";
 import { getProvidersForCountry, getZonesForCity } from "@vendeur-ia/core";
@@ -401,8 +402,8 @@ function BoutiqueTab({ merchant, initialKnowledge, accessToken }: { merchant: an
             <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Devise de Facturation</label>
             <select
               className="w-full h-14 rounded-2xl bg-black/40 border border-white/10 px-4 text-white focus:border-vendeur-emerald outline-none transition-all appearance-none cursor-pointer"
-              value={localMerchant?.currency || "XOF"}
-              onChange={e => setLocalMerchant({...localMerchant, currency: e.target.value})}
+              value={localMerchant?.billingCurrency || "XOF"}
+              onChange={e => setLocalMerchant({...localMerchant, billingCurrency: e.target.value})}
             >
               <option value="XOF">FCFA (XOF)</option>
               <option value="GHS">Cedi (GHS)</option>
@@ -412,12 +413,20 @@ function BoutiqueTab({ merchant, initialKnowledge, accessToken }: { merchant: an
               <option value="ZAR">Rand (ZAR)</option>
             </select>
           </div>
-          <InputGroup label="Adresse / Zone" value={localMerchant?.address} onChange={v => setLocalMerchant({...localMerchant, address: v})} placeholder="Ex: Cocody, Abidjan" />
+          <div className="space-y-1.5">
+             <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Adresse / Zone</label>
+             <AddressAutocomplete
+               value={localMerchant?.address || ""}
+               onChange={v => setLocalMerchant({...localMerchant, address: v})}
+               placeholder="Ex: Cocody, Abidjan"
+               className="h-14 rounded-2xl"
+             />
+          </div>
         </div>
       </section>
 
       {/* Grille de Livraison */}
-      <section className="bg-vendeur-coal border border-white/10 p-6 md:p-10 rounded-[2.5rem] md:rounded-[3.5rem] space-y-8 shadow-2xl overflow-hidden">
+      <section className="bg-vendeur-coal border border-white/10 px-4 py-6 md:px-4 md:py-10 rounded-[2.5rem] md:rounded-[3.5rem] space-y-8 shadow-2xl overflow-hidden">
         <div className="flex items-center gap-3 md:gap-4">
           <div className="h-12 w-12 md:h-14 md:w-14 bg-sky-500/10 rounded-2xl flex items-center justify-center text-sky-400 border border-sky-500/20 shrink-0">
             <Truck size={24} className="md:w-7 md:h-7" />
@@ -429,9 +438,10 @@ function BoutiqueTab({ merchant, initialKnowledge, accessToken }: { merchant: an
         </div>
 
         <div className="space-y-3 md:space-y-4">
-           <div className="grid grid-cols-2 gap-4 px-4 text-[10px] font-black uppercase tracking-[0.3em] text-white/20">
-              <span>Zone / Commune</span>
-              <span className="text-[10px] font-black uppercase tracking-widest text-white/40">Tarif ({localMerchant?.currency || "XOF"})</span>
+           <div className="flex flex-row gap-2 px-1 text-[10px] font-black uppercase tracking-[0.2em] text-white/20">
+              <span className="flex-1 px-3">Zone / Commune</span>
+              <span className="w-20 md:w-32 px-2 text-white/40">Tarif ({localMerchant?.currency || "XOF"})</span>
+              <div className="w-10 md:w-12" /> {/* Spacer pour aligner avec le bouton supprimer */}
            </div>
 
            {deliveryFees.map((fee: any, idx: number) => (
@@ -492,12 +502,12 @@ function BoutiqueTab({ merchant, initialKnowledge, accessToken }: { merchant: an
         </div>
       </section>
 
-      {/* Moyens de Paiement */}
-      <section className="bg-vendeur-coal border border-white/10 p-6 md:p-8 rounded-[2.5rem] space-y-8 shadow-2xl overflow-hidden">
+      {/* Canal de paiement */}
+      <section className="bg-vendeur-coal border border-white/10 px-4 py-6 md:px-4 md:py-8 rounded-[2.5rem] space-y-8 shadow-2xl overflow-hidden">
          <div className="space-y-1">
             <h2 className="text-xl md:text-2xl font-black text-white flex items-center gap-3">
               <Banknote size={22} className="text-emerald-400 shrink-0" />
-              <span className="whitespace-nowrap">Moyens de Paiement</span>
+              <span className="whitespace-nowrap">Canal de paiement</span>
             </h2>
             <p className="text-[10px] md:text-xs text-white/40">Coordonnées pour les transferts d'argent.</p>
          </div>
@@ -550,7 +560,7 @@ function BoutiqueTab({ merchant, initialKnowledge, accessToken }: { merchant: an
               onClick={() => setPayments([...payments, { provider: "Wave", number: "" }])}
               className="flex items-center gap-2 text-emerald-400 text-[10px] font-black uppercase tracking-[0.2em] hover:underline pt-2 px-1"
             >
-               <Plus size={16} /> Ajouter un mode de paiement
+               <Plus size={16} /> Ajouter un canal de paiement
             </button>
          </div>
       </section>

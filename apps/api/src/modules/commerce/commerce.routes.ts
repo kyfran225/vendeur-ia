@@ -169,7 +169,7 @@ router.post("/activate-premium", authenticate, async (req, res) => {
   const userId = (req as any).user.id;
   try {
     const merchant = await CommerceMerchantModel.findOne({ ownerId: userId });
-    const currency = merchant?.currency || "XOF";
+    const currency = merchant?.billingCurrency || merchant?.currency || "XOF";
     const settings = await SystemSettingsModel.findOne();
 
     let amount = 5000;
@@ -198,7 +198,7 @@ router.post("/activate-business", authenticate, async (req, res) => {
   const userId = (req as any).user.id;
   try {
     const merchant = await CommerceMerchantModel.findOne({ ownerId: userId });
-    const currency = merchant?.currency || "XOF";
+    const currency = merchant?.billingCurrency || merchant?.currency || "XOF";
     const settings = await SystemSettingsModel.findOne();
 
     let amount = 25000;
@@ -226,10 +226,23 @@ router.post("/buy-pack-pro", authenticate, async (req, res) => {
   const { email } = req.body;
   const userId = (req as any).user.id;
   try {
-    // Pack Pro – amount is in the merchant's regional currency (XOF, NGN, GHS, etc.)
-    const data = await paystackService.initializeSubscription(email, 25000, {
+    const merchant = await CommerceMerchantModel.findOne({ ownerId: userId });
+    const currency = merchant?.billingCurrency || merchant?.currency || "XOF";
+    const settings = await SystemSettingsModel.findOne();
+
+    let amount = 25000;
+    const regional = settings?.pricing?.regional?.find(r => r.currency === currency);
+    if (regional) {
+      amount = regional.businessMonthly; // Or a specific packProFee from regional
+    } else if (settings?.pricing?.packProFee) {
+      amount = settings.pricing.packProFee;
+    }
+
+    // Pack Pro – amount is in the merchant's regional billing currency
+    const data = await paystackService.initializeSubscription(email, amount, {
       type: "pack_pro",
-      userId
+      userId,
+      currency
     });
 
     res.json(data);

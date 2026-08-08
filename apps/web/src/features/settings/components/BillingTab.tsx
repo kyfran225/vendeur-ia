@@ -99,7 +99,7 @@ export function BillingTab({ merchant }: { merchant: any }) {
               <div className="space-y-1">
                 <p className="text-[10px] font-black uppercase text-white/30 tracking-widest flex items-center gap-2">
                   {isMobileMoney ? <Smartphone size={12} /> : <CreditCard size={12} />}
-                  Mode de Paiement
+                  Canal de paiement
                 </p>
                 <p className="text-lg font-black text-white capitalize">
                   {isMobileMoney ? "Mobile Money" : "Carte Bancaire"}
@@ -116,7 +116,7 @@ export function BillingTab({ merchant }: { merchant: any }) {
               </button>
             ) : isMobileMoney ? (
               <button className="w-full h-16 bg-white text-vendeur-coal font-black uppercase tracking-widest rounded-2xl flex items-center justify-center gap-3 hover:scale-[1.02] active:scale-95 transition-all shadow-xl shadow-white/10">
-                Renouveler ({merchant.currency || 'XOF'})
+                Renouveler ({merchant.billingCurrency || merchant.currency || 'XOF'})
                 <Zap size={20} className="text-vendeur-emerald" />
               </button>
             ) : (

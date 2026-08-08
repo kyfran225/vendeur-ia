@@ -95,7 +95,7 @@ export class AIGrowthService {
         tips: [
           { text: "Optimisez vos descriptions produits pour mieux vendre.", action: "/products" },
           { text: "Répondez rapidement à vos messages dans l'Inbox.", action: "/inbox" },
-          { text: "Configurez vos moyens de paiement pour encaisser vos gains.", action: "/settings?tab=boutique" }
+          { text: "Configurez vos canaux de paiement pour encaisser vos gains.", action: "/settings?tab=boutique" }
         ]
       };
     }

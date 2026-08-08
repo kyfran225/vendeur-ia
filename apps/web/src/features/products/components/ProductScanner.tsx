@@ -1,7 +1,8 @@
 import React, { useRef, useState, useEffect, useCallback } from "react";
-import { X, Camera, Sparkles, RefreshCw, Check, Loader2, Zap, ShieldCheck } from "lucide-react";
+import { X, Camera, Sparkles, RefreshCw, Check, Loader2, Zap, ShieldCheck, Layers } from "lucide-react";
 import { toast } from "sonner";
 import { PosterGenerator } from "./PosterGenerator";
+import { BatchReviewModal } from "./BatchReviewModal";
 import { useAuthStore } from "@/stores/authStore";
 import { useOnboardingStore } from "@/stores/onboardingStore";
 import { compressImage } from "@/lib/imageUtils";
@@ -24,9 +25,10 @@ export function ProductScanner({ onClose, onScanComplete, boutiqueName }: Produc
   const isMountedRef = useRef(false);
   const activeRequestRef = useRef(0);
   const [stream, setStream] = useState<MediaStream | null>(null);
-  const [scanStep, setScanStep] = useState<"idle" | "capturing" | "processing" | "analyzing" | "studio" | "complete">("idle");
+  const [scanStep, setScanStep] = useState<"idle" | "capturing" | "processing" | "analyzing" | "batch_review" | "studio" | "complete">("idle");
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [detectedData, setDetectedData] = useState<any>(null);
+  const [batchItems, setBatchItems] = useState<any[]>([]);
 
   // Filter values for "Auto-Enhance"
   const filters = "saturate(1.2) brightness(1.1) contrast(1.05)";
@@ -51,7 +53,6 @@ export function ProductScanner({ onClose, onScanComplete, boutiqueName }: Produc
       });
 
       // RACE CONDITION CHECK:
-      // If the component was unmounted or a new request was started while waiting for getUserMedia
       if (!isMountedRef.current || requestId !== activeRequestRef.current) {
         mediaStream.getTracks().forEach(track => track.stop());
         return;
@@ -127,23 +128,49 @@ export function ProductScanner({ onClose, onScanComplete, boutiqueName }: Produc
         timeout: 30000 // 30s timeout for AI analysis in prod
       });
 
+      const resData = response.data;
+      const items = resData.items && Array.isArray(resData.items) ? resData.items : [resData];
+
+      setBatchItems(items);
       setDetectedData({
-        ...response.data,
+        ...items[0],
         image: imageData
       });
-      setScanStep("studio");
+      setScanStep("batch_review");
     } catch (error) {
       console.error("Vision API Error:", error);
       toast.error("L'IA n'a pas pu analyser l'image. Utilisation du mode manuel.");
-      setDetectedData({
+      const fallbackItem = {
         name: "Produit sans nom",
         price: 0,
-        category: "Mode",
+        category: "fashion",
+        description: "Description produit",
         image: imageData
-      });
-      setScanStep("studio");
+      };
+      setBatchItems([fallbackItem]);
+      setDetectedData(fallbackItem);
+      setScanStep("batch_review");
     }
   };
+
+  if (scanStep === "batch_review" && previewUrl) {
+    return (
+      <BatchReviewModal
+        image={previewUrl}
+        rawItems={batchItems}
+        boutiqueName={boutiqueName}
+        onCancel={() => {
+          setScanStep("idle");
+          setPreviewUrl(null);
+          startCamera();
+        }}
+        onConfirm={(confirmedItems) => {
+          onScanComplete({ items: confirmedItems, isBatch: true });
+          handleClose();
+        }}
+      />
+    );
+  }
 
   if (scanStep === "studio" && detectedData) {
     return (

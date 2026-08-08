@@ -340,16 +340,40 @@ export function ProductManager() {
     setNewProduct({ name: "", price: NaN, stock: 1, category: businessCategory, description: "", imageUrl: "" });
   };
 
-  const handleScanComplete = (data: any) => {
-    createMutation.mutate({
-      name: data.name,
-      price: typeof data.price === "string" ? parseInt(data.price) : data.price,
-      category: data.category || businessCategory,
-      stock: 1,
-      description: data.description || "",
-      imageUrl: data.finalPoster,
-      isService: businessCategory === "services"
-    });
+  const handleScanComplete = (scannedData: any) => {
+    if (scannedData.isBatch && Array.isArray(scannedData.items)) {
+      let createdCount = 0;
+      scannedData.items.forEach((item: any) => {
+        createMutation.mutate({
+          name: item.name || "Article IA",
+          price: item.price || 0,
+          stock: item.stock || 1,
+          category: item.category || businessCategory,
+          description: item.description || "",
+          imageUrl: item.image || ""
+        }, {
+          onSuccess: () => {
+            createdCount++;
+          }
+        });
+      });
+      setIsScannerOpen(false);
+      toast.success(`${scannedData.items.length} articles ajoutés au catalogue !`);
+      return;
+    }
+
+    if (scannedData.finalPoster || scannedData.image) {
+      setNewProduct(prev => ({
+        ...prev,
+        name: scannedData.name || prev.name,
+        price: isNaN(parseInt(scannedData.price)) ? prev.price : parseInt(scannedData.price),
+        category: scannedData.category || prev.category,
+        description: scannedData.description || prev.description,
+        imageUrl: scannedData.finalPoster || scannedData.image
+      }));
+    }
+    setIsScannerOpen(false);
+    setIsAddingManual(true);
   };
 
   return (

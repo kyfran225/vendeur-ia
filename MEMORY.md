@@ -19,6 +19,7 @@ Le produit doit être utilisable par un commerçant sans formation technique en 
 - **[PROTOCOL.md](file:///C:/Users/Franck/web-apps/vendeur-ia/PROTOCOL.md)** : Règles de qualité et standards IA.
 
 ## Dernières Interventions
+- **Batch Photo-to-Product / Vision Multi-Articles (2026-08-08)** : Implémentation complète de la détection et création de catalogues multi-produits par photo. Mise à jour de `commerce.service.ts` (analyse multi-articles Gemini/OpenAI), création du composant de révision/édition rapide `BatchReviewModal.tsx` et intégration dans `ProductScanner.tsx` et `ProductManager.tsx`.
 - **Validation Paystack Côte d'Ivoire & Architecture Multi-Pays (2026-08-08)** : Confirmation du compte Live Maât Feed (`pk_live_882659738a53aa8f8cc4c88afeabf58e89edf496`). Validation de la stratégie de paiement (Cartes = Subscriptions récurrentes Paystack / Mobile Money = Recharge + Relances d'échéance automatisées via `billing-queue.service.ts`). Webhook route vérifié sur `/api/payments/webhook/paystack`.
 - **Intégration Facebook (2026-08-05)** : Ajout du support complet Facebook Messenger (Pages) avec redirection Marketplace Pro vers Pack Pro (25.000 FCFA). Mise à jour des contrats Core, API et Web.
 - **Rapports Hebdomadaires IA (2026-08-08)** : Automatisation des bilans de performance envoyés aux marchands chaque lundi (Clients servis, Ventes récupérées, Top Produit). Optimisation de la logique de relance pour un tracking précis.

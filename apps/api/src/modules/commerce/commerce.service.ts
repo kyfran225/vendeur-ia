@@ -338,15 +338,21 @@ Réponds UNIQUEMENT avec le JSON. Si ce n'est pas une preuve de paiement, mets i
   async analyzeProductImage(imageBuffer: Buffer, mimeType: string) {
     // 1. Primary: Dynamic Vision Provider
     try {
-      const prompt = `Analyse cette image de produit et extrait les informations suivantes au format JSON :
+      const prompt = `Analyse cette image de commerce. Elle peut contenir soit un seul produit, soit un LOT DE PLUSIEURS PRODUITS (ex: plusieurs vêtements disposés, plusieurs articles sur une table, etc.).
+Détecte tous les produits visibles distincts et extrait un tableau JSON "items" au format suivant :
 {
-  "name": "Nom accrocheur du produit",
-  "price": number (prix estimé ou 0 si inconnu, en FCFA),
-  "description": "Description vendeuse et détaillée, incluant les variantes (tailles, couleurs) si détectées sur l'image ou l'étiquette",
-  "category": "Choisir parmi: fashion, food, beauty, electronics, artisan, services, digital, home, grocery, health, auto, other",
-  "tags": ["tag1", "tag2"]
+  "items": [
+    {
+      "name": "Nom accrocheur et vendeur du produit",
+      "price": number (prix estimé en FCFA selon l'article ou 0 si totalement inconnu),
+      "stock": 1,
+      "description": "Description commerciale complète optimisée pour WhatsApp/Instagram avec emojis et détails (couleurs, style, matière)",
+      "category": "Choisir parmi: fashion, food, beauty, electronics, artisan, services, digital, home, grocery, health, auto, other",
+      "tags": ["tag1", "tag2"]
+    }
+  ]
 }
-Réponds UNIQUEMENT avec le JSON. Sois précis sur les détails techniques (matières, variantes).`;
+Réponds UNIQUEMENT avec le JSON strict. Si 1 seul produit est présent, renvoie quand même un tableau "items" avec cet unique élément.`;
 
       const settings = await SystemSettingsModel.findOne();
       const provider = settings?.aiConfig?.defaultVisionProvider || 'gemini';
@@ -366,7 +372,17 @@ Réponds UNIQUEMENT avec le JSON. Sois précis sur les détails techniques (mati
 
         const text = response.data.candidates[0].content.parts[0].text;
         const jsonMatch = text.match(/\{[\s\S]*\}/);
-        if (jsonMatch) return JSON.parse(jsonMatch[0]);
+        if (jsonMatch) {
+          const parsed = JSON.parse(jsonMatch[0]);
+          if (parsed.items && Array.isArray(parsed.items) && parsed.items.length > 0) {
+            return parsed;
+          }
+          // Backward compatibility if AI returned single object
+          if (parsed.name) {
+            return { items: [parsed] };
+          }
+          return parsed;
+        }
       } else if (provider === 'openai') {
         const apiKey = settings?.aiConfig?.providers?.find(p => p.name === 'openai')?.apiKey || env.OPENAI_API_KEY;
         if (!apiKey) throw new Error("Clé OpenAI manquante");
@@ -388,7 +404,16 @@ Réponds UNIQUEMENT avec le JSON. Sois précis sur les détails techniques (mati
 
         const text = response.data.choices[0].message.content;
         const jsonMatch = text.match(/\{[\s\S]*\}/);
-        if (jsonMatch) return JSON.parse(jsonMatch[0]);
+        if (jsonMatch) {
+          const parsed = JSON.parse(jsonMatch[0]);
+          if (parsed.items && Array.isArray(parsed.items) && parsed.items.length > 0) {
+            return parsed;
+          }
+          if (parsed.name) {
+            return { items: [parsed] };
+          }
+          return parsed;
+        }
       }
     } catch (error: any) {
       const status = error.response?.status;

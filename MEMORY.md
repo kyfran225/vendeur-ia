@@ -20,6 +20,7 @@ Le produit doit être utilisable par un commerçant sans formation technique en 
 
 ## Dernières Interventions
 - **Intégration Facebook (2026-08-05)** : Ajout du support complet Facebook Messenger (Pages) avec redirection Marketplace Pro vers Pack Pro (25.000 FCFA). Mise à jour des contrats Core, API et Web.
+- **Rapports Hebdomadaires IA (2026-08-08)** : Automatisation des bilans de performance envoyés aux marchands chaque lundi (Clients servis, Ventes récupérées, Top Produit). Optimisation de la logique de relance pour un tracking précis.
 
 ## Bugs Bloquants Identifiés
 - **Indefinite Spinner (Configuration IA)** : Le composant frontend `AiSettings` boucle indéfiniment si `aiSettings` n'est pas initialisé ou est manquant.

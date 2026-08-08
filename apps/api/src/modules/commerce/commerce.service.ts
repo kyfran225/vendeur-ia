@@ -13,6 +13,7 @@ import { aiAgentService } from "../../services/ai-agent.service.js";
 import { aiGrowthService } from "../../services/ai-growth.service.js";
 import { aiProvider } from "../../services/ai-provider.js";
 import { messagingService } from "../../services/messaging.service.js";
+import { pushService } from "../../services/push.service.js";
 import { env } from "../../config/env.js";
 import { GEMINI_DEFAULT_VISION_MODEL, resolveGeminiModel } from "../../config/gemini.js";
 import axios from "axios";
@@ -486,6 +487,21 @@ Merci de votre confiance ! 🚀
 
     order.status = "paid";
     order.paidAt = new Date();
+
+    // Check for AI recovery
+    const conversation = await CommerceConversationModel.findOne({
+      merchantId: order.merchantId,
+      customerId: order.customerId,
+      isRecoveryPending: true
+    });
+
+    if (conversation) {
+      (order as any).recoveredByAi = true;
+      conversation.isRecoveryPending = false; // Reset for future sales
+      await conversation.save();
+      console.log(`[Recovery] Order ${order._id} successfully attributed to AI follow-up.`);
+    }
+
     await order.save();
 
     // 1. Stock Deduction Logic
@@ -733,7 +749,7 @@ Résumé actuel :`;
       title: "1 Mois Offert ! 🎁",
       body: `Félicitations ! Votre parrainage de ${newMerchant.businessName} a réussi.`,
       data: { type: "referral", action: "reward" }
-    }).catch(err => console.error("[Referral] Push failed:", err));
+    }).catch((err: any) => console.error("[Referral] Push failed:", err));
   }
 
   async syncProductEmbedding(productId: string) {

@@ -59,23 +59,20 @@ export class AIAgentService {
     }
 
     // --- RAG: Fetch relevant products based on query ---
+    let ragProducts: any[] = [];
     if (context.merchant._id) {
        try {
-         const relevantProducts = await commerceService.searchRelevantProducts(
+         ragProducts = await commerceService.searchRelevantProducts(
            context.merchant._id,
            context.message,
-           5 // Limit to top 5 products
+           4 // Limit to top 4 relevant products
          );
-         // Replace entire catalog with only relevant products for the prompt
-         if (relevantProducts.length > 0) {
-            context.products = relevantProducts;
-         }
        } catch (err) {
-         console.warn("[AIAgent] RAG search failed, falling back to full catalog:", err);
+         console.warn("[AIAgent] RAG search failed:", err);
        }
     }
 
-    const systemPrompt = customSystemPrompt || this.buildSystemPrompt(context);
+    const systemPrompt = customSystemPrompt || this.buildSystemPrompt(context, ragProducts);
 
     return aiProvider.generateText({
       systemPrompt,
@@ -87,7 +84,7 @@ export class AIAgentService {
     });
   }
 
-  private buildSystemPrompt(context: SalesContext): string {
+  private buildSystemPrompt(context: SalesContext, ragProducts: any[] = []): string {
     const { merchant, products, knowledge, customerPhone, customerLoyalty, platform = "whatsapp" } = context;
 
     const platformInstructions = {
@@ -97,13 +94,24 @@ export class AIAgentService {
       tiktok: "Le client est sur TikTok. Utilise un ton encore plus dynamique et court. Mentionne que tes produits sont 'ceux de la vidéo' s'il pose des questions sur un post."
     };
 
-    const productsStr = products
-      .filter(p => p.availability !== "hidden")
-      .map(p => {
+    // --- HYBRID CATALOG STRATEGY ---
+    // 1. Specific search results (RAG)
+    const ragStr = ragProducts.length > 0
+      ? `\n🔎 RÉSULTATS DE RECHERCHE PRÉCIS (Priorité) :\n` + ragProducts.map(p => `- ${p.name}: ${p.price} ${p.currency || "XOF"} (${p.description || "Pas de description"})`).join("\n")
+      : "";
+
+    // 2. High-level catalog overview (excluding what's already in RAG)
+    const ragIds = new Set(ragProducts.map(p => p._id?.toString()));
+    const otherProducts = products
+      .filter(p => p.availability !== "hidden" && !ragIds.has(p._id?.toString()))
+      .slice(0, 5); // Show top 5 others
+
+    const productsStr = otherProducts.length > 0
+      ? `\n📦 AUTRES PRODUITS DISPONIBLES :\n` + otherProducts.map(p => {
         const stockStatus = p.stock <= 0 ? "ÉPUISÉ" : p.stock <= 5 ? `STOCK TRÈS LIMITÉ (${p.stock} restants)` : "Disponible";
-        return `- ${p.name}: ${p.price} ${p.currency || "XOF"} [${stockStatus}] (${p.description || "Pas de description"})`;
-      })
-      .join("\n");
+        return `- ${p.name}: ${p.price} ${p.currency || "XOF"} [${stockStatus}]`;
+      }).join("\n")
+      : "";
 
     const loyaltyStr = customerLoyalty
       ? `CLIENT : ${customerPhone}. Fidélité: ${customerLoyalty.points} points. Statut: ${customerLoyalty.isVIP ? "VIP (Très fidèle)" : "Habituel"}.`
@@ -150,7 +158,7 @@ ${loyaltyStr}
 Si c'est un client VIP ou fidèle, commence par un accueil personnalisé reconnaissant sa loyauté.
 ${summaryStr}${insightsStr}
 CATALOGUE PRODUITS & STOCKS :
-${productsStr || "Aucun produit disponible pour le moment."}
+${ragStr}${productsStr || (!ragStr ? "Aucun produit disponible pour le moment." : "")}
 
 RÈGLES DE VENTE & URGENCE :
 - Si un produit est marqué [STOCK TRÈS LIMITÉ], souligne subtilement qu'il part vite pour inciter à la réservation immédiate.

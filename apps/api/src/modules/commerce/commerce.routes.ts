@@ -265,7 +265,8 @@ router.post("/verify-payment", authenticate, async (req, res) => {
         merchant.subscription = {
           plan: type === "ram_contribution" ? "premium" : "business",
           status: "active",
-          expiresAt: expiresAt
+          expiresAt: expiresAt,
+          paymentMethod: 'card'
         };
 
         await merchant.save();

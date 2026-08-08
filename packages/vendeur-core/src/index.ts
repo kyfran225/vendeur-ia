@@ -39,7 +39,8 @@ export const merchantSchema = z.object({
   aiSettings: z.object({
     personality: z.enum(commerceAgentTones).default("friendly"),
     responseStyle: z.enum(commerceResponseStyles).default("normal"),
-    autoReply: z.boolean().default(true)
+    autoReply: z.boolean().default(true),
+    weeklyReport: z.boolean().default(true)
   }),
   facebookConfig: z.object({
     pageId: z.string().optional(),
@@ -47,7 +48,8 @@ export const merchantSchema = z.object({
     status: z.enum(['disconnected', 'connected', 'error']).default('disconnected')
   }).optional(),
   createdAt: z.string(),
-  updatedAt: z.string()
+  updatedAt: z.string(),
+  lastWeeklyReportDate: z.string().nullable().optional()
 });
 
 export type Merchant = z.infer<typeof merchantSchema>;

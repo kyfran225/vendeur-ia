@@ -298,6 +298,13 @@ class WhatsAppService {
     conversation = await CommerceConversationModel.findOne({ merchantId: merchant._id, customerId: customer._id, status: "active" });
     if (!conversation) {
       conversation = await CommerceConversationModel.create({ merchantId: merchant._id, customerId: customer._id });
+    } else if (conversation.followUpSent) {
+      // Reset followUpSent when customer replies to allow new follow-ups later
+      // and to track recovery correctly in reporting
+      conversation.followUpSent = false;
+      conversation.isRecoveryPending = true; // Mark that the next order from this conv is a recovery
+      await conversation.save();
+      console.log(`[WhatsApp] Follow-up reset and recovery pending for conversation ${conversation._id}`);
     }
 
     // Handle Image / Payment Proof
@@ -394,7 +401,7 @@ class WhatsAppService {
       userId,
       conversationId: conversation._id.toString(),
       remoteJid: from,
-      merchant: merchant.toObject(),
+      merchant: merchant.toObject() as any,
       products: products.map(p => p.toObject()),
       knowledge: knowledge ? (knowledge.toObject() as any) : {},
       history: formattedHistory,

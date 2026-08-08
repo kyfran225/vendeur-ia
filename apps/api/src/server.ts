@@ -45,6 +45,16 @@ async function start() {
         logger.error("[Server] Follow-up check failed:", err);
       }
     }, 60 * 60 * 1000);
+
+    // Run Weekly Reporting Check every 24 hours
+    setInterval(async () => {
+      try {
+        const { reportingService } = await import("./services/reporting.service.js");
+        await reportingService.runScheduledReports();
+      } catch (err) {
+        logger.error("[Server] Weekly report check failed:", err);
+      }
+    }, 24 * 60 * 60 * 1000);
   });
 }
 

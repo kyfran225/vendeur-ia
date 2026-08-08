@@ -32,7 +32,8 @@ const MerchantSchema = new Schema({
     responseStyle: { type: String, default: "normal" },
     autoReply: { type: Boolean, default: true },
     voiceMode: { type: Boolean, default: false },
-    localSlang: { type: Boolean, default: false }
+    localSlang: { type: Boolean, default: false },
+    weeklyReport: { type: Boolean, default: true }
   },
   whatsappConfig: {
     provider: { type: String, enum: ['baileys', 'meta'], default: 'baileys' },
@@ -43,7 +44,8 @@ const MerchantSchema = new Schema({
       wabaId: String
     },
     status: { type: String, enum: ['disconnected', 'connected', 'error'], default: 'disconnected' },
-    lastBillingDate: { type: Date, default: null }
+    lastBillingDate: { type: Date, default: null },
+    reconnectAttempts: { type: Number, default: 0 }
   },
   instagramConfig: {
     pageId: String,
@@ -66,7 +68,8 @@ const MerchantSchema = new Schema({
   referralStats: {
     count: { type: Number, default: 0 },
     earnedMonths: { type: Number, default: 0 }
-  }
+  },
+  lastWeeklyReportDate: { type: Date, default: null }
 }, { timestamps: true });
 
 // --- KNOWLEDGE BASE ---
@@ -137,7 +140,8 @@ const ConversationSchema = new Schema({
   lastMessageAt: { type: Date, default: Date.now },
   messagesCount: { type: Number, default: 0 },
   aiSummary: { type: String, default: "" },
-  followUpSent: { type: Boolean, default: false }
+  followUpSent: { type: Boolean, default: false },
+  isRecoveryPending: { type: Boolean, default: false }
 }, { timestamps: true });
 
 // --- MESSAGE ---
@@ -183,7 +187,8 @@ const OrderSchema = new Schema({
   paymentMethod: String,
   shippingAddress: String,
   paidAt: Date,
-  deliveredAt: Date
+  deliveredAt: Date,
+  recoveredByAi: { type: Boolean, default: false }
 }, { timestamps: true });
 
 export const CommerceOrderModel = mongoose.model("CommerceOrder", OrderSchema);

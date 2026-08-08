@@ -26,7 +26,7 @@ async function test() {
     { upsert: true, new: true }
   );
 
-  console.log(`✅ Created test merchant with expiration in 2 days: ${testMerchant.subscription.expiresAt}`);
+  console.log(`✅ Created test merchant with expiration in 2 days: ${testMerchant.subscription?.expiresAt}`);
 
   // 2. Create a dummy merchant with expired subscription
   const expiredDate = new Date();
@@ -47,7 +47,7 @@ async function test() {
     { upsert: true, new: true }
   );
 
-  console.log(`✅ Created test merchant already expired: ${expiredMerchant.subscription.expiresAt}`);
+  console.log(`✅ Created test merchant already expired: ${expiredMerchant.subscription?.expiresAt}`);
 
   // 3. Run Billing Check
   console.log("⏳ Running Billing Check...");
@@ -60,8 +60,8 @@ async function test() {
 
   // 4. Verify results
   const updatedExpired = await CommerceMerchantModel.findOne({ ownerId: "test-expired-user" });
-  console.log(`📊 Expired Merchant Status after check: ${updatedExpired?.subscription.status}`);
-  if (updatedExpired?.subscription.status === "past_due") {
+  console.log(`📊 Expired Merchant Status after check: ${updatedExpired?.subscription?.status}`);
+  if (updatedExpired?.subscription?.status === "past_due") {
     console.log("✅ SUCCESS: Merchant correctly suspended.");
   } else {
     console.log("❌ FAILED: Merchant status not updated.");

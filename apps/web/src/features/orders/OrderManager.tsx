@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { ShoppingCart, Package, Clock, CheckCircle2, XCircle, Truck, Banknote, User, Calendar, Loader2, Search, Filter, MoreVertical, ExternalLink } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/apiClient";
@@ -59,6 +59,46 @@ export function OrderManager() {
 
   const [filter, setFilter] = useState("all");
   const [search, setSearch] = useState("");
+  const tabsRef = React.useRef<HTMLDivElement>(null);
+  const [showLeftScroll, setShowLeftScroll] = useState(false);
+  const [showRightScroll, setShowRightScroll] = useState(false);
+
+  const handleScroll = () => {
+    if (tabsRef.current) {
+      const { scrollLeft, scrollWidth, clientWidth } = tabsRef.current;
+      setShowLeftScroll(scrollLeft > 10);
+      setShowRightScroll(scrollLeft < scrollWidth - clientWidth - 10);
+    }
+  };
+
+  useEffect(() => {
+    handleScroll();
+    const currentRef = tabsRef.current;
+    if (currentRef) {
+      currentRef.addEventListener("scroll", handleScroll);
+    }
+    window.addEventListener("resize", handleScroll);
+    return () => {
+      if (currentRef) {
+        currentRef.removeEventListener("scroll", handleScroll);
+      }
+      window.removeEventListener("resize", handleScroll);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (tabsRef.current) {
+      const activeBtn = tabsRef.current.querySelector('[data-active="true"]');
+      if (activeBtn) {
+        activeBtn.scrollIntoView({
+          behavior: "smooth",
+          block: "nearest",
+          inline: "center",
+        });
+      }
+      setTimeout(handleScroll, 400);
+    }
+  }, [filter]);
 
   const { data: orders = [], isLoading } = useQuery({
     queryKey: ["orders"],
@@ -94,35 +134,89 @@ export function OrderManager() {
   }, [orders, filter, search]);
 
   return (
-    <div className="p-4 md:p-10 space-y-10 max-w-[1600px] mx-auto animate-in fade-in duration-700 pb-24 md:pb-12">
-      <header className="flex flex-col xl:flex-row xl:items-center justify-between gap-6">
-        <div>
-          <h1 className="text-3xl md:text-5xl font-black tracking-tighter uppercase text-white">{config.ordersLabel}</h1>
-          <p className="text-white/40 md:text-lg">Suivez vos ventes et gérez le cycle de vie de vos {config.ordersLabel.toLowerCase()}.</p>
+    <div className="p-4 md:p-10 space-y-8 md:space-y-10 max-w-6xl mx-auto animate-in fade-in duration-700 pb-24 md:pb-12">
+      <header className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div className="space-y-2">
+          <h1 className="text-3xl md:text-5xl font-black tracking-tighter uppercase text-white flex items-center gap-4">
+            <ShoppingCart className="text-vendeur-emerald shrink-0" size={32} />
+            {config.ordersLabel}
+          </h1>
+          <p className="text-white/40 text-sm md:text-lg">Suivez vos ventes et gérez le cycle de vie de vos {config.ordersLabel.toLowerCase()}.</p>
         </div>
 
-        <div className="flex flex-wrap gap-2.5">
-          {["all", "pending", "paid", "delivered", "cancelled"].map((s) => (
+        {/* Desktop Filter Menu */}
+        <div className="hidden md:flex gap-2 p-1.5 bg-vendeur-coal/80 backdrop-blur-md rounded-3xl border border-white/10 w-fit shadow-2xl overflow-hidden">
+          {[
+            { id: "all", label: "Tous", icon: <Package size={18} /> },
+            { id: "pending", label: "En attente", icon: <Clock size={18} /> },
+            { id: "paid", label: "Payée", icon: <Banknote size={18} /> },
+            { id: "delivered", label: "Livrée", icon: <Truck size={18} /> },
+            { id: "cancelled", label: "Annulée", icon: <XCircle size={18} /> }
+          ].map((tab) => (
             <button
-              key={s}
-              onClick={() => setFilter(s)}
+              key={tab.id}
+              onClick={() => setFilter(tab.id)}
+              data-active={filter === tab.id}
               className={cn(
-                "px-5 py-2.5 rounded-xl text-[10px] md:text-xs font-black uppercase tracking-widest border transition-all shadow-sm",
-                filter === s
-                  ? "bg-white text-black border-white shadow-xl scale-105"
-                  : "bg-white/5 text-white/40 border-white/10 hover:border-white/20 hover:bg-white/10"
+                "flex items-center justify-center gap-2 px-4 h-11 rounded-2xl text-[10px] font-black uppercase tracking-tight transition-all shrink-0 whitespace-nowrap",
+                filter === tab.id
+                  ? "bg-vendeur-emerald text-vendeur-coal shadow-lg"
+                  : "text-white/40 hover:bg-white/5 hover:text-white"
               )}
             >
-              {s === "all" ? "Tous" : statusLabels[s]}
+              <div className="shrink-0">{tab.icon}</div>
+              <span className="leading-none">{tab.label}</span>
             </button>
           ))}
         </div>
       </header>
 
+      {/* Mobile Navigation Onglets (Only on Mobile) */}
+      <div className="md:hidden sticky top-0 z-30 -mx-4 px-4 py-3 bg-vendeur-bg/95 backdrop-blur-xl">
+        <div className="relative max-w-full w-full group">
+          <div className={cn(
+            "absolute left-0 top-0 bottom-0 w-12 z-10 bg-gradient-to-r from-vendeur-coal to-transparent pointer-events-none rounded-l-2xl transition-opacity duration-300",
+            showLeftScroll ? "opacity-100" : "opacity-0"
+          )} />
+          <div className={cn(
+            "absolute right-0 top-0 bottom-0 w-12 z-10 bg-gradient-to-l from-vendeur-coal to-transparent pointer-events-none rounded-r-2xl transition-opacity duration-300",
+            showRightScroll ? "opacity-100" : "opacity-0"
+          )} />
+
+          <div
+            ref={tabsRef}
+            className="flex gap-2 p-1.5 bg-vendeur-coal/80 backdrop-blur-md rounded-2xl border border-white/10 w-fit shadow-2xl overflow-x-auto no-scrollbar max-w-full relative"
+          >
+            {[
+              { id: "all", label: "Tous", icon: <Package size={18} /> },
+              { id: "pending", label: "En attente", icon: <Clock size={18} /> },
+              { id: "paid", label: "Payée", icon: <Banknote size={18} /> },
+              { id: "delivered", label: "Livrée", icon: <Truck size={18} /> },
+              { id: "cancelled", label: "Annulée", icon: <XCircle size={18} /> }
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setFilter(tab.id)}
+                data-active={filter === tab.id}
+                className={cn(
+                  "flex items-center justify-center gap-2 px-4 h-12 rounded-xl text-[10px] font-black uppercase tracking-tight transition-all shrink-0 whitespace-nowrap",
+                  filter === tab.id
+                    ? "bg-vendeur-emerald text-vendeur-coal shadow-lg"
+                    : "text-white/40 hover:bg-white/5 hover:text-white"
+                )}
+              >
+                <div className="shrink-0">{tab.icon}</div>
+                <span className="leading-none">{tab.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
       <div className="relative">
         <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" size={18} />
         <input
-          className="w-full bg-[#0c0f0d] border border-white/5 rounded-2xl py-4 pl-12 pr-4 text-sm outline-none focus:border-emerald-500/50 transition-all shadow-xl"
+          className="w-full bg-vendeur-coal/50 border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-sm text-white outline-none focus:border-vendeur-emerald/50 transition-all shadow-xl"
           placeholder="Rechercher par client ou produit..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
@@ -132,7 +226,7 @@ export function OrderManager() {
       <div className="grid gap-4">
         {isLoading ? (
           <div className="py-20 flex flex-col items-center justify-center gap-4 text-white/20">
-            <Loader2 size={48} className="animate-spin" />
+            <Loader2 size={48} className="animate-spin text-vendeur-emerald" />
             <p className="font-black uppercase tracking-[0.2em] text-xs">Chargement des {config.ordersLabel.toLowerCase()}...</p>
           </div>
         ) : filteredOrders.length === 0 ? (
@@ -142,7 +236,7 @@ export function OrderManager() {
           </div>
         ) : (
           filteredOrders.map((order: any) => (
-            <div key={order._id} className="bg-[#0c0f0d] border border-white/5 rounded-[2rem] p-6 hover:border-white/10 transition-all group shadow-lg">
+            <div key={order._id} className="bg-vendeur-coal/40 border border-white/5 rounded-[2rem] p-6 hover:border-white/10 transition-all group shadow-lg">
               <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
                 <div className="flex items-start gap-4">
                   <div className="h-12 w-12 rounded-2xl bg-white/5 flex items-center justify-center text-white/20 shrink-0">

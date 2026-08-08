@@ -9,12 +9,14 @@ import {
   Sparkles,
   Zap,
   Share2,
-  ExternalLink
+  ExternalLink,
+  Brain,
+  MessageSquareQuote
 } from "lucide-react";
 
 import { useSocket } from "@/hooks/useSocket";
 import { useQuery as useTanstackQuery, useQueryClient } from "@tanstack/react-query";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { useAuthStore } from "@/stores/authStore";
 import { toast } from "sonner";
 import { apiClient } from "@/lib/apiClient";
@@ -22,6 +24,7 @@ import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { SetupGuide } from "./components/SetupGuide";
 import { SubscriptionBanner } from "./components/SubscriptionBanner";
+import { BriefingRoom } from "./components/BriefingRoom";
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -37,6 +40,18 @@ export function SalesDashboard() {
   const { accessToken } = useAuthStore();
   const socket = useSocket();
   const queryClient = useQueryClient();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const isBriefingOpen = searchParams.get("briefing") === "true";
+
+  const setIsBriefingOpen = (open: boolean) => {
+    if (open) {
+      setSearchParams({ briefing: "true" });
+    } else {
+      const newParams = new URLSearchParams(searchParams);
+      newParams.delete("briefing");
+      setSearchParams(newParams);
+    }
+  };
 
   const { data: dashboard, isLoading } = useTanstackQuery({
     queryKey: ["dashboard"],
@@ -110,12 +125,18 @@ export function SalesDashboard() {
         </div>
       </header>
 
-      <HomePanel dashboard={dashboard} />
+      <HomePanel dashboard={dashboard} onOpenBriefing={() => setIsBriefingOpen(true)} />
+
+      <BriefingRoom
+        isOpen={isBriefingOpen}
+        onClose={() => setIsBriefingOpen(false)}
+        businessName={dashboard?.merchant?.businessName || "Votre boutique"}
+      />
     </main>
   );
 }
 
-function HomePanel({ dashboard }: { dashboard: any }) {
+function HomePanel({ dashboard, onOpenBriefing }: { dashboard: any, onOpenBriefing: () => void }) {
   const tips = dashboard?.aiGrowthAdvice?.tips || [];
   const status = dashboard?.merchant?.whatsappConfig?.status || 'disconnected';
   const setupStatus = dashboard?.setupStatus;
@@ -145,8 +166,8 @@ function HomePanel({ dashboard }: { dashboard: any }) {
         </div>
 
         <div className="relative z-10 space-y-8">
-          <div className="flex items-center md:justify-start justify-center">
-            <div className="flex items-center gap-3 md:gap-5 max-w-full">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div className="flex items-center gap-3 md:gap-5">
               <div className="h-9 w-9 md:h-14 md:w-14 rounded-xl md:rounded-2xl bg-vendeur-emerald flex items-center justify-center text-vendeur-coal shadow-2xl shadow-vendeur-emerald/30 group-hover:rotate-6 transition-transform shrink-0">
                 <Bot className="w-6 h-6 md:w-8 md:h-8" />
               </div>
@@ -162,6 +183,14 @@ function HomePanel({ dashboard }: { dashboard: any }) {
                 </div>
               </div>
             </div>
+
+            <button
+              onClick={onOpenBriefing}
+              className="flex items-center justify-center gap-3 px-5 py-2.5 rounded-xl bg-vendeur-emerald/10 border border-vendeur-emerald/30 text-vendeur-emerald text-[10px] md:text-xs font-black uppercase tracking-widest hover:bg-vendeur-emerald/20 transition-all group/btn w-full md:w-auto mt-2 md:mt-0"
+            >
+              <MessageSquareQuote size={18} className="group-hover/btn:rotate-12 transition-transform" />
+              Briefing Room : Donner des instructions
+            </button>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

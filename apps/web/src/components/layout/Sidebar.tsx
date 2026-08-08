@@ -11,22 +11,33 @@ export function Sidebar() {
 
   const links = [
     { to: "/dashboard", icon: LayoutDashboard, label: "Stats" },
+    { to: "/inbox", icon: MessageCircle, label: "Inbox" },
+    { to: "/dashboard?briefing=true", icon: Brain, label: "IA" },
     ...(user?.roles.includes("admin") ? [{ to: "/admin", icon: Shield, label: "Admin" }] : []),
     { to: "/products", icon: Package, label: "Catalogue" },
     { to: "/orders", icon: ShoppingCart, label: "Commandes" },
-    { to: "/inbox", icon: MessageCircle, label: "Messages" },
     { to: "/marketing", icon: Megaphone, label: "Marketing" },
     { to: "/settings", icon: Settings, label: "Réglages" },
   ];
 
-  const bottomLinks = links.slice(0, 4);
-  const isMoreActive = links.slice(4).some((link) => location.pathname.startsWith(link.to));
+  const bottomLinks = [
+    { to: "/dashboard", icon: LayoutDashboard, label: "Stats" },
+    { to: "/dashboard?briefing=true", icon: Brain, label: "IA" },
+    { to: "/products", icon: Package, label: "Catalogue" },
+    { to: "/inbox", icon: MessageCircle, label: "Messages" },
+  ];
+
+  const bottomLinkPaths = bottomLinks.map(l => l.to.split('?')[0]);
+  const isMoreActive = links.some((link) =>
+    location.pathname.startsWith(link.to.split('?')[0]) &&
+    !bottomLinkPaths.includes(link.to.split('?')[0])
+  );
 
   return (
     <>
       {/* Desktop Sidebar */}
-      <aside className="hidden md:flex w-28 bg-vendeur-coal border-r border-white/5 flex-col items-center py-10 space-y-12 shrink-0">
-        <div className="h-16 w-16 flex items-center justify-center overflow-hidden bg-white/5 rounded-2xl p-2 border border-white/10 shadow-2xl">
+      <aside className="hidden md:flex w-28 bg-vendeur-coal border-r border-white/5 flex-col items-center py-10 space-y-8 shrink-0">
+        <div className="h-16 w-16 flex items-center justify-center overflow-hidden bg-white/5 rounded-2xl p-2 border border-white/10 shadow-2xl shrink-0">
           <img src="/apple-touch-icon.png" alt="Logo" className="h-full w-full object-contain filter drop-shadow-lg" />
         </div>
 
@@ -109,7 +120,7 @@ export function Sidebar() {
 
           {/* Vertical layout similar to desktop sidebar but slightly smaller */}
           <nav className="flex-1 w-full flex flex-col items-center gap-6 overflow-y-auto no-scrollbar">
-            {links.slice(4).map((link) => (
+            {links.filter(l => !bottomLinks.some(bl => bl.to === l.to)).map((link) => (
               <NavLink
                 key={link.to}
                 to={link.to}

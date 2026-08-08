@@ -129,8 +129,8 @@ const ProductSchema = new Schema({
 const CustomerSchema = new Schema({
   merchantId: { type: Schema.Types.ObjectId, ref: "CommerceMerchant", required: true, index: true },
   phone: { type: String, required: true, index: true },
-  platform: { type: String, enum: ["whatsapp", "instagram", "tiktok", "facebook"], default: "whatsapp" },
-  platformId: { type: String }, // For non-phone IDs like Instagram Scoped ID
+  platform: { type: String, enum: ["whatsapp", "instagram", "tiktok", "facebook", "web"], default: "whatsapp" },
+  platformId: { type: String, index: true }, // For non-phone IDs like Instagram Scoped ID or Web Session
   name: String,
   location: String,
   leadScore: { type: Number, default: 0 },
@@ -141,7 +141,7 @@ const CustomerSchema = new Schema({
 const ConversationSchema = new Schema({
   merchantId: { type: Schema.Types.ObjectId, ref: "CommerceMerchant", required: true, index: true },
   customerId: { type: Schema.Types.ObjectId, ref: "CommerceCustomer", required: true },
-  platform: { type: String, enum: ["whatsapp", "instagram", "tiktok", "facebook"], default: "whatsapp" },
+  platform: { type: String, enum: ["whatsapp", "instagram", "tiktok", "facebook", "web"], default: "whatsapp" },
   status: { type: String, enum: ["active", "needs_human", "converted", "closed"], default: "active" },
   lastMessageAt: { type: Date, default: Date.now },
   messagesCount: { type: Number, default: 0 },

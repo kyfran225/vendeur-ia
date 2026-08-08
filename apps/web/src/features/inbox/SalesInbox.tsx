@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import {
   MessageCircle, Search, MoreVertical, CheckCheck, ShieldCheck,
   Send, User, Bot, Loader2, Sparkles, X, Instagram, Facebook,
-  ShoppingCart, Plus, Minus, Package, ChevronLeft
+  ShoppingCart, Plus, Minus, Package, ChevronLeft, Globe
 } from "lucide-react";
 
 // Add TikTok Icon (Lucide doesn't have it natively sometimes, using a custom or placeholder)
@@ -254,6 +254,7 @@ export function SalesInbox() {
                         {activeChatData?.platform === 'instagram' && <Instagram size={10} />}
                         {activeChatData?.platform === 'facebook' && <Facebook size={10} className="text-blue-500" />}
                         {activeChatData?.platform === 'tiktok' && <TikTokIcon size={10} />}
+                        {activeChatData?.platform === 'web' && <Globe size={10} className="text-sky-400" />}
                         {(!activeChatData?.platform || activeChatData?.platform === 'whatsapp') && <MessageCircle size={10} />}
                         {activeChatData?.platform || 'WhatsApp'} • En ligne
                       </>
@@ -569,6 +570,7 @@ function ChatListItem({ name, lastMsg, time, unread, active, platform, onClick }
            {platform === 'instagram' && <Instagram size={10} className="text-pink-500" />}
            {platform === 'facebook' && <Facebook size={10} className="text-blue-500" />}
            {platform === 'tiktok' && <TikTokIcon size={10} className="text-white" />}
+           {platform === 'web' && <Globe size={10} className="text-sky-400" />}
            {(!platform || platform === 'whatsapp') && <MessageCircle size={10} className="text-vendeur-emerald" />}
         </div>
       </div>

@@ -13,6 +13,7 @@ import instagramRoutes from "./modules/instagram/instagram.routes.js";
 import facebookRoutes from "./modules/facebook/facebook.routes.js";
 import tiktokRoutes from "./modules/tiktok/tiktok.routes.js";
 import mediaRoutes from "./modules/media/media.routes.js";
+import webChatRoutes from "./modules/commerce/web-chat.routes.js";
 import "./services/ai-queue.service.js";
 import { globalLimiter } from "./middleware/rate-limiter.js";
 import mongoose from "mongoose";
@@ -102,5 +103,6 @@ app.use("/api/instagram", instagramRoutes);
 app.use("/api/facebook", facebookRoutes);
 app.use("/api/tiktok", tiktokRoutes);
 app.use("/api/media", mediaRoutes);
+app.use("/api/commerce/web-chat", webChatRoutes);
 
 export { app, httpServer };

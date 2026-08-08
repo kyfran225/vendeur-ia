@@ -1,4 +1,5 @@
 import { aiProvider, AIResponse } from "./ai-provider.js";
+import { commerceService } from "../modules/commerce/commerce.service.js";
 
 export interface SalesContext {
   merchant: SalesMerchant;
@@ -55,6 +56,23 @@ export class AIAgentService {
         provider: "internal",
         usage: { promptTokens: 0, completionTokens: 0, totalTokens: 0 }
       };
+    }
+
+    // --- RAG: Fetch relevant products based on query ---
+    if (context.merchant._id) {
+       try {
+         const relevantProducts = await commerceService.searchRelevantProducts(
+           context.merchant._id,
+           context.message,
+           5 // Limit to top 5 products
+         );
+         // Replace entire catalog with only relevant products for the prompt
+         if (relevantProducts.length > 0) {
+            context.products = relevantProducts;
+         }
+       } catch (err) {
+         console.warn("[AIAgent] RAG search failed, falling back to full catalog:", err);
+       }
     }
 
     const systemPrompt = customSystemPrompt || this.buildSystemPrompt(context);

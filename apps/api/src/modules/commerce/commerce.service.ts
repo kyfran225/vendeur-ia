@@ -1,3 +1,4 @@
+import mongoose, { Schema, Document } from "mongoose";
 import {
   CommerceMerchantModel,
   CommerceKnowledgeModel,
@@ -189,6 +190,14 @@ export class CommerceService {
             tags: data.firstProduct.tags || []
           }
         });
+
+        // Trigger embedding generation for the first product
+        const newProduct = await CommerceProductModel.findOne({ merchantId: merchant._id, name: data.firstProduct.name });
+        if (newProduct) {
+          this.syncProductEmbedding(newProduct._id.toString()).catch(err =>
+            console.error("[Embedding] Initial sync failed:", err)
+          );
+        }
       }
     }
 
@@ -725,6 +734,71 @@ Résumé actuel :`;
       body: `Félicitations ! Votre parrainage de ${newMerchant.businessName} a réussi.`,
       data: { type: "referral", action: "reward" }
     }).catch(err => console.error("[Referral] Push failed:", err));
+  }
+
+  async syncProductEmbedding(productId: string) {
+    const product = await CommerceProductModel.findById(productId);
+    if (!product) return;
+
+    const textToEmbed = `${product.name} ${product.description} ${product.category}`.trim();
+    if (!textToEmbed) return;
+
+    try {
+      const embedding = await aiProvider.generateEmbeddings(textToEmbed);
+      await CommerceProductModel.findByIdAndUpdate(productId, {
+        "aiMetadata.embedding": embedding
+      });
+      console.log(`[Embedding] Synced for product: ${product.name}`);
+    } catch (err) {
+      console.error(`[Embedding] Sync failed for product ${product.name}:`, err);
+    }
+  }
+
+  async searchRelevantProducts(merchantId: string, query: string, limit = 5) {
+    try {
+      // 1. Generate embedding for query
+      const queryEmbedding = await aiProvider.generateEmbeddings(query);
+
+      // 2. Vector search using MongoDB aggregate
+      const relevantProducts = await CommerceProductModel.aggregate([
+        { $match: {
+          merchantId: new mongoose.Types.ObjectId(merchantId),
+          stock: { $gt: 0 },
+          "aiMetadata.embedding": { $exists: true, $ne: [] }
+        } },
+        {
+          $addFields: {
+            score: {
+              $reduce: {
+                input: { $range: [0, { $size: "$aiMetadata.embedding" }] },
+                initialValue: 0,
+                in: {
+                  $add: [
+                    "$$value",
+                    {
+                      $multiply: [
+                        { $arrayElemAt: ["$aiMetadata.embedding", "$$this"] },
+                        { $arrayElemAt: [queryEmbedding, "$$this"] }
+                      ]
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        { $sort: { score: -1 } },
+        { $limit: limit }
+      ]);
+
+      return relevantProducts;
+    } catch (err) {
+      console.error("[Embedding Search] Error:", err);
+      return CommerceProductModel.find({
+        merchantId,
+        stock: { $gt: 0 }
+      }).limit(limit);
+    }
   }
 }
 

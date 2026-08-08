@@ -561,6 +561,28 @@ export class AIProvider {
 
     throw new Error("Échec TTS.");
   }
+
+  async generateEmbeddings(text: string): Promise<number[]> {
+    const config = await this.getDynamicConfig();
+    const apiKey = this.getProviderKey(config, 'openai');
+
+    if (!apiKey) throw new Error("OpenAI API Key missing for embeddings");
+
+    try {
+      const response = await axios.post("https://api.openai.com/v1/embeddings", {
+        input: text,
+        model: "text-embedding-3-small"
+      }, {
+        headers: { "Authorization": `Bearer ${apiKey}`, "Content-Type": "application/json" }
+      });
+
+      return response.data.data[0].embedding;
+    } catch (error: any) {
+      const msg = error.response?.data?.error?.message || error.message;
+      console.error("[AI Provider] Embedding generation failed:", msg);
+      throw new Error(`Embedding failed: ${msg}`);
+    }
+  }
 }
 
 export const aiProvider = new AIProvider();

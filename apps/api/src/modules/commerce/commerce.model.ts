@@ -111,7 +111,8 @@ const ProductSchema = new Schema({
   availability: { type: String, enum: ["available", "limited", "sold_out", "hidden"], default: "available" },
   aiMetadata: {
     tags: [String],
-    tiktokCaption: String
+    tiktokCaption: String,
+    embedding: [Number] // For RAG search
   }
 }, { timestamps: true });
 

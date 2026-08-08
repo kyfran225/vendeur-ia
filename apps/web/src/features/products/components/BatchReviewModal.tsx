@@ -18,11 +18,12 @@ interface BatchReviewModalProps {
   image: string;
   rawItems: any[];
   boutiqueName: string;
+  currency?: string;
   onConfirm: (confirmedItems: any[]) => void;
   onCancel: () => void;
 }
 
-export function BatchReviewModal({ image, rawItems, boutiqueName, onConfirm, onCancel }: BatchReviewModalProps) {
+export function BatchReviewModal({ image, rawItems, boutiqueName, currency = "XOF", onConfirm, onCancel }: BatchReviewModalProps) {
   const [items, setItems] = useState<BatchItem[]>(() =>
     rawItems.map((item, index) => ({
       id: `item-${index}-${Date.now()}`,
@@ -162,7 +163,7 @@ export function BatchReviewModal({ image, rawItems, boutiqueName, onConfirm, onC
                         {idx + 1}. {item.name || "Sans nom"}
                       </p>
                       <p className="text-[10px] text-emerald-400 font-black">
-                        {item.price > 0 ? `${item.price.toLocaleString("fr-FR")} FCFA` : "Prix non défini"}
+                        {item.price > 0 ? `${item.price.toLocaleString("fr-FR")} ${currency}` : "Prix non défini"}
                       </p>
                     </div>
                   </div>
@@ -219,10 +220,10 @@ export function BatchReviewModal({ image, rawItems, boutiqueName, onConfirm, onC
                 />
               </div>
 
-              {/* Price FCFA */}
+              {/* Price Dynamic Currency */}
               <div className="space-y-1">
                 <label className="text-[10px] font-black uppercase tracking-widest text-emerald-400">
-                  Prix de Vente (FCFA)
+                  Prix de Vente ({currency})
                 </label>
                 <div className="relative">
                   <input
@@ -233,7 +234,7 @@ export function BatchReviewModal({ image, rawItems, boutiqueName, onConfirm, onC
                     placeholder="15000"
                   />
                   <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-emerald-400/60">
-                    FCFA
+                    {currency}
                   </span>
                 </div>
               </div>

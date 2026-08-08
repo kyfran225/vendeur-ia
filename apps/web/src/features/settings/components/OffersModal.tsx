@@ -4,6 +4,7 @@ import { apiClient } from "@/lib/apiClient";
 import { toast } from "sonner";
 import { useAuthStore } from "@/stores/authStore";
 import { useQueryClient } from "@tanstack/react-query";
+import { useMerchantCurrency } from "@/hooks/useMerchantCurrency";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
@@ -20,6 +21,7 @@ export function OffersModal({ isOpen, onClose }: OffersModalProps) {
   const [loading, setLoading] = useState<string | null>(null);
   const { user } = useAuthStore();
   const queryClient = useQueryClient();
+  const currency = useMerchantCurrency();
 
   if (!isOpen) return null;
 
@@ -89,7 +91,7 @@ export function OffersModal({ isOpen, onClose }: OffersModalProps) {
           <div className="pt-10">
             <div className="flex items-baseline gap-2 mb-8 h-12">
               <span className="text-4xl font-black text-vendeur-emerald">5 000</span>
-              <span className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em]">FCFA / MOIS</span>
+              <span className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em]">{currency} / MOIS</span>
             </div>
 
             <button
@@ -134,7 +136,7 @@ export function OffersModal({ isOpen, onClose }: OffersModalProps) {
           <div className="pt-10">
              <div className="flex items-baseline gap-2 mb-8 h-12">
               <span className="text-4xl font-black text-white">25 000</span>
-              <span className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em]">FCFA (UNIQUE)</span>
+              <span className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em]">{currency} (UNIQUE)</span>
             </div>
 
             <button

@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { useMerchantCurrency } from "@/hooks/useMerchantCurrency";
 import { toast } from "sonner";
 import { apiClient } from "@/lib/apiClient";
 import { useAuthStore } from "@/stores/authStore";
@@ -48,6 +49,7 @@ export function WhatsAppConnectionFlow({ merchant, qrCode, onInitBaileys, onRefr
 
   const { user } = useAuthStore();
   const qrRef = useRef<HTMLDivElement>(null);
+  const currency = useMerchantCurrency();
 
   useEffect(() => {
     if (qrCode && qrRef.current) {
@@ -376,7 +378,7 @@ export function WhatsAppConnectionFlow({ merchant, qrCode, onInitBaileys, onRefr
               <HelpOption
                 icon={<Sparkles size={18} className="text-vendeur-coal" />}
                 title="Pack Pro Clé en Main"
-                desc="Un expert configure tout pour vous (25.000 FCFA)."
+                desc={`Un expert configure tout pour vous (25.000 ${currency}).`}
                 onClick={handlePackProLead}
                 highlight
               />

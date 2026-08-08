@@ -169,6 +169,7 @@ function WelcomeStep({ onNext, onBack }: { onNext: () => void; onBack: () => voi
       setForm(prev => ({
         ...prev,
         country: selectedCountry.code,
+        currency: selectedCountry.currency,
         whatsappNumber: `${selectedCountry.dialCode}${localPhone}`
       }));
     }
@@ -307,6 +308,8 @@ function VisionStep({ onNext, onBack }: { onNext: () => void; onBack: () => void
   const [result, setResult] = useState<any>(tempData?.firstProduct || null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(tempData?.productImage || null);
   const { accessToken } = useAuthStore();
+  // Currency comes from the country selected in WelcomeStep and stored in tempData
+  const currency: string = (tempData as any)?.currency || "XOF";
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const selected = e.target.files?.[0];
@@ -418,7 +421,7 @@ function VisionStep({ onNext, onBack }: { onNext: () => void; onBack: () => void
                           value={result.price}
                           onChange={(e) => handleUpdateResult({ price: Number(e.target.value) })}
                         />
-                        <span className="text-xl font-black text-vendeur-emerald">FCFA</span>
+                        <span className="text-xl font-black text-vendeur-emerald">{currency}</span>
                       </div>
                     </div>
                     <button onClick={onNext} className="w-full sm:w-auto h-12 px-8 rounded-xl bg-vendeur-emerald text-vendeur-coal font-black uppercase tracking-widest text-xs shrink-0">

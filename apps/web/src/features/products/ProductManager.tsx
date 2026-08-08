@@ -152,6 +152,19 @@ export function ProductManager() {
   });
 
   // Real Backend Data Fetching
+  const { data: merchant } = useQuery({
+    queryKey: ["merchant-profile"],
+    queryFn: async () => {
+      const response = await axios.get(`${API_URL}/api/commerce/merchant/profile`, {
+        headers: { Authorization: `Bearer ${accessToken}` }
+      });
+      return response.data;
+    },
+    enabled: !!accessToken
+  });
+
+  const activeCurrency = merchant?.currency || "XOF";
+
   const { data: products = [], isLoading } = useQuery<Product[]>({
     queryKey: ["products"],
     queryFn: async () => {
@@ -476,7 +489,7 @@ export function ProductManager() {
               </label>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <label className="grid gap-2 text-xs font-black uppercase tracking-widest text-white/40">
-                  Prix (FCFA)
+                  Prix ({activeCurrency})
                   <input
                     type="number"
                     className="h-12 rounded-xl bg-white/5 border border-white/10 px-4 text-white outline-none focus:border-emerald-300 transition-all"
@@ -587,7 +600,7 @@ export function ProductManager() {
                     <h3 className="font-black text-lg text-white line-clamp-1">{p.name}</h3>
                     <p className="text-sm text-white/40">{p.category}</p>
                   </div>
-                  <p className={`font-black text-${config.accent}-400`}>{p.price.toLocaleString()} FCFA</p>
+                  <p className={`font-black text-${config.accent}-400`}>{p.price.toLocaleString()} {(p as any).currency || activeCurrency}</p>
                 </div>
                 <div className="flex items-center justify-between pt-4 border-t border-white/5">
                   <div className="flex items-center gap-2">

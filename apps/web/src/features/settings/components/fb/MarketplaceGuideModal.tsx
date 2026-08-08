@@ -2,6 +2,7 @@ import React from "react";
 import { X, Globe, Check, Rocket, ShieldCheck, ChevronRight } from "lucide-react";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { useMerchantCurrency } from "@/hooks/useMerchantCurrency";
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -14,6 +15,7 @@ interface MarketplaceGuideModalProps {
 }
 
 export function MarketplaceGuideModal({ isOpen, onClose, onOpenPackPro }: MarketplaceGuideModalProps) {
+  const currency = useMerchantCurrency();
   if (!isOpen) return null;
 
   return (
@@ -60,7 +62,7 @@ export function MarketplaceGuideModal({ isOpen, onClose, onOpenPackPro }: Market
             className="w-full h-18 bg-vendeur-emerald text-vendeur-coal font-black uppercase tracking-widest text-xs rounded-[2rem] flex items-center justify-center gap-3 hover:scale-[1.02] active:scale-95 transition-all shadow-xl shadow-vendeur-emerald/20"
           >
             <Rocket size={20} />
-            M'aider avec le Pack Pro (25.000 FCFA)
+            M'aider avec le Pack Pro (25.000 {currency})
           </button>
 
           <button

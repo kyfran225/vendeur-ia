@@ -335,16 +335,17 @@ Réponds UNIQUEMENT avec le JSON. Si ce n'est pas une preuve de paiement, mets i
     }
   }
 
-  async analyzeProductImage(imageBuffer: Buffer, mimeType: string) {
+  async analyzeProductImage(imageBuffer: Buffer, mimeType: string, currency: string = "XOF", country: string = "CI") {
     // 1. Primary: Dynamic Vision Provider
     try {
-      const prompt = `Analyse cette image de commerce. Elle peut contenir soit un seul produit, soit un LOT DE PLUSIEURS PRODUITS (ex: plusieurs vêtements disposés, plusieurs articles sur une table, etc.).
+      const prompt = `Analyse cette image de commerce pour un marchand situé dans le pays code "${country}" utilisant la devise "${currency}".
+Elle peut contenir soit un seul produit, soit un LOT DE PLUSIEURS PRODUITS (ex: plusieurs vêtements disposés, plusieurs articles sur une table, etc.).
 Détecte tous les produits visibles distincts et extrait un tableau JSON "items" au format suivant :
 {
   "items": [
     {
       "name": "Nom accrocheur et vendeur du produit",
-      "price": number (prix estimé en FCFA selon l'article ou 0 si totalement inconnu),
+      "price": number (prix estimé en ${currency} selon l'article et le marché local, ou 0 si totalement inconnu),
       "stock": 1,
       "description": "Description commerciale complète optimisée pour WhatsApp/Instagram avec emojis et détails (couleurs, style, matière)",
       "category": "Choisir parmi: fashion, food, beauty, electronics, artisan, services, digital, home, grocery, health, auto, other",

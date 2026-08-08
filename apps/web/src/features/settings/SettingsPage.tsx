@@ -401,7 +401,7 @@ function BoutiqueTab({ merchant, initialKnowledge, accessToken }: { merchant: an
         <div className="space-y-4">
            <div className="grid grid-cols-2 gap-4 px-4 text-[10px] font-black uppercase tracking-[0.3em] text-white/20">
               <span>Zone / Commune</span>
-              <span>Tarif (FCFA)</span>
+              <span className="text-[10px] font-black uppercase tracking-widest text-white/40">Tarif ({localMerchant?.currency || "XOF"})</span>
            </div>
 
            {deliveryFees.map((fee: any, idx: number) => (

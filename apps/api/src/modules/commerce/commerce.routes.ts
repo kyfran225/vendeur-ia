@@ -229,7 +229,7 @@ router.post("/buy-pack-pro", authenticate, async (req, res) => {
   const { email } = req.body;
   const userId = (req as any).user.id;
   try {
-    // Pack Pro is 25,000 FCFA
+    // Pack Pro – amount is in the merchant's regional currency (XOF, NGN, GHS, etc.)
     const data = await paystackService.initializeSubscription(email, 25000, {
       type: "pack_pro",
       userId
@@ -562,11 +562,18 @@ router.post("/products/vision", authenticate, aiLimiter, upload.single("image"),
   try {
     if (!req.file) return res.status(400).json({ error: "No image provided" });
 
-    logger.info(`[Vision] Image analysis requested by user ${(req as any).user.id}`);
+    const userId = (req as any).user.id;
+    const merchant = await CommerceMerchantModel.findOne({ ownerId: userId });
+    const currency = merchant?.currency || "XOF";
+    const country = merchant?.country || "CI";
+
+    logger.info(`[Vision] Image analysis requested by user ${userId} (Currency: ${currency}, Country: ${country})`);
 
     const analysis = await commerceService.analyzeProductImage(
       req.file.buffer,
-      req.file.mimetype
+      req.file.mimetype,
+      currency,
+      country
     );
 
     res.json(analysis);

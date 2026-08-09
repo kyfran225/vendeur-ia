@@ -212,8 +212,8 @@ export function WhatsAppConnectionFlow({ merchant, qrCode, onInitBaileys, onRefr
                   : hasPaidContribution
                     ? "Générer QR Code"
                     : merchant?.subscription?.status === 'past_due'
-                      ? "Réactiver (RAM)"
-                      : "Connecter (RAM)"}
+                      ? "Réactiver"
+                      : "Connecter"}
               </button>
             </div>
           </div>
@@ -395,6 +395,11 @@ export function WhatsAppConnectionFlow({ merchant, qrCode, onInitBaileys, onRefr
           </div>
         </div>
       )}
+
+      <OffersModal
+        isOpen={showOffers}
+        onClose={() => setShowOffers(false)}
+      />
     </div>
   );
 }

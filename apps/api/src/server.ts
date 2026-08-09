@@ -24,8 +24,16 @@ async function start() {
     setTimeout(async () => {
       try {
         const { billingService } = await import("./services/billing.service.js");
-        // Run once at startup
-        billingService.checkExpirations().catch(err => logger.error("[Server] Initial billing check failed:", err));
+        const { billingQueue } = await import("./services/billing-queue.service.js");
+
+        // Run once at startup (except in development to avoid log flood)
+        if (env.NODE_ENV !== "development") {
+          billingService.checkExpirations().catch(err => logger.error("[Server] Initial billing check failed:", err));
+        } else {
+          logger.info("[Server] Development mode: Draining billing queue to clear leftover test jobs...");
+          await billingQueue.drain().catch(err => logger.error("[Server] Failed to drain billing queue:", err));
+          logger.info("[Server] Skipping initial billing check in development mode");
+        }
 
         // Schedule every 24 hours
         setInterval(() => {

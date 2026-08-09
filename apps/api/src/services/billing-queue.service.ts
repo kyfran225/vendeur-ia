@@ -86,9 +86,13 @@ export const billingWorker = new Worker(
           await messagingService.sendMessage(merchant, 'whatsapp', merchant.whatsappNumber || "", waMessage);
         } catch (waErr: any) {
           if (waErr.message === "WhatsApp session not active") {
-            logger.warn(`[BillingQueue] WhatsApp session down for ${businessName}. Falling back to SMS.`);
-            const smsMessage = `VENDEUR IA: Rappel abonnement - ${daysLeft} jour(s). Renouvelez ici: ${renewalLink || env.CLIENT_URL + '/settings?tab=billing'}`;
-            await smsService.sendAlert(merchant.whatsappNumber || "", smsMessage);
+            if (merchant.whatsappNumber) {
+              logger.warn(`[BillingQueue] WhatsApp session down for ${businessName}. Falling back to SMS.`);
+              const smsMessage = `VENDEUR IA: Rappel abonnement - ${daysLeft} jour(s). Renouvelez ici: ${renewalLink || env.CLIENT_URL + '/settings?tab=billing'}`;
+              await smsService.sendAlert(merchant.whatsappNumber, smsMessage);
+            } else {
+              logger.warn(`[BillingQueue] WhatsApp session down for ${businessName}, but no phone number available for SMS fallback.`);
+            }
           } else {
             logger.error(`[BillingQueue] Failed to send WhatsApp reminder to ${businessName}:`, waErr);
           }
@@ -125,9 +129,13 @@ export const billingWorker = new Worker(
           await messagingService.sendMessage(merchant, 'whatsapp', merchant.whatsappNumber || "", waMessage);
         } catch (waErr: any) {
           if (waErr.message === "WhatsApp session not active") {
-            logger.warn(`[BillingQueue] WhatsApp session down for ${businessName}. Falling back to SMS suspension notice.`);
-            const smsMessage = `VENDEUR IA: Service Suspendu pour ${businessName}. Votre abonnement a expiré. Réactivez ici: ${env.CLIENT_URL}/settings?tab=billing`;
-            await smsService.sendAlert(merchant.whatsappNumber || "", smsMessage);
+            if (merchant.whatsappNumber) {
+              logger.warn(`[BillingQueue] WhatsApp session down for ${businessName}. Falling back to SMS suspension notice.`);
+              const smsMessage = `VENDEUR IA: Service Suspendu pour ${businessName}. Votre abonnement a expiré. Réactivez ici: ${env.CLIENT_URL}/settings?tab=billing`;
+              await smsService.sendAlert(merchant.whatsappNumber, smsMessage);
+            } else {
+              logger.warn(`[BillingQueue] WhatsApp session down for ${businessName}, but no phone number available for SMS suspension notice fallback.`);
+            }
           } else {
             logger.error(`[BillingQueue] Failed to send WhatsApp suspension notice to ${businessName}:`, waErr);
           }

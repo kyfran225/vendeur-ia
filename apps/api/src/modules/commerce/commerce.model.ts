@@ -20,8 +20,8 @@ const MerchantSchema = new Schema({
     number: String
   }],
   subscription: {
-    plan: { type: String, default: "starter" },
-    status: { type: String, default: "trial" },
+    plan: { type: String, default: null },
+    status: { type: String, default: null },
     expiresAt: { type: Date, default: null },
     subscriptionCode: { type: String, default: null },
     emailToken: { type: String, default: null },

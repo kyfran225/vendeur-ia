@@ -79,7 +79,8 @@ class WhatsAppService {
     try {
       const activeMerchants = await CommerceMerchantModel.find({
         "whatsappConfig.status": { $in: ["connected", "error"] },
-        "whatsappConfig.provider": "baileys"
+        "whatsappConfig.provider": "baileys",
+        ownerId: { $nin: ["recurring-test-user", "load-test-user"] } // Exclude test accounts
       });
 
       const bootPromises = activeMerchants.map(merchant => {

@@ -76,15 +76,17 @@ export function BillingTab({ merchant }: { merchant: any }) {
               </div>
               <div>
                 <h2 className="text-2xl font-black uppercase tracking-tighter text-white">
-                  Plan {sub?.plan || 'Starter'}
+                  {sub?.plan ? `Plan ${sub.plan}` : 'Aucun Plan Actif'}
                 </h2>
                 <div className="flex items-center gap-2 mt-1">
-                  <span className={cn(
-                    "px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest border",
-                    sub?.status === 'active' || sub?.status === 'trial' ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" : "bg-rose-500/10 text-rose-500 border-rose-500/20"
-                  )}>
-                    {sub?.status === 'active' || sub?.status === 'trial' ? "Actif" : "Suspendu"}
-                  </span>
+                  {sub?.status && (
+                    <span className={cn(
+                      "px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest border",
+                      sub?.status === 'active' || sub?.status === 'trial' ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" : "bg-rose-500/10 text-rose-500 border-rose-500/20"
+                    )}>
+                      {sub?.status === 'active' ? "Actif" : sub?.status === 'trial' ? "Essai" : "Suspendu"}
+                    </span>
+                  )}
                   {hasRecurring && (
                     <span className="px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest border bg-blue-500/10 text-blue-400 border-blue-500/20">
                       Auto-Renouvellement

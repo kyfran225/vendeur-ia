@@ -70,13 +70,13 @@ export function OffersModal({ isOpen, onClose }: OffersModalProps) {
         {/* Option 1: RAM Contribution */}
         <div className="flex-1 p-8 md:p-12 border-b md:border-b-0 md:border-r border-white/5 flex flex-col justify-between min-h-[450px] md:min-h-[600px]">
           <div className="space-y-8">
-            <div className="space-y-4">
-              <div className="h-16 w-16 bg-vendeur-emerald/10 rounded-2xl flex items-center justify-center text-vendeur-emerald">
-                <Server size={32} />
+            <div className="flex items-center gap-4">
+              <div className="h-10 w-10 bg-vendeur-emerald/10 rounded-xl flex items-center justify-center text-vendeur-emerald shrink-0">
+                <Server size={20} />
               </div>
               <div>
-                <h3 className="text-2xl font-black text-white uppercase tracking-tighter leading-none">Contribution RAM</h3>
-                <p className="text-white/40 text-[10px] font-black uppercase tracking-[0.15em] mt-2">Maintenance session serveur</p>
+                <h3 className="text-xl font-black text-white uppercase tracking-tighter leading-none">Contribution RAM</h3>
+                <p className="text-white/40 text-[8px] font-black uppercase tracking-[0.15em] mt-1">Maintenance session serveur</p>
               </div>
             </div>
 
@@ -114,13 +114,13 @@ export function OffersModal({ isOpen, onClose }: OffersModalProps) {
           </div>
 
           <div className="space-y-8 pt-8 md:pt-6">
-            <div className="space-y-4">
-              <div className="h-16 w-16 bg-vendeur-emerald rounded-2xl flex items-center justify-center text-vendeur-coal shadow-xl shadow-vendeur-emerald/20">
-                <Rocket size={32} />
+            <div className="flex items-center gap-4">
+              <div className="h-10 w-10 bg-vendeur-emerald rounded-xl flex items-center justify-center text-vendeur-coal shadow-lg shadow-vendeur-emerald/20 shrink-0">
+                <Rocket size={20} />
               </div>
               <div>
-                <h3 className="text-2xl font-black text-white uppercase tracking-tighter leading-none">Pack Pro Expert</h3>
-                <p className="text-vendeur-emerald font-black text-[10px] uppercase tracking-[0.15em] mt-2">Accompagnement VIP Clé en main</p>
+                <h3 className="text-xl font-black text-white uppercase tracking-tighter leading-none">Pack Pro Expert</h3>
+                <p className="text-vendeur-emerald font-black text-[8px] uppercase tracking-[0.15em] mt-1">Accompagnement VIP Clé en main</p>
               </div>
             </div>
 

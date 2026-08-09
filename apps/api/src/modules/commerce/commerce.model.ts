@@ -12,6 +12,7 @@ const MerchantSchema = new Schema({
   phone: { type: String, default: "" },
   whatsappNumber: { type: String, default: "" },
   currency: { type: String, default: "XOF" },
+  billingCurrency: { type: String, default: "XOF" },
   language: { type: String, default: "fr" },
   paymentChannels: [{
     provider: String,

@@ -4,6 +4,7 @@ import { CommerceMerchantModel } from '../modules/commerce/commerce.model.js';
 import { UserModel } from '../modules/auth/user.model.js';
 import { messagingService } from './messaging.service.js';
 import { pushService } from './push.service.js';
+import { smsService } from './sms.service.js';
 import { billingEmailService } from './billing-email.service.js';
 import { paystackService } from './paystack.service.js';
 import { logger } from './logger.service.js';
@@ -76,7 +77,9 @@ export const billingWorker = new Worker(
           await messagingService.sendMessage(merchant, 'whatsapp', merchant.whatsappNumber || "", waMessage);
         } catch (waErr: any) {
           if (waErr.message === "WhatsApp session not active") {
-            logger.warn(`[BillingQueue] Could not send WhatsApp reminder to ${businessName}: WhatsApp session not active`);
+            logger.warn(`[BillingQueue] WhatsApp session down for ${businessName}. Falling back to SMS.`);
+            const smsMessage = `VENDEUR IA: Rappel abonnement - ${daysLeft} jour(s). Renouvelez ici: ${renewalLink || env.CLIENT_URL + '/settings?tab=billing'}`;
+            await smsService.sendAlert(merchant.whatsappNumber || "", smsMessage);
           } else {
             logger.error(`[BillingQueue] Failed to send WhatsApp reminder to ${businessName}:`, waErr);
           }
@@ -113,7 +116,9 @@ export const billingWorker = new Worker(
           await messagingService.sendMessage(merchant, 'whatsapp', merchant.whatsappNumber || "", waMessage);
         } catch (waErr: any) {
           if (waErr.message === "WhatsApp session not active") {
-            logger.warn(`[BillingQueue] Could not send WhatsApp suspension notice to ${businessName}: WhatsApp session not active`);
+            logger.warn(`[BillingQueue] WhatsApp session down for ${businessName}. Falling back to SMS suspension notice.`);
+            const smsMessage = `VENDEUR IA: Service Suspendu pour ${businessName}. Votre abonnement a expiré. Réactivez ici: ${env.CLIENT_URL}/settings?tab=billing`;
+            await smsService.sendAlert(merchant.whatsappNumber || "", smsMessage);
           } else {
             logger.error(`[BillingQueue] Failed to send WhatsApp suspension notice to ${businessName}:`, waErr);
           }

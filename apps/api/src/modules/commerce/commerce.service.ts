@@ -20,6 +20,7 @@ import axios from "axios";
 import crypto from "crypto";
 
 import { SystemSettingsModel } from "./admin.model.js";
+import { TransactionModel } from "./transaction.model.js";
 
 export class CommerceService {
   async getDashboard(ownerId: string) {

@@ -30,44 +30,86 @@ function cn(...inputs: ClassValue[]) {
 const API_URL = (import.meta as any).env.VITE_API_URL || "http://localhost:3001";
 
 export function OnboardingWizard() {
-  const { tempData, currentStep, setStep, clearOnboarding } = useOnboardingStore();
+  const { tempData, currentStep, setStep, setTempData, clearOnboarding } = useOnboardingStore();
   const { user, accessToken } = useAuthStore();
   const navigate = useNavigate();
   const [isMerchantCreated, setIsMerchantCreated] = useState(false);
+  const [isRestoring, setIsRestoring] = useState(true);
   const creationStarted = useRef(false);
 
-  // Redirect if no temp data and no user (should be handled by App.tsx guard but safe check)
-  if (!tempData && !user) {
-    navigate("/");
-    return null;
-  }
-
-  // Create real merchant record as soon as the wizard starts if not already done
+  // Restore data from backend on mount if not present locally
   useEffect(() => {
-    const initMerchant = async () => {
-      if (user && accessToken && tempData && !isMerchantCreated && !creationStarted.current) {
-        creationStarted.current = true;
+    const restoreData = async () => {
+      if (user && accessToken && !tempData) {
         try {
-          console.log("[Onboarding] Attempting to create/update merchant with complete data...");
+          const res = await apiClient.get("/api/commerce/dashboard");
+          if (res.data?.merchant) {
+            const m = res.data.merchant;
+            const knowledge = res.data.knowledge;
+
+            // Reconstruct OnboardingData from Merchant and Knowledge models
+            const restoredData = {
+              businessName: m.businessName,
+              category: m.category,
+              description: m.description,
+              country: m.country,
+              currency: m.currency,
+              address: m.address,
+              whatsappNumber: m.whatsappNumber,
+              city: m.city,
+              paymentMethods: knowledge?.businessRules?.paymentMethods?.map((pm: any) => pm.provider) || [],
+              // First product is more complex to restore perfectly but we can try the latest one
+              firstProduct: res.data.products?.[0] ? {
+                name: res.data.products[0].name,
+                price: res.data.products[0].price,
+                description: res.data.products[0].description,
+                category: res.data.products[0].category,
+                tags: res.data.products[0].aiMetadata?.tags
+              } : undefined,
+              productImage: res.data.products?.[0]?.images?.[0]
+            };
+
+            setTempData(restoredData);
+            setIsMerchantCreated(true);
+            creationStarted.current = true;
+          }
+        } catch (err) {
+          console.error("[Onboarding] Failed to restore data", err);
+        }
+      }
+      setIsRestoring(false);
+    };
+    restoreData();
+  }, [user, accessToken, tempData, setTempData]);
+
+  // Create or Update merchant record (Auto-save)
+  useEffect(() => {
+    const saveMerchant = async () => {
+      if (user && accessToken && tempData && !isRestoring) {
+        try {
+          console.log("[Onboarding] Auto-saving merchant data...");
           await apiClient.post("/api/commerce/merchant", {
             ...tempData,
-            city: tempData.city || "" // Ensure we don't force a default if we want to capture the merchant's real city
+            city: tempData.city || ""
           });
           setIsMerchantCreated(true);
-          console.log("[Onboarding] Merchant data persisted successfully");
+          creationStarted.current = true;
         } catch (err: any) {
           const isDuplicate = err.response?.status === 409;
           if (isDuplicate) {
             setIsMerchantCreated(true);
+            creationStarted.current = true;
           } else {
-            creationStarted.current = false; // Allow retry if it wasn't a 409
-            console.error("[Onboarding] Failed to persist data", err);
+            console.error("[Onboarding] Auto-save failed", err);
           }
         }
       }
     };
-    initMerchant();
-  }, [user, accessToken, tempData, isMerchantCreated]);
+
+    // Debounce auto-save
+    const timer = setTimeout(saveMerchant, 2000);
+    return () => clearTimeout(timer);
+  }, [user, accessToken, tempData, isRestoring]);
 
   const handleNext = () => setStep(currentStep + 1);
   const handleBack = () => setStep(currentStep - 1);
@@ -99,6 +141,15 @@ export function OnboardingWizard() {
       setStep(steps.length - 1);
     }
   }, [currentStep, steps.length, setStep]);
+
+  if (isRestoring) {
+    return (
+      <div className="min-h-screen bg-vendeur-coal flex flex-col items-center justify-center p-4">
+        <Loader2 className="text-vendeur-emerald animate-spin mb-4" size={48} />
+        <p className="text-white/50 font-black uppercase tracking-widest text-xs">Restauration de votre session...</p>
+      </div>
+    );
+  }
 
   // Pre-render check to avoid crash
   if (!steps[currentStep]) return null;
@@ -164,14 +215,32 @@ function WelcomeStep({ onNext, onBack }: { onNext: () => void; onBack: () => voi
 
   useEffect(() => {
     if (selectedCountry) {
-      setForm(prev => ({
-        ...prev,
-        country: selectedCountry.code,
-        currency: selectedCountry.currency,
-        whatsappNumber: `${selectedCountry.dialCode}${localPhone}`
-      }));
+      const newWhatsappNumber = `${selectedCountry.dialCode}${localPhone}`;
+      setForm(prev => {
+        const updated = {
+          ...prev,
+          country: selectedCountry.code,
+          currency: selectedCountry.currency,
+          whatsappNumber: newWhatsappNumber
+        };
+        // Trigger auto-save via store
+        if (updated.businessName && updated.address && updated.whatsappNumber) {
+           // We only sync to store if basic required fields are somewhat present to avoid empty records
+           // But since we want persistence, let's just sync it.
+           // However, let's use a small timeout to avoid store thrashing on every keystroke
+        }
+        return updated;
+      });
     }
   }, [localPhone, selectedCountry]);
+
+  // Debounced store update for auto-save
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setTempData(form);
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, [form, setTempData]);
 
   const handleNext = () => {
     if (form.businessName && form.whatsappNumber && form.address) {

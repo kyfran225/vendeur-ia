@@ -301,12 +301,26 @@ function BoutiqueTab({ merchant, initialKnowledge, accessToken }: { merchant: an
   const [localMerchant, setLocalMerchant] = useState(merchant);
   const [payments, setPayments] = useState(initialKnowledge?.businessRules?.paymentMethods || []);
   const [deliveryFees, setDeliveryFees] = useState(initialKnowledge?.businessRules?.deliveryFees || []);
+  const [pushStatus, setPushStatus] = useState<'default' | 'granted' | 'denied'>('default');
+  const [isSubscribed, setIsSubscribed] = useState(false);
 
   useEffect(() => {
     if (merchant) setLocalMerchant(merchant);
     if (initialKnowledge?.businessRules?.paymentMethods) setPayments(initialKnowledge.businessRules.paymentMethods);
     if (initialKnowledge?.businessRules?.deliveryFees) setDeliveryFees(initialKnowledge.businessRules.deliveryFees);
   }, [merchant, initialKnowledge]);
+
+  useEffect(() => {
+    if ("Notification" in window) {
+      setPushStatus(Notification.permission);
+
+      navigator.serviceWorker.ready.then(reg => {
+        reg.pushManager.getSubscription().then(sub => {
+          setIsSubscribed(!!sub);
+        });
+      });
+    }
+  }, []);
 
   const updateMutation = useMutation({
     mutationFn: async () => {
@@ -652,18 +666,53 @@ function BoutiqueTab({ merchant, initialKnowledge, accessToken }: { merchant: an
 
         <button
           onClick={async () => {
-            const permission = await Notification.requestPermission();
-            if (permission === "granted") {
-              await subscribeToPush(accessToken);
-              toast.success("Alertes activées ! 🔔");
-            } else {
-              toast.error("Permission refusée.");
+            if (!("Notification" in window)) {
+              toast.error("Votre navigateur ne supporte pas les notifications.");
+              return;
+            }
+
+            try {
+              const permission = await Notification.requestPermission();
+              setPushStatus(permission);
+
+              if (permission === "granted") {
+                const promise = subscribeToPush(accessToken);
+                toast.promise(promise, {
+                  loading: 'Activation des alertes...',
+                  success: () => {
+                    setIsSubscribed(true);
+                    return 'Alertes activées ! 🔔';
+                  },
+                  error: 'Échec de l\'activation.'
+                });
+                await promise;
+              } else {
+                toast.error("Permission refusée. Veuillez activer les notifications dans votre navigateur.");
+              }
+            } catch (error) {
+              console.error("Push Error:", error);
+              toast.error("Erreur lors de l'activation.");
             }
           }}
-          className="flex h-16 w-full md:w-auto px-10 items-center justify-center gap-3 rounded-2xl bg-white/5 border border-white/10 text-[10px] font-black uppercase tracking-widest text-white hover:bg-white/10 transition-all active:scale-95"
+          disabled={isSubscribed && pushStatus === 'granted'}
+          className={cn(
+            "flex h-16 w-full md:w-auto px-10 items-center justify-center gap-3 rounded-2xl border text-[10px] font-black uppercase tracking-widest transition-all active:scale-95",
+            (isSubscribed && pushStatus === 'granted')
+              ? "bg-vendeur-emerald/10 border-vendeur-emerald text-vendeur-emerald cursor-default"
+              : "bg-white/5 border-white/10 text-white hover:bg-white/10"
+          )}
         >
-          <Sparkles size={18} className="text-amber-400" />
-          Activer les Notifications
+          {isSubscribed && pushStatus === 'granted' ? (
+            <>
+              <Bell size={18} className="text-vendeur-emerald" />
+              Alertes Actives
+            </>
+          ) : (
+            <>
+              <Sparkles size={18} className="text-amber-400" />
+              Activer les Notifications
+            </>
+          )}
         </button>
 
 

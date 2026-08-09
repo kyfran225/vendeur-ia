@@ -1,7 +1,4 @@
 import { apiClient } from './apiClient';
-import axios from 'axios';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
 function urlBase64ToUint8Array(base64String: string) {
   const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
@@ -16,22 +13,32 @@ function urlBase64ToUint8Array(base64String: string) {
 
 export async function subscribeToPush(accessToken: string) {
   const publicVapidKey = import.meta.env.VITE_VAPID_PUBLIC_KEY;
-  if (!publicVapidKey) return;
+  if (!publicVapidKey) {
+    console.warn("[Push] VAPID public key missing.");
+    return;
+  }
 
-  if ('serviceWorker' in navigator) {
-    try {
-      const registration = await navigator.serviceWorker.ready;
+  if (!('serviceWorker' in navigator)) {
+    console.warn("[Push] Service Workers not supported.");
+    return;
+  }
 
-      const subscription = await registration.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(publicVapidKey)
-      });
+  try {
+    const registration = await navigator.serviceWorker.ready;
+    console.log("[Push] Service Worker ready.");
 
-      await apiClient.post("/api/commerce/push/subscribe", subscription);
+    const subscription = await registration.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(publicVapidKey)
+    });
 
-      console.log("[Push] Subscribed successfully");
-    } catch (err) {
-      console.error("[Push] Subscription failed:", err);
-    }
+    console.log("[Push] Subscription created:", subscription.endpoint);
+    await apiClient.post("/api/commerce/push/subscribe", subscription);
+
+    console.log("[Push] Subscribed successfully on server.");
+    return true;
+  } catch (err) {
+    console.error("[Push] Subscription failed:", err);
+    throw err;
   }
 }

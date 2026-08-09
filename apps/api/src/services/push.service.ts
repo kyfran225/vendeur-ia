@@ -43,6 +43,12 @@ export class PushService {
       { userId, subscription },
       { upsert: true, new: true }
     );
+
+    // Send Welcome Notification
+    this.sendNotification(userId, {
+      title: "Vendeur IA OS 🚀",
+      body: "Alertes activées ! Vous recevrez désormais vos notifications ici.",
+    }).catch(err => console.error("[Push Service] Welcome notification failed:", err));
   }
 
   async sendNotification(userId: string, payload: { title: string; body: string; icon?: string; data?: any }) {

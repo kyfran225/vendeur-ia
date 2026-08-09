@@ -53,8 +53,16 @@ export function BillingTab({ merchant }: { merchant: any }) {
   const sub = merchant?.subscription;
   const isExpired = sub?.status === "past_due";
   const nextDate = sub?.nextPaymentDate || sub?.expiresAt;
+
+  // Real data logic (no mocks)
   const isMobileMoney = sub?.paymentMethod === 'mobile_money';
+  const isCard = sub?.paymentMethod === 'card';
   const hasRecurring = !!sub?.subscriptionCode;
+
+  // Determine actual payment method label from real data
+  let paymentMethodLabel = "Non défini";
+  if (isMobileMoney) paymentMethodLabel = "Mobile Money";
+  else if (isCard) paymentMethodLabel = "Carte Bancaire";
 
   return (
     <div className="space-y-8 animate-in slide-in-from-bottom-2 duration-500">
@@ -73,9 +81,9 @@ export function BillingTab({ merchant }: { merchant: any }) {
                 <div className="flex items-center gap-2 mt-1">
                   <span className={cn(
                     "px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest border",
-                    sub?.status === 'active' ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" : "bg-rose-500/10 text-rose-500 border-rose-500/20"
+                    sub?.status === 'active' || sub?.status === 'trial' ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" : "bg-rose-500/10 text-rose-500 border-rose-500/20"
                   )}>
-                    {sub?.status === 'active' ? "Actif" : "Suspendu"}
+                    {sub?.status === 'active' || sub?.status === 'trial' ? "Actif" : "Suspendu"}
                   </span>
                   {hasRecurring && (
                     <span className="px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest border bg-blue-500/10 text-blue-400 border-blue-500/20">
@@ -98,11 +106,11 @@ export function BillingTab({ merchant }: { merchant: any }) {
               </div>
               <div className="space-y-1">
                 <p className="text-[10px] font-black uppercase text-white/30 tracking-widest flex items-center gap-2">
-                  {isMobileMoney ? <Smartphone size={12} /> : <CreditCard size={12} />}
+                  {isMobileMoney ? <Smartphone size={12} /> : (isCard ? <CreditCard size={12} /> : <Banknote size={12} />)}
                   Canal de paiement
                 </p>
-                <p className="text-lg font-black text-white capitalize">
-                  {isMobileMoney ? "Mobile Money" : "Carte Bancaire"}
+                <p className="text-lg font-black text-white">
+                  {paymentMethodLabel}
                 </p>
               </div>
             </div>
@@ -114,6 +122,11 @@ export function BillingTab({ merchant }: { merchant: any }) {
                 Réactiver mon IA
                 <ArrowRight size={20} />
               </button>
+            ) : (sub?.status === 'trial' || sub?.paymentMethod === 'unknown') ? (
+              <button className="w-full h-16 bg-white text-vendeur-coal font-black uppercase tracking-widest rounded-2xl flex items-center justify-center gap-3 hover:scale-[1.02] active:scale-95 transition-all shadow-xl shadow-white/10">
+                S'abonner maintenant
+                <Zap size={20} className="text-vendeur-emerald" />
+              </button>
             ) : isMobileMoney ? (
               <button className="w-full h-16 bg-white text-vendeur-coal font-black uppercase tracking-widest rounded-2xl flex items-center justify-center gap-3 hover:scale-[1.02] active:scale-95 transition-all shadow-xl shadow-white/10">
                 Renouveler ({merchant.billingCurrency || merchant.currency || 'XOF'})
@@ -124,7 +137,7 @@ export function BillingTab({ merchant }: { merchant: any }) {
                 <div className="p-4 rounded-2xl bg-white/5 border border-white/5 flex items-center gap-3">
                   <CheckCircle2 size={20} className="text-vendeur-emerald" />
                   <p className="text-[10px] font-bold text-white/60 uppercase leading-tight">
-                    {hasRecurring ? "Prélèvement automatique actif" : "Plan prépayé actif"}
+                    {hasRecurring ? "Prélèvement automatique actif" : "Plan actif"}
                   </p>
                 </div>
                 {hasRecurring && (

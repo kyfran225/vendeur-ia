@@ -116,10 +116,15 @@ export class CommerceService {
       { $group: { _id: null, total: { $sum: "$totalAmount" } } }
     ]);
 
+    const recentTransactions = await TransactionModel.find({ merchantId: merchant._id })
+      .sort({ createdAt: -1 })
+      .limit(10);
+
     return {
       merchant,
       products,
       knowledge,
+      recentTransactions,
       setupStatus: {
         score: setupScore,
         isFullyOperational,

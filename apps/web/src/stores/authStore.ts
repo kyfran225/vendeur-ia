@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import { useOnboardingStore } from "./onboardingStore";
 
 interface AuthUser {
   id: string;
@@ -34,7 +35,12 @@ export const useAuthStore = create<AuthState>()(
         accessToken: session.accessToken,
         refreshToken: session.refreshToken
       }),
-      logout: () => set({ user: null, accessToken: null, refreshToken: null }),
+      logout: () => {
+        // Clear onboarding data as well to prevent cross-account pollution
+        useOnboardingStore.getState().clearOnboarding();
+
+        set({ user: null, accessToken: null, refreshToken: null });
+      },
       updateUser: (userData) => set((state) => ({
         user: state.user ? { ...state.user, ...userData } : null
       })),

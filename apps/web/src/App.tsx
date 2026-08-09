@@ -47,10 +47,20 @@ function App() {
             <Route path="/" element={<LandingPage />} />
 
             <Route path="/onboarding" element={
-              user ? <OnboardingWizard /> : <Navigate to="/" />
+              user ? (
+                !!user.onboardingCompleted ? <Navigate to="/dashboard" /> : <OnboardingWizard />
+              ) : (
+                <Navigate to="/" />
+              )
             } />
 
-            <Route element={user ? <AppLayout /> : <Navigate to="/" />}>
+            <Route element={
+              user ? (
+                !!user.onboardingCompleted ? <AppLayout /> : <Navigate to="/onboarding" />
+              ) : (
+                <Navigate to="/" />
+              )
+            }>
               <Route path="/dashboard" element={<SalesDashboard />} />
               <Route path="/admin" element={<AdminDashboard />} />
               <Route path="/products" element={<ProductManager />} />

@@ -46,7 +46,7 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
         onClose();
 
         // Use the returned user data to determine where to go
-        if (user?.onboardingCompleted) {
+        if (!!user?.onboardingCompleted) {
           navigate("/dashboard");
         } else {
           navigate("/onboarding");
@@ -103,7 +103,7 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
         : "Compte créé avec succès !");
       onClose();
 
-      if (user?.onboardingCompleted) {
+      if (!!user?.onboardingCompleted) {
         navigate("/dashboard");
       } else {
         navigate("/onboarding");

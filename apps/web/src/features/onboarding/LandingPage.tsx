@@ -584,7 +584,11 @@ export function LandingPage() {
 
   useEffect(() => {
     if (user) {
-      navigate("/dashboard");
+      if (!!user.onboardingCompleted) {
+        navigate("/dashboard");
+      } else {
+        navigate("/onboarding");
+      }
     }
   }, [user, navigate]);
 

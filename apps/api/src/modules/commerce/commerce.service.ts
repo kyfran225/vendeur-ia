@@ -228,8 +228,10 @@ export class CommerceService {
       }
     }
 
-    // Update user onboarding status
-    await UserModel.findByIdAndUpdate(ownerId, { onboardingCompleted: true });
+    // Update user onboarding status ONLY if explicitly requested
+    if (data.onboardingCompleted) {
+      await UserModel.findByIdAndUpdate(ownerId, { onboardingCompleted: true });
+    }
 
     return merchant;
   }

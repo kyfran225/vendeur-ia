@@ -2,12 +2,13 @@ import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ChevronRight,
+  ChevronLeft,
   Sparkles,
   Store,
   Zap,
   Check,
   Rocket,
-  Image as ImageIcon,
+  ImageIcon,
   Loader2,
   CheckCircle2,
 } from "lucide-react";
@@ -77,8 +78,13 @@ export function OnboardingWizard() {
       // Final sync before dashboard
       try {
         if (tempData) {
-          await apiClient.post("/api/commerce/merchant", tempData);
+          await apiClient.post("/api/commerce/merchant", {
+            ...tempData,
+            onboardingCompleted: true
+          });
         }
+        // Mise à jour de l'état local pour refléter le succès de l'onboarding
+        useAuthStore.getState().updateUser({ onboardingCompleted: true });
       } catch (err) {
         console.warn("[Onboarding] Final sync failed", err);
       }
@@ -99,22 +105,20 @@ export function OnboardingWizard() {
 
   return (
     <div className="min-h-screen bg-vendeur-coal flex flex-col items-center justify-center p-4 md:p-12 overflow-x-hidden">
-      {/* Progress Bar */}
-      <div className="w-full max-w-3xl mb-16 flex items-center justify-between px-6 relative">
+      {/* Modern Minimal Progress Bar */}
+      <div className="w-full max-w-md mb-8 md:mb-16 flex gap-2 px-6">
         {steps.map((s, i) => (
-          <div key={i} className="flex flex-col items-center gap-3 z-10">
-            <div className={`h-10 w-10 md:h-12 md:w-12 rounded-2xl flex items-center justify-center text-xs md:text-sm font-black transition-all shadow-2xl ${
-              i <= currentStep ? "bg-vendeur-emerald text-vendeur-coal scale-110 shadow-vendeur-emerald/20" : "bg-white/5 text-white/20 border border-white/10"
-            }`}>
-              {i < currentStep ? <Check size={20} /> : i + 1}
-            </div>
-            <span className={`text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] ${
+          <div key={i} className="flex-1 flex flex-col gap-2">
+            <div className={`h-1.5 rounded-full transition-all duration-500 ${
+              i <= currentStep ? "bg-vendeur-emerald shadow-[0_0_10px_rgba(16,185,129,0.3)]" : "bg-white/5"
+            }`} />
+            <span className={`text-[9px] font-black uppercase tracking-[0.2em] text-center transition-colors ${
               i <= currentStep ? "text-vendeur-emerald" : "text-white/20"
-            }`}>{s.title}</span>
+            }`}>
+              {s.title}
+            </span>
           </div>
         ))}
-        {/* Connection lines */}
-        <div className="absolute left-1/2 -translate-x-1/2 top-5 md:top-6 w-[60%] h-[2px] bg-white/5 -z-10" />
       </div>
 
       <div className="w-full max-w-7xl relative">
@@ -136,6 +140,7 @@ export function OnboardingWizard() {
 }
 
 function WelcomeStep({ onNext, onBack }: { onNext: () => void; onBack: () => void }) {
+  const navigate = useNavigate();
   const { tempData, setTempData } = useOnboardingStore();
   const [form, setForm] = useState(tempData || {
     businessName: "",
@@ -181,11 +186,13 @@ function WelcomeStep({ onNext, onBack }: { onNext: () => void; onBack: () => voi
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-700 w-full max-w-7xl mx-auto">
       <section className="w-full flex flex-col lg:flex-row items-center justify-center gap-8 lg:gap-24 text-left">
         <div className="w-full lg:max-w-lg">
-          <div className="mb-6 inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-vendeur-emerald/10 border border-vendeur-emerald/20">
-            <Rocket className="text-vendeur-emerald" size={32} />
-          </div>
-          <h1 className="text-4xl md:text-5xl font-black text-white mb-6 uppercase tracking-tighter leading-tight">
-            {tempData?.businessName ? "Vérifiez votre" : "Lancez votre"} <br/>
+          <h1 className="text-4xl md:text-5xl font-black text-white mb-6 uppercase tracking-tighter leading-tight flex flex-col gap-4">
+            <div className="flex items-center gap-4">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-vendeur-emerald/10 border border-vendeur-emerald/20">
+                <Rocket className="text-vendeur-emerald" size={24} />
+              </div>
+              <span>{tempData?.businessName ? "Vérifiez votre" : "Lancez votre"}</span>
+            </div>
             <span className="text-vendeur-emerald">machine de vente.</span>
           </h1>
           <p className="text-lg text-white/50 mb-8 max-w-xl leading-relaxed font-medium">
@@ -226,11 +233,17 @@ function WelcomeStep({ onNext, onBack }: { onNext: () => void; onBack: () => voi
                       onChange={(e) => setForm({ ...form, category: e.target.value })}
                     >
                       <option value="fashion">👗 Mode & Beauté</option>
-                      <option value="food">🍔 Restauration</option>
-                      <option value="services">💼 Services</option>
+                      <option value="food">🍔 Restauration & Food</option>
                       <option value="beauty">💄 Soins & Cosmétiques</option>
-                      <option value="electronics">📱 Électronique</option>
-                      <option value="other">📦 Autre</option>
+                      <option value="electronics">📱 Électronique & High-Tech</option>
+                      <option value="artisan">🛠️ Artisanat & Fait Main</option>
+                      <option value="services">💼 Prestations de Services</option>
+                      <option value="digital">📚 Produits Digitaux & Formations</option>
+                      <option value="home">🏠 Maison & Décoration</option>
+                      <option value="grocery">🛒 Épicerie & Supérette</option>
+                      <option value="health">💊 Santé & Bien-être</option>
+                      <option value="auto">🚗 Auto-Moto & Pièces</option>
+                      <option value="other">📦 Autre Commerce</option>
                     </select>
                     <ChevronRight size={16} className="absolute right-4 top-1/2 -translate-y-1/2 rotate-90 text-white/30 pointer-events-none" />
                   </div>
@@ -302,8 +315,14 @@ function WelcomeStep({ onNext, onBack }: { onNext: () => void; onBack: () => voi
                 <Sparkles size={18} /> Continuer vers l'IA Vision
               </button>
 
-              <button onClick={onBack} className="mt-4 text-white/20 text-[10px] font-black uppercase tracking-widest hover:text-white transition-colors text-center w-full">
-                Retour à l'accueil
+              <button
+                onClick={() => {
+                  useAuthStore.getState().logout();
+                  navigate("/");
+                }}
+                className="mt-4 text-white/20 text-[10px] font-black uppercase tracking-widest hover:text-rose-400 transition-colors text-center w-full"
+              >
+                Quitter la configuration (Déconnexion)
               </button>
             </div>
           </div>
@@ -314,6 +333,7 @@ function WelcomeStep({ onNext, onBack }: { onNext: () => void; onBack: () => voi
 }
 
 function VisionStep({ onNext, onBack }: { onNext: () => void; onBack: () => void }) {
+  const navigate = useNavigate();
   const { tempData, setTempData } = useOnboardingStore();
   const [analyzing, setAnalyzing] = useState(false);
   const [result, setResult] = useState<any>(tempData?.firstProduct || null);
@@ -445,15 +465,39 @@ function VisionStep({ onNext, onBack }: { onNext: () => void; onBack: () => void
         </div>
       </div>
 
-      <div className="mt-12 flex flex-col items-center gap-6">
+      <div className="mt-12 flex flex-col items-center gap-6 w-full max-w-sm mx-auto">
         {!result && !analyzing && (
-          <button onClick={onNext} className="text-white/40 text-[10px] font-black uppercase tracking-widest hover:text-white transition-colors">
-            Passer cette étape
-          </button>
+          <div className="w-full space-y-4">
+            <button
+              onClick={onNext}
+              className="w-full h-16 rounded-2xl bg-white/5 border border-white/10 text-white font-black uppercase tracking-widest text-xs hover:bg-white/10 transition-all active:scale-95 flex items-center justify-center gap-2"
+            >
+              Terminer la configuration <ChevronRight size={18} />
+            </button>
+            <p className="text-[10px] text-white/30 text-center font-medium italic">
+              Vous pourrez ajouter vos produits plus tard depuis votre tableau de bord.
+            </p>
+          </div>
         )}
-        <button onClick={onBack} className="text-white/20 text-[10px] font-black uppercase tracking-widest hover:text-white transition-colors">
-          Retour aux informations
-        </button>
+
+        <div className="flex flex-col items-center gap-4 w-full">
+          <button
+            onClick={onBack}
+            className="text-white/40 text-[10px] font-black uppercase tracking-widest hover:text-white transition-colors flex items-center gap-2"
+          >
+            <ChevronLeft size={14} /> Retour aux informations
+          </button>
+
+          <button
+            onClick={() => {
+              useAuthStore.getState().logout();
+              navigate("/");
+            }}
+            className="text-white/10 text-[9px] font-black uppercase tracking-widest hover:text-rose-400/50 transition-colors"
+          >
+            Quitter (Déconnexion)
+          </button>
+        </div>
       </div>
     </div>
   );

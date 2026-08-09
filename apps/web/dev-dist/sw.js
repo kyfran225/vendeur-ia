@@ -67,7 +67,7 @@ if (!self.define) {
     });
   };
 }
-define(['./workbox-aeb6ecaf'], (function (workbox) { 'use strict';
+define(['./workbox-7e5eb42b'], (function (workbox) { 'use strict';
 
   self.skipWaiting();
   workbox.clientsClaim();
@@ -81,17 +81,11 @@ define(['./workbox-aeb6ecaf'], (function (workbox) { 'use strict';
     "revision": "3ca0b8505b4bec776b69afdba2768812"
   }, {
     "url": "index.html",
-    "revision": "0.bi8gkb9ntf8"
-  }], {
-    "ignoreURLParametersMatching": [/.*/]
-  });
+    "revision": "0.51h8dqmm188"
+  }], {});
   workbox.cleanupOutdatedCaches();
   workbox.registerRoute(new workbox.NavigationRoute(workbox.createHandlerBoundToURL("index.html"), {
-    allowlist: [/^\/$/],
-    denylist: [/^\/android-chrome-/, /^\/favicon/, /^https:\/\/accounts\.google\.com/, /^https:\/\/js\.paystack\.co/]
+    allowlist: [/^\/$/]
   }));
-  workbox.registerRoute(({
-    url
-  }) => url.host === "accounts.google.com" || url.host === "js.paystack.co", new workbox.NetworkOnly(), 'GET');
 
 }));

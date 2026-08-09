@@ -15,6 +15,15 @@ const REDIS_URL = env.REDIS_URL || 'redis://localhost:6379';
 
 export const billingQueue = new Queue('billing-tasks', {
   connection: { url: REDIS_URL },
+  defaultJobOptions: {
+    attempts: 5,
+    backoff: {
+      type: 'exponential',
+      delay: 5000, // Start with 5s delay, then 10s, 20s...
+    },
+    removeOnComplete: { count: 100 }, // Keep last 100 for debugging
+    removeOnFail: { count: 500 },
+  }
 });
 
 export const billingWorker = new Worker(
@@ -146,6 +155,10 @@ export const billingWorker = new Worker(
   },
   {
     connection: { url: REDIS_URL },
-    concurrency: 5, // Increased from 2 to 5 for better throughput
+    concurrency: 1, // Process one by one to avoid hitting Paystack rate limits
+    limiter: {
+      max: 5, // Max 5 jobs per second
+      duration: 1000,
+    }
   }
 );

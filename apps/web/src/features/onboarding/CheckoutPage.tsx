@@ -57,13 +57,9 @@ export function CheckoutPage() {
         const paystack = new (window as any).PaystackPop();
         paystack.checkout({
           accessCode: res.data.access_code,
-          onSuccess: (transaction: any) => {
+          onSuccess: () => {
             toast.success("Paiement réussi !");
-            // Important: Invalidate dashboard to start the polling on activation page
-            queryClient.invalidateQueries({ queryKey: ["dashboard"] });
-
-            // Redirect to activation with the reference to force a check if needed
-            navigate(`/activation?reference=${transaction.reference}`);
+            navigate("/activation");
           },
           onCancel: () => {
             toast.info("Paiement annulé");

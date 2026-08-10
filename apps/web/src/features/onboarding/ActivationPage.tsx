@@ -33,9 +33,9 @@ export function ActivationPage() {
       const res = await apiClient.get("/api/commerce/dashboard");
       return res.data;
     },
-    refetchInterval: (data) => {
+    refetchInterval: (query) => {
       // Poll every 3s as long as subscription is not active
-      return data?.subscription?.status === 'active' ? false : 3000;
+      return query.state.data?.subscription?.status === 'active' ? false : 3000;
     }
   });
 

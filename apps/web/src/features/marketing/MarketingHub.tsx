@@ -73,7 +73,7 @@ export function MarketingHub() {
       const res = await apiClient.get("/api/marketing/active");
       return res.data;
     },
-    refetchInterval: (data) => (data ? 5000 : false) // Refetch every 5s if active
+    refetchInterval: (query) => (query.state.data ? 5000 : false) // Refetch every 5s if active
   });
 
   useEffect(() => {

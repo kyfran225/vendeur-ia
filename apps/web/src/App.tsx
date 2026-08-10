@@ -3,6 +3,9 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "sonner";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import { LandingPage } from "./features/onboarding/LandingPage";
+import { OffersPage } from "./features/onboarding/OffersPage";
+import { CheckoutPage } from "./features/onboarding/CheckoutPage";
+import { ActivationPage } from "./features/onboarding/ActivationPage";
 import { OnboardingWizard } from "./features/onboarding/OnboardingWizard";
 import { SalesDashboard } from "./features/dashboard/SalesDashboard";
 import { ProductManager } from "./features/products/ProductManager";
@@ -54,6 +57,10 @@ function App() {
                 <Navigate to="/" />
               )
             } />
+
+            <Route path="/offers" element={<OffersPage />} />
+            <Route path="/checkout" element={<CheckoutPage />} />
+            <Route path="/activation" element={<ActivationPage />} />
 
             <Route element={
               user ? (

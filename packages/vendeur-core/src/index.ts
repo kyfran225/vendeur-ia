@@ -13,6 +13,77 @@ export const commerceOrderStatuses = ["pending", "confirmed", "paid", "delivery"
 export const commercePaymentProviders = ["wave", "orange_money", "mtn_momo", "moov_money", "visa", "cash"] as const;
 export const commercePaymentStatuses = ["waiting", "pending", "succeeded", "failed", "cancelled"] as const;
 
+// --- Subscription & Offers ---
+
+export const subscriptionPlans = ["starter", "essential", "pro"] as const;
+export const subscriptionStatuses = ["pending", "active", "past_due", "cancelled", "expired", "scheduled_change"] as const;
+export const whatsappConnectionStatuses = ["NOT_CONNECTED", "CONNECTING", "CONNECTED", "DISCONNECTED", "ERROR", "RECONNECTING"] as const;
+
+export const offerSchema = z.object({
+  id: z.string(),
+  slug: z.string(),
+  name: z.string(),
+  description: z.string(),
+  monthlyPrice: z.number(),
+  currency: z.string(),
+  features: z.array(z.string()),
+  isActive: z.boolean(),
+  setupRequired: z.boolean().default(false),
+  setupOptions: z.array(z.object({
+    type: z.string(),
+    price: z.number(),
+    label: z.string()
+  })).optional()
+});
+
+export type Offer = z.infer<typeof offerSchema>;
+
+export const subscriptionSchema = z.object({
+  id: z.string(),
+  userId: z.string(),
+  offerId: z.string(),
+  status: z.enum(subscriptionStatuses),
+  billingInterval: z.enum(["monthly", "yearly"]).default("monthly"),
+  price: z.number(),
+  currency: z.string(),
+  startDate: z.string().optional(),
+  currentPeriodStart: z.string().optional(),
+  currentPeriodEnd: z.string().optional(),
+  nextBillingDate: z.string().nullable().optional(),
+  paymentMethod: z.enum(['card', 'mobile_money', 'unknown']).default('unknown'),
+  provider: z.string().default("paystack"),
+  providerSubscriptionId: z.string().optional(),
+  cancellationRequestedAt: z.string().optional(),
+  cancelledAt: z.string().optional(),
+  scheduledOfferId: z.string().optional(),
+  createdAt: z.string(),
+  updatedAt: z.string()
+});
+
+export type Subscription = z.infer<typeof subscriptionSchema>;
+
+export const whatsAppConnectionSchema = z.object({
+  id: z.string(),
+  userId: z.string(),
+  phoneNumber: z.string().optional(),
+  status: z.enum(whatsappConnectionStatuses),
+  provider: z.enum(['baileys', 'meta']).default('baileys'),
+  meta: z.object({
+    phoneNumberId: z.string().optional(),
+    accessToken: z.string().optional(),
+    wabaId: z.string().optional()
+  }).optional(),
+  connectedAt: z.string().optional(),
+  disconnectedAt: z.string().optional(),
+  lastSeenAt: z.string().optional(),
+  errorCode: z.string().optional(),
+  errorMessage: z.string().optional(),
+  createdAt: z.string(),
+  updatedAt: z.string()
+});
+
+export type WhatsAppConnection = z.infer<typeof whatsAppConnectionSchema>;
+
 // --- Merchant ---
 
 export const merchantSchema = z.object({
@@ -34,25 +105,20 @@ export const merchantSchema = z.object({
     number: z.string()
   })).default([]),
   countryCode: z.string().default("CI"),
+  // Legacy subscription field - to be deprecated
   subscription: z.object({
-    plan: z.enum(["starter", "premium", "business"]).default("starter"),
-    status: z.enum(["trial", "active", "past_due", "cancelled"]).default("trial"),
+    plan: z.string().nullable(),
+    status: z.string().nullable(),
     expiresAt: z.string().nullable()
-  }),
+  }).optional(),
   aiSettings: z.object({
     personality: z.enum(commerceAgentTones).default("friendly"),
     responseStyle: z.enum(commerceResponseStyles).default("normal"),
     autoReply: z.boolean().default(true),
     weeklyReport: z.boolean().default(true)
   }),
-  facebookConfig: z.object({
-    pageId: z.string().optional(),
-    accessToken: z.string().optional(),
-    status: z.enum(['disconnected', 'connected', 'error']).default('disconnected')
-  }).optional(),
   createdAt: z.string(),
   updatedAt: z.string(),
-  lastWeeklyReportDate: z.string().nullable().optional()
 });
 
 export type Merchant = z.infer<typeof merchantSchema>;

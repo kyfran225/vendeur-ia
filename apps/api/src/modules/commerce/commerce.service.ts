@@ -8,12 +8,16 @@ import {
   CommerceCustomerModel,
   CommerceOrderModel
 } from "./commerce.model.js";
+import { OfferModel } from "./offer.model.js";
+import { SubscriptionModel } from "./subscription.model.js";
+import { WhatsAppConnectionModel } from "./whatsapp-connection.model.js";
 import { UserModel } from "../auth/user.model.js";
 import { aiAgentService } from "../../services/ai-agent.service.js";
 import { aiGrowthService } from "../../services/ai-growth.service.js";
 import { aiProvider } from "../../services/ai-provider.js";
 import { messagingService } from "../../services/messaging.service.js";
 import { pushService } from "../../services/push.service.js";
+import { paystackService } from "../../services/paystack.service.js";
 import { env } from "../../config/env.js";
 import { GEMINI_DEFAULT_VISION_MODEL, resolveGeminiModel } from "../../config/gemini.js";
 import axios from "axios";
@@ -26,6 +30,11 @@ export class CommerceService {
   async getDashboard(ownerId: string) {
     const merchant = await CommerceMerchantModel.findOne({ ownerId });
     if (!merchant) return { merchant: null, products: [], metrics: {} };
+
+    // New Models Data
+    const subscription = await SubscriptionModel.findOne({ userId: ownerId }).populate('offerId');
+    const whatsappConnection = await WhatsAppConnectionModel.findOne({ userId: ownerId });
+    const offers = await OfferModel.find({ isActive: true }).sort({ sortOrder: 1 });
 
     const products = await CommerceProductModel.find({ merchantId: merchant._id });
 
@@ -123,6 +132,9 @@ export class CommerceService {
 
     return {
       merchant,
+      subscription,
+      whatsappConnection,
+      offers,
       products,
       knowledge,
       recentTransactions,
@@ -903,6 +915,46 @@ Résumé actuel :`;
         stock: { $gt: 0 }
       }).limit(limit);
     }
+  }
+
+  // --- NEW SUBSCRIPTION LOGIC ---
+
+  async initializeCheckout(userId: string, offerSlug: string, email: string, setupOption?: string) {
+    const offer = await OfferModel.findOne({ slug: offerSlug });
+    if (!offer) throw new Error("Offre non trouvée");
+
+    let amount = offer.monthlyPrice;
+
+    // Add setup fee if selected
+    if (setupOption) {
+      const option = offer.setupOptions.find(o => o.type === setupOption);
+      if (option) {
+        amount += option.price;
+      }
+    }
+
+    const metadata = {
+      userId,
+      offerSlug: offer.slug,
+      setupOption,
+      type: "SUBSCRIPTION_INITIAL"
+    };
+
+    return paystackService.initializeSubscription(email, amount, metadata);
+  }
+
+  async updateWhatsAppStatus(userId: string, status: string, details?: any) {
+    return WhatsAppConnectionModel.findOneAndUpdate(
+      { userId },
+      {
+        $set: {
+          status,
+          ...details,
+          updatedAt: new Date()
+        }
+      },
+      { upsert: true, new: true }
+    );
   }
 }
 

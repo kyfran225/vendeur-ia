@@ -12,7 +12,7 @@ L'objectif est la **fiabilité absolue du moteur de vente**. Chaque interaction 
 
 **Mandat Zéro UI Morte :**
 - **Aucune simulation de façade** : Tout bouton visible doit être fonctionnel.
-- **Données Réelles** : Pas de texte statique là où l'IA doit agir (Prix, Stocks, Canaux de paiement).
+- **Données Réelles** : Pas de mock ou simulation de données.
 - **Zéro Hallucination** : L'IA ne doit utiliser QUE les données configurées par le marchand dans son "Cerveau IA".
 
 ---
@@ -23,7 +23,6 @@ Avant toute modification, l'agent doit suivre cet ordre de vérité :
 1.  **[MEMORY.md](file:///C:/Users/Franck/web-apps/vendeur-ia/MEMORY.md)** : État opérationnel immédiat.
 2.  **Code Réel** : Les contrats `@vendeur-ia/core` et les schémas Mongoose sont les seules sources de vérité technique.
 3.  **[MANIFESTO.md](file:///C:/Users/Franck/web-apps/vendeur-ia/MANIFESTO.md)** : Rappel de la mission (Interdiction de régression sociale).
-4.  **Product Bible** : Vision conceptuelle.
 
 **Processus d'intervention :**
 -   **Reproduire** : On ne corrige pas un bug "théorique".

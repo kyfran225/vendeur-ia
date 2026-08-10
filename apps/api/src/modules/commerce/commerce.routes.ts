@@ -10,6 +10,9 @@ import { logger } from "../../services/logger.service.js";
 import { validate } from "../../middleware/validate.js";
 import { CreateProductSchema, UpdateMerchantSchema, UpdateProductSchema, CreateOrderSchema } from "./commerce.schema.js";
 import { CommerceMerchantModel, CommerceProductModel, CommerceConversationModel, CommerceMessageModel, CommerceCustomerModel, CommerceOrderModel, CommerceKnowledgeModel } from "./commerce.model.js";
+import { OfferModel } from "./offer.model.js";
+import { SubscriptionModel } from "./subscription.model.js";
+import { WhatsAppConnectionModel } from "./whatsapp-connection.model.js";
 import { TransactionModel } from "./transaction.model.js";
 import { SystemSettingsModel } from "./admin.model.js";
 import { CATEGORY_MOCKS } from "./demo.data.js";
@@ -190,6 +193,29 @@ router.post("/conversations/:id/messages", authenticate, async (req, res) => {
     // 3. Force "needs_human" status to stop AI from intervening
 
     res.status(201).json(message);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// GET ALL OFFERS
+router.get("/offers", async (req, res) => {
+  try {
+    const offers = await OfferModel.find({ isActive: true }).sort({ sortOrder: 1 });
+    res.json(offers);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// INITIALIZE CHECKOUT
+router.post("/checkout", authenticate, async (req, res) => {
+  const userId = (req as any).user.id;
+  const { offerSlug, email, setupOption } = req.body;
+
+  try {
+    const data = await commerceService.initializeCheckout(userId, offerSlug, email, setupOption);
+    res.json(data);
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
@@ -377,103 +403,117 @@ router.post("/webhooks/paystack", express.raw({ type: 'application/json' }), asy
 
   const event = JSON.parse(body);
 
+  // IDEMPOTENCY CHECK: Check if this event was already processed
+  const existingTransaction = await TransactionModel.findOne({ reference: event.data.reference, status: 'success' });
+  if (existingTransaction) {
+    console.log(`[Paystack Webhook] Event ${event.data.reference} already processed. Skipping.`);
+    return res.status(200).send('OK');
+  }
+
   if (event.event === 'charge.success') {
     const data = event.data;
-    const { type, userId } = data.metadata || {};
+    const { type, userId, offerSlug, setupOption } = data.metadata || {};
 
-    if ((type === 'ram_contribution' || type === 'subscription' || type === 'pack_pro') && userId) {
+    if (userId && (type === 'SUBSCRIPTION_INITIAL' || type === 'subscription' || type === 'pack_pro')) {
       console.log(`[Paystack Webhook] Charge Success for User: ${userId} (${type})`);
 
-      const paymentMethod = data.channel === 'card' ? 'card' : 'mobile_money';
+      // 1. Find Offer
+      const offer = await OfferModel.findOne({ slug: offerSlug || (type === 'pack_pro' ? 'pro' : 'essential') });
+      if (!offer) {
+        console.error(`[Paystack Webhook] Offer not found for slug: ${offerSlug}`);
+        return res.status(404).send('Offer not found');
+      }
+
+      // 2. Update/Create Subscription
       const expiresAt = new Date();
       expiresAt.setMonth(expiresAt.getMonth() + 1);
 
-      const updatePayload: any = {
-        "whatsappConfig.lastBillingDate": new Date(),
-        "subscription.status": "active",
-        "subscription.expiresAt": expiresAt,
-        "subscription.paymentMethod": paymentMethod
-      };
-
-      if (type === 'pack_pro') {
-        updatePayload["whatsappConfig.packProAssistance"] = true;
-        updatePayload["subscription.plan"] = 'business';
-        // When buying Pack Pro, we often switch to Meta, but let's keep it flexible
-        // The UI will guide the user to configure Meta
-      } else {
-        updatePayload["subscription.plan"] = 'premium';
-        updatePayload["whatsappConfig.provider"] = "baileys";
-        updatePayload["whatsappConfig.status"] = 'connected';
-      }
-
-      if (data.plan) {
-        updatePayload["subscription.subscriptionCode"] = data.subscription_code;
-        updatePayload["subscription.emailToken"] = data.email_token;
-        updatePayload["subscription.nextPaymentDate"] = new Date(data.next_payment_date);
-      }
-
-      const merchant = await CommerceMerchantModel.findOneAndUpdate(
-        { ownerId: userId },
-        { $set: updatePayload },
-        { new: true }
+      const subscription = await SubscriptionModel.findOneAndUpdate(
+        { userId },
+        {
+          $set: {
+            offerId: offer._id,
+            status: 'active',
+            price: data.amount / 100,
+            currency: data.currency,
+            currentPeriodStart: new Date(),
+            currentPeriodEnd: expiresAt,
+            paymentMethod: data.channel === 'card' ? 'card' : 'mobile_money',
+            providerSubscriptionId: data.subscription_code,
+            nextBillingDate: data.next_payment_date ? new Date(data.next_payment_date) : null
+          }
+        },
+        { upsert: true, new: true }
       );
 
-      if (merchant) {
-        // Auto-init Baileys ONLY for non-pro or if explicitly requested
-        if (type !== 'pack_pro') {
-          try {
-            await whatsappService.initSession(userId);
-            console.log(`[Paystack Webhook] Baileys session initialized for User: ${userId}`);
-          } catch (err) {
-            console.error(`[Paystack Webhook] Failed to auto-init Baileys:`, err);
+      // 3. Update/Create WhatsApp Connection record (Initial state)
+      await WhatsAppConnectionModel.findOneAndUpdate(
+        { userId },
+        {
+          $setOnInsert: {
+            userId,
+            status: 'NOT_CONNECTED',
+            connectionType: offer.slug === 'pro' ? 'meta' : 'baileys'
+          }
+        },
+        { upsert: true }
+      );
+
+      // 4. Record Transaction
+      const newTransaction = await TransactionModel.create({
+        merchantId: (await CommerceMerchantModel.findOne({ ownerId: userId }))?._id,
+        ownerId: userId,
+        reference: data.reference,
+        amount: data.amount / 100,
+        currency: data.currency,
+        type: type || 'SUBSCRIPTION_INITIAL',
+        status: 'success',
+        paymentMethod: data.channel,
+        paidAt: new Date(data.paid_at),
+        metadata: data.metadata
+      });
+
+      // 5. Legacy Sync (Keep Merchant model in sync for now to avoid breaking other parts)
+      await CommerceMerchantModel.findOneAndUpdate(
+        { ownerId: userId },
+        {
+          $set: {
+            "subscription.plan": offer.slug,
+            "subscription.status": "active",
+            "subscription.expiresAt": expiresAt
           }
         }
+      );
 
-        const successfulTransactions = await TransactionModel.countDocuments({
-          merchantId: merchant._id,
-          status: 'success'
-        });
+      // 6. Referral Reward
+      const successfulTransactions = await TransactionModel.countDocuments({
+        ownerId: userId,
+        status: 'success'
+      });
+      if (successfulTransactions === 1) {
+        const m = await CommerceMerchantModel.findOne({ ownerId: userId });
+        if (m) await commerceService.processReferralReward(m._id.toString());
+      }
 
-        if (successfulTransactions === 0) {
-          await commerceService.processReferralReward(merchant._id.toString());
-        }
-
-        const newTransaction = await TransactionModel.findOneAndUpdate(
-          { reference: data.reference },
-          {
-            merchantId: merchant._id,
-            ownerId: userId,
-            reference: data.reference,
-            amount: data.amount / 100,
-            currency: data.currency,
-            type: type || 'subscription',
-            status: 'success',
-            paymentMethod: data.channel,
-            paidAt: new Date(data.paid_at)
-          },
-          { upsert: true, new: true }
-        );
-
-        if (newTransaction) {
-          await billingReceiptService.sendDigitalReceipt(merchant._id.toString(), newTransaction);
-        }
+      if (newTransaction) {
+        const m = await CommerceMerchantModel.findOne({ ownerId: userId });
+        if (m) await billingReceiptService.sendDigitalReceipt(m._id.toString(), newTransaction as any);
       }
     }
   }
 
   if (event.event === 'subscription.create') {
+    // Already handled in charge.success for the first one, but useful for recurring
     const data = event.data;
     const { userId } = data.metadata || {};
     if (userId) {
-      console.log(`[Paystack Webhook] Subscription Created for User: ${userId}`);
-      await CommerceMerchantModel.findOneAndUpdate(
-        { ownerId: userId },
+      await SubscriptionModel.findOneAndUpdate(
+        { userId },
         {
           $set: {
-            "subscription.subscriptionCode": data.subscription_code,
-            "subscription.emailToken": data.email_token,
-            "subscription.nextPaymentDate": new Date(data.next_payment_date),
-            "subscription.status": "active"
+            providerSubscriptionId: data.subscription_code,
+            nextBillingDate: new Date(data.next_payment_date),
+            status: "active"
           }
         }
       );
@@ -485,18 +525,16 @@ router.post("/webhooks/paystack", express.raw({ type: 'application/json' }), asy
     const metadata = data.subscription?.metadata || data.metadata;
     const { userId } = metadata || {};
     if (userId) {
-      console.log(`[Paystack Webhook] Subscription Payment Failed for User: ${userId}`);
-      const merchant = await CommerceMerchantModel.findOneAndUpdate(
-        { ownerId: userId },
-        { $set: { "subscription.status": "past_due" } },
-        { new: true }
+      await SubscriptionModel.findOneAndUpdate(
+        { userId },
+        { $set: { status: "past_due" } }
       );
 
+      const merchant = await CommerceMerchantModel.findOne({ ownerId: userId });
       if (merchant) {
         const waMessage = `⚠️ *Échec de paiement - ${merchant.businessName}*\n\n` +
           `Le prélèvement automatique pour votre abonnement a échoué. Votre service risque d'être suspendu.\n\n` +
-          `Veuillez vérifier votre carte ici :\n👉 ${env.CLIENT_URL}/settings?tab=billing`;
-
+          `Veuillez vérifier votre moyen de paiement sur votre tableau de bord.`;
         try {
           await messagingService.sendMessage(merchant, 'whatsapp', merchant.whatsappNumber || "", waMessage);
         } catch (err) {

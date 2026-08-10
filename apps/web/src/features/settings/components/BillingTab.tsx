@@ -27,13 +27,17 @@ export function BillingTab({ merchant }: { merchant: any }) {
   const queryClient = useQueryClient();
   const [isCancelConfirmOpen, setIsCancelConfirmOpen] = useState(false);
 
-  const { data: billingHistory } = useQuery({
-    queryKey: ["billing-history"],
+  // New Models Query
+  const { data: dashboard } = useQuery({
+    queryKey: ["dashboard"],
     queryFn: async () => {
-      const res = await apiClient.get("/api/commerce/dashboard"); // Reusing dashboard for history
-      return res.data.recentTransactions || [];
+      const res = await apiClient.get("/api/commerce/dashboard");
+      return res.data;
     }
   });
+
+  const subscription = dashboard?.subscription;
+  const billingHistory = dashboard?.recentTransactions || [];
 
   const cancelSubscriptionMutation = useMutation({
     mutationFn: async () => {
@@ -50,14 +54,16 @@ export function BillingTab({ merchant }: { merchant: any }) {
     }
   });
 
-  const sub = merchant?.subscription;
-  const isExpired = sub?.status === "past_due";
-  const nextDate = sub?.nextPaymentDate || sub?.expiresAt;
+  const sub = subscription;
+  const isExpired = sub?.status === 'expired';
+  const isPastDue = sub?.status === 'past_due';
+  const nextDate = sub?.nextBillingDate || sub?.currentPeriodEnd;
 
-  // Real data logic (no mocks)
   const isMobileMoney = sub?.paymentMethod === 'mobile_money';
   const isCard = sub?.paymentMethod === 'card';
-  const hasRecurring = !!sub?.subscriptionCode;
+  const hasRecurring = !!sub?.providerSubscriptionId;
+
+  const offer = sub?.offerId;
 
   // Determine actual payment method label from real data
   let paymentMethodLabel = "Non défini";
@@ -76,15 +82,17 @@ export function BillingTab({ merchant }: { merchant: any }) {
               </div>
               <div>
                 <h2 className="text-2xl font-black uppercase tracking-tighter text-white">
-                  {sub?.plan ? `Plan ${sub.plan}` : 'Aucun Plan Actif'}
+                  {offer?.name || 'Aucun Plan Actif'}
                 </h2>
                 <div className="flex items-center gap-2 mt-1">
                   {sub?.status && (
                     <span className={cn(
                       "px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest border",
-                      sub?.status === 'active' || sub?.status === 'trial' ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" : "bg-rose-500/10 text-rose-500 border-rose-500/20"
+                      sub?.status === 'active' ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" :
+                      sub?.status === 'past_due' ? "bg-amber-500/10 text-amber-500 border-amber-500/20" :
+                      "bg-rose-500/10 text-rose-500 border-rose-500/20"
                     )}>
-                      {sub?.status === 'active' ? "Actif" : sub?.status === 'trial' ? "Essai" : "Suspendu"}
+                      {sub?.status === 'active' ? "Actif" : sub?.status === 'past_due' ? "Retard de paiement" : sub?.status === 'cancelled' ? "Résilié" : "Expiré"}
                     </span>
                   )}
                   {hasRecurring && (

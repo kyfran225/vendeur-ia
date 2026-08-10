@@ -42,6 +42,7 @@ import { GrowthTab } from "./components/GrowthTab";
 import { subscribeToPush } from "@/lib/pushUtils";
 import { AddressAutocomplete } from "../onboarding/components/AddressAutocomplete";
 import { ZoneAutocomplete } from "../onboarding/components/ZoneAutocomplete";
+import { useNavigate } from "react-router-dom";
 
 import { useSocket } from "@/hooks/useSocket";
 import { getProvidersForCountry, getZonesForCity, getCountryByCode } from "@vendeur-ia/core";
@@ -73,6 +74,7 @@ export function SettingsPage() {
   const tabsRef = React.useRef<HTMLDivElement>(null);
   const [showLeftScroll, setShowLeftScroll] = useState(false);
   const [showRightScroll, setShowRightScroll] = useState(false);
+  const navigate = useNavigate();
 
   const handleScroll = () => {
     if (tabsRef.current) {
@@ -961,10 +963,8 @@ function ConnexionsTab({ merchant, systemSettings, qrCode, onCancelScan }: { mer
          </div>
 
          <WhatsAppConnectionFlow
-           merchant={{ ...merchant, systemSettings }}
            qrCode={qrCode}
            onInitBaileys={() => connectMutation.mutate()}
-           onRefreshMerchant={() => queryClient.invalidateQueries({ queryKey: ["dashboard"] })}
            onCancelScan={onCancelScan}
          />
       </section>

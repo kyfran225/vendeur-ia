@@ -1,5 +1,5 @@
 import React from "react";
-import { Zap, Rocket, Check, Sparkles, Server, ArrowRight } from "lucide-react";
+import { Zap, Rocket, Check, Sparkles, Server, ArrowRight, ArrowLeft } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { apiClient } from "@/lib/apiClient";
 import { useMerchantCurrency } from "@/hooks/useMerchantCurrency";

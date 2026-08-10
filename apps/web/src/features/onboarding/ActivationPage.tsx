@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/apiClient";
 import {
   CheckCircle2,
@@ -12,7 +12,7 @@ import {
   ShieldCheck,
   Smartphone
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { WhatsAppConnectionFlow } from "../settings/components/WhatsAppConnectionFlow";
@@ -24,8 +24,12 @@ function cn(...inputs: ClassValue[]) {
 
 export function ActivationPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const queryClient = useQueryClient();
   const { user } = useAuthStore();
   const [qrCode, setQrCode] = useState<string | null>(null);
+
+  const reference = searchParams.get("reference");
 
   const { data: dashboard, refetch } = useQuery({
     queryKey: ["dashboard"],
@@ -33,8 +37,29 @@ export function ActivationPage() {
       const res = await apiClient.get("/api/commerce/dashboard");
       return res.data;
     },
-    refetchInterval: 5000 // Poll status during activation
+    refetchInterval: (query) => {
+      // Access data from the query state
+      const subStatus = query.state.data?.subscription?.status;
+      return subStatus === 'active' ? false : 3000;
+    }
   });
+
+  // Manual verification if reference is provided
+  useEffect(() => {
+    if (reference && dashboard?.subscription?.status !== 'active') {
+      const verify = async () => {
+        try {
+          await apiClient.get(`/api/commerce/verify-transaction/${reference}`);
+          queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+        } catch (e) {
+          console.error("Manual verification failed", e);
+        }
+      };
+      // Short delay to let webhook finish first
+      const timer = setTimeout(verify, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [reference, dashboard?.subscription?.status, queryClient]);
 
   const subscription = dashboard?.subscription;
   const whatsapp = dashboard?.whatsappConnection;

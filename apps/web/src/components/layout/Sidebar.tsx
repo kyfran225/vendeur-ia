@@ -46,10 +46,22 @@ export function Sidebar() {
             <NavLink
               key={link.to}
               to={link.to}
-              className={({ isActive }) => cn(
-                "flex flex-col items-center gap-1 group transition-all",
-                isActive ? "text-vendeur-emerald" : "text-white/30 hover:text-white"
-              )}
+              className={({ isActive }) => {
+                const isBriefing = location.search.includes("briefing=true");
+                const isDashboardPath = location.pathname === "/dashboard";
+
+                let active = isActive;
+                if (link.to === "/dashboard") {
+                  active = isDashboardPath && !isBriefing;
+                } else if (link.to.includes("briefing=true")) {
+                  active = isDashboardPath && isBriefing;
+                }
+
+                return cn(
+                  "flex flex-col items-center gap-1 group transition-all",
+                  active ? "text-vendeur-emerald" : "text-white/30 hover:text-white"
+                );
+              }}
             >
               <div className={cn(
                 "h-10 w-10 rounded-xl flex items-center justify-center transition-all",
@@ -69,10 +81,22 @@ export function Sidebar() {
           <NavLink
             key={link.to}
             to={link.to}
-            className={({ isActive }) => cn(
-              "flex flex-col items-center gap-1 transition-all flex-1 py-1 text-center",
-              isActive ? "text-vendeur-emerald" : "text-white/30"
-            )}
+            className={({ isActive }) => {
+              const isBriefing = location.search.includes("briefing=true");
+              const isDashboardPath = location.pathname === "/dashboard";
+
+              let active = isActive;
+              if (link.to === "/dashboard") {
+                active = isDashboardPath && !isBriefing;
+              } else if (link.to.includes("briefing=true")) {
+                active = isDashboardPath && isBriefing;
+              }
+
+              return cn(
+                "flex flex-col items-center gap-1 transition-all flex-1 py-1 text-center",
+                active ? "text-vendeur-emerald" : "text-white/30"
+              );
+            }}
           >
             <link.icon size={18} />
             <span className="text-[8px] font-black uppercase tracking-tight truncate max-w-full block">{link.label}</span>
@@ -125,10 +149,22 @@ export function Sidebar() {
                 key={link.to}
                 to={link.to}
                 onClick={() => setIsOpen(false)}
-                className={({ isActive }) => cn(
-                  "flex flex-col items-center gap-1 group transition-all w-full",
-                  isActive ? "text-vendeur-emerald" : "text-white/30 hover:text-white"
-                )}
+                className={({ isActive }) => {
+                  const isBriefing = location.search.includes("briefing=true");
+                  const isDashboardPath = location.pathname === "/dashboard";
+
+                  let active = isActive;
+                  if (link.to === "/dashboard") {
+                    active = isDashboardPath && !isBriefing;
+                  } else if (link.to.includes("briefing=true")) {
+                    active = isDashboardPath && isBriefing;
+                  }
+
+                  return cn(
+                    "flex flex-col items-center gap-1 group transition-all w-full",
+                    active ? "text-vendeur-emerald" : "text-white/30 hover:text-white"
+                  );
+                }}
               >
                 <div className={cn(
                   "h-10 w-10 rounded-lg flex items-center justify-center transition-all",

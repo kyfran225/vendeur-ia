@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/apiClient";
 import { useAuthStore } from "@/stores/authStore";
 import { useMerchantCurrency } from "@/hooks/useMerchantCurrency";
@@ -26,6 +26,7 @@ function cn(...inputs: ClassValue[]) {
 export function CheckoutPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { user } = useAuthStore();
   const currency = useMerchantCurrency();
   const [loading, setLoading] = useState(false);
@@ -56,9 +57,13 @@ export function CheckoutPage() {
         const paystack = new (window as any).PaystackPop();
         paystack.checkout({
           accessCode: res.data.access_code,
-          onSuccess: () => {
+          onSuccess: (transaction: any) => {
             toast.success("Paiement réussi !");
-            navigate("/activation");
+            // Important: Invalidate dashboard to start the polling on activation page
+            queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+
+            // Redirect to activation with the reference to force a check if needed
+            navigate(`/activation?reference=${transaction.reference}`);
           },
           onCancel: () => {
             toast.info("Paiement annulé");

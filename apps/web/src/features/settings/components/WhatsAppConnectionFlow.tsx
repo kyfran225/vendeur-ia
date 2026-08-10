@@ -197,22 +197,24 @@ export function WhatsAppConnectionFlow({ merchant, qrCode, onInitBaileys, onRefr
 
               {/* Logic: If not subscribed, show Choice. If subscribed, show Config. */}
               {!isSubscribed ? (
-                <div className="space-y-4 pt-4 border-t border-white/5 mt-4">
+                <div className="space-y-3 pt-4 border-t border-white/5 mt-4">
                    <button
                     onClick={() => setShowOffers(true)}
                     className="w-full h-14 bg-white text-vendeur-coal rounded-2xl font-black uppercase tracking-widest text-[10px] flex items-center justify-center gap-2 hover:bg-blue-500 hover:text-white transition-all active:scale-95 shadow-lg"
                   >
-                    <Sparkles size={16} /> Activer Pack Pro Assistance (25k)
+                    <Sparkles size={16} /> Pack Pro Clé en main (25k)
                   </button>
 
-                  <div className="text-center">
-                    <button
-                      onClick={() => setShowOffers(true)}
-                      className="text-[9px] font-black uppercase text-white/40 hover:text-blue-400 transition-colors tracking-widest"
-                    >
-                      Ou Configurer Manuellement (5k/mois)
-                    </button>
-                  </div>
+                  <button
+                    onClick={() => setShowOffers(true)}
+                    className="w-full h-12 bg-white/5 border border-white/10 text-white rounded-2xl font-black uppercase tracking-widest text-[9px] flex items-center justify-center gap-2 hover:bg-white/10 transition-all active:scale-95"
+                  >
+                    <Settings size={14} /> Mode Manuel (5k/mois)
+                  </button>
+
+                  <p className="text-[8px] text-white/20 text-center uppercase font-black tracking-widest">
+                    Choisissez votre méthode d'activation
+                  </p>
                 </div>
               ) : (
                 <div className="space-y-4 pt-2 border-t border-white/5 mt-4">

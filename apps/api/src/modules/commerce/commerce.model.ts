@@ -46,7 +46,8 @@ const MerchantSchema = new Schema({
     },
     status: { type: String, enum: ['disconnected', 'connected', 'error'], default: 'disconnected' },
     lastBillingDate: { type: Date, default: null },
-    reconnectAttempts: { type: Number, default: 0 }
+    reconnectAttempts: { type: Number, default: 0 },
+    packProAssistance: { type: Boolean, default: false }
   },
   instagramConfig: {
     pageId: String,

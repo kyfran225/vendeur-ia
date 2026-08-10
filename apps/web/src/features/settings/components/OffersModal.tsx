@@ -40,15 +40,22 @@ export function OffersModal({ isOpen, onClose }: OffersModalProps) {
         paystack.checkout({
           accessCode: res.data.access_code,
           onSuccess: (transaction: any) => {
-            toast.success(type === "ram_contribution" ? "Contribution RAM validée ! 🚀" : "Pack Pro activé ! 🚀");
+            toast.success(type === "ram_contribution" ? "Paiement validé ! 🚀" : "Pack Pro activé ! 🚀");
+            // Redirect to a callback-like logic or just refresh
             queryClient.invalidateQueries({ queryKey: ["dashboard"] });
             onClose();
+
+            // Force a small delay then redirect to connections tab to see the change
+            setTimeout(() => {
+               window.location.href = "/settings?tab=connexions&verified=true";
+            }, 1500);
           },
           onCancel: () => {
             toast.info("Paiement annulé");
           }
         });
       } else if (res.data.authorization_url) {
+        // Paystack handles the callback_url from the server-side initialization
         window.location.href = res.data.authorization_url;
       }
     } catch (err) {

@@ -46,6 +46,37 @@ router.get("/dashboard", authenticate, async (req, res) => {
   });
 });
 
+router.get("/verify-transaction/:reference", authenticate, async (req, res) => {
+  try {
+    const { reference } = req.params;
+    const userId = (req as any).user.id;
+
+    const transaction = await TransactionModel.findOne({ reference, ownerId: userId });
+
+    if (!transaction) {
+      // If not in our DB yet, try verifying with Paystack directly
+      const data = await paystackService.verifyTransaction(reference);
+
+      if (data && data.status === 'success') {
+         // The webhook might not have fired yet, but Paystack says it's good.
+         // We can return a "pending_process" or similar, or just say it's success
+         // and let the frontend know the merchant might still be updating.
+         return res.json({ status: 'success', data });
+      }
+      return res.status(404).json({ error: "Transaction non trouvée" });
+    }
+
+    const merchant = await CommerceMerchantModel.findOne({ ownerId: userId });
+
+    res.json({
+      status: transaction.status,
+      merchant
+    });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // PUBLIC SHOP ENDPOINT
 router.get("/public/shop/:merchantId", async (req, res) => {
   try {
@@ -350,9 +381,8 @@ router.post("/webhooks/paystack", express.raw({ type: 'application/json' }), asy
     const data = event.data;
     const { type, userId } = data.metadata || {};
 
-    if ((type === 'ram_contribution' || type === 'subscription') && userId) {
+    if ((type === 'ram_contribution' || type === 'subscription' || type === 'pack_pro') && userId) {
       console.log(`[Paystack Webhook] Charge Success for User: ${userId} (${type})`);
-      console.log(`[Paystack Webhook] Data Plan: ${data.plan}, Sub Code: ${data.subscription_code}`);
 
       const paymentMethod = data.channel === 'card' ? 'card' : 'mobile_money';
       const expiresAt = new Date();
@@ -360,13 +390,21 @@ router.post("/webhooks/paystack", express.raw({ type: 'application/json' }), asy
 
       const updatePayload: any = {
         "whatsappConfig.lastBillingDate": new Date(),
-        "whatsappConfig.status": 'connected',
-        "whatsappConfig.provider": "baileys",
         "subscription.status": "active",
         "subscription.expiresAt": expiresAt,
-        "subscription.plan": type === 'subscription' || type === 'ram_contribution' ? 'premium' : 'business',
         "subscription.paymentMethod": paymentMethod
       };
+
+      if (type === 'pack_pro') {
+        updatePayload["whatsappConfig.packProAssistance"] = true;
+        updatePayload["subscription.plan"] = 'business';
+        // When buying Pack Pro, we often switch to Meta, but let's keep it flexible
+        // The UI will guide the user to configure Meta
+      } else {
+        updatePayload["subscription.plan"] = 'premium';
+        updatePayload["whatsappConfig.provider"] = "baileys";
+        updatePayload["whatsappConfig.status"] = 'connected';
+      }
 
       if (data.plan) {
         updatePayload["subscription.subscriptionCode"] = data.subscription_code;
@@ -381,11 +419,14 @@ router.post("/webhooks/paystack", express.raw({ type: 'application/json' }), asy
       );
 
       if (merchant) {
-        try {
-          await whatsappService.initSession(userId);
-          console.log(`[Paystack Webhook] Baileys session initialized for User: ${userId}`);
-        } catch (err) {
-          console.error(`[Paystack Webhook] Failed to auto-init Baileys:`, err);
+        // Auto-init Baileys ONLY for non-pro or if explicitly requested
+        if (type !== 'pack_pro') {
+          try {
+            await whatsappService.initSession(userId);
+            console.log(`[Paystack Webhook] Baileys session initialized for User: ${userId}`);
+          } catch (err) {
+            console.error(`[Paystack Webhook] Failed to auto-init Baileys:`, err);
+          }
         }
 
         const successfulTransactions = await TransactionModel.countDocuments({

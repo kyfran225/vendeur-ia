@@ -52,8 +52,6 @@ export class CommerceService {
       leadScore: { $gte: 50 }
     });
 
-    const aiGrowthAdvice = await aiGrowthService.generateGrowthAdvice(merchant._id.toString());
-
     // --- PIPELINE METRICS ---
     const ordersToday = await CommerceOrderModel.countDocuments({
       merchantId: merchant._id,
@@ -153,8 +151,7 @@ export class CommerceService {
         totalPoints: totalPoints[0]?.total || 0,
         loyalCustomersCount,
         aiRevenue: aiRevenueStats[0]?.total || 0
-      },
-      aiGrowthAdvice
+      }
     };
   }
 

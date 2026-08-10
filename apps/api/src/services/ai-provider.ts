@@ -176,13 +176,20 @@ export class AIProvider {
       response = await this.generateWithProvider(primaryProvider, request, config);
     } catch (error: any) {
       const errorMsg = error.message || "";
-      const isQuotaError = errorMsg.includes("quota") || errorMsg.includes("429") || errorMsg.includes("limit");
+      const errorData = error.response?.data?.error?.message || error.response?.data?.message || "";
+      const fullError = `${errorMsg} ${errorData}`.toLowerCase();
+
+      const isQuotaError = fullError.includes("quota") ||
+                          fullError.includes("429") ||
+                          fullError.includes("limit") ||
+                          fullError.includes("credits") ||
+                          fullError.includes("billing");
 
       if (isQuotaError) {
         this.markDegraded(primaryProvider);
       }
 
-      console.warn(`[AI Provider] ${primaryProvider} failed, trying fallback:`, errorMsg);
+      console.warn(`[AI Provider] ${primaryProvider} failed (Quota=${isQuotaError}), trying fallback...`);
 
       const fallbackProvider = primaryProvider === 'gemini' ? 'groq' : 'gemini';
 
@@ -192,21 +199,30 @@ export class AIProvider {
           response = await this.generateWithProvider('openrouter', request, config);
         } catch (openRouterError: any) {
           console.error("[AI Provider] All fallbacks failed:", openRouterError.message);
-          throw new Error("Tous les fournisseurs d'IA ont échoué.");
+          return {
+            text: "Désolé, nos services d'IA sont saturés. Veuillez réessayer plus tard.",
+            provider: 'error',
+            usage: { promptTokens: 0, completionTokens: 0, totalTokens: 0 }
+          };
         }
       } else {
         try {
           response = await this.generateWithProvider(fallbackProvider, request, config);
         } catch (fallbackError: any) {
-          if (fallbackError.message?.includes("quota") || fallbackError.message?.includes("429")) {
+          const fallbackMsg = (fallbackError.message || "") + (fallbackError.response?.data?.error?.message || "");
+          if (fallbackMsg.toLowerCase().includes("quota") || fallbackMsg.includes("429")) {
             this.markDegraded(fallbackProvider);
           }
-          console.warn("[AI Provider] Secondary fallback failed, trying OpenRouter:", fallbackError.message);
+          console.warn("[AI Provider] Secondary fallback failed, trying OpenRouter...");
           try {
             response = await this.generateWithProvider('openrouter', request, config);
           } catch (openRouterError: any) {
             console.error("[AI Provider] All fallbacks failed:", openRouterError.message);
-            throw new Error("Tous les fournisseurs d'IA ont échoué.");
+            return {
+              text: "Désolé, nos services d'IA sont saturés. Veuillez réessayer plus tard.",
+              provider: 'error',
+              usage: { promptTokens: 0, completionTokens: 0, totalTokens: 0 }
+            };
           }
         }
       }

@@ -141,6 +141,7 @@ function LandingHero({
   onAuth: () => void;
   onFormUpdate: (name: string) => void;
 }) {
+  const navigate = useNavigate();
   const { tempData, setTempData, isSimulatorActive, setSimulatorActive } = useOnboardingStore();
   const [step, setStep] = useState<"form" | "simulator">(isSimulatorActive ? "simulator" : "form");
   const [form, setForm] = useState(tempData || {

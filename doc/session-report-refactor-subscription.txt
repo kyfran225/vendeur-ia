@@ -1,0 +1,72 @@
+COMPTE-RENDU DÉTAILLÉ DE LA SESSION : REFONTE COMMERCIALE & WHATSAPP
+Date : 2026-08-10
+Objet : Refonte complète du système d'offres, abonnements, paiements et connexion WhatsApp.
+
+---
+1. MISSION & OBJECTIFS
+---
+L'objectif était de transformer une architecture technique complexe et confuse pour l'utilisateur en un parcours commerçant fluide et "Zero Jargon".
+- Séparer la relation commerciale (Subscription) de l'état technique (WhatsApp).
+- Supprimer les termes techniques (Baileys, Meta Cloud API, Mode Express/Pro) de l'interface commerçant.
+- Créer un flux d'onboarding linéaire : Offres -> Checkout -> Activation.
+- Garantir la sécurité et l'idempotence des paiements via Paystack.
+
+---
+2. RÉALISATIONS TECHNIQUES (BACKEND / API)
+---
+A. Nouveaux Modèles de Données (Mongoose) :
+- OfferModel : Gère le catalogue des offres (slug, prix, fonctionnalités, options d'installation).
+- SubscriptionModel : Gère le cycle de vie commercial (status: pending, active, past_due, cancelled, expired).
+- WhatsAppConnectionModel : Gère l'état technique de la liaison (NOT_CONNECTED, CONNECTING, CONNECTED, ERROR).
+
+B. Centralisation de la Logique (CommerceService) :
+- Création d'un service unifié pour le calcul des montants (incluant les frais d'installation Expert de 25 000 XOF).
+- Initialisation des transactions Paystack avec des métadonnées enrichies pour un suivi précis.
+
+C. Refonte du Webhook Paystack :
+- Implémentation de l'idempotence : vérification systématique de la référence transactionnelle avant traitement pour éviter les doublons.
+- Synchronisation automatique : mise à jour simultanée des nouveaux modèles et maintien temporaire du modèle legacy pour la rétrocompatibilité.
+
+D. Données Initiales :
+- Script de "seeding" (seed-offers.ts) exécuté pour injecter les offres "Essentiel" (5 000 XOF) et "Pro" (20 000 XOF) en base de données.
+
+---
+3. RÉALISATIONS TECHNIQUES (FRONTEND / WEB)
+---
+A. Nouvelles Pages Onboarding :
+- /offers : Interface épurée présentant les cartes "Essentiel" et "Pro" avec leurs bénéfices réels.
+- /checkout : Récapitulatif financier détaillé avant le lancement de Paystack.
+- /activation : Page de progression guidée (Paiement -> Connexion -> Prêt) remplaçant les anciens modaux techniques.
+
+B. Refonte du Dashboard & Settings :
+- WhatsAppConnectionFlow : Suppression totale des sélections de "Mode". L'interface est désormais pilotée par l'état réel de la connexion.
+- BillingTab : Mise à jour pour afficher les informations issues du nouveau modèle Subscription.
+
+C. Corrections Ergonomiques & Visuelles :
+- Intégration du logo officiel Paystack (SVG) dans le récapitulatif de paiement.
+- Ajout d'un bouton "Retour au Dashboard" sur la page des offres pour éviter la "captivité" des utilisateurs.
+- Ajustement de la taille des polices et de la disposition (stacking vertical) pour les gros montants (> 10 000 XOF) afin d'éviter les retours à la ligne disgracieux du symbole XOF.
+
+---
+4. RÉSOLUTION DE BUGS & AJUSTEMENTS
+---
+- Correction Sidebar : Correction de la logique de mise en surbrillance. Désormais, le menu distingue correctement la page "Stats" de la page "IA" (Briefing Room) malgré le partage de l'URL de base /dashboard (via le paramètre ?briefing=true).
+- React Warning : Suppression de l'erreur "Missing key prop" dans la liste des offres.
+- ReferenceError : Correction de l'oubli de l'import ArrowLeft sur la page des offres.
+
+---
+5. REVERTS EFFECTUÉS
+---
+À la demande de l'utilisateur, les changements suivants ont été annulés pour revenir à la version stable initiale de ces composants spécifiques :
+- Annulation du polling agressif sur la page d'activation.
+- Annulation de la double vérification (Manual Verification) au retour du paiement.
+
+---
+6. ÉTAT FINAL DU PROJET
+---
+- Builds API & WEB : Validés (0 erreurs de type).
+- Branche : preview.
+- Offres en base : OK.
+- Flux commercial : Prêt pour test sur de nouveaux comptes.
+
+Rapport généré par l'Agent IA Vendeur-IA.

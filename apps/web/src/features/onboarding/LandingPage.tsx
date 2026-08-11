@@ -234,12 +234,7 @@ function LandingHero({
 
   const handleActivate = () => {
     setSimulatorActive(true); // Ensure it's active for onboarding store
-    if (user) {
-      // If already logged in, go straight to onboarding
-      window.location.href = "/onboarding";
-    } else {
-      onAuth();
-    }
+    navigate("/onboarding");
   };
 
   const handleMicClick = async () => {

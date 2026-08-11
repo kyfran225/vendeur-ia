@@ -206,8 +206,8 @@ Réponds UNIQUEMENT avec le texte final du message.`;
         mediaUrl: audioUrl,
         aiMetadata: {
           provider: aiResponse.provider,
-          tokensUsed: aiResponse.usage.totalTokens,
-          cost: aiResponse.usage.totalTokens * 0.000002 // Estimated cost
+          tokensUsed: aiResponse.usage?.totalTokens || 0,
+          cost: (aiResponse.usage?.totalTokens || 0) * 0.000002 // Estimated cost
         }
       });
 
@@ -231,9 +231,10 @@ Réponds UNIQUEMENT avec le texte final du message.`;
       }
 
       // Notify Merchant via Push
+      const replyText = reply || "";
       pushService.sendNotification(userId, {
         title: `Nouvelle réponse (${platform}) de ${context.merchant.businessName}`,
-        body: reply.length > 100 ? reply.substring(0, 97) + '...' : reply,
+        body: replyText.length > 100 ? replyText.substring(0, 97) + '...' : replyText,
         data: { conversationId }
       }).catch(err => console.error("[AI Queue] Push notification error:", err));
 

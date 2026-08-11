@@ -414,15 +414,11 @@ router.post("/webhooks/paystack", express.raw({ type: 'application/json' }), asy
     const data = event.data;
     const { type, userId, offerSlug, setupOption } = data.metadata || {};
 
-    if (userId && (type === 'SUBSCRIPTION_INITIAL' || type === 'subscription' || type === 'pack_pro')) {
+    if (userId && (type === 'SUBSCRIPTION_INITIAL' || type === 'subscription' || type === 'pack_pro' || type === 'ram_contribution')) {
       console.log(`[Paystack Webhook] Charge Success for User: ${userId} (${type})`);
 
-      // 1. Find Offer
+      // 1. Find Offer or fallback to essential
       const offer = await OfferModel.findOne({ slug: offerSlug || (type === 'pack_pro' ? 'pro' : 'essential') });
-      if (!offer) {
-        console.error(`[Paystack Webhook] Offer not found for slug: ${offerSlug}`);
-        return res.status(404).send('Offer not found');
-      }
 
       // 2. Update/Create Subscription
       const expiresAt = new Date();
@@ -432,7 +428,7 @@ router.post("/webhooks/paystack", express.raw({ type: 'application/json' }), asy
         { userId },
         {
           $set: {
-            offerId: offer._id,
+            offerId: offer?._id,
             status: 'active',
             price: data.amount / 100,
             currency: data.currency,
@@ -453,7 +449,7 @@ router.post("/webhooks/paystack", express.raw({ type: 'application/json' }), asy
           $setOnInsert: {
             userId,
             status: 'NOT_CONNECTED',
-            connectionType: offer.slug === 'pro' ? 'meta' : 'baileys'
+            connectionType: offerSlug === 'pro' || type === 'pack_pro' ? 'meta' : 'baileys'
           }
         },
         { upsert: true }
@@ -478,9 +474,10 @@ router.post("/webhooks/paystack", express.raw({ type: 'application/json' }), asy
         { ownerId: userId },
         {
           $set: {
-            "subscription.plan": offer.slug,
+            "subscription.plan": offerSlug || (type === 'pack_pro' ? 'pro' : 'essential'),
             "subscription.status": "active",
-            "subscription.expiresAt": expiresAt
+            "subscription.expiresAt": expiresAt,
+            "whatsappConfig.status": "connected"
           }
         }
       );

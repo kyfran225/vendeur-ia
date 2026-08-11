@@ -31,7 +31,9 @@ function App() {
 
   React.useEffect(() => {
     if (accessToken) {
-      subscribeToPush(accessToken);
+      subscribeToPush(accessToken).catch(err => {
+        console.warn("[Push] Optional subscription failed:", err.message);
+      });
     }
   }, [accessToken]);
 

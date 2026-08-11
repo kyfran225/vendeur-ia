@@ -3,8 +3,8 @@ import mongoose, { Schema, Document } from "mongoose";
 // --- MERCHANT ---
 const MerchantSchema = new Schema({
   ownerId: { type: String, required: true, unique: true, index: true },
-  businessName: { type: String, required: true },
-  category: { type: String, required: true },
+  businessName: { type: String, default: "" },
+  category: { type: String, default: "" },
   description: { type: String, default: "" },
   country: { type: String, default: "CI" },
   city: { type: String, default: "" },

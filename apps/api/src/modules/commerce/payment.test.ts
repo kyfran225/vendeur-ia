@@ -30,6 +30,21 @@ vi.mock('../../services/logger.service.js', () => ({
   },
 }));
 
+// Mock WhatsApp
+vi.mock('../whatsapp/whatsapp.service.js', () => ({
+  whatsappService: {
+    sendMetaMessage: vi.fn(),
+    activeSessions: { get: vi.fn() }
+  }
+}));
+
+// Mock messaging
+vi.mock('../../services/messaging.service.js', () => ({
+  messagingService: {
+    sendMessage: vi.fn()
+  }
+}));
+
 describe('Payment & Gamification Audit Tests', () => {
   let accessToken: string;
   let userId: string;

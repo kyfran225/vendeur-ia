@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { Types } from 'mongoose';
 import { aiProvider } from '../services/ai-provider.js';
+import { aiAgentService } from '../services/ai-agent.service.js';
 import { aiWorker } from '../services/ai-queue.service.js';
 import { CommerceMessageModel, CommerceMerchantModel, CommerceConversationModel } from '../modules/commerce/commerce.model.js';
 import { messagingService } from '../services/messaging.service.js';
@@ -19,8 +20,23 @@ vi.mock('../config/redis.js', () => ({
 
 vi.mock('../services/ai-provider.js', () => ({
   aiProvider: {
-    generateText: vi.fn().mockResolvedValue("Ceci est un test vocal"),
-    generateSpeech: vi.fn().mockResolvedValue(Buffer.from("fake_audio_content"))
+    generateText: vi.fn().mockResolvedValue({ text: "Ceci est un test vocal" }),
+    generateSpeech: vi.fn().mockResolvedValue(Buffer.from("fake_audio_content")),
+    generateResponse: vi.fn().mockResolvedValue({
+      text: "Ceci est un test vocal",
+      provider: "mock",
+      usage: { totalTokens: 100 }
+    })
+  }
+}));
+
+vi.mock('../services/ai-agent.service.js', () => ({
+  aiAgentService: {
+    generateResponse: vi.fn().mockResolvedValue({
+      text: "Ceci est un test vocal",
+      provider: "mock",
+      usage: { totalTokens: 100 }
+    })
   }
 }));
 

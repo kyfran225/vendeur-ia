@@ -18,9 +18,24 @@ export async function subscribeToPush(accessToken: string) {
     return;
   }
 
-  if (!('serviceWorker' in navigator)) {
-    console.warn("[Push] Service Workers not supported.");
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+    console.warn("[Push] Service Workers or Push not supported.");
     return;
+  }
+
+  // Check current permission
+  if (Notification.permission === 'denied') {
+    console.warn("[Push] Permission explicitly denied by user.");
+    return;
+  }
+
+  // Request permission if default
+  if (Notification.permission === 'default') {
+    const permission = await Notification.requestPermission();
+    if (permission !== 'granted') {
+      console.warn("[Push] Permission not granted after request.");
+      return;
+    }
   }
 
   try {

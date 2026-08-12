@@ -30,6 +30,7 @@ export class PaystackService {
       email,
       amount: amount * 100, // Paystack works in kobo/cents
       currency: currency,
+      channels: ["card", "mobile_money"],
       callback_url: `${env.CLIENT_URL}/payment/callback`,
       metadata: metadata || {
         type: "subscription",

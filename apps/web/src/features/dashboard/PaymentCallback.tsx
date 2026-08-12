@@ -4,18 +4,20 @@ import { CheckCircle2, Loader2, XCircle, Sparkles } from "lucide-react";
 import { apiClient } from "@/lib/apiClient";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
+import { useAuthStore } from "@/stores/authStore";
 
 export function PaymentCallback() {
   const [searchParams] = useSearchParams();
   const reference = searchParams.get("reference") || searchParams.get("trxref");
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { user } = useAuthStore();
   const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
   const [attempts, setAttempts] = useState(0);
 
   useEffect(() => {
     if (!reference) {
-      navigate("/dashboard");
+      navigate(user?.onboardingCompleted ? "/dashboard" : "/offers");
       return;
     }
 
@@ -27,10 +29,10 @@ export function PaymentCallback() {
           queryClient.invalidateQueries({ queryKey: ["dashboard"] });
           toast.success("Paiement confirmé ! Votre accès est activé. 🚀");
 
-          // Redirect after a short delay
+          // Always redirect to /activation post-payment so user gets the QR code / pairing code screen
           setTimeout(() => {
-            navigate("/settings?tab=connexions&verified=true");
-          }, 3000);
+            navigate("/activation");
+          }, 2000);
         } else {
           // Retry if pending, up to 10 times (20 seconds)
           if (attempts < 10) {
@@ -49,7 +51,7 @@ export function PaymentCallback() {
     };
 
     checkStatus();
-  }, [reference, attempts, navigate, queryClient]);
+  }, [reference, attempts, navigate, queryClient, user]);
 
   return (
     <div className="min-h-screen bg-vendeur-coal flex items-center justify-center p-6 text-center">

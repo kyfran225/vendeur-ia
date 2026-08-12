@@ -48,6 +48,12 @@ export default defineConfig({
     },
   },
   server: {
+    fs: {
+      allow: [
+        '..',
+        'C:/Users/Franck/web-apps',
+      ],
+    },
     headers: {
       "Cross-Origin-Opener-Policy": "same-origin-allow-popups",
       "Cross-Origin-Embedder-Policy": "unsafe-none",

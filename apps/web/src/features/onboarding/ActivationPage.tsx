@@ -63,9 +63,15 @@ export function ActivationPage() {
       setQrCode(data.qrCodeData);
       setAutoInitializing(false);
     });
-    socket.on("whatsapp:connected", () => {
+    socket.on("whatsapp:connected", async () => {
       setQrCode(null);
       setPairingCode(null);
+      try {
+        await apiClient.post("/api/commerce/merchant", { onboardingCompleted: true });
+        useAuthStore.getState().updateUser({ onboardingCompleted: true });
+      } catch (err) {
+        console.warn("[Activation] Failed to set onboardingCompleted on connect:", err);
+      }
       refetch();
     });
     return () => {
@@ -138,7 +144,15 @@ export function ActivationPage() {
             </p>
           </div>
           <button
-            onClick={() => navigate("/dashboard")}
+            onClick={async () => {
+              try {
+                await apiClient.post("/api/commerce/merchant", { onboardingCompleted: true });
+                useAuthStore.getState().updateUser({ onboardingCompleted: true });
+              } catch (err) {
+                console.warn("[Activation] Failed to set onboardingCompleted:", err);
+              }
+              navigate("/dashboard");
+            }}
             className="w-full h-20 bg-white text-vendeur-coal rounded-3xl font-black uppercase tracking-[0.2em] text-[10px] flex items-center justify-center gap-3 hover:bg-vendeur-emerald transition-all active:scale-95 shadow-xl"
           >
             Ouvrir mon Dashboard

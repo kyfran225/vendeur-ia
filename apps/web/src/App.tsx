@@ -63,6 +63,7 @@ function App() {
             <Route path="/offers" element={<OffersPage />} />
             <Route path="/checkout" element={<CheckoutPage />} />
             <Route path="/activation" element={<ActivationPage />} />
+            <Route path="/payment/callback" element={<PaymentCallback />} />
 
             <Route element={
               user ? (
@@ -78,7 +79,6 @@ function App() {
               <Route path="/inbox" element={<SalesInbox />} />
               <Route path="/marketing" element={<MarketingHub />} />
               <Route path="/settings" element={<SettingsPage />} />
-              <Route path="/payment/callback" element={<PaymentCallback />} />
             </Route>
 
             <Route path="/shop/:merchantId" element={<PublicShopPage />} />

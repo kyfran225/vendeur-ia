@@ -35,37 +35,10 @@ export function OffersModal({ isOpen, onClose }: OffersModalProps) {
         userId: user?.id
       });
 
-      if (res.data.access_code) {
-        const paystack = new (window as any).PaystackPop();
-        paystack.checkout({
-          accessCode: res.data.access_code,
-          onSuccess: async (transaction: any) => {
-            try {
-              const confirmRes = await apiClient.post("/api/commerce/checkout/confirm", {
-                reference: transaction.reference
-              });
-              if (confirmRes.data.success) {
-                toast.success(type === "ram_contribution" ? "Paiement validé ! 🚀" : "Pack Pro activé ! 🚀");
-                queryClient.invalidateQueries({ queryKey: ["dashboard"] });
-                onClose();
-                setTimeout(() => {
-                   window.location.href = "/settings?tab=connexions&verified=true";
-                }, 1500);
-              } else {
-                toast.error("Paiement non confirmé par la banque/opérateur.");
-              }
-            } catch (err: any) {
-              const errMsg = err?.response?.data?.error || "Paiement non confirmé.";
-              toast.error(errMsg);
-            }
-          },
-          onCancel: () => {
-            toast.info("Paiement annulé");
-          }
-        });
-      } else if (res.data.authorization_url) {
-        // Paystack handles the callback_url from the server-side initialization
+      if (res.data.authorization_url) {
         window.location.href = res.data.authorization_url;
+      } else {
+        toast.error("Impossible de générer le lien de paiement.");
       }
     } catch (err) {
       toast.error("Erreur lors de l'initialisation du paiement.");

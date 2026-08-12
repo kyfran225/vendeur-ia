@@ -53,34 +53,10 @@ export function CheckoutPage() {
         setupOption
       });
 
-      if (res.data.access_code) {
-        const paystack = new (window as any).PaystackPop();
-        paystack.checkout({
-          accessCode: res.data.access_code,
-          onSuccess: async (transaction: { reference: string }) => {
-            try {
-              const confirmRes = await apiClient.post("/api/commerce/checkout/confirm", {
-                reference: transaction.reference
-              });
-              
-              if (confirmRes.data.success) {
-                toast.success("Paiement réussi ! Abonnement activé.");
-                navigate("/activation");
-              } else {
-                toast.error("Le paiement n'a pas encore été validé par l'opérateur.");
-              }
-            } catch (err: any) {
-              const errMsg = err?.response?.data?.error || err?.message || "Validation du paiement échouée.";
-              console.warn("[Checkout] confirm failed:", errMsg);
-              toast.error(`Paiement non confirmé : ${errMsg}`);
-            }
-          },
-          onCancel: () => {
-            toast.info("Paiement annulé");
-          }
-        });
-      } else if (res.data.authorization_url) {
+      if (res.data.authorization_url) {
         window.location.href = res.data.authorization_url;
+      } else {
+        toast.error("Impossible de générer le lien de paiement.");
       }
     } catch (error: any) {
       toast.error(error.response?.data?.error || "Erreur de paiement");

@@ -54,19 +54,87 @@ router.get("/verify-transaction/:reference", authenticate, async (req, res) => {
     const { reference } = req.params;
     const userId = (req as any).user.id;
 
-    const transaction = await TransactionModel.findOne({ reference, ownerId: userId });
+    let transaction = await TransactionModel.findOne({ reference, ownerId: userId });
 
-    if (!transaction) {
-      // If not in our DB yet, try verifying with Paystack directly
+    if (!transaction || transaction.status !== 'success') {
+      console.log(`[Verify Route] Transaction ${reference} non enregistrée ou non complétée localement. Vérification directe Paystack...`);
       const data = await paystackService.verifyTransaction(reference);
 
       if (data && data.status === 'success') {
-         // The webhook might not have fired yet, but Paystack says it's good.
-         // We can return a "pending_process" or similar, or just say it's success
-         // and let the frontend know the merchant might still be updating.
-         return res.json({ status: 'success', data });
+        const { type, offerSlug } = data.metadata || {};
+        const offer = await OfferModel.findOne({ slug: offerSlug || (type === 'pack_pro' ? 'pro' : 'essential') });
+
+        const expiresAt = new Date();
+        expiresAt.setMonth(expiresAt.getMonth() + 1);
+
+        await SubscriptionModel.findOneAndUpdate(
+          { userId },
+          {
+            $set: {
+              offerId: offer?._id,
+              status: 'active',
+              price: data.amount / 100,
+              currency: data.currency,
+              currentPeriodStart: new Date(),
+              currentPeriodEnd: expiresAt,
+              paymentMethod: data.channel === 'card' ? 'card' : 'mobile_money',
+              providerSubscriptionId: data.subscription_code || null,
+              nextBillingDate: data.next_payment_date ? new Date(data.next_payment_date) : null
+            }
+          },
+          { upsert: true, new: true }
+        );
+
+        await WhatsAppConnectionModel.findOneAndUpdate(
+          { userId },
+          {
+            $setOnInsert: {
+              userId,
+              status: 'NOT_CONNECTED',
+              connectionType: offerSlug === 'pro' || type === 'pack_pro' ? 'meta' : 'baileys'
+            }
+          },
+          { upsert: true }
+        );
+
+        transaction = await TransactionModel.findOneAndUpdate(
+          { reference },
+          {
+            $set: {
+              merchantId: (await CommerceMerchantModel.findOne({ ownerId: userId }))?._id,
+              ownerId: userId,
+              reference: data.reference,
+              amount: data.amount / 100,
+              currency: data.currency,
+              type: type || 'SUBSCRIPTION_INITIAL',
+              status: 'success',
+              paymentMethod: data.channel,
+              paidAt: data.paid_at ? new Date(data.paid_at) : new Date(),
+              metadata: data.metadata
+            }
+          },
+          { upsert: true, new: true }
+        );
+
+        await CommerceMerchantModel.findOneAndUpdate(
+          { ownerId: userId },
+          {
+            $set: {
+              "subscription.plan": offerSlug || (type === 'pack_pro' ? 'pro' : 'essential'),
+              "subscription.status": "active",
+              "subscription.expiresAt": expiresAt,
+              "whatsappConfig.status": "connected"
+            }
+          }
+        );
+
+        console.log(`[Verify Route] Activation effectuée avec succès pour le paiement ${reference}`);
+        const merchant = await CommerceMerchantModel.findOne({ ownerId: userId });
+        return res.json({ status: 'success', data, merchant });
+      } else {
+        console.warn(`[Verify Route] Transaction ${reference} refusée ou échouée chez Paystack: ${data?.gateway_response || 'Unknown'}`);
+        return res.status(400).json({ status: data?.status || 'failed', gateway_response: data?.gateway_response, error: "Paiement non validé par Paystack" });
       }
-      return res.status(404).json({ error: "Transaction non trouvée" });
     }
 
     const merchant = await CommerceMerchantModel.findOne({ ownerId: userId });
@@ -76,6 +144,7 @@ router.get("/verify-transaction/:reference", authenticate, async (req, res) => {
       merchant
     });
   } catch (error: any) {
+    console.error(`[Verify Route] Erreur lors de la vérification de ${req.params.reference}:`, error.message);
     res.status(500).json({ error: error.message });
   }
 });
@@ -520,16 +589,18 @@ router.post("/webhooks/paystack", express.raw({ type: 'application/json' }), asy
   }
 
   const event = JSON.parse(body);
+  console.log(`[Paystack Webhook] Event received: "${event.event}" for reference: ${event?.data?.reference}`);
 
   // IDEMPOTENCY CHECK: Check if this event was already processed
-  const existingTransaction = await TransactionModel.findOne({ reference: event.data.reference, status: 'success' });
+  const existingTransaction = await TransactionModel.findOne({ reference: event.data?.reference, status: 'success' });
   if (existingTransaction) {
-    console.log(`[Paystack Webhook] Event ${event.data.reference} already processed. Skipping.`);
+    console.log(`[Paystack Webhook] Event ${event.data?.reference} already processed. Skipping.`);
     return res.status(200).send('OK');
   }
 
   if (event.event === 'charge.success') {
     const data = event.data;
+    console.log(`[Paystack Webhook] Charge SUCCESS for reference ${data.reference}, amount: ${data.amount / 100} ${data.currency}, channel: ${data.channel}`);
     const { type, userId, offerSlug, setupOption } = data.metadata || {};
 
     if (userId && (type === 'SUBSCRIPTION_INITIAL' || type === 'subscription' || type === 'pack_pro' || type === 'ram_contribution')) {

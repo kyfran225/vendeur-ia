@@ -64,10 +64,19 @@ export class PaystackService {
   }
 
   async verifyTransaction(reference: string) {
-    const response = await axios.get(`${PAYSTACK_URL}/transaction/verify/${reference}`, {
-      headers: this.headers
-    });
-    return response.data.data;
+    console.log(`[Paystack] Verifying transaction reference: ${reference}`);
+    try {
+      const response = await axios.get(`${PAYSTACK_URL}/transaction/verify/${reference}`, {
+        headers: this.headers
+      });
+      const data = response.data.data;
+      console.log(`[Paystack] Verification result for ${reference}: status=${data?.status}, gateway_response=${data?.gateway_response}, channel=${data?.channel}`);
+      return data;
+    } catch (error: any) {
+      const msg = error.response?.data?.message || error.message;
+      console.error(`[Paystack] Verification error for ${reference}:`, msg);
+      throw error;
+    }
   }
 }
 

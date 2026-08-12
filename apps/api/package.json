@@ -9,7 +9,8 @@
     "build": "tsc",
     "db:reset": "tsx src/scripts/reset-dev-db.ts",
     "db:purge": "tsx src/scripts/purge-non-admins.ts",
-    "db:backup": "tsx src/scripts/cloud-backup.ts"
+    "db:backup": "tsx src/scripts/cloud-backup.ts",
+    "db:seed-offers": "tsx src/scripts/seed-offers.ts"
   },
   "dependencies": {
     "@hapi/boom": "^10.0.1",

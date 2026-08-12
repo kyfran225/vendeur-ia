@@ -39,16 +39,25 @@ export function OffersModal({ isOpen, onClose }: OffersModalProps) {
         const paystack = new (window as any).PaystackPop();
         paystack.checkout({
           accessCode: res.data.access_code,
-          onSuccess: (transaction: any) => {
-            toast.success(type === "ram_contribution" ? "Paiement validé ! 🚀" : "Pack Pro activé ! 🚀");
-            // Redirect to a callback-like logic or just refresh
-            queryClient.invalidateQueries({ queryKey: ["dashboard"] });
-            onClose();
-
-            // Force a small delay then redirect to connections tab to see the change
-            setTimeout(() => {
-               window.location.href = "/settings?tab=connexions&verified=true";
-            }, 1500);
+          onSuccess: async (transaction: any) => {
+            try {
+              const confirmRes = await apiClient.post("/api/commerce/checkout/confirm", {
+                reference: transaction.reference
+              });
+              if (confirmRes.data.success) {
+                toast.success(type === "ram_contribution" ? "Paiement validé ! 🚀" : "Pack Pro activé ! 🚀");
+                queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+                onClose();
+                setTimeout(() => {
+                   window.location.href = "/settings?tab=connexions&verified=true";
+                }, 1500);
+              } else {
+                toast.error("Paiement non confirmé par la banque/opérateur.");
+              }
+            } catch (err: any) {
+              const errMsg = err?.response?.data?.error || "Paiement non confirmé.";
+              toast.error(errMsg);
+            }
           },
           onCancel: () => {
             toast.info("Paiement annulé");

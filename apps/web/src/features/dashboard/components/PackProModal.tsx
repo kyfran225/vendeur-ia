@@ -27,10 +27,22 @@ export function PackProModal({ isOpen, onClose }: PackProModalProps) {
         const paystack = new (window as any).PaystackPop();
         paystack.checkout({
           accessCode: res.data.access_code,
-          onSuccess: (transaction: any) => {
-            toast.success("Pack Pro activé !");
-            queryClient.invalidateQueries({ queryKey: ["dashboard"] });
-            onClose();
+          onSuccess: async (transaction: any) => {
+            try {
+              const confirmRes = await apiClient.post("/api/commerce/checkout/confirm", {
+                reference: transaction.reference
+              });
+              if (confirmRes.data.success) {
+                toast.success("Pack Pro activé !");
+                queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+                onClose();
+              } else {
+                toast.error("Paiement non confirmé par la banque/opérateur.");
+              }
+            } catch (err: any) {
+              const errMsg = err?.response?.data?.error || "Paiement non confirmé.";
+              toast.error(errMsg);
+            }
           },
           onCancel: () => {
             toast.info("Paiement annulé");

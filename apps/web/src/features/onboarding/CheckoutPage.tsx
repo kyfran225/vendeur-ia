@@ -59,17 +59,21 @@ export function CheckoutPage() {
           accessCode: res.data.access_code,
           onSuccess: async (transaction: { reference: string }) => {
             try {
-              // Activate subscription immediately (webhook may not fire in dev)
-              await apiClient.post("/api/commerce/checkout/confirm", {
+              const confirmRes = await apiClient.post("/api/commerce/checkout/confirm", {
                 reference: transaction.reference
               });
-              toast.success("Paiement réussi ! Abonnement activé.");
+              
+              if (confirmRes.data.success) {
+                toast.success("Paiement réussi ! Abonnement activé.");
+                navigate("/activation");
+              } else {
+                toast.error("Le paiement n'a pas encore été validé par l'opérateur.");
+              }
             } catch (err: any) {
-              // Activation failed but Paystack confirmed payment — webhook will handle it later
-              console.warn("[Checkout] confirm failed, webhook fallback active:", err?.response?.data?.error || err?.message);
-              toast.success("Paiement réussi ! Activation en cours...");
+              const errMsg = err?.response?.data?.error || err?.message || "Validation du paiement échouée.";
+              console.warn("[Checkout] confirm failed:", errMsg);
+              toast.error(`Paiement non confirmé : ${errMsg}`);
             }
-            navigate("/activation");
           },
           onCancel: () => {
             toast.info("Paiement annulé");

@@ -15,6 +15,24 @@ router.post("/connect", authenticate, async (req, res) => {
   }
 });
 
+// Generate a pairing code for same-device mobile users who can't scan a QR
+router.post("/pairing-code", authenticate, async (req, res) => {
+  const userId = (req as any).user.id;
+  const { phoneNumber } = req.body;
+
+  if (!phoneNumber) {
+    return res.status(400).json({ error: "Le numéro de téléphone WhatsApp est requis." });
+  }
+
+  try {
+    const code = await whatsappService.requestPairingCode(userId, phoneNumber);
+    res.json({ code });
+  } catch (error: any) {
+    console.error("[Route Pairing Code Error]:", error);
+    res.status(500).json({ error: error.message || "Impossible de générer le code d'appairage." });
+  }
+});
+
 router.post("/disconnect", authenticate, async (req, res) => {
   try {
     await whatsappService.disconnectSession((req as any).user.id);

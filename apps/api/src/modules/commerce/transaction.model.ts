@@ -8,7 +8,7 @@ const TransactionSchema = new Schema({
   currency: { type: String, default: "XOF" },
   type: {
     type: String,
-    enum: ["subscription", "ram_contribution", "pack_pro"],
+    enum: ["subscription", "ram_contribution", "pack_pro", "SUBSCRIPTION_INITIAL"],
     required: true
   },
   status: { type: String, enum: ["success", "failed", "pending"], default: "pending" },

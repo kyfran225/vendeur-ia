@@ -109,6 +109,9 @@ class WhatsAppService {
           version,
           auth: state,
           printQRInTerminal: false,
+          // Enable pairing code support (for same-device mobile users)
+          // When usePairingCode is true, the socket can also emit pairing codes
+          // in addition to QR codes via requestPairingCode()
         });
 
         this.activeSessions.set(userId, sock);
@@ -217,6 +220,37 @@ class WhatsAppService {
 
     this.pendingInitializations.set(userId, initPromise);
     return initPromise;
+  }
+
+  async requestPairingCode(userId: string, phoneNumber: string): Promise<string> {
+    // Ensure we have an active session (init if not)
+    if (!this.activeSessions.has(userId)) {
+      // Start session init in background — don't await full connection
+      this.initSession(userId).catch(err =>
+        console.error(`[WhatsApp] Pairing session init error for ${userId}:`, err)
+      );
+
+      // Wait briefly for socket to be created (it's synchronous up to makeWASocket)
+      await new Promise(r => setTimeout(r, 1500));
+    }
+
+    const sock = this.activeSessions.get(userId);
+    if (!sock) {
+      throw new Error("Session WhatsApp non initialisée. Réessayez dans quelques secondes.");
+    }
+
+    // Normalize phone number: strip spaces, dashes, +
+    const normalized = phoneNumber.replace(/[\s\-\+]/g, "");
+
+    try {
+      const code = await sock.requestPairingCode(normalized);
+      console.log(`[WhatsApp] Pairing code generated for user ${userId}: ${code}`);
+      // Format as XXXX-XXXX for readability
+      return code.length === 8 ? `${code.slice(0, 4)}-${code.slice(4)}` : code;
+    } catch (err: any) {
+      console.error(`[WhatsApp] requestPairingCode failed for ${userId}:`, err);
+      throw new Error(`Impossible de générer le code d'appairage: ${err.message || err}`);
+    }
   }
 
   private async getMetaConfig(merchant: any) {

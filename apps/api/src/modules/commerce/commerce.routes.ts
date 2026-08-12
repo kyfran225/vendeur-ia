@@ -221,6 +221,124 @@ router.post("/checkout", authenticate, async (req, res) => {
   }
 });
 
+// CONFIRM CHECKOUT AFTER PAYSTACK POPUP (frontend-triggered, idempotent)
+// Called by the client immediately after PaystackPop.onSuccess fires.
+// Activates the subscription without waiting for the Paystack webhook
+// (which cannot reach localhost in dev mode).
+router.post("/checkout/confirm", authenticate, async (req, res) => {
+  const userId = (req as any).user.id;
+  const { reference } = req.body;
+
+  if (!reference) {
+    return res.status(400).json({ error: "Transaction reference is required" });
+  }
+
+  try {
+    // Idempotency: if already processed, return success immediately
+    const existing = await TransactionModel.findOne({ reference, status: "success" });
+    if (existing) {
+      console.log(`[Checkout Confirm] Already processed reference ${reference}. Returning success.`);
+      return res.json({ success: true, alreadyProcessed: true });
+    }
+
+    // Verify with Paystack
+    const data = await paystackService.verifyTransaction(reference);
+
+    if (!data || data.status !== "success") {
+      return res.status(400).json({ error: "Transaction non confirmée par Paystack", status: data?.status });
+    }
+
+    const { type, offerSlug, setupOption } = data.metadata || {};
+
+    // 1. Find offer
+    const offer = await OfferModel.findOne({ slug: offerSlug || "essential" });
+
+    // 2. Upsert Subscription
+    const expiresAt = new Date();
+    expiresAt.setMonth(expiresAt.getMonth() + 1);
+
+    await SubscriptionModel.findOneAndUpdate(
+      { userId },
+      {
+        $set: {
+          offerId: offer?._id,
+          status: "active",
+          price: data.amount / 100,
+          currency: data.currency,
+          currentPeriodStart: new Date(),
+          currentPeriodEnd: expiresAt,
+          paymentMethod: data.channel === "card" ? "card" : "mobile_money",
+          providerSubscriptionId: data.subscription_code || null,
+          nextBillingDate: data.next_payment_date ? new Date(data.next_payment_date) : null
+        }
+      },
+      { upsert: true, new: true }
+    );
+
+    // 3. Upsert WhatsApp Connection (initial state, do not overwrite if already exists)
+    await WhatsAppConnectionModel.findOneAndUpdate(
+      { userId },
+      {
+        $setOnInsert: {
+          userId,
+          status: "NOT_CONNECTED",
+          connectionType: offerSlug === "pro" || type === "pack_pro" ? "meta" : "baileys"
+        }
+      },
+      { upsert: true }
+    );
+
+    // 4. Record transaction
+    const merchant = await CommerceMerchantModel.findOne({ ownerId: userId });
+    const newTransaction = await TransactionModel.create({
+      merchantId: merchant?._id,
+      ownerId: userId,
+      reference: data.reference,
+      amount: data.amount / 100,
+      currency: data.currency,
+      type: type || "SUBSCRIPTION_INITIAL",
+      status: "success",
+      paymentMethod: data.channel,
+      paidAt: new Date(data.paid_at),
+      metadata: data.metadata
+    });
+
+    // 5. Legacy Merchant sync
+    await CommerceMerchantModel.findOneAndUpdate(
+      { ownerId: userId },
+      {
+        $set: {
+          "subscription.plan": offerSlug || "essential",
+          "subscription.status": "active",
+          "subscription.expiresAt": expiresAt,
+          "whatsappConfig.status": "connected"
+        }
+      }
+    );
+
+    // 6. Referral reward (only on first successful transaction)
+    const successCount = await TransactionModel.countDocuments({ ownerId: userId, status: "success" });
+    if (successCount === 1 && merchant) {
+      commerceService.processReferralReward(merchant._id.toString()).catch((err: any) =>
+        console.error("[Referral] processReferralReward failed:", err)
+      );
+    }
+
+    // 7. Send receipt
+    if (newTransaction && merchant) {
+      billingReceiptService.sendDigitalReceipt(merchant._id.toString(), newTransaction as any).catch((err: any) =>
+        console.error("[Receipt] sendDigitalReceipt failed:", err)
+      );
+    }
+
+    console.log(`[Checkout Confirm] ✅ Subscription activated for user ${userId} (${reference})`);
+    res.json({ success: true });
+  } catch (error: any) {
+    console.error(`[Checkout Confirm] Error for user ${userId}:`, error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 router.post("/activate-premium", authenticate, async (req, res) => {
   const { email } = req.body;
   const userId = (req as any).user.id;

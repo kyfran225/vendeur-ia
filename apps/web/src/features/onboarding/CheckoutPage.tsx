@@ -57,8 +57,18 @@ export function CheckoutPage() {
         const paystack = new (window as any).PaystackPop();
         paystack.checkout({
           accessCode: res.data.access_code,
-          onSuccess: () => {
-            toast.success("Paiement réussi !");
+          onSuccess: async (transaction: { reference: string }) => {
+            try {
+              // Activate subscription immediately (webhook may not fire in dev)
+              await apiClient.post("/api/commerce/checkout/confirm", {
+                reference: transaction.reference
+              });
+              toast.success("Paiement réussi ! Abonnement activé.");
+            } catch (err: any) {
+              // Activation failed but Paystack confirmed payment — webhook will handle it later
+              console.warn("[Checkout] confirm failed, webhook fallback active:", err?.response?.data?.error || err?.message);
+              toast.success("Paiement réussi ! Activation en cours...");
+            }
             navigate("/activation");
           },
           onCancel: () => {

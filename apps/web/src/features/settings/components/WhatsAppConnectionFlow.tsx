@@ -33,6 +33,7 @@ interface WhatsAppConnectionFlowProps {
 export function WhatsAppConnectionFlow({ qrCode, onInitBaileys, onCancelScan }: WhatsAppConnectionFlowProps) {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [isInitializing, setIsInitializing] = useState(false);
   const qrRef = useRef<HTMLDivElement>(null);
 
   const { data: dashboard, refetch } = useQuery({
@@ -47,8 +48,15 @@ export function WhatsAppConnectionFlow({ qrCode, onInitBaileys, onCancelScan }: 
   const subscription = dashboard?.subscription;
   const isSubscribed = subscription?.status === 'active';
   const isConnected = whatsapp?.status === 'CONNECTED';
-  const isConnecting = whatsapp?.status === 'CONNECTING' || !!qrCode;
+  const isConnecting = whatsapp?.status === 'CONNECTING' || !!qrCode || isInitializing;
   const isError = whatsapp?.status === 'ERROR';
+
+  // Clear initializing state once QR arrives
+  useEffect(() => {
+    if (qrCode) {
+      setIsInitializing(false);
+    }
+  }, [qrCode]);
 
   useEffect(() => {
     if (qrCode && qrRef.current) {
@@ -228,12 +236,12 @@ export function WhatsAppConnectionFlow({ qrCode, onInitBaileys, onCancelScan }: 
         </p>
       </div>
       <button
-        onClick={onInitBaileys}
-        disabled={loading}
-        className="w-full h-16 bg-white text-vendeur-coal rounded-2xl font-black uppercase tracking-widest text-[10px] flex items-center justify-center gap-3 hover:bg-vendeur-emerald transition-all active:scale-95 shadow-xl"
+        onClick={() => { setIsInitializing(true); onInitBaileys(); }}
+        disabled={loading || isInitializing}
+        className="w-full h-16 bg-white text-vendeur-coal rounded-2xl font-black uppercase tracking-widest text-[10px] flex items-center justify-center gap-3 hover:bg-vendeur-emerald transition-all active:scale-95 shadow-xl disabled:opacity-70"
       >
-        {loading ? <Loader2 className="animate-spin" size={18} /> : <Zap size={18} />}
-        Connecter WhatsApp
+        {isInitializing ? <Loader2 className="animate-spin" size={18} /> : <Zap size={18} />}
+        {isInitializing ? "Initialisation..." : "Connecter WhatsApp"}
       </button>
     </div>
   );

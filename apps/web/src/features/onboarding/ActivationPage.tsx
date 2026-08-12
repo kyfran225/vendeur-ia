@@ -10,22 +10,35 @@ import {
   Loader2,
   ArrowRight,
   ShieldCheck,
-  Smartphone
+  Smartphone,
+  Hash,
+  RefreshCw
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
-import { WhatsAppConnectionFlow } from "../settings/components/WhatsAppConnectionFlow";
 import { useAuthStore } from "@/stores/authStore";
+import { useSocket } from "@/hooks/useSocket";
+import { toast } from "sonner";
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+const isMobileDevice = () =>
+  /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
 export function ActivationPage() {
   const navigate = useNavigate();
   const { user } = useAuthStore();
   const [qrCode, setQrCode] = useState<string | null>(null);
+  const [autoInitializing, setAutoInitializing] = useState(false);
+  // "qr" | "pairing" — auto-detect mobile
+  const [mode, setMode] = useState<"qr" | "pairing">(() => isMobileDevice() ? "pairing" : "qr");
+  const [pairingPhone, setPairingPhone] = useState("");
+  const [pairingCode, setPairingCode] = useState<string | null>(null);
+  const [pairingLoading, setPairingLoading] = useState(false);
+  const socket = useSocket();
 
   const { data: dashboard, refetch } = useQuery({
     queryKey: ["dashboard"],
@@ -34,7 +47,6 @@ export function ActivationPage() {
       return res.data;
     },
     refetchInterval: (query) => {
-      // Poll every 3s as long as subscription is not active
       return query.state.data?.subscription?.status === 'active' ? false : 3000;
     }
   });
@@ -44,17 +56,71 @@ export function ActivationPage() {
   const isSubscribed = subscription?.status === 'active';
   const isWhatsAppConnected = whatsapp?.status === 'CONNECTED';
 
-  // Socket logic (simulated for flow)
+  // Listen for socket events
   useEffect(() => {
-    // In a real app, socket.on('whatsapp:qr') would set the QR
-  }, []);
+    if (!socket) return;
+    socket.on("whatsapp:qr", (data: { qrCodeData: string }) => {
+      setQrCode(data.qrCodeData);
+      setAutoInitializing(false);
+    });
+    socket.on("whatsapp:connected", () => {
+      setQrCode(null);
+      setPairingCode(null);
+      refetch();
+    });
+    return () => {
+      socket.off("whatsapp:qr");
+      socket.off("whatsapp:connected");
+    };
+  }, [socket, refetch]);
 
   const handleInitBaileys = async () => {
     try {
-      await apiClient.post("/api/whatsapp/init");
-      // UI will catch QR via socket
+      await apiClient.post("/api/whatsapp/connect");
     } catch (err) {
-      console.error("Init WhatsApp failed");
+      console.error("Init WhatsApp failed:", err);
+      toast.error("Erreur lors de l'initialisation WhatsApp");
+    }
+  };
+
+  const handleRequestPairingCode = async () => {
+    if (!pairingPhone.trim()) {
+      toast.error("Entrez votre numéro WhatsApp");
+      return;
+    }
+    setPairingLoading(true);
+    setPairingCode(null);
+    try {
+      const res = await apiClient.post("/api/whatsapp/pairing-code", {
+        phoneNumber: pairingPhone.trim()
+      });
+      setPairingCode(res.data.code);
+    } catch (err: any) {
+      toast.error(err.response?.data?.error || "Impossible de générer le code");
+    } finally {
+      setPairingLoading(false);
+    }
+  };
+
+  // Auto-init QR as soon as subscription is active (only in QR mode)
+  const autoInitDoneRef = React.useRef(false);
+  useEffect(() => {
+    if (isSubscribed && !isWhatsAppConnected && !qrCode && !autoInitDoneRef.current && mode === "qr") {
+      autoInitDoneRef.current = true;
+      setAutoInitializing(true);
+      handleInitBaileys();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isSubscribed, isWhatsAppConnected, qrCode, mode]);
+
+  // When switching to QR mode, init if not done yet
+  const handleSwitchToQr = () => {
+    setMode("qr");
+    setPairingCode(null);
+    if (isSubscribed && !isWhatsAppConnected && !qrCode && !autoInitDoneRef.current) {
+      autoInitDoneRef.current = true;
+      setAutoInitializing(true);
+      handleInitBaileys();
     }
   };
 
@@ -112,21 +178,129 @@ export function ActivationPage() {
                 </p>
               </div>
             ) : !isWhatsAppConnected ? (
-              <div className="space-y-8">
+              <div className="space-y-6 animate-in fade-in duration-500">
                 <div className="space-y-2">
                   <h2 className="text-2xl font-black uppercase tracking-tighter italic text-vendeur-emerald">Connectons votre WhatsApp</h2>
                   <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest leading-relaxed">
-                    Votre abonnement est actif. Scannez le QR Code pour mettre votre vendeur au travail.
+                    Votre abonnement est actif. Choisissez comment connecter votre numéro.
                   </p>
                 </div>
 
-                <div className="bg-vendeur-coal border border-white/10 rounded-[2.5rem] p-2 overflow-hidden shadow-2xl">
-                   <WhatsAppConnectionFlow
-                     qrCode={qrCode}
-                     onInitBaileys={handleInitBaileys}
-                     onCancelScan={() => setQrCode(null)}
-                   />
+                {/* Mode Toggle */}
+                <div className="flex gap-2 p-1 bg-white/5 rounded-2xl border border-white/5">
+                  <button
+                    onClick={handleSwitchToQr}
+                    className={cn(
+                      "flex-1 h-12 rounded-xl font-black uppercase tracking-widest text-[9px] flex items-center justify-center gap-2 transition-all",
+                      mode === "qr"
+                        ? "bg-white text-vendeur-coal shadow-lg"
+                        : "text-white/30 hover:text-white"
+                    )}
+                  >
+                    <QrCode size={14} />
+                    QR Code
+                  </button>
+                  <button
+                    onClick={() => { setMode("pairing"); setQrCode(null); }}
+                    className={cn(
+                      "flex-1 h-12 rounded-xl font-black uppercase tracking-widest text-[9px] flex items-center justify-center gap-2 transition-all",
+                      mode === "pairing"
+                        ? "bg-white text-vendeur-coal shadow-lg"
+                        : "text-white/30 hover:text-white"
+                    )}
+                  >
+                    <Smartphone size={14} />
+                    Code — Même tél
+                  </button>
                 </div>
+
+                {/* QR Mode */}
+                {mode === "qr" && (
+                  <div className="bg-vendeur-coal border border-vendeur-emerald/20 rounded-[2.5rem] p-8 md:p-12 flex flex-col items-center gap-8 shadow-2xl">
+                    <div className="text-center space-y-2">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-white/40">
+                        Ouvrez WhatsApp → ⋮ → Appareils connectés → Associer un appareil
+                      </p>
+                    </div>
+                    {qrCode ? (
+                      <div className="relative group">
+                        <div className="absolute -inset-6 bg-vendeur-emerald/10 blur-3xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                        <div className="relative p-6 bg-white rounded-[2.5rem] shadow-2xl border-[12px] border-white transition-transform group-hover:scale-[1.02]">
+                          <img src={qrCode} alt="WhatsApp QR Code" className="w-60 h-60 md:w-72 md:h-72" />
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="h-60 w-60 md:h-72 md:w-72 bg-white/5 rounded-[2.5rem] flex flex-col items-center justify-center gap-4 border-2 border-dashed border-white/10">
+                        <Loader2 className="animate-spin text-vendeur-emerald/60" size={48} />
+                        <p className="text-[9px] font-black uppercase tracking-widest text-white/30">Génération du QR...</p>
+                      </div>
+                    )}
+                    <div className="flex flex-col items-center gap-3 w-full max-w-sm">
+                      <div className="flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.2em] text-vendeur-emerald bg-vendeur-emerald/5 px-8 py-4 rounded-2xl w-full justify-center border border-vendeur-emerald/10">
+                        <Loader2 className="animate-spin" size={14} />
+                        {qrCode ? "En attente de scan..." : "Préparation de la connexion..."}
+                      </div>
+                      {qrCode && (
+                        <button
+                          onClick={() => { setQrCode(null); autoInitDoneRef.current = false; setAutoInitializing(true); handleInitBaileys(); }}
+                          className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-white/20 hover:text-white transition-all py-2"
+                        >
+                          <RefreshCw size={12} /> Régénérer le QR
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Pairing Code Mode */}
+                {mode === "pairing" && (
+                  <div className="bg-vendeur-coal border border-vendeur-emerald/20 rounded-[2.5rem] p-8 md:p-12 flex flex-col gap-8 shadow-2xl">
+                    <div className="space-y-3">
+                      <div className="inline-flex h-14 w-14 rounded-2xl bg-vendeur-emerald/10 items-center justify-center text-vendeur-emerald">
+                        <Hash size={28} />
+                      </div>
+                      <h3 className="text-xl font-black uppercase tracking-tight text-white">Code d'appairage</h3>
+                      <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest leading-relaxed">
+                        Entrez votre numéro WhatsApp. Un code à 8 chiffres s'affichera. Tapez-le dans WhatsApp → Appareils connectés → Associer avec un numéro.
+                      </p>
+                    </div>
+
+                    <div className="space-y-4">
+                      <div className="flex flex-col sm:flex-row gap-3">
+                        <input
+                          type="tel"
+                          value={pairingPhone}
+                          onChange={e => setPairingPhone(e.target.value)}
+                          placeholder="Ex: +225 07 00 00 00 00"
+                          className="w-full sm:flex-1 h-16 bg-white/5 border border-white/10 rounded-2xl px-5 text-white font-bold text-sm placeholder:text-white/20 focus:outline-none focus:border-vendeur-emerald/50 transition-colors"
+                          onKeyDown={e => e.key === 'Enter' && handleRequestPairingCode()}
+                        />
+                        <button
+                          onClick={handleRequestPairingCode}
+                          disabled={pairingLoading}
+                          className="h-16 px-6 bg-white text-vendeur-coal rounded-2xl font-black uppercase tracking-widest text-[9px] flex items-center justify-center gap-2 hover:bg-vendeur-emerald transition-all active:scale-95 disabled:opacity-50 w-full sm:w-auto shrink-0"
+                        >
+                          {pairingLoading ? <Loader2 className="animate-spin" size={16} /> : <Zap size={16} />}
+                          {pairingLoading ? "Génération..." : "Générer le code"}
+                        </button>
+                      </div>
+
+                      {pairingCode && (
+                        <div className="animate-in zoom-in-95 duration-300 p-6 bg-vendeur-emerald/5 border border-vendeur-emerald/20 rounded-2xl text-center space-y-3">
+                          <p className="text-[9px] font-black uppercase tracking-widest text-vendeur-emerald/60">Votre code WhatsApp</p>
+                          <p className="text-5xl font-black tracking-[0.3em] text-vendeur-emerald font-mono">{pairingCode}</p>
+                          <p className="text-[9px] text-white/30 font-bold uppercase tracking-widest">
+                            Valable quelques minutes · WhatsApp → ⋮ → Appareils connectés → Associer avec un numéro
+                          </p>
+                          <div className="flex items-center justify-center gap-2 text-[9px] font-black uppercase tracking-widest text-vendeur-emerald">
+                            <Loader2 className="animate-spin" size={12} />
+                            En attente de validation...
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             ) : null}
           </div>
@@ -142,10 +316,13 @@ export function ActivationPage() {
               </ul>
             </div>
 
-            <div className="p-6 bg-white/5 border border-white/5 rounded-3xl flex items-center gap-4">
-              <Smartphone className="text-white/20" size={20} />
-              <p className="text-[9px] font-bold uppercase text-white/40 leading-relaxed">
-                Gardez votre téléphone à portée de main pour le scan initial.
+            <div className="p-6 bg-white/5 border border-white/5 rounded-3xl space-y-3">
+              <div className="flex items-center gap-3">
+                <Smartphone className="text-vendeur-emerald shrink-0" size={18} />
+                <p className="text-[9px] font-black uppercase tracking-widest text-vendeur-emerald">Sur mobile ?</p>
+              </div>
+              <p className="text-[9px] font-bold text-white/40 leading-relaxed">
+                Si vous avez payé sur ce téléphone, utilisez le <strong className="text-white/60">Code d'appairage</strong> — pas besoin d'un 2ème appareil pour scanner.
               </p>
             </div>
           </div>

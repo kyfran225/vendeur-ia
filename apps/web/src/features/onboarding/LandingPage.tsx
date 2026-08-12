@@ -133,6 +133,8 @@ function PillarSection() {
 import { useOnboardingStore } from "@/stores/onboardingStore";
 import { useNavigate, Link } from "react-router-dom";
 
+import { WhatsAppTypingIndicator } from "@/components/ui/WhatsAppTypingIndicator";
+
 // THE MAIN LANDING HERO (1:1 UI REPLICA)
 function LandingHero({
   onAuth,
@@ -234,8 +236,12 @@ function LandingHero({
   };
 
   const handleActivate = () => {
-    setSimulatorActive(true); // Ensure it's active for onboarding store
-    navigate("/onboarding");
+    setSimulatorActive(true);
+    if (!user) {
+      onAuth();
+    } else {
+      navigate("/onboarding");
+    }
   };
 
   const handleMicClick = async () => {
@@ -433,7 +439,7 @@ function LandingHero({
                 disabled={!form.businessName || !form.address}
                 className="mt-2 flex h-12 items-center justify-center gap-3 rounded-2xl bg-emerald-300 px-6 text-sm font-black uppercase tracking-widest text-[#06130d] shadow-xl shadow-emerald-500/10 transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-30"
               >
-                {user ? "Lancer ma configuration" : "Créer mon vendeurIa"} <ChevronRight size={18} />
+                {user ? "Lancer ma configuration" : "Tester mon vendeurIa"} <ChevronRight size={18} />
               </button>
 
               {user && (
@@ -456,12 +462,11 @@ function LandingHero({
                 </div>
                 <div>
                   <p className="text-[15px] font-bold text-white leading-tight">{form.businessName}</p>
-                  <p className={cn(
-                    "text-[11px] font-medium transition-all duration-300",
-                    isReplying ? "text-white/50 italic animate-pulse" : "text-emerald-400"
-                  )}>
-                    {isReplying ? "en train d'écrire..." : "en ligne"}
-                  </p>
+                  {isReplying ? (
+                    <WhatsAppTypingIndicator variant="header" label="en train d'écrire" />
+                  ) : (
+                    <p className="text-[11px] font-medium text-emerald-400">en ligne</p>
+                  )}
                 </div>
               </div>
               <div className="flex items-center gap-5 text-[#aebac1]">
@@ -483,6 +488,8 @@ function LandingHero({
               {history.map((msg, i) => (
                 <MemoizedWhatsAppBubble key={i} role={msg.role} text={msg.text} time={msg.time} />
               ))}
+
+              {isReplying && <WhatsAppTypingIndicator variant="bubble" />}
 
               {aiResponseCount >= 4 && aiResponseCount < MAX_DEMO_REPLIES && (
                 <div className="flex justify-center my-4 animate-bounce">
@@ -543,7 +550,7 @@ function LandingHero({
                   className="w-full flex h-16 items-center justify-between px-8 rounded-[2rem] bg-gradient-to-r from-[#00a884] to-[#00c9a0] text-sm font-black uppercase tracking-[0.15em] text-white transition-all hover:scale-[1.02] hover:shadow-[0_0_40px_rgba(0,168,132,0.4)] active:scale-95 shadow-2xl relative overflow-hidden group/btn"
                 >
                   <Sparkles className="animate-pulse shrink-0" size={18} />
-                  <span className="flex-1 text-center px-4">Activer ma machine</span>
+                  <span className="flex-1 text-center px-4">Créer mon vendeurIa</span>
                   <ChevronRight size={22} className="group-hover/btn:translate-x-1 transition-transform shrink-0" />
                 </button>
 

@@ -123,7 +123,7 @@ router.get("/verify-transaction/:reference", authenticate, async (req, res) => {
               "subscription.plan": offerSlug || (type === 'pack_pro' ? 'pro' : 'essential'),
               "subscription.status": "active",
               "subscription.expiresAt": expiresAt,
-              "whatsappConfig.status": "connected"
+              "whatsappConfig.status": "disconnected"
             }
           }
         );

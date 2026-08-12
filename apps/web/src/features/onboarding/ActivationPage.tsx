@@ -12,7 +12,8 @@ import {
   ShieldCheck,
   Smartphone,
   Hash,
-  RefreshCw
+  RefreshCw,
+  Sparkles
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { clsx, type ClassValue } from "clsx";
@@ -47,14 +48,37 @@ export function ActivationPage() {
       return res.data;
     },
     refetchInterval: (query) => {
-      return query.state.data?.subscription?.status === 'active' ? false : 3000;
+      const isConnected = query.state.data?.whatsappConnection?.status === 'CONNECTED';
+      const isSubscribed = query.state.data?.subscription?.status === 'active';
+      return (isConnected || !isSubscribed) ? false : 10000;
     }
   });
 
   const subscription = dashboard?.subscription;
   const whatsapp = dashboard?.whatsappConnection;
+  const merchant = dashboard?.merchant;
   const isSubscribed = subscription?.status === 'active';
-  const isWhatsAppConnected = whatsapp?.status === 'CONNECTED';
+  const isWhatsAppConnected =
+    whatsapp?.status === 'CONNECTED' ||
+    merchant?.whatsappConfig?.status === 'connected' ||
+    dashboard?.setupStatus?.steps?.find((s: any) => s.id === 'whatsapp')?.completed === true;
+
+  // Redirect automatically when connected (give time to read screen)
+  useEffect(() => {
+    if (isSubscribed && isWhatsAppConnected) {
+      toast.success("WhatsApp connecté avec succès !");
+      const timer = setTimeout(async () => {
+        try {
+          await apiClient.post("/api/commerce/merchant", { onboardingCompleted: true });
+          useAuthStore.getState().updateUser({ onboardingCompleted: true });
+        } catch (err) {
+          console.warn("[Activation] Failed to set onboardingCompleted:", err);
+        }
+        navigate("/dashboard");
+      }, 7000);
+      return () => clearTimeout(timer);
+    }
+  }, [isSubscribed, isWhatsAppConnected, navigate]);
 
   // Listen for socket events
   useEffect(() => {
@@ -80,12 +104,14 @@ export function ActivationPage() {
     };
   }, [socket, refetch]);
 
-  const handleInitBaileys = async () => {
+  const handleInitBaileys = async (silent = true) => {
     try {
       await apiClient.post("/api/whatsapp/connect");
     } catch (err) {
       console.error("Init WhatsApp failed:", err);
-      toast.error("Erreur lors de l'initialisation WhatsApp");
+      if (!silent) {
+        toast.error("Erreur lors de l'initialisation WhatsApp");
+      }
     }
   };
 
@@ -114,7 +140,7 @@ export function ActivationPage() {
     if (isSubscribed && !isWhatsAppConnected && !qrCode && !autoInitDoneRef.current && mode === "qr") {
       autoInitDoneRef.current = true;
       setAutoInitializing(true);
-      handleInitBaileys();
+      handleInitBaileys(true);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isSubscribed, isWhatsAppConnected, qrCode, mode]);
@@ -126,38 +152,97 @@ export function ActivationPage() {
     if (isSubscribed && !isWhatsAppConnected && !qrCode && !autoInitDoneRef.current) {
       autoInitDoneRef.current = true;
       setAutoInitializing(true);
-      handleInitBaileys();
+      handleInitBaileys(false);
     }
   };
 
   if (isSubscribed && isWhatsAppConnected) {
+    // Next step determination (e.g. add products)
+    const setupSteps = dashboard?.setupStatus?.steps || [];
+    const nextStep = setupSteps.find((s: any) => !s.completed);
+    const nextStepPath = nextStep?.id === 'products' ? '/products' :
+                         nextStep?.id === 'payments' ? '/settings?tab=boutique' :
+                         nextStep?.id === 'identity' ? '/settings?tab=boutique' : '/products';
+    const nextStepLabel = nextStep?.id === 'products' ? 'Ajouter mes produits' :
+                          nextStep?.id === 'payments' ? 'Configurer mes paiements' : 'Étape suivante : Ajouter mes produits';
+
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center p-6 animate-in zoom-in-95 duration-700">
-        <div className="max-w-md w-full bg-vendeur-coal border border-white/10 p-12 rounded-[3.5rem] text-center space-y-8 shadow-2xl">
-          <div className="h-24 w-24 bg-vendeur-emerald rounded-[2rem] flex items-center justify-center text-vendeur-coal mx-auto shadow-2xl shadow-vendeur-emerald/20 animate-bounce">
-            <Bot size={48} />
+      <div className="min-h-screen bg-black flex items-center justify-center p-6 animate-in zoom-in-95 duration-700 relative overflow-hidden">
+        {/* Ambient Glow & Sparkles */}
+        <div className="absolute inset-0 bg-vendeur-emerald/10 pointer-events-none blur-3xl animate-pulse" />
+
+        <div className="max-w-md w-full bg-vendeur-coal border border-vendeur-emerald/30 p-8 md:p-12 rounded-[3.5rem] text-center space-y-6 shadow-2xl relative z-10">
+          <div className="relative mx-auto w-fit">
+            <div className="h-24 w-24 bg-vendeur-emerald rounded-[2rem] flex items-center justify-center text-vendeur-coal shadow-2xl shadow-vendeur-emerald/30 animate-bounce">
+              <Bot size={48} />
+            </div>
+            <Sparkles className="absolute -top-2 -right-2 text-vendeur-emerald animate-pulse" size={28} />
           </div>
-          <div className="space-y-4">
-            <h1 className="text-4xl font-black uppercase tracking-tighter italic text-white">Prêt à vendre !</h1>
-            <p className="text-sm text-white/40 font-bold uppercase tracking-widest leading-relaxed">
+
+          <div className="space-y-3">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-vendeur-emerald/10 border border-vendeur-emerald/30 text-vendeur-emerald text-[10px] font-black uppercase tracking-widest">
+              <Zap size={12} fill="currentColor" /> Connexion Réussie
+            </div>
+            <h1 className="text-3xl md:text-4xl font-black uppercase tracking-tighter italic text-white">Prêt à vendre !</h1>
+            <p className="text-xs md:text-sm text-white/50 font-bold uppercase tracking-widest leading-relaxed">
               Votre Vendeur IA est désormais actif et opérationnel sur WhatsApp.
             </p>
           </div>
-          <button
-            onClick={async () => {
-              try {
-                await apiClient.post("/api/commerce/merchant", { onboardingCompleted: true });
-                useAuthStore.getState().updateUser({ onboardingCompleted: true });
-              } catch (err) {
-                console.warn("[Activation] Failed to set onboardingCompleted:", err);
-              }
-              navigate("/dashboard");
-            }}
-            className="w-full h-20 bg-white text-vendeur-coal rounded-3xl font-black uppercase tracking-[0.2em] text-[10px] flex items-center justify-center gap-3 hover:bg-vendeur-emerald transition-all active:scale-95 shadow-xl"
-          >
-            Ouvrir mon Dashboard
-            <ArrowRight size={18} />
-          </button>
+
+          {/* 7-Second Visual Progress Countdown */}
+          <div className="space-y-1.5 pt-2">
+            <div className="flex justify-between items-center text-[9px] font-black uppercase text-white/40 tracking-widest px-1">
+              <span>Redirection automatique</span>
+              <span>7s</span>
+            </div>
+            <div className="h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-vendeur-emerald shadow-[0_0_10px_rgba(16,185,129,0.8)] transition-all duration-[7000ms] ease-linear"
+                style={{ width: "100%", animation: "shrinkWidth 7s linear forwards" }}
+              />
+            </div>
+          </div>
+
+          <div className="space-y-3 pt-2">
+            <button
+              onClick={async () => {
+                try {
+                  await apiClient.post("/api/commerce/merchant", { onboardingCompleted: true });
+                  useAuthStore.getState().updateUser({ onboardingCompleted: true });
+                } catch (err) {
+                  console.warn("[Activation] Failed to set onboardingCompleted:", err);
+                }
+                navigate(nextStepPath);
+              }}
+              className="w-full min-h-[4rem] px-6 bg-vendeur-emerald text-vendeur-coal rounded-3xl font-black uppercase tracking-[0.15em] text-xs flex items-center justify-between gap-3 hover:scale-102 active:scale-95 transition-all shadow-xl shadow-vendeur-emerald/20 group"
+            >
+              <div className="flex items-center gap-3 min-w-0">
+                <Zap size={18} fill="currentColor" className="animate-pulse shrink-0" />
+                <span className="truncate">{nextStepLabel}</span>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <span className="bg-black/20 text-vendeur-coal px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-wider hidden sm:inline-block">
+                  Recommandé
+                </span>
+                <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
+              </div>
+            </button>
+
+            <button
+              onClick={async () => {
+                try {
+                  await apiClient.post("/api/commerce/merchant", { onboardingCompleted: true });
+                  useAuthStore.getState().updateUser({ onboardingCompleted: true });
+                } catch (err) {
+                  console.warn("[Activation] Failed to set onboardingCompleted:", err);
+                }
+                navigate("/dashboard");
+              }}
+              className="w-full h-14 bg-white/5 border border-white/10 text-white/70 rounded-2xl font-black uppercase tracking-[0.15em] text-[10px] flex items-center justify-center gap-2 hover:bg-white/10 hover:text-white transition-all active:scale-95"
+            >
+              Ouvrir mon Dashboard
+            </button>
+          </div>
         </div>
       </div>
     );

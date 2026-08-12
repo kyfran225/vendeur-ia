@@ -4,6 +4,7 @@ import QRCode from "qrcode";
 import { env } from "../../config/env.js";
 import { commerceService } from "../commerce/commerce.service.js";
 import { CommerceMerchantModel, CommerceConversationModel, CommerceMessageModel, CommerceCustomerModel, CommerceProductModel, CommerceKnowledgeModel } from "../commerce/commerce.model.js";
+import { WhatsAppConnectionModel } from "../commerce/whatsapp-connection.model.js";
 import { emitToUser } from "../../realtime/socketServer.js";
 import axios from "axios";
 import { addAIJob } from "../../services/ai-queue.service.js";
@@ -139,6 +140,20 @@ class WhatsAppService {
                   }
                 }
               );
+
+              await WhatsAppConnectionModel.findOneAndUpdate(
+                { userId },
+                {
+                  $set: {
+                    status: 'CONNECTED',
+                    connectionType: 'baileys',
+                    connectedAt: new Date(),
+                    disconnectedAt: null
+                  }
+                },
+                { upsert: true }
+              );
+
               emitToUser(userId, "whatsapp:connected", {});
               console.log(`[WhatsApp] User ${userId} connected`);
               if (!resolved) {
@@ -153,6 +168,17 @@ class WhatsAppService {
               await CommerceMerchantModel.findOneAndUpdate(
                 { ownerId: userId },
                 { $set: { "whatsappConfig.status": shouldReconnect ? "error" : "disconnected" } }
+              );
+
+              await WhatsAppConnectionModel.findOneAndUpdate(
+                { userId },
+                {
+                  $set: {
+                    status: shouldReconnect ? 'RECONNECTING' : 'DISCONNECTED',
+                    disconnectedAt: new Date()
+                  }
+                },
+                { upsert: true }
               );
 
               if (shouldReconnect) {
@@ -223,18 +249,28 @@ class WhatsAppService {
   }
 
   async requestPairingCode(userId: string, phoneNumber: string): Promise<string> {
-    // Ensure we have an active session (init if not)
-    if (!this.activeSessions.has(userId)) {
-      // Start session init in background — don't await full connection
+    let sock = this.activeSessions.get(userId);
+
+    // If socket doesn't exist or its WS connection is closed/closing (readyState !== 1/OPEN)
+    if (!sock || (sock as any).ws?.readyState !== 1) {
+      console.log(`[WhatsApp] Socket not connected for ${userId}. Re-initializing session...`);
+      this.activeSessions.delete(userId);
+      this.pendingInitializations.delete(userId);
+
+      // Initialize session synchronously wait brief time
       this.initSession(userId).catch(err =>
         console.error(`[WhatsApp] Pairing session init error for ${userId}:`, err)
       );
 
-      // Wait briefly for socket to be created (it's synchronous up to makeWASocket)
-      await new Promise(r => setTimeout(r, 1500));
+      // Wait up to 3 seconds for socket to open WS connection
+      for (let i = 0; i < 15; i++) {
+        await new Promise(r => setTimeout(r, 200));
+        sock = this.activeSessions.get(userId);
+        if (sock && (sock as any).ws?.readyState === 1) break;
+      }
     }
 
-    const sock = this.activeSessions.get(userId);
+    sock = this.activeSessions.get(userId);
     if (!sock) {
       throw new Error("Session WhatsApp non initialisée. Réessayez dans quelques secondes.");
     }
@@ -249,6 +285,9 @@ class WhatsAppService {
       return code.length === 8 ? `${code.slice(0, 4)}-${code.slice(4)}` : code;
     } catch (err: any) {
       console.error(`[WhatsApp] requestPairingCode failed for ${userId}:`, err);
+      // Clean up failed socket so user can retry cleanly
+      this.activeSessions.delete(userId);
+      this.pendingInitializations.delete(userId);
       throw new Error(`Impossible de générer le code d'appairage: ${err.message || err}`);
     }
   }
@@ -325,9 +364,13 @@ class WhatsAppService {
     if (!merchant) return;
 
     // Find or create customer
+    const pushName = msg.pushName || undefined;
     let customer = await CommerceCustomerModel.findOne({ merchantId: merchant._id, phone: from });
     if (!customer) {
-      customer = await CommerceCustomerModel.create({ merchantId: merchant._id, phone: from });
+      customer = await CommerceCustomerModel.create({ merchantId: merchant._id, phone: from, name: pushName });
+    } else if (pushName && !customer.name) {
+      customer.name = pushName;
+      await customer.save();
     }
 
     // Find or create conversation

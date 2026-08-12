@@ -72,17 +72,50 @@ export function SetupGuide({ setupStatus, businessName, dashboard }: { setupStat
               </p>
             </div>
           </div>
-
-          <div className="bg-black/40 border border-white/5 rounded-3xl p-6 relative">
+          <div className="bg-black/40 border border-white/5 rounded-3xl p-6 relative space-y-4">
             <div className="absolute -left-2 top-6 w-4 h-4 bg-black/40 border-l border-t border-white/5 rotate-45" />
             <p className="text-sm md:text-base text-white/80 leading-relaxed italic">
               "Félicitations pour le lancement de{" "}
               <span className="text-vendeur-emerald font-black not-italic">{businessName}</span> !{" "}
-              {firstProduct
-                ? `Je connais déjà ton produit : ${firstProduct.name}. Pour que je puisse commencer à le vendre et encaisser tes paiements, il ne nous manque plus que quelques réglages. On s'en occupe ?`
-                : "Pour que je puisse vendre tes produits et encaisser tes paiements automatiquement, il nous manque encore quelques réglages. On s'en occupe ?"
+              {nextStep?.id === 'whatsapp'
+                ? "Ton WhatsApp n'est pas encore relié ! Branche-le dès maintenant pour que je puisse commencer à répondre à tes clients 24h/24."
+                : nextStep?.id === 'products'
+                ? (firstProduct
+                    ? `Je connais déjà ton produit "${firstProduct.name}". Ajoute d'autres produits ou vérifie tes prix pour lancer la machine.`
+                    : "Pour que je puisse vendre automatiquement tes articles, ajoute tes premiers produits et leurs prix.")
+                : nextStep?.id === 'payments'
+                ? "Ton catalogue est prêt ! Configure tes moyens de paiement (Mobile Money, Virement) pour encaisser directement."
+                : nextStep?.id === 'identity'
+                ? "Personnalise le nom et l'identité de ta boutique pour renforcer la confiance de tes clients."
+                : "Il nous manque encore quelques réglages pour être 100% opérationnel. On s'en occupe ?"
               }"
             </p>
+
+            {nextStep && (
+              <div className="pt-2">
+                <Link
+                  to={getActionLink(nextStep.id)}
+                  className="flex items-center justify-center gap-3 w-full min-h-[3.5rem] px-6 rounded-2xl bg-vendeur-emerald text-vendeur-coal font-black uppercase text-xs tracking-[0.15em] hover:scale-102 active:scale-95 transition-all shadow-xl shadow-vendeur-emerald/20 group relative overflow-hidden"
+                >
+                  <Zap size={16} fill="currentColor" className="shrink-0 animate-pulse text-vendeur-coal" />
+                  <span className="flex-1 text-center font-black">
+                    {nextStep.id === 'whatsapp' ? 'Brancher mon WhatsApp' :
+                     nextStep.id === 'products' ? 'Ajouter des produits & prix' :
+                     nextStep.id === 'payments' ? 'Configurer mes paiements' :
+                     nextStep.id === 'identity' ? 'Configurer ma boutique' : 'Action Requise'}
+                  </span>
+                  
+                  {/* Micro-Impact Badge */}
+                  <span className="bg-black/20 text-vendeur-coal px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-wider hidden sm:inline-block shrink-0">
+                    {nextStep.id === 'whatsapp' ? 'Ventes 24h/24' :
+                     nextStep.id === 'products' ? 'Catalogue prêt' :
+                     nextStep.id === 'payments' ? 'Cash Direct' : 'Indispensable'}
+                  </span>
+
+                  <ArrowRight size={16} className="shrink-0 group-hover:translate-x-1 transition-transform" />
+                </Link>
+              </div>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -103,6 +136,7 @@ export function SetupGuide({ setupStatus, businessName, dashboard }: { setupStat
 
         {/* Right Side: Step List */}
         <div className="w-full md:w-[380px] space-y-2">
+          <p className="text-[10px] font-black uppercase text-white/40 tracking-widest mb-3">Toutes les étapes</p>
           {steps.map((step: any) => (
             <Link
               key={step.id}
@@ -133,21 +167,6 @@ export function SetupGuide({ setupStatus, businessName, dashboard }: { setupStat
               )}
             </Link>
           ))}
-
-          {nextStep && (
-            <Link
-              to={getActionLink(nextStep.id)}
-              className="mt-4 flex items-center justify-center gap-3 w-full min-h-[3.5rem] px-6 rounded-2xl bg-vendeur-emerald text-vendeur-coal font-black uppercase text-xs tracking-[0.15em] hover:scale-102 active:scale-95 transition-all shadow-xl shadow-vendeur-emerald/20 group"
-            >
-              <Zap size={16} fill="currentColor" className="shrink-0 animate-pulse text-vendeur-coal" />
-              <span className="flex-1 text-center font-black">
-                {nextStep.id === 'whatsapp' ? 'Brancher mon WhatsApp' :
-                 nextStep.id === 'products' ? 'Ajouter des prix' :
-                 nextStep.id === 'payments' ? 'Configurer mes paiements' : 'Action Requise'}
-              </span>
-              <ArrowRight size={16} className="shrink-0 group-hover:translate-x-1 transition-transform" />
-            </Link>
-          )}
         </div>
       </div>
     </motion.section>

@@ -297,7 +297,7 @@ export class AIProvider {
     contents.push({ role: "user", parts: [{ text: request.userMessage }] });
 
     const generationConfig: Record<string, unknown> = {
-      maxOutputTokens: request.maxTokens || 1000,
+      maxOutputTokens: request.maxTokens || 2500,
       temperature: request.temperature ?? 0.7,
     };
 
@@ -353,7 +353,7 @@ export class AIProvider {
       const payload: any = {
         model,
         messages,
-        max_tokens: request.maxTokens || 1000,
+        max_tokens: request.maxTokens || 2500,
         temperature: request.temperature || 0.7,
       };
 
@@ -396,7 +396,7 @@ export class AIProvider {
       const payload: any = {
         model,
         messages,
-        max_tokens: request.maxTokens || 1000,
+        max_tokens: request.maxTokens || 2500,
         temperature: request.temperature || 0.7,
       };
 
@@ -439,7 +439,7 @@ export class AIProvider {
       const response = await axios.post("https://openrouter.ai/api/v1/chat/completions", {
         model,
         messages,
-        max_tokens: request.maxTokens || 1000,
+        max_tokens: request.maxTokens || 2500,
         temperature: request.temperature || 0.7,
       }, {
         headers: {

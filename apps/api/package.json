@@ -9,6 +9,8 @@
     "build": "tsc",
     "db:reset": "tsx src/scripts/reset-dev-db.ts",
     "db:purge": "tsx src/scripts/purge-non-admins.ts",
+    "db:delete-user": "tsx src/scripts/delete-user.ts",
+    "db:make-admin": "tsx src/scripts/make-admin.ts",
     "db:backup": "tsx src/scripts/cloud-backup.ts",
     "db:seed-offers": "tsx src/scripts/seed-offers.ts"
   },

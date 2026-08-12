@@ -54,16 +54,31 @@ export class PushService {
   async sendNotification(userId: string, payload: { title: string; body: string; icon?: string; data?: any }) {
     const subscriptions = await PushSubscriptionModel.find({ userId });
 
-    const notifications = subscriptions.map(sub =>
-      webpush.sendNotification(sub.subscription as any, JSON.stringify(payload))
-        .catch(err => {
-          if (err.statusCode === 410 || err.statusCode === 404) {
-            // Subscription expired or no longer valid
-            return PushSubscriptionModel.deleteOne({ _id: sub._id });
+    const notifications = subscriptions.map(async (sub) => {
+      const maxRetries = 2;
+      for (let attempt = 0; attempt <= maxRetries; attempt++) {
+        try {
+          await webpush.sendNotification(sub.subscription as any, JSON.stringify(payload));
+          return;
+        } catch (err: any) {
+          const isTransient500 = err.statusCode === 500 || err.statusCode === 502 || err.statusCode === 503;
+          if (isTransient500 && attempt < maxRetries) {
+            // Transient error from push service (FCM), retry with exponential backoff
+            await new Promise(res => setTimeout(res, 1000 * Math.pow(2, attempt)));
+            continue;
           }
-          console.error(`[Push] Error sending to ${userId}:`, err);
-        })
-    );
+
+          if (err.statusCode === 410 || err.statusCode === 404) {
+            // Subscription expired or invalid
+            await PushSubscriptionModel.deleteOne({ _id: sub._id });
+            return;
+          }
+
+          console.warn(`[Push] Could not deliver to subscription for user ${userId} (Status ${err.statusCode || 'Unknown'}): ${err.message || err.body || err}`);
+          return;
+        }
+      }
+    });
 
     await Promise.all(notifications);
   }

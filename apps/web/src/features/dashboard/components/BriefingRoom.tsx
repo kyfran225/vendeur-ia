@@ -13,6 +13,8 @@ function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+import { WhatsAppTypingIndicator } from "@/components/ui/WhatsAppTypingIndicator";
+
 interface Message {
   role: "customer" | "ai";
   text: string;
@@ -106,12 +108,11 @@ Comment souhaitez-vous que nous fassions progresser ${businessName} aujourd'hui 
             </div>
             <div>
               <p className="text-[15px] font-bold text-white leading-tight">Mon Vendeur IA ({businessName})</p>
-              <p className={cn(
-                "text-[11px] font-medium transition-all duration-300",
-                isTyping ? "text-vendeur-emerald italic animate-pulse" : "text-vendeur-emerald"
-              )}>
-                {isTyping ? "en train d'écrire..." : "en ligne (Mode Briefing)"}
-              </p>
+              {isTyping ? (
+                <WhatsAppTypingIndicator variant="header" label="en train d'écrire" />
+              ) : (
+                <p className="text-[11px] font-medium text-vendeur-emerald">en ligne (Mode Briefing)</p>
+              )}
             </div>
           </div>
           <button onClick={onClose} className="hidden md:block text-white/10 hover:text-white/40 transition-all duration-300">
@@ -151,6 +152,8 @@ Comment souhaitez-vous que nous fassions progresser ${businessName} aujourd'hui 
               </div>
             </div>
           ))}
+
+          {isTyping && <WhatsAppTypingIndicator variant="bubble" />}
         </div>
 
         {/* Input Area */}

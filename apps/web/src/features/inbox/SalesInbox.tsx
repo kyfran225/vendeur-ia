@@ -20,11 +20,27 @@ import { apiClient } from "@/lib/apiClient";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
+import { WhatsAppTypingIndicator } from "@/components/ui/WhatsAppTypingIndicator";
+
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
 const API_URL = (import.meta as any).env.VITE_API_URL || "http://localhost:3001";
+
+function formatCustomerDisplayName(customer?: { name?: string; phone?: string }): string {
+  if (!customer) return "Client";
+  if (customer.name && customer.name.trim()) return customer.name.trim();
+
+  const phone = customer.phone || "";
+  if (phone.includes("@lid")) {
+    const rawDigits = phone.replace(/@lid/g, "").replace(/\D/g, "");
+    const shortId = rawDigits.length > 6 ? rawDigits.slice(-6) : rawDigits;
+    return `Client #${shortId}`;
+  }
+
+  return phone || "Client";
+}
 
 export function SalesInbox() {
   const { accessToken } = useAuthStore();
@@ -135,8 +151,11 @@ export function SalesInbox() {
 
   const filteredConversations = conversations?.filter((c: any) => {
     if (!searchQuery) return true;
+    const query = searchQuery.toLowerCase();
     const phone = c.customerId?.phone?.toLowerCase() || "";
-    return phone.includes(searchQuery.toLowerCase());
+    const name = c.customerId?.name?.toLowerCase() || "";
+    const displayName = formatCustomerDisplayName(c.customerId).toLowerCase();
+    return phone.includes(query) || name.includes(query) || displayName.includes(query);
   });
 
   const toggleTakeover = () => {
@@ -197,7 +216,7 @@ export function SalesInbox() {
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" size={18} />
             <input
               className="w-full bg-vendeur-coal border border-white/5 rounded-2xl py-3 pl-12 pr-4 text-sm outline-none focus:border-vendeur-emerald transition-all"
-              placeholder="Rechercher par numéro..."
+              placeholder="Rechercher par nom ou numéro..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -211,7 +230,7 @@ export function SalesInbox() {
             filteredConversations?.map((chat: any) => (
               <ChatListItem
                 key={chat._id}
-                name={chat.customerId?.phone || "Client"}
+                name={formatCustomerDisplayName(chat.customerId)}
                 lastMsg={chat.status}
                 platform={chat.platform || 'whatsapp'}
                 time={new Date(chat.lastMessageAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -244,7 +263,7 @@ export function SalesInbox() {
                 </div>
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
-                    <p className="font-bold text-sm truncate">{activeChatData?.customerId?.phone}</p>
+                    <p className="font-bold text-sm truncate">{formatCustomerDisplayName(activeChatData?.customerId)}</p>
                     {activeChatData?.customerId?.loyaltyPoints > 0 && (
                       <div className="flex items-center gap-1 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-md">
                         <Sparkles size={10} className="text-amber-500" />
@@ -255,27 +274,22 @@ export function SalesInbox() {
                       <span className="text-[9px] font-black bg-vendeur-emerald text-vendeur-coal px-1.5 rounded uppercase tracking-tighter">VIP</span>
                     )}
                   </div>
-                  <p className={cn(
-                    "text-[10px] font-black uppercase tracking-widest flex items-center gap-1 transition-all duration-300",
-                    typingChats[selectedChat] ? "text-white/40 italic animate-pulse" : "text-vendeur-emerald"
-                  )}>
-                    {typingChats[selectedChat] ? (
-                      <>L'IA est en train d'écrire...</>
-                    ) : (
-                      <>
-                        {activeChatData?.platform === 'instagram' && <Instagram size={14} />}
-                        {activeChatData?.platform === 'facebook' && <Facebook size={14} className="text-blue-500" />}
-                        {activeChatData?.platform === 'tiktok' && <TikTokIcon size={14} />}
-                        {activeChatData?.platform === 'web' && <Globe size={14} className="text-sky-400" />}
-                        {(!activeChatData?.platform || activeChatData?.platform === 'whatsapp') && <MessageCircle size={14} />}
-                        <span className="ml-1">
-                          {activeChatData?.platform === 'web'
-                            ? (onlineSessions.has(activeChatData?.customerId?.platformId) ? "En ligne" : "Hors ligne")
-                            : "En ligne"}
-                        </span>
-                      </>
-                    )}
-                  </p>
+                  {typingChats[selectedChat] ? (
+                    <WhatsAppTypingIndicator variant="header" label="L'IA est en train d'écrire" />
+                  ) : (
+                    <p className="text-[10px] font-black uppercase tracking-widest flex items-center gap-1 text-vendeur-emerald">
+                      {activeChatData?.platform === 'instagram' && <Instagram size={14} />}
+                      {activeChatData?.platform === 'facebook' && <Facebook size={14} className="text-blue-500" />}
+                      {activeChatData?.platform === 'tiktok' && <TikTokIcon size={14} />}
+                      {activeChatData?.platform === 'web' && <Globe size={14} className="text-sky-400" />}
+                      {(!activeChatData?.platform || activeChatData?.platform === 'whatsapp') && <MessageCircle size={14} />}
+                      <span className="ml-1">
+                        {activeChatData?.platform === 'web'
+                          ? (onlineSessions.has(activeChatData?.customerId?.platformId) ? "En ligne" : "Hors ligne")
+                          : "En ligne"}
+                      </span>
+                    </p>
+                  )}
                 </div>
               </div>
               <div className="flex items-center gap-2 md:gap-4">
@@ -328,7 +342,7 @@ export function SalesInbox() {
 
             <div
               ref={scrollRef}
-              className="flex-1 p-4 md:p-4 space-y-4 overflow-y-auto bg-repeat opacity-95"
+              className="flex-1 p-3 md:p-4 space-y-4 overflow-y-auto bg-repeat opacity-95"
               style={{ backgroundImage: "url('https://static.whatsapp.net/rsrc.php/v3/y6/r/wa669ae5qee.png')", backgroundSize: "400px" }}
             >
               {loadingMessages ? (
@@ -346,14 +360,7 @@ export function SalesInbox() {
                 ))
               )}
 
-              {typingChats[selectedChat] && (
-                <div className="flex justify-start animate-in fade-in duration-300">
-                  <div className="bg-vendeur-coal/50 border border-white/5 px-4 py-2 rounded-2xl flex items-center gap-2">
-                    <Loader2 size={12} className="animate-spin text-vendeur-emerald" />
-                    <span className="text-[10px] font-black text-vendeur-emerald uppercase tracking-widest">L'IA prépare une réponse...</span>
-                  </div>
-                </div>
-              )}
+              {typingChats[selectedChat] && <WhatsAppTypingIndicator variant="bubble" />}
             </div>
 
             <footer className="p-4 md:p-6 bg-vendeur-coal/50 border-t border-white/5 relative">

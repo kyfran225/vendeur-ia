@@ -74,7 +74,7 @@ export class CommerceService {
     const knowledge = await CommerceKnowledgeModel.findOne({ merchantId: merchant._id });
 
     const hasProducts = (products?.length || 0) > 0;
-    const isWhatsAppConnected = merchant.whatsappConfig?.status === 'connected';
+    const isWhatsAppConnected = merchant.whatsappConfig?.status === 'connected' || whatsappConnection?.status === 'CONNECTED';
 
     // Check if user has actually ADDED payment methods (not just the default empty ones)
     const hasPaymentMethods = (knowledge?.businessRules?.paymentMethods?.length || 0) > 0 &&

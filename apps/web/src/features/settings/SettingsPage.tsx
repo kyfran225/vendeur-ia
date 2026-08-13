@@ -970,11 +970,11 @@ function ConnexionsTab({ merchant, systemSettings, qrCode, isConnectingSocket, o
   });
 
   return (
-    <div className="space-y-10 animate-in slide-in-from-bottom-2 duration-500 overflow-x-hidden">
-      <section className="bg-vendeur-coal border border-white/10 p-6 md:p-10 rounded-[2.5rem] md:rounded-[3.5rem] space-y-8 shadow-2xl overflow-hidden">
-         <div className="space-y-1">
-            <h2 className="text-xl md:text-2xl font-black text-white whitespace-nowrap">Liaison WhatsApp</h2>
-            <p className="text-[10px] text-white/40 uppercase tracking-[0.15em] md:tracking-[0.2em] font-black">Indispensable pour vos ventes automatisées.</p>
+    <div className="space-y-6 md:space-y-10 animate-in slide-in-from-bottom-2 duration-500 overflow-x-hidden">
+      <section className="bg-vendeur-coal border border-white/10 p-3.5 sm:p-6 md:p-10 rounded-[2rem] md:rounded-[3.5rem] space-y-6 md:space-y-8 shadow-2xl overflow-hidden">
+         <div className="space-y-1 px-1">
+            <h2 className="text-lg md:text-2xl font-black text-white whitespace-nowrap">Liaison WhatsApp</h2>
+            <p className="text-[9px] md:text-[10px] text-white/40 uppercase tracking-[0.15em] md:tracking-[0.2em] font-black">Indispensable pour vos ventes automatisées.</p>
          </div>
 
          <WhatsAppConnectionFlow

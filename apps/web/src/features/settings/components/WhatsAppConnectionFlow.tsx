@@ -18,7 +18,7 @@ import { twMerge } from "tailwind-merge";
 import { toast } from "sonner";
 import { apiClient } from "@/lib/apiClient";
 import { useQuery } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -33,6 +33,10 @@ interface WhatsAppConnectionFlowProps {
 
 export function WhatsAppConnectionFlow({ qrCode, isConnectingSocket, onInitBaileys, onCancelScan }: WhatsAppConnectionFlowProps) {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const isProParam = searchParams.get("pro") === "true";
+  const isExpertParam = searchParams.get("expert") === "true";
+
   const [loading, setLoading] = useState(false);
   const [isInitializing, setIsInitializing] = useState(false);
   const [mode, setMode] = useState<"qr" | "pairing">("qr");
@@ -49,20 +53,22 @@ export function WhatsAppConnectionFlow({ qrCode, isConnectingSocket, onInitBaile
     }
   });
 
+  const merchant = dashboard?.merchant;
   const whatsapp = dashboard?.whatsappConnection;
   const subscription = dashboard?.subscription;
-  const isSubscribed = subscription?.status === 'active';
-  const isConnected = whatsapp?.status === 'CONNECTED';
-  const isConnecting = whatsapp?.status === 'CONNECTING' || !!qrCode || isInitializing;
-  const isError = whatsapp?.status === 'ERROR';
 
-  // Auto-init WhatsApp session if not connected and no QR code yet
+  const isProPlan = isProParam || subscription?.plan === 'pro' || whatsapp?.connectionType === 'meta';
+  const isPackPro = isExpertParam || subscription?.plan === 'business' || subscription?.type === 'pack_pro' || whatsapp?.connectionType === 'expert';
+  const isSubscribed = isProPlan || isPackPro || subscription?.status === 'active' || merchant?.subscription?.status === 'active';
+  const isConnected = whatsapp?.status === 'CONNECTED' || merchant?.whatsappConfig?.status === 'connected';
+
+  // Auto-init WhatsApp session ONLY for Essential plan (Baileys QR code)
   useEffect(() => {
-    if (isSubscribed && !isConnected && !qrCode && mode === "qr") {
+    if (isSubscribed && !isPackPro && !isProPlan && !isConnected && !qrCode && mode === "qr") {
       setIsInitializing(true);
       onInitBaileys(true);
     }
-  }, [isSubscribed, isConnected, mode]);
+  }, [isSubscribed, isPackPro, isProPlan, isConnected, mode]);
 
   // Clear initializing state once QR arrives
   useEffect(() => {
@@ -98,10 +104,254 @@ export function WhatsAppConnectionFlow({ qrCode, isConnectingSocket, onInitBaile
 
   // CAS 1: PAS D'ABONNEMENT ACTIF
   if (!isSubscribed) {
-    return null;
+    return (
+      <div className="bg-vendeur-coal border border-white/5 rounded-[2.5rem] p-8 md:p-12 text-center space-y-8 animate-in fade-in duration-500">
+        <div className="h-20 w-20 bg-white/5 rounded-[2rem] flex items-center justify-center text-white/20 mx-auto">
+          <Zap size={40} />
+        </div>
+        <div className="space-y-4">
+          <h3 className="text-2xl font-black uppercase tracking-tighter text-white">WhatsApp</h3>
+          <p className="text-sm text-white/40 font-bold uppercase tracking-widest leading-relaxed max-w-xs mx-auto">
+            Votre vendeur IA travaille sur WhatsApp. Pour commencer, choisissez une offre.
+          </p>
+        </div>
+        <button
+          onClick={() => navigate("/offers")}
+          className="w-full h-16 bg-white text-vendeur-coal rounded-2xl font-black uppercase tracking-widest text-[10px] flex items-center justify-center gap-3 hover:bg-vendeur-emerald transition-all active:scale-95 shadow-xl"
+        >
+          Voir les offres
+          <ChevronRight size={18} />
+        </button>
+      </div>
+    );
   }
 
-  // CAS 2: DEJA CONNECTE
+  // CAS 2: PACK PRO / INSTALLATION EXPERT CLE EN MAIN
+  if (isPackPro && !isConnected) {
+    const supportPhone = dashboard?.systemSettings?.supportWhatsApp || "+2250700000000";
+    const supportMessage = encodeURIComponent(`Bonjour ! J'ai souscrit au Pack Pro Vendeur IA (${merchant?.storeName || 'Ma boutique'}). Je souhaite planifier l'installation de mon Vendeur IA.`);
+
+    return (
+      <div className="bg-vendeur-coal border border-vendeur-emerald/30 p-8 md:p-12 rounded-[2.5rem] text-center space-y-8 animate-in fade-in duration-500 shadow-2xl relative overflow-hidden">
+        <div className="h-20 w-20 bg-vendeur-emerald/10 border border-vendeur-emerald/30 rounded-[2rem] flex items-center justify-center text-vendeur-emerald mx-auto animate-bounce">
+          <Bot size={44} />
+        </div>
+
+        <div className="space-y-3 max-w-md mx-auto">
+          <div className="inline-block px-4 py-1.5 rounded-full bg-vendeur-emerald/10 border border-vendeur-emerald/20 text-vendeur-emerald text-[10px] font-black uppercase tracking-widest mb-2">
+            Pack Pro Clé en Main Active
+          </div>
+          <h3 className="text-2xl md:text-3xl font-black uppercase tracking-tighter text-white">Votre IA est en cours de déploiement !</h3>
+          <p className="text-xs md:text-sm text-white/60 font-medium leading-relaxed">
+            Vous avez choisi la formule **Clé en Main**. Notre équipe technique s'occupe de la configuration complète de votre Vendeur IA et de votre catalogue.
+          </p>
+        </div>
+
+        <div className="p-6 bg-white/5 border border-white/5 rounded-3xl space-y-4 max-w-md mx-auto text-left">
+          <p className="text-[10px] font-black uppercase tracking-widest text-vendeur-emerald flex items-center gap-2">
+            <Check size={14} /> Étapes prises en charge par l'expert :
+          </p>
+          <ul className="space-y-2 text-xs font-bold text-white/70">
+            <li className="flex items-center gap-3">✓ Configuration du serveur WhatsApp Pro</li>
+            <li className="flex items-center gap-3">✓ Importation de vos produits & grille tarifaire</li>
+            <li className="flex items-center gap-3">✓ Entraînement de l'IA aux réponses de votre boutique</li>
+            <li className="flex items-center gap-3">✓ Session d'accompagnement direct (30 min)</li>
+          </ul>
+        </div>
+
+        <div className="pt-2 max-w-md mx-auto space-y-3">
+          <a
+            href={`https://wa.me/${supportPhone.replace(/[^0-9]/g, '')}?text=${supportMessage}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-full h-16 bg-vendeur-emerald text-vendeur-coal rounded-2xl font-black uppercase tracking-widest text-xs flex items-center justify-center gap-3 hover:scale-[1.02] active:scale-95 transition-all shadow-xl shadow-vendeur-emerald/20"
+          >
+            <MessageSquare size={20} />
+            Contacter mon Expert Dédié
+          </a>
+          <p className="text-[9px] font-black uppercase tracking-widest text-white/30">
+            Notre équipe vous recontacte également sous 2h ouvrées.
+          </p>
+        </div>
+
+        <div className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/4 h-64 w-64 bg-vendeur-emerald/5 blur-[100px] rounded-full" />
+      </div>
+    );
+  }
+
+  // CAS 3: OFFRE PRO AUTONOME (20 000 XOF) - META CLOUD API (AUCUN QR CODE)
+  if (isProPlan && !isConnected) {
+    const [metaForm, setMetaForm] = useState({
+      phoneNumberId: merchant?.whatsappConfig?.phoneNumberId || "",
+      wabaId: merchant?.whatsappConfig?.wabaId || "",
+      accessToken: merchant?.whatsappConfig?.accessToken || ""
+    });
+    const [savingMeta, setSavingMeta] = useState(false);
+    const [showManualForm, setShowManualForm] = useState(false);
+
+    const handleSaveMetaConfig = async () => {
+      if (!metaForm.phoneNumberId || !metaForm.accessToken) {
+        toast.error("Veuillez remplir le Phone Number ID et le Jeton d'accès Meta (Access Token).");
+        return;
+      }
+      setSavingMeta(true);
+      try {
+        await apiClient.post("/api/whatsapp/meta-config", metaForm);
+        toast.success("Configuration Meta WhatsApp enregistrée et activée ! 🚀");
+        refetch();
+      } catch (err: any) {
+        toast.error(err.response?.data?.error || "Erreur lors de l'enregistrement de la configuration Meta.");
+      } finally {
+        setSavingMeta(false);
+      }
+    };
+
+    const handleFacebookLogin = () => {
+      const fbAppId = import.meta.env.VITE_FACEBOOK_APP_ID || dashboard?.systemSettings?.metaConfig?.globalAppId;
+
+      if (!fbAppId) {
+        toast.info("L'Embedded Signup Meta nécessite un ID d'App Facebook. Utilisez la saisie manuelle ci-dessous.");
+        const formElement = document.getElementById("meta-manual-form");
+        if (formElement) formElement.scrollIntoView({ behavior: "smooth" });
+        return;
+      }
+
+      setSavingMeta(true);
+
+      const launchFbLogin = () => {
+        if ((window as any).FB) {
+          (window as any).FB.login((response: any) => {
+            if (response.authResponse) {
+              toast.success("Connexion Facebook réussie ! Synchronisation de votre compte WhatsApp Business...");
+              apiClient.post("/api/whatsapp/meta-oauth", { accessToken: response.authResponse.accessToken })
+                .then(() => refetch())
+                .catch(() => toast.error("Erreur de synchronisation Facebook Meta."))
+                .finally(() => setSavingMeta(false));
+            } else {
+              toast.error("Connexion Facebook annulée.");
+              setSavingMeta(false);
+            }
+          }, { scope: "whatsapp_business_management,whatsapp_business_messaging" });
+        } else {
+          toast.info("Veuillez renseigner vos identifiants Meta ci-dessous.");
+          setSavingMeta(false);
+        }
+      };
+
+      if ((window as any).FB) {
+        launchFbLogin();
+      } else {
+        toast.info("Initialisation du module Facebook Meta...");
+        const existingScript = document.getElementById("facebook-jssdk");
+        if (!existingScript) {
+          const js = document.createElement("script");
+          js.id = "facebook-jssdk";
+          js.src = "https://connect.facebook.net/fr_FR/sdk.js";
+          js.onload = () => {
+            (window as any).FB.init({
+              appId: fbAppId,
+              cookie: true,
+              xfbml: true,
+              version: "v20.0"
+            });
+            launchFbLogin();
+          };
+          js.onerror = () => {
+            toast.info("Veuillez remplir le formulaire ci-dessous.");
+            setSavingMeta(false);
+          };
+          document.body.appendChild(js);
+        } else {
+          launchFbLogin();
+        }
+      }
+    };
+
+    return (
+      <div className="bg-vendeur-coal border border-vendeur-emerald/30 p-3.5 sm:p-6 md:p-8 rounded-[1.8rem] sm:rounded-[2.5rem] text-center space-y-5 sm:space-y-8 animate-in fade-in duration-500 shadow-2xl relative overflow-hidden">
+        <div className="h-14 w-14 sm:h-20 sm:w-20 bg-vendeur-emerald/10 border border-vendeur-emerald/30 rounded-2xl sm:rounded-[2rem] flex items-center justify-center text-vendeur-emerald mx-auto shrink-0">
+          <Zap size={28} className="sm:hidden" />
+          <Zap size={36} className="hidden sm:block" />
+        </div>
+
+        <div className="space-y-2 sm:space-y-3 max-w-md mx-auto px-1">
+          <div className="inline-block px-3 py-1 rounded-full bg-vendeur-emerald/10 border border-vendeur-emerald/20 text-vendeur-emerald text-[9px] sm:text-[10px] font-black uppercase tracking-wider mb-1">
+            Offre Pro Meta API (20 000 XOF)
+          </div>
+          <h3 className="text-lg sm:text-2xl md:text-3xl font-black uppercase tracking-tighter text-white">Connexion Meta Cloud API</h3>
+          <p className="text-[11px] sm:text-xs md:text-sm text-white/60 font-medium leading-relaxed">
+            Votre offre Pro utilise l'API Officielle WhatsApp de Meta. Vous n'avez <strong className="text-white">aucun QR Code à scanner</strong>.
+          </p>
+        </div>
+
+        <div className="space-y-4 sm:space-y-6 max-w-md mx-auto text-left w-full">
+          {/* Bouton Connexion Facebook Mobile-First */}
+          <button
+            onClick={handleFacebookLogin}
+            disabled={savingMeta}
+            className="w-full min-h-[3.25rem] sm:h-16 px-4 bg-[#1877F2] hover:bg-[#166fe5] text-white font-black uppercase tracking-wider text-[10px] sm:text-xs rounded-xl sm:rounded-2xl flex items-center justify-center gap-2 sm:gap-3 active:scale-95 transition-all shadow-xl disabled:opacity-50"
+          >
+            {savingMeta ? <Loader2 className="animate-spin shrink-0" size={18} /> : <ShieldCheck className="shrink-0" size={18} />}
+            <span className="truncate">Se connecter avec Facebook Meta</span>
+          </button>
+
+          <div className="relative flex py-1 items-center">
+            <div className="flex-grow border-t border-white/10"></div>
+            <span className="flex-shrink mx-2 sm:mx-4 text-[8px] sm:text-[9px] font-black text-white/30 uppercase tracking-widest text-center">OU RENSEIGNER MANUELLEMENT</span>
+            <div className="flex-grow border-t border-white/10"></div>
+          </div>
+
+          {/* Formulaire de saisie ID Meta Mobile-Optimized */}
+          <div id="meta-manual-form" className="bg-white/5 border border-white/5 rounded-2xl sm:rounded-3xl p-3.5 sm:p-6 space-y-3.5 sm:space-y-4">
+            <div className="space-y-1">
+              <label className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-white/40">Phone Number ID</label>
+              <input
+                type="text"
+                placeholder="Ex: 1048593849502"
+                value={metaForm.phoneNumberId}
+                onChange={(e) => setMetaForm({ ...metaForm, phoneNumberId: e.target.value })}
+                className="w-full h-11 sm:h-12 bg-black/40 border border-white/10 rounded-xl px-3 sm:px-4 text-xs font-mono text-white focus:border-vendeur-emerald outline-none transition-all"
+              />
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-white/40">WhatsApp Business Account ID (WABA ID)</label>
+              <input
+                type="text"
+                placeholder="Ex: 2049583920194"
+                value={metaForm.wabaId}
+                onChange={(e) => setMetaForm({ ...metaForm, wabaId: e.target.value })}
+                className="w-full h-11 sm:h-12 bg-black/40 border border-white/10 rounded-xl px-3 sm:px-4 text-xs font-mono text-white focus:border-vendeur-emerald outline-none transition-all"
+              />
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-white/40">Jeton d'accès Permanent (Access Token)</label>
+              <textarea
+                placeholder="Ex: EAAG..."
+                value={metaForm.accessToken}
+                onChange={(e) => setMetaForm({ ...metaForm, accessToken: e.target.value })}
+                className="w-full h-20 sm:h-24 bg-black/40 border border-white/10 rounded-xl p-3 sm:p-4 text-[10px] font-mono text-white focus:border-vendeur-emerald outline-none transition-all resize-none"
+              />
+            </div>
+
+            <button
+              onClick={handleSaveMetaConfig}
+              disabled={savingMeta}
+              className="w-full min-h-[3rem] sm:h-14 px-3 bg-vendeur-emerald text-vendeur-coal font-black uppercase tracking-wider text-[10px] sm:text-xs rounded-xl flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-vendeur-emerald/20 disabled:opacity-50"
+            >
+              {savingMeta ? <Loader2 className="animate-spin shrink-0" size={16} /> : <Check className="shrink-0" size={16} />}
+              <span className="truncate">Enregistrer ma clé API Meta</span>
+            </button>
+          </div>
+        </div>
+
+        <div className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/4 h-64 w-64 bg-vendeur-emerald/5 blur-[100px] rounded-full" />
+      </div>
+    );
+  }
+
+  // CAS 3: DEJA CONNECTE
   if (isConnected) {
     return (
       <div className="bg-vendeur-emerald/10 border border-vendeur-emerald/30 p-6 md:p-8 rounded-[2rem] md:rounded-[2.5rem] flex flex-col md:flex-row items-center md:items-center justify-between gap-6 text-center md:text-left shadow-xl">
@@ -141,7 +391,7 @@ export function WhatsAppConnectionFlow({ qrCode, isConnectingSocket, onInitBaile
     );
   }
 
-  // CAS 3: EN COURS DE CONNEXION / SELECTION DU MODE
+  // CAS 4: EN COURS DE CONNEXION / SELECTION DU MODE (OFFRE ESSENTIELLE)
   return (
     <div className="space-y-6">
       {/* Mode Toggle */}

@@ -30,10 +30,16 @@ export function PaymentCallback() {
           toast.success("Paiement confirmé ! Votre accès est activé. 🚀");
 
           const plan = res.data.merchant?.subscription?.plan || res.data.data?.metadata?.offerSlug || "essential";
-          const isProPlan = plan === "pro" || res.data.data?.metadata?.type === "pack_pro";
+          const type = res.data.data?.metadata?.type;
+          const setupOption = res.data.data?.metadata?.setupOption;
+
+          const isPackPro = type === "pack_pro" || setupOption === "EXPERT";
+          const isProPlan = plan === "pro";
 
           setTimeout(() => {
-            if (isProPlan) {
+            if (isPackPro) {
+              navigate("/settings?tab=connexions&expert=true");
+            } else if (isProPlan) {
               navigate("/settings?tab=connexions&pro=true");
             } else {
               navigate("/activation");

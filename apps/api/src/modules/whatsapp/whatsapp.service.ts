@@ -1,4 +1,5 @@
-import { makeWASocket, useMultiFileAuthState, DisconnectReason, fetchLatestBaileysVersion } from "@whiskeysockets/baileys";
+import { makeWASocket, DisconnectReason, fetchLatestBaileysVersion } from "@whiskeysockets/baileys";
+import { useMongoAuthState, clearMongoAuthState } from "./mongo-auth-state.js";
 import { Boom } from "@hapi/boom";
 import QRCode from "qrcode";
 import fs from "fs";
@@ -110,22 +111,15 @@ class WhatsAppService {
       }
       this.pendingInitializations.delete(userId);
 
-      const sessionPath = path.join(process.cwd(), `storage/whatsapp/session-${userId}`);
-      try {
-        fs.rmSync(sessionPath, { recursive: true, force: true });
-      } catch (e) {}
+      await clearMongoAuthState(userId);
     }
 
     if (this.activeSessions.has(userId)) return;
     if (this.pendingInitializations.has(userId)) return this.pendingInitializations.get(userId);
 
-    const sessionPath = path.join(process.cwd(), `storage/whatsapp/session-${userId}`);
-    fs.mkdirSync(sessionPath, { recursive: true });
-
     const initPromise = (async () => {
       try {
-        fs.mkdirSync(sessionPath, { recursive: true });
-        const { state, saveCreds } = await useMultiFileAuthState(sessionPath);
+        const { state, saveCreds } = await useMongoAuthState(userId);
         const { version } = await fetchLatestBaileysVersion();
 
         const sock = makeWASocket({
@@ -252,9 +246,7 @@ class WhatsAppService {
 
               if (statusCode === DisconnectReason.badSession || statusCode === DisconnectReason.connectionClosed) {
                   console.log(`[WhatsApp] Stale/failed session detected for ${userId} (status ${statusCode}), clearing storage.`);
-                  try {
-                    fs.rmSync(sessionPath, { recursive: true, force: true });
-                  } catch (e) {}
+                  await clearMongoAuthState(userId);
               }
 
               this.activeSessions.delete(userId);
@@ -820,10 +812,7 @@ class WhatsAppService {
     }
     this.pendingInitializations.delete(userId);
 
-    const sessionPath = path.join(process.cwd(), `storage/whatsapp/session-${userId}`);
-    try {
-      fs.rmSync(sessionPath, { recursive: true, force: true });
-    } catch (e) {}
+    await clearMongoAuthState(userId);
 
     await CommerceMerchantModel.findOneAndUpdate(
       { ownerId: userId },

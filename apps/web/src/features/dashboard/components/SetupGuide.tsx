@@ -142,7 +142,7 @@ export function SetupGuide({ setupStatus, businessName, dashboard }: { setupStat
               key={step.id}
               to={getActionLink(step.id)}
               className={cn(
-                "flex items-center gap-3 p-3 rounded-2xl border transition-all group",
+                "flex items-center gap-3 p-3 rounded-2xl border transition-all group relative overflow-hidden",
                 step.completed
                   ? "bg-vendeur-emerald/5 border-vendeur-emerald/20 opacity-60"
                   : step.id === nextStep?.id
@@ -152,18 +152,25 @@ export function SetupGuide({ setupStatus, businessName, dashboard }: { setupStat
             >
               <div className={cn(
                 "h-5 w-5 rounded-full flex items-center justify-center shrink-0",
-                step.completed ? "text-vendeur-emerald" : "text-white/20"
+                step.completed ? "text-vendeur-emerald" : step.id === nextStep?.id ? "text-vendeur-emerald animate-pulse" : "text-white/20"
               )}>
                 {step.completed ? <CheckCircle2 size={18} /> : <Circle size={18} />}
               </div>
               <span className={cn(
                 "flex-1 text-xs font-bold",
-                step.completed ? "text-white/40 line-through" : "text-white"
+                step.completed ? "text-white/40 line-through" : step.id === nextStep?.id ? "text-white font-black" : "text-white"
               )}>
                 {step.label}
               </span>
+              
+              {!step.completed && step.id === nextStep?.id && (
+                <span className="text-[8px] font-black uppercase tracking-wider text-vendeur-emerald bg-vendeur-emerald/10 border border-vendeur-emerald/30 px-2 py-0.5 rounded-full">
+                  Prioritaire
+                </span>
+              )}
+
               {!step.completed && (
-                <ChevronRight size={14} className="text-white/20 group-hover:text-vendeur-emerald transition-colors" />
+                <ChevronRight size={14} className="text-white/20 group-hover:text-vendeur-emerald transition-colors shrink-0" />
               )}
             </Link>
           ))}

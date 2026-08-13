@@ -1,6 +1,8 @@
 import { makeWASocket, useMultiFileAuthState, DisconnectReason, fetchLatestBaileysVersion } from "@whiskeysockets/baileys";
 import { Boom } from "@hapi/boom";
 import QRCode from "qrcode";
+import fs from "fs";
+import path from "path";
 import { env } from "../../config/env.js";
 import { commerceService } from "../commerce/commerce.service.js";
 import { CommerceMerchantModel, CommerceConversationModel, CommerceMessageModel, CommerceCustomerModel, CommerceProductModel, CommerceKnowledgeModel } from "../commerce/commerce.model.js";
@@ -101,9 +103,13 @@ class WhatsAppService {
     if (this.activeSessions.has(userId)) return;
     if (this.pendingInitializations.has(userId)) return this.pendingInitializations.get(userId);
 
+    const sessionPath = path.join(process.cwd(), `storage/whatsapp/session-${userId}`);
+    fs.mkdirSync(sessionPath, { recursive: true });
+
     const initPromise = (async () => {
       try {
-        const { state, saveCreds } = await useMultiFileAuthState(`storage/whatsapp/session-${userId}`);
+        fs.mkdirSync(sessionPath, { recursive: true });
+        const { state, saveCreds } = await useMultiFileAuthState(sessionPath);
         const { version } = await fetchLatestBaileysVersion();
 
         const sock = makeWASocket({
@@ -117,17 +123,18 @@ class WhatsAppService {
 
         this.activeSessions.set(userId, sock);
 
-        return new Promise<void>((resolve, reject) => {
-          let resolved = false;
+        sock.ev.on("connection.update", async (update) => {
+          const { connection, lastDisconnect, qr } = update;
 
-          sock.ev.on("connection.update", async (update) => {
-            const { connection, lastDisconnect, qr } = update;
+          if (qr) {
+            const qrCodeData = await QRCode.toDataURL(qr);
+            emitToUser(userId, "whatsapp:qr", { qrCodeData });
+            console.log(`[WhatsApp] QR Code generated for user ${userId}`);
+          }
 
-            if (qr) {
-              const qrCodeData = await QRCode.toDataURL(qr);
-              emitToUser(userId, "whatsapp:qr", { qrCodeData });
-              console.log(`[WhatsApp] QR Code generated for user ${userId}`);
-            }
+          if (connection === "connecting") {
+            emitToUser(userId, "whatsapp:connecting", {});
+          }
 
             if (connection === "open") {
               await CommerceMerchantModel.findOneAndUpdate(
@@ -156,14 +163,11 @@ class WhatsAppService {
 
               emitToUser(userId, "whatsapp:connected", {});
               console.log(`[WhatsApp] User ${userId} connected`);
-              if (!resolved) {
-                resolved = true;
-                resolve();
-              }
             }
 
             if (connection === "close") {
-              const shouldReconnect = (lastDisconnect?.error as Boom)?.output?.statusCode !== DisconnectReason.loggedOut;
+              const statusCode = (lastDisconnect?.error as Boom)?.output?.statusCode;
+              const shouldReconnect = statusCode !== DisconnectReason.loggedOut && statusCode !== DisconnectReason.connectionClosed;
 
               await CommerceMerchantModel.findOneAndUpdate(
                 { ownerId: userId },
@@ -184,7 +188,6 @@ class WhatsAppService {
               if (shouldReconnect) {
                 console.warn(`[WhatsApp] Critical disconnection for user ${userId}. Reconnecting...`);
 
-                // Track reconnection attempts in the model
                 const merchant = await CommerceMerchantModel.findOneAndUpdate(
                   { ownerId: userId },
                   { $inc: { "whatsappConfig.reconnectAttempts": 1 } },
@@ -199,6 +202,7 @@ class WhatsAppService {
                   this.initSession(userId).catch(err => console.error(`[WhatsApp] Auto-reconnect failed for ${userId}:`, err));
                 } else {
                   console.error(`[WhatsApp] Max reconnection attempts reached for ${userId}. Alerting merchant.`);
+                  this.activeSessions.delete(userId);
                   await CommerceMerchantModel.findOneAndUpdate(
                     { ownerId: userId },
                     { $set: { "whatsappConfig.status": "error" } }
@@ -213,17 +217,21 @@ class WhatsAppService {
                 }
               } else {
                 this.activeSessions.delete(userId);
-                // Reset attempts on intentional logout
                 await CommerceMerchantModel.findOneAndUpdate(
                   { ownerId: userId },
                   { $set: { "whatsappConfig.reconnectAttempts": 0 } }
                 );
               }
 
-              if (!resolved) {
-                resolved = true;
-                reject(new Error(`Connection closed: ${lastDisconnect?.error?.message || "Unknown error"}`));
+              if (statusCode === DisconnectReason.badSession || statusCode === DisconnectReason.connectionClosed) {
+                  console.log(`[WhatsApp] Stale/failed session detected for ${userId} (status ${statusCode}), clearing storage.`);
+                  try {
+                    fs.rmSync(sessionPath, { recursive: true, force: true });
+                  } catch (e) {}
               }
+
+              this.activeSessions.delete(userId);
+              this.pendingInitializations.delete(userId);
             }
           });
 
@@ -238,7 +246,6 @@ class WhatsAppService {
               }
             }
           });
-        });
       } finally {
         this.pendingInitializations.delete(userId);
       }
@@ -257,13 +264,17 @@ class WhatsAppService {
       this.activeSessions.delete(userId);
       this.pendingInitializations.delete(userId);
 
-      // Initialize session synchronously wait brief time
-      this.initSession(userId).catch(err =>
-        console.error(`[WhatsApp] Pairing session init error for ${userId}:`, err)
-      );
+      try {
+        await this.initSession(userId);
+      } catch (err: any) {
+        console.error(`[WhatsApp] Pairing session init error for ${userId}:`, err);
+        this.activeSessions.delete(userId);
+        this.pendingInitializations.delete(userId);
+        throw new Error(`La connexion WhatsApp a échoué. Veuillez réessayer dans un instant (${err.message || err}).`);
+      }
 
-      // Wait up to 3 seconds for socket to open WS connection
-      for (let i = 0; i < 15; i++) {
+      // Wait up to 5 seconds for socket to open WS connection
+      for (let i = 0; i < 25; i++) {
         await new Promise(r => setTimeout(r, 200));
         sock = this.activeSessions.get(userId);
         if (sock && (sock as any).ws?.readyState === 1) break;
@@ -775,9 +786,18 @@ class WhatsAppService {
   async disconnectSession(userId: string) {
     const sock = this.activeSessions.get(userId);
     if (sock) {
-      await sock.logout();
+      try {
+        await sock.logout();
+      } catch (e) {}
       this.activeSessions.delete(userId);
     }
+    this.pendingInitializations.delete(userId);
+
+    const sessionPath = path.join(process.cwd(), `storage/whatsapp/session-${userId}`);
+    try {
+      fs.rmSync(sessionPath, { recursive: true, force: true });
+    } catch (e) {}
+
     await CommerceMerchantModel.findOneAndUpdate(
       { ownerId: userId },
       { $set: { "whatsappConfig.status": "disconnected" } }

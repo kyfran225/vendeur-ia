@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { motion } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
 import { apiClient } from "@/lib/apiClient";
 import {
@@ -80,16 +81,23 @@ export function ActivationPage() {
     }
   }, [isSubscribed, isWhatsAppConnected, navigate]);
 
+  const [isConnecting, setIsConnecting] = useState(false);
+
   // Listen for socket events
   useEffect(() => {
     if (!socket) return;
     socket.on("whatsapp:qr", (data: { qrCodeData: string }) => {
       setQrCode(data.qrCodeData);
       setAutoInitializing(false);
+      setIsConnecting(false);
+    });
+    socket.on("whatsapp:connecting", () => {
+      setIsConnecting(true);
     });
     socket.on("whatsapp:connected", async () => {
       setQrCode(null);
       setPairingCode(null);
+      setIsConnecting(false);
       try {
         await apiClient.post("/api/commerce/merchant", { onboardingCompleted: true });
         useAuthStore.getState().updateUser({ onboardingCompleted: true });
@@ -100,6 +108,7 @@ export function ActivationPage() {
     });
     return () => {
       socket.off("whatsapp:qr");
+      socket.off("whatsapp:connecting");
       socket.off("whatsapp:connected");
     };
   }, [socket, refetch]);
@@ -109,9 +118,7 @@ export function ActivationPage() {
       await apiClient.post("/api/whatsapp/connect");
     } catch (err) {
       console.error("Init WhatsApp failed:", err);
-      if (!silent) {
-        toast.error("Erreur lors de l'initialisation WhatsApp");
-      }
+      // Silent init: do not trigger user-facing error toasts on auto-connect attempts
     }
   };
 
@@ -167,38 +174,27 @@ export function ActivationPage() {
                           nextStep?.id === 'payments' ? 'Configurer mes paiements' : 'Étape suivante : Ajouter mes produits';
 
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center p-6 animate-in zoom-in-95 duration-700 relative overflow-hidden">
-        {/* Ambient Glow & Sparkles */}
-        <div className="absolute inset-0 bg-vendeur-emerald/10 pointer-events-none blur-3xl animate-pulse" />
-
-        <div className="max-w-md w-full bg-vendeur-coal border border-vendeur-emerald/30 p-8 md:p-12 rounded-[3.5rem] text-center space-y-6 shadow-2xl relative z-10">
-          <div className="relative mx-auto w-fit">
-            <div className="h-24 w-24 bg-vendeur-emerald rounded-[2rem] flex items-center justify-center text-vendeur-coal shadow-2xl shadow-vendeur-emerald/30 animate-bounce">
-              <Bot size={48} />
-            </div>
-            <Sparkles className="absolute -top-2 -right-2 text-vendeur-emerald animate-pulse" size={28} />
+      <div className="min-h-screen bg-black flex items-center justify-center p-6 animate-in zoom-in-95 duration-700">
+        <div className="max-w-md w-full bg-vendeur-coal border border-white/10 p-8 md:p-12 rounded-[3.5rem] text-center space-y-6 shadow-2xl">
+          <div className="h-24 w-24 bg-vendeur-emerald rounded-[2rem] flex items-center justify-center text-vendeur-coal mx-auto shadow-2xl shadow-vendeur-emerald/20 animate-bounce">
+            <Bot size={48} />
           </div>
 
           <div className="space-y-3">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-vendeur-emerald/10 border border-vendeur-emerald/30 text-vendeur-emerald text-[10px] font-black uppercase tracking-widest">
-              <Zap size={12} fill="currentColor" /> Connexion Réussie
-            </div>
             <h1 className="text-3xl md:text-4xl font-black uppercase tracking-tighter italic text-white">Prêt à vendre !</h1>
             <p className="text-xs md:text-sm text-white/50 font-bold uppercase tracking-widest leading-relaxed">
               Votre Vendeur IA est désormais actif et opérationnel sur WhatsApp.
             </p>
           </div>
 
-          {/* 7-Second Visual Progress Countdown */}
-          <div className="space-y-1.5 pt-2">
-            <div className="flex justify-between items-center text-[9px] font-black uppercase text-white/40 tracking-widest px-1">
-              <span>Redirection automatique</span>
-              <span>7s</span>
-            </div>
+          {/* Visual Progress Countdown */}
+          <div className="pt-2">
             <div className="h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-vendeur-emerald shadow-[0_0_10px_rgba(16,185,129,0.8)] transition-all duration-[7000ms] ease-linear"
-                style={{ width: "100%", animation: "shrinkWidth 7s linear forwards" }}
+              <motion.div
+                initial={{ width: "0%" }}
+                animate={{ width: "100%" }}
+                transition={{ duration: 7, ease: "linear" }}
+                className="h-full bg-vendeur-emerald shadow-[0_0_10px_rgba(16,185,129,0.8)]"
               />
             </div>
           </div>
@@ -323,9 +319,31 @@ export function ActivationPage() {
                     </div>
                     {qrCode ? (
                       <div className="relative group">
-                        <div className="absolute -inset-6 bg-vendeur-emerald/10 blur-3xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                        <div className="relative p-6 bg-white rounded-[2.5rem] shadow-2xl border-[12px] border-white transition-transform group-hover:scale-[1.02]">
+                        <div className="absolute -inset-6 bg-vendeur-emerald/20 blur-3xl rounded-full opacity-100 transition-opacity duration-500 animate-pulse" />
+                        <div className="relative p-6 bg-white rounded-[2.5rem] shadow-2xl border-[12px] border-white transition-transform overflow-hidden">
                           <img src={qrCode} alt="WhatsApp QR Code" className="w-60 h-60 md:w-72 md:h-72" />
+                          
+                          {/* Lightweight Hardware-Accelerated Scanner Line */}
+                          <motion.div
+                            initial={{ top: "0%" }}
+                            animate={{ top: ["5%", "90%", "5%"] }}
+                            transition={{ repeat: Infinity, duration: 3, ease: "linear" }}
+                            className="absolute left-4 right-4 h-1 bg-vendeur-emerald rounded-full opacity-80 z-10 pointer-events-none"
+                            style={{ willChange: "top" }}
+                          />
+
+                          {/* Connecting Overlay when scanned */}
+                          {isConnecting && (
+                            <div className="absolute inset-0 bg-vendeur-coal/90 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center space-y-4 animate-in fade-in duration-300 z-20">
+                              <div className="h-16 w-16 bg-vendeur-emerald/20 border border-vendeur-emerald/40 rounded-2xl flex items-center justify-center text-vendeur-emerald shadow-xl animate-pulse">
+                                <Loader2 className="animate-spin text-vendeur-emerald" size={32} />
+                              </div>
+                              <div className="space-y-1">
+                                <p className="text-xs font-black uppercase text-white tracking-wider">Connexion en cours...</p>
+                                <p className="text-[10px] text-white/50 font-bold uppercase tracking-widest">Synchronisation avec votre téléphone</p>
+                              </div>
+                            </div>
+                          )}
                         </div>
                       </div>
                     ) : (
@@ -335,9 +353,14 @@ export function ActivationPage() {
                       </div>
                     )}
                     <div className="flex flex-col items-center gap-3 w-full max-w-sm">
-                      <div className="flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.2em] text-vendeur-emerald bg-vendeur-emerald/5 px-8 py-4 rounded-2xl w-full justify-center border border-vendeur-emerald/10">
+                      <div className={cn(
+                        "flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.2em] px-8 py-4 rounded-2xl w-full justify-center border transition-all",
+                        isConnecting
+                          ? "bg-vendeur-emerald text-vendeur-coal border-vendeur-emerald shadow-lg shadow-vendeur-emerald/20"
+                          : "bg-vendeur-emerald/5 text-vendeur-emerald border-vendeur-emerald/10"
+                      )}>
                         <Loader2 className="animate-spin" size={14} />
-                        {qrCode ? "En attente de scan..." : "Préparation de la connexion..."}
+                        {isConnecting ? "Connexion en cours..." : qrCode ? "En attente de scan..." : "Préparation de la connexion..."}
                       </div>
                       {qrCode && (
                         <button

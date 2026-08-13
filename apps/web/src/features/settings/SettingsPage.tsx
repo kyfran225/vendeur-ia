@@ -142,16 +142,29 @@ export function SettingsPage() {
 
   const qrCodeData = queryClient.getQueryData<string>(["whatsapp:qr"]);
   const [localQrCode, setLocalQrCode] = useState<string | null>(qrCodeData || null);
+  const [isConnectingSocket, setIsConnectingSocket] = useState(false);
   const socket = useSocket();
 
   useEffect(() => {
     if (!socket) return;
     socket.on("whatsapp:qr", (data: { qrCodeData: string }) => {
       setLocalQrCode(data.qrCodeData);
+      setIsConnectingSocket(false);
       queryClient.setQueryData(["whatsapp:qr"], data.qrCodeData);
+    });
+    socket.on("whatsapp:connecting", () => {
+      setIsConnectingSocket(true);
+    });
+    socket.on("whatsapp:connected", () => {
+      setLocalQrCode(null);
+      setIsConnectingSocket(false);
+      queryClient.setQueryData(["whatsapp:qr"], null);
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
     });
     return () => {
       socket.off("whatsapp:qr");
+      socket.off("whatsapp:connecting");
+      socket.off("whatsapp:connected");
     };
   }, [socket, queryClient]);
 
@@ -264,8 +277,10 @@ export function SettingsPage() {
             merchant={merchant}
             systemSettings={systemSettings}
             qrCode={localQrCode}
+            isConnectingSocket={isConnectingSocket}
             onCancelScan={() => {
               setLocalQrCode(null);
+              setIsConnectingSocket(false);
               queryClient.setQueryData(["whatsapp:qr"], null);
             }}
           />
@@ -939,7 +954,7 @@ function PersonnaliteTab({ merchant }: { merchant: any }) {
 }
 
 // --- ONGLET 4 : CONNEXIONS ---
-function ConnexionsTab({ merchant, systemSettings, qrCode, onCancelScan }: { merchant: any; systemSettings: any; qrCode: string | null; onCancelScan: () => void }) {
+function ConnexionsTab({ merchant, systemSettings, qrCode, isConnectingSocket, onCancelScan }: { merchant: any; systemSettings: any; qrCode: string | null; isConnectingSocket?: boolean; onCancelScan: () => void }) {
   const queryClient = useQueryClient();
   const [isFacebookModalOpen, setIsFacebookModalOpen] = useState(false);
   const [isMarketplaceGuideOpen, setIsMarketplaceGuideOpen] = useState(false);
@@ -964,6 +979,7 @@ function ConnexionsTab({ merchant, systemSettings, qrCode, onCancelScan }: { mer
 
          <WhatsAppConnectionFlow
            qrCode={qrCode}
+           isConnectingSocket={isConnectingSocket}
            onInitBaileys={() => connectMutation.mutate()}
            onCancelScan={onCancelScan}
          />

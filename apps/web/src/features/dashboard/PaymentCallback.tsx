@@ -29,9 +29,15 @@ export function PaymentCallback() {
           queryClient.invalidateQueries({ queryKey: ["dashboard"] });
           toast.success("Paiement confirmé ! Votre accès est activé. 🚀");
 
-          // Always redirect to /activation post-payment so user gets the QR code / pairing code screen
+          const plan = res.data.merchant?.subscription?.plan || res.data.data?.metadata?.offerSlug || "essential";
+          const isProPlan = plan === "pro" || res.data.data?.metadata?.type === "pack_pro";
+
           setTimeout(() => {
-            navigate("/activation");
+            if (isProPlan) {
+              navigate("/settings?tab=connexions&pro=true");
+            } else {
+              navigate("/activation");
+            }
           }, 2000);
         } else {
           // Retry if pending, up to 10 times (20 seconds)

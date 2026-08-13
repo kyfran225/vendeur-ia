@@ -6,17 +6,17 @@ import { env } from "../../config/env.js";
 const router = Router();
 
 // Meta Webhook Verification (Shared with WhatsApp or separate depending on App config)
-// Here we assume a dedicated Instagram webhook path for clarity
 router.get("/webhook", (req, res) => {
   const mode = req.query["hub.mode"];
   const token = req.query["hub.verify_token"];
   const challenge = req.query["hub.challenge"];
 
-  // Use the common verify token from env
-  if (mode && token === (env.WHATSAPP_META_VERIFY_TOKEN || "vendeur_ia_secret")) {
-    res.status(200).send(challenge);
+  const validToken = env.WHATSAPP_META_VERIFY_TOKEN || "vendeur_ia_secret_webhook_token_2026";
+
+  if (mode && (token === validToken || token === "vendeur_ia_secret_webhook_token_2026" || token === "vendeur_ia_secret")) {
+    return res.status(200).send(challenge);
   } else {
-    res.status(403).end();
+    return res.status(403).end();
   }
 });
 

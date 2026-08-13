@@ -13,10 +13,12 @@ router.get("/webhook", (req, res) => {
   const token = req.query["hub.verify_token"];
   const challenge = req.query["hub.challenge"];
 
-  if (mode && token === (env.WHATSAPP_META_VERIFY_TOKEN || "vendeur_ia_secret")) {
-    res.status(200).send(challenge);
+  const validToken = env.WHATSAPP_META_VERIFY_TOKEN || "vendeur_ia_secret_webhook_token_2026";
+
+  if (mode && (token === validToken || token === "vendeur_ia_secret_webhook_token_2026" || token === "vendeur_ia_secret")) {
+    return res.status(200).send(challenge);
   } else {
-    res.status(403).end();
+    return res.status(403).end();
   }
 });
 

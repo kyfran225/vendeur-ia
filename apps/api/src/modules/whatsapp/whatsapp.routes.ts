@@ -150,11 +150,11 @@ router.post("/meta-oauth", authenticate, async (req, res) => {
 
 // Meta Webhook Verification
 router.get("/webhook", (req, res) => {
-  const mode = req.query["hub.mode"];
-  const token = req.query["hub.verify_token"];
-  const challenge = req.query["hub.challenge"];
+  const mode = req.query["hub.mode"] || req.query["hub_mode"] || req.query["mode"];
+  const token = req.query["hub.verify_token"] || req.query["hub_verify_token"] || req.query["verify_token"];
+  const challenge = req.query["hub.challenge"] || req.query["hub_challenge"] || req.query["challenge"];
 
-  console.log(`[Webhook] Verification attempt - Mode: ${mode}, Token: ${token}`);
+  console.log(`[Webhook] Verification attempt - Mode: ${mode}, Token: ${token}, Challenge: ${challenge}`);
 
   const validToken = env.WHATSAPP_META_VERIFY_TOKEN || "vendeur_ia_secret_webhook_token_2026";
 
@@ -163,7 +163,7 @@ router.get("/webhook", (req, res) => {
     return res.status(200).send(challenge);
   } else {
     console.warn(`[Webhook] Verification failed - Received Token: ${token}, Expected: ${validToken} ❌`);
-    return res.status(403).end();
+    return res.status(403).send("Verification failed");
   }
 });
 

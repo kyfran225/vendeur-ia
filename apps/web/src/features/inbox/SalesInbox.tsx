@@ -245,11 +245,11 @@ export function SalesInbox() {
 
       {/* Main Chat Area */}
       <main className={cn(
-        "flex-1 flex flex-col relative bg-vendeur-bg transition-all",
+        "flex-1 flex flex-col relative bg-vendeur-bg transition-all min-w-0 overflow-x-hidden",
         !showMobileChat ? "hidden md:flex" : "flex"
       )}>
         {selectedChat ? (
-          <div className="flex-1 flex flex-col h-full max-w-6xl mx-auto w-full border-x border-white/5 bg-[#0b141a] relative">
+          <div className="flex-1 flex flex-col h-full max-w-6xl mx-auto w-full border-x border-white/5 bg-[#0b141a] relative min-w-0 overflow-x-hidden">
             <header className="p-4 md:p-4 border-b border-white/5 flex items-center justify-between bg-[#202c33] sticky top-0 z-30">
               <div className="flex items-center gap-3">
                 <button
@@ -620,9 +620,9 @@ function ChatBubble({ role, text, time, type, mediaUrl }: any) {
   const isPaymentDetected = text?.includes("[PREUVE DE PAIEMENT DÉTECTÉE]");
 
   return (
-    <div className={cn("flex w-full animate-in slide-in-from-bottom-2 duration-300", isCustomer ? "justify-start" : "justify-end")}>
+    <div className={cn("flex w-full animate-in slide-in-from-bottom-2 duration-300 min-w-0", isCustomer ? "justify-start" : "justify-end")}>
       <div className={cn(
-        "max-w-[85%] p-3 rounded-xl shadow-md relative",
+        "max-w-[85%] p-3 rounded-xl shadow-md relative break-words overflow-hidden min-w-0",
         isCustomer
           ? "bg-[#202c33] border border-white/5 rounded-tl-none text-white"
           : "bg-[#005c4b] text-white rounded-tr-none font-medium",
@@ -637,10 +637,10 @@ function ChatBubble({ role, text, time, type, mediaUrl }: any) {
         {type === "audio" && mediaUrl ? (
           <div className="space-y-2">
             <audio src={mediaUrl} controls className="h-8 max-w-full brightness-90 contrast-125" />
-            <p className="text-[10px] italic opacity-60 line-clamp-2">{text}</p>
+            <p className="text-[10px] italic opacity-60 line-clamp-2 break-words">{text}</p>
           </div>
         ) : (
-          <p className="text-[14px] leading-relaxed whitespace-pre-wrap">{text}</p>
+          <p className="text-[14px] leading-relaxed whitespace-pre-wrap break-words overflow-wrap-anywhere">{text}</p>
         )}
 
         <div className="flex items-center justify-end gap-1 mt-1 opacity-50">

@@ -22,6 +22,7 @@ import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { CountrySelector, COUNTRIES } from "./components/CountrySelector";
 import { AddressAutocomplete } from "./components/AddressAutocomplete";
+import { ConfirmationModal } from "@/components/ui/ConfirmationModal";
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -35,6 +36,7 @@ export function OnboardingWizard() {
   const navigate = useNavigate();
   const [isMerchantCreated, setIsMerchantCreated] = useState(false);
   const [isRestoring, setIsRestoring] = useState(true);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const creationStarted = useRef(false);
 
   // Restore data from backend on mount if not present locally
@@ -193,6 +195,7 @@ export function OnboardingWizard() {
 function WelcomeStep({ onNext, onBack }: { onNext: () => void; onBack: () => void }) {
   const navigate = useNavigate();
   const { tempData, setTempData } = useOnboardingStore();
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [form, setForm] = useState(tempData || {
     businessName: "",
     category: "fashion",
@@ -378,11 +381,22 @@ function WelcomeStep({ onNext, onBack }: { onNext: () => void; onBack: () => voi
                 <Sparkles size={18} /> Continuer vers l'IA Vision
               </button>
 
-              <button
-                onClick={() => {
+              <ConfirmationModal
+                isOpen={showLogoutConfirm}
+                onClose={() => setShowLogoutConfirm(false)}
+                onConfirm={() => {
                   useAuthStore.getState().logout();
                   navigate("/");
                 }}
+                title="Quitter la configuration ?"
+                message="Votre progression sera sauvegardée, mais vous devrez vous réauthentifier pour continuer l'assistant."
+                confirmLabel="Se déconnecter"
+                cancelLabel="Continuer l'assistant"
+                type="logout"
+              />
+
+              <button
+                onClick={() => setShowLogoutConfirm(true)}
                 className="mt-4 text-white/20 text-[10px] font-black uppercase tracking-widest hover:text-rose-400 transition-colors text-center w-full"
               >
                 Quitter la configuration (Déconnexion)
@@ -399,6 +413,7 @@ function VisionStep({ onNext, onBack }: { onNext: () => void; onBack: () => void
   const navigate = useNavigate();
   const { tempData, setTempData } = useOnboardingStore();
   const [analyzing, setAnalyzing] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [result, setResult] = useState<any>(tempData?.firstProduct || null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(tempData?.productImage || null);
   const { accessToken } = useAuthStore();
@@ -550,11 +565,22 @@ function VisionStep({ onNext, onBack }: { onNext: () => void; onBack: () => void
             <ChevronLeft size={14} /> Retour aux informations
           </button>
 
-          <button
-            onClick={() => {
+          <ConfirmationModal
+            isOpen={showLogoutConfirm}
+            onClose={() => setShowLogoutConfirm(false)}
+            onConfirm={() => {
               useAuthStore.getState().logout();
               navigate("/");
             }}
+            title="Quitter la configuration ?"
+            message="Votre progression sera sauvegardée, mais vous devrez vous réauthentifier pour continuer l'assistant."
+            confirmLabel="Se déconnecter"
+            cancelLabel="Continuer l'assistant"
+            type="logout"
+          />
+
+          <button
+            onClick={() => setShowLogoutConfirm(true)}
             className="text-white/10 text-[9px] font-black uppercase tracking-widest hover:text-rose-400/50 transition-colors"
           >
             Quitter (Déconnexion)

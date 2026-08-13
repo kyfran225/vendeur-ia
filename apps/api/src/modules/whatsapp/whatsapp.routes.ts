@@ -34,32 +34,19 @@ router.post("/pairing-code", authenticate, async (req, res) => {
   }
 });
 
-router.post("/disconnect", authenticate, async (req, res) => {
-  try {
-    await whatsappService.disconnectSession((req as any).user.id);
-    res.json({ message: "WhatsApp disconnected" });
-  } catch (error: any) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-router.get("/status", authenticate, async (req, res) => {
-  try {
-    const status = await whatsappService.getSessionStatus((req as any).user.id);
-    res.json({ status });
-  } catch (error: any) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
 router.patch("/config", authenticate, async (req, res) => {
   try {
-    const { provider, meta } = req.body;
+    const { provider, meta, whatsappNumber } = req.body;
     const userId = (req as any).user.id;
 
     const update: any = {
       "whatsappConfig.provider": provider
     };
+
+    if (whatsappNumber) {
+      update["whatsappNumber"] = whatsappNumber;
+      update["phone"] = whatsappNumber;
+    }
 
     if (meta) {
       if (meta.phoneNumberId) update["whatsappConfig.meta.phoneNumberId"] = meta.phoneNumberId;
@@ -79,7 +66,25 @@ router.patch("/config", authenticate, async (req, res) => {
       { new: true }
     );
 
-    res.json({ message: "Configuration updated", whatsappConfig: merchant?.whatsappConfig });
+    res.json({ message: "Configuration updated", whatsappConfig: merchant?.whatsappConfig, merchant });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.post("/disconnect", authenticate, async (req, res) => {
+  try {
+    await whatsappService.disconnectSession((req as any).user.id);
+    res.json({ message: "WhatsApp disconnected" });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.get("/status", authenticate, async (req, res) => {
+  try {
+    const status = await whatsappService.getSessionStatus((req as any).user.id);
+    res.json({ status });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }

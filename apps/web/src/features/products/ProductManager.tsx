@@ -410,7 +410,11 @@ export function ProductManager() {
       <ConfirmationModal
         isOpen={!!deletingProduct}
         onClose={() => setDeletingProduct(null)}
-        onConfirm={() => deletingProduct && deleteMutation.mutate(deletingProduct._id)}
+        onConfirm={() => {
+          if (deletingProduct) {
+            deleteMutation.mutate(deletingProduct._id);
+          }
+        }}
         title={`Supprimer ${config.itemLabel.toLowerCase()} ?`}
         message={`Êtes-vous sûr de vouloir retirer "${deletingProduct?.name}" ? Cette action est irréversible.`}
         confirmLabel="Oui, supprimer"

@@ -161,89 +161,89 @@ Réponds UNIQUEMENT avec le texte final du message.`;
       // Emit typing start
       emitToUser(userId, 'ai:typing', { conversationId, isTyping: true });
 
-      // Native Typing Indicator (Only WhatsApp for now in this impl)
-      if (platform === 'whatsapp') {
-        await whatsappService.sendPresence(userId, remoteJid, 'composing');
-      }
+      try {
+        // Native Typing Indicator (Only WhatsApp for now in this impl)
+        if (platform === 'whatsapp') {
+          await whatsappService.sendPresence(userId, remoteJid, 'composing');
+        }
 
-      // Generate AI response
-      const aiResponse = await aiAgentService.generateResponse({ ...context, platform } as any);
-      const reply = aiResponse.text;
+        // Generate AI response
+        const aiResponse = await aiAgentService.generateResponse({ ...context, platform } as any);
+        const reply = aiResponse.text;
 
-      const merchant = await CommerceMerchantModel.findById(context.merchant._id);
-      let voiceMode = merchant?.aiSettings?.voiceMode && platform === 'whatsapp';
+        const merchant = await CommerceMerchantModel.findById(context.merchant._id);
+        let voiceMode = merchant?.aiSettings?.voiceMode && platform === 'whatsapp';
 
-      let audioUrl = "";
-      let audioBuffer: Buffer | null = null;
+        let audioUrl = "";
+        let audioBuffer: Buffer | null = null;
 
-      if (voiceMode) {
-        try {
-          console.log(`[AI Queue] Voice mode active. Generating audio for user ${userId}`);
-          audioBuffer = await aiProvider.generateSpeech(reply);
+        if (voiceMode) {
+          try {
+            console.log(`[AI Queue] Voice mode active. Generating audio for user ${userId}`);
+            audioBuffer = await aiProvider.generateSpeech(reply);
 
-          // Save to local storage
-          const fileName = `voice-${Date.now()}.ogg`;
-          const filePath = path.join(process.cwd(), 'uploads', 'audio', fileName);
+            // Save to local storage
+            const fileName = `voice-${Date.now()}.ogg`;
+            const filePath = path.join(process.cwd(), 'uploads', 'audio', fileName);
 
-          if (!fs.existsSync(path.join(process.cwd(), 'uploads', 'audio'))) {
-            fs.mkdirSync(path.join(process.cwd(), 'uploads', 'audio'), { recursive: true });
+            if (!fs.existsSync(path.join(process.cwd(), 'uploads', 'audio'))) {
+              fs.mkdirSync(path.join(process.cwd(), 'uploads', 'audio'), { recursive: true });
+            }
+
+            fs.writeFileSync(filePath, audioBuffer);
+            audioUrl = `${API_URL}/uploads/audio/${fileName}`;
+          } catch (err) {
+            console.warn("[AI Queue] TTS Generation failed, falling back to text mode:", err);
+            voiceMode = false;
           }
+        }
 
-          fs.writeFileSync(filePath, audioBuffer);
-          audioUrl = `${API_URL}/uploads/audio/${fileName}`;
-        } catch (err) {
-          console.warn("[AI Queue] TTS Generation failed, falling back to text mode:", err);
-          voiceMode = false;
+        // Save AI message
+        const aiMsg = await CommerceMessageModel.create({
+          conversationId,
+          sender: 'ai',
+          type: voiceMode ? 'audio' : 'text',
+          content: reply,
+          mediaUrl: audioUrl,
+          aiMetadata: {
+            provider: aiResponse.provider,
+            tokensUsed: aiResponse.usage?.totalTokens || 0,
+            cost: (aiResponse.usage?.totalTokens || 0) * 0.000002 // Estimated cost
+          }
+        });
+
+        // Update conversation last message timestamp
+        await CommerceConversationModel.findByIdAndUpdate(conversationId, {
+          updatedAt: new Date(),
+        });
+
+        // Emit to frontend via Socket.io
+        emitToUser(userId, 'conversation:update', {
+          conversationId,
+          message: aiMsg,
+        });
+
+        // Notify Merchant via Push
+        const replyText = reply || "";
+        pushService.sendNotification(userId, {
+          title: `Nouvelle réponse (${platform}) de ${context.merchant.businessName}`,
+          body: replyText.length > 100 ? replyText.substring(0, 97) + '...' : replyText,
+          data: { conversationId }
+        }).catch(err => console.error("[AI Queue] Push notification error:", err));
+
+        // SEND MESSAGE via Unified Messaging Service
+        await messagingService.sendMessage(merchant, platform, remoteJid, reply, {
+          audioBuffer: audioBuffer || undefined
+        });
+
+        return reply;
+      } finally {
+        // Emit typing stop in ALL cases (success, error, failure)
+        emitToUser(userId, 'ai:typing', { conversationId, isTyping: false });
+        if (platform === 'whatsapp') {
+          await whatsappService.sendPresence(userId, remoteJid, 'paused').catch(() => {});
         }
       }
-
-      // Save AI message
-      const aiMsg = await CommerceMessageModel.create({
-        conversationId,
-        sender: 'ai',
-        type: voiceMode ? 'audio' : 'text',
-        content: reply,
-        mediaUrl: audioUrl,
-        aiMetadata: {
-          provider: aiResponse.provider,
-          tokensUsed: aiResponse.usage?.totalTokens || 0,
-          cost: (aiResponse.usage?.totalTokens || 0) * 0.000002 // Estimated cost
-        }
-      });
-
-      // Update conversation last message timestamp
-      await CommerceConversationModel.findByIdAndUpdate(conversationId, {
-        updatedAt: new Date(),
-      });
-
-      // Emit to frontend via Socket.io
-      emitToUser(userId, 'conversation:update', {
-        conversationId,
-        message: aiMsg,
-      });
-
-      // Emit typing stop
-      emitToUser(userId, 'ai:typing', { conversationId, isTyping: false });
-
-      // Native Typing Indicator (Stop)
-      if (platform === 'whatsapp') {
-        await whatsappService.sendPresence(userId, remoteJid, 'paused');
-      }
-
-      // Notify Merchant via Push
-      const replyText = reply || "";
-      pushService.sendNotification(userId, {
-        title: `Nouvelle réponse (${platform}) de ${context.merchant.businessName}`,
-        body: replyText.length > 100 ? replyText.substring(0, 97) + '...' : replyText,
-        data: { conversationId }
-      }).catch(err => console.error("[AI Queue] Push notification error:", err));
-
-      // SEND MESSAGE via Unified Messaging Service
-      await messagingService.sendMessage(merchant, platform, remoteJid, reply, {
-        audioBuffer: audioBuffer || undefined
-      });
-
-      return reply;
     } catch (error) {
       console.error(`[AI Queue] Error processing job ${job.id}:`, error);
       throw error;

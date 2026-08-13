@@ -116,6 +116,7 @@ router.get("/verify-transaction/:reference", authenticate, async (req, res) => {
           { upsert: true, new: true }
         );
 
+        const currentMerchantForStatus = await CommerceMerchantModel.findOne({ ownerId: userId });
         await CommerceMerchantModel.findOneAndUpdate(
           { ownerId: userId },
           {
@@ -123,7 +124,8 @@ router.get("/verify-transaction/:reference", authenticate, async (req, res) => {
               "subscription.plan": offerSlug || (type === 'pack_pro' ? 'pro' : 'essential'),
               "subscription.status": "active",
               "subscription.expiresAt": expiresAt,
-              "whatsappConfig.status": "disconnected"
+              "whatsappConfig.provider": offerSlug === 'pro' || type === 'pack_pro' ? 'meta' : 'baileys',
+              "whatsappConfig.status": currentMerchantForStatus?.whatsappConfig?.status || "disconnected"
             }
           }
         );
@@ -373,6 +375,7 @@ router.post("/checkout/confirm", authenticate, async (req, res) => {
     });
 
     // 5. Legacy Merchant sync
+    const currentMerchantManual = await CommerceMerchantModel.findOne({ ownerId: userId });
     await CommerceMerchantModel.findOneAndUpdate(
       { ownerId: userId },
       {
@@ -380,7 +383,7 @@ router.post("/checkout/confirm", authenticate, async (req, res) => {
           "subscription.plan": offerSlug || "essential",
           "subscription.status": "active",
           "subscription.expiresAt": expiresAt,
-          "whatsappConfig.status": "connected"
+          "whatsappConfig.status": currentMerchantManual?.whatsappConfig?.status || "disconnected"
         }
       }
     );
@@ -550,10 +553,9 @@ router.post("/verify-payment", authenticate, async (req, res) => {
 
         if (merchant.whatsappConfig) {
           merchant.whatsappConfig.lastBillingDate = new Date();
-          merchant.whatsappConfig.status = 'connected'; // Allow connection process
         } else {
           merchant.whatsappConfig = {
-            status: 'connected',
+            status: 'disconnected',
             lastBillingDate: new Date()
           } as any;
         }
@@ -659,6 +661,7 @@ router.post("/webhooks/paystack", express.raw({ type: 'application/json' }), asy
       });
 
       // 5. Legacy Sync (Keep Merchant model in sync for now to avoid breaking other parts)
+      const currentMerchant = await CommerceMerchantModel.findOne({ ownerId: userId });
       await CommerceMerchantModel.findOneAndUpdate(
         { ownerId: userId },
         {
@@ -666,7 +669,7 @@ router.post("/webhooks/paystack", express.raw({ type: 'application/json' }), asy
             "subscription.plan": offerSlug || (type === 'pack_pro' ? 'pro' : 'essential'),
             "subscription.status": "active",
             "subscription.expiresAt": expiresAt,
-            "whatsappConfig.status": "connected"
+            "whatsappConfig.status": currentMerchant?.whatsappConfig?.status || "disconnected"
           }
         }
       );

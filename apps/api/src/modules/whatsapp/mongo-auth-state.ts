@@ -1,5 +1,5 @@
 import mongoose, { Schema, Document } from "mongoose";
-import { AuthenticationCreds, AuthenticationState, SignalDataTypeMap, initAuthCreds, BufferJSON } from "@whiskeysockets/baileys";
+import { AuthenticationCreds, AuthenticationState, SignalDataTypeMap, initAuthCreds, BufferJSON, proto } from "@whiskeysockets/baileys";
 
 export interface IWhatsAppSession extends Document {
   sessionId: string;
@@ -71,7 +71,7 @@ export async function useMongoAuthState(sessionId: string): Promise<{ state: Aut
             ids.map(async (id) => {
               const value = await readData(`${type}-${id}`);
               if (type === "app-state-sync-key" && value) {
-                data[id] = value;
+                data[id] = proto.Message.AppStateSyncKeyData.fromObject(value);
               } else if (value) {
                 data[id] = value;
               }

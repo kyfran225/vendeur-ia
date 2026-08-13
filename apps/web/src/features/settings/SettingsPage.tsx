@@ -46,6 +46,7 @@ import { useNavigate } from "react-router-dom";
 
 import { useSocket } from "@/hooks/useSocket";
 import { getProvidersForCountry, getZonesForCity, getCountryByCode } from "@vendeur-ia/core";
+import { ConfirmationModal } from "@/components/ui/ConfirmationModal";
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -106,6 +107,7 @@ export function SettingsPage() {
 
   const { accessToken, logout } = useAuthStore();
   const queryClient = useQueryClient();
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   useEffect(() => {
     if (tabsRef.current) {
@@ -181,6 +183,17 @@ export function SettingsPage() {
 
   return (
     <div className="p-4 md:p-10 max-w-6xl mx-auto space-y-8 md:space-y-10 animate-in fade-in duration-700 pb-24 overflow-x-hidden">
+      <ConfirmationModal
+        isOpen={showLogoutConfirm}
+        onClose={() => setShowLogoutConfirm(false)}
+        onConfirm={logout}
+        title="Se déconnecter ?"
+        message="Êtes-vous sûr de vouloir quitter votre session ? Vos données et votre IA continueront de fonctionner en arrière-plan."
+        confirmLabel="Oui, se déconnecter"
+        cancelLabel="Rester connecté"
+        type="logout"
+      />
+
       <header className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div className="space-y-2">
           <h1 className="text-2xl md:text-5xl font-black tracking-tighter uppercase text-white flex items-center gap-3 md:gap-4">
@@ -191,7 +204,7 @@ export function SettingsPage() {
         </div>
 
         <button
-          onClick={logout}
+          onClick={() => setShowLogoutConfirm(true)}
           className="h-12 px-6 rounded-2xl border border-rose-500/20 bg-rose-500/5 text-rose-500 text-[10px] font-black uppercase tracking-[0.2em] hover:bg-rose-500 hover:text-white transition-all shadow-lg flex items-center justify-center gap-2 shrink-0"
         >
           <LogOut size={16} />

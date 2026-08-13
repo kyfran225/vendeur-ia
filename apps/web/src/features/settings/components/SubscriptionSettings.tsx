@@ -1,10 +1,11 @@
-import React from "react";
-import { Zap, ShieldCheck, Clock, XCircle, CreditCard, Calendar } from "lucide-react";
+import React, { useState } from "react";
+import { Zap, ShieldCheck, Clock, XCircle, CreditCard, Calendar, Crown } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/apiClient";
 import { toast } from "sonner";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { ConfirmationModal } from "@/components/ui/ConfirmationModal";
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -12,6 +13,7 @@ function cn(...inputs: ClassValue[]) {
 
 export function SubscriptionSettings({ merchant }: { merchant: any }) {
   const queryClient = useQueryClient();
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const sub = merchant?.subscription;
 
   const cancelMutation = useMutation({
@@ -21,9 +23,11 @@ export function SubscriptionSettings({ merchant }: { merchant: any }) {
     onSuccess: () => {
       toast.success("Abonnement annulé. Vous resterez premium jusqu'à la fin de la période en cours.");
       queryClient.invalidateQueries({ queryKey: ["merchant"] });
+      setShowCancelConfirm(false);
     },
     onError: (err: any) => {
       toast.error(err.response?.data?.error || "Erreur lors de l'annulation");
+      setShowCancelConfirm(false);
     }
   });
 
@@ -31,6 +35,17 @@ export function SubscriptionSettings({ merchant }: { merchant: any }) {
 
   return (
     <div className="space-y-6 animate-in fade-in duration-700">
+      <ConfirmationModal
+        isOpen={showCancelConfirm}
+        onClose={() => setShowCancelConfirm(false)}
+        onConfirm={() => cancelMutation.mutate()}
+        title="Annuler le renouvellement ?"
+        message="Êtes-vous sûr de vouloir annuler le renouvellement automatique ? Vous garderez vos accès premium jusqu'à la fin de votre période de facturation actuelle."
+        confirmLabel="Oui, annuler"
+        cancelLabel="Garder mon abonnement"
+        type="warning"
+        isLoading={cancelMutation.isPending}
+      />
       <div className="bg-vendeur-coal border border-white/5 p-6 md:p-8 rounded-[2rem] md:rounded-[2.5rem] space-y-8">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="flex items-center gap-5">
@@ -83,11 +98,7 @@ export function SubscriptionSettings({ merchant }: { merchant: any }) {
               Prélèvement automatique activé via Paystack
             </div>
             <button
-              onClick={() => {
-                if(confirm("Êtes-vous sûr de vouloir annuler le renouvellement automatique ?")) {
-                  cancelMutation.mutate();
-                }
-              }}
+              onClick={() => setShowCancelConfirm(true)}
               disabled={cancelMutation.isPending}
               className="flex items-center gap-2 px-6 py-3 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-xl transition-all text-xs font-black uppercase tracking-widest border border-red-500/20 active:scale-95 disabled:opacity-50"
             >

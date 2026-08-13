@@ -1,4 +1,4 @@
-import { makeWASocket, DisconnectReason, fetchLatestBaileysVersion } from "@whiskeysockets/baileys";
+import { makeWASocket, DisconnectReason, fetchLatestBaileysVersion, Browsers } from "@whiskeysockets/baileys";
 import { useMongoAuthState, clearMongoAuthState } from "./mongo-auth-state.js";
 import { Boom } from "@hapi/boom";
 import QRCode from "qrcode";
@@ -82,7 +82,7 @@ class WhatsAppService {
     console.log("[WhatsApp] Booting sessions for active merchants...");
     try {
       const activeMerchants = await CommerceMerchantModel.find({
-        "whatsappConfig.status": { $in: ["connected", "error"] },
+        "whatsappConfig.status": "connected",
         "whatsappConfig.provider": "baileys",
         ownerId: { $nin: ["recurring-test-user", "load-test-user"] } // Exclude test accounts
       });
@@ -126,6 +126,7 @@ class WhatsAppService {
           version,
           auth: state,
           printQRInTerminal: false,
+          browser: Browsers.ubuntu("Chrome"),
         });
 
         this.activeSessions.set(userId, sock);
@@ -174,7 +175,22 @@ class WhatsAppService {
 
             if (connection === "close") {
               const statusCode = (lastDisconnect?.error as Boom)?.output?.statusCode;
-              const shouldReconnect = statusCode !== DisconnectReason.loggedOut && statusCode !== DisconnectReason.connectionClosed;
+              const errMessage = (lastDisconnect?.error as Error)?.message || "";
+              const isQrExpired = errMessage.includes("QR refs attempts ended") || statusCode === DisconnectReason.timedOut;
+
+              if (isQrExpired) {
+                console.log(`[WhatsApp] QR Code expiré pour l'utilisateur ${userId} (non scanné sous 2 minutes). Nettoyage de la session.`);
+                this.activeSessions.delete(userId);
+                this.pendingInitializations.delete(userId);
+                emitToUser(userId, "whatsapp:disconnected", {
+                  reason: "qr_expired",
+                  shouldReconnect: false
+                });
+                return;
+              }
+
+              const isReplaced = statusCode === DisconnectReason.connectionReplaced;
+              const shouldReconnect = statusCode !== DisconnectReason.loggedOut && statusCode !== DisconnectReason.connectionClosed && !isReplaced;
 
               await CommerceMerchantModel.findOneAndUpdate(
                 { ownerId: userId },
@@ -194,7 +210,7 @@ class WhatsAppService {
 
               // Notify front-end in real-time about disconnection/error status
               emitToUser(userId, "whatsapp:disconnected", {
-                reason: statusCode === DisconnectReason.loggedOut ? "logged_out" : "error",
+                reason: isReplaced ? "connection_replaced" : (statusCode === DisconnectReason.loggedOut ? "logged_out" : "error"),
                 statusCode,
                 shouldReconnect
               });
@@ -244,8 +260,8 @@ class WhatsAppService {
                 );
               }
 
-              if (statusCode === DisconnectReason.badSession || statusCode === DisconnectReason.connectionClosed) {
-                  console.log(`[WhatsApp] Stale/failed session detected for ${userId} (status ${statusCode}), clearing storage.`);
+              if (statusCode === DisconnectReason.badSession || statusCode === DisconnectReason.connectionClosed || isReplaced) {
+                  console.log(`[WhatsApp] Stale/replaced session detected for ${userId} (status ${statusCode}), clearing storage.`);
                   await clearMongoAuthState(userId);
               }
 
@@ -276,24 +292,26 @@ class WhatsAppService {
 
   async requestPairingCode(userId: string, phoneNumber: string): Promise<string> {
     let sock = this.activeSessions.get(userId);
+    const normalized = phoneNumber.replace(/[\s\-\+]/g, "");
 
-    // If socket doesn't exist or its WS connection is closed/closing (readyState !== 1/OPEN)
+    // If socket doesn't exist or its WS connection is not OPEN (readyState !== 1)
     if (!sock || (sock as any).ws?.readyState !== 1) {
-      console.log(`[WhatsApp] Socket not connected for ${userId}. Re-initializing session...`);
+      console.log(`[WhatsApp] Socket not connected for ${userId}. Forcing fresh pairing session...`);
       this.activeSessions.delete(userId);
       this.pendingInitializations.delete(userId);
 
       try {
-        await this.initSession(userId);
+        await this.initSession(userId, true); // Force clean auth state
       } catch (err: any) {
         console.error(`[WhatsApp] Pairing session init error for ${userId}:`, err);
         this.activeSessions.delete(userId);
         this.pendingInitializations.delete(userId);
+        await clearMongoAuthState(userId).catch(() => {});
         throw new Error(`La connexion WhatsApp a échoué. Veuillez réessayer dans un instant (${err.message || err}).`);
       }
 
-      // Wait up to 5 seconds for socket to open WS connection
-      for (let i = 0; i < 25; i++) {
+      // Wait up to 10 seconds for socket WS connection to open
+      for (let i = 0; i < 50; i++) {
         await new Promise(r => setTimeout(r, 200));
         sock = this.activeSessions.get(userId);
         if (sock && (sock as any).ws?.readyState === 1) break;
@@ -302,22 +320,21 @@ class WhatsAppService {
 
     sock = this.activeSessions.get(userId);
     if (!sock) {
-      throw new Error("Session WhatsApp non initialisée. Réessayez dans quelques secondes.");
+      this.activeSessions.delete(userId);
+      this.pendingInitializations.delete(userId);
+      await clearMongoAuthState(userId).catch(() => {});
+      throw new Error("La session n'a pas pu s'initialiser à temps. Veuillez récliquer sur Générer le code.");
     }
-
-    // Normalize phone number: strip spaces, dashes, +
-    const normalized = phoneNumber.replace(/[\s\-\+]/g, "");
 
     try {
       const code = await sock.requestPairingCode(normalized);
       console.log(`[WhatsApp] Pairing code generated for user ${userId}: ${code}`);
-      // Format as XXXX-XXXX for readability
       return code.length === 8 ? `${code.slice(0, 4)}-${code.slice(4)}` : code;
     } catch (err: any) {
       console.error(`[WhatsApp] requestPairingCode failed for ${userId}:`, err);
-      // Clean up failed socket so user can retry cleanly
       this.activeSessions.delete(userId);
       this.pendingInitializations.delete(userId);
+      await clearMongoAuthState(userId).catch(() => {});
       throw new Error(`Impossible de générer le code d'appairage: ${err.message || err}`);
     }
   }
@@ -348,7 +365,17 @@ class WhatsAppService {
   }
 
   async handleIncomingMessage(userId: string, msg: any) {
-    const from = msg.key.remoteJid;
+    // Extract phone or normalized remoteJid
+    let rawFrom = msg.key.remoteJid;
+    let from = rawFrom;
+    
+    // If Baileys uses LID (@lid), try to get the real phone number (sender_pn or remoteJidAlt)
+    if (msg.key?.remoteJidAlt && msg.key.remoteJidAlt.includes('@s.whatsapp.net')) {
+      from = msg.key.remoteJidAlt;
+    } else if (msg.key?.sender_pn) {
+      from = msg.key.sender_pn;
+    }
+
     let text = msg.message?.conversation || msg.message?.extendedTextMessage?.text;
     const imageMsg = msg.message?.imageMessage;
 
@@ -396,6 +423,11 @@ class WhatsAppService {
     // Find or create customer
     const pushName = msg.pushName || undefined;
     let customer = await CommerceCustomerModel.findOne({ merchantId: merchant._id, phone: from });
+    if (!customer && rawFrom !== from) {
+      // Fallback: check if customer exists under rawFrom
+      customer = await CommerceCustomerModel.findOne({ merchantId: merchant._id, phone: rawFrom });
+    }
+
     if (!customer) {
       customer = await CommerceCustomerModel.create({ merchantId: merchant._id, phone: from, name: pushName });
     } else if (pushName && !customer.name) {
@@ -609,8 +641,16 @@ class WhatsAppService {
   }
 
   async handleMetaIncomingMessage(from: string, text: string, phoneId: string, media?: { mediaId: string, mediaType: string }) {
-    // 1. Find the merchant associated with this Phone ID (Dedicated number)
-    let merchant = await CommerceMerchantModel.findOne({ "whatsappConfig.meta.phoneNumberId": phoneId });
+    // 1. Find the merchant associated with this Phone ID (Dedicated number) or phone/whatsappNumber
+    let merchant = await CommerceMerchantModel.findOne({
+      $or: [
+        { "whatsappConfig.meta.phoneNumberId": phoneId },
+        { whatsappNumber: phoneId },
+        { phone: phoneId },
+        { whatsappNumber: `+${phoneId}` },
+        { "whatsappConfig.provider": "meta" }
+      ]
+    });
     let latestConversation: any = null;
 
     // 2. If not found, it might be a shared system number
@@ -726,12 +766,14 @@ class WhatsAppService {
 
   async sendPresence(userId: string, remoteJid: string, presence: 'composing' | 'available' | 'paused') {
     const sock = this.activeSessions.get(userId);
-    if (sock) {
+    if (sock && sock.user && (sock.user.id || (sock.user as any).lid)) {
       try {
         await sock.sendPresenceUpdate(presence, remoteJid);
       } catch (err) {
         console.error(`[WhatsApp] Failed to send presence for user ${userId}:`, err);
       }
+    } else {
+      console.warn(`[WhatsApp] Skipping presence update for ${userId}: socket not fully authenticated`);
     }
   }
 
@@ -772,24 +814,24 @@ class WhatsAppService {
         sock = this.activeSessions.get(userId);
       }
 
-      if (sock) {
+      if (sock && sock.user) {
         if (useAudio) {
           try {
             const audioBuffer = await aiProvider.generateSpeech(text);
             // Baileys audio message: we need to handle the conversion if needed or send as PTT
-            return sock.sendMessage(to, {
+            return await sock.sendMessage(to, {
               audio: audioBuffer,
               mimetype: 'audio/mp4',
               ptt: true
             });
           } catch (err) {
             console.warn("[WhatsApp Baileys] Failed to generate speech, falling back to text:", err);
-            return sock.sendMessage(to, { text });
+            return await sock.sendMessage(to, { text });
           }
         }
-        return sock.sendMessage(to, { text });
+        return await sock.sendMessage(to, { text });
       } else {
-        throw new Error("WhatsApp session not active");
+        throw new Error("WhatsApp session not active or authenticated");
       }
     }
   }

@@ -20,6 +20,8 @@ import { apiClient } from "@/lib/apiClient";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
+import { ConfirmationModal } from "@/components/ui/ConfirmationModal";
+
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
@@ -38,11 +40,20 @@ export function WhatsAppConnectionFlow({ qrCode, isConnectingSocket, onInitBaile
   const isExpertParam = searchParams.get("expert") === "true";
 
   const [loading, setLoading] = useState(false);
+  const [showDisconnectConfirm, setShowDisconnectConfirm] = useState(false);
   const [isInitializing, setIsInitializing] = useState(false);
   const [mode, setMode] = useState<"qr" | "pairing">("qr");
   const [pairingPhone, setPairingPhone] = useState("");
   const [pairingCode, setPairingCode] = useState<string | null>(null);
   const [pairingLoading, setPairingLoading] = useState(false);
+  const [storeWhatsApp, setStoreWhatsApp] = useState("");
+  const [metaForm, setMetaForm] = useState({
+    phoneNumberId: "",
+    wabaId: "",
+    accessToken: ""
+  });
+  const [savingMeta, setSavingMeta] = useState(false);
+  const [showManualForm, setShowManualForm] = useState(false);
   const qrRef = useRef<HTMLDivElement>(null);
 
   const { data: dashboard, refetch } = useQuery({
@@ -56,6 +67,22 @@ export function WhatsAppConnectionFlow({ qrCode, isConnectingSocket, onInitBaile
   const merchant = dashboard?.merchant;
   const whatsapp = dashboard?.whatsappConnection;
   const subscription = dashboard?.subscription;
+
+  useEffect(() => {
+    if (merchant?.whatsappNumber || merchant?.phone) {
+      setStoreWhatsApp(merchant.whatsappNumber || merchant.phone || "");
+    }
+  }, [merchant?.whatsappNumber, merchant?.phone]);
+
+  useEffect(() => {
+    if (merchant?.whatsappConfig) {
+      setMetaForm({
+        phoneNumberId: merchant.whatsappConfig.phoneNumberId || "",
+        wabaId: merchant.whatsappConfig.wabaId || "",
+        accessToken: merchant.whatsappConfig.accessToken || ""
+      });
+    }
+  }, [merchant?.whatsappConfig]);
 
   const isProPlan = isProParam || subscription?.plan === 'pro' || whatsapp?.connectionType === 'meta';
   const isPackPro = isExpertParam || subscription?.plan === 'business' || subscription?.type === 'pack_pro' || whatsapp?.connectionType === 'expert';
@@ -181,13 +208,21 @@ export function WhatsAppConnectionFlow({ qrCode, isConnectingSocket, onInitBaile
 
   // CAS 3: OFFRE PRO AUTONOME (20 000 XOF) - META CLOUD API (AUCUN QR CODE)
   if (isProPlan && !isConnected) {
-    const [metaForm, setMetaForm] = useState({
-      phoneNumberId: merchant?.whatsappConfig?.phoneNumberId || "",
-      wabaId: merchant?.whatsappConfig?.wabaId || "",
-      accessToken: merchant?.whatsappConfig?.accessToken || ""
-    });
-    const [savingMeta, setSavingMeta] = useState(false);
-    const [showManualForm, setShowManualForm] = useState(false);
+    const handleActivateSystemFleet = async () => {
+      setSavingMeta(true);
+      try {
+        await apiClient.patch("/api/whatsapp/config", { 
+          provider: "meta",
+          whatsappNumber: storeWhatsApp 
+        });
+        toast.success("Vendeur IA Pro activé avec succès ! 🚀");
+        refetch();
+      } catch (err: any) {
+        toast.error(err.response?.data?.error || "Erreur lors de l'activation.");
+      } finally {
+        setSavingMeta(false);
+      }
+    };
 
     const handleSaveMetaConfig = async () => {
       if (!metaForm.phoneNumberId || !metaForm.accessToken) {
@@ -268,83 +303,155 @@ export function WhatsAppConnectionFlow({ qrCode, isConnectingSocket, onInitBaile
     };
 
     return (
-      <div className="bg-vendeur-coal border border-vendeur-emerald/30 p-3.5 sm:p-6 md:p-8 rounded-[1.8rem] sm:rounded-[2.5rem] text-center space-y-5 sm:space-y-8 animate-in fade-in duration-500 shadow-2xl relative overflow-hidden">
-        <div className="h-14 w-14 sm:h-20 sm:w-20 bg-vendeur-emerald/10 border border-vendeur-emerald/30 rounded-2xl sm:rounded-[2rem] flex items-center justify-center text-vendeur-emerald mx-auto shrink-0">
-          <Zap size={28} className="sm:hidden" />
-          <Zap size={36} className="hidden sm:block" />
+      <div className="bg-vendeur-coal border border-vendeur-emerald/30 p-4 sm:p-8 rounded-[2rem] sm:rounded-[2.5rem] text-center space-y-6 sm:space-y-8 animate-in fade-in duration-500 shadow-2xl relative overflow-hidden">
+        <div className="h-16 w-16 sm:h-20 sm:w-20 bg-vendeur-emerald/10 border border-vendeur-emerald/30 rounded-2xl sm:rounded-[2rem] flex items-center justify-center text-vendeur-emerald mx-auto shrink-0">
+          <Zap size={32} className="sm:hidden" />
+          <Zap size={40} className="hidden sm:block" />
         </div>
 
-        <div className="space-y-2 sm:space-y-3 max-w-md mx-auto px-1">
-          <div className="inline-block px-3 py-1 rounded-full bg-vendeur-emerald/10 border border-vendeur-emerald/20 text-vendeur-emerald text-[9px] sm:text-[10px] font-black uppercase tracking-wider mb-1">
-            Offre Pro Meta API (20 000 XOF)
+        <div className="space-y-2 max-w-lg mx-auto">
+          <div className="inline-block px-3 py-1 rounded-full bg-vendeur-emerald/10 border border-vendeur-emerald/20 text-vendeur-emerald text-[9px] sm:text-[10px] font-black uppercase tracking-wider">
+            Vendeur IA Pro Active (20 000 XOF)
           </div>
-          <h3 className="text-lg sm:text-2xl md:text-3xl font-black uppercase tracking-tighter text-white">Connexion Meta Cloud API</h3>
-          <p className="text-[11px] sm:text-xs md:text-sm text-white/60 font-medium leading-relaxed">
-            Votre offre Pro utilise l'API Officielle WhatsApp de Meta. Vous n'avez <strong className="text-white">aucun QR Code à scanner</strong>.
+          <h3 className="text-xl sm:text-3xl font-black uppercase tracking-tighter text-white">Activation de votre Vendeur IA</h3>
+          <p className="text-xs sm:text-sm text-white/60 font-medium leading-relaxed">
+            Votre assistant commercial est prêt. <strong className="text-white">Activez-le dès maintenant pour commencer à vendre !</strong>
           </p>
         </div>
 
-        <div className="space-y-4 sm:space-y-6 max-w-md mx-auto text-left w-full">
-          {/* Bouton Connexion Facebook Mobile-First */}
-          <button
-            onClick={handleFacebookLogin}
-            disabled={savingMeta}
-            className="w-full min-h-[3.25rem] sm:h-16 px-4 bg-[#1877F2] hover:bg-[#166fe5] text-white font-black uppercase tracking-wider text-[10px] sm:text-xs rounded-xl sm:rounded-2xl flex items-center justify-center gap-2 sm:gap-3 active:scale-95 transition-all shadow-xl disabled:opacity-50"
-          >
-            {savingMeta ? <Loader2 className="animate-spin shrink-0" size={18} /> : <ShieldCheck className="shrink-0" size={18} />}
-            <span className="truncate">Se connecter avec Facebook Meta</span>
-          </button>
-
-          <div className="relative flex py-1 items-center">
-            <div className="flex-grow border-t border-white/10"></div>
-            <span className="flex-shrink mx-2 sm:mx-4 text-[8px] sm:text-[9px] font-black text-white/30 uppercase tracking-widest text-center">OU RENSEIGNER MANUELLEMENT</span>
-            <div className="flex-grow border-t border-white/10"></div>
-          </div>
-
-          {/* Formulaire de saisie ID Meta Mobile-Optimized */}
-          <div id="meta-manual-form" className="bg-white/5 border border-white/5 rounded-2xl sm:rounded-3xl p-3.5 sm:p-6 space-y-3.5 sm:space-y-4">
-            <div className="space-y-1">
-              <label className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-white/40">Phone Number ID</label>
-              <input
-                type="text"
-                placeholder="Ex: 1048593849502"
-                value={metaForm.phoneNumberId}
-                onChange={(e) => setMetaForm({ ...metaForm, phoneNumberId: e.target.value })}
-                className="w-full h-11 sm:h-12 bg-black/40 border border-white/10 rounded-xl px-3 sm:px-4 text-xs font-mono text-white focus:border-vendeur-emerald outline-none transition-all"
-              />
-            </div>
-
-            <div className="space-y-1">
-              <label className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-white/40">WhatsApp Business Account ID (WABA ID)</label>
-              <input
-                type="text"
-                placeholder="Ex: 2049583920194"
-                value={metaForm.wabaId}
-                onChange={(e) => setMetaForm({ ...metaForm, wabaId: e.target.value })}
-                className="w-full h-11 sm:h-12 bg-black/40 border border-white/10 rounded-xl px-3 sm:px-4 text-xs font-mono text-white focus:border-vendeur-emerald outline-none transition-all"
-              />
-            </div>
-
-            <div className="space-y-1">
-              <label className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-white/40">Jeton d'accès Permanent (Access Token)</label>
-              <textarea
-                placeholder="Ex: EAAG..."
-                value={metaForm.accessToken}
-                onChange={(e) => setMetaForm({ ...metaForm, accessToken: e.target.value })}
-                className="w-full h-20 sm:h-24 bg-black/40 border border-white/10 rounded-xl p-3 sm:p-4 text-[10px] font-mono text-white focus:border-vendeur-emerald outline-none transition-all resize-none"
-              />
+        {/* CHOIX DES OPTIONS DE CONNEXION */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-3xl mx-auto text-left w-full">
+          
+          {/* OPTION 1: INSTANTANÉE (RECOMMANDÉ) */}
+          <div className="bg-vendeur-emerald/10 border-2 border-vendeur-emerald p-5 sm:p-6 rounded-2xl sm:rounded-3xl flex flex-col justify-between space-y-4 relative overflow-hidden group hover:scale-[1.01] transition-all">
+            <div className="space-y-3">
+              <span className="bg-vendeur-emerald text-vendeur-coal text-[8px] font-black uppercase px-3 py-1 rounded-full tracking-widest inline-block shadow-md">
+                Recommandé • Prêt Immédiatement
+              </span>
+              <h4 className="text-base sm:text-lg font-black uppercase tracking-tight text-white flex items-center gap-2">
+                <Bot className="text-vendeur-emerald shrink-0" size={20} />
+                Activation Automatique
+              </h4>
+              <p className="text-xs text-white/70 font-medium leading-relaxed">
+                Renseignez le numéro WhatsApp de votre boutique pour commencer à recevoir vos clients.
+              </p>
+              
+              <div className="space-y-1 pt-2">
+                <label className="text-[9px] font-black uppercase tracking-widest text-vendeur-emerald">
+                  Numéro WhatsApp Boutique
+                </label>
+                <input
+                  type="tel"
+                  placeholder="Ex: +2250700000000"
+                  value={storeWhatsApp}
+                  onChange={(e) => setStoreWhatsApp(e.target.value)}
+                  className="w-full h-11 bg-black/60 border border-vendeur-emerald/40 rounded-xl px-3 text-xs font-bold text-white focus:border-vendeur-emerald outline-none transition-all"
+                />
+              </div>
             </div>
 
             <button
-              onClick={handleSaveMetaConfig}
+              onClick={handleActivateSystemFleet}
               disabled={savingMeta}
-              className="w-full min-h-[3rem] sm:h-14 px-3 bg-vendeur-emerald text-vendeur-coal font-black uppercase tracking-wider text-[10px] sm:text-xs rounded-xl flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-vendeur-emerald/20 disabled:opacity-50"
+              className="w-full h-14 bg-vendeur-emerald hover:bg-vendeur-emerald/90 text-vendeur-coal font-black uppercase tracking-wider text-xs rounded-xl flex items-center justify-center gap-2 active:scale-95 transition-all shadow-xl shadow-vendeur-emerald/20 disabled:opacity-50 mt-4"
             >
-              {savingMeta ? <Loader2 className="animate-spin shrink-0" size={16} /> : <Check className="shrink-0" size={16} />}
-              <span className="truncate">Enregistrer ma clé API Meta</span>
+              {savingMeta ? <Loader2 className="animate-spin" size={18} /> : <Check size={18} />}
+              Activer mon Vendeur IA
             </button>
           </div>
+
+          {/* OPTION 2: PROPRES IDENTIFIANTS META (OPTIONNEL / AVANCÉ) */}
+          <div className="bg-white/5 border border-white/10 p-5 sm:p-6 rounded-2xl sm:rounded-3xl flex flex-col justify-between space-y-4 relative hover:border-white/20 transition-all">
+            <div className="space-y-3">
+              <span className="bg-white/10 text-white/60 text-[8px] font-black uppercase px-3 py-1 rounded-full tracking-widest inline-block">
+                Options Avancées
+              </span>
+              <h4 className="text-base sm:text-lg font-black uppercase tracking-tight text-white flex items-center gap-2">
+                <ShieldCheck className="text-blue-400 shrink-0" size={20} />
+                Mon propre numéro d'entreprise
+              </h4>
+              <p className="text-xs text-white/60 font-medium leading-relaxed">
+                Si vous possédez un numéro WhatsApp Business officiel configuré avec votre compte Facebook d'entreprise.
+              </p>
+            </div>
+
+            <button
+              onClick={() => setShowManualForm(!showManualForm)}
+              className="w-full h-14 bg-white/10 hover:bg-white/15 text-white font-black uppercase tracking-wider text-xs rounded-xl flex items-center justify-center gap-2 active:scale-95 transition-all mt-4 border border-white/10"
+            >
+              <Zap size={16} />
+              {showManualForm ? "Masquer les options" : "Options avancées"}
+            </button>
+          </div>
+
         </div>
+
+        {/* SECTION FORMULAIRE META PERSONNALISE (SI DEPLIE) */}
+        {showManualForm && (
+          <div className="max-w-md mx-auto text-left space-y-4 bg-black/40 border border-white/10 p-5 rounded-2xl sm:rounded-3xl animate-in slide-in-from-top duration-300">
+            <h5 className="text-xs font-black uppercase tracking-widest text-vendeur-emerald text-center">
+              Configuration de votre numéro d'entreprise
+            </h5>
+            
+            <button
+              onClick={handleFacebookLogin}
+              disabled={savingMeta}
+              className="w-full h-12 bg-[#1877F2] hover:bg-[#166fe5] text-white font-black uppercase tracking-wider text-xs rounded-xl flex items-center justify-center gap-2 transition-all shadow-md disabled:opacity-50"
+            >
+              {savingMeta ? <Loader2 className="animate-spin" size={16} /> : <ShieldCheck size={16} />}
+              Se connecter avec Facebook Meta
+            </button>
+
+            <div className="relative flex py-1 items-center">
+              <div className="flex-grow border-t border-white/10"></div>
+              <span className="flex-shrink mx-3 text-[8px] font-black text-white/30 uppercase tracking-widest">OU SAISIE MANUELLE</span>
+              <div className="flex-grow border-t border-white/10"></div>
+            </div>
+
+            <div id="meta-manual-form" className="space-y-3">
+              <div className="space-y-1">
+                <label className="text-[9px] font-black uppercase tracking-widest text-white/40">Phone Number ID</label>
+                <input
+                  type="text"
+                  placeholder="Ex: 1048593849502"
+                  value={metaForm.phoneNumberId}
+                  onChange={(e) => setMetaForm({ ...metaForm, phoneNumberId: e.target.value })}
+                  className="w-full h-11 bg-black/60 border border-white/10 rounded-xl px-3 text-xs font-mono text-white focus:border-vendeur-emerald outline-none transition-all"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[9px] font-black uppercase tracking-widest text-white/40">WhatsApp Business Account ID (WABA ID)</label>
+                <input
+                  type="text"
+                  placeholder="Ex: 2049583920194"
+                  value={metaForm.wabaId}
+                  onChange={(e) => setMetaForm({ ...metaForm, wabaId: e.target.value })}
+                  className="w-full h-11 bg-black/60 border border-white/10 rounded-xl px-3 text-xs font-mono text-white focus:border-vendeur-emerald outline-none transition-all"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[9px] font-black uppercase tracking-widest text-white/40">Jeton d'accès Permanent (Access Token EAAG)</label>
+                <textarea
+                  placeholder="Ex: EAAG..."
+                  value={metaForm.accessToken}
+                  onChange={(e) => setMetaForm({ ...metaForm, accessToken: e.target.value })}
+                  className="w-full h-20 bg-black/60 border border-white/10 rounded-xl p-3 text-[10px] font-mono text-white focus:border-vendeur-emerald outline-none transition-all resize-none"
+                />
+              </div>
+
+              <button
+                onClick={handleSaveMetaConfig}
+                disabled={savingMeta}
+                className="w-full h-12 bg-vendeur-emerald text-vendeur-coal font-black uppercase tracking-wider text-xs rounded-xl flex items-center justify-center gap-2 hover:scale-[1.01] active:scale-95 transition-all shadow-md disabled:opacity-50"
+              >
+                {savingMeta ? <Loader2 className="animate-spin shrink-0" size={16} /> : <Check className="shrink-0" size={16} />}
+                Enregistrer mes clés Meta
+              </button>
+            </div>
+          </div>
+        )}
 
         <div className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/4 h-64 w-64 bg-vendeur-emerald/5 blur-[100px] rounded-full" />
       </div>
@@ -353,24 +460,14 @@ export function WhatsAppConnectionFlow({ qrCode, isConnectingSocket, onInitBaile
 
   // CAS 3: DEJA CONNECTE
   if (isConnected) {
-    return (
-      <div className="bg-vendeur-emerald/10 border border-vendeur-emerald/30 p-6 md:p-8 rounded-[2rem] md:rounded-[2.5rem] flex flex-col md:flex-row items-center md:items-center justify-between gap-6 text-center md:text-left shadow-xl">
-        <div className="flex flex-col md:flex-row items-center gap-4 md:gap-5">
-          <div className="h-12 w-12 md:h-14 md:w-14 rounded-2xl bg-vendeur-emerald/20 border border-vendeur-emerald/40 flex items-center justify-center text-vendeur-emerald shrink-0">
-            <ShieldCheck size={24} className="md:w-7 md:h-7" />
-          </div>
-          <div className="space-y-1">
-            <div className="flex items-center justify-center md:justify-start gap-2">
-              <span className="h-2.5 w-2.5 rounded-full bg-vendeur-emerald animate-pulse shrink-0" />
-              <h3 className="text-base md:text-xl font-black text-white uppercase tracking-tight leading-snug">WhatsApp Connecté & Opérationnel</h3>
-            </div>
-            <p className="text-xs text-white/60 font-medium max-w-xs md:max-w-none mx-auto">Votre assistant IA répond automatiquement à vos clients 24/7.</p>
-          </div>
-        </div>
+    const isUsingCustomMeta = !!merchant?.whatsappConfig?.phoneNumberId;
 
-        <button
-          onClick={async () => {
-            if (!confirm("Voulez-vous vraiment déconnecter votre compte WhatsApp ?")) return;
+    return (
+      <>
+        <ConfirmationModal
+          isOpen={showDisconnectConfirm}
+          onClose={() => setShowDisconnectConfirm(false)}
+          onConfirm={async () => {
             setLoading(true);
             try {
               await apiClient.post("/api/whatsapp/disconnect");
@@ -382,12 +479,39 @@ export function WhatsAppConnectionFlow({ qrCode, isConnectingSocket, onInitBaile
               setLoading(false);
             }
           }}
-          disabled={loading}
-          className="w-full md:w-auto h-12 px-6 rounded-2xl border border-red-500/20 bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white text-xs font-black uppercase tracking-wider transition-all disabled:opacity-50 shrink-0 flex items-center justify-center gap-2"
-        >
-          {loading ? <Loader2 className="animate-spin" size={16} /> : "Déconnecter WhatsApp"}
-        </button>
-      </div>
+          title="Déconnecter WhatsApp ?"
+          message="Votre assistant IA ne pourra plus répondre automatiquement à vos clients sur WhatsApp jusqu'à sa reconnexion."
+          confirmLabel="Oui, déconnecter"
+          cancelLabel="Conserver la connexion"
+          type="warning"
+          isLoading={loading}
+        />
+
+        <div className="bg-vendeur-emerald/10 border border-vendeur-emerald/30 p-6 md:p-8 rounded-[2rem] md:rounded-[2.5rem] flex flex-col md:flex-row items-center md:items-center justify-between gap-6 text-center md:text-left shadow-xl">
+          <div className="flex flex-col md:flex-row items-center gap-4 md:gap-5">
+            <div className="h-12 w-12 md:h-14 md:w-14 rounded-2xl bg-vendeur-emerald/20 border border-vendeur-emerald/40 flex items-center justify-center text-vendeur-emerald shrink-0">
+              <ShieldCheck size={24} className="md:w-7 md:h-7" />
+            </div>
+            <div className="space-y-1">
+              <div className="flex items-center justify-center md:justify-start gap-2">
+                <span className="h-2.5 w-2.5 rounded-full bg-vendeur-emerald animate-pulse shrink-0" />
+                <h3 className="text-base md:text-xl font-black text-white uppercase tracking-tight leading-snug">WhatsApp Connecté & Opérationnel</h3>
+              </div>
+              <p className="text-xs text-white/60 font-medium max-w-xs md:max-w-none mx-auto">
+                Mode actif : <strong className="text-vendeur-emerald">{isUsingCustomMeta ? "Ligne Dédiée Meta Personnelle" : "Flotte Vendeur IA Partagée"}</strong>. Votre assistant IA répond 24/7.
+              </p>
+            </div>
+          </div>
+
+          <button
+            onClick={() => setShowDisconnectConfirm(true)}
+            disabled={loading}
+            className="w-full md:w-auto h-12 px-6 rounded-2xl border border-red-500/20 bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white text-xs font-black uppercase tracking-wider transition-all disabled:opacity-50 shrink-0 flex items-center justify-center gap-2"
+          >
+            {loading ? <Loader2 className="animate-spin" size={16} /> : "Déconnecter WhatsApp"}
+          </button>
+        </div>
+      </>
     );
   }
 

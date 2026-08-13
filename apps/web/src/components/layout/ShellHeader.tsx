@@ -1,14 +1,17 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useAuthStore } from "@/stores/authStore";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/apiClient";
 import { Bot, User, LogOut, AlertCircle } from "lucide-react";
 import { PackProModal } from "@/features/dashboard/components/PackProModal";
+import { useSocket } from "@/hooks/useSocket";
 
 export function ShellHeader() {
   const [isPackProOpen, setIsPackProOpen] = useState(false);
   const { user, logout, accessToken } = useAuthStore();
+  const queryClient = useQueryClient();
+  const socket = useSocket();
 
   useEffect(() => {
     (window as any).openPackPro = () => setIsPackProOpen(true);
@@ -23,15 +26,36 @@ export function ShellHeader() {
     enabled: !!accessToken
   });
 
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleDisconnect = () => {
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+    };
+
+    const handleConnected = () => {
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+    };
+
+    socket.on("whatsapp:disconnected", handleDisconnect);
+    socket.on("whatsapp:connected", handleConnected);
+
+    return () => {
+      socket.off("whatsapp:disconnected", handleDisconnect);
+      socket.off("whatsapp:connected", handleConnected);
+    };
+  }, [socket, queryClient]);
+
   const merchant = dashboard?.merchant;
+  const isDisconnected = merchant?.whatsappConfig?.status === 'error' || merchant?.whatsappConfig?.status === 'disconnected';
 
   return (
     <header className="h-14 md:h-20 border-b border-white/5 bg-vendeur-bg/80 backdrop-blur-md flex items-center justify-between px-4 md:px-12 sticky top-0 z-40 w-full gap-4">
       <PackProModal isOpen={isPackProOpen} onClose={() => setIsPackProOpen(false)} />
 
       {/* Connection Error Banner */}
-      {merchant?.whatsappConfig?.status === 'error' && (
-        <div className="absolute top-full left-0 right-0 bg-red-500 py-2 px-4 flex items-center justify-center gap-3 animate-in slide-in-from-top duration-500 shadow-lg">
+      {isDisconnected && (
+        <div className="absolute top-full left-0 right-0 bg-red-500 py-2 px-4 flex items-center justify-center gap-3 animate-in slide-in-from-top duration-500 shadow-lg z-50">
           <AlertCircle size={14} className="text-white animate-pulse" />
           <p className="text-[10px] font-black uppercase tracking-widest text-white">Attention : Votre WhatsApp est déconnecté !</p>
           <Link

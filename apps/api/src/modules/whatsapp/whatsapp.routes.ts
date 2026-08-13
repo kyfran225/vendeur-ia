@@ -8,7 +8,8 @@ const router = Router();
 
 router.post("/connect", authenticate, async (req, res) => {
   try {
-    await whatsappService.initSession((req as any).user.id);
+    const force = req.body?.force === true || req.query?.force === "true";
+    await whatsappService.initSession((req as any).user.id, force);
     res.json({ message: "WhatsApp connection initialized" });
   } catch (error: any) {
     res.status(500).json({ error: error.message });

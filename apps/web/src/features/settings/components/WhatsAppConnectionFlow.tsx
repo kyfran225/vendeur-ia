@@ -27,7 +27,7 @@ function cn(...inputs: ClassValue[]) {
 interface WhatsAppConnectionFlowProps {
   qrCode: string | null;
   isConnectingSocket?: boolean;
-  onInitBaileys: () => void;
+  onInitBaileys: (force?: boolean) => void;
   onCancelScan: () => void;
 }
 
@@ -60,7 +60,7 @@ export function WhatsAppConnectionFlow({ qrCode, isConnectingSocket, onInitBaile
   useEffect(() => {
     if (isSubscribed && !isConnected && !qrCode && mode === "qr") {
       setIsInitializing(true);
-      onInitBaileys();
+      onInitBaileys(true);
     }
   }, [isSubscribed, isConnected, mode]);
 
@@ -98,72 +98,45 @@ export function WhatsAppConnectionFlow({ qrCode, isConnectingSocket, onInitBaile
 
   // CAS 1: PAS D'ABONNEMENT ACTIF
   if (!isSubscribed) {
-    return (
-      <div className="bg-vendeur-coal border border-white/5 rounded-[2.5rem] p-8 md:p-12 text-center space-y-8 animate-in fade-in duration-500">
-        <div className="h-20 w-20 bg-white/5 rounded-[2rem] flex items-center justify-center text-white/20 mx-auto">
-          <Zap size={40} />
-        </div>
-        <div className="space-y-4">
-          <h3 className="text-2xl font-black uppercase tracking-tighter text-white">WhatsApp</h3>
-          <p className="text-sm text-white/40 font-bold uppercase tracking-widest leading-relaxed max-w-xs mx-auto">
-            Votre vendeur IA travaille sur WhatsApp. Pour commencer, choisissez une offre.
-          </p>
-        </div>
-        <button
-          onClick={() => navigate("/offers")}
-          className="w-full h-16 bg-white text-vendeur-coal rounded-2xl font-black uppercase tracking-widest text-[10px] flex items-center justify-center gap-3 hover:bg-vendeur-emerald transition-all active:scale-95 shadow-xl"
-        >
-          Voir les offres
-          <ArrowRight size={18} />
-        </button>
-      </div>
-    );
+    return null;
   }
 
-  // CAS 2: CONNECTÉ
-  if (isConnected && !qrCode) {
+  // CAS 2: DEJA CONNECTE
+  if (isConnected) {
     return (
-      <div className="bg-vendeur-coal border border-white/5 rounded-[2.5rem] p-8 md:p-12 space-y-10 animate-in zoom-in-95 duration-500">
-        <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-          <div className="flex items-center gap-6">
-            <div className="h-16 w-16 bg-vendeur-emerald rounded-[1.5rem] flex items-center justify-center text-vendeur-coal shadow-2xl shadow-vendeur-emerald/20">
-              <Bot size={32} />
-            </div>
-            <div>
-              <h3 className="text-2xl font-black text-white uppercase tracking-tighter italic">WhatsApp est Connecté !</h3>
-              <p className="text-xs text-vendeur-emerald font-black uppercase tracking-widest mt-1">Votre vendeur IA est prêt à servir vos clients 24h/24</p>
-            </div>
+      <div className="bg-vendeur-emerald/10 border border-vendeur-emerald/30 p-6 md:p-8 rounded-[2rem] md:rounded-[2.5rem] flex flex-col md:flex-row items-center md:items-center justify-between gap-6 text-center md:text-left shadow-xl">
+        <div className="flex flex-col md:flex-row items-center gap-4 md:gap-5">
+          <div className="h-12 w-12 md:h-14 md:w-14 rounded-2xl bg-vendeur-emerald/20 border border-vendeur-emerald/40 flex items-center justify-center text-vendeur-emerald shrink-0">
+            <ShieldCheck size={24} className="md:w-7 md:h-7" />
           </div>
-          <button
-            onClick={() => toast.info("Ouverture du test...")}
-            className="h-14 px-8 bg-white/5 border border-white/10 text-white rounded-2xl font-black uppercase tracking-widest text-[10px] flex items-center gap-3 hover:bg-white/10 transition-all active:scale-95"
-          >
-            Tester mon vendeur
-            <MessageSquare size={16} />
-          </button>
+          <div className="space-y-1">
+            <div className="flex items-center justify-center md:justify-start gap-2">
+              <span className="h-2.5 w-2.5 rounded-full bg-vendeur-emerald animate-pulse shrink-0" />
+              <h3 className="text-base md:text-xl font-black text-white uppercase tracking-tight leading-snug">WhatsApp Connecté & Opérationnel</h3>
+            </div>
+            <p className="text-xs text-white/60 font-medium max-w-xs md:max-w-none mx-auto">Votre assistant IA répond automatiquement à vos clients 24/7.</p>
+          </div>
         </div>
 
-        <div className="pt-8 border-t border-white/5 grid grid-cols-1 md:grid-cols-2 gap-4">
-           <div className="p-6 bg-white/5 rounded-3xl space-y-2">
-             <p className="text-[10px] font-black uppercase text-white/20 tracking-widest">Votre Offre</p>
-             <p className="text-lg font-black text-white">{subscription?.offerId?.name || "Vendeur IA Essentiel"}</p>
-           </div>
-           <div className="p-6 bg-white/5 rounded-3xl space-y-2">
-             <p className="text-[10px] font-black uppercase text-white/20 tracking-widest">Prochaine Échéance</p>
-             <p className="text-lg font-black text-white">
-               {subscription?.currentPeriodEnd ? new Date(subscription.currentPeriodEnd).toLocaleDateString() : "N/A"}
-             </p>
-           </div>
-        </div>
-
-        <div className="flex justify-center">
-          <button
-            onClick={() => navigate("/offers")}
-            className="text-[10px] font-black uppercase text-white/20 hover:text-white transition-all tracking-widest"
-          >
-            Gérer mon offre
-          </button>
-        </div>
+        <button
+          onClick={async () => {
+            if (!confirm("Voulez-vous vraiment déconnecter votre compte WhatsApp ?")) return;
+            setLoading(true);
+            try {
+              await apiClient.post("/api/whatsapp/disconnect");
+              toast.success("WhatsApp déconnecté avec succès.");
+              refetch();
+            } catch (e: any) {
+              toast.error("Erreur lors de la déconnexion.");
+            } finally {
+              setLoading(false);
+            }
+          }}
+          disabled={loading}
+          className="w-full md:w-auto h-12 px-6 rounded-2xl border border-red-500/20 bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white text-xs font-black uppercase tracking-wider transition-all disabled:opacity-50 shrink-0 flex items-center justify-center gap-2"
+        >
+          {loading ? <Loader2 className="animate-spin" size={16} /> : "Déconnecter WhatsApp"}
+        </button>
       </div>
     );
   }
@@ -174,7 +147,7 @@ export function WhatsAppConnectionFlow({ qrCode, isConnectingSocket, onInitBaile
       {/* Mode Toggle */}
       <div className="flex gap-2 p-1 bg-white/5 rounded-2xl border border-white/5">
         <button
-          onClick={() => { setMode("qr"); setIsInitializing(true); onInitBaileys(); }}
+          onClick={() => { setMode("qr"); setIsInitializing(true); onInitBaileys(true); }}
           className={cn(
             "flex-1 h-12 rounded-xl font-black uppercase tracking-widest text-[9px] flex items-center justify-center gap-2 transition-all",
             mode === "qr" ? "bg-white text-vendeur-coal shadow-lg" : "text-white/30 hover:text-white"
@@ -254,7 +227,7 @@ export function WhatsAppConnectionFlow({ qrCode, isConnectingSocket, onInitBaile
              </div>
 
              <button
-               onClick={() => { setIsInitializing(true); onInitBaileys(); }}
+               onClick={() => { setIsInitializing(true); onInitBaileys(true); }}
                className="text-[9px] font-black uppercase tracking-widest text-vendeur-emerald/80 hover:text-vendeur-emerald transition-all py-1"
              >
                Régénérer le QR

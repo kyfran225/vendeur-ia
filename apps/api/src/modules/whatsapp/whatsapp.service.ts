@@ -99,7 +99,23 @@ class WhatsAppService {
     }
   }
 
-  async initSession(userId: string): Promise<void> {
+  async initSession(userId: string, force: boolean = false): Promise<void> {
+    if (force) {
+      const existingSock = this.activeSessions.get(userId);
+      if (existingSock) {
+        try {
+          existingSock.end(undefined);
+        } catch (e) {}
+        this.activeSessions.delete(userId);
+      }
+      this.pendingInitializations.delete(userId);
+
+      const sessionPath = path.join(process.cwd(), `storage/whatsapp/session-${userId}`);
+      try {
+        fs.rmSync(sessionPath, { recursive: true, force: true });
+      } catch (e) {}
+    }
+
     if (this.activeSessions.has(userId)) return;
     if (this.pendingInitializations.has(userId)) return this.pendingInitializations.get(userId);
 
@@ -116,9 +132,6 @@ class WhatsAppService {
           version,
           auth: state,
           printQRInTerminal: false,
-          // Enable pairing code support (for same-device mobile users)
-          // When usePairingCode is true, the socket can also emit pairing codes
-          // in addition to QR codes via requestPairingCode()
         });
 
         this.activeSessions.set(userId, sock);
@@ -184,6 +197,20 @@ class WhatsAppService {
                 },
                 { upsert: true }
               );
+
+              // Notify front-end in real-time about disconnection/error status
+              emitToUser(userId, "whatsapp:disconnected", {
+                reason: statusCode === DisconnectReason.loggedOut ? "logged_out" : "error",
+                statusCode,
+                shouldReconnect
+              });
+
+              // Trigger push notification to merchant
+              pushService.sendNotification(userId, {
+                title: "⚠️ WhatsApp Déconnecté !",
+                body: "La connexion WhatsApp de votre assistant IA s'est interrompue. Cliquez ici pour la rétablir.",
+                data: { url: "/settings?tab=connexions" }
+              }).catch(err => console.error("[WhatsApp] Push notification send failed:", err));
 
               if (shouldReconnect) {
                 console.warn(`[WhatsApp] Critical disconnection for user ${userId}. Reconnecting...`);

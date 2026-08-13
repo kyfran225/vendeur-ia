@@ -961,8 +961,8 @@ function ConnexionsTab({ merchant, systemSettings, qrCode, isConnectingSocket, o
   const [isPackProOpen, setIsPackProOpen] = useState(false);
 
   const connectMutation = useMutation({
-    mutationFn: async () => {
-      await apiClient.post("/api/whatsapp/connect", {});
+    mutationFn: async (force?: boolean) => {
+      await apiClient.post("/api/whatsapp/connect", { force: !!force });
     },
     onSuccess: () => {
       toast.info("Initialisation de WhatsApp...");
@@ -980,7 +980,7 @@ function ConnexionsTab({ merchant, systemSettings, qrCode, isConnectingSocket, o
          <WhatsAppConnectionFlow
            qrCode={qrCode}
            isConnectingSocket={isConnectingSocket}
-           onInitBaileys={() => connectMutation.mutate()}
+           onInitBaileys={(force) => connectMutation.mutate(force)}
            onCancelScan={onCancelScan}
          />
       </section>

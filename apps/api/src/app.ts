@@ -21,6 +21,7 @@ import { getRedisClient } from "./config/redis.js";
 import { whatsappService } from "./modules/whatsapp/whatsapp.service.js";
 
 const app = express();
+app.set("trust proxy", 1);
 const httpServer = createServer(app);
 
 // Initialize Sockets

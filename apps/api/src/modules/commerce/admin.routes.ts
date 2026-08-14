@@ -30,6 +30,8 @@ router.get("/settings", authenticate, isAdmin, async (req, res) => {
   }
 });
 
+import { logger } from "../../services/logger.service.js";
+
 // UPDATE Global Settings
 router.patch("/settings", authenticate, isAdmin, async (req, res) => {
   try {
@@ -38,6 +40,7 @@ router.patch("/settings", authenticate, isAdmin, async (req, res) => {
       { $set: req.body },
       { new: true, upsert: true }
     );
+    logger.info("[Admin MasterControl] Clés et configuration IA mises à jour avec succès ✅");
     res.json(settings);
   } catch (error: any) {
     res.status(500).json({ error: error.message });

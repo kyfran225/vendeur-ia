@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { Logo } from "@/components/ui/Logo";
 import { NavLink, useLocation } from "react-router-dom";
 import { LayoutDashboard, Package, MessageCircle, Brain, Settings, Megaphone, ShoppingCart, MoreHorizontal, X, Shield } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -37,8 +38,8 @@ export function Sidebar() {
     <>
       {/* Desktop Sidebar */}
       <aside className="hidden md:flex w-28 bg-vendeur-coal border-r border-white/5 flex-col items-center py-10 space-y-8 shrink-0">
-        <div className="h-16 w-16 flex items-center justify-center overflow-hidden bg-white/5 rounded-2xl p-2 border border-white/10 shadow-2xl shrink-0">
-          <img src="/apple-touch-icon.png" alt="Logo" className="h-full w-full object-contain filter drop-shadow-lg" />
+        <div className="h-16 w-16 flex items-center justify-center overflow-hidden bg-white/5 rounded-2xl p-3 border border-white/10 shadow-2xl shrink-0 text-vendeur-emerald hover:text-white transition-colors">
+          <Logo size={36} />
         </div>
 
         <nav className="flex-1 w-full flex flex-col items-center gap-6">

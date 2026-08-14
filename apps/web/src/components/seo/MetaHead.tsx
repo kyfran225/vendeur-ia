@@ -54,7 +54,8 @@ export const MetaHead: React.FC<MetaHeadProps> = ({
     'name': 'Vendeur IA Inc',
     'alternateName': ['Vendeur IA', 'VendeurIA', 'Vendeur IA WhatsApp'],
     'url': DEFAULT_SITE_URL,
-    'logo': DEFAULT_OG_IMAGE,
+    'logo': `${SITE_CONFIG.baseUrl}/android-chrome-512x512.png`,
+    'image': DEFAULT_OG_IMAGE,
     'sameAs': [
       'https://twitter.com/vendeuria',
       'https://linkedin.com/company/vendeuria',

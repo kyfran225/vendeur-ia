@@ -131,7 +131,8 @@ function PillarSection() {
 }
 
 import { useOnboardingStore } from "@/stores/onboardingStore";
-import { useNavigate, Link } from "react-router-dom";
+import { Logo } from "@/components/ui/Logo";
+import { Link, useNavigate } from "react-router-dom";
 
 import { WhatsAppTypingIndicator } from "@/components/ui/WhatsAppTypingIndicator";
 
@@ -617,8 +618,8 @@ export function LandingPage() {
       <header className="fixed top-0 left-0 right-0 z-50 border-b border-white/5 bg-[#07100d]/80 backdrop-blur-md w-full h-14 md:h-20">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 h-full gap-4">
           <div className="flex items-center gap-3 md:gap-5 flex-1 min-w-0">
-            <div className="flex h-9 w-9 md:h-12 md:w-12 shrink-0 items-center justify-center overflow-hidden bg-white/5 rounded-xl md:rounded-2xl p-1.5 border border-white/10 shadow-xl">
-              <img src="/apple-touch-icon.png" alt="Logo" className="h-full w-full object-contain" />
+            <div className="flex h-9 w-9 md:h-12 md:w-12 shrink-0 items-center justify-center overflow-hidden bg-white/5 rounded-xl md:rounded-2xl p-2 border border-white/10 shadow-xl text-vendeur-emerald">
+              <Logo size={28} />
             </div>
             <div className="min-w-0">
               <p className="truncate text-base md:text-xl font-black text-white uppercase leading-tight tracking-tight">{dynamicTitle}</p>

@@ -18,6 +18,8 @@ import {
   X
 } from "lucide-react";
 import { WebChatWidget } from "./components/WebChatWidget";
+import { MetaHead } from "@/components/seo/MetaHead";
+import { SITE_CONFIG } from "@/lib/seoConfig";
 import { apiClient } from "@/lib/apiClient";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
@@ -81,6 +83,30 @@ export function PublicShop() {
 
   return (
     <div className="min-h-screen bg-vendeur-bg text-white selection:bg-vendeur-emerald selection:text-vendeur-coal pb-24">
+      <MetaHead
+        title={`${merchant.businessName} | Boutique Officielle WhatsApp Vendeur IA`}
+        description={`Achetez directement chez ${merchant.businessName} (${merchant.category}). Commandes instantanées et réponses 24/7 via WhatsApp sur Vendeur IA.`}
+        keywords={[
+          merchant.businessName,
+          `boutique ${merchant.businessName}`,
+          `achats ${merchant.category}`,
+          'vendeur IA boutique',
+          'whatsapp commerce'
+        ]}
+        canonicalUrl={`${SITE_CONFIG.baseUrl}/shop/${merchantId}`}
+        schemaRaw={{
+          '@context': 'https://schema.org',
+          '@type': 'Store',
+          'name': merchant.businessName,
+          'description': merchant.description || `Boutique officielle ${merchant.businessName} propulsée par Vendeur IA.`,
+          'address': {
+            '@type': 'PostalAddress',
+            'addressLocality': merchant.city || '',
+            'addressCountry': merchant.country || ''
+          },
+          'telephone': merchant.whatsappNumber
+        }}
+      />
       {/* Header / Branding */}
       <header className="sticky top-0 z-50 bg-vendeur-bg/80 backdrop-blur-xl border-b border-white/5">
         <div className="max-w-7xl mx-auto px-4 md:px-6 h-20 flex items-center justify-between">

@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { X, Mail, Lock, User, LogIn, Sparkles, ChevronRight, Bot, Loader2 } from "lucide-react";
+import { Logo } from "@/components/ui/Logo";
 import { useAuthStore } from "@/stores/authStore";
 import { useGoogleLogin } from "@react-oauth/google";
 import { toast } from "sonner";
@@ -125,8 +126,8 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
         </button>
 
         <div className="text-center mb-8">
-          <div className="inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-white/5 border border-white/10 mb-4 p-3">
-            <img src="/apple-touch-icon.png" alt="Logo" className="w-full h-full object-contain" />
+          <div className="inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-white/5 border border-white/10 mb-4 p-3 text-vendeur-emerald">
+            <Logo size={40} />
           </div>
           <h2 className="text-2xl font-black text-white uppercase tracking-tight">
             {mode === "login" ? "Content de vous revoir" : mode === "register" ? "Rejoindre l'aventure" : "Mot de passe oublié"}

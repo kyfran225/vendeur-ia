@@ -4,6 +4,7 @@ import { useAuthStore } from "@/stores/authStore";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/apiClient";
 import { Bot, User, LogOut, AlertCircle } from "lucide-react";
+import { Logo } from "@/components/ui/Logo";
 import { PackProModal } from "@/features/dashboard/components/PackProModal";
 import { useSocket } from "@/hooks/useSocket";
 import { clsx, type ClassValue } from "clsx";
@@ -106,8 +107,8 @@ export function ShellHeader() {
       )}
 
       <div className="flex items-center gap-3 md:gap-5 flex-1 min-w-0">
-        <div className="md:hidden h-9 w-9 flex items-center justify-center overflow-hidden bg-white/5 rounded-xl p-1.5 border border-white/10 shrink-0">
-          <img src="/apple-touch-icon.png" alt="Logo" className="h-full w-full object-contain" />
+        <div className="md:hidden h-9 w-9 flex items-center justify-center overflow-hidden bg-white/5 rounded-xl p-1.5 border border-white/10 shrink-0 text-vendeur-emerald">
+          <Logo size={22} />
         </div>
         <div className="hidden md:flex h-10 w-10 rounded-2xl bg-vendeur-emerald/10 items-center justify-center border border-vendeur-emerald/20 shrink-0">
           <Bot className="text-vendeur-emerald" size={20} />

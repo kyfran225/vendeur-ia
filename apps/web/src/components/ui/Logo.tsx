@@ -1,0 +1,35 @@
+import React from "react";
+import { cn } from "@/lib/utils";
+
+interface LogoProps extends React.SVGProps<SVGSVGElement> {
+  size?: number | string;
+  className?: string;
+  leftBranchColor?: string;
+  rightBranchColor?: string;
+}
+
+export const Logo: React.FC<LogoProps> = ({
+  size = 24,
+  className,
+  leftBranchColor = "#ffffff",
+  rightBranchColor = "#10b981",
+  ...props
+}) => {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 1254 1254"
+      width={size}
+      height={size}
+      className={cn("shrink-0 transition-colors duration-200", className)}
+      {...props}
+    >
+      <g>
+        {/* Branche Gauche (Oblique V) - Tracé exact 100% indépendant */}
+        <path fill={leftBranchColor} d="M 613.00,1063.15 L 580.00,1062.31 L 562.00,1058.11 L 542.00,1050.05 L 524.00,1039.25 L 513.00,1030.27 L 500.57,1018.00 L 489.00,1001.96 L 235.30,573.00 L 94.40,340.00 L 48.71,267.00 L 42.38,248.00 L 43.77,230.00 L 52.76,213.00 L 69.00,199.60 L 83.00,193.85 L 104.00,190.86 L 282.00,191.69 L 303.00,196.81 L 320.00,205.58 L 333.51,216.00 L 347.13,233.00 L 424.73,365.00 L 670.50,766.00 L 752.15,901.00 L 757.00,911.58 L 758.00,924.95 L 753.33,938.00 L 710.53,1002.00 L 693.17,1023.00 L 673.00,1040.27 L 655.00,1051.15 L 633.00,1059.36 L 613.00,1063.15 Z" />
+        {/* Branche Droite (Forme 7) - Tracé exact 100% indépendant */}
+        <path fill={rightBranchColor} d="M 774.00,898.05 L 771.55,896.00 L 665.94,723.00 L 814.18,510.00 L 860.37,440.00 L 861.44,432.00 L 858.00,427.78 L 853.00,426.36 L 626.00,426.10 L 617.00,423.15 L 610.84,416.00 L 609.02,407.00 L 612.63,396.00 L 733.88,231.00 L 755.00,211.68 L 778.00,199.63 L 794.00,194.85 L 816.00,192.41 L 1194.00,192.27 L 1203.00,193.58 L 1210.00,196.96 L 1217.24,204.00 L 1222.03,214.00 L 1222.26,226.00 L 1218.35,237.00 L 1042.44,504.00 L 833.25,813.00 L 774.00,898.05 Z" />
+      </g>
+    </svg>
+  );
+};

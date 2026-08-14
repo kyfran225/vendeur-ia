@@ -25,6 +25,7 @@ import { twMerge } from "tailwind-merge";
 import { SetupGuide } from "./components/SetupGuide";
 import { SubscriptionBanner } from "./components/SubscriptionBanner";
 import { BriefingRoom } from "./components/BriefingRoom";
+import { VendeurIAPlaygroundModal } from "./components/VendeurIAPlaygroundModal";
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -42,6 +43,7 @@ export function SalesDashboard() {
   const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
   const isBriefingOpen = searchParams.get("briefing") === "true";
+  const isTestIAOpen = searchParams.get("test_ia") === "true";
 
   const setIsBriefingOpen = (open: boolean) => {
     if (open) {
@@ -49,6 +51,16 @@ export function SalesDashboard() {
     } else {
       const newParams = new URLSearchParams(searchParams);
       newParams.delete("briefing");
+      setSearchParams(newParams);
+    }
+  };
+
+  const setIsTestIAOpen = (open: boolean) => {
+    if (open) {
+      setSearchParams({ test_ia: "true" });
+    } else {
+      const newParams = new URLSearchParams(searchParams);
+      newParams.delete("test_ia");
       setSearchParams(newParams);
     }
   };
@@ -125,18 +137,28 @@ export function SalesDashboard() {
         </div>
       </header>
 
-      <HomePanel dashboard={dashboard} onOpenBriefing={() => setIsBriefingOpen(true)} />
+      <HomePanel 
+        dashboard={dashboard} 
+        onOpenBriefing={() => setIsBriefingOpen(true)} 
+        onOpenTestIA={() => setIsTestIAOpen(true)}
+      />
 
       <BriefingRoom
         isOpen={isBriefingOpen}
         onClose={() => setIsBriefingOpen(false)}
         businessName={dashboard?.merchant?.businessName || "Votre boutique"}
       />
+
+      <VendeurIAPlaygroundModal
+        isOpen={isTestIAOpen}
+        onClose={() => setIsTestIAOpen(false)}
+        merchant={dashboard?.merchant}
+      />
     </main>
   );
 }
 
-function HomePanel({ dashboard, onOpenBriefing }: { dashboard: any, onOpenBriefing: () => void }) {
+function HomePanel({ dashboard, onOpenBriefing, onOpenTestIA }: { dashboard: any, onOpenBriefing: () => void, onOpenTestIA: () => void }) {
   const tips = dashboard?.aiGrowthAdvice?.tips || [];
   const status = dashboard?.merchant?.whatsappConfig?.status || 'disconnected';
   const setupStatus = dashboard?.setupStatus;
@@ -208,13 +230,23 @@ function HomePanel({ dashboard, onOpenBriefing }: { dashboard: any, onOpenBriefi
               </div>
             </div>
 
-            <button
-              onClick={onOpenBriefing}
-              className="flex items-center justify-center gap-3 px-5 py-2.5 rounded-xl bg-vendeur-emerald/10 border border-vendeur-emerald/30 text-vendeur-emerald text-[10px] md:text-xs font-black uppercase tracking-widest hover:bg-vendeur-emerald/20 transition-all group/btn w-full md:w-auto mt-2 md:mt-0"
-            >
-              <MessageSquareQuote size={18} className="group-hover/btn:rotate-12 transition-transform" />
-              Briefing Room : Donner des instructions
-            </button>
+            <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto mt-2 md:mt-0">
+              <button
+                onClick={onOpenTestIA}
+                className="flex items-center justify-center gap-2.5 px-5 py-2.5 rounded-xl bg-vendeur-emerald text-vendeur-coal text-[10px] md:text-xs font-black uppercase tracking-widest hover:scale-105 transition-all shadow-lg shadow-vendeur-emerald/20 w-full sm:w-auto"
+              >
+                <Bot size={18} />
+                Tester mon Vendeur IA
+              </button>
+
+              <button
+                onClick={onOpenBriefing}
+                className="flex items-center justify-center gap-2.5 px-5 py-2.5 rounded-xl bg-vendeur-emerald/10 border border-vendeur-emerald/30 text-vendeur-emerald text-[10px] md:text-xs font-black uppercase tracking-widest hover:bg-vendeur-emerald/20 transition-all group/btn w-full sm:w-auto"
+              >
+                <MessageSquareQuote size={18} className="group-hover/btn:rotate-12 transition-transform" />
+                Briefing Room
+              </button>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

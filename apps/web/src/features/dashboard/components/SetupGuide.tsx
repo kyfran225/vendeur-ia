@@ -116,6 +116,19 @@ export function SetupGuide({ setupStatus, businessName, dashboard }: { setupStat
                 </Link>
               </div>
             )}
+
+            {/* Quick Test IA Button if WhatsApp is connected */}
+            {dashboard?.merchant?.whatsappConfig?.status === 'connected' && (
+              <div className="pt-1">
+                <Link
+                  to="/dashboard?test_ia=true"
+                  className="flex items-center justify-center gap-2.5 w-full h-12 px-6 rounded-2xl bg-white/10 border border-vendeur-emerald/40 text-vendeur-emerald font-black uppercase text-xs tracking-[0.1em] hover:bg-vendeur-emerald/20 transition-all"
+                >
+                  <Bot size={18} />
+                  <span>Tester mon Vendeur IA en Direct</span>
+                </Link>
+              </div>
+            )}
           </div>
 
           <div className="space-y-2">

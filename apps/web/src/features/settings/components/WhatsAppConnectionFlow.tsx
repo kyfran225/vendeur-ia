@@ -504,13 +504,22 @@ export function WhatsAppConnectionFlow({ qrCode, isConnectingSocket, onInitBaile
             </div>
           </div>
 
-          <button
-            onClick={() => setShowDisconnectConfirm(true)}
-            disabled={loading}
-            className="w-full md:w-auto h-12 px-6 rounded-2xl border border-red-500/20 bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white text-xs font-black uppercase tracking-wider transition-all disabled:opacity-50 shrink-0 flex items-center justify-center gap-2"
-          >
-            {loading ? <Loader2 className="animate-spin" size={16} /> : "Déconnecter WhatsApp"}
-          </button>
+          <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
+            <button
+              onClick={() => navigate("/dashboard?test_ia=true")}
+              className="w-full sm:w-auto h-12 px-6 rounded-2xl bg-vendeur-emerald hover:bg-vendeur-emerald/90 text-vendeur-coal font-black uppercase tracking-wider text-xs transition-all shadow-lg shadow-vendeur-emerald/20 shrink-0 flex items-center justify-center gap-2"
+            >
+              <Bot size={16} />
+              Tester mon Vendeur IA
+            </button>
+            <button
+              onClick={() => setShowDisconnectConfirm(true)}
+              disabled={loading}
+              className="w-full sm:w-auto h-12 px-6 rounded-2xl border border-red-500/20 bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white text-xs font-black uppercase tracking-wider transition-all disabled:opacity-50 shrink-0 flex items-center justify-center gap-2"
+            >
+              {loading ? <Loader2 className="animate-spin" size={16} /> : "Déconnecter"}
+            </button>
+          </div>
         </div>
       </>
     );

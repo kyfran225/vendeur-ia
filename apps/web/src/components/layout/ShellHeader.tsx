@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { useAuthStore } from "@/stores/authStore";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/apiClient";
@@ -14,6 +14,10 @@ function cn(...inputs: ClassValue[]) {
 }
 
 export function ShellHeader() {
+  const [searchParams] = useSearchParams();
+  const isProParam = searchParams.get("pro") === "true";
+  const isExpertParam = searchParams.get("expert") === "true";
+
   const [isPackProOpen, setIsPackProOpen] = useState(false);
   const { user, logout, accessToken } = useAuthStore();
   const queryClient = useQueryClient();
@@ -53,15 +57,32 @@ export function ShellHeader() {
   }, [socket, queryClient]);
 
   const merchant = dashboard?.merchant;
-  const isProPlan = merchant?.subscription?.plan === 'pro' || merchant?.whatsappConfig?.provider === 'meta';
+  const subscription = dashboard?.subscription;
+  const whatsapp = dashboard?.whatsappConnection;
+
+  // Détection absolue du Pack Pro / Formule Clé en Main / Expert
+  const isPackPro = 
+    isExpertParam || 
+    subscription?.plan === 'business' || 
+    subscription?.plan === 'pro' || 
+    subscription?.type === 'pack_pro' || 
+    whatsapp?.connectionType === 'expert' ||
+    merchant?.subscription?.plan === 'pro' ||
+    merchant?.subscription?.plan === 'business' ||
+    merchant?.whatsappConfig?.connectionType === 'expert';
+
+  const isProPlan = isProParam || merchant?.subscription?.plan === 'pro' || merchant?.whatsappConfig?.provider === 'meta';
   const isDisconnected = merchant?.whatsappConfig?.status === 'error' || merchant?.whatsappConfig?.status === 'disconnected';
+
+  // Ne JAMAIS afficher le bandeau si l'utilisateur est sous une formule Pro / Pack Pro Clé en Main
+  const showBanner = isDisconnected && !isPackPro;
 
   return (
     <header className="h-14 md:h-20 border-b border-white/5 bg-vendeur-bg/80 backdrop-blur-md flex items-center justify-between px-4 md:px-12 sticky top-0 z-40 w-full gap-4">
       <PackProModal isOpen={isPackProOpen} onClose={() => setIsPackProOpen(false)} />
 
       {/* Connection Status Banner */}
-      {isDisconnected && (
+      {showBanner && (
         <div className={cn(
           "absolute top-full left-0 right-0 py-2 px-4 flex items-center justify-center gap-3 animate-in slide-in-from-top duration-500 shadow-lg z-50",
           isProPlan ? "bg-vendeur-emerald text-vendeur-coal" : "bg-red-500 text-white"

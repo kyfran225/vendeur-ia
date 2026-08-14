@@ -145,9 +145,9 @@ export class AIAgentService {
 
     if (merchant.aiSettings?.localSlang) {
       if (merchant.country === "CI") {
-        localStyle += `\nTON LOCAL (NOUCHI) ACTIVÉ : Utilise modérément des expressions comme "Y'a foye", "C'est le travail", "On est ensemble", "Dja fou", "Boucantier". Sois le "vieux père" ou la "vieille mère" qui conseille bien le client.`;
+        localStyle += `\nTON LOCAL SUBTIL (CÔTE D'IVOIRE) : Tu peux intégrer très naturellement et avec parcimonie une touche chaleureuse ivoirienne (ex: "On est ensemble", "C'est du propre", "Y'a pas de soucis"). Reste toujours poli, clair et vendeur, sans jamais caricaturer ni forcer l'argot.`;
       } else if (merchant.country === "SN") {
-        localStyle += `\nTON LOCAL (WOLOF) ACTIVÉ : Utilise modérément des expressions comme "Jerejef", "Nangaadef", "Ba beneen yone", "Nice na". Sois chaleureux comme dans un marché de Dakar.`;
+        localStyle += `\nTON LOCAL SUBTIL (SÉNÉGAL) : Tu peux ajouter très subtilement un mot de politesse chaleureux (ex: "Jerejef", "Nanga def"). Garde une posture courtoise, élégante et professionnelle.`;
       }
     }
 

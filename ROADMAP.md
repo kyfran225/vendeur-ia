@@ -9,11 +9,11 @@ Ce document sert de plan directeur technique et de guide d'exécution pour tous 
 | Phase / Tâche | Statut | Responsable / Agent | Dernière Mise à jour |
 | :--- | :---: | :---: | :---: |
 | **Bugs Prioritaires (Endless Spinner)** | ✅ Résolu | Antigravity | 2026-08-02 |
-| **Phase 1 : Auth, Sécurité & Offline** | ⏳ À démarrer | - | - |
-| **Phase 2 : IA Vision & Audio** | ⏳ À démarrer | - | - |
-| **Phase 3 : Inbox Sync & Push** | ⏳ À démarrer | - | - |
-| **Phase 4 : Paiements & Reçus** | ⏳ À démarrer | - | - |
-| **Phase 5 : Captions & Nouchi/Wolof** | ⏳ À démarrer | - | - |
+| **Phase 1 : PWA, Sécurité & Offline** | ✅ Résolu | Antigravity | 2026-08-14 |
+| **Phase 2 : IA Vision (Photo-to-Product)** | ✅ Résolu | Antigravity | 2026-08-14 |
+| **Phase 3 : Inbox Sync & Push** | ✅ Résolu | Antigravity | 2026-08-14 |
+| **Phase 4 : Paiements & Reçus** | ✅ Résolu | Antigravity | 2026-08-14 |
+| **Phase 5 : Captions & Nouchi/Wolof** | ✅ Résolu | Antigravity | 2026-08-14 |
 
 > [!NOTE]
 > **Instructions pour les agents IA** : Mettez à jour le tableau ci-dessus et cochez les tâches au fur et à mesure de vos implémentations. Lancez toujours `pnpm build` pour valider votre code.

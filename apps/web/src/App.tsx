@@ -20,6 +20,7 @@ import { AppLayout } from "./components/layout/AppLayout";
 import { useAuthStore } from "./stores/authStore";
 import { useOnboardingStore } from "./stores/onboardingStore";
 import { ErrorBoundary } from "./components/ui/ErrorBoundary";
+import { WifiOff } from "./components/ui/WifiOff";
 import { subscribeToPush } from "./lib/pushUtils";
 import { Sparkles } from "lucide-react";
 
@@ -49,6 +50,7 @@ function App() {
     <ErrorBoundary>
       <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
         <BrowserRouter>
+          <WifiOff />
           <Routes>
             <Route path="/" element={<LandingPage />} />
 

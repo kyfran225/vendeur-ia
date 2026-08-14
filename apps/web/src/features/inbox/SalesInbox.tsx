@@ -617,7 +617,8 @@ function ChatListItem({ name, lastMsg, time, unread, active, platform, isOnline,
 
 function ChatBubble({ role, text, time, type, mediaUrl }: any) {
   const isCustomer = role === "customer";
-  const isPaymentDetected = text?.includes("[PREUVE DE PAIEMENT DÉTECTÉE]");
+  const isPaymentValidated = text?.includes("[PAIEMENT VALIDÉ AUTOMATIQUEMENT");
+  const isPaymentDetected = text?.includes("[PREUVE DE PAIEMENT DÉTECTÉE]") || text?.includes("[PREUVE DÉTECTÉE MAIS");
 
   return (
     <div className={cn("flex w-full animate-in slide-in-from-bottom-2 duration-300 min-w-0", isCustomer ? "justify-start" : "justify-end")}>
@@ -626,11 +627,18 @@ function ChatBubble({ role, text, time, type, mediaUrl }: any) {
         isCustomer
           ? "bg-[#202c33] border border-white/5 rounded-tl-none text-white"
           : "bg-[#005c4b] text-white rounded-tr-none font-medium",
+        isPaymentValidated && "ring-4 ring-emerald-500/50 border-emerald-500 bg-emerald-950/40 text-emerald-100",
         isPaymentDetected && "ring-4 ring-amber-500/50 border-amber-500 bg-amber-900/20"
       )}>
+        {isPaymentValidated && (
+          <div className="flex items-center gap-2 mb-2 px-2.5 py-1 bg-emerald-500 text-black rounded-lg text-[10px] font-black uppercase tracking-wider shadow-lg">
+            <CheckCheck size={14} /> Paiement Validé Automatiquement 💰
+          </div>
+        )}
+
         {isPaymentDetected && (
-          <div className="flex items-center gap-2 mb-2 px-2 py-1 bg-amber-500 text-black rounded-lg text-[10px] font-black uppercase">
-            <ShieldCheck size={12} /> Paiement à valider
+          <div className="flex items-center gap-2 mb-2 px-2.5 py-1 bg-amber-500 text-black rounded-lg text-[10px] font-black uppercase tracking-wider shadow-lg">
+            <ShieldCheck size={14} /> Preuve de Paiement à Vérifier
           </div>
         )}
 

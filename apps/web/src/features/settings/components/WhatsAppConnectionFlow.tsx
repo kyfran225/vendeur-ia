@@ -159,22 +159,23 @@ export function WhatsAppConnectionFlow({ qrCode, isConnectingSocket, onInitBaile
     const supportMessage = encodeURIComponent(`Bonjour ! J'ai souscrit au Pack Pro Vendeur IA (${merchant?.storeName || 'Ma boutique'}). Je souhaite planifier l'installation de mon Vendeur IA.`);
 
     return (
-      <div className="bg-vendeur-coal border border-vendeur-emerald/30 p-8 md:p-12 rounded-[2.5rem] text-center space-y-8 animate-in fade-in duration-500 shadow-2xl relative overflow-hidden">
-        <div className="h-20 w-20 bg-vendeur-emerald/10 border border-vendeur-emerald/30 rounded-[2rem] flex items-center justify-center text-vendeur-emerald mx-auto animate-bounce">
-          <Bot size={44} />
+      <div className="bg-vendeur-coal border border-vendeur-emerald/30 p-5 sm:p-8 md:p-12 rounded-[2rem] sm:rounded-[2.5rem] text-center space-y-6 sm:space-y-8 animate-in fade-in duration-500 shadow-2xl relative overflow-hidden">
+        <div className="h-16 w-16 sm:h-20 sm:w-20 bg-vendeur-emerald/10 border border-vendeur-emerald/30 rounded-2xl sm:rounded-[2rem] flex items-center justify-center text-vendeur-emerald mx-auto animate-bounce">
+          <Bot size={36} className="sm:hidden" />
+          <Bot size={44} className="hidden sm:block" />
         </div>
 
-        <div className="space-y-3 max-w-md mx-auto">
-          <div className="inline-block px-4 py-1.5 rounded-full bg-vendeur-emerald/10 border border-vendeur-emerald/20 text-vendeur-emerald text-[10px] font-black uppercase tracking-widest mb-2">
-            Pack Pro Clé en Main Active
+        <div className="space-y-2 sm:space-y-3 max-w-md mx-auto">
+          <div className="inline-block px-3 py-1 sm:px-4 sm:py-1.5 rounded-full bg-vendeur-emerald/10 border border-vendeur-emerald/20 text-vendeur-emerald text-[9px] sm:text-[10px] font-black uppercase tracking-widest mb-1 sm:mb-2">
+            Pack Pro Clé en Main Activé
           </div>
-          <h3 className="text-2xl md:text-3xl font-black uppercase tracking-tighter text-white">Votre IA est en cours de déploiement !</h3>
+          <h3 className="text-xl sm:text-2xl md:text-3xl font-black uppercase tracking-tighter text-white">Votre IA est en cours de déploiement !</h3>
           <p className="text-xs md:text-sm text-white/60 font-medium leading-relaxed">
             Vous avez choisi la formule **Clé en Main**. Notre équipe technique s'occupe de la configuration complète de votre Vendeur IA et de votre catalogue.
           </p>
         </div>
 
-        <div className="p-6 bg-white/5 border border-white/5 rounded-3xl space-y-4 max-w-md mx-auto text-left">
+        <div className="p-4 sm:p-6 bg-white/5 border border-white/5 rounded-2xl sm:rounded-3xl space-y-3 sm:space-y-4 max-w-md mx-auto text-left">
           <p className="text-[10px] font-black uppercase tracking-widest text-vendeur-emerald flex items-center gap-2">
             <Check size={14} /> Étapes prises en charge par l'expert :
           </p>
@@ -191,10 +192,10 @@ export function WhatsAppConnectionFlow({ qrCode, isConnectingSocket, onInitBaile
             href={`https://wa.me/${supportPhone.replace(/[^0-9]/g, '')}?text=${supportMessage}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="w-full h-16 bg-vendeur-emerald text-vendeur-coal rounded-2xl font-black uppercase tracking-widest text-xs flex items-center justify-center gap-3 hover:scale-[1.02] active:scale-95 transition-all shadow-xl shadow-vendeur-emerald/20"
+            className="w-full h-12 md:h-16 px-4 bg-vendeur-emerald text-vendeur-coal rounded-xl md:rounded-2xl font-black uppercase tracking-wider md:tracking-widest text-[11px] md:text-xs flex items-center justify-center gap-2 md:gap-3 hover:scale-[1.02] active:scale-95 transition-all shadow-xl shadow-vendeur-emerald/20"
           >
-            <MessageSquare size={20} />
-            Contacter mon Expert Dédié
+            <MessageSquare size={16} className="md:w-5 md:h-5 shrink-0" />
+            <span>Contacter mon Expert Dédié</span>
           </a>
           <p className="text-[9px] font-black uppercase tracking-widest text-white/30">
             Notre équipe vous recontacte également sous 2h ouvrées.

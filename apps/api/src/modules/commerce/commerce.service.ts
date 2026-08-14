@@ -450,7 +450,7 @@ Réponds UNIQUEMENT avec le JSON strict. Si 1 seul produit est présent, renvoie
     const merchant = await CommerceMerchantModel.findById(product.merchantId);
     if (!merchant) throw new Error("Marchand non trouvé");
 
-    const prompt = `Génère 3 options de légendes percutantes pour les réseaux sociaux (TikTok/Instagram) pour ce produit.
+    const prompt = `Génère 3 options de légendes équilibrées et efficaces pour les réseaux sociaux (TikTok/Instagram) pour ce produit.
 Produit : ${product.name}
 Prix : ${product.price} ${product.currency}
 Description : ${product.description || "Pas de description"}
@@ -458,12 +458,12 @@ Boutique : ${merchant.businessName}
 
 Format de réponse attendu (JSON uniquement) :
 {
-  "viral": "Accroche forte (Hook), ton dynamique, beaucoup d'emojis, hashtags tendances",
-  "professional": "Ton expert, focus sur la qualité et les bénéfices, élégant",
-  "urgent": "Focus sur le stock limité, promo flash, appel à l'action immédiat"
+  "viral": "Accroche claire et moderne, ton dynamique, mise en valeur naturelle avec quelques emojis pertinents",
+  "professional": "Ton expert, élégant, axé sur la qualité et la valeur du produit",
+  "urgent": "Mise en avant discrète de la disponibilité et invitation simple à réserver sur WhatsApp"
 }
 
-Le ton doit être adapté à une audience d'Afrique de l'Ouest (chaleureux et direct).`;
+Règle d'or : Reste élégant, chaleureux et professionnel. Évite l'excès d'emojis ou le style trop agressif.`;
 
     const response = await aiProvider.generateText({
       systemPrompt: "Tu es un expert en marketing digital et copywriting spécialisé dans la vente sur les réseaux sociaux.",

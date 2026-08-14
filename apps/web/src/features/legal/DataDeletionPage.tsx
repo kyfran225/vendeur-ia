@@ -100,7 +100,7 @@ export const DataDeletionPage: React.FC = () => {
               <div className="mt-3 text-xs bg-slate-950 p-3 rounded-lg border border-white/10 flex items-center gap-3 text-slate-300">
                 <Mail className="text-vendeur-emerald" size={18} />
                 <div>
-                  <strong>Email :</strong> <a href="mailto:privacy@maatfeed.com" className="text-vendeur-emerald hover:underline">privacy@maatfeed.com</a><br />
+                  <strong>Email :</strong> <a href="mailto:vendeuria@gmail.com" className="text-vendeur-emerald hover:underline">vendeuria@gmail.com</a><br />
                   <strong>Objet :</strong> Suppression des données Meta - vendeuria.maatfeed.com
                 </div>
               </div>
@@ -119,7 +119,7 @@ export const DataDeletionPage: React.FC = () => {
 
       {/* Footer */}
       <footer className="border-t border-white/10 py-6 text-center text-xs text-slate-500">
-        © 2026 Vendeur IA / Maatfeed. Tous droits réservés.
+        © 2026 Vendeur IA, Inc. Tous droits réservés.
       </footer>
     </div>
   );

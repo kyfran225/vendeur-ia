@@ -47,7 +47,7 @@ export const PrivacyPolicyPage: React.FC = () => {
               <p>
                 Le service <strong>Vendeur IA</strong> (accessible à l'adresse{" "}
                 <code className="text-vendeur-emerald bg-white/5 px-2 py-0.5 rounded">https://vendeuria.maatfeed.com</code>)
-                est édité par <strong>Maatfeed / Vendeur IA Inc.</strong> La présente Politique de Confidentialité a pour objet d'informer les utilisateurs, marchands et clients finaux sur la manière dont leurs données personnelles sont collectées, traitées et protégées dans le cadre de l'utilisation de notre plateforme d'automatisation des ventes par Intelligence Artificielle sur WhatsApp, Instagram et Facebook Messenger.
+                est édité par <strong>Vendeur IA, Inc.</strong> La présente Politique de Confidentialité a pour objet d'informer les utilisateurs, marchands et clients finaux sur la manière dont leurs données personnelles sont collectées, traitées et protégées dans le cadre de l'utilisation de notre plateforme d'automatisation des ventes par Intelligence Artificielle sur WhatsApp, Instagram et Facebook Messenger.
               </p>
             </section>
 
@@ -97,7 +97,7 @@ export const PrivacyPolicyPage: React.FC = () => {
                 <p className="font-semibold text-vendeur-emerald mb-1">Procédure de suppression :</p>
                 <p className="text-xs text-slate-300">
                   - Via l'interface de l'application : visitez la page dédiée de suppression des données à l'adresse <code className="text-white">https://vendeuria.maatfeed.com/data-deletion</code>.<br/>
-                  - Par e-mail : envoyez une demande à <a href="mailto:privacy@maatfeed.com" className="text-vendeur-emerald underline">privacy@maatfeed.com</a> avec l'objet "Demande de suppression de données Meta". Nous traiterons votre demande sous 48 heures ouvrées.
+                  - Par e-mail : envoyez une demande à <a href="mailto:vendeuria@gmail.com" className="text-vendeur-emerald underline">vendeuria@gmail.com</a> avec l'objet "Demande de suppression de données Meta". Nous traiterons votre demande sous 48 heures ouvrées.
                 </p>
               </div>
             </section>
@@ -123,9 +123,9 @@ export const PrivacyPolicyPage: React.FC = () => {
                 Pour toute question concernant cette politique de confidentialité ou l'exercice de vos droits, vous pouvez nous contacter :
               </p>
               <p className="mt-2 text-slate-300">
-                - <strong>Équipe :</strong> Vendeur IA & Maatfeed Tech<br />
+                - <strong>Équipe :</strong> Vendeur IA, Inc.<br />
                 - <strong>Site Web :</strong> <a href="https://vendeuria.maatfeed.com" className="text-vendeur-emerald hover:underline">https://vendeuria.maatfeed.com</a><br />
-                - <strong>E-mail :</strong> <a href="mailto:support@maatfeed.com" className="text-vendeur-emerald hover:underline">support@maatfeed.com</a>
+                - <strong>E-mail :</strong> <a href="mailto:vendeuria@gmail.com" className="text-vendeur-emerald hover:underline">vendeuria@gmail.com</a>
               </p>
             </section>
           </div>
@@ -134,7 +134,7 @@ export const PrivacyPolicyPage: React.FC = () => {
 
       {/* Footer */}
       <footer className="border-t border-white/10 py-6 text-center text-xs text-slate-500">
-        © 2026 Vendeur IA / Maatfeed. Tous droits réservés.
+        © 2026 Vendeur IA, Inc. Tous droits réservés.
       </footer>
     </div>
   );

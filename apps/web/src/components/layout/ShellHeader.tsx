@@ -76,17 +76,21 @@ export function ShellHeader() {
   const isProPlan = isProParam || merchant?.subscription?.plan === 'pro' || merchant?.whatsappConfig?.provider === 'meta';
   const isDisconnected = merchant?.whatsappConfig?.status === 'error' || merchant?.whatsappConfig?.status === 'disconnected';
 
-  // Ne pas afficher le bandeau si on est déjà sur la page de connexion / réglages
-  const isConnexionsPage = location.pathname.includes('/settings') || location.pathname.includes('/connexions');
+  // Détection des états de connexion
+  const isConnexionsPage = location.pathname.includes('/settings') || location.pathname.includes('/connexions') || location.pathname.includes('/plus');
 
-  // Ne JAMAIS afficher le bandeau si l'utilisateur est sous une formule Pro / Pack Pro Clé en Main ou s'il est déjà sur la page des connexions
-  const showBanner = isDisconnected && !isPackPro && !isConnexionsPage;
+  // Une déconnexion inopinée (qui nécessite l'alerte rouge) ne s'applique que si le marchand avait une session active qui est tombée en erreur ou explicitement déconnectée après avoir été active.
+  const isUnexpectedDisconnect = merchant?.whatsappConfig?.status === 'error' || 
+    (merchant?.whatsappConfig?.status === 'disconnected' && merchant?.whatsappConfig?.connectedAt);
+
+  // Ne JAMAIS afficher le bandeau si l'utilisateur est sur les réglages/connexions, si c'est un Pack Pro, ou s'il n'a encore jamais configuré son WhatsApp.
+  const showBanner = isUnexpectedDisconnect && !isPackPro && !isConnexionsPage;
 
   return (
     <header className="h-14 md:h-20 border-b border-white/5 bg-vendeur-bg/80 backdrop-blur-md flex items-center justify-between px-4 md:px-12 sticky top-0 z-40 w-full gap-4">
       <PackProModal isOpen={isPackProOpen} onClose={() => setIsPackProOpen(false)} />
 
-      {/* Connection Status Banner */}
+      {/* Connection Status Banner - uniquement en cas de déconnexion inopinée d'un WhatsApp précédemment relié */}
       {showBanner && (
         <div className={cn(
           "absolute top-full left-0 right-0 py-2 px-4 flex items-center justify-center gap-3 animate-in slide-in-from-top duration-500 shadow-lg z-50",
@@ -95,8 +99,8 @@ export function ShellHeader() {
           <AlertCircle size={14} className={isProPlan ? "text-vendeur-coal animate-pulse" : "text-white animate-pulse"} />
           <p className="text-[10px] font-black uppercase tracking-widest">
             {isProPlan 
-              ? "⚡ Votre Vendeur IA Pro est prêt ! Cliquez pour l'activer." 
-              : "Attention : Votre WhatsApp est déconnecté !"}
+              ? "⚡ Votre Vendeur IA Pro nécessite une ré-activation." 
+              : "Attention : Votre session WhatsApp a été interrompue !"}
           </p>
           <Link
             to="/settings?tab=connexions"

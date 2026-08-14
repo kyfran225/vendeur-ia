@@ -65,17 +65,19 @@ export class AIProvider {
 
   private getProviderKey(config: any, providerName: string): string | undefined {
     const provider = config?.providers?.find((p: any) => p.name === providerName && p.isActive);
-    if (provider?.apiKey) return provider.apiKey;
+    let key: string | undefined = provider?.apiKey;
 
-    // Fallback to env
-    switch (providerName) {
-      case 'gemini': return env.GEMINI_API_KEY;
-      case 'openai': return env.OPENAI_API_KEY;
-      case 'groq': return env.GROQ_API_KEY;
-      case 'openrouter': return env.OPENROUTER_API_KEY;
-      case 'elevenlabs': return env.ELEVENLABS_API_KEY;
-      default: return undefined;
+    if (!key) {
+      switch (providerName) {
+        case 'gemini': key = env.GEMINI_API_KEY; break;
+        case 'openai': key = env.OPENAI_API_KEY; break;
+        case 'groq': key = env.GROQ_API_KEY; break;
+        case 'openrouter': key = env.OPENROUTER_API_KEY; break;
+        case 'elevenlabs': key = env.ELEVENLABS_API_KEY; break;
+      }
     }
+
+    return key && typeof key === 'string' ? key.trim() : undefined;
   }
 
   private getModel(config: any, providerName: string, type: 'text' | 'vision' | 'audio'): string {

@@ -257,10 +257,18 @@ Réponds UNIQUEMENT avec le texte final du message.`;
   }
 );
 
+aiQueue.on('error', (err) => {
+  console.error('[AI Queue Error]', err.message);
+});
+
 aiWorker.on('completed', (job) => {
   console.log(`[AI Queue] Job ${job.id} completed successfully`);
 });
 
 aiWorker.on('failed', (job, err) => {
   console.error(`[AI Queue] Job ${job?.id} failed:`, err);
+});
+
+aiWorker.on('error', (err) => {
+  console.error('[AI Worker Error]', err.message);
 });

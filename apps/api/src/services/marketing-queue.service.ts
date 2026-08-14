@@ -110,3 +110,12 @@ export async function scheduleRecovery(conversationId: string, merchantId: strin
 
   logger.info(`[MarketingQueue] Scheduled recovery for ${conversationId} in ${delay/60000} minutes.`);
 }
+
+marketingQueue.on('error', (err) => {
+  logger.error('[Marketing Queue Error]', { message: err.message });
+});
+
+marketingWorker.on('error', (err) => {
+  logger.error('[Marketing Worker Error]', { message: err.message });
+});
+

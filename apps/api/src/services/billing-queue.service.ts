@@ -170,3 +170,12 @@ export const billingWorker = new Worker(
     }
   }
 );
+
+billingQueue.on('error', (err) => {
+  logger.error('[Billing Queue Error]', { message: err.message });
+});
+
+billingWorker.on('error', (err) => {
+  logger.error('[Billing Worker Error]', { message: err.message });
+});
+

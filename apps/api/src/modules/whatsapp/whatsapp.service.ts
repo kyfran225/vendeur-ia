@@ -588,7 +588,11 @@ class WhatsAppService {
       );
       console.log(`[Meta WhatsApp] Message sent to ${to} (Merchant: ${merchant.businessName})`);
     } catch (error: any) {
-      console.error("[Meta WhatsApp] Error sending message:", error.response?.data || error.message);
+      const errData = error.response?.data || {};
+      if (errData?.error?.code === 131030) {
+        console.warn(`[Meta WhatsApp Warning] Le numéro ${to} n'est pas dans la liste des destinataires autorisés du mode Sandbox Meta. Ajoutez-le sur developers.facebook.com ou passez l'app Meta en Production.`);
+      }
+      console.error("[Meta WhatsApp] Error sending message:", errData || error.message);
     }
   }
 

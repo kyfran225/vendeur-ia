@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useSearchParams, useLocation } from "react-router-dom";
 import { useAuthStore } from "@/stores/authStore";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/apiClient";
@@ -15,6 +15,7 @@ function cn(...inputs: ClassValue[]) {
 }
 
 export function ShellHeader() {
+  const location = useLocation();
   const [searchParams] = useSearchParams();
   const isProParam = searchParams.get("pro") === "true";
   const isExpertParam = searchParams.get("expert") === "true";
@@ -75,8 +76,11 @@ export function ShellHeader() {
   const isProPlan = isProParam || merchant?.subscription?.plan === 'pro' || merchant?.whatsappConfig?.provider === 'meta';
   const isDisconnected = merchant?.whatsappConfig?.status === 'error' || merchant?.whatsappConfig?.status === 'disconnected';
 
-  // Ne JAMAIS afficher le bandeau si l'utilisateur est sous une formule Pro / Pack Pro Clé en Main
-  const showBanner = isDisconnected && !isPackPro;
+  // Ne pas afficher le bandeau si on est déjà sur la page de connexion / réglages
+  const isConnexionsPage = location.pathname.includes('/settings') || location.pathname.includes('/connexions');
+
+  // Ne JAMAIS afficher le bandeau si l'utilisateur est sous une formule Pro / Pack Pro Clé en Main ou s'il est déjà sur la page des connexions
+  const showBanner = isDisconnected && !isPackPro && !isConnexionsPage;
 
   return (
     <header className="h-14 md:h-20 border-b border-white/5 bg-vendeur-bg/80 backdrop-blur-md flex items-center justify-between px-4 md:px-12 sticky top-0 z-40 w-full gap-4">

@@ -119,7 +119,11 @@ describe('WhatsAppService Multi-Tenant Config', () => {
 
       await whatsappService.handleMetaIncomingMessage(from, 'Hello', phoneId);
 
-      expect(CommerceMerchantModel.findOne).toHaveBeenCalledWith({ "whatsappConfig.meta.phoneNumberId": phoneId });
+      expect(CommerceMerchantModel.findOne).toHaveBeenCalledWith(expect.objectContaining({
+        $or: expect.arrayContaining([
+          { "whatsappConfig.meta.phoneNumberId": phoneId }
+        ])
+      }));
       expect(spy).toHaveBeenCalledWith('user-123', expect.anything());
     });
 

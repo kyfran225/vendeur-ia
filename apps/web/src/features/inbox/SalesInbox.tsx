@@ -619,6 +619,7 @@ function ChatBubble({ role, text, time, type, mediaUrl }: any) {
   const isCustomer = role === "customer";
   const isPaymentValidated = text?.includes("[PAIEMENT VALIDÉ AUTOMATIQUEMENT");
   const isPaymentDetected = text?.includes("[PREUVE DE PAIEMENT DÉTECTÉE]") || text?.includes("[PREUVE DÉTECTÉE MAIS");
+  const isVoiceMessage = type === "audio" || text?.includes("[Message Vocal]");
 
   return (
     <div className={cn("flex w-full animate-in slide-in-from-bottom-2 duration-300 min-w-0", isCustomer ? "justify-start" : "justify-end")}>
@@ -642,13 +643,22 @@ function ChatBubble({ role, text, time, type, mediaUrl }: any) {
           </div>
         )}
 
+        {isVoiceMessage && (
+          <div className="flex items-center gap-1.5 mb-1.5 px-2 py-0.5 bg-sky-500/10 border border-sky-500/20 text-sky-400 rounded-md text-[9px] font-black uppercase tracking-widest w-fit">
+            <span className="h-1.5 w-1.5 rounded-full bg-sky-400 animate-pulse" />
+            🎙️ Message Vocal • Transcrit par l'IA
+          </div>
+        )}
+
         {type === "audio" && mediaUrl ? (
           <div className="space-y-2">
             <audio src={mediaUrl} controls className="h-8 max-w-full brightness-90 contrast-125" />
             <p className="text-[10px] italic opacity-60 line-clamp-2 break-words">{text}</p>
           </div>
         ) : (
-          <p className="text-[14px] leading-relaxed whitespace-pre-wrap break-words overflow-wrap-anywhere">{text}</p>
+          <p className="text-[14px] leading-relaxed whitespace-pre-wrap break-words overflow-wrap-anywhere">
+            {isVoiceMessage ? text?.replace(/^\[Message Vocal\]:\s*/, "") : text}
+          </p>
         )}
 
         <div className="flex items-center justify-end gap-1 mt-1 opacity-50">

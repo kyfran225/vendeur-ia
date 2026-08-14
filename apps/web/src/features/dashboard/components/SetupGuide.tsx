@@ -104,7 +104,7 @@ export function SetupGuide({ setupStatus, businessName, dashboard }: { setupStat
                   </span>
                   
                   {/* Micro-Impact Badge */}
-                  <span className="bg-black/20 text-vendeur-coal px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-wider hidden sm:inline-block shrink-0">
+                  <span className="bg-black/20 text-vendeur-coal px-3 py-1 rounded-full text-[10px] md:text-xs font-black uppercase tracking-wider hidden sm:inline-block shrink-0">
                     {nextStep.id === 'whatsapp' ? 'Ventes 24h/24' :
                      nextStep.id === 'products' ? 'Catalogue prêt' :
                      nextStep.id === 'payments' ? 'Cash Direct' : 'Indispensable'}

@@ -46,7 +46,7 @@ export function BillingTab({ merchant }: { merchant: any }) {
     },
     onSuccess: () => {
       toast.success("Votre abonnement ne sera pas renouvelé.");
-      queryClient.invalidateQueries({ queryKey: ["merchant:profile"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
       setIsCancelConfirmOpen(false);
     },
     onError: (err: any) => {

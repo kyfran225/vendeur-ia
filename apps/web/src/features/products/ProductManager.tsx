@@ -5,6 +5,7 @@ import { CaptionModal } from "./components/CaptionModal";
 import { ConfirmationModal } from "../../components/ui/ConfirmationModal";
 import { useOnboardingStore } from "@/stores/onboardingStore";
 import { useAuthStore } from "@/stores/authStore";
+import { useMerchant } from "@/hooks/useMerchant";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { compressImage } from "@/lib/imageUtils";
 import axios from "axios";
@@ -151,18 +152,8 @@ export function ProductManager() {
     productName: ""
   });
 
-  // Real Backend Data Fetching
-  const { data: merchant } = useQuery({
-    queryKey: ["merchant-profile"],
-    queryFn: async () => {
-      const response = await axios.get(`${API_URL}/api/commerce/merchant/profile`, {
-        headers: { Authorization: `Bearer ${accessToken}` }
-      });
-      return response.data;
-    },
-    enabled: !!accessToken
-  });
-
+  // Merchant Data from Cache
+  const merchant = useMerchant();
   const activeCurrency = merchant?.currency || "XOF";
 
   const { data: products = [], isLoading } = useQuery<Product[]>({

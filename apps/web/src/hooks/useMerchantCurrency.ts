@@ -11,5 +11,5 @@ import { useQueryClient } from "@tanstack/react-query";
 export function useMerchantCurrency(): string {
   const queryClient = useQueryClient();
   const dashboard = queryClient.getQueryData<any>(["dashboard"]);
-  return dashboard?.merchant?.currency || "XOF";
+  return dashboard?.merchant?.billingCurrency || dashboard?.merchant?.currency || "XOF";
 }

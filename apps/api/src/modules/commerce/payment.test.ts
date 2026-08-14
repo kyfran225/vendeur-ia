@@ -122,7 +122,7 @@ describe('Payment & Gamification Audit Tests', () => {
       expect(response.status).toBe(200);
 
       const updatedMerchant = await CommerceMerchantModel.findOne({ ownerId: userId });
-      expect(updatedMerchant?.whatsappConfig?.status).toBe('connected');
+      expect(updatedMerchant?.subscription?.status).toBe('active');
 
       const transaction = await TransactionModel.findOne({ reference });
       expect(transaction).toBeDefined();

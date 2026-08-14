@@ -19,9 +19,9 @@ export function OffersPage() {
   const currency = useMerchantCurrency();
 
   const { data: offers, isLoading } = useQuery({
-    queryKey: ["offers"],
+    queryKey: ["offers", currency],
     queryFn: async () => {
-      const res = await apiClient.get("/api/commerce/offers");
+      const res = await apiClient.get(`/api/commerce/offers?currency=${currency}`);
       return res.data;
     }
   });
@@ -145,7 +145,7 @@ function OfferCard({ offer, currency, onSelect }: { offer: any, currency: string
       <div className="pt-12">
         <div className="flex items-baseline gap-2 mb-8">
           <span className="text-5xl font-black italic tracking-tighter text-white">{offer.monthlyPrice.toLocaleString()}</span>
-          <span className="text-xs font-black uppercase text-white/20 tracking-widest">{currency} / MOIS</span>
+          <span className="text-xs font-black uppercase text-white/20 tracking-widest">{offer.currency || currency} / MOIS</span>
         </div>
 
         <button

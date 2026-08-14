@@ -91,7 +91,7 @@ export function CheckoutPage() {
                 </div>
                 <div>
                   <h3 className="text-lg font-black uppercase tracking-tight">{offer.name}</h3>
-                  <p className="text-[10px] font-bold text-white/30 uppercase tracking-widest">{offer.monthlyPrice.toLocaleString()} {currency} / mois</p>
+                  <p className="text-[10px] font-bold text-white/30 uppercase tracking-widest">{offer.monthlyPrice.toLocaleString()} {offer.currency || currency} / mois</p>
                 </div>
               </div>
             </div>
@@ -113,7 +113,7 @@ export function CheckoutPage() {
                 <Sparkles className="text-vendeur-emerald" size={24} />
                 <div>
                   <h4 className="text-sm font-black uppercase tracking-tight text-vendeur-emerald">Installation Pro Expert</h4>
-                  <p className="text-[10px] font-bold text-vendeur-emerald/60 uppercase tracking-widest">Paiement unique de 25 000 {currency}</p>
+                  <p className="text-[10px] font-bold text-vendeur-emerald/60 uppercase tracking-widest">Paiement unique de 25 000 {offer.currency || currency}</p>
                 </div>
               </div>
             )}

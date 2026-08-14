@@ -395,24 +395,27 @@ class WhatsAppService {
     }
     // ----------------------------
 
+    const isAudioMsg = !text && (msg.message?.audioMessage || msg.message?.videoMessage);
+
     // Vocal Support: Handle Audio Messages
-    if (!text && (msg.message?.audioMessage || msg.message?.videoMessage)) {
+    if (isAudioMsg) {
       console.log("[WhatsApp] Audio/Video message received, attempting transcription...");
       try {
         const type = msg.message?.audioMessage ? 'audio' : 'video';
         const buffer = await whatsappMediaService.downloadBaileysMedia(msg, type);
         const merchantContext = merchant ? `Boutique: ${merchant.businessName}, Ville: ${merchant.city}` : "";
 
-        text = await aiProvider.transcribeAudio(
+        const transcription = await aiProvider.transcribeAudio(
           buffer,
           msg.message?.[`${type}Message`]?.mimetype || 'audio/ogg',
           merchantContext
         );
 
+        text = `[Message Vocal]: ${transcription}`;
         console.log(`[WhatsApp] Transcription result: ${text}`);
       } catch (err) {
         console.error("Error handling audio/video transcription:", err);
-        text = "[Message Vocal Reçu (Transcription échouée)]";
+        text = "[Message Vocal Reçu (Transcription indisponible)]";
       }
     }
 
@@ -501,6 +504,7 @@ class WhatsAppService {
     const customerMsg = await CommerceMessageModel.create({
       conversationId: conversation._id,
       sender: "customer",
+      type: isAudioMsg ? "audio" : imageMsg ? "image" : "text",
       content: text
     });
 

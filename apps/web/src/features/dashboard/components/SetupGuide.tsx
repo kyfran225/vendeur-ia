@@ -75,19 +75,17 @@ export function SetupGuide({ setupStatus, businessName, dashboard }: { setupStat
           <div className="bg-black/40 border border-white/5 rounded-3xl p-6 relative space-y-4">
             <div className="absolute -left-2 top-6 w-4 h-4 bg-black/40 border-l border-t border-white/5 rotate-45" />
             <p className="text-sm md:text-base text-white/80 leading-relaxed italic">
-              "Félicitations pour le lancement de{" "}
-              <span className="text-vendeur-emerald font-black not-italic">{businessName}</span> !{" "}
-              {nextStep?.id === 'whatsapp'
-                ? "Ton WhatsApp n'est pas encore relié ! Branche-le dès maintenant pour que je puisse commencer à répondre à tes clients 24h/24."
+              "{nextStep?.id === 'whatsapp'
+                ? `Bienvenue chez ${businessName} ! 🚀 Première étape essentielle : connectons ton numéro WhatsApp pour que je puisse enfin répondre à tes clients et vendre à ta place !`
                 : nextStep?.id === 'products'
                 ? (firstProduct
-                    ? `Je connais déjà ton produit "${firstProduct.name}". Ajoute d'autres produits ou vérifie tes prix pour lancer la machine.`
-                    : "Pour que je puisse vendre automatiquement tes articles, ajoute tes premiers produits et leurs prix.")
+                    ? `Super, l'identité de ${businessName} prend forme ! Je vois déjà "${firstProduct.name}". Complète ton catalogue pour que mes réponses soient ultra précises.`
+                    : `Génial, WhatsApp est relié ! 🛍️ Il ne me manque plus que tes articles et leurs prix pour commencer à négocier et vendre.`)
                 : nextStep?.id === 'payments'
-                ? "Ton catalogue est prêt ! Configure tes moyens de paiement (Mobile Money, Virement) pour encaisser directement."
+                ? `Ton catalogue est en place ! 💰 Configure tes moyens de paiement (Mobile Money, Virement) pour qu'on puisse encaisser automatiquement.`
                 : nextStep?.id === 'identity'
-                ? "Personnalise le nom et l'identité de ta boutique pour renforcer la confiance de tes clients."
-                : "Il nous manque encore quelques réglages pour être 100% opérationnel. On s'en occupe ?"
+                ? `Bienvenue ! Commençons par donner un nom et une identité percutante à ta boutique pour inspirer confiance à tes acheteurs.`
+                : `Bravo, nous y sommes presque ! Plus que quelques détails et ${businessName} tournera à 100% en automatique.`
               }"
             </p>
 

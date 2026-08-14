@@ -638,8 +638,19 @@ export function LandingPage() {
           onFormUpdate={(name) => setDynamicTitle(name)}
         />
         <PillarSection />
-        <footer className="py-16 text-center border-t border-white/5 opacity-40">
-           <p className="text-[9px] font-black uppercase tracking-[0.4em] text-white">Sécurisé par vendeurIa Passport SSO</p>
+        <footer className="py-12 border-t border-white/5 flex flex-col items-center justify-center gap-4 text-center">
+           <div className="flex flex-wrap items-center justify-center gap-6 text-xs text-white/50">
+             <Link to="/privacy" className="hover:text-vendeur-emerald transition-colors">
+               Politique de Confidentialité
+             </Link>
+             <span>•</span>
+             <Link to="/data-deletion" className="hover:text-vendeur-emerald transition-colors">
+               Suppression des Données Meta
+             </Link>
+           </div>
+           <p className="text-[9px] font-black uppercase tracking-[0.4em] text-white/30">
+             © 2026 Vendeur IA (vendeuria.maatfeed.com) — Propulsé par Maatfeed Tech
+           </p>
         </footer>
       </main>
 

@@ -16,6 +16,8 @@ import { SettingsPage } from "./features/settings/SettingsPage";
 import { AdminDashboard } from "./features/admin/AdminDashboard";
 import { PublicShopPage } from "./features/shop/PublicShopPage";
 import { PaymentCallback } from "./features/dashboard/PaymentCallback";
+import { PrivacyPolicyPage } from "./features/legal/PrivacyPolicyPage";
+import { DataDeletionPage } from "./features/legal/DataDeletionPage";
 import { AppLayout } from "./components/layout/AppLayout";
 import { useAuthStore } from "./stores/authStore";
 import { useOnboardingStore } from "./stores/onboardingStore";
@@ -82,6 +84,9 @@ function App() {
               <Route path="/marketing" element={<MarketingHub />} />
               <Route path="/settings" element={<SettingsPage />} />
             </Route>
+
+            <Route path="/privacy" element={<PrivacyPolicyPage />} />
+            <Route path="/data-deletion" element={<DataDeletionPage />} />
 
             <Route path="/shop/:merchantId" element={<PublicShopPage />} />
           </Routes>

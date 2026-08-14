@@ -154,68 +154,68 @@ export function VendeurIAPlaygroundModal({ isOpen, onClose, merchant }: VendeurI
           className="relative w-full max-w-2xl bg-vendeur-coal border border-vendeur-emerald/30 rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col h-[90vh] max-h-[750px]"
         >
           {/* Top Header */}
-          <div className="p-5 md:p-6 bg-vendeur-bg border-b border-white/10 flex items-center justify-between shrink-0">
-            <div className="flex items-center gap-3 md:gap-4">
-              <div className="h-12 w-12 rounded-2xl bg-vendeur-emerald flex items-center justify-center text-vendeur-coal shadow-lg shadow-vendeur-emerald/20">
-                <Bot size={26} />
+          <div className="p-4 sm:p-5 md:p-6 bg-vendeur-bg border-b border-white/10 flex items-center justify-between shrink-0 gap-3">
+            <div className="flex items-center gap-3 min-w-0 flex-1">
+              <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-xl sm:rounded-2xl bg-vendeur-emerald flex items-center justify-center text-vendeur-coal shadow-lg shadow-vendeur-emerald/20 shrink-0">
+                <Bot size={22} className="sm:w-6 sm:h-6" />
               </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <h3 className="text-lg md:text-xl font-black text-white uppercase tracking-tight">
-                    Banc d'Essai Vendeur IA
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h3 className="text-sm sm:text-base md:text-xl font-black text-white uppercase tracking-tight truncate">
+                    Banc d'Essai IA
                   </h3>
-                  <span className="flex items-center gap-1 bg-vendeur-emerald/10 border border-vendeur-emerald/30 text-vendeur-emerald text-[9px] font-black uppercase px-2.5 py-0.5 rounded-full">
+                  <span className="inline-flex items-center gap-1 bg-vendeur-emerald/10 border border-vendeur-emerald/30 text-vendeur-emerald text-[8px] sm:text-[9px] font-black uppercase px-2 py-0.5 rounded-full shrink-0">
                     <span className="h-1.5 w-1.5 rounded-full bg-vendeur-emerald animate-pulse" />
                     En Ligne
                   </span>
                 </div>
-                <p className="text-xs text-white/50 font-medium">
-                  {merchant?.businessName || merchant?.storeName || "Votre boutique"} • Mode Simulateur
+                <p className="text-[10px] sm:text-xs text-white/50 font-medium truncate">
+                  {merchant?.businessName || merchant?.storeName || "Votre boutique"} • Simulateur
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 shrink-0">
               <button
                 onClick={handleResetChat}
                 title="Réinitialiser le chat"
-                className="h-10 w-10 rounded-xl bg-white/5 hover:bg-white/10 text-white/60 hover:text-white flex items-center justify-center transition-all"
+                className="h-9 w-9 sm:h-10 sm:w-10 rounded-xl bg-white/5 hover:bg-white/10 text-white/60 hover:text-white flex items-center justify-center transition-all"
               >
-                <RefreshCw size={16} />
+                <RefreshCw size={15} />
               </button>
               <button
                 onClick={onClose}
-                className="h-10 w-10 rounded-xl bg-white/5 hover:bg-white/10 text-white/60 hover:text-white flex items-center justify-center transition-all"
+                className="h-9 w-9 sm:h-10 sm:w-10 rounded-xl bg-white/5 hover:bg-white/10 text-white/60 hover:text-white flex items-center justify-center transition-all"
               >
-                <X size={20} />
+                <X size={18} />
               </button>
             </div>
           </div>
 
           {/* Dual Action Strip (Real WA vs Simulator) */}
-          <div className="bg-vendeur-emerald/10 border-b border-vendeur-emerald/20 p-3 px-5 flex flex-wrap items-center justify-between gap-3 text-xs shrink-0">
-            <div className="flex items-center gap-2 text-vendeur-emerald font-bold">
+          <div className="bg-vendeur-emerald/10 border-b border-vendeur-emerald/20 p-2.5 px-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 text-xs shrink-0">
+            <div className="flex items-center gap-2 text-vendeur-emerald font-bold text-[11px] sm:text-xs">
               <Zap size={14} className="animate-pulse shrink-0" />
-              <span>Votre WhatsApp est connecté ! Testez-le sur cette fenêtre ou en réel :</span>
+              <span className="truncate">WhatsApp connecté ! Testez en réel :</span>
             </div>
             
             <div className="flex items-center gap-2 w-full sm:w-auto">
               <button
                 onClick={handleCopyWATestLink}
-                className="flex-1 sm:flex-initial h-8 px-3 rounded-lg bg-black/40 border border-white/10 hover:border-vendeur-emerald/40 text-white/80 text-[10px] font-black uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all"
+                className="flex-1 sm:flex-initial h-9 sm:h-8 px-3 rounded-lg bg-black/40 border border-white/10 hover:border-vendeur-emerald/40 text-white/90 text-[10px] font-black uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all truncate"
               >
-                {copied ? <Check size={12} className="text-vendeur-emerald" /> : <Copy size={12} />}
-                Copier lien WhatsApp
+                {copied ? <Check size={12} className="text-vendeur-emerald shrink-0" /> : <Copy size={12} className="shrink-0" />}
+                <span className="truncate">{copied ? "Copié !" : "Copier lien"}</span>
               </button>
               {whatsappNumber && (
                 <a
                   href={waTestLink}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex-1 sm:flex-initial h-8 px-3 rounded-lg bg-vendeur-emerald text-vendeur-coal text-[10px] font-black uppercase tracking-wider flex items-center justify-center gap-1.5 hover:scale-105 transition-all shadow-md"
+                  className="flex-1 sm:flex-initial h-9 sm:h-8 px-3 rounded-lg bg-vendeur-emerald text-vendeur-coal text-[10px] font-black uppercase tracking-wider flex items-center justify-center gap-1.5 hover:scale-105 transition-all shadow-md truncate"
                 >
-                  <MessageSquare size={12} />
-                  Ouvrir WhatsApp
+                  <MessageSquare size={12} className="shrink-0" />
+                  <span className="truncate">WhatsApp</span>
                 </a>
               )}
             </div>

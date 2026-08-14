@@ -35,7 +35,7 @@ export function ActivationPage() {
   const { user } = useAuthStore();
   const [qrCode, setQrCode] = useState<string | null>(null);
   const [autoInitializing, setAutoInitializing] = useState(false);
-  // "qr" | "pairing" — auto-detect mobile
+  // "qr" | "pairing" : auto-detect mobile
   const [mode, setMode] = useState<"qr" | "pairing">(() => isMobileDevice() ? "pairing" : "qr");
   const [pairingPhone, setPairingPhone] = useState("");
   const [pairingCode, setPairingCode] = useState<string | null>(null);
@@ -305,7 +305,7 @@ export function ActivationPage() {
                     )}
                   >
                     <Smartphone size={14} />
-                    Code — Même tél
+                    Code - Même tél
                   </button>
                 </div>
 
@@ -444,7 +444,7 @@ export function ActivationPage() {
                 <p className="text-[9px] font-black uppercase tracking-widest text-vendeur-emerald">Sur mobile ?</p>
               </div>
               <p className="text-[9px] font-bold text-white/40 leading-relaxed">
-                Si vous avez payé sur ce téléphone, utilisez le <strong className="text-white/60">Code d'appairage</strong> — pas besoin d'un 2ème appareil pour scanner.
+                Si vous avez payé sur ce téléphone, utilisez le <strong className="text-white/60">Code d'appairage</strong> - pas besoin d'un 2ème appareil pour scanner.
               </p>
             </div>
           </div>

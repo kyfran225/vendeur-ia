@@ -66,7 +66,7 @@ export function OffersPage() {
               Besoin que nous installions tout pour vous ?
             </h3>
             <p className="text-white/40 font-bold uppercase tracking-widest text-[10px]">
-              Installation Pro Expert — 25 000 {currency}, une seule fois.
+              Installation Pro Expert, 25 000 {currency}, une seule fois.
             </p>
             <div className="flex flex-wrap justify-center md:justify-start gap-4 pt-2">
               <span className="text-[9px] font-black uppercase text-vendeur-emerald/60">✓ Configuration WhatsApp</span>

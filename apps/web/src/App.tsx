@@ -18,6 +18,7 @@ import { PublicShopPage } from "./features/shop/PublicShopPage";
 import { PaymentCallback } from "./features/dashboard/PaymentCallback";
 import { PrivacyPolicyPage } from "./features/legal/PrivacyPolicyPage";
 import { DataDeletionPage } from "./features/legal/DataDeletionPage";
+import { TermsOfServicePage } from "./features/legal/TermsOfServicePage";
 import { AppLayout } from "./components/layout/AppLayout";
 import { useAuthStore } from "./stores/authStore";
 import { useOnboardingStore } from "./stores/onboardingStore";
@@ -87,6 +88,7 @@ function App() {
 
             <Route path="/privacy" element={<PrivacyPolicyPage />} />
             <Route path="/data-deletion" element={<DataDeletionPage />} />
+            <Route path="/terms" element={<TermsOfServicePage />} />
 
             <Route path="/shop/:merchantId" element={<PublicShopPage />} />
           </Routes>

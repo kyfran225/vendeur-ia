@@ -638,18 +638,22 @@ export function LandingPage() {
           onFormUpdate={(name) => setDynamicTitle(name)}
         />
         <PillarSection />
-        <footer className="py-12 border-t border-white/5 flex flex-col items-center justify-center gap-4 text-center">
-           <div className="flex flex-wrap items-center justify-center gap-6 text-xs text-white/50">
-             <Link to="/privacy" className="hover:text-vendeur-emerald transition-colors">
+        <footer className="py-10 md:py-14 border-t border-white/5 flex flex-col items-center justify-center gap-4 text-center px-4">
+           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-6 text-xs text-white/50 font-medium">
+             <Link to="/privacy" className="hover:text-vendeur-emerald transition-colors py-1">
                Politique de Confidentialité
              </Link>
-             <span>•</span>
-             <Link to="/data-deletion" className="hover:text-vendeur-emerald transition-colors">
+             <span className="hidden sm:inline text-white/20">•</span>
+             <Link to="/terms" className="hover:text-vendeur-emerald transition-colors py-1">
+               Conditions de Service
+             </Link>
+             <span className="hidden sm:inline text-white/20">•</span>
+             <Link to="/data-deletion" className="hover:text-vendeur-emerald transition-colors py-1">
                Suppression des Données Meta
              </Link>
            </div>
-           <p className="text-[9px] font-black uppercase tracking-[0.4em] text-white/30">
-             © 2026 Vendeur IA (vendeuria.maatfeed.com) — Propulsé par Maatfeed Tech
+           <p className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] md:tracking-[0.4em] text-white/30 leading-relaxed max-w-md">
+             © 2026 Vendeur IA, Inc. Tous droits réservés.
            </p>
         </footer>
       </main>

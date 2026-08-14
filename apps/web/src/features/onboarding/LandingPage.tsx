@@ -579,6 +579,8 @@ function LandingHero({
   );
 }
 
+import { MetaHead } from "@/components/seo/MetaHead";
+
 export function LandingPage() {
   const navigate = useNavigate();
   const [dynamicTitle, setDynamicTitle] = useState("Vendeur IA");
@@ -597,6 +599,21 @@ export function LandingPage() {
 
   return (
     <div className="min-h-screen bg-[#07100d] selection:bg-emerald-300/30 overflow-x-hidden text-left pt-14 md:pt-20 w-full">
+      <MetaHead
+        title="Vendeur IA | Commercial Virtuel WhatsApp & Automation de Vente 24/7"
+        description="Vendeur IA (Vendeur IA Inc / VendeurIA) est le 1er agent commercial IA autonome sur WhatsApp. Automatisez vos ventes, intégrez WhatsApp Business API et relancez vos clients 24/7."
+        keywords={[
+          'vendeur IA',
+          'Vendeur IA Inc',
+          'vendeuria',
+          'vendeur IA whatsapp',
+          'vente automatique whatsapp',
+          'whatsapp business api',
+          'bot vendeur whatsapp',
+          'ia pour whatsapp',
+          'relance automatique whatsapp'
+        ]}
+      />
       <header className="fixed top-0 left-0 right-0 z-50 border-b border-white/5 bg-[#07100d]/80 backdrop-blur-md w-full h-14 md:h-20">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 h-full gap-4">
           <div className="flex items-center gap-3 md:gap-5 flex-1 min-w-0">

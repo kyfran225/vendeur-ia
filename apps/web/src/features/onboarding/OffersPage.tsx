@@ -11,6 +11,9 @@ function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+import { MetaHead } from "@/components/seo/MetaHead";
+import { SITE_CONFIG } from "@/lib/seoConfig";
+
 export function OffersPage() {
   const navigate = useNavigate();
   const currency = useMerchantCurrency();
@@ -31,6 +34,12 @@ export function OffersPage() {
 
   return (
     <div className="min-h-screen bg-black text-white p-6 md:p-12 animate-in fade-in duration-700">
+      <MetaHead
+        title="Offres & Tarifs | Vendeur IA WhatsApp Commercial"
+        description="Découvrez nos formules Vendeur IA pour automatiser vos ventes sur WhatsApp Business. Tarifs transparents, sans engagement avec période d'essai."
+        keywords={['tarifs vendeur ia', 'prix vendeur ia whatsapp', 'offre commerciale ia', 'abonnement vendeuria']}
+        canonicalUrl={`${SITE_CONFIG.baseUrl}/offers`}
+      />
       <div className="max-w-6xl mx-auto space-y-12">
         <button
           onClick={() => navigate("/dashboard")}

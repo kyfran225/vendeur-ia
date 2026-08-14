@@ -1,0 +1,23 @@
+# User-agent pour tous les robots d'indexation
+User-agent: *
+Allow: /
+Allow: /offers
+Allow: /privacy
+Allow: /terms
+Allow: /shop/
+
+# Protection des données privées & pages de tableau de bord
+Disallow: /dashboard
+Disallow: /admin
+Disallow: /inbox
+Disallow: /products
+Disallow: /orders
+Disallow: /marketing
+Disallow: /settings
+Disallow: /onboarding
+Disallow: /checkout
+Disallow: /activation
+Disallow: /payment/
+
+# Emplacement exact du sitemap XML
+Sitemap: https://vendeuria.maatfeed.com/sitemap.xml

@@ -5,6 +5,7 @@ import { messagingService } from "../../services/messaging.service.js";
 import { paystackService } from "../../services/paystack.service.js";
 import { env } from "../../config/env.js";
 import { authenticate } from "../../middleware/authenticate.js";
+import jwt from "jsonwebtoken";
 import { aiLimiter } from "../../middleware/rate-limiter.js";
 import { logger } from "../../services/logger.service.js";
 import { validate } from "../../middleware/validate.js";
@@ -269,11 +270,69 @@ router.post("/conversations/:id/messages", authenticate, async (req, res) => {
   }
 });
 
-// GET ALL OFFERS
+// Currency rate table relative to XOF (1 XOF = rate)
+const CURRENCY_CONVERSION_RATES: Record<string, { rate: number; symbol: string; round: number }> = {
+  XOF: { rate: 1, symbol: "FCFA", round: 500 },
+  XAF: { rate: 1, symbol: "FCFA", round: 500 },
+  GNF: { rate: 14, symbol: "GNF", round: 5000 },
+  NGN: { rate: 2.5, symbol: "₦", round: 100 },
+  GHS: { rate: 0.025, symbol: "GH₵", round: 5 },
+  KES: { rate: 0.22, symbol: "KSh", round: 50 },
+  MAD: { rate: 0.016, symbol: "DH", round: 10 },
+  DZD: { rate: 0.22, symbol: "DZD", round: 50 },
+  TND: { rate: 0.005, symbol: "TND", round: 1 },
+  CDF: { rate: 4.6, symbol: "FC", round: 500 },
+  MRU: { rate: 0.065, symbol: "MRU", round: 10 },
+  EUR: { rate: 0.00152, symbol: "€", round: 1 },
+  USD: { rate: 0.00165, symbol: "$", round: 1 },
+  ZAR: { rate: 0.03, symbol: "R", round: 5 }
+};
+
+// GET ALL OFFERS (Converts prices dynamically based on merchant billing currency)
 router.get("/offers", async (req, res) => {
   try {
+    let currency = (req.query.currency as string) || "XOF";
+
+    // If user is authenticated, use their actual merchant billing currency
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith("Bearer ")) {
+      try {
+        const token = authHeader.split(" ")[1];
+        const decoded: any = jwt.verify(token, env.JWT_SECRET);
+        if (decoded?.id) {
+          const merchant = await CommerceMerchantModel.findOne({ ownerId: decoded.id });
+          if (merchant) {
+            currency = merchant.billingCurrency || merchant.currency || "XOF";
+          }
+        }
+      } catch (e) {
+        // Fallback to query param or XOF if token is invalid
+      }
+    }
+
     const offers = await OfferModel.find({ isActive: true }).sort({ sortOrder: 1 });
-    res.json(offers);
+    const conv = CURRENCY_CONVERSION_RATES[currency.toUpperCase()] || CURRENCY_CONVERSION_RATES.XOF;
+
+    const formattedOffers = offers.map(offer => {
+      const obj = offer.toObject();
+      if (currency !== "XOF") {
+        // Convert monthly price
+        const rawPrice = obj.monthlyPrice * conv.rate;
+        obj.monthlyPrice = Math.ceil(rawPrice / conv.round) * conv.round;
+        obj.currency = currency;
+
+        // Convert setup options
+        if (obj.setupOptions) {
+          obj.setupOptions = obj.setupOptions.map(opt => ({
+            ...opt,
+            price: opt.price > 0 ? Math.ceil((opt.price * conv.rate) / conv.round) * conv.round : 0
+          }));
+        }
+      }
+      return obj;
+    });
+
+    res.json(formattedOffers);
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }

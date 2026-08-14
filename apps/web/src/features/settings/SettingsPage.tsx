@@ -367,6 +367,7 @@ function BoutiqueTab({ merchant, initialKnowledge, accessToken }: { merchant: an
       toast.success("Réglages Boutique enregistrés ! ✨");
       queryClient.invalidateQueries({ queryKey: ["dashboard"] });
       queryClient.invalidateQueries({ queryKey: ["knowledge"] });
+      queryClient.invalidateQueries({ queryKey: ["offers"] });
     }
   });
 
@@ -381,14 +382,6 @@ function BoutiqueTab({ merchant, initialKnowledge, accessToken }: { merchant: an
             </h2>
             <p className="text-[10px] md:text-xs text-white/40 font-medium">L'IA utilise ces infos pour présenter votre business.</p>
           </div>
-          <button
-            onClick={() => updateMutation.mutate()}
-            disabled={updateMutation.isPending}
-            className="flex h-12 w-full sm:w-auto items-center justify-center gap-2 rounded-2xl bg-vendeur-emerald px-6 text-[10px] font-black uppercase text-vendeur-coal shadow-lg hover:scale-105 active:scale-95 transition-all disabled:opacity-50 whitespace-nowrap"
-          >
-            {updateMutation.isPending ? <Loader2 className="animate-spin" size={16} /> : <Save size={16} />}
-            Enregistrer
-          </button>
         </div>
 
         <div className="grid gap-6 md:grid-cols-2">
@@ -480,7 +473,6 @@ function BoutiqueTab({ merchant, initialKnowledge, accessToken }: { merchant: an
                  if (countryCode) {
                    const country = getProvidersForCountry(countryCode); // This is just to check if country exists in our core
                    updates.country = countryCode;
-                   // Logic to update currency could go here if we want to be aggressive
                  }
 
                  setLocalMerchant({ ...localMerchant, ...updates });
@@ -497,6 +489,22 @@ function BoutiqueTab({ merchant, initialKnowledge, accessToken }: { merchant: an
              />
           </div>
         </div>
+
+        {/* Dynamic Save Button - Displayed only when data has been modified */}
+        {JSON.stringify(localMerchant) !== JSON.stringify(merchant) ||
+         JSON.stringify(payments) !== JSON.stringify(initialKnowledge?.businessRules?.paymentMethods || []) ||
+         JSON.stringify(deliveryFees) !== JSON.stringify(initialKnowledge?.businessRules?.deliveryFees || []) ? (
+          <div className="pt-4 flex justify-end animate-in fade-in slide-in-from-bottom-2 duration-300">
+            <button
+              onClick={() => updateMutation.mutate()}
+              disabled={updateMutation.isPending}
+              className="flex h-14 w-full sm:w-auto items-center justify-center gap-3 rounded-2xl bg-vendeur-emerald px-8 text-xs font-black uppercase text-vendeur-coal shadow-xl shadow-vendeur-emerald/20 hover:scale-105 active:scale-95 transition-all disabled:opacity-50 whitespace-nowrap"
+            >
+              {updateMutation.isPending ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />}
+              Enregistrer les modifications
+            </button>
+          </div>
+        ) : null}
       </section>
 
       {/* Grille de Livraison */}

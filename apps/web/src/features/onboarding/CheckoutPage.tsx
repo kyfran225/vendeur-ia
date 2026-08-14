@@ -35,9 +35,9 @@ export function CheckoutPage() {
   const setupOption = searchParams.get("setup") || null;
 
   const { data: offers } = useQuery({
-    queryKey: ["offers"],
+    queryKey: ["offers", currency],
     queryFn: async () => {
-      const res = await apiClient.get("/api/commerce/offers");
+      const res = await apiClient.get(`/api/commerce/offers?currency=${currency}`);
       return res.data;
     }
   });
@@ -127,12 +127,12 @@ export function CheckoutPage() {
               <div className="space-y-4">
                 <div className="flex justify-between text-[11px] font-bold uppercase text-white/40">
                   <span>Abonnement</span>
-                  <span className="text-white">{offer.monthlyPrice.toLocaleString()} {currency}</span>
+                  <span className="text-white">{offer.monthlyPrice.toLocaleString()} {offer.currency || currency}</span>
                 </div>
                 {setupFee > 0 && (
                    <div className="flex justify-between text-[11px] font-bold uppercase text-white/40">
                     <span>Installation Expert</span>
-                    <span className="text-white">{setupFee.toLocaleString()} {currency}</span>
+                    <span className="text-white">{setupFee.toLocaleString()} {offer.currency || currency}</span>
                   </div>
                 )}
                 <div className="pt-4 border-t border-white/5 flex flex-col items-start gap-1">
@@ -142,7 +142,7 @@ export function CheckoutPage() {
                       {totalToday.toLocaleString()}
                     </span>
                     <span className="text-base font-black italic text-vendeur-emerald/60 tracking-tight uppercase">
-                      {currency}
+                      {offer.currency || currency}
                     </span>
                   </div>
                 </div>

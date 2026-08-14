@@ -315,16 +315,17 @@ export class CommerceService {
   async validatePaymentProof(imageBuffer: Buffer, mimeType: string) {
     if (!env.GEMINI_API_KEY) throw new Error("GEMINI_API_KEY not configured");
 
-    const prompt = `Analyse cette capture d'écran de paiement Mobile Money (Wave, Orange Money, MTN, etc.) et extrait les informations suivantes au format JSON :
+    const prompt = `Analyse cette capture d'écran de paiement Mobile Money ou de transfert bancaire d'Afrique (Wave, Orange Money, MTN MoMo, Moov Money, Airtel Money, Telecel Cash, Djamo, KPay, Paystack, M-Pesa, Flutterwave, Wari, etc.).
+Extrait les informations exactes au format JSON strict :
 {
   "isPaymentProof": true/false,
   "amount": number,
-  "transactionId": "string",
-  "platform": "Wave" | "Orange Money" | "MTN" | "Autre",
+  "transactionId": "string (numéro de référence / ID de la transaction)",
+  "platform": "Wave" | "Orange Money" | "MTN MoMo" | "Moov Money" | "Airtel Money" | "Telecel Cash" | "Djamo" | "KPay" | "Virement Bancaire" | "Autre",
   "status": "success" | "pending" | "failed",
   "date": "string"
 }
-Réponds UNIQUEMENT avec le JSON. Si ce n'est pas une preuve de paiement, mets isPaymentProof à false.`;
+Réponds UNIQUEMENT avec le JSON. Si ce n'est pas une preuve de paiement valide ou lisible, mets isPaymentProof à false.`;
 
     try {
       const response = await axios.post(`https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_DEFAULT_VISION_MODEL}:generateContent?key=${env.GEMINI_API_KEY}`, {
@@ -923,24 +924,55 @@ Résumé actuel :`;
     const offer = await OfferModel.findOne({ slug: offerSlug });
     if (!offer) throw new Error("Offre non trouvée");
 
-    let amount = offer.monthlyPrice;
+    const merchant = await CommerceMerchantModel.findOne({ ownerId: userId });
+    const currency = merchant?.billingCurrency || merchant?.currency || "XOF";
+    const country = merchant?.country || "CI";
 
-    // Add setup fee if selected
+    // Dynamic currency conversion table (1 XOF = rate)
+    const rates: Record<string, { rate: number; round: number }> = {
+      XOF: { rate: 1, round: 500 },
+      XAF: { rate: 1, round: 500 },
+      GNF: { rate: 14, round: 5000 },
+      NGN: { rate: 2.5, round: 100 },
+      GHS: { rate: 0.025, round: 5 },
+      KES: { rate: 0.22, round: 50 },
+      MAD: { rate: 0.016, round: 10 },
+      DZD: { rate: 0.22, round: 50 },
+      TND: { rate: 0.005, round: 1 },
+      CDF: { rate: 4.6, round: 500 },
+      MRU: { rate: 0.065, round: 10 },
+      EUR: { rate: 0.00152, round: 1 },
+      USD: { rate: 0.00165, round: 1 },
+      ZAR: { rate: 0.03, round: 5 }
+    };
+
+    let baseAmount = offer.monthlyPrice;
     if (setupOption) {
       const option = offer.setupOptions.find(o => o.type === setupOption);
       if (option) {
-        amount += option.price;
+        baseAmount += option.price;
       }
+    }
+
+    // Convert amount if currency is not XOF
+    let finalAmount = baseAmount;
+    const conv = rates[currency.toUpperCase()];
+    if (conv && currency !== "XOF") {
+      finalAmount = Math.ceil((baseAmount * conv.rate) / conv.round) * conv.round;
     }
 
     const metadata = {
       userId,
+      merchantId: merchant?._id,
       offerSlug: offer.slug,
       setupOption,
+      currency,
+      country,
+      baseAmount,
       type: "SUBSCRIPTION_INITIAL"
     };
 
-    return paystackService.initializeSubscription(email, amount, metadata);
+    return paystackService.initializeSubscription(email, finalAmount, metadata);
   }
 
   async updateWhatsAppStatus(userId: string, status: string, details?: any) {

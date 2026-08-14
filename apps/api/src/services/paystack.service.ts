@@ -25,12 +25,24 @@ export class PaystackService {
   }
 
   async initializeSubscription(email: string, amount: number, metadata?: any) {
-    const currency = metadata?.currency || "XOF";
+    const currency = (metadata?.currency || "XOF").toUpperCase();
+
+    // Map channels strictly based on Paystack's official capability per currency
+    let channels: string[] = ["card", "mobile_money"];
+    if (currency === "NGN") {
+      channels = ["card", "bank_transfer", "ussd", "bank"];
+    } else if (currency === "KES") {
+      channels = ["mobile_money", "card"];
+    } else if (currency === "ZAR") {
+      channels = ["card", "eft"];
+    } else if (currency === "USD" || currency === "EUR" || currency === "GBP") {
+      channels = ["card"];
+    }
+
     const payload: any = {
       email,
-      amount: amount * 100, // Paystack works in kobo/cents
+      amount: amount * 100, // Paystack works in smallest subunit (kobo/cents/francs)
       currency: currency,
-      channels: ["card", "mobile_money"],
       callback_url: `${env.CLIENT_URL}/payment/callback`,
       metadata: metadata || {
         type: "subscription",
@@ -51,6 +63,21 @@ export class PaystackService {
     } catch (error: any) {
       const msg = error.response?.data?.message || error.message;
       console.error(`[Paystack] Initialization failed for ${email}:`, msg);
+
+      // Fallback: If merchant Paystack integration does not support the requested currency or payment channels (e.g. USD card settlement not enabled on account), fallback to XOF with original base amount
+      const lowerMsg = (msg || "").toLowerCase();
+      if ((lowerMsg.includes("currency not supported") || lowerMsg.includes("no active channel")) && currency !== "XOF") {
+        console.warn(`[Paystack] Currency ${currency} or channels not supported on current account integration (${msg}). Falling back to XOF...`);
+        const fallbackAmount = metadata?.baseAmount || amount;
+        const fallbackPayload = {
+          ...payload,
+          currency: "XOF",
+          amount: fallbackAmount * 100
+        };
+        const response = await axios.post(`${PAYSTACK_URL}/transaction/initialize`, fallbackPayload, { headers: this.headers });
+        return response.data.data;
+      }
+
       throw new Error(`Erreur Paystack: ${msg}`);
     }
   }

@@ -33,11 +33,11 @@ export function SetupGuide({ setupStatus, businessName, dashboard }: { setupStat
 
   const getActionLink = (id: string) => {
     switch (id) {
-      case 'identity': return "/settings?tab=boutique";
-      case 'whatsapp': return "/settings?tab=connexions";
+      case 'identity': return "/settings?tab=boutique#identity";
+      case 'whatsapp': return "/settings?tab=connexions#whatsapp";
       case 'products': return "/products";
-      case 'payments': return "/settings?tab=boutique";
-      case 'delivery': return "/settings?tab=boutique";
+      case 'payments': return "/settings?tab=boutique#payments";
+      case 'delivery': return "/settings?tab=boutique#delivery";
       default: return "/";
     }
   };

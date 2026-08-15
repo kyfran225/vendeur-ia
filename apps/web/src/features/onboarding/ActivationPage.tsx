@@ -168,8 +168,8 @@ export function ActivationPage() {
     const setupSteps = dashboard?.setupStatus?.steps || [];
     const nextStep = setupSteps.find((s: any) => !s.completed);
     const nextStepPath = nextStep?.id === 'products' ? '/products' :
-                         nextStep?.id === 'payments' ? '/settings?tab=boutique' :
-                         nextStep?.id === 'identity' ? '/settings?tab=boutique' : '/products';
+                         nextStep?.id === 'payments' ? '/settings?tab=boutique#payments' :
+                         nextStep?.id === 'identity' ? '/settings?tab=boutique#identity' : '/products';
     const nextStepLabel = nextStep?.id === 'products' ? 'Ajouter mes produits' :
                           nextStep?.id === 'payments' ? 'Configurer mes paiements' : 'Étape suivante : Ajouter mes produits';
 

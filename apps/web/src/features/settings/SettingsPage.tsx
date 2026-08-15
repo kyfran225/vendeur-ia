@@ -125,6 +125,25 @@ export function SettingsPage() {
     }
   }, [activeTab]);
 
+  useEffect(() => {
+    const hashTarget = window.location.hash.replace("#", "");
+    const sectionTarget = searchParams.get("section") || hashTarget;
+
+    if (sectionTarget) {
+      const timer = setTimeout(() => {
+        const el = document.getElementById(sectionTarget);
+        if (el) {
+          el.scrollIntoView({ behavior: "smooth", block: "center" });
+          el.classList.add("ring-4", "ring-vendeur-emerald/50", "transition-all", "duration-500");
+          setTimeout(() => {
+            el.classList.remove("ring-4", "ring-vendeur-emerald/50");
+          }, 3000);
+        }
+      }, 350);
+      return () => clearTimeout(timer);
+    }
+  }, [activeTab, searchParams]);
+
   const { data: dashboard, isLoading: isDashboardLoading } = useQuery({
     queryKey: ["dashboard"],
     queryFn: async () => {
@@ -405,7 +424,7 @@ function BoutiqueTab({ merchant, initialKnowledge, accessToken }: { merchant: an
 
   return (
     <div className="space-y-8 animate-in slide-in-from-bottom-2 duration-500">
-      <section className="bg-vendeur-coal/50 backdrop-blur-md border border-white/10 p-6 md:p-10 rounded-[2.5rem] md:rounded-[3.5rem] space-y-8 shadow-2xl overflow-hidden">
+      <section id="identity" className="bg-vendeur-coal/50 backdrop-blur-md border border-white/10 p-6 md:p-10 rounded-[2.5rem] md:rounded-[3.5rem] space-y-8 shadow-2xl overflow-hidden">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="space-y-1">
             <h2 className="text-xl md:text-2xl font-black text-white flex items-center gap-3">
@@ -525,7 +544,7 @@ function BoutiqueTab({ merchant, initialKnowledge, accessToken }: { merchant: an
       </section>
 
       {/* Grille de Livraison */}
-      <section className="bg-vendeur-coal border border-white/10 p-4 md:p-8 rounded-[2.5rem] md:rounded-[3.5rem] space-y-8 shadow-2xl overflow-hidden">
+      <section id="delivery" className="bg-vendeur-coal border border-white/10 p-4 md:p-8 rounded-[2.5rem] md:rounded-[3.5rem] space-y-8 shadow-2xl overflow-hidden">
         <div className="flex items-center gap-3 md:gap-4 px-2">
           <div className="h-12 w-12 md:h-14 md:w-14 bg-sky-500/10 rounded-2xl flex items-center justify-center text-sky-400 border border-sky-500/20 shrink-0">
             <Truck size={24} className="md:w-7 md:h-7" />
@@ -619,7 +638,7 @@ function BoutiqueTab({ merchant, initialKnowledge, accessToken }: { merchant: an
       </section>
 
       {/* Canal de paiement */}
-      <section className="bg-vendeur-coal border border-white/10 p-4 md:p-8 rounded-[2.5rem] space-y-8 shadow-2xl overflow-hidden">
+      <section id="payments" className="bg-vendeur-coal border border-white/10 p-4 md:p-8 rounded-[2.5rem] space-y-8 shadow-2xl overflow-hidden">
          <div className="space-y-1 px-2">
             <h2 className="text-xl md:text-2xl font-black text-white flex items-center gap-3">
               <Banknote size={22} className="text-emerald-400 shrink-0" />
@@ -722,7 +741,7 @@ function BoutiqueTab({ merchant, initialKnowledge, accessToken }: { merchant: an
       </section>
 
       {/* Alertes Push */}
-      <section className="bg-vendeur-coal border border-white/10 p-6 md:p-8 rounded-[2.5rem] space-y-6 overflow-hidden">
+      <section id="push" className="bg-vendeur-coal border border-white/10 p-6 md:p-8 rounded-[2.5rem] space-y-6 overflow-hidden">
         <div className="flex items-center gap-4">
            <div className="h-10 w-10 md:h-12 md:w-12 bg-amber-500/10 rounded-2xl flex items-center justify-center text-amber-400 border border-amber-500/20 shadow-lg shadow-amber-500/5 shrink-0">
               <Bell size={20} className="md:w-6 md:h-6" />
@@ -1047,7 +1066,7 @@ function ConnexionsTab({ merchant, systemSettings, qrCode, isConnectingSocket, o
 
   return (
     <div className="space-y-6 md:space-y-10 animate-in slide-in-from-bottom-2 duration-500 overflow-x-hidden">
-      <section className="bg-vendeur-coal border border-white/10 p-3.5 sm:p-6 md:p-10 rounded-[2rem] md:rounded-[3.5rem] space-y-6 md:space-y-8 shadow-2xl overflow-hidden">
+      <section id="whatsapp" className="bg-vendeur-coal border border-white/10 p-3.5 sm:p-6 md:p-10 rounded-[2rem] md:rounded-[3.5rem] space-y-6 md:space-y-8 shadow-2xl overflow-hidden">
          <div className="space-y-1 px-1">
             <h2 className="text-lg md:text-2xl font-black text-white whitespace-nowrap">Liaison WhatsApp</h2>
             <p className="text-[9px] md:text-[10px] text-white/40 uppercase tracking-[0.15em] md:tracking-[0.2em] font-black">Indispensable pour vos ventes automatisées.</p>

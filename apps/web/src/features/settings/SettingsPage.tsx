@@ -40,6 +40,7 @@ import { PackProModal } from "../dashboard/components/PackProModal";
 import { BillingTab } from "./components/BillingTab";
 import { ReferralCard } from "./components/ReferralCard";
 import { GrowthTab } from "./components/GrowthTab";
+import { ProfileTab } from "./components/ProfileTab";
 import { subscribeToPush } from "@/lib/pushUtils";
 import { AddressAutocomplete } from "../onboarding/components/AddressAutocomplete";
 import { ZoneAutocomplete } from "../onboarding/components/ZoneAutocomplete";
@@ -321,7 +322,7 @@ export function SettingsPage() {
         {activeTab === "growth" && <GrowthTab merchant={merchant} />}
         {activeTab === "billing" && <BillingTab merchant={merchant} />}
         {activeTab === "referral" && <ReferralCard merchant={merchant} />}
-        {activeTab === "compte" && <CompteTab />}
+        {activeTab === "compte" && <ProfileTab merchant={merchant} />}
       </div>
     </div>
   );
@@ -1281,118 +1282,6 @@ function ConnexionsTab({ merchant, systemSettings, qrCode, isConnectingSocket, o
          isOpen={isPackProOpen}
          onClose={() => setIsPackProOpen(false)}
       />
-    </div>
-  );
-}
-
-function CompteTab() {
-  const { user, updateUser, logout } = useAuthStore();
-  const [loading, setLoading] = useState(false);
-  const [form, setForm] = useState({
-    displayName: user?.displayName || "",
-    avatarUrl: user?.avatarUrl || ""
-  });
-
-  const handleUpdate = async () => {
-    setLoading(true);
-    try {
-      const res = await apiClient.patch("/api/auth/me", form);
-      updateUser(res.data);
-      toast.success("Profil mis à jour ! ✨");
-    } catch (err) {
-      toast.error("Échec de la mise à jour");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <div className="space-y-8 animate-in slide-in-from-bottom-2 duration-500 max-w-2xl overflow-x-hidden">
-      <section className="bg-vendeur-coal/50 backdrop-blur-md border border-white/10 p-6 md:p-10 rounded-[2.5rem] md:rounded-[3.5rem] space-y-8 shadow-2xl overflow-hidden">
-        <div className="flex items-center gap-3 md:gap-4">
-          <div className="h-12 w-12 md:h-14 md:w-14 bg-vendeur-emerald/10 rounded-2xl flex items-center justify-center text-vendeur-emerald border border-vendeur-emerald/20 shrink-0">
-            <UserIcon size={24} className="md:w-7 md:h-7" />
-          </div>
-          <div>
-            <h2 className="text-xl md:text-2xl font-black uppercase text-white leading-tight whitespace-nowrap">Mon Profil Personnel</h2>
-            <p className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] text-white/30">Gérez vos informations de compte.</p>
-          </div>
-        </div>
-
-        <div className="flex flex-col items-center gap-6 py-4">
-           <div className="relative group">
-              <div className="h-24 w-24 rounded-[2rem] bg-white/5 border border-white/10 overflow-hidden shadow-2xl">
-                {form.avatarUrl ? (
-                  <img src={form.avatarUrl} alt="Avatar" className="h-full w-full object-cover" />
-                ) : (
-                  <div className="h-full w-full flex items-center justify-center text-white/20">
-                    <UserIcon size={40} />
-                  </div>
-                )}
-              </div>
-              <label className="absolute -right-2 -bottom-2 h-10 w-10 bg-vendeur-emerald text-vendeur-coal rounded-xl flex items-center justify-center cursor-pointer shadow-xl hover:scale-110 transition-all">
-                <Camera size={18} />
-                <input
-                  type="text"
-                  className="hidden"
-                  placeholder="URL de l'image"
-                  onChange={(e) => setForm({ ...form, avatarUrl: e.target.value })}
-                />
-              </label>
-           </div>
-           <p className="text-[10px] font-bold text-white/20 uppercase tracking-widest">Cliquez sur l'icône pour modifier l'URL de l'image</p>
-        </div>
-
-        <div className="grid gap-6">
-          <div className="space-y-1.5">
-            <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Nom d'affichage</label>
-            <div className="relative">
-              <UserIcon className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" size={18} />
-              <input
-                className="w-full h-14 rounded-2xl bg-black/40 border border-white/10 pl-12 pr-4 text-white focus:border-vendeur-emerald outline-none transition-all shadow-inner"
-                value={form.displayName}
-                onChange={e => setForm({ ...form, displayName: e.target.value })}
-                placeholder="Votre nom"
-              />
-            </div>
-          </div>
-
-          <div className="space-y-1.5 opacity-50">
-            <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Email (Non modifiable)</label>
-            <div className="relative">
-              <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" size={18} />
-              <input
-                disabled
-                className="w-full h-14 rounded-2xl bg-black/20 border border-white/10 pl-12 pr-4 text-white/40 outline-none cursor-not-allowed"
-                value={user?.email || ""}
-              />
-            </div>
-          </div>
-
-          <div className="space-y-1.5">
-            <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">URL Photo de Profil</label>
-            <input
-              className="w-full h-14 rounded-2xl bg-black/40 border border-white/10 px-4 text-white focus:border-vendeur-emerald outline-none transition-all shadow-inner text-xs"
-              value={form.avatarUrl}
-              onChange={e => setForm({ ...form, avatarUrl: e.target.value })}
-              placeholder="https://..."
-            />
-          </div>
-        </div>
-
-        <button
-          onClick={handleUpdate}
-          disabled={loading}
-          className="w-full h-14 bg-vendeur-emerald text-vendeur-coal font-black uppercase tracking-widest rounded-2xl flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50 mt-4 shadow-xl shadow-vendeur-emerald/20 whitespace-nowrap"
-        >
-          {loading ? <Loader2 className="animate-spin" size={20} /> : (
-            <>
-              Enregistrer
-              <Save size={18} />
-            </>
-          )}
-        </button>
-      </section>
     </div>
   );
 }

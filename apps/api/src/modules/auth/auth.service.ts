@@ -219,6 +219,19 @@ export class AuthService {
     await user.save();
   }
 
+  async changePassword(userId: string, currentPassword: string, newPassword: string) {
+    const user = await UserModel.findById(userId);
+    if (!user) throw new Error("Utilisateur introuvable");
+    if (!user.passwordHash) throw new Error("Ce compte utilise une connexion externe (Google). Le mot de passe ne peut pas être modifié ici.");
+
+    const isMatch = await bcrypt.compare(currentPassword, user.passwordHash);
+    if (!isMatch) throw new Error("Le mot de passe actuel est incorrect");
+
+    user.passwordHash = await bcrypt.hash(newPassword, 10);
+    await user.save();
+    return { success: true };
+  }
+
   async updateProfile(userId: string, data: { displayName?: string; avatarUrl?: string }) {
     const user = await UserModel.findByIdAndUpdate(
       userId,

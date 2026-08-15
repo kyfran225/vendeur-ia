@@ -118,8 +118,17 @@ const ProductSchema = new Schema({
   price: { type: Number, required: true },
   currency: { type: String, default: "XOF" },
   images: [String],
+  imageUrl: { type: String, default: "" }, // Alias used by frontend uploader
   stock: { type: Number, default: 0 },
   availability: { type: String, enum: ["available", "limited", "sold_out", "hidden"], default: "available" },
+  // Domain-specific fields
+  isService: { type: Boolean, default: false },
+  digitalUrl: { type: String, default: "" },
+  digitalFormat: { type: String, default: "" },
+  serviceDuration: { type: String, default: "" },
+  serviceDeliveryType: { type: String, default: "" },
+  preparationTime: { type: String, default: "" },
+  foodOptions: { type: String, default: "" },
   aiMetadata: {
     tags: [String],
     tiktokCaption: String,

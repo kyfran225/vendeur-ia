@@ -354,6 +354,7 @@ function BoutiqueTab({ merchant, initialKnowledge, accessToken }: { merchant: an
   const [pushStatus, setPushStatus] = useState<'default' | 'granted' | 'denied'>('default');
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
+  const [categoryChangeWarning, setCategoryChangeWarning] = useState<{ newCategory: string; oldCategory: string } | null>(null);
 
   useEffect(() => {
     if (merchant) setLocalMerchant(JSON.parse(JSON.stringify(merchant)));
@@ -415,10 +416,14 @@ function BoutiqueTab({ merchant, initialKnowledge, accessToken }: { merchant: an
     },
     onSuccess: () => {
       setIsDirty(false);
+      setCategoryChangeWarning(null);
       toast.success("Réglages Boutique enregistrés ! ✨");
+      // Invalidate ALL queries that depend on merchant data so the whole UI reacts
       queryClient.invalidateQueries({ queryKey: ["dashboard"] });
       queryClient.invalidateQueries({ queryKey: ["knowledge"] });
       queryClient.invalidateQueries({ queryKey: ["offers"] });
+      queryClient.invalidateQueries({ queryKey: ["products"] }); // Re-render ProductManager with new category config
+      queryClient.invalidateQueries({ queryKey: ["merchant"] }); // Clear useMerchant cache if used
     }
   });
 
@@ -466,27 +471,102 @@ function BoutiqueTab({ merchant, initialKnowledge, accessToken }: { merchant: an
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Catégorie</label>
+            <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Catégorie de Commerce</label>
 
-            <select
-              className="w-full h-14 rounded-2xl bg-black/40 border border-white/10 px-4 text-white focus:border-vendeur-emerald outline-none transition-all appearance-none cursor-pointer"
-              value={localMerchant?.category || ""}
-              onChange={e => { setLocalMerchant({...localMerchant, category: e.target.value}); setIsDirty(true); }}
-            >
-              <option value="fashion">👗 Mode & Beauté</option>
-              <option value="food">🍔 Restauration & Food</option>
-              <option value="beauty">💄 Soins & Cosmétiques</option>
-              <option value="electronics">📱 Électronique & High-Tech</option>
-              <option value="artisan">🛠️ Artisanat & Fait Main</option>
-              <option value="services">💼 Prestations de Services</option>
-              <option value="digital">📚 Produits Digitaux & Formations</option>
-              <option value="home">🏠 Maison & Décoration</option>
-              <option value="grocery">🛒 Épicerie & Supérette</option>
-              <option value="health">💊 Santé & Bien-être</option>
-              <option value="auto">🚗 Auto-Moto & Pièces</option>
-              <option value="other">📦 Autre Commerce</option>
-            </select>
+            <div className="relative">
+              <select
+                className={`w-full h-14 rounded-2xl bg-black/40 border px-4 text-white focus:border-vendeur-emerald outline-none transition-all appearance-none cursor-pointer ${localMerchant?.category !== merchant?.category ? "border-amber-500/60 bg-amber-500/5" : "border-white/10"}`}
+                value={localMerchant?.category || ""}
+                onChange={e => {
+                  const newCat = e.target.value;
+                  if (newCat !== merchant?.category) {
+                    // Trigger warning modal before committing the change
+                    setCategoryChangeWarning({ newCategory: newCat, oldCategory: merchant?.category || "" });
+                    setLocalMerchant({...localMerchant, category: newCat});
+                    setIsDirty(true);
+                  }
+                }}
+              >
+                <option value="fashion">👗 Mode & Accessoires</option>
+                <option value="food">🍔 Restauration & Food</option>
+                <option value="beauty">💄 Soins & Cosmétiques</option>
+                <option value="electronics">📱 Électronique & High-Tech</option>
+                <option value="artisan">🛠️ Artisanat & Fait Main</option>
+                <option value="services">💼 Prestations de Services</option>
+                <option value="digital">📚 Produits Digitaux & Formations</option>
+                <option value="home">🏠 Maison & Décoration</option>
+                <option value="grocery">🛒 Épicerie & Supérette</option>
+                <option value="health">💊 Santé & Bien-être</option>
+                <option value="auto">🚗 Auto-Moto & Pièces</option>
+                <option value="other">📦 Autre Commerce</option>
+              </select>
+              <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 text-white/20 pointer-events-none" size={16} />
+            </div>
+
+            {/* Warning badge when category has been changed but not saved yet */}
+            {localMerchant?.category !== merchant?.category && (
+              <div className="flex items-start gap-2 px-4 py-3 rounded-xl bg-amber-500/10 border border-amber-500/20">
+                <span className="text-amber-400 text-base shrink-0 mt-0.5">⚠️</span>
+                <p className="text-xs text-amber-300 leading-relaxed font-medium">
+                  Changement non enregistré. L'interface Admin, le Vendeur IA WhatsApp et la vitrine publique s'adapteront au nouveau type de commerce après sauvegarde.
+                </p>
+              </div>
+            )}
           </div>
+
+          {/* Category Change Confirmation Modal */}
+          {categoryChangeWarning && (
+            <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/70 backdrop-blur-lg animate-in fade-in duration-200">
+              <div className="w-full max-w-md bg-vendeur-coal border border-white/10 rounded-3xl p-8 space-y-6 shadow-2xl animate-in zoom-in-95 duration-300">
+                <div className="space-y-2">
+                  <div className="h-12 w-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-2xl mb-4">⚠️</div>
+                  <h3 className="text-xl font-black uppercase tracking-tight text-white">Changer de type de commerce ?</h3>
+                  <p className="text-white/50 text-sm leading-relaxed">
+                    Cette action va adapter <strong className="text-white">l'interface Admin</strong> (labels, champs, icônes),
+                    le <strong className="text-white">Vendeur IA WhatsApp</strong> (nouveau comportement et persona),
+                    et la <strong className="text-white">vitrine publique</strong> (hero, CTA, messages clients).
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-4 p-4 bg-white/5 rounded-2xl border border-white/5">
+                  <div className="flex-1 text-center">
+                    <p className="text-[9px] font-black text-white/30 uppercase tracking-widest mb-1">Actuel</p>
+                    <p className="text-sm font-black text-white uppercase">{categoryChangeWarning.oldCategory}</p>
+                  </div>
+                  <div className="text-2xl text-white/20">→</div>
+                  <div className="flex-1 text-center">
+                    <p className="text-[9px] font-black text-amber-400 uppercase tracking-widest mb-1">Nouveau</p>
+                    <p className="text-sm font-black text-amber-400 uppercase">{categoryChangeWarning.newCategory}</p>
+                  </div>
+                </div>
+
+                <p className="text-[10px] text-white/30 font-medium">
+                  Vos produits existants ne seront pas supprimés. Seule l'interface et le comportement de l'IA seront mis à jour après sauvegarde.
+                </p>
+
+                <div className="grid grid-cols-2 gap-3 pt-2">
+                  <button
+                    onClick={() => {
+                      // Revert the category change
+                      setLocalMerchant({...localMerchant, category: categoryChangeWarning.oldCategory});
+                      setIsDirty(false);
+                      setCategoryChangeWarning(null);
+                    }}
+                    className="h-12 rounded-2xl border border-white/10 text-white/60 hover:text-white hover:bg-white/5 transition-all text-[10px] font-black uppercase tracking-widest"
+                  >
+                    Annuler
+                  </button>
+                  <button
+                    onClick={() => setCategoryChangeWarning(null)}
+                    className="h-12 rounded-2xl bg-amber-500 text-black font-black text-[10px] uppercase tracking-widest hover:bg-amber-400 transition-all"
+                  >
+                    Confirmer
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
           <div className="space-y-1.5">
             <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Devise de Facturation</label>
             <select

@@ -5,7 +5,7 @@ export * from "./data/cities.js";
 
 // --- Enums & Constants ---
 
-export const commerceCategories = ["fashion", "food", "beauty", "electronics", "services", "digital", "artisan", "other"] as const;
+export const commerceCategories = ["fashion", "food", "beauty", "electronics", "services", "digital", "artisan", "home", "grocery", "health", "auto", "other"] as const;
 export const commerceLanguages = ["fr", "en", "wolof", "yoruba", "lingala"] as const;
 export const commerceAgentTones = ["friendly", "professional", "premium", "dynamic"] as const;
 export const commerceResponseStyles = ["short", "normal", "detailed"] as const;

@@ -30,6 +30,7 @@ interface Product {
   serviceDuration?: string;
   serviceDeliveryType?: string;
   preparationTime?: string;
+  foodOptions?: string;
 }
 
 // Adaptive UI Configuration
@@ -48,7 +49,7 @@ const BUSINESS_CONFIGS: Record<string, any> = {
   food: {
     title: "Menu & Restauration",
     itemLabel: "Plat / Formule",
-    stockLabel: "Disponibilité",
+    stockLabel: "Disponibilité du jour",
     icon: <Utensils size={48} className="text-amber-500/20" />,
     btnBg: "bg-amber-400 hover:bg-amber-500 text-black font-black",
     badgeBg: "bg-amber-500/10 text-amber-400 border-amber-500/20",
@@ -65,7 +66,7 @@ const BUSINESS_CONFIGS: Record<string, any> = {
     badgeBg: "bg-sky-500/10 text-sky-400 border-sky-500/20",
     showScanner: false,
     showStock: false,
-    actionButtonLabel: "Créer un Service"
+    actionButtonLabel: "Nouveau Service"
   },
   digital: {
     title: "Produits Digitaux & Formations",
@@ -98,7 +99,7 @@ const BUSINESS_CONFIGS: Record<string, any> = {
     badgeBg: "bg-pink-500/10 text-pink-400 border-pink-500/20",
     showScanner: true,
     showStock: true,
-    actionButtonLabel: "Ajouter Soin/Produit"
+    actionButtonLabel: "Ajouter Produit"
   },
   electronics: {
     title: "Stock High-Tech",
@@ -187,6 +188,7 @@ export function ProductManager() {
 
   const merchant = merchantFromCache || dashboardData?.merchant;
   const isMerchantLoading = !merchant && isDashboardLoading;
+  const queryClient = useQueryClient();
 
   const businessCategory = merchant?.category || tempData?.category || "other";
   const activeCurrency = merchant?.currency || "XOF";
@@ -209,7 +211,8 @@ export function ProductManager() {
     digitalFormat: "PDF / E-Book",
     serviceDuration: "1h",
     serviceDeliveryType: "Présentiel",
-    preparationTime: "15-20 min"
+    preparationTime: "15-20 min",
+    foodOptions: ""
   });
 
   const [captionData, setCaptionData] = useState<{ isOpen: boolean; text: string; productName: string }>({
@@ -673,6 +676,23 @@ export function ProductManager() {
                 )}
               </div>
 
+              {/* SPECIFIC FIELD: FOOD OPTIONS */}
+              {businessCategory === "food" && (
+                <label className="grid gap-2 text-xs font-black uppercase tracking-widest text-white/60">
+                  Options / Formules disponibles
+                  <input
+                    className="h-12 rounded-xl bg-white/5 border border-white/10 px-4 text-white outline-none focus:border-emerald-300 transition-all placeholder:text-white/20"
+                    value={editingProduct ? (editingProduct.foodOptions || "") : newProduct.foodOptions}
+                    onChange={e => editingProduct
+                      ? setEditingProduct({...editingProduct, foodOptions: e.target.value})
+                      : setNewProduct({...newProduct, foodOptions: e.target.value})
+                    }
+                    placeholder="ex: Sans sauce, Extra fromage, Menu enfant..."
+                  />
+                  <span className="text-[10px] text-white/40 normal-case">Options séparées par des virgules. Le Vendeur IA les proposera automatiquement au client.</span>
+                </label>
+              )}
+
               {/* SPECIFIC FIELD: DIGITAL LINK */}
               {businessCategory === "digital" && (
                 <label className="grid gap-2 text-xs font-black uppercase tracking-widest text-white/60">
@@ -856,7 +876,8 @@ export function ProductManager() {
                   ) : (
                     <span className={cn("text-[10px] font-black px-2.5 py-1 rounded-lg uppercase tracking-wider border", config.badgeBg)}>
                       {businessCategory === "digital" ? (p.digitalFormat || "Accès Digital") :
-                       businessCategory === "services" ? (p.serviceDeliveryType || "Sur RDV") : "Menu Resto"}
+                       businessCategory === "services" ? (p.serviceDuration ? `⏳ ${p.serviceDuration}` : (p.serviceDeliveryType || "Sur RDV")) :
+                       businessCategory === "food" ? (p.preparationTime ? `⏱ ${p.preparationTime}` : "Au menu") : "Disponible"}
                     </span>
                   )}
 

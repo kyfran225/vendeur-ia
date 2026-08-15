@@ -16,6 +16,7 @@ export interface IProduct extends Document {
   serviceDuration?: string;
   serviceDeliveryType?: string;
   preparationTime?: string;
+  foodOptions?: string;
   aiMetadata: {
     tags: string[];
     tiktokCaption?: string;
@@ -37,6 +38,7 @@ const ProductSchema: Schema = new Schema({
   serviceDuration: { type: String, default: "" },
   serviceDeliveryType: { type: String, default: "" },
   preparationTime: { type: String, default: "" },
+  foodOptions: { type: String, default: "" },
   aiMetadata: {
     tags: [{ type: String }],
     tiktokCaption: { type: String }
@@ -44,3 +46,4 @@ const ProductSchema: Schema = new Schema({
 }, { timestamps: true });
 
 export const ProductModel = mongoose.model<IProduct>("Product", ProductSchema);
+

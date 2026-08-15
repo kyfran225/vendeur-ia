@@ -18,6 +18,7 @@ import { aiProvider } from "../../services/ai-provider.js";
 import { messagingService } from "../../services/messaging.service.js";
 import { pushService } from "../../services/push.service.js";
 import { paystackService } from "../../services/paystack.service.js";
+import { logger } from "../../services/logger.service.js";
 import { env } from "../../config/env.js";
 import { GEMINI_DEFAULT_VISION_MODEL, resolveGeminiModel } from "../../config/gemini.js";
 import axios from "axios";
@@ -354,9 +355,7 @@ Réponds UNIQUEMENT avec le JSON. Si ce n'est pas une preuve de paiement valide 
   }
 
   async analyzeProductImage(imageBuffer: Buffer, mimeType: string, currency: string = "XOF", country: string = "CI") {
-    // 1. Primary: Dynamic Vision Provider
-    try {
-      const prompt = `Analyse cette image de commerce pour un marchand situé dans le pays code "${country}" utilisant la devise "${currency}".
+    const prompt = `Analyse cette image de commerce pour un marchand situé dans le pays code "${country}" utilisant la devise "${currency}".
 Elle peut contenir soit un seul produit, soit un LOT DE PLUSIEURS PRODUITS (ex: plusieurs vêtements disposés, plusieurs articles sur une table, etc.).
 Détecte tous les produits visibles distincts et extrait un tableau JSON "items" au format suivant :
 {
@@ -373,75 +372,98 @@ Détecte tous les produits visibles distincts et extrait un tableau JSON "items"
 }
 Réponds UNIQUEMENT avec le JSON strict. Si 1 seul produit est présent, renvoie quand même un tableau "items" avec cet unique élément.`;
 
-      const settings = await SystemSettingsModel.findOne();
-      const provider = settings?.aiConfig?.defaultVisionProvider || 'gemini';
+    const settings = await SystemSettingsModel.findOne();
+    const primaryProvider = settings?.aiConfig?.defaultVisionProvider || 'gemini';
+    const providersToTry = [primaryProvider, primaryProvider === 'gemini' ? 'openai' : 'gemini'];
 
-      if (provider === 'gemini') {
-        const apiKey = settings?.aiConfig?.providers?.find(p => p.name === 'gemini')?.apiKey || env.GEMINI_API_KEY;
-        if (!apiKey) throw new Error("Clé Gemini manquante");
+    let lastErrorMessage = "";
 
-        const geminiProvider = settings?.aiConfig?.providers?.find(p => p.name === 'gemini');
-        const model = resolveGeminiModel(geminiProvider?.models?.vision, GEMINI_DEFAULT_VISION_MODEL);
+    for (const provider of providersToTry) {
+      try {
+        if (provider === 'gemini') {
+          const apiKey = settings?.aiConfig?.providers?.find(p => p.name === 'gemini')?.apiKey || env.GEMINI_API_KEY;
+          if (!apiKey) continue;
 
-        const response = await axios.post(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
-          contents: [{
-            parts: [{ text: prompt }, { inlineData: { mimeType, data: imageBuffer.toString("base64") } }]
-          }]
-        });
+          const geminiProvider = settings?.aiConfig?.providers?.find(p => p.name === 'gemini');
+          const rawModel = geminiProvider?.models?.vision;
+          const model = resolveGeminiModel(rawModel, GEMINI_DEFAULT_VISION_MODEL);
 
-        const text = response.data.candidates[0].content.parts[0].text;
-        const jsonMatch = text.match(/\{[\s\S]*\}/);
-        if (jsonMatch) {
-          const parsed = JSON.parse(jsonMatch[0]);
-          if (parsed.items && Array.isArray(parsed.items) && parsed.items.length > 0) {
-            return parsed;
-          }
-          // Backward compatibility if AI returned single object
-          if (parsed.name) {
-            return { items: [parsed] };
-          }
-          return parsed;
-        }
-      } else if (provider === 'openai') {
-        const apiKey = settings?.aiConfig?.providers?.find(p => p.name === 'openai')?.apiKey || env.OPENAI_API_KEY;
-        if (!apiKey) throw new Error("Clé OpenAI manquante");
-
-        const response = await axios.post("https://api.openai.com/v1/chat/completions", {
-          model: "gpt-4o-mini",
-          messages: [
+          logger.info(`[Product Vision] Attempting analysis with Gemini (${model})...`);
+          const response = await axios.post(
+            `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
             {
-              role: "user",
-              content: [
-                { type: "text", text: prompt },
-                { type: "image_url", image_url: { url: `data:${mimeType};base64,${imageBuffer.toString("base64")}` } }
-              ]
-            }
-          ]
-        }, {
-          headers: { "Authorization": `Bearer ${apiKey}` }
-        });
+              contents: [{
+                parts: [{ text: prompt }, { inlineData: { mimeType, data: imageBuffer.toString("base64") } }]
+              }]
+            },
+            { timeout: 30000 }
+          );
 
-        const text = response.data.choices[0].message.content;
-        const jsonMatch = text.match(/\{[\s\S]*\}/);
-        if (jsonMatch) {
-          const parsed = JSON.parse(jsonMatch[0]);
-          if (parsed.items && Array.isArray(parsed.items) && parsed.items.length > 0) {
-            return parsed;
+          const text = response.data?.candidates?.[0]?.content?.parts?.[0]?.text;
+          if (text) {
+            const jsonMatch = text.match(/\{[\s\S]*\}/);
+            if (jsonMatch) {
+              const parsed = JSON.parse(jsonMatch[0]);
+              logger.info(`[Product Vision] Successfully analyzed image with Gemini`);
+              if (parsed.items && Array.isArray(parsed.items) && parsed.items.length > 0) {
+                return parsed;
+              }
+              if (parsed.name) {
+                return { items: [parsed] };
+              }
+              return parsed;
+            }
           }
-          if (parsed.name) {
-            return { items: [parsed] };
+        } else if (provider === 'openai') {
+          const apiKey = settings?.aiConfig?.providers?.find(p => p.name === 'openai')?.apiKey || env.OPENAI_API_KEY;
+          if (!apiKey) continue;
+
+          logger.info(`[Product Vision] Attempting analysis with OpenAI (gpt-4o-mini)...`);
+          const response = await axios.post(
+            "https://api.openai.com/v1/chat/completions",
+            {
+              model: "gpt-4o-mini",
+              messages: [
+                {
+                  role: "user",
+                  content: [
+                    { type: "text", text: prompt },
+                    { type: "image_url", image_url: { url: `data:${mimeType};base64,${imageBuffer.toString("base64")}` } }
+                  ]
+                }
+              ]
+            },
+            {
+              headers: { "Authorization": `Bearer ${apiKey}` },
+              timeout: 30000
+            }
+          );
+
+          const text = response.data?.choices?.[0]?.message?.content;
+          if (text) {
+            const jsonMatch = text.match(/\{[\s\S]*\}/);
+            if (jsonMatch) {
+              const parsed = JSON.parse(jsonMatch[0]);
+              logger.info(`[Product Vision] Successfully analyzed image with OpenAI`);
+              if (parsed.items && Array.isArray(parsed.items) && parsed.items.length > 0) {
+                return parsed;
+              }
+              if (parsed.name) {
+                return { items: [parsed] };
+              }
+              return parsed;
+            }
           }
-          return parsed;
         }
+      } catch (error: any) {
+        const status = error.response?.status;
+        const data = error.response?.data;
+        lastErrorMessage = error.response?.data?.error?.message || error.message;
+        logger.warn(`[Product Vision] ${provider} analysis failed (${status || 'unknown'}): ${error.message} ${data ? JSON.stringify(data) : ""}`);
       }
-    } catch (error: any) {
-      const status = error.response?.status;
-      const data = error.response?.data;
-      console.warn(`[Product Vision] Analysis failed (${status || 'unknown'}):`, error.message, data ? JSON.stringify(data) : "");
     }
 
-    // 2. Fallback: No silent default if Gemini is configured but fails
-    throw new Error("L'analyse de l'image a échoué. Veuillez vérifier vos clés API IA dans le dashboard Admin.");
+    throw new Error(`L'analyse de l'image a échoué (${lastErrorMessage || "Vérifiez vos clés API IA dans le dashboard Admin"}).`);
   }
 
   async generateProductCaption(productId: string) {

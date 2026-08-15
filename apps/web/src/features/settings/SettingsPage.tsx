@@ -12,6 +12,7 @@ import {
   Plus,
   Trash2,
   Save,
+  RotateCcw,
   Loader2,
   Globe,
   Instagram,
@@ -328,16 +329,22 @@ function TabButton({ active, onClick, icon, label }: { active: boolean; onClick:
 // --- ONGLET 1 : BOUTIQUE (PROFIL, LIVRAISON, PAIEMENTS) ---
 function BoutiqueTab({ merchant, initialKnowledge, accessToken }: { merchant: any; initialKnowledge: any; accessToken: string }) {
   const queryClient = useQueryClient();
-  const [localMerchant, setLocalMerchant] = useState(merchant);
-  const [payments, setPayments] = useState(initialKnowledge?.businessRules?.paymentMethods || []);
-  const [deliveryFees, setDeliveryFees] = useState(initialKnowledge?.businessRules?.deliveryFees || []);
+  const [localMerchant, setLocalMerchant] = useState<any>(merchant);
+  const [payments, setPayments] = useState<any[]>(initialKnowledge?.businessRules?.paymentMethods || []);
+  const [deliveryFees, setDeliveryFees] = useState<any[]>(initialKnowledge?.businessRules?.deliveryFees || []);
   const [pushStatus, setPushStatus] = useState<'default' | 'granted' | 'denied'>('default');
   const [isSubscribed, setIsSubscribed] = useState(false);
+  const [isDirty, setIsDirty] = useState(false);
 
   useEffect(() => {
-    if (merchant) setLocalMerchant(merchant);
-    if (initialKnowledge?.businessRules?.paymentMethods) setPayments(initialKnowledge.businessRules.paymentMethods);
-    if (initialKnowledge?.businessRules?.deliveryFees) setDeliveryFees(initialKnowledge.businessRules.deliveryFees);
+    if (merchant) setLocalMerchant(JSON.parse(JSON.stringify(merchant)));
+    if (initialKnowledge?.businessRules?.paymentMethods) {
+      setPayments(JSON.parse(JSON.stringify(initialKnowledge.businessRules.paymentMethods)));
+    }
+    if (initialKnowledge?.businessRules?.deliveryFees) {
+      setDeliveryFees(JSON.parse(JSON.stringify(initialKnowledge.businessRules.deliveryFees)));
+    }
+    setIsDirty(false);
   }, [merchant, initialKnowledge]);
 
   useEffect(() => {
@@ -352,6 +359,30 @@ function BoutiqueTab({ merchant, initialKnowledge, accessToken }: { merchant: an
     }
   }, []);
 
+  const handleCancel = () => {
+    if (merchant) setLocalMerchant(JSON.parse(JSON.stringify(merchant)));
+    if (initialKnowledge?.businessRules?.paymentMethods) {
+      setPayments(JSON.parse(JSON.stringify(initialKnowledge.businessRules.paymentMethods)));
+    } else {
+      setPayments([]);
+    }
+    if (initialKnowledge?.businessRules?.deliveryFees) {
+      setDeliveryFees(JSON.parse(JSON.stringify(initialKnowledge.businessRules.deliveryFees)));
+    } else {
+      setDeliveryFees([]);
+    }
+    setIsDirty(false);
+    toast.info("Modifications annulées 🔄");
+  };
+
+  const initialPayments = initialKnowledge?.businessRules?.paymentMethods || [];
+  const initialFees = initialKnowledge?.businessRules?.deliveryFees || [];
+
+  const isModified =
+    JSON.stringify(localMerchant) !== JSON.stringify(merchant) ||
+    JSON.stringify(payments) !== JSON.stringify(initialPayments) ||
+    JSON.stringify(deliveryFees) !== JSON.stringify(initialFees);
+
   const updateMutation = useMutation({
     mutationFn: async () => {
       await apiClient.patch("/api/commerce/merchant", localMerchant);
@@ -364,6 +395,7 @@ function BoutiqueTab({ merchant, initialKnowledge, accessToken }: { merchant: an
       });
     },
     onSuccess: () => {
+      setIsDirty(false);
       toast.success("Réglages Boutique enregistrés ! ✨");
       queryClient.invalidateQueries({ queryKey: ["dashboard"] });
       queryClient.invalidateQueries({ queryKey: ["knowledge"] });
@@ -385,8 +417,8 @@ function BoutiqueTab({ merchant, initialKnowledge, accessToken }: { merchant: an
         </div>
 
         <div className="grid gap-6 md:grid-cols-2">
-          <InputGroup label="Nom du commerce" value={localMerchant?.businessName} onChange={v => setLocalMerchant({...localMerchant, businessName: v})} placeholder="Ex: Ma Boutique Chic" />
-          <InputGroup label="WhatsApp Business" value={localMerchant?.whatsappNumber} onChange={v => setLocalMerchant({...localMerchant, whatsappNumber: v})} placeholder="Ex: 07 00 00 00 00" />
+          <InputGroup label="Nom du commerce" value={localMerchant?.businessName} onChange={v => { setLocalMerchant({...localMerchant, businessName: v}); setIsDirty(true); }} placeholder="Ex: Ma Boutique Chic" />
+          <InputGroup label="WhatsApp Business" value={localMerchant?.whatsappNumber} onChange={v => { setLocalMerchant({...localMerchant, whatsappNumber: v}); setIsDirty(true); }} placeholder="Ex: 07 00 00 00 00" />
 
           <div className="space-y-1.5">
             <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Devise du Commerce</label>
@@ -394,7 +426,7 @@ function BoutiqueTab({ merchant, initialKnowledge, accessToken }: { merchant: an
               <select
                 className="w-full h-14 bg-black/40 border border-white/10 rounded-2xl px-5 text-sm text-white focus:border-vendeur-emerald outline-none transition-all appearance-none cursor-pointer"
                 value={localMerchant?.currency}
-                onChange={e => setLocalMerchant({...localMerchant, currency: e.target.value})}
+                onChange={e => { setLocalMerchant({...localMerchant, currency: e.target.value}); setIsDirty(true); }}
               >
                 <option value="XOF">Franc CFA (XOF) - UEMOA</option>
                 <option value="XAF">Franc CFA (XAF) - CEMAC</option>
@@ -420,7 +452,7 @@ function BoutiqueTab({ merchant, initialKnowledge, accessToken }: { merchant: an
             <select
               className="w-full h-14 rounded-2xl bg-black/40 border border-white/10 px-4 text-white focus:border-vendeur-emerald outline-none transition-all appearance-none cursor-pointer"
               value={localMerchant?.category || ""}
-              onChange={e => setLocalMerchant({...localMerchant, category: e.target.value})}
+              onChange={e => { setLocalMerchant({...localMerchant, category: e.target.value}); setIsDirty(true); }}
             >
               <option value="fashion">👗 Mode & Beauté</option>
               <option value="food">🍔 Restauration & Food</option>
@@ -441,7 +473,7 @@ function BoutiqueTab({ merchant, initialKnowledge, accessToken }: { merchant: an
             <select
               className="w-full h-14 rounded-2xl bg-black/40 border border-white/10 px-4 text-white focus:border-vendeur-emerald outline-none transition-all appearance-none cursor-pointer"
               value={localMerchant?.billingCurrency || "XOF"}
-              onChange={e => setLocalMerchant({...localMerchant, billingCurrency: e.target.value})}
+              onChange={e => { setLocalMerchant({...localMerchant, billingCurrency: e.target.value}); setIsDirty(true); }}
             >
               <option value="XOF">FCFA (XOF)</option>
               <option value="GHS">Cedi (GHS)</option>
@@ -455,7 +487,7 @@ function BoutiqueTab({ merchant, initialKnowledge, accessToken }: { merchant: an
              <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Adresse / Zone</label>
              <AddressAutocomplete
                value={localMerchant?.address || ""}
-               onChange={v => setLocalMerchant({...localMerchant, address: v})}
+               onChange={v => { setLocalMerchant({...localMerchant, address: v}); setIsDirty(true); }}
                onSelectSuggestion={(feature) => {
                  const props = feature.properties;
                  const context = props.context || {};
@@ -476,6 +508,7 @@ function BoutiqueTab({ merchant, initialKnowledge, accessToken }: { merchant: an
                  }
 
                  setLocalMerchant({ ...localMerchant, ...updates });
+                 setIsDirty(true);
 
                  // Automatically suggest adding the detected zone/commune if not already present
                  const zoneName = neighborhood || district;
@@ -489,22 +522,6 @@ function BoutiqueTab({ merchant, initialKnowledge, accessToken }: { merchant: an
              />
           </div>
         </div>
-
-        {/* Dynamic Save Button - Displayed only when data has been modified */}
-        {JSON.stringify(localMerchant) !== JSON.stringify(merchant) ||
-         JSON.stringify(payments) !== JSON.stringify(initialKnowledge?.businessRules?.paymentMethods || []) ||
-         JSON.stringify(deliveryFees) !== JSON.stringify(initialKnowledge?.businessRules?.deliveryFees || []) ? (
-          <div className="pt-4 flex justify-end animate-in fade-in slide-in-from-bottom-2 duration-300">
-            <button
-              onClick={() => updateMutation.mutate()}
-              disabled={updateMutation.isPending}
-              className="flex h-14 w-full sm:w-auto items-center justify-center gap-3 rounded-2xl bg-vendeur-emerald px-8 text-xs font-black uppercase text-vendeur-coal shadow-xl shadow-vendeur-emerald/20 hover:scale-105 active:scale-95 transition-all disabled:opacity-50 whitespace-nowrap"
-            >
-              {updateMutation.isPending ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />}
-              Enregistrer les modifications
-            </button>
-          </div>
-        ) : null}
       </section>
 
       {/* Grille de Livraison */}
@@ -533,9 +550,8 @@ function BoutiqueTab({ merchant, initialKnowledge, accessToken }: { merchant: an
                         city={localMerchant?.city}
                         countryCode={localMerchant?.country}
                         onChange={(val) => {
-                          const next = [...deliveryFees];
-                          next[idx].zone = val;
-                          setDeliveryFees(next);
+                          setDeliveryFees((prev: any[]) => prev.map((f: any, i: number) => i === idx ? { ...f, zone: val } : f));
+                          setIsDirty(true);
                         }}
                         placeholder="Ex: Riviera 3"
                         className="flex-1 h-14 text-sm font-bold"
@@ -547,9 +563,9 @@ function BoutiqueTab({ merchant, initialKnowledge, accessToken }: { merchant: an
                           placeholder="1500"
                           value={fee.price}
                           onChange={(e) => {
-                            const next = [...deliveryFees];
-                            next[idx].price = parseInt(e.target.value) || 0;
-                            setDeliveryFees(next);
+                            const val = parseInt(e.target.value) || 0;
+                            setDeliveryFees((prev: any[]) => prev.map((f: any, i: number) => i === idx ? { ...f, price: val } : f));
+                            setIsDirty(true);
                           }}
                       />
                       <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[8px] font-black text-white/10 pointer-events-none uppercase">
@@ -559,7 +575,10 @@ function BoutiqueTab({ merchant, initialKnowledge, accessToken }: { merchant: an
                  </div>
 
                  <button
-                    onClick={() => setDeliveryFees(deliveryFees.filter((_: any, i: number) => i !== idx))}
+                    onClick={() => {
+                      setDeliveryFees((prev: any[]) => prev.filter((_: any, i: number) => i !== idx));
+                      setIsDirty(true);
+                    }}
                     className="absolute -right-2 -top-1 h-7 w-7 bg-rose-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all shadow-lg hover:scale-110 active:scale-95 z-10"
                  >
                     <Trash2 size={12} />
@@ -574,7 +593,10 @@ function BoutiqueTab({ merchant, initialKnowledge, accessToken }: { merchant: an
                    {getZonesForCity(localMerchant.city).map((suggestion, i) => (
                       <button
                         key={i}
-                        onClick={() => setDeliveryFees([...deliveryFees, { zone: suggestion.name, price: suggestion.suggestedPrice }])}
+                        onClick={() => {
+                          setDeliveryFees((prev: any[]) => [...prev, { zone: suggestion.name, price: suggestion.suggestedPrice }]);
+                          setIsDirty(true);
+                        }}
                         className="px-4 py-2 rounded-xl bg-sky-500/10 border border-sky-500/20 text-sky-400 text-[10px] font-bold hover:bg-sky-500 hover:text-white transition-all"
                       >
                          + {suggestion.name} ({suggestion.suggestedPrice} {localMerchant.currency || "XOF"})
@@ -585,7 +607,10 @@ function BoutiqueTab({ merchant, initialKnowledge, accessToken }: { merchant: an
            )}
 
            <button
-              onClick={() => setDeliveryFees([...deliveryFees, { zone: "", price: 1000 }])}
+              onClick={() => {
+                setDeliveryFees((prev: any[]) => [...prev, { zone: "", price: 1000 }]);
+                setIsDirty(true);
+              }}
               className="flex items-center gap-2 text-sky-400 text-xs font-black uppercase tracking-widest hover:underline px-4 pt-2"
            >
               <Plus size={16} /> Ajouter une zone
@@ -613,9 +638,9 @@ function BoutiqueTab({ merchant, initialKnowledge, accessToken }: { merchant: an
                           className="w-full h-14 bg-black/40 border border-white/10 rounded-2xl px-2 text-[10px] font-black uppercase tracking-tight text-white focus:border-emerald-500 outline-none transition-all appearance-none cursor-pointer"
                           value={p.provider}
                           onChange={(e) => {
-                            const next = [...payments];
-                            next[idx].provider = e.target.value;
-                            setPayments(next);
+                            const val = e.target.value;
+                            setPayments((prev: any[]) => prev.map((item: any, i: number) => i === idx ? { ...item, provider: val } : item));
+                            setIsDirty(true);
                           }}
                         >
                           {getProvidersForCountry(localMerchant?.country || "CI").map(provider => (
@@ -639,9 +664,9 @@ function BoutiqueTab({ merchant, initialKnowledge, accessToken }: { merchant: an
                           )}
                           value={p.number}
                           onChange={(e) => {
-                            const next = [...payments];
-                            next[idx].number = e.target.value;
-                            setPayments(next);
+                            const val = e.target.value;
+                            setPayments((prev: any[]) => prev.map((item: any, i: number) => i === idx ? { ...item, number: val } : item));
+                            setIsDirty(true);
                           }}
                           placeholder={
                             p.provider === "Carte Bancaire"
@@ -664,16 +689,19 @@ function BoutiqueTab({ merchant, initialKnowledge, accessToken }: { merchant: an
                       placeholder="NOM DU CANAL..."
                       value={p.customLabel || ""}
                       onChange={(e) => {
-                        const next = [...payments];
-                        next[idx].customLabel = e.target.value;
-                        setPayments(next);
+                        const val = e.target.value;
+                        setPayments((prev: any[]) => prev.map((item: any, i: number) => i === idx ? { ...item, customLabel: val } : item));
+                        setIsDirty(true);
                       }}
                     />
                   </div>
                 )}
 
                 <button
-                  onClick={() => setPayments(payments.filter((_: any, i: number) => i !== idx))}
+                  onClick={() => {
+                    setPayments((prev: any[]) => prev.filter((_: any, i: number) => i !== idx));
+                    setIsDirty(true);
+                  }}
                   className="absolute -right-2 top-0 h-7 w-7 bg-rose-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all shadow-lg hover:scale-110 active:scale-95 z-10"
                 >
                     <Trash2 size={12} />
@@ -682,7 +710,10 @@ function BoutiqueTab({ merchant, initialKnowledge, accessToken }: { merchant: an
             ))}
 
             <button
-              onClick={() => setPayments([...payments, { provider: "Wave", number: "" }])}
+              onClick={() => {
+                setPayments((prev: any[]) => [...prev, { provider: "Wave", number: "" }]);
+                setIsDirty(true);
+              }}
               className="flex items-center gap-2 text-emerald-400 text-[10px] font-black uppercase tracking-[0.2em] hover:underline pt-2 px-1"
             >
                <Plus size={16} /> Ajouter un canal de paiement
@@ -753,8 +784,32 @@ function BoutiqueTab({ merchant, initialKnowledge, accessToken }: { merchant: an
           )}
         </button>
 
-
       </section>
+
+      {/* Floating Sticky Save/Cancel Bar */}
+      {isModified && (
+        <div className="fixed bottom-20 md:bottom-8 left-4 right-4 md:left-auto md:right-8 z-50 animate-in slide-in-from-bottom-5 duration-300">
+          <div className="bg-vendeur-coal/90 backdrop-blur-xl border border-white/15 p-2 sm:p-3 rounded-2xl md:rounded-3xl shadow-2xl shadow-black/80 flex items-center justify-between sm:justify-start gap-2 sm:gap-3 ring-1 ring-white/10">
+            <button
+              onClick={handleCancel}
+              disabled={updateMutation.isPending}
+              className="flex h-12 md:h-14 items-center justify-center gap-2 rounded-xl md:rounded-2xl bg-white/10 hover:bg-white/15 px-4 md:px-6 text-xs font-black uppercase text-white/80 transition-all disabled:opacity-50 active:scale-95 whitespace-nowrap"
+            >
+              <RotateCcw size={16} />
+              <span>Annuler</span>
+            </button>
+
+            <button
+              onClick={() => updateMutation.mutate()}
+              disabled={updateMutation.isPending}
+              className="flex h-12 md:h-14 flex-1 md:flex-none items-center justify-center gap-2.5 rounded-xl md:rounded-2xl bg-vendeur-emerald px-6 md:px-8 text-xs font-black uppercase text-vendeur-coal shadow-lg shadow-vendeur-emerald/30 hover:scale-105 active:scale-95 transition-all disabled:opacity-50 whitespace-nowrap"
+            >
+              {updateMutation.isPending ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />}
+              Enregistrer
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

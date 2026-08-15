@@ -46,7 +46,7 @@ import { ZoneAutocomplete } from "../onboarding/components/ZoneAutocomplete";
 import { useNavigate } from "react-router-dom";
 
 import { useSocket } from "@/hooks/useSocket";
-import { getProvidersForCountry, getZonesForCity, getCountryByCode } from "@vendeur-ia/core";
+import { getProvidersForCountry, getZonesForCity, getCountryByCode, convertCurrencyAmount, CURRENCIES_DATA } from "@vendeur-ia/core";
 import { ConfirmationModal } from "@/components/ui/ConfirmationModal";
 
 function cn(...inputs: ClassValue[]) {
@@ -355,6 +355,7 @@ function BoutiqueTab({ merchant, initialKnowledge, accessToken }: { merchant: an
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
   const [categoryChangeWarning, setCategoryChangeWarning] = useState<{ newCategory: string; oldCategory: string } | null>(null);
+  const [currencyChangeWarning, setCurrencyChangeWarning] = useState<{ newCurrency: string; oldCurrency: string } | null>(null);
 
   useEffect(() => {
     if (merchant) setLocalMerchant(JSON.parse(JSON.stringify(merchant)));
@@ -445,30 +446,112 @@ function BoutiqueTab({ merchant, initialKnowledge, accessToken }: { merchant: an
           <InputGroup label="WhatsApp Business" value={localMerchant?.whatsappNumber} onChange={v => { setLocalMerchant({...localMerchant, whatsappNumber: v}); setIsDirty(true); }} placeholder="Ex: 07 00 00 00 00" />
 
           <div className="space-y-1.5">
-            <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Devise du Commerce</label>
+            <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Devise du Commerce &amp; Facturation</label>
             <div className="relative">
               <select
-                className="w-full h-14 bg-black/40 border border-white/10 rounded-2xl px-5 text-sm text-white focus:border-vendeur-emerald outline-none transition-all appearance-none cursor-pointer"
-                value={localMerchant?.currency}
-                onChange={e => { setLocalMerchant({...localMerchant, currency: e.target.value}); setIsDirty(true); }}
+                className={`w-full h-14 bg-black/40 border px-5 text-sm text-white focus:border-vendeur-emerald outline-none transition-all appearance-none cursor-pointer rounded-2xl ${localMerchant?.currency !== merchant?.currency ? "border-amber-500/60 bg-amber-500/5" : "border-white/10"}`}
+                value={localMerchant?.currency || "XOF"}
+                onChange={e => {
+                  const newCurr = e.target.value;
+                  const oldCurr = merchant?.currency || "XOF";
+                  if (newCurr !== oldCurr) {
+                    setCurrencyChangeWarning({ newCurrency: newCurr, oldCurrency: oldCurr });
+                  }
+                  // Keep currency and billingCurrency synchronized
+                  setLocalMerchant({
+                    ...localMerchant,
+                    currency: newCurr,
+                    billingCurrency: newCurr
+                  });
+                  setIsDirty(true);
+                }}
               >
                 <option value="XOF">Franc CFA (XOF) - UEMOA</option>
                 <option value="XAF">Franc CFA (XAF) - CEMAC</option>
                 <option value="GNF">Franc Guinéen (GNF)</option>
-                <option value="NGN">Naira (NGN)</option>
-                <option value="GHS">Cedi (GHS)</option>
-                <option value="KES">Shilling (KES)</option>
+                <option value="NGN">Naira Nigérian (NGN)</option>
+                <option value="GHS">Cedi Ghanéen (GHS)</option>
+                <option value="KES">Shilling Kenyan (KES)</option>
                 <option value="MAD">Dirham Marocain (MAD)</option>
                 <option value="DZD">Dinar Algérien (DZD)</option>
                 <option value="TND">Dinar Tunisien (TND)</option>
                 <option value="CDF">Franc Congolais (CDF)</option>
-                <option value="MRU">Ouguiya (MRU)</option>
+                <option value="MRU">Ouguiya Mauritanien (MRU)</option>
+                <option value="ZAR">Rand Sud-Africain (ZAR)</option>
                 <option value="EUR">Euro (€)</option>
                 <option value="USD">Dollar ($)</option>
               </select>
               <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 text-white/20 pointer-events-none" size={16} />
             </div>
+
+            {/* Warning badge when currency has changed */}
+            {localMerchant?.currency !== merchant?.currency && (
+              <div className="flex items-start gap-2 px-4 py-3 rounded-xl bg-amber-500/10 border border-amber-500/20">
+                <span className="text-amber-400 text-base shrink-0 mt-0.5">💰</span>
+                <p className="text-xs text-amber-300 leading-relaxed font-medium">
+                  Conversion automatique activée : après enregistrement, les prix de tous vos produits et vos frais de livraison seront automatiquement convertis en <strong className="text-white font-black">{localMerchant?.currency}</strong>.
+                </p>
+              </div>
+            )}
           </div>
+
+          {/* Currency Change Confirmation Modal */}
+          {currencyChangeWarning && (
+            <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/70 backdrop-blur-lg animate-in fade-in duration-200">
+              <div className="w-full max-w-md bg-vendeur-coal border border-white/10 rounded-3xl p-8 space-y-6 shadow-2xl animate-in zoom-in-95 duration-300">
+                <div className="space-y-2">
+                  <div className="h-12 w-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-2xl mb-4">💱</div>
+                  <h3 className="text-xl font-black uppercase tracking-tight text-white">Changer la Devise Principale ?</h3>
+                  <p className="text-white/50 text-sm leading-relaxed">
+                    Cette action va convertir automatiquement les prix de vos produits, vos frais de livraison, l'affichage de vos factures et les messages de vente du Vendeur IA WhatsApp.
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-4 p-4 bg-white/5 rounded-2xl border border-white/5">
+                  <div className="flex-1 text-center">
+                    <p className="text-[9px] font-black text-white/30 uppercase tracking-widest mb-1">Actuelle</p>
+                    <p className="text-sm font-black text-white uppercase">{currencyChangeWarning.oldCurrency}</p>
+                    <p className="text-[10px] text-white/40 font-mono mt-1">Ex: 10 000 {currencyChangeWarning.oldCurrency}</p>
+                  </div>
+                  <div className="text-2xl text-white/20">→</div>
+                  <div className="flex-1 text-center">
+                    <p className="text-[9px] font-black text-amber-400 uppercase tracking-widest mb-1">Nouvelle</p>
+                    <p className="text-sm font-black text-amber-400 uppercase">{currencyChangeWarning.newCurrency}</p>
+                    <p className="text-[10px] text-amber-300 font-mono mt-1 font-bold">
+                      ≈ {convertCurrencyAmount(10000, currencyChangeWarning.oldCurrency, currencyChangeWarning.newCurrency).toLocaleString()} {currencyChangeWarning.newCurrency}
+                    </p>
+                  </div>
+                </div>
+
+                <p className="text-[10px] text-white/30 font-medium">
+                  Tous les libellés de la vitrine et de l'IA WhatsApp seront instantanément mis à jour.
+                </p>
+
+                <div className="grid grid-cols-2 gap-3 pt-2">
+                  <button
+                    onClick={() => {
+                      setLocalMerchant({
+                        ...localMerchant,
+                        currency: currencyChangeWarning.oldCurrency,
+                        billingCurrency: currencyChangeWarning.oldCurrency
+                      });
+                      setIsDirty(false);
+                      setCurrencyChangeWarning(null);
+                    }}
+                    className="h-12 rounded-2xl border border-white/10 text-white/60 hover:text-white hover:bg-white/5 transition-all text-[10px] font-black uppercase tracking-widest"
+                  >
+                    Annuler
+                  </button>
+                  <button
+                    onClick={() => setCurrencyChangeWarning(null)}
+                    className="h-12 rounded-2xl bg-amber-500 text-black font-black text-[10px] uppercase tracking-widest hover:bg-amber-400 transition-all"
+                  >
+                    Confirmer
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
 
           <div className="space-y-1.5">
             <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Catégorie de Commerce</label>
@@ -487,17 +570,17 @@ function BoutiqueTab({ merchant, initialKnowledge, accessToken }: { merchant: an
                   }
                 }}
               >
-                <option value="fashion">👗 Mode & Accessoires</option>
-                <option value="food">🍔 Restauration & Food</option>
-                <option value="beauty">💄 Soins & Cosmétiques</option>
-                <option value="electronics">📱 Électronique & High-Tech</option>
-                <option value="artisan">🛠️ Artisanat & Fait Main</option>
+                <option value="fashion">👗 Mode &amp; Accessoires</option>
+                <option value="food">🍔 Restauration &amp; Food</option>
+                <option value="beauty">💄 Soins &amp; Cosmétiques</option>
+                <option value="electronics">📱 Électronique &amp; High-Tech</option>
+                <option value="artisan">🛠️ Artisanat &amp; Fait Main</option>
                 <option value="services">💼 Prestations de Services</option>
-                <option value="digital">📚 Produits Digitaux & Formations</option>
-                <option value="home">🏠 Maison & Décoration</option>
-                <option value="grocery">🛒 Épicerie & Supérette</option>
-                <option value="health">💊 Santé & Bien-être</option>
-                <option value="auto">🚗 Auto-Moto & Pièces</option>
+                <option value="digital">📚 Produits Digitaux &amp; Formations</option>
+                <option value="home">🏠 Maison &amp; Décoration</option>
+                <option value="grocery">🛒 Épicerie &amp; Supérette</option>
+                <option value="health">💊 Santé &amp; Bien-être</option>
+                <option value="auto">🚗 Auto-Moto &amp; Pièces</option>
                 <option value="other">📦 Autre Commerce</option>
               </select>
               <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 text-white/20 pointer-events-none" size={16} />
@@ -566,22 +649,6 @@ function BoutiqueTab({ merchant, initialKnowledge, accessToken }: { merchant: an
               </div>
             </div>
           )}
-
-          <div className="space-y-1.5">
-            <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Devise de Facturation</label>
-            <select
-              className="w-full h-14 rounded-2xl bg-black/40 border border-white/10 px-4 text-white focus:border-vendeur-emerald outline-none transition-all appearance-none cursor-pointer"
-              value={localMerchant?.billingCurrency || "XOF"}
-              onChange={e => { setLocalMerchant({...localMerchant, billingCurrency: e.target.value}); setIsDirty(true); }}
-            >
-              <option value="XOF">FCFA (XOF)</option>
-              <option value="GHS">Cedi (GHS)</option>
-              <option value="NGN">Naira (NGN)</option>
-              <option value="USD">Dollar (USD)</option>
-              <option value="KES">Shilling (KES)</option>
-              <option value="ZAR">Rand (ZAR)</option>
-            </select>
-          </div>
           <div className="space-y-1.5">
              <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Adresse / Zone</label>
              <AddressAutocomplete

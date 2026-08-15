@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/apiClient";
 import { useAuthStore } from "@/stores/authStore";
 import { useOnboardingStore } from "@/stores/onboardingStore";
+import { useMerchantCurrency } from "@/hooks/useMerchantCurrency";
 import { toast } from "sonner";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
@@ -53,6 +54,7 @@ const BUSINESS_CONFIGS: Record<string, any> = {
 export function OrderManager() {
   const { accessToken } = useAuthStore();
   const { tempData } = useOnboardingStore();
+  const merchantCurrency = useMerchantCurrency();
   const queryClient = useQueryClient();
   const businessCategory = tempData?.category || "fashion";
   const config = BUSINESS_CONFIGS[businessCategory] || BUSINESS_CONFIGS.default;
@@ -258,12 +260,12 @@ export function OrderManager() {
                     {order.items.map((item: any, i: number) => (
                       <div key={i} className="flex justify-between items-center text-sm">
                         <span className="text-white/60 font-medium">{item.quantity}x {item.name}</span>
-                        <span className="text-white font-bold">{item.price.toLocaleString()} XOF</span>
+                        <span className="text-white font-bold">{item.price.toLocaleString()} {order.currency || merchantCurrency}</span>
                       </div>
                     ))}
                     <div className="flex justify-between items-center pt-2 border-t border-white/5">
-                      <span className="text-[10px] font-black text-white/20 uppercase tracking-widest">Total</span>
-                      <span className="text-xl font-black text-emerald-400">{order.totalAmount.toLocaleString()} XOF</span>
+                       <span className="text-[10px] font-black text-white/20 uppercase tracking-widest">Total</span>
+                       <span className="text-xl font-black text-emerald-400">{order.totalAmount.toLocaleString()} {order.currency || merchantCurrency}</span>
                     </div>
                   </div>
                 </div>

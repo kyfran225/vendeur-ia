@@ -21,6 +21,7 @@ import { paystackService } from "../../services/paystack.service.js";
 import { logger } from "../../services/logger.service.js";
 import { env } from "../../config/env.js";
 import { GEMINI_DEFAULT_VISION_MODEL, resolveGeminiModel } from "../../config/gemini.js";
+import { convertCurrencyAmount } from "@vendeur-ia/core";
 import axios from "axios";
 import crypto from "crypto";
 
@@ -256,12 +257,51 @@ export class CommerceService {
   }
 
   async updateMerchant(ownerId: string, data: any) {
+    const existingMerchant = await CommerceMerchantModel.findOne({ ownerId });
+    if (!existingMerchant) throw new Error("Merchant not found");
+
+    const previousCurrency = existingMerchant.currency || "XOF";
+    const targetCurrency = data.currency || existingMerchant.currency || "XOF";
+
+    // Detect if currency changed
+    const currencyChanged = data.currency && data.currency.toUpperCase() !== previousCurrency.toUpperCase();
+
     const merchant = await CommerceMerchantModel.findOneAndUpdate(
       { ownerId },
       { $set: data },
       { new: true }
     );
     if (!merchant) throw new Error("Merchant not found");
+
+    // If currency changed, convert all existing products and knowledge delivery fees
+    if (currencyChanged) {
+      logger.info(`[Currency Migration] Converting catalog and fees for merchant ${merchant.businessName} (${previousCurrency} -> ${targetCurrency})`);
+
+      // 1. Convert products prices
+      const products = await CommerceProductModel.find({ merchantId: merchant._id });
+      for (const prod of products) {
+        const oldPrice = prod.price || 0;
+        const newPrice = convertCurrencyAmount(oldPrice, previousCurrency, targetCurrency);
+        await CommerceProductModel.findByIdAndUpdate(prod._id, {
+          price: newPrice,
+          currency: targetCurrency
+        });
+      }
+
+      // 2. Convert delivery fees in knowledge base
+      const knowledge = await CommerceKnowledgeModel.findOne({ merchantId: merchant._id });
+      if (knowledge && knowledge.businessRules && Array.isArray(knowledge.businessRules.deliveryFees)) {
+        const updatedFees = knowledge.businessRules.deliveryFees.map((fee: any) => ({
+          zone: fee.zone,
+          price: convertCurrencyAmount(fee.price || 0, previousCurrency, targetCurrency)
+        }));
+
+        await CommerceKnowledgeModel.findByIdAndUpdate(knowledge._id, {
+          "businessRules.deliveryFees": updatedFees
+        });
+      }
+    }
+
     return merchant;
   }
 

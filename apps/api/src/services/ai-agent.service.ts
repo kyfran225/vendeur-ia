@@ -98,9 +98,11 @@ export class AIAgentService {
     };
 
     // --- HYBRID CATALOG STRATEGY ---
+    const activeCurrency = merchant.currency || "XOF";
+
     // 1. Specific search results (RAG)
     const ragStr = ragProducts.length > 0
-      ? `\n🔎 RÉSULTATS DE RECHERCHE PRÉCIS (Priorité) :\n` + ragProducts.map(p => `- ${p.name}: ${p.price} ${p.currency || "XOF"} (${p.description || "Pas de description"})`).join("\n")
+      ? `\n🔎 RÉSULTATS DE RECHERCHE PRÉCIS (Priorité) :\n` + ragProducts.map(p => `- ${p.name}: ${p.price} ${p.currency || activeCurrency} (${p.description || "Pas de description"})`).join("\n")
       : "";
 
     // 2. High-level catalog overview (excluding what's already in RAG)
@@ -136,7 +138,7 @@ export class AIAgentService {
         if (isService && p.serviceDeliveryType) extras.push(`📍 Mode: ${p.serviceDeliveryType}`);
         if (isDigital && p.digitalFormat) extras.push(`📁 Format: ${p.digitalFormat}`);
         const extraStr = extras.length > 0 ? ` | ${extras.join(" | ")}` : "";
-        return `- ${p.name}: ${p.price} ${p.currency || "XOF"} [${stockStatus}]${extraStr}`;
+        return `- ${p.name}: ${p.price} ${p.currency || activeCurrency} [${stockStatus}]${extraStr}`;
       }).join("\n")
       : "";
 
@@ -258,6 +260,7 @@ ${ragStr}${productsStr || (!ragStr ? "Aucune offre disponible pour le moment." :
 ${categoryBehavior}
 
 RÈGLES D'ACTION ET ENGAGEMENT :
+- DEVISE DU COMMERCE : La devise officielle est "${merchant.currency || "XOF"}". Indique TOUJOURS les prix en ${merchant.currency || "XOF"} (jamais dans une autre devise sauf si le client le demande expressément).
 - LIVRAISON / MODALITÉ : ${isService || isDigital ? "Prestation sur place, en ligne ou sur rendez-vous." : `Tarifs par zone :\n${deliveryFeesStr}\nSi la zone n'est pas dans la liste, demande l'adresse exacte.`}
 - PAIEMENTS : ${paymentsStr}.
 - CONDITIONS / RETOURS : ${knowledge.businessRules?.returnPolicy || "Selon conditions de l'établissement"}.

@@ -10,6 +10,11 @@ export const CreateProductSchema = z.object({
     imageUrl: z.string().optional().or(z.string().length(0)),
     images: z.array(z.string()).optional(),
     isService: z.boolean().optional(),
+    digitalUrl: z.string().optional(),
+    digitalFormat: z.string().optional(),
+    serviceDuration: z.string().optional(),
+    serviceDeliveryType: z.string().optional(),
+    preparationTime: z.string().optional(),
   })
 });
 
@@ -23,6 +28,11 @@ export const UpdateProductSchema = z.object({
     images: z.array(z.string()).optional(),
     availability: z.enum(["available", "limited", "sold_out", "hidden"]).optional(),
     isService: z.boolean().optional(),
+    digitalUrl: z.string().optional(),
+    digitalFormat: z.string().optional(),
+    serviceDuration: z.string().optional(),
+    serviceDeliveryType: z.string().optional(),
+    preparationTime: z.string().optional(),
   })
 });
 

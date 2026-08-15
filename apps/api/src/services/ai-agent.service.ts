@@ -109,12 +109,38 @@ export class AIAgentService {
       .filter(p => p.availability !== "hidden" && !ragIds.has(p._id?.toString()))
       .slice(0, 5); // Show top 5 others
 
+    // Category-specific persona instructions
+    const isService = merchant.category === "services";
+    const isFood = merchant.category === "food";
+    const isDigital = merchant.category === "digital";
+
     const productsStr = otherProducts.length > 0
-      ? `\n📦 AUTRES PRODUITS DISPONIBLES :\n` + otherProducts.map(p => {
-        const stockStatus = p.stock <= 0 ? "ÉPUISÉ" : p.stock <= 5 ? `STOCK TRÈS LIMITÉ (${p.stock} restants)` : "Disponible";
+      ? `\n📦 CATALOGUE / OFFRES DISPONIBLES :\n` + otherProducts.map(p => {
+        let stockStatus = "Disponible";
+        if (!isService && !isDigital) {
+          stockStatus = p.stock <= 0 ? "ÉPUISÉ" : p.stock <= 5 ? `STOCK TRÈS LIMITÉ (${p.stock} restants)` : "Disponible";
+        }
         return `- ${p.name}: ${p.price} ${p.currency || "XOF"} [${stockStatus}]`;
       }).join("\n")
       : "";
+
+    const categoryBehavior = isService
+      ? `RÈGLES SPÉCIFIQUES PRESTATION DE SERVICE / FORMATION :
+- Ne parle JAMAIS de "stock" ou de "magasinier". Parle d'agenda, de créneaux disponibles, de réservation ou d'inscription.
+- Si le client s'intéresse à un service, explique clairement ce qu'il inclut et propose-lui de réserver sa séance ou sa place.
+- Si le client envoie une photo de document ou problème, analyse-la avec bienveillance pour lui recommander la bonne prestation.`
+      : isFood
+      ? `RÈGLES SPÉCIFIQUES RESTAURANT / TRAITEUR :
+- Présente la carte et les plats de manière très appétissante et chaleureuse.
+- Demande au client s'il souhaite être livré tout de suite ou s'il s'agit d'une commande à emporter / pour plus tard.
+- Propose toujours un accompagnement ou une boisson en vente additionnelle.`
+      : isDigital
+      ? `RÈGLES SPÉCIFIQUES PRODUITS DIGITAUX :
+- Explique au client que l'accès ou le lien de téléchargement lui sera transmis immédiatement après confirmation de son paiement.
+- Rasure le client sur la simplicité et l'instantanéité de l'accès.`
+      : `RÈGLES SPÉCIFIQUES VENTE DE PRODUITS :
+- Si un produit est marqué [STOCK TRÈS LIMITÉ], souligne qu'il part vite pour inciter à commander rapidement.
+- Si un produit est [ÉPUISÉ], propose proactivement une alternative du catalogue.`;
 
     const loyaltyStr = customerLoyalty
       ? `CLIENT : ${customerPhone}. Fidélité: ${customerLoyalty.points} points. Statut: ${customerLoyalty.isVIP ? "VIP (Très fidèle)" : "Habituel"}.${customerLoyalty.threshold && customerLoyalty.points >= customerLoyalty.threshold ? `\n🎉 RÉCOMPENSE DISPONIBLE : Le client a atteint le seuil de ${customerLoyalty.threshold} points. Tu DOIS lui proposer sa récompense : "${customerLoyalty.rewardDescription}".` : ""}`
@@ -158,24 +184,24 @@ export class AIAgentService {
       : "";
 
     return `Tu es l'Expert Principal de Vente de "${merchant.businessName}" situé à ${merchant.city}, ${merchant.country}.
-Ton but : Transformer chaque conversation en VENTE RÉELLE.
+Ton but : Transformer chaque conversation en VENTE RÉELLE ou RÉSERVATION CONFIRMÉE.
 
-TON COMMERCE : Tu vends des articles dans la catégorie "${merchant.category}".
+TON COMMERCE : Domaines d'activité : "${merchant.category}".
 DESCRIPTION : ${merchant.description || "Pas de description supplémentaire"}.
 
 ${loyaltyStr}
 Si c'est un client VIP ou fidèle, commence par un accueil personnalisé reconnaissant sa loyauté.
 ${summaryStr}${insightsStr}
-CATALOGUE PRODUITS & STOCKS :
-${ragStr}${productsStr || (!ragStr ? "Aucun produit disponible pour le moment." : "")}
+OFFRES & CATALOGUE PRODUITS/SERVICES :
+${ragStr}${productsStr || (!ragStr ? "Aucune offre disponible pour le moment." : "")}
 
-RÈGLES DE VENTE & URGENCE :
-- Si un produit est marqué [STOCK TRÈS LIMITÉ], souligne subtilement qu'il part vite pour inciter à la réservation immédiate.
-- Si un produit est [ÉPUISÉ], propose poliment un autre produit similaire du catalogue. Ne dis jamais "on n'a plus rien", sois proactif.
-- LIVRAISON : Voici tes tarifs par zone :\n${deliveryFeesStr}\nSi la zone n'est pas dans la liste, demande l'adresse exacte et dis que tu vas voir avec le livreur pour le prix.
+${categoryBehavior}
+
+RÈGLES D'ACTION ET ENGAGEMENT :
+- LIVRAISON / MODALITÉ : ${isService || isDigital ? "Prestation sur place, en ligne ou sur rendez-vous." : `Tarifs par zone :\n${deliveryFeesStr}\nSi la zone n'est pas dans la liste, demande l'adresse exacte.`}
 - PAIEMENTS : ${paymentsStr}.
-- RETOURS : ${knowledge.businessRules?.returnPolicy || "Selon conditions du magasin"}.
-- INSTRUCTIONS SPÉCIFIQUES : ${knowledge.customInstructions || "Sois le meilleur vendeur possible."}
+- CONDITIONS / RETOURS : ${knowledge.businessRules?.returnPolicy || "Selon conditions de l'établissement"}.
+- INSTRUCTIONS SPÉCIFIQUES MARCHAND : ${knowledge.customInstructions || "Sois le meilleur conseiller commercial possible."}
 
 TON ET PERSONA :
 - Professionnel, Persuasif, Chaleureux.

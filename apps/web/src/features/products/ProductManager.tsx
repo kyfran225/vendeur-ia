@@ -21,116 +21,175 @@ interface Product {
   price: number;
   stock: number;
   category: string;
+  description?: string;
+  imageUrl?: string;
+  images?: string[];
   isService?: boolean;
+  digitalUrl?: string;
+  digitalFormat?: string;
+  serviceDuration?: string;
+  serviceDeliveryType?: string;
+  preparationTime?: string;
 }
 
 // Adaptive UI Configuration
 const BUSINESS_CONFIGS: Record<string, any> = {
   fashion: {
-    title: "Catalogue Mode",
+    title: "Catalogue Mode & Accessoires",
     itemLabel: "Article",
     stockLabel: "Stock",
-    icon: <ShoppingBag size={48} className="text-white/10" />,
-    accent: "emerald",
-    scannerHint: "Scannez vos vêtements ou accessoires"
+    icon: <ShoppingBag size={48} className="text-emerald-400/20" />,
+    btnBg: "bg-emerald-400 hover:bg-emerald-500 text-black font-black",
+    badgeBg: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
+    showScanner: true,
+    showStock: true,
+    actionButtonLabel: "Nouveau Produit"
   },
   food: {
-    title: "Menu Restaurant",
-    itemLabel: "Plat",
+    title: "Menu & Restauration",
+    itemLabel: "Plat / Formule",
     stockLabel: "Disponibilité",
     icon: <Utensils size={48} className="text-amber-500/20" />,
-    accent: "amber",
-    scannerHint: "Scannez vos plats ou boissons"
+    btnBg: "bg-amber-400 hover:bg-amber-500 text-black font-black",
+    badgeBg: "bg-amber-500/10 text-amber-400 border-amber-500/20",
+    showScanner: true,
+    showStock: false,
+    actionButtonLabel: "Ajouter au Menu"
   },
   services: {
-    title: "Mes Prestations",
+    title: "Mes Prestations & Services",
     itemLabel: "Service",
-    stockLabel: "Disponibilité",
+    stockLabel: "Créneaux",
     icon: <Zap size={48} className="text-sky-500/20" />,
-    accent: "sky",
-    scannerHint: "Décrivez votre service à l'IA"
+    btnBg: "bg-sky-400 hover:bg-sky-500 text-black font-black",
+    badgeBg: "bg-sky-500/10 text-sky-400 border-sky-500/20",
+    showScanner: false,
+    showStock: false,
+    actionButtonLabel: "Créer un Service"
   },
   digital: {
-    title: "Produits Digitaux",
-    itemLabel: "Fichier",
+    title: "Produits Digitaux & Formations",
+    itemLabel: "Contenu Digital",
     stockLabel: "Accès",
     icon: <Laptop size={48} className="text-purple-500/20" />,
-    accent: "purple",
-    scannerHint: "Uploadez vos contenus"
+    btnBg: "bg-purple-400 hover:bg-purple-500 text-black font-black",
+    badgeBg: "bg-purple-500/10 text-purple-400 border-purple-500/20",
+    showScanner: false,
+    showStock: false,
+    actionButtonLabel: "Ajouter Contenu Digital"
   },
   artisan: {
-    title: "Atelier Artisanat",
+    title: "Atelier & Créations",
     itemLabel: "Création",
     stockLabel: "En stock",
     icon: <Hammer size={48} className="text-orange-500/20" />,
-    accent: "orange",
-    scannerHint: "Scannez vos créations uniques"
+    btnBg: "bg-orange-400 hover:bg-orange-500 text-black font-black",
+    badgeBg: "bg-orange-500/10 text-orange-400 border-orange-500/20",
+    showScanner: true,
+    showStock: true,
+    actionButtonLabel: "Ajouter Création"
   },
   beauty: {
-    title: "Cosmétiques & Beauté",
+    title: "Cosmétiques & Soins",
     itemLabel: "Produit",
     stockLabel: "Stock",
     icon: <Heart size={48} className="text-pink-500/20" />,
-    accent: "pink",
-    scannerHint: "Scannez vos produits de beauté"
+    btnBg: "bg-pink-400 hover:bg-pink-500 text-black font-black",
+    badgeBg: "bg-pink-500/10 text-pink-400 border-pink-500/20",
+    showScanner: true,
+    showStock: true,
+    actionButtonLabel: "Ajouter Soin/Produit"
   },
   electronics: {
     title: "Stock High-Tech",
-    itemLabel: "Article",
+    itemLabel: "Appareil",
     stockLabel: "Stock",
     icon: <Monitor size={48} className="text-blue-500/20" />,
-    accent: "blue",
-    scannerHint: "Scannez vos appareils électroniques"
+    btnBg: "bg-blue-400 hover:bg-blue-500 text-black font-black",
+    badgeBg: "bg-blue-500/10 text-blue-400 border-blue-500/20",
+    showScanner: true,
+    showStock: true,
+    actionButtonLabel: "Ajouter Appareil"
   },
   home: {
-    title: "Maison & Déco",
+    title: "Maison & Décoration",
     itemLabel: "Article",
     stockLabel: "Stock",
     icon: <Home size={48} className="text-indigo-500/20" />,
-    accent: "indigo",
-    scannerHint: "Scannez vos articles de maison"
+    btnBg: "bg-indigo-400 hover:bg-indigo-500 text-black font-black",
+    badgeBg: "bg-indigo-500/10 text-indigo-400 border-indigo-500/20",
+    showScanner: true,
+    showStock: true,
+    actionButtonLabel: "Ajouter Article"
   },
   grocery: {
-    title: "Mon Épicerie",
+    title: "Épicerie & Équipement",
     itemLabel: "Produit",
     stockLabel: "Stock",
     icon: <ShoppingCart size={48} className="text-lime-500/20" />,
-    accent: "lime",
-    scannerHint: "Scannez vos produits alimentaires"
+    btnBg: "bg-lime-400 hover:bg-lime-500 text-black font-black",
+    badgeBg: "bg-lime-500/10 text-lime-400 border-lime-500/20",
+    showScanner: true,
+    showStock: true,
+    actionButtonLabel: "Ajouter Produit"
   },
   health: {
     title: "Santé & Bien-être",
     itemLabel: "Produit",
     stockLabel: "Stock",
     icon: <Activity size={48} className="text-red-500/20" />,
-    accent: "red",
-    scannerHint: "Scannez vos produits de santé"
+    btnBg: "bg-red-400 hover:bg-red-500 text-black font-black",
+    badgeBg: "bg-red-500/10 text-red-400 border-red-500/20",
+    showScanner: true,
+    showStock: true,
+    actionButtonLabel: "Ajouter Produit"
   },
   auto: {
-    title: "Auto-Moto",
+    title: "Auto & Pièces Détachées",
     itemLabel: "Pièce",
     stockLabel: "Stock",
     icon: <Car size={48} className="text-slate-500/20" />,
-    accent: "slate",
-    scannerHint: "Scannez vos pièces ou accessoires"
+    btnBg: "bg-slate-300 hover:bg-slate-400 text-black font-black",
+    badgeBg: "bg-slate-500/10 text-slate-400 border-slate-500/20",
+    showScanner: true,
+    showStock: true,
+    actionButtonLabel: "Ajouter Pièce"
   },
   other: {
-    title: "Mon Catalogue",
-    itemLabel: "Article",
-    stockLabel: "Stock",
+    title: "Mon Offre & Catalogue",
+    itemLabel: "Article / Service",
+    stockLabel: "Disponible",
     icon: <Box size={48} className="text-gray-500/20" />,
-    accent: "gray",
-    scannerHint: "Scannez vos articles"
+    btnBg: "bg-emerald-400 hover:bg-emerald-500 text-black font-black",
+    badgeBg: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
+    showScanner: true,
+    showStock: true,
+    actionButtonLabel: "Ajouter Élément"
   }
 };
 
-const DEFAULT_CONFIG = BUSINESS_CONFIGS.fashion;
+const DEFAULT_CONFIG = BUSINESS_CONFIGS.other;
 
 export function ProductManager() {
   const { tempData } = useOnboardingStore();
   const { accessToken } = useAuthStore();
-  const queryClient = useQueryClient();
-  const businessCategory = tempData?.category || "fashion";
+  const merchantFromCache = useMerchant();
+  const { data: dashboardData, isLoading: isDashboardLoading } = useQuery({
+    queryKey: ["dashboard"],
+    queryFn: async () => {
+      const res = await axios.get(`${API_URL}/api/commerce/dashboard`, {
+        headers: { Authorization: `Bearer ${accessToken}` }
+      });
+      return res.data;
+    },
+    enabled: !!accessToken
+  });
+
+  const merchant = merchantFromCache || dashboardData?.merchant;
+  const isMerchantLoading = !merchant && isDashboardLoading;
+
+  const businessCategory = merchant?.category || tempData?.category || "other";
+  const activeCurrency = merchant?.currency || "XOF";
   const config = useMemo(() => BUSINESS_CONFIGS[businessCategory] || DEFAULT_CONFIG, [businessCategory]);
 
   const [isScannerOpen, setIsScannerOpen] = useState(false);
@@ -138,23 +197,26 @@ export function ProductManager() {
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [deletingProduct, setDeletingProduct] = useState<Product | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
+
   const [newProduct, setNewProduct] = useState({
     name: "",
     price: NaN,
     stock: 1,
     category: businessCategory,
     description: "",
-    imageUrl: ""
+    imageUrl: "",
+    digitalUrl: "",
+    digitalFormat: "PDF / E-Book",
+    serviceDuration: "1h",
+    serviceDeliveryType: "Présentiel",
+    preparationTime: "15-20 min"
   });
+
   const [captionData, setCaptionData] = useState<{ isOpen: boolean; text: string; productName: string }>({
     isOpen: false,
     text: "",
     productName: ""
   });
-
-  // Merchant Data from Cache
-  const merchant = useMerchant();
-  const activeCurrency = merchant?.currency || "XOF";
 
   const { data: products = [], isLoading } = useQuery<Product[]>({
     queryKey: ["products"],
@@ -168,17 +230,18 @@ export function ProductManager() {
   });
 
   const createMutation = useMutation({
-    mutationFn: (newProduct: any) =>
-      axios.post(`${API_URL}/api/commerce/products`, newProduct, {
+    mutationFn: (newProd: any) =>
+      axios.post(`${API_URL}/api/commerce/products`, newProd, {
         headers: { Authorization: `Bearer ${accessToken}` }
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["products"] });
-      toast.success("Article ajouté au catalogue !");
+      toast.success("Ajouté au catalogue avec succès ! ✨");
+      setIsAddingManual(false);
     },
     onError: (error: any) => {
       console.error("Create Product Error:", error);
-      toast.error("Erreur lors de l'ajout. Vérifiez votre connexion.");
+      toast.error("Erreur lors de l'ajout.");
     }
   });
 
@@ -194,7 +257,7 @@ export function ProductManager() {
     },
     onError: (error: any) => {
       console.error("Delete Product Error:", error);
-      toast.error("Impossible de supprimer l'article.");
+      toast.error("Impossible de supprimer.");
     }
   });
 
@@ -205,7 +268,7 @@ export function ProductManager() {
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["products"] });
-      toast.success("Mise à jour réussie.");
+      toast.success("Mise à jour réussie ! ✨");
       setEditingProduct(null);
     },
     onError: (error: any) => {
@@ -275,7 +338,7 @@ export function ProductManager() {
         }));
         setIsAddingManual(true);
       }
-      toast.success("Analyse terminée ! ✨");
+      toast.success("Analyse IA terminée ! ✨");
     },
     onError: () => {
       toast.error("Échec de l'analyse de l'image.");
@@ -285,45 +348,38 @@ export function ProductManager() {
     }
   });
 
-  const handleVisionUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const dataUrl = event.target?.result as string;
-        if (editingProduct) setEditingProduct({ ...editingProduct, imageUrl: dataUrl } as any);
-        else setNewProduct(prev => ({ ...prev, imageUrl: dataUrl }));
-      };
-      reader.readAsDataURL(file);
-      visionMutation.mutate(file);
-    }
-  };
+  const [autoAnalyzeWithIA, setAutoAnalyzeWithIA] = useState(true);
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleUnifiedPhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = async (event) => {
-        const dataUrl = event.target?.result as string;
-        try {
-          const compressedBlob = await compressImage(dataUrl, 1080, 0.7);
-          const compressedDataUrl = await new Promise<string>((resolve) => {
-            const r = new FileReader();
-            r.onload = () => resolve(r.result as string);
-            r.readAsDataURL(compressedBlob);
-          });
+    if (!file) return;
 
-          if (editingProduct) {
-            setEditingProduct({ ...editingProduct, imageUrl: compressedDataUrl } as any);
-          } else {
-            setNewProduct({ ...newProduct, imageUrl: compressedDataUrl });
-          }
-        } catch (error) {
-          toast.error("Erreur lors de la compression de l'image");
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      const dataUrl = event.target?.result as string;
+      try {
+        const compressedBlob = await compressImage(dataUrl, 1080, 0.7);
+        const compressedDataUrl = await new Promise<string>((resolve) => {
+          const r = new FileReader();
+          r.onload = () => resolve(r.result as string);
+          r.readAsDataURL(compressedBlob);
+        });
+
+        if (editingProduct) {
+          setEditingProduct({ ...editingProduct, imageUrl: compressedDataUrl } as any);
+        } else {
+          setNewProduct(prev => ({ ...prev, imageUrl: compressedDataUrl }));
         }
-      };
-      reader.readAsDataURL(file);
-    }
+
+        // Trigger AI vision analysis if auto-analyze option is enabled
+        if (autoAnalyzeWithIA && config.showScanner) {
+          visionMutation.mutate(file);
+        }
+      } catch (error) {
+        toast.error("Erreur lors du traitement de la photo");
+      }
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleUpdate = (e: React.FormEvent) => {
@@ -340,13 +396,10 @@ export function ProductManager() {
       category: newProduct.category || businessCategory,
       isService: businessCategory === "services"
     });
-    setIsAddingManual(false);
-    setNewProduct({ name: "", price: NaN, stock: 1, category: businessCategory, description: "", imageUrl: "" });
   };
 
   const handleScanComplete = (scannedData: any) => {
     if (scannedData.isBatch && Array.isArray(scannedData.items)) {
-      let createdCount = 0;
       scannedData.items.forEach((item: any) => {
         createMutation.mutate({
           name: item.name || "Article IA",
@@ -355,14 +408,10 @@ export function ProductManager() {
           category: item.category || businessCategory,
           description: item.description || "",
           imageUrl: item.image || ""
-        }, {
-          onSuccess: () => {
-            createdCount++;
-          }
         });
       });
       setIsScannerOpen(false);
-      toast.success(`${scannedData.items.length} articles ajoutés au catalogue !`);
+      toast.success(`${scannedData.items.length} éléments ajoutés au catalogue !`);
       return;
     }
 
@@ -379,6 +428,25 @@ export function ProductManager() {
     setIsScannerOpen(false);
     setIsAddingManual(true);
   };
+
+  if (isMerchantLoading) {
+    return (
+      <div className="p-6 space-y-8 min-h-screen animate-pulse">
+        <div className="flex justify-between items-center">
+          <div className="space-y-3">
+            <div className="h-10 w-72 bg-white/10 rounded-2xl" />
+            <div className="h-4 w-96 bg-white/5 rounded-lg" />
+          </div>
+          <div className="h-12 w-48 bg-white/10 rounded-2xl" />
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 pt-8">
+          {[1, 2, 3, 4].map(i => (
+            <div key={i} className="h-80 bg-white/5 rounded-3xl border border-white/5" />
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 space-y-8 relative min-h-screen">
@@ -397,7 +465,7 @@ export function ProductManager() {
         productName={captionData.productName}
       />
 
-      {/* Custom Confirmation Modal */}
+      {/* Confirmation Modal */}
       <ConfirmationModal
         isOpen={!!deletingProduct}
         onClose={() => setDeletingProduct(null)}
@@ -412,78 +480,114 @@ export function ProductManager() {
         type="danger"
       />
 
-      {/* Edit Form Modal */}
+      {/* Edit / Add Form Modal */}
       {(editingProduct || isAddingManual) && (
         <div className="fixed inset-0 z-[150] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/90 backdrop-blur-md" onClick={() => { setEditingProduct(null); setIsAddingManual(false); }} />
           <form
             onSubmit={editingProduct ? handleUpdate : handleManualCreate}
-            className="relative w-full max-w-lg bg-[#0c0f0d] border border-white/10 rounded-[2.5rem] p-8 space-y-6 shadow-2xl animate-in zoom-in-95 duration-200"
+            className="relative w-full max-w-xl bg-[#0c0f0d] border border-white/10 rounded-[2.5rem] p-8 space-y-6 shadow-2xl animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto"
           >
-            <div className="flex justify-between items-center mb-4">
+            <div className="flex justify-between items-center mb-2">
               <h2 className="text-2xl font-black text-white">
-                {editingProduct ? "Modifier" : "Ajouter"} {config.itemLabel.toLowerCase()}
+                {editingProduct ? "Modifier" : "Nouveau"} {config.itemLabel}
               </h2>
-              <button onClick={() => { setEditingProduct(null); setIsAddingManual(false); }} type="button" className="text-white/20 hover:text-white"><X size={24} /></button>
+              <button onClick={() => { setEditingProduct(null); setIsAddingManual(false); }} type="button" className="text-white/40 hover:text-white"><X size={24} /></button>
             </div>
 
             <div className="space-y-4">
-              <div className="flex flex-col items-center gap-4 pb-4">
-                {/* Image Upload Area */}
-                <div className="relative group">
-                  <label className="relative flex flex-col items-center justify-center w-32 h-32 rounded-[2rem] bg-white/5 border-2 border-dashed border-white/10 hover:border-emerald-300/50 transition-all cursor-pointer overflow-hidden">
-                    {(editingProduct ? (editingProduct as any).imageUrl : newProduct.imageUrl) ? (
-                      <img
-                        src={editingProduct ? (editingProduct as any).imageUrl : newProduct.imageUrl}
-                        className="w-full h-full object-cover"
-                        alt="Preview"
-                      />
-                    ) : (
-                      <div className="flex flex-col items-center gap-2 text-white/20">
-                        <Camera size={24} />
-                        <span className="text-[8px] font-black uppercase tracking-widest">Photo</span>
-                      </div>
+              {/* Unified Intelligent Photo Uploader */}
+              {businessCategory !== "digital" && (
+                <div className="flex flex-col items-center gap-3 pb-2">
+                  <div className="relative w-full">
+                    <label className={cn(
+                      "relative flex flex-col items-center justify-center w-full h-36 rounded-3xl bg-white/5 border-2 border-dashed border-white/10 hover:border-emerald-400/50 transition-all cursor-pointer overflow-hidden p-4 group text-center",
+                      analyzing && "opacity-75 cursor-wait border-sky-400/50"
+                    )}>
+                      {(editingProduct ? (editingProduct as any).imageUrl : newProduct.imageUrl) ? (
+                        <img
+                          src={editingProduct ? (editingProduct as any).imageUrl : newProduct.imageUrl}
+                          className="w-full h-full object-cover rounded-2xl"
+                          alt="Preview"
+                        />
+                      ) : (
+                        <div className="flex flex-col items-center gap-2">
+                          {analyzing ? (
+                            <>
+                              <Loader2 size={28} className="animate-spin text-sky-400" />
+                              <span className="text-xs font-black uppercase text-sky-400 tracking-wider">Analyse de la photo par l'IA...</span>
+                            </>
+                          ) : (
+                            <>
+                              <div className="p-3 bg-white/5 rounded-2xl text-white/40 group-hover:text-emerald-400 group-hover:bg-emerald-400/10 transition-all">
+                                <Camera size={24} />
+                              </div>
+                              <div>
+                                <p className="text-xs font-black uppercase text-white tracking-wider">Ajouter une photo</p>
+                                <p className="text-[10px] text-white/40 font-medium mt-0.5">Cliquez pour choisir une photo ou scanner</p>
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      )}
+                      <input type="file" accept="image/*" className="hidden" onChange={handleUnifiedPhotoUpload} disabled={analyzing} />
+                    </label>
+
+                    {(editingProduct ? (editingProduct as any).imageUrl : newProduct.imageUrl) && (
+                      <button
+                        type="button"
+                        onClick={() => editingProduct
+                          ? setEditingProduct({ ...editingProduct, imageUrl: "" } as any)
+                          : setNewProduct(prev => ({ ...prev, imageUrl: "" }))
+                        }
+                        className="absolute top-2 right-2 h-7 w-7 rounded-full bg-rose-500 text-white flex items-center justify-center shadow-lg hover:bg-rose-600 transition-all z-10"
+                      >
+                        <X size={14} />
+                      </button>
                     )}
-                    <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
-                  </label>
-                  {(editingProduct ? (editingProduct as any).imageUrl : newProduct.imageUrl) && (
-                    <button
-                      type="button"
-                      onClick={() => editingProduct
-                        ? setEditingProduct({ ...editingProduct, imageUrl: "" } as any)
-                        : setNewProduct({ ...newProduct, imageUrl: "" })
-                      }
-                      className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-rose-500 text-white flex items-center justify-center shadow-lg hover:bg-rose-600 transition-all"
-                    >
-                      <X size={14} />
-                    </button>
+                  </div>
+
+                  {/* AI Auto-fill Checkbox / Toggle */}
+                  {config.showScanner && (
+                    <label className="flex items-center gap-2.5 px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-white/70 hover:text-white transition-all cursor-pointer w-full justify-center">
+                      <input
+                        type="checkbox"
+                        checked={autoAnalyzeWithIA}
+                        onChange={(e) => setAutoAnalyzeWithIA(e.target.checked)}
+                        className="w-4 h-4 rounded border-white/20 text-emerald-400 focus:ring-emerald-400 accent-emerald-400"
+                      />
+                      <Sparkles size={14} className="text-sky-400 shrink-0" />
+                      <span className="text-[10px] font-black uppercase tracking-wider">Pré-remplir automatiquement les infos avec l'IA</span>
+                    </label>
                   )}
                 </div>
+              )}
 
-                <label className={cn(
-                  "flex items-center gap-2 px-6 py-3 rounded-2xl bg-sky-400/10 border border-sky-400/20 text-sky-400 text-[10px] font-black uppercase tracking-widest hover:bg-sky-400/20 transition-all cursor-pointer shadow-lg shadow-sky-400/5",
-                  analyzing && "opacity-50 cursor-wait"
-                )}>
-                   {analyzing ? <Loader2 className="animate-spin" size={14} /> : <Camera size={14} />}
-                   Remplir par IA Vision
-                   <input type="file" accept="image/*" className="hidden" onChange={handleVisionUpload} disabled={analyzing} />
-                </label>
-              </div>
-
-              <label className="grid gap-2 text-xs font-black uppercase tracking-widest text-white/40">
-                Nom {config.itemLabel.toLowerCase() === "service" ? "de la prestation" : "de l'article"}
+              {/* Title / Name Field */}
+              <label className="grid gap-2 text-xs font-black uppercase tracking-widest text-white/60">
+                {businessCategory === "digital" && "Titre du Contenu / E-Book / Formation"}
+                {businessCategory === "services" && "Intitulé de la Prestation"}
+                {businessCategory === "food" && "Nom du Plat ou Formule"}
+                {businessCategory !== "digital" && businessCategory !== "services" && businessCategory !== "food" && "Nom de l'Article"}
                 <input
-                  className="h-12 rounded-xl bg-white/5 border border-white/10 px-4 text-white outline-none focus:border-emerald-300 transition-all"
+                  className="h-12 rounded-xl bg-white/5 border border-white/10 px-4 text-white outline-none focus:border-emerald-300 transition-all placeholder:text-white/20"
                   value={editingProduct ? editingProduct.name : newProduct.name}
                   onChange={e => editingProduct
                     ? setEditingProduct({...editingProduct, name: e.target.value})
                     : setNewProduct({...newProduct, name: e.target.value})
                   }
+                  placeholder={
+                    businessCategory === "digital" ? "ex: E-Book Réussir sur WhatsApp" :
+                    businessCategory === "services" ? "ex: Consultation Coaching 1h" :
+                    businessCategory === "food" ? "ex: Menu Burger Gourmet + Frites" : "ex: Chaussure Sneakers Nike"
+                  }
                   required
                 />
               </label>
+
+              {/* Price & Stock/Duration */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <label className="grid gap-2 text-xs font-black uppercase tracking-widest text-white/40">
+                <label className="grid gap-2 text-xs font-black uppercase tracking-widest text-white/60">
                   Prix ({activeCurrency})
                   <input
                     type="number"
@@ -499,51 +603,157 @@ export function ProductManager() {
                     required
                   />
                 </label>
-                <label className="grid gap-2 text-xs font-black uppercase tracking-widest text-white/40">
-                  {config.stockLabel}
-                  <input
-                    type="number"
-                    className="h-12 rounded-xl bg-white/5 border border-white/10 px-4 text-white outline-none focus:border-emerald-300 transition-all"
-                    value={editingProduct ? (isNaN(editingProduct.stock) ? "" : editingProduct.stock) : (isNaN(newProduct.stock) ? "" : newProduct.stock)}
-                    onChange={e => {
-                      const val = e.target.value === "" ? NaN : parseInt(e.target.value);
-                      editingProduct
-                        ? setEditingProduct({...editingProduct, stock: val})
-                        : setNewProduct({...newProduct, stock: val});
-                    }}
-                    placeholder="0"
-                  />
-                </label>
+
+                {/* DOMAIN SPECIFIC SECOND FIELD */}
+                {businessCategory === "digital" && (
+                  <label className="grid gap-2 text-xs font-black uppercase tracking-widest text-white/60">
+                    Format du Contenu
+                    <select
+                      className="h-12 rounded-xl bg-[#141815] border border-white/10 px-4 text-white outline-none focus:border-emerald-300 transition-all"
+                      value={editingProduct ? (editingProduct.digitalFormat || "PDF / E-Book") : newProduct.digitalFormat}
+                      onChange={e => editingProduct
+                        ? setEditingProduct({...editingProduct, digitalFormat: e.target.value})
+                        : setNewProduct({...newProduct, digitalFormat: e.target.value})
+                      }
+                    >
+                      <option value="PDF / E-Book">PDF / E-Book</option>
+                      <option value="Formation Vidéo">Formation Vidéo</option>
+                      <option value="Fichier ZIP / Logiciel">Fichier ZIP / Logiciel</option>
+                      <option value="Lien VIP / Groupe">Lien VIP / Groupe</option>
+                    </select>
+                  </label>
+                )}
+
+                {businessCategory === "services" && (
+                  <label className="grid gap-2 text-xs font-black uppercase tracking-widest text-white/60">
+                    Durée Estimée
+                    <input
+                      className="h-12 rounded-xl bg-white/5 border border-white/10 px-4 text-white outline-none focus:border-emerald-300 transition-all"
+                      value={editingProduct ? (editingProduct.serviceDuration || "1h") : newProduct.serviceDuration}
+                      onChange={e => editingProduct
+                        ? setEditingProduct({...editingProduct, serviceDuration: e.target.value})
+                        : setNewProduct({...newProduct, serviceDuration: e.target.value})
+                      }
+                      placeholder="ex: 45 min, 1h30"
+                    />
+                  </label>
+                )}
+
+                {businessCategory === "food" && (
+                  <label className="grid gap-2 text-xs font-black uppercase tracking-widest text-white/60">
+                    Temps de Préparation
+                    <input
+                      className="h-12 rounded-xl bg-white/5 border border-white/10 px-4 text-white outline-none focus:border-emerald-300 transition-all"
+                      value={editingProduct ? (editingProduct.preparationTime || "15-20 min") : newProduct.preparationTime}
+                      onChange={e => editingProduct
+                        ? setEditingProduct({...editingProduct, preparationTime: e.target.value})
+                        : setNewProduct({...newProduct, preparationTime: e.target.value})
+                      }
+                      placeholder="ex: 15-20 min"
+                    />
+                  </label>
+                )}
+
+                {config.showStock && (
+                  <label className="grid gap-2 text-xs font-black uppercase tracking-widest text-white/60">
+                    {config.stockLabel}
+                    <input
+                      type="number"
+                      className="h-12 rounded-xl bg-white/5 border border-white/10 px-4 text-white outline-none focus:border-emerald-300 transition-all"
+                      value={editingProduct ? (isNaN(editingProduct.stock) ? "" : editingProduct.stock) : (isNaN(newProduct.stock) ? "" : newProduct.stock)}
+                      onChange={e => {
+                        const val = e.target.value === "" ? NaN : parseInt(e.target.value);
+                        editingProduct
+                          ? setEditingProduct({...editingProduct, stock: val})
+                          : setNewProduct({...newProduct, stock: val});
+                      }}
+                      placeholder="1"
+                    />
+                  </label>
+                )}
               </div>
-              <label className="grid gap-2 text-xs font-black uppercase tracking-widest text-white/40">
-                Description
+
+              {/* SPECIFIC FIELD: DIGITAL LINK */}
+              {businessCategory === "digital" && (
+                <label className="grid gap-2 text-xs font-black uppercase tracking-widest text-white/60">
+                  Lien du Fichier / Accès (Google Drive, Notion, etc.)
+                  <input
+                    className="h-12 rounded-xl bg-white/5 border border-white/10 px-4 text-emerald-400 outline-none focus:border-emerald-300 transition-all placeholder:text-white/20"
+                    value={editingProduct ? (editingProduct.digitalUrl || "") : newProduct.digitalUrl}
+                    onChange={e => editingProduct
+                      ? setEditingProduct({...editingProduct, digitalUrl: e.target.value})
+                      : setNewProduct({...newProduct, digitalUrl: e.target.value})
+                    }
+                    placeholder="https://drive.google.com/file/d/..."
+                  />
+                  <span className="text-[10px] text-white/40 normal-case">Ce lien sera envoyé automatiquement par le Vendeur IA dès confirmation du paiement client.</span>
+                </label>
+              )}
+
+              {/* SPECIFIC FIELD: SERVICE DELIVERY */}
+              {businessCategory === "services" && (
+                <label className="grid gap-2 text-xs font-black uppercase tracking-widest text-white/60">
+                  Mode de délivrance
+                  <select
+                    className="h-12 rounded-xl bg-[#141815] border border-white/10 px-4 text-white outline-none focus:border-emerald-300 transition-all"
+                    value={editingProduct ? (editingProduct.serviceDeliveryType || "Présentiel") : newProduct.serviceDeliveryType}
+                    onChange={e => editingProduct
+                      ? setEditingProduct({...editingProduct, serviceDeliveryType: e.target.value})
+                      : setNewProduct({...newProduct, serviceDeliveryType: e.target.value})
+                    }
+                  >
+                    <option value="Présentiel (En cabinet/boutique)">Présentiel (En cabinet / boutique)</option>
+                    <option value="À domicile">À domicile</option>
+                    <option value="En Ligne (Google Meet/Zoom)">En Ligne (Google Meet / Zoom)</option>
+                  </select>
+                </label>
+              )}
+
+              {/* Description Field */}
+              <label className="grid gap-2 text-xs font-black uppercase tracking-widest text-white/60">
+                Description détaillée
                 <textarea
-                  className="min-h-[100px] rounded-xl bg-white/5 border border-white/10 p-4 text-white outline-none focus:border-emerald-300 transition-all resize-none"
-                  value={editingProduct ? (editingProduct as any).description : newProduct.description}
+                  className="min-h-[100px] rounded-xl bg-white/5 border border-white/10 p-4 text-white outline-none focus:border-emerald-300 transition-all resize-none placeholder:text-white/20"
+                  value={editingProduct ? (editingProduct.description || "") : newProduct.description}
                   onChange={e => editingProduct
-                    ? setEditingProduct({...editingProduct, description: e.target.value} as any)
+                    ? setEditingProduct({...editingProduct, description: e.target.value})
                     : setNewProduct({...newProduct, description: e.target.value})
                   }
-                  placeholder="Détails du produit..."
+                  placeholder={
+                    businessCategory === "services" ? "Expliquez le contenu de la séance ou prestation..." :
+                    businessCategory === "digital" ? "Décrivez ce que le client apprendra ou téléchargera..." :
+                    "Détails, caractéristiques, ingrédients..."
+                  }
                 />
               </label>
             </div>
 
-            <button type="submit" className="w-full h-14 bg-emerald-300 text-black font-black uppercase tracking-widest rounded-2xl flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all">
-              {editingProduct ? <Save size={18} /> : <Plus size={18} />}
-              {editingProduct ? "Enregistrer" : "Ajouter"}
+            <button
+              type="submit"
+              disabled={createMutation.isPending || updateMutation.isPending}
+              className="w-full h-14 bg-emerald-400 hover:bg-emerald-500 text-black font-black uppercase tracking-widest rounded-2xl flex items-center justify-center gap-2 hover:scale-[1.01] active:scale-95 transition-all shadow-xl shadow-emerald-400/20 disabled:opacity-50"
+            >
+              {(createMutation.isPending || updateMutation.isPending) ? (
+                <Loader2 size={18} className="animate-spin" />
+              ) : editingProduct ? (
+                <Save size={18} />
+              ) : (
+                <Plus size={18} />
+              )}
+              {editingProduct ? "Enregistrer les modifications" : "Enregistrer et Publier"}
             </button>
           </form>
         </div>
       )}
 
+      {/* Main Header */}
       <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
         <div>
           <h1 className="text-3xl md:text-5xl font-black tracking-tighter text-white uppercase">{config.title}</h1>
-          <p className="text-white/40 mt-1 md:text-lg">Gérez vos {config.itemLabel.toLowerCase()}s et laissez l'IA travailler.</p>
+          <p className="text-white/40 mt-1 md:text-lg">Gérez vos {config.itemLabel.toLowerCase()}s et laissez le Vendeur IA conclure les transactions.</p>
         </div>
         <div className="flex flex-col xs:flex-row gap-3">
-          {businessCategory !== "services" && (
+          {config.showScanner && (
             <button
               onClick={() => setIsScannerOpen(true)}
               className="flex items-center justify-center gap-2 bg-sky-400 text-black px-6 py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] md:text-xs shadow-xl hover:bg-sky-500 hover:scale-[1.02] active:scale-95 transition-all w-full sm:w-auto"
@@ -552,105 +762,128 @@ export function ProductManager() {
             </button>
           )}
           <button
-            onClick={() => {
-               if (businessCategory === "services") setIsAddingManual(true);
-               else {
-                 setIsAddingManual(true);
-               }
-            }}
-            className={`flex items-center justify-center gap-2 bg-${config.accent}-300 text-black px-6 py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] md:text-xs shadow-xl hover:scale-[1.02] active:scale-95 transition-all w-full sm:w-auto`}
+            onClick={() => setIsAddingManual(true)}
+            className={cn(
+              "flex items-center justify-center gap-2 px-6 py-4 rounded-2xl text-[10px] md:text-xs tracking-widest uppercase shadow-xl hover:scale-[1.02] active:scale-95 transition-all w-full sm:w-auto",
+              config.btnBg
+            )}
           >
-            {businessCategory === "services" ? <Zap size={18} /> : <Plus size={18} />}
-            {businessCategory === "services" ? "Ajouter Service" : "Manuel"}
+            {!config.showScanner ? <Zap size={18} /> : <Plus size={18} />}
+            {config.actionButtonLabel}
           </button>
         </div>
       </header>
 
+      {/* Grid of items */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {isLoading ? (
           <div className="col-span-full py-20 flex flex-col items-center justify-center gap-4 text-white/20">
             <Loader2 size={48} className="animate-spin" />
-            <p className="font-black uppercase tracking-[0.2em] text-xs">Chargement du catalogue...</p>
+            <p className="font-black uppercase tracking-[0.2em] text-xs">Chargement de votre catalogue...</p>
           </div>
         ) : products.length === 0 ? (
           <div className="col-span-full py-20 border-2 border-dashed border-white/5 rounded-[3rem] flex flex-col items-center justify-center gap-4 text-white/20">
-            <Package size={48} />
-            <p className="font-black uppercase tracking-[0.2em] text-xs">Votre catalogue est vide</p>
+            {config.icon}
+            <p className="font-black uppercase tracking-[0.2em] text-xs">Aucun {config.itemLabel.toLowerCase()} créé pour le moment</p>
           </div>
         ) : (
           products.map(p => (
-            <div key={p._id} className={`bg-[#0c0f0d] border border-white/10 rounded-3xl overflow-hidden group hover:border-${config.accent}-500/30 transition-all shadow-xl`}>
-              <div className="aspect-square bg-white/5 flex items-center justify-center relative">
-                {(p as any).imageUrl || (p as any).images?.[0] ? (
-                  <img src={(p as any).imageUrl || (p as any).images?.[0]} className="w-full h-full object-cover" alt={p.name} />
-                ) : config.icon}
-                <div className="absolute top-4 right-4 bg-sky-500/10 border border-sky-500/30 px-3 py-1 rounded-lg flex items-center gap-1.5 backdrop-blur-md">
-                  <Sparkles size={12} className="text-sky-400" />
-                  <span className="text-[10px] font-black text-sky-400 uppercase tracking-widest">IA Powered</span>
+            <div key={p._id} className="bg-[#0c0f0d] border border-white/10 rounded-3xl overflow-hidden group hover:border-emerald-500/30 transition-all shadow-xl flex flex-col justify-between">
+              <div>
+                <div className="aspect-square bg-white/5 flex items-center justify-center relative overflow-hidden">
+                  {(p as any).imageUrl || (p as any).images?.[0] ? (
+                    <img src={(p as any).imageUrl || (p as any).images?.[0]} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt={p.name} />
+                  ) : (
+                    <div className="flex flex-col items-center gap-2">
+                      {config.icon}
+                      <span className="text-[10px] font-black uppercase text-white/20 tracking-widest">{businessCategory}</span>
+                    </div>
+                  )}
+                  <div className="absolute top-4 right-4 bg-sky-500/10 border border-sky-500/30 px-3 py-1 rounded-lg flex items-center gap-1.5 backdrop-blur-md">
+                    <Sparkles size={12} className="text-sky-400" />
+                    <span className="text-[10px] font-black text-sky-400 uppercase tracking-widest">IA Active</span>
+                  </div>
+                </div>
+
+                <div className="p-6 space-y-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <h3 className="font-black text-lg text-white line-clamp-1">{p.name}</h3>
+                      <p className="text-xs text-white/40">{p.digitalFormat || p.serviceDuration || p.category}</p>
+                    </div>
+                    <p className="font-black text-emerald-400 whitespace-nowrap">{p.price.toLocaleString()} {(p as any).currency || activeCurrency}</p>
+                  </div>
+                  {p.description && (
+                    <p className="text-xs text-white/40 line-clamp-2">{p.description}</p>
+                  )}
                 </div>
               </div>
-              <div className="p-6 space-y-4">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <h3 className="font-black text-lg text-white line-clamp-1">{p.name}</h3>
-                    <p className="text-sm text-white/40">{p.category}</p>
-                  </div>
-                  <p className={`font-black text-${config.accent}-400`}>{p.price.toLocaleString()} {(p as any).currency || activeCurrency}</p>
-                </div>
+
+              <div className="p-6 pt-0 space-y-4">
                 <div className="flex items-center justify-between pt-4 border-t border-white/5">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold text-white/60">{config.stockLabel}:</span>
-                    <div className="flex items-center bg-white/5 rounded-lg border border-white/10 px-1 py-0.5">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          updateStockMutation.mutate({ id: p._id, stock: Math.max(0, p.stock - 1) });
-                        }}
-                        disabled={updateStockMutation.isPending}
-                        className="p-1 hover:text-rose-400 transition-colors disabled:opacity-30"
-                      >
-                        <Minus size={12} />
-                      </button>
-                      <span className="w-8 text-center text-xs font-black text-white">
-                        {updateStockMutation.isPending && updateStockMutation.variables?.id === p._id
-                          ? <Loader2 size={10} className="animate-spin inline" />
-                          : p.stock
-                        }
-                      </span>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          updateStockMutation.mutate({ id: p._id, stock: p.stock + 1 });
-                        }}
-                        disabled={updateStockMutation.isPending}
-                        className="p-1 hover:text-emerald-400 transition-colors disabled:opacity-30"
-                      >
-                        <Plus size={12} />
-                      </button>
+                  {config.showStock ? (
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-bold text-white/60">{config.stockLabel}:</span>
+                      <div className="flex items-center bg-white/5 rounded-lg border border-white/10 px-1 py-0.5">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            updateStockMutation.mutate({ id: p._id, stock: Math.max(0, p.stock - 1) });
+                          }}
+                          disabled={updateStockMutation.isPending}
+                          className="p-1 hover:text-rose-400 transition-colors disabled:opacity-30"
+                        >
+                          <Minus size={12} />
+                        </button>
+                        <span className="w-8 text-center text-xs font-black text-white">
+                          {updateStockMutation.isPending && updateStockMutation.variables?.id === p._id
+                            ? <Loader2 size={10} className="animate-spin inline" />
+                            : p.stock
+                          }
+                        </span>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            updateStockMutation.mutate({ id: p._id, stock: p.stock + 1 });
+                          }}
+                          disabled={updateStockMutation.isPending}
+                          className="p-1 hover:text-emerald-400 transition-colors disabled:opacity-30"
+                        >
+                          <Plus size={12} />
+                        </button>
+                      </div>
                     </div>
-                  </div>
+                  ) : (
+                    <span className={cn("text-[10px] font-black px-2.5 py-1 rounded-lg uppercase tracking-wider border", config.badgeBg)}>
+                      {businessCategory === "digital" ? (p.digitalFormat || "Accès Digital") :
+                       businessCategory === "services" ? (p.serviceDeliveryType || "Sur RDV") : "Menu Resto"}
+                    </span>
+                  )}
+
                   <div className="flex gap-2">
                     <button
                       onClick={() => generateCaptionMutation.mutate(p._id)}
                       disabled={generateCaptionMutation.isPending}
                       className="p-2 bg-sky-500/10 text-sky-400 rounded-xl hover:bg-sky-500/20 transition-all flex items-center gap-2 group/btn"
+                      title="Générer Légende TikTok/Insta par IA"
                     >
                       {generateCaptionMutation.isPending && generateCaptionMutation.variables === p._id ? (
                         <Loader2 size={16} className="animate-spin" />
                       ) : (
                         <MessageSquareText size={16} />
                       )}
-                      <span className="max-w-0 overflow-hidden group-hover/btn:max-w-xs transition-all duration-500 text-[10px] font-black uppercase tracking-widest whitespace-nowrap">Caption</span>
                     </button>
                     <button
                       onClick={() => setEditingProduct(p)}
                       className="p-2 bg-white/5 text-white/60 rounded-xl hover:bg-white/10 hover:text-white transition-all"
+                      title="Modifier"
                     >
                       <Edit size={16} />
                     </button>
                     <button
                       onClick={() => setDeletingProduct(p)}
                       className="p-2 bg-rose-500/10 text-rose-400 rounded-xl hover:bg-rose-500/20 transition-all"
+                      title="Supprimer"
                     >
                       <Trash2 size={16} />
                     </button>

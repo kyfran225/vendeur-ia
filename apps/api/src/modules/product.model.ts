@@ -10,6 +10,12 @@ export interface IProduct extends Document {
   images: string[];
   stock: number;
   availability: string;
+  // Domain specific fields
+  digitalUrl?: string;
+  digitalFormat?: string;
+  serviceDuration?: string;
+  serviceDeliveryType?: string;
+  preparationTime?: string;
   aiMetadata: {
     tags: string[];
     tiktokCaption?: string;
@@ -26,6 +32,11 @@ const ProductSchema: Schema = new Schema({
   images: [{ type: String }],
   stock: { type: Number, default: 0, min: 0 },
   availability: { type: String, enum: ["available", "limited", "sold_out", "hidden"], default: "available" },
+  digitalUrl: { type: String, default: "" },
+  digitalFormat: { type: String, default: "" },
+  serviceDuration: { type: String, default: "" },
+  serviceDeliveryType: { type: String, default: "" },
+  preparationTime: { type: String, default: "" },
   aiMetadata: {
     tags: [{ type: String }],
     tiktokCaption: { type: String }

@@ -211,7 +211,7 @@ export function PublicShop() {
                              <Package size={48} />
                           </div>
                        )}
-                       {p.stock <= 5 && p.stock > 0 && (
+                       {merchant?.category !== "services" && merchant?.category !== "digital" && p.stock <= 5 && p.stock > 0 && (
                           <div className="absolute top-4 left-4 px-3 py-1 bg-rose-500 text-white text-[8px] font-black uppercase rounded-lg shadow-lg">
                              Stock Limité
                           </div>

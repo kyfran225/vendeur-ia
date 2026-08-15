@@ -14,6 +14,11 @@ Le produit doit être utilisable par un commerçant sans formation technique en 
 2. **Local Context First**: Every prompt must enforce local city/country context and tone.
 3. **Automated Everything**: Receipts, follow-ups, stock alerts must be automated, not manual "workflows".
 
+## Pitch & Key Differentiators (Pitch Points)
+- **Fidélisation & Gamification IA :** L'agent IA suit automatiquement les achats de vos clients sur WhatsApp, leur attribue des points et déclenche des récompenses/remises personnalisées dès qu'ils deviennent VIP pour débloquer de nouveaux achats.
+- **IA Vision Multi-Articles :** Ajout de catalogue entier par simple photo de rayon ou d'étalage.
+- **Validation Automatique des Paiements :** Lecture IA des captures Mobile Money / virements pour valider les commandes instantanément.
+
 ## Documents Opérationnels
 - **[ROADMAP.md](file:///C:/Users/Franck/web-apps/vendeur-ia/ROADMAP.md)** : Plan de finalisation détaillé étape par étape pour passer en production (110% fonctionnel).
 - **[PROTOCOL.md](file:///C:/Users/Franck/web-apps/vendeur-ia/PROTOCOL.md)** : Règles de qualité et standards IA.

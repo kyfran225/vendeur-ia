@@ -42,10 +42,16 @@ export function OffersPage() {
       />
       <div className="max-w-6xl mx-auto space-y-12">
         <button
-          onClick={() => navigate("/dashboard")}
+          onClick={() => {
+            if (window.history.length > 1) {
+              navigate(-1);
+            } else {
+              navigate("/settings?tab=billing");
+            }
+          }}
           className="flex items-center gap-2 text-[10px] font-black uppercase text-white/30 hover:text-white transition-all"
         >
-          <ArrowLeft size={14} /> Retour au Dashboard
+          <ArrowLeft size={14} /> Retour
         </button>
 
         <div className="text-center space-y-4">

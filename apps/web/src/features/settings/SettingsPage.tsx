@@ -446,7 +446,7 @@ function BoutiqueTab({ merchant, initialKnowledge, accessToken }: { merchant: an
           <InputGroup label="WhatsApp Business" value={localMerchant?.whatsappNumber} onChange={v => { setLocalMerchant({...localMerchant, whatsappNumber: v}); setIsDirty(true); }} placeholder="Ex: 07 00 00 00 00" />
 
           <div className="space-y-1.5">
-            <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Devise du Commerce &amp; Facturation</label>
+            <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Devise du Catalogue &amp; Offres</label>
             <div className="relative">
               <select
                 className={`w-full h-14 bg-black/40 border px-5 text-sm text-white focus:border-vendeur-emerald outline-none transition-all appearance-none cursor-pointer rounded-2xl ${localMerchant?.currency !== merchant?.currency ? "border-amber-500/60 bg-amber-500/5" : "border-white/10"}`}
@@ -457,11 +457,9 @@ function BoutiqueTab({ merchant, initialKnowledge, accessToken }: { merchant: an
                   if (newCurr !== oldCurr) {
                     setCurrencyChangeWarning({ newCurrency: newCurr, oldCurrency: oldCurr });
                   }
-                  // Keep currency and billingCurrency synchronized
                   setLocalMerchant({
                     ...localMerchant,
-                    currency: newCurr,
-                    billingCurrency: newCurr
+                    currency: newCurr
                   });
                   setIsDirty(true);
                 }}
@@ -483,13 +481,14 @@ function BoutiqueTab({ merchant, initialKnowledge, accessToken }: { merchant: an
               </select>
               <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 text-white/20 pointer-events-none" size={16} />
             </div>
+            <p className="text-[10px] text-white/30 ml-1 font-medium">Monnaie affichée à vos clients (produits, plats, prestations, formations &amp; WhatsApp).</p>
 
             {/* Warning badge when currency has changed */}
             {localMerchant?.currency !== merchant?.currency && (
               <div className="flex items-start gap-2 px-4 py-3 rounded-xl bg-amber-500/10 border border-amber-500/20">
                 <span className="text-amber-400 text-base shrink-0 mt-0.5">💰</span>
                 <p className="text-xs text-amber-300 leading-relaxed font-medium">
-                  Conversion automatique activée : après enregistrement, les prix de tous vos produits et vos frais de livraison seront automatiquement convertis en <strong className="text-white font-black">{localMerchant?.currency}</strong>.
+                  Conversion automatique activée : après enregistrement, les prix de l'ensemble de votre catalogue et vos frais de livraison seront automatiquement convertis en <strong className="text-white font-black">{localMerchant?.currency}</strong>.
                 </p>
               </div>
             )}

@@ -33,7 +33,7 @@ export const TermsOfServicePage: React.FC = () => {
               Conditions de Service (Terms of Service)
             </h1>
             <p className="text-slate-400 text-sm mt-2">
-              Dernière mise à jour : 14 Août 2026 | Édité par Vendeur IA, Inc. (domaine : vendeuria.maatfeed.com)
+              Dernière mise à jour : 14 Août 2026 | Édité par Vendeur IA (domaine : vendeuria.maatfeed.com)
             </p>
           </div>
 
@@ -42,7 +42,7 @@ export const TermsOfServicePage: React.FC = () => {
             <section>
               <h2 className="text-xl font-bold text-white mb-3">1. Objet et Acceptation</h2>
               <p>
-                Les présentes Conditions de Service régissent l'accès et l'utilisation de la plateforme <strong>Vendeur IA</strong> (accessible sur <code>https://vendeuria.maatfeed.com</code>), exploitée par <strong>Vendeur IA, Inc.</strong> En utilisant nos services d'automatisation des ventes par IA sur WhatsApp, Instagram et Facebook Messenger, vous acceptez sans réserve les présentes conditions.
+                Les présentes Conditions de Service régissent l'accès et l'utilisation de la plateforme <strong>Vendeur IA</strong> (accessible sur <code>https://vendeuria.maatfeed.com</code>), exploitée par <strong>Vendeur IA</strong>. En utilisant nos services d'automatisation des ventes par IA sur WhatsApp, Instagram et Facebook Messenger, vous acceptez sans réserve les présentes conditions.
               </p>
             </section>
 
@@ -77,7 +77,7 @@ export const TermsOfServicePage: React.FC = () => {
             <section>
               <h2 className="text-xl font-bold text-white mb-3">5. Propriété Intellectuelle et Données</h2>
               <p>
-                La marque <strong>Vendeur IA</strong>, les modèles conversationnels, le code source et le design de la plateforme restent la propriété exclusive de Vendeur IA, Inc. Le marchand conserve l'entière propriété de son catalogue produits et des données de sa clientèle.
+                La marque <strong>Vendeur IA</strong>, les modèles conversationnels, le code source et le design de la plateforme restent la propriété exclusive de Vendeur IA. Le marchand conserve l'entière propriété de son catalogue produits et des données de sa clientèle.
               </p>
             </section>
 
@@ -86,7 +86,7 @@ export const TermsOfServicePage: React.FC = () => {
               <h2 className="text-xl font-bold text-white mb-3">6. Contact</h2>
               <p>
                 Pour toute question relative aux présentes Conditions de Service :<br />
-                - <strong>Éditeur :</strong> Vendeur IA, Inc.<br />
+                - <strong>Éditeur :</strong> Vendeur IA<br />
                 - <strong>E-mail :</strong> <a href="mailto:vendeuria@gmail.com" className="text-vendeur-emerald hover:underline">vendeuria@gmail.com</a><br />
                 - <strong>Site Web :</strong> <a href="https://vendeuria.maatfeed.com" className="text-vendeur-emerald hover:underline">https://vendeuria.maatfeed.com</a>
               </p>
@@ -97,7 +97,7 @@ export const TermsOfServicePage: React.FC = () => {
 
       {/* Footer */}
       <footer className="border-t border-white/10 py-6 text-center text-xs text-slate-500">
-        © 2026 Vendeur IA, Inc. Tous droits réservés.
+        © 2026 Vendeur IA. Tous droits réservés.
       </footer>
     </div>
   );

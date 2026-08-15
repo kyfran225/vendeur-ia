@@ -119,14 +119,27 @@ router.get("/stats", authenticate, isAdmin, async (req, res) => {
       .sort({ createdAt: -1 })
       .limit(10);
 
-    // QUEUE STATS
-    const [waiting, active, completed, failed, delayed] = await Promise.all([
-      aiQueue.getWaitingCount(),
-      aiQueue.getActiveCount(),
-      aiQueue.getCompletedCount(),
-      aiQueue.getFailedCount(),
-      aiQueue.getDelayedCount(),
-    ]);
+    // QUEUE STATS (with fallback if Redis is unavailable)
+    let queueStats = {
+      waiting: 0,
+      active: 0,
+      completed: 0,
+      failed: 0,
+      delayed: 0
+    };
+
+    try {
+      const [waiting, active, completed, failed, delayed] = await Promise.all([
+        aiQueue.getWaitingCount(),
+        aiQueue.getActiveCount(),
+        aiQueue.getCompletedCount(),
+        aiQueue.getFailedCount(),
+        aiQueue.getDelayedCount(),
+      ]);
+      queueStats = { waiting, active, completed, failed, delayed };
+    } catch (queueErr: any) {
+      logger.warn(`[Admin Stats] BullMQ/Redis inaccessible: ${queueErr.message}`);
+    }
 
     res.json({
       totalMerchants,
@@ -137,13 +150,7 @@ router.get("/stats", authenticate, isAdmin, async (req, res) => {
       totalGMV,
       recentTransactions,
       providerUsage,
-      queue: {
-        waiting,
-        active,
-        completed,
-        failed,
-        delayed
-      }
+      queue: queueStats
     });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
@@ -257,14 +264,19 @@ router.get("/billing/export", authenticate, isAdmin, async (req, res) => {
 // GET Failed Jobs Details
 router.get("/queue/failed", authenticate, isAdmin, async (req, res) => {
   try {
-    const failedJobs = await aiQueue.getFailed(0, 50);
-    const details = failedJobs.map(job => ({
-      id: job.id,
-      name: job.name,
-      data: job.data,
-      failedReason: job.failedReason,
-      timestamp: job.timestamp
-    }));
+    let details: any[] = [];
+    try {
+      const failedJobs = await aiQueue.getFailed(0, 50);
+      details = failedJobs.map(job => ({
+        id: job.id,
+        name: job.name,
+        data: job.data,
+        failedReason: job.failedReason,
+        timestamp: job.timestamp
+      }));
+    } catch (queueErr: any) {
+      logger.warn(`[Admin Queue Failed] BullMQ/Redis inaccessible: ${queueErr.message}`);
+    }
     res.json(details);
   } catch (error: any) {
     res.status(500).json({ error: error.message });

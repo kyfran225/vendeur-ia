@@ -5,6 +5,6 @@ export const SITE_CONFIG = {
     return `https://${this.domain}`;
   },
   appName: "Vendeur IA",
-  companyName: "Vendeur IA Inc",
+  companyName: "Vendeur IA",
   defaultOgImage: "/android-chrome-512x512.png"
 };

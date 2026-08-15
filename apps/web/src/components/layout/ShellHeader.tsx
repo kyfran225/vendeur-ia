@@ -3,7 +3,7 @@ import { Link, useSearchParams, useLocation } from "react-router-dom";
 import { useAuthStore } from "@/stores/authStore";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/apiClient";
-import { Bot, User, LogOut, AlertCircle } from "lucide-react";
+import { Store, User, LogOut, AlertCircle } from "lucide-react";
 import { Logo } from "@/components/ui/Logo";
 import { PackProModal } from "@/features/dashboard/components/PackProModal";
 import { useSocket } from "@/hooks/useSocket";
@@ -119,14 +119,14 @@ export function ShellHeader() {
           <Logo size={22} />
         </div>
         <div className="hidden md:flex h-10 w-10 rounded-2xl bg-vendeur-emerald/10 items-center justify-center border border-vendeur-emerald/20 shrink-0">
-          <Bot className="text-vendeur-emerald" size={20} />
+          <Store className="text-vendeur-emerald" size={20} />
         </div>
         <div className="text-left min-w-0">
           <p className="text-base md:text-xl font-black text-white uppercase tracking-tight truncate leading-tight">
             {merchant?.businessName || "SYSTEM CORE"}
           </p>
           <p className="text-[8px] md:text-[10px] uppercase tracking-[0.2em] text-vendeur-emerald/60 font-black leading-none truncate">
-            AI Sales Machine
+            Boutique Active
           </p>
         </div>
       </div>

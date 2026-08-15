@@ -113,6 +113,14 @@ export class AIAgentService {
     const isService = merchant.category === "services";
     const isFood = merchant.category === "food";
     const isDigital = merchant.category === "digital";
+    const isFashion = merchant.category === "fashion";
+    const isBeauty = merchant.category === "beauty";
+    const isElectronics = merchant.category === "electronics";
+    const isHome = merchant.category === "home";
+    const isGrocery = merchant.category === "grocery";
+    const isHealth = merchant.category === "health";
+    const isAuto = merchant.category === "auto";
+    const isArtisan = merchant.category === "artisan";
 
     const productsStr = otherProducts.length > 0
       ? `\n📦 CATALOGUE / OFFRES DISPONIBLES :\n` + otherProducts.map(p => {
@@ -120,27 +128,79 @@ export class AIAgentService {
         if (!isService && !isDigital) {
           stockStatus = p.stock <= 0 ? "ÉPUISÉ" : p.stock <= 5 ? `STOCK TRÈS LIMITÉ (${p.stock} restants)` : "Disponible";
         }
-        return `- ${p.name}: ${p.price} ${p.currency || "XOF"} [${stockStatus}]`;
+        // Domain-specific metadata enrichment
+        const extras: string[] = [];
+        if (isFood && p.preparationTime) extras.push(`⏱ Préparation: ${p.preparationTime}`);
+        if (isFood && p.foodOptions) extras.push(`🍽 Options: ${p.foodOptions}`);
+        if (isService && p.serviceDuration) extras.push(`⏳ Durée: ${p.serviceDuration}`);
+        if (isService && p.serviceDeliveryType) extras.push(`📍 Mode: ${p.serviceDeliveryType}`);
+        if (isDigital && p.digitalFormat) extras.push(`📁 Format: ${p.digitalFormat}`);
+        const extraStr = extras.length > 0 ? ` | ${extras.join(" | ")}` : "";
+        return `- ${p.name}: ${p.price} ${p.currency || "XOF"} [${stockStatus}]${extraStr}`;
       }).join("\n")
       : "";
 
     const categoryBehavior = isService
       ? `RÈGLES SPÉCIFIQUES PRESTATION DE SERVICE / FORMATION :
-- Ne parle JAMAIS de "stock" ou de "magasinier". Parle d'agenda, de créneaux disponibles, de réservation ou d'inscription.
-- Si le client s'intéresse à un service, explique clairement ce qu'il inclut et propose-lui de réserver sa séance ou sa place.
-- Si le client envoie une photo de document ou problème, analyse-la avec bienveillance pour lui recommander la bonne prestation.`
+- Tu agis comme un(e) Secrétaire commercial(e) expert(e). Ne parle JAMAIS de "stock" ou de "magasinier".
+- Parle toujours d'agenda, de créneaux disponibles, de réservation ou d'inscription à une session.
+- Si le client s'intéresse à un service, explique clairement : la durée, le déroulement, le lieu de délivrance (présentiel, à domicile, en ligne), puis propose-lui de réserver sa séance.
+- Si le client envoie une photo de document ou décrit un problème, analyse-la avec bienveillance pour lui recommander la bonne prestation.`
       : isFood
-      ? `RÈGLES SPÉCIFIQUES RESTAURANT / TRAITEUR :
-- Présente la carte et les plats de manière très appétissante et chaleureuse.
-- Demande au client s'il souhaite être livré tout de suite ou s'il s'agit d'une commande à emporter / pour plus tard.
-- Propose toujours un accompagnement ou une boisson en vente additionnelle.`
+      ? `RÈGLES SPÉCIFIQUES RESTAURANT / TRAITEUR / PÂTISSERIE :
+- Présente chaque plat ou formule de manière très appétissante, gourmande et chaleureuse avec des emojis.
+- Demande TOUJOURS au client s'il souhaite : sur place 🍽️, à emporter 🛍️ ou en livraison 🛵.
+- Propose systématiquement une boisson, un dessert ou un accompagnement en vente additionnelle.
+- Si le produit a un temps de préparation, mentionne-le pour gérer les attentes du client.`
       : isDigital
-      ? `RÈGLES SPÉCIFIQUES PRODUITS DIGITAUX :
-- Explique au client que l'accès ou le lien de téléchargement lui sera transmis immédiatement après confirmation de son paiement.
-- Rasure le client sur la simplicité et l'instantanéité de l'accès.`
-      : `RÈGLES SPÉCIFIQUES VENTE DE PRODUITS :
+      ? `RÈGLES SPÉCIFIQUES PRODUITS DIGITAUX / FORMATIONS :
+- Explique au client que le lien d'accès ou de téléchargement lui sera transmis IMMÉDIATEMENT et AUTOMATIQUEMENT dès confirmation de son paiement. Aucune attente.
+- Rassure sur la simplicité : "Tu cliques, tu paies, tu accèdes instantanément".
+- Mets en avant la valeur transformatrice du contenu (ce qu'il va apprendre, gagner, accomplir).`
+      : isFashion
+      ? `RÈGLES SPÉCIFIQUES MODE & ACCESSOIRES :
+- Sois très précis sur les pointures, tailles (S/M/L/XL), couleurs et matières disponibles.
+- Propose des conseils de style et de look. Encourage les photos de la tenue portée pour créer une relation.
+- Si un article est en stock limité, crée un sentiment d'urgence élégant : "Il n'en reste que quelques exemplaires".`
+      : isBeauty
+      ? `RÈGLES SPÉCIFIQUES COSMÉTIQUES & SOINS :
+- Prodigue des conseils beauté personnalisés selon le type de peau, les cheveux ou les besoins exprimés par le client.
+- Décris la routine d'utilisation : comment et quand appliquer le produit.
+- Rassure sur la qualité, les ingrédients et les résultats attendus. Partage des conseils d'experts beauté.`
+      : isElectronics
+      ? `RÈGLES SPÉCIFIQUES HIGH-TECH & ÉLECTRONIQUE :
+- Donne la fiche technique complète si demandée : marque, modèle, processeur, mémoire, stockage, état (Neuf / Reconditionné).
+- Mentionne la garantie disponible si applicable.
+- Vérifie la compatibilité si le client cherche un accessoire (ex: chargeur, coque). Demande le modèle exact.
+- Si un produit est reconditionné, explique ce que cela signifie et rassure sur la qualité.`
+      : isHome
+      ? `RÈGLES SPÉCIFIQUES MAISON & DÉCORATION :
+- Précise toujours les dimensions, les matériaux et les coloris disponibles.
+- Donne des conseils d'agencement et d'harmonie de décoration intérieure.
+- Si le client hésite, propose de lui envoyer plus de photos sous différents angles ou dans différents contextes de décor.`
+      : isGrocery
+      ? `RÈGLES SPÉCIFIQUES ÉPICERIE & ALIMENTATION :
+- Propose des lots, des packs famille ou des offres groupées pour augmenter le panier moyen.
+- Mentionne les dates de péremption si le client pose des questions sur la fraîcheur.
+- Si le client achète régulièrement, propose-lui de s'abonner à une commande récurrente.`
+      : isHealth
+      ? `RÈGLES SPÉCIFIQUES SANTÉ & BIEN-ÊTRE :
+- Adopte un ton bienveillant, rassurant et professionnel. Ne fais jamais de promesses médicales.
+- Présente les produits avec leurs bénéfices et conseils d'usage recommandés.
+- Encourage le client à consulter un professionnel de santé pour les questions médicales. Propose le produit comme un complément.`
+      : isAuto
+      ? `RÈGLES SPÉCIFIQUES AUTO & PIÈCES DÉTACHÉES :
+- Demande TOUJOURS la marque, le modèle et l'année du véhicule avant de proposer une pièce.
+- Précise la référence constructeur de la pièce et sa compatibilité exacte.
+- Mentionne si la pièce est d'origine (OEM), équivalente ou générique et explique la différence.`
+      : isArtisan
+      ? `RÈGLES SPÉCIFIQUES ATELIER & ARTISANAT :
+- Mets en valeur le travail fait-main, l'authenticité et le caractère unique de chaque création.
+- Si le client demande une commande personnalisée, explique le processus de création et le délai de fabrication.
+- Encourage le client à partager ses préférences de couleurs, tailles ou matériaux pour une création sur mesure.`
+      : `RÈGLES SPÉCIFIQUES CATALOGUE POLYVALENT :
 - Si un produit est marqué [STOCK TRÈS LIMITÉ], souligne qu'il part vite pour inciter à commander rapidement.
-- Si un produit est [ÉPUISÉ], propose proactivement une alternative du catalogue.`;
+- Si un produit est [ÉPUISÉ], propose proactivement une alternative similaire du catalogue.`;
 
     const loyaltyStr = customerLoyalty
       ? `CLIENT : ${customerPhone}. Fidélité: ${customerLoyalty.points} points. Statut: ${customerLoyalty.isVIP ? "VIP (Très fidèle)" : "Habituel"}.${customerLoyalty.threshold && customerLoyalty.points >= customerLoyalty.threshold ? `\n🎉 RÉCOMPENSE DISPONIBLE : Le client a atteint le seuil de ${customerLoyalty.threshold} points. Tu DOIS lui proposer sa récompense : "${customerLoyalty.rewardDescription}".` : ""}`

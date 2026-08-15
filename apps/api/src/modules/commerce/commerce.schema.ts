@@ -15,6 +15,7 @@ export const CreateProductSchema = z.object({
     serviceDuration: z.string().optional(),
     serviceDeliveryType: z.string().optional(),
     preparationTime: z.string().optional(),
+    foodOptions: z.string().optional(),
   })
 });
 
@@ -33,6 +34,7 @@ export const UpdateProductSchema = z.object({
     serviceDuration: z.string().optional(),
     serviceDeliveryType: z.string().optional(),
     preparationTime: z.string().optional(),
+    foodOptions: z.string().optional(),
   })
 });
 

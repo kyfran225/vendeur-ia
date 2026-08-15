@@ -10,9 +10,10 @@ $ErrorActionPreference = "Stop"
 
 Write-Host "--- Git AI Automation ---" -ForegroundColor Cyan
 
-# 1. Run AI Commit with Auto-Add options
+# 1. Run AI Commit (Staging + AI Message + Commit)
+# If no changes are present, it will just return silently
 $env:GIT_AI_PROVIDER = $Provider
-$cmdArgs = @("scripts/git-ai.py")
+$cmdArgs = @("scripts/gitai.py")
 
 if ($AddAll) { $cmdArgs += "--add-all" }
 elseif ($AddPath) {
@@ -24,17 +25,19 @@ if ($DryRun) { $cmdArgs += "--dry-run" }
 
 python $cmdArgs
 
-if ($LASTEXITCODE -ne 0 -or $DryRun) {
-    if ($DryRun) { Write-Host "Dry run completed." }
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "Error during AI commit process." -ForegroundColor Red
     exit
 }
 
-# 2. Push to Preview
-Write-Host "Pushing to preview..." -ForegroundColor Yellow
-git push origin preview
+# 2. Push to Preview (Only if not a dry run)
+if (-not $DryRun) {
+    Write-Host "Pushing to preview..." -ForegroundColor Yellow
+    git push origin preview
+}
 
 # 3. Optional Merge to Main
-if ($MergeMain) {
+if ($MergeMain -and -not $DryRun) {
     Write-Host "Merging to main..." -ForegroundColor Green
     $currentBranch = git rev-parse --abbrev-ref HEAD
 
@@ -43,6 +46,9 @@ if ($MergeMain) {
         git merge preview --no-edit
         git push origin main
         Write-Host "Successfully merged and pushed to main." -ForegroundColor Green
+    }
+    catch {
+        Write-Host "Merge to main failed. Please check for conflicts." -ForegroundColor Red
     }
     finally {
         git checkout $currentBranch

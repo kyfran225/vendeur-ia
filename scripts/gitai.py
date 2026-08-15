@@ -142,7 +142,7 @@ def main():
 
     files, diff = get_staged_diff()
     if not files:
-        print("No staged changes found. Use 'git add' or run with --add-all.")
+        # Exit silently if no changes, so the PS script can continue to merge if needed
         return
 
     print("Analyzing changes...")

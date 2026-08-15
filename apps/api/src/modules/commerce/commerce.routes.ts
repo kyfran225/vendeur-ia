@@ -886,6 +886,7 @@ router.post("/products", authenticate, validate(CreateProductSchema), async (req
 
     const product = await CommerceProductModel.create({
       ...productData,
+      currency: productData.currency || merchant.currency || "XOF",
       merchantId: merchant._id
     });
     res.status(201).json(product);

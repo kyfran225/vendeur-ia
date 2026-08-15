@@ -15,6 +15,7 @@ const TikTokIcon = ({ size = 16, className = "" }: { size?: number; className?: 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuthStore } from "@/stores/authStore";
 import { useSocket } from "@/hooks/useSocket";
+import { useMerchantCurrency } from "@/hooks/useMerchantCurrency";
 import { toast } from "sonner";
 import { apiClient } from "@/lib/apiClient";
 import { clsx, type ClassValue } from "clsx";
@@ -85,6 +86,8 @@ export function SalesInbox() {
     enabled: isOrderModalOpen
   });
 
+  const merchantCurrency = useMerchantCurrency();
+
   // Socket listener for updates
   useEffect(() => {
     if (socket) {
@@ -100,7 +103,7 @@ export function SalesInbox() {
       });
 
       socket.on("payment:detected", (data: any) => {
-        toast.success(`💰 Paiement détecté pour ${data.platform} (${data.amount} XOF) !`);
+        toast.success(`💰 Paiement détecté pour ${data.platform} (${data.amount} ${data.currency || merchantCurrency}) !`);
         queryClient.invalidateQueries({ queryKey: ["conversations"] });
         if (data.conversationId === selectedChat) {
           queryClient.invalidateQueries({ queryKey: ["messages", selectedChat] });
@@ -440,12 +443,16 @@ export function SalesInbox() {
 function OrderCreationModal({ isOpen, onClose, products, customerId, conversationId }: any) {
   const [selectedItems, setSelectedItems] = useState<any[]>([]);
   const queryClient = useQueryClient();
+  const merchantCurrency = useMerchantCurrency();
 
   const totalAmount = selectedItems.reduce((acc, item) => acc + (item.price * item.quantity), 0);
 
   const createOrderMutation = useMutation({
     mutationFn: async (orderData: any) => {
-      const res = await apiClient.post("/api/commerce/orders", orderData);
+      const res = await apiClient.post("/api/commerce/orders", {
+        ...orderData,
+        currency: merchantCurrency
+      });
       return res.data;
     },
     onSuccess: () => {
@@ -518,7 +525,7 @@ function OrderCreationModal({ isOpen, onClose, products, customerId, conversatio
                 )}
                 <div className="flex-1 min-w-0">
                   <p className="font-bold text-sm truncate text-white group-hover:text-emerald-400">{p.name}</p>
-                  <p className="text-xs font-black text-white/40">{p.price.toLocaleString()} XOF</p>
+                  <p className="text-xs font-black text-white/40">{p.price.toLocaleString()} {p.currency || merchantCurrency}</p>
                 </div>
                 <Plus size={16} className="text-white/20 group-hover:text-emerald-400" />
               </button>
@@ -539,7 +546,7 @@ function OrderCreationModal({ isOpen, onClose, products, customerId, conversatio
                   <div key={item.productId} className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/5">
                     <div className="min-w-0 flex-1">
                       <p className="text-xs font-bold text-white truncate">{item.name}</p>
-                      <p className="text-[10px] text-white/40">{item.price.toLocaleString()} XOF</p>
+                      <p className="text-[10px] text-white/40">{item.price.toLocaleString()} {merchantCurrency}</p>
                     </div>
                     <div className="flex items-center gap-3">
                       <button onClick={() => handleRemoveItem(item.productId)} className="text-white/20 hover:text-rose-400"><Minus size={14} /></button>
@@ -554,7 +561,7 @@ function OrderCreationModal({ isOpen, onClose, products, customerId, conversatio
             <div className="pt-6 border-t border-white/10 mt-6 space-y-4">
               <div className="flex justify-between items-center">
                 <span className="text-[10px] font-black text-white/40 uppercase tracking-widest">Total à payer</span>
-                <span className="text-2xl font-black text-emerald-400">{totalAmount.toLocaleString()} XOF</span>
+                <span className="text-2xl font-black text-emerald-400">{totalAmount.toLocaleString()} {merchantCurrency}</span>
               </div>
               <button
                 disabled={selectedItems.length === 0 || createOrderMutation.isPending}
@@ -563,6 +570,7 @@ function OrderCreationModal({ isOpen, onClose, products, customerId, conversatio
                   conversationId,
                   items: selectedItems,
                   totalAmount,
+                  currency: merchantCurrency,
                   status: "pending"
                 })}
                 className="w-full h-14 bg-emerald-500 text-black font-black uppercase tracking-widest rounded-2xl flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all shadow-xl shadow-emerald-500/20 disabled:opacity-20"

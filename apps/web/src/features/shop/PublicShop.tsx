@@ -271,7 +271,11 @@ export function PublicShop() {
   });
 
   const handleWhatsAppCTA = (product: any) => {
-    const msg = shopCfg.buildWhatsAppMessage(merchant.businessName, product);
+    const enrichedProduct = {
+      ...product,
+      currency: product.currency || merchant.currency || "XOF"
+    };
+    const msg = shopCfg.buildWhatsAppMessage(merchant.businessName, enrichedProduct);
     window.open(`https://wa.me/${merchant.whatsappNumber?.replace(/\+/g, "")}?text=${encodeURIComponent(msg)}`, "_blank");
   };
 
@@ -453,7 +457,7 @@ export function PublicShop() {
                     </div>
 
                     <div className="flex items-center justify-between pt-3 md:pt-4 border-t border-white/5">
-                      <p className="text-xl font-black text-white">{p.price.toLocaleString()} <span className="text-[10px] text-white/40 ml-1">{p.currency || "XOF"}</span></p>
+                      <p className="text-xl font-black text-white">{p.price.toLocaleString()} <span className="text-[10px] text-white/40 ml-1">{p.currency || merchant.currency || "XOF"}</span></p>
                       {hint ? (
                         <span className="text-[9px] font-black text-white/30 uppercase tracking-wider text-right max-w-[100px] leading-tight">{hint}</span>
                       ) : (
@@ -560,7 +564,7 @@ export function PublicShop() {
                   <div>
                     <p className="text-[9px] font-black text-white/20 uppercase tracking-widest mb-1">Prix</p>
                     <p className="text-2xl md:text-3xl font-black text-white">
-                      {selectedProduct.price.toLocaleString()} <span className="text-xs text-white/40">{selectedProduct.currency || "XOF"}</span>
+                      {selectedProduct.price.toLocaleString()} <span className="text-xs text-white/40">{selectedProduct.currency || merchant.currency || "XOF"}</span>
                     </p>
                   </div>
 

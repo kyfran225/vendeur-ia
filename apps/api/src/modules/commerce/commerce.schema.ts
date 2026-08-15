@@ -64,6 +64,7 @@ export const UpdateMerchantSchema = z.object({
     phone: z.string().optional(),
     country: z.string().optional(),
     currency: z.string().optional(),
+    billingCurrency: z.string().optional(),
     paymentChannels: z.array(z.object({
       provider: z.string(),
       label: z.string().optional(),

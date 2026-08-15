@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import {
   LayoutDashboard,
   TrendingUp,
@@ -26,6 +26,7 @@ import { SetupGuide } from "./components/SetupGuide";
 import { SubscriptionBanner } from "./components/SubscriptionBanner";
 import { BriefingRoom } from "./components/BriefingRoom";
 import { VendeurIAPlaygroundModal } from "./components/VendeurIAPlaygroundModal";
+import { SetupCompletionModal } from "./components/SetupCompletionModal";
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -44,6 +45,7 @@ export function SalesDashboard() {
   const [searchParams, setSearchParams] = useSearchParams();
   const isBriefingOpen = searchParams.get("briefing") === "true";
   const isTestIAOpen = searchParams.get("test_ia") === "true";
+  const [isCompletionModalOpen, setIsCompletionModalOpen] = useState(false);
 
   const setIsBriefingOpen = (open: boolean) => {
     if (open) {
@@ -73,6 +75,20 @@ export function SalesDashboard() {
     },
     enabled: !!accessToken
   });
+
+  // Check if all setup steps are completed to auto-trigger celebration modal once
+  useEffect(() => {
+    if (!dashboard?.setupStatus || !dashboard?.merchant?._id) return;
+    
+    const { isFullyOperational } = dashboard.setupStatus;
+    const storageKey = `vendeur_ia_setup_celebrated_${dashboard.merchant._id}`;
+    const alreadyCelebrated = localStorage.getItem(storageKey);
+
+    if (isFullyOperational && !alreadyCelebrated) {
+      setIsCompletionModalOpen(true);
+      localStorage.setItem(storageKey, "true");
+    }
+  }, [dashboard?.setupStatus, dashboard?.merchant?._id]);
 
   useEffect(() => {
     if (socket) {
@@ -153,6 +169,12 @@ export function SalesDashboard() {
         isOpen={isTestIAOpen}
         onClose={() => setIsTestIAOpen(false)}
         merchant={dashboard?.merchant}
+      />
+
+      <SetupCompletionModal
+        isOpen={isCompletionModalOpen}
+        onClose={() => setIsCompletionModalOpen(false)}
+        businessName={dashboard?.merchant?.businessName || "Votre boutique"}
       />
     </main>
   );

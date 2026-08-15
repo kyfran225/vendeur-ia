@@ -129,6 +129,14 @@ export class CommerceService {
       .sort({ createdAt: -1 })
       .limit(10);
 
+    const aiGrowthAdvice = await aiGrowthService.generateGrowthAdvice(merchant._id.toString()).catch(() => ({
+      tips: [
+        { text: "Optimisez vos descriptions produits pour mieux vendre.", action: "/products" },
+        { text: "Répondez rapidement à vos messages dans l'Inbox.", action: "/inbox" },
+        { text: "Configurez vos canaux de paiement pour encaisser vos gains.", action: "/settings?tab=boutique" }
+      ]
+    }));
+
     return {
       merchant,
       subscription,
@@ -137,6 +145,7 @@ export class CommerceService {
       products,
       knowledge,
       recentTransactions,
+      aiGrowthAdvice,
       setupStatus: {
         score: setupScore,
         isFullyOperational,

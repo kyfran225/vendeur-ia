@@ -11,7 +11,6 @@ $ErrorActionPreference = "Stop"
 Write-Host "--- Git AI Automation ---" -ForegroundColor Cyan
 
 # 1. Run AI Commit (Staging + AI Message + Commit)
-# If no changes are present, it will just return silently
 $env:GIT_AI_PROVIDER = $Provider
 $cmdArgs = @("scripts/gitai.py")
 
@@ -38,14 +37,18 @@ if (-not $DryRun) {
 
 # 3. Optional Merge to Main
 if ($MergeMain -and -not $DryRun) {
-    Write-Host "Merging to main..." -ForegroundColor Green
+    Write-Host "Merging to main with AI message..." -ForegroundColor Green
     $currentBranch = git rev-parse --abbrev-ref HEAD
+
+    # Récupérer le dernier message de commit de la branche actuelle
+    $lastCommitMsg = git log -1 --pretty=%B
 
     try {
         git checkout main
-        git merge preview --no-edit
+        # Utiliser le message du dernier commit pour le merge
+        git merge preview --no-edit -m "merge: $lastCommitMsg"
         git push origin main
-        Write-Host "Successfully merged and pushed to main." -ForegroundColor Green
+        Write-Host "Successfully merged to main with message: $lastCommitMsg" -ForegroundColor Green
     }
     catch {
         Write-Host "Merge to main failed. Please check for conflicts." -ForegroundColor Red

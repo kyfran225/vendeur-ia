@@ -601,13 +601,14 @@ export function LandingPage() {
   return (
     <div className="min-h-screen bg-[#07100d] selection:bg-emerald-300/30 overflow-x-hidden text-left pt-14 md:pt-20 w-full">
       <MetaHead
-        title="Vendeur IA | Commercial Virtuel WhatsApp & Automation de Vente 24/7"
-        description="Vendeur IA (Vendeur IA Inc / VendeurIA) est le 1er agent commercial IA autonome sur WhatsApp. Automatisez vos ventes, intégrez WhatsApp Business API et relancez vos clients 24/7."
+        title="Vendeur IA | Commercial Virtuel sur WhatsApp & Instagram"
+        description="Vendeur IA : votre commercial virtuel sur WhatsApp & Instagram. Répondez, conseillez et vendez 24h/24, 7j/7."
         keywords={[
           'vendeur IA',
-          'Vendeur IA Inc',
           'vendeuria',
           'vendeur IA whatsapp',
+          'commercial virtuel whatsapp',
+          'commercial virtuel instagram',
           'vente automatique whatsapp',
           'whatsapp business api',
           'bot vendeur whatsapp',
@@ -671,7 +672,7 @@ export function LandingPage() {
              </Link>
            </div>
            <p className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] md:tracking-[0.4em] text-white/30 leading-relaxed max-w-md">
-             © 2026 Vendeur IA, Inc. Tous droits réservés.
+             © 2026 Vendeur IA Tous droits réservés.
            </p>
         </footer>
       </main>

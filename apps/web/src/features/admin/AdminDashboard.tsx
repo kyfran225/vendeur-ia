@@ -54,7 +54,8 @@ export function AdminDashboard() {
       return res.data;
     },
     enabled: !!accessToken,
-    refetchInterval: 10000 // Refresh every 10s
+    retry: 1,
+    refetchInterval: 15000 // Refresh every 15s
   });
 
   // 1b. Fetch Billing Stats
@@ -64,7 +65,8 @@ export function AdminDashboard() {
       const res = await apiClient.get("/api/admin/billing/stats");
       return res.data;
     },
-    enabled: !!accessToken && activeTab === "billing"
+    enabled: !!accessToken && activeTab === "billing",
+    retry: 1
   });
 
   const { data: failedJobs } = useQuery({
@@ -73,7 +75,8 @@ export function AdminDashboard() {
       const res = await apiClient.get("/api/admin/queue/failed");
       return res.data;
     },
-    enabled: !!accessToken && activeTab === "overview"
+    enabled: !!accessToken && activeTab === "overview",
+    retry: 1
   });
 
   // 2. Fetch All Merchants

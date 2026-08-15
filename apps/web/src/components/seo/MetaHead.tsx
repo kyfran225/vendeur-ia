@@ -15,23 +15,23 @@ export interface MetaHeadProps {
 
 const DEFAULT_KEYWORDS = [
   'vendeur IA',
-  'Vendeur IA Inc',
   'vendeuria',
   'vendeur IA whatsapp',
+  'commercial virtuel whatsapp',
+  'commercial virtuel instagram',
   'vente automatique whatsapp',
   'whatsapp business api',
   'bot vendeur whatsapp',
   'ia pour whatsapp',
   'relance automatique whatsapp',
   'automation vente e-commerce',
-  'commercial virtuel whatsapp',
   'vendeur autonome ia',
   'intelligence artificielle whatsapp',
   'agents commerciaux ia'
 ];
 
-const DEFAULT_TITLE = 'Vendeur IA | Votre Commercial Virtuel WhatsApp & Automation de Vente 24/7';
-const DEFAULT_DESCRIPTION = 'Vendeur IA (VendeurIA Inc) transforme votre WhatsApp Business en machine de vente automatique grâce à l\'IA. Clôturez des ventes, relancez vos prospects et encaissez 24/7.';
+const DEFAULT_TITLE = 'Vendeur IA | Votre Commercial Virtuel sur WhatsApp & Instagram';
+const DEFAULT_DESCRIPTION = 'Vendeur IA : votre commercial virtuel sur WhatsApp & Instagram. Répondez, conseillez et vendez 24h/24, 7j/7.';
 const DEFAULT_SITE_URL = SITE_CONFIG.baseUrl;
 const DEFAULT_OG_IMAGE = `${SITE_CONFIG.baseUrl}${SITE_CONFIG.defaultOgImage}`;
 
@@ -47,11 +47,11 @@ export const MetaHead: React.FC<MetaHeadProps> = ({
 }) => {
   const mergedKeywords = Array.from(new Set([...keywords, ...DEFAULT_KEYWORDS])).join(', ');
 
-  // Schema.org standard pour Vendeur IA Inc (SoftwareApplication & Organization)
+  // Schema.org standard pour Vendeur IA (SoftwareApplication & Organization)
   const defaultOrganizationSchema = {
     '@context': 'https://schema.org',
     '@type': 'Organization',
-    'name': 'Vendeur IA Inc',
+    'name': 'Vendeur IA',
     'alternateName': ['Vendeur IA', 'VendeurIA', 'Vendeur IA WhatsApp'],
     'url': DEFAULT_SITE_URL,
     'logo': `${SITE_CONFIG.baseUrl}/android-chrome-512x512.png`,
@@ -103,7 +103,7 @@ export const MetaHead: React.FC<MetaHeadProps> = ({
       )}
 
       {/* OpenGraph / Facebook / WhatsApp Preview */}
-      <meta property="og:site_name" content="Vendeur IA Inc" />
+      <meta property="og:site_name" content="Vendeur IA" />
       <meta property="og:title" content={title} />
       <meta property="og:description" content={description} />
       <meta property="og:type" content={ogType} />

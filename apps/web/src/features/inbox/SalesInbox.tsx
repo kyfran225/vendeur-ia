@@ -21,6 +21,7 @@ import { apiClient } from "@/lib/apiClient";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
+import { useMerchant } from "@/hooks/useMerchant";
 import { WhatsAppTypingIndicator } from "@/components/ui/WhatsAppTypingIndicator";
 
 function cn(...inputs: ClassValue[]) {
@@ -86,7 +87,8 @@ export function SalesInbox() {
     enabled: isOrderModalOpen
   });
 
-  const merchantCurrency = useMerchantCurrency();
+  const merchant = useMerchant();
+  const vipThreshold = merchant?.loyaltySettings?.threshold || 50;
 
   // Socket listener for updates
   useEffect(() => {
@@ -273,7 +275,7 @@ export function SalesInbox() {
                         <span className="text-[9px] font-black text-amber-500 uppercase">{activeChatData.customerId.loyaltyPoints} pts</span>
                       </div>
                     )}
-                    {activeChatData?.customerId?.loyaltyPoints >= 50 && (
+                    {activeChatData?.customerId?.loyaltyPoints >= vipThreshold && (
                       <span className="text-[9px] font-black bg-vendeur-emerald text-vendeur-coal px-1.5 rounded uppercase tracking-tighter">VIP</span>
                     )}
                   </div>

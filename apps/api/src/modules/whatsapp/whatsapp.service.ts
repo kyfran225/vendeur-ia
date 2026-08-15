@@ -557,10 +557,12 @@ class WhatsAppService {
       history: formattedHistory,
       message: text,
       customerPhone: from,
-      customerLoyalty: {
+      customerLoyalty: customer ? {
         points: customer.loyaltyPoints || 0,
-        isVIP: (customer.loyaltyPoints || 0) >= 50
-      },
+        isVIP: (customer.loyaltyPoints || 0) >= (merchant.loyaltySettings?.threshold || 50),
+        threshold: merchant.loyaltySettings?.enabled ? merchant.loyaltySettings.threshold : undefined,
+        rewardDescription: merchant.loyaltySettings?.rewardDescription
+      } : undefined,
       aiSummary: (conversation as any).aiSummary || ""
     });
   }

@@ -19,7 +19,10 @@ export class MarketingService {
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-    const vipCount = await CommerceCustomerModel.countDocuments({ merchantId, loyaltyPoints: { $gte: 50 } });
+    const merchant = await CommerceMerchantModel.findById(merchantId);
+    const vipThreshold = merchant?.loyaltySettings?.threshold || 50;
+
+    const vipCount = await CommerceCustomerModel.countDocuments({ merchantId, loyaltyPoints: { $gte: vipThreshold } });
     const activeCount = await CommerceCustomerModel.countDocuments({
         merchantId,
         updatedAt: { $gte: thirtyDaysAgo }
@@ -72,7 +75,8 @@ Réponds UNIQUEMENT avec le texte du message.`;
 
     // 1. Precise Segmentation
     const query: any = { merchantId };
-    if (segment === 'vip') query.loyaltyPoints = { $gte: 50 };
+    const vipThreshold = merchant.loyaltySettings?.threshold || 50;
+    if (segment === 'vip') query.loyaltyPoints = { $gte: vipThreshold };
     if (segment === 'inactive') {
         const thirtyDaysAgo = new Date();
         thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);

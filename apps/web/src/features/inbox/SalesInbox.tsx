@@ -88,6 +88,7 @@ export function SalesInbox() {
   });
 
   const merchant = useMerchant();
+  const merchantCurrency = useMerchantCurrency();
   const vipThreshold = merchant?.loyaltySettings?.threshold || 50;
 
   // Socket listener for updates

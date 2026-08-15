@@ -1,5 +1,13 @@
 {
   "$schema": "https://turbo.build/schema.json",
+  "globalEnv": [
+    "VITE_API_URL",
+    "VITE_GOOGLE_CLIENT_ID",
+    "VITE_PAYSTACK_PUBLIC_KEY",
+    "VITE_VAPID_PUBLIC_KEY",
+    "VITE_MAPBOX_ACCESS_TOKEN",
+    "ENABLE_EXPERIMENTAL_COREPACK"
+  ],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],

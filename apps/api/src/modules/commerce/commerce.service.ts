@@ -880,7 +880,10 @@ Résumé actuel :`;
     console.log(`[Referral] Rewarding ${referrer.businessName} for referring ${newMerchant.businessName}`);
 
     // Extend subscription by 30 days
-    const currentExpiry = referrer.subscription?.expiresAt || new Date();
+    const now = new Date();
+    const currentExpiry = referrer.subscription?.expiresAt && new Date(referrer.subscription.expiresAt) > now 
+      ? new Date(referrer.subscription.expiresAt) 
+      : now;
     const newExpiry = new Date(currentExpiry);
     newExpiry.setDate(newExpiry.getDate() + 30);
 

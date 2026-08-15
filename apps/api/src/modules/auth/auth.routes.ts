@@ -107,4 +107,21 @@ router.patch("/me", authenticate, async (req, res) => {
   }
 });
 
+router.post("/change-password", authenticate, async (req, res) => {
+  try {
+    const userId = (req as any).user.id;
+    const { currentPassword, newPassword } = req.body;
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ error: "Veuillez renseigner l'ancien et le nouveau mot de passe." });
+    }
+    if (typeof newPassword !== "string" || newPassword.length < 8) {
+      return res.status(400).json({ error: "Le nouveau mot de passe doit contenir au moins 8 caractères." });
+    }
+    await authService.changePassword(userId, currentPassword, newPassword);
+    res.json({ success: true, message: "Mot de passe modifié avec succès" });
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
 export default router;

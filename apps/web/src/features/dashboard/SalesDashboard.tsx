@@ -11,7 +11,8 @@ import {
   Share2,
   ExternalLink,
   Brain,
-  MessageSquareQuote
+  MessageSquareQuote,
+  Play
 } from "lucide-react";
 
 import { useSocket } from "@/hooks/useSocket";
@@ -257,7 +258,7 @@ function HomePanel({ dashboard, onOpenBriefing, onOpenTestIA }: { dashboard: any
                 onClick={onOpenTestIA}
                 className="flex items-center justify-center gap-2.5 px-5 py-2.5 rounded-xl bg-vendeur-emerald text-vendeur-coal text-[10px] md:text-xs font-black uppercase tracking-widest hover:scale-105 transition-all shadow-lg shadow-vendeur-emerald/20 w-full sm:w-auto"
               >
-                <Bot size={18} />
+                <Play size={16} className="fill-current" />
                 Tester mon Vendeur IA
               </button>
 

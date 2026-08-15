@@ -13,7 +13,7 @@ export function Sidebar() {
   const links = [
     { to: "/dashboard", icon: LayoutDashboard, label: "Stats" },
     { to: "/inbox", icon: MessageCircle, label: "Inbox" },
-    { to: "/dashboard?briefing=true", icon: Brain, label: "IA" },
+    { to: "/dashboard?briefing=true", icon: Brain, label: "Briefing" },
     ...(user?.roles.includes("admin") ? [{ to: "/admin", icon: Shield, label: "Admin" }] : []),
     { to: "/products", icon: Package, label: "Catalogue" },
     { to: "/orders", icon: ShoppingCart, label: "Commandes" },
@@ -23,7 +23,7 @@ export function Sidebar() {
 
   const bottomLinks = [
     { to: "/dashboard", icon: LayoutDashboard, label: "Stats" },
-    { to: "/dashboard?briefing=true", icon: Brain, label: "IA" },
+    { to: "/dashboard?briefing=true", icon: Brain, label: "Briefing" },
     { to: "/products", icon: Package, label: "Catalogue" },
     { to: "/inbox", icon: MessageCircle, label: "Messages" },
   ];

@@ -1,6 +1,6 @@
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, Trophy, CreditCard, Truck, LayoutDashboard, Bot, Package, X, ArrowRight } from "lucide-react";
+import { Sparkles, Trophy, CreditCard, Truck, LayoutDashboard, Play, Package, X, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 
 interface SetupCompletionModalProps {
@@ -74,7 +74,7 @@ export function SetupCompletionModal({ isOpen, onClose, businessName }: SetupCom
                   className="flex items-center gap-3.5 p-3 rounded-2xl bg-vendeur-emerald/10 border border-vendeur-emerald/30 hover:border-vendeur-emerald transition-all group"
                 >
                   <div className="h-9 w-9 rounded-xl bg-vendeur-emerald flex items-center justify-center text-vendeur-coal font-bold shrink-0">
-                    <Bot size={18} />
+                    <Play size={16} className="fill-current" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="text-xs font-black text-white uppercase group-hover:text-vendeur-emerald transition-colors">

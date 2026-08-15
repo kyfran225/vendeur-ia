@@ -21,6 +21,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
 import { ConfirmationModal } from "@/components/ui/ConfirmationModal";
+import { StepMilestoneModal } from "@/components/ui/StepMilestoneModal";
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -88,6 +89,16 @@ export function WhatsAppConnectionFlow({ qrCode, isConnectingSocket, onInitBaile
   const isPackPro = isExpertParam || subscription?.plan === 'business' || subscription?.type === 'pack_pro' || whatsapp?.connectionType === 'expert';
   const isSubscribed = isProPlan || isPackPro || subscription?.status === 'active' || merchant?.subscription?.status === 'active';
   const isConnected = whatsapp?.status === 'CONNECTED' || merchant?.whatsappConfig?.status === 'connected';
+
+  const [showMilestoneModal, setShowMilestoneModal] = useState(false);
+  const wasConnectedRef = useRef(isConnected);
+
+  useEffect(() => {
+    if (!wasConnectedRef.current && isConnected) {
+      setShowMilestoneModal(true);
+    }
+    wasConnectedRef.current = isConnected;
+  }, [isConnected]);
 
   // Auto-init WhatsApp session ONLY for Essential plan (Baileys QR code)
   useEffect(() => {
@@ -657,6 +668,64 @@ export function WhatsAppConnectionFlow({ qrCode, isConnectingSocket, onInitBaile
           )}
         </div>
       )}
+
+      {/* WhatsApp Connected Step Milestone Modal */}
+      {(() => {
+        const setupSteps = dashboard?.setupStatus?.steps || [];
+        const hasProducts = setupSteps.find((s: any) => s.id === 'products')?.completed;
+        const hasPayments = setupSteps.find((s: any) => s.id === 'payments')?.completed;
+        const hasDelivery = setupSteps.find((s: any) => s.id === 'delivery')?.completed;
+
+        let nextActionConfig = {
+          label: "Étape suivante : Ajouter des Produits",
+          sublabel: "Enrichissez votre catalogue",
+          href: "/products"
+        };
+
+        if (!hasProducts) {
+          nextActionConfig = {
+            label: "Étape suivante : Ajouter des Produits",
+            sublabel: "Ajoutez vos articles au catalogue",
+            href: "/products"
+          };
+        } else if (!hasPayments) {
+          nextActionConfig = {
+            label: "Étape suivante : Moyens de Paiement",
+            sublabel: "Activez Wave, OM, MTN...",
+            href: "/settings?tab=boutique#payments"
+          };
+        } else if (!hasDelivery) {
+          nextActionConfig = {
+            label: "Étape suivante : Tarifs de Livraison",
+            sublabel: "Définissez vos zones d'envoi",
+            href: "/settings?tab=boutique#delivery"
+          };
+        } else {
+          nextActionConfig = {
+            label: "Tester mon Vendeur IA",
+            sublabel: "Simulez des ventes en direct",
+            href: "/dashboard?test_ia=true"
+          };
+        }
+
+        return (
+          <StepMilestoneModal
+            isOpen={showMilestoneModal}
+            onClose={() => setShowMilestoneModal(false)}
+            title="WhatsApp Connecté ! 🚀"
+            subtitle="Votre ligne WhatsApp Business est désormais synchronisée avec votre commercial IA 24h/24."
+            score={dashboard?.setupStatus?.score || 60}
+            primaryAction={nextActionConfig}
+            secondaryAction={{
+              label: "Personnaliser le ton de l'IA",
+              href: "/settings?tab=personnalite"
+            }}
+            dashboardActionLabel="Retour au Tableau de Bord"
+            autoRedirectSeconds={7}
+            autoRedirectTo={nextActionConfig.href}
+          />
+        );
+      })()}
     </div>
   );
 }

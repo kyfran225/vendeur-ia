@@ -3,6 +3,7 @@ import { Package, Sparkles, Trash2, Edit, Camera, X, Save, Zap, Utensils, Laptop
 import { ProductScanner } from "./components/ProductScanner";
 import { CaptionModal } from "./components/CaptionModal";
 import { ConfirmationModal } from "../../components/ui/ConfirmationModal";
+import { StepMilestoneModal } from "../../components/ui/StepMilestoneModal";
 import { useOnboardingStore } from "@/stores/onboardingStore";
 import { useAuthStore } from "@/stores/authStore";
 import { useMerchant } from "@/hooks/useMerchant";
@@ -221,6 +222,20 @@ export function ProductManager() {
     productName: ""
   });
 
+  const [showMilestoneModal, setShowMilestoneModal] = useState(false);
+  const [lastAddedName, setLastAddedName] = useState("");
+
+  const { data: dashboard } = useQuery({
+    queryKey: ["dashboard"],
+    queryFn: async () => {
+      const response = await axios.get(`${API_URL}/api/commerce/dashboard`, {
+        headers: { Authorization: `Bearer ${accessToken}` }
+      });
+      return response.data;
+    },
+    enabled: !!accessToken
+  });
+
   const { data: products = [], isLoading } = useQuery<Product[]>({
     queryKey: ["products"],
     queryFn: async () => {
@@ -237,10 +252,27 @@ export function ProductManager() {
       axios.post(`${API_URL}/api/commerce/products`, newProd, {
         headers: { Authorization: `Bearer ${accessToken}` }
       }),
-    onSuccess: () => {
+    onSuccess: (_data, variables: any) => {
       queryClient.invalidateQueries({ queryKey: ["products"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
       toast.success("Ajouté au catalogue avec succès ! ✨");
       setIsAddingManual(false);
+      setLastAddedName(variables.name || "Produit");
+      setShowMilestoneModal(true);
+      setNewProduct({
+        name: "",
+        price: NaN,
+        stock: 1,
+        category: businessCategory,
+        description: "",
+        imageUrl: "",
+        digitalUrl: "",
+        digitalFormat: "PDF / E-Book",
+        serviceDuration: "1h",
+        serviceDeliveryType: "Présentiel",
+        preparationTime: "15-20 min",
+        foodOptions: ""
+      });
     },
     onError: (error: any) => {
       console.error("Create Product Error:", error);
@@ -915,6 +947,86 @@ export function ProductManager() {
           ))
         )}
       </div>
+
+      {/* Step Milestone Progression Modal */}
+      {(() => {
+        const setupSteps = dashboard?.setupStatus?.steps || [];
+        const isWhatsAppConnected = setupSteps.find((s: any) => s.id === 'whatsapp')?.completed;
+        const isPaymentSetup = setupSteps.find((s: any) => s.id === 'payments')?.completed;
+        const isDeliverySetup = setupSteps.find((s: any) => s.id === 'delivery')?.completed;
+
+        let nextActionConfig = {
+          label: "Étape suivante : Connecter WhatsApp",
+          sublabel: "Reliez votre WhatsApp Business",
+          href: "/settings?tab=connexions#whatsapp"
+        };
+
+        if (!isWhatsAppConnected) {
+          nextActionConfig = {
+            label: "Étape suivante : Connecter WhatsApp",
+            sublabel: "Activez votre commercial sur WhatsApp",
+            href: "/settings?tab=connexions#whatsapp"
+          };
+        } else if (!isPaymentSetup) {
+          nextActionConfig = {
+            label: "Étape suivante : Moyens de Paiement",
+            sublabel: "Activez Mobile Money (Wave, OM, MTN)",
+            href: "/settings?tab=boutique#payments"
+          };
+        } else if (!isDeliverySetup) {
+          nextActionConfig = {
+            label: "Étape suivante : Tarifs de Livraison",
+            sublabel: "Définissez vos zones d'expédition",
+            href: "/settings?tab=boutique#delivery"
+          };
+        } else {
+          nextActionConfig = {
+            label: "Tester mon Vendeur IA",
+            sublabel: "Simulez une conversation de vente",
+            href: "/dashboard?test_ia=true"
+          };
+        }
+
+        const itemLabel = config?.itemLabel || "Article";
+        const isService = businessCategory === "services";
+        const isFood = businessCategory === "food";
+        const isDigital = businessCategory === "digital";
+
+        const modalTitle = isFood
+          ? "Plat Ajouté au Menu ! 🍲"
+          : isService
+          ? "Prestation Enregistrée ! 💼"
+          : isDigital
+          ? "Contenu Digital Enregistré ! 📚"
+          : `${itemLabel} Ajouté ! ✨`;
+
+        return (
+          <StepMilestoneModal
+            isOpen={showMilestoneModal}
+            onClose={() => setShowMilestoneModal(false)}
+            title={modalTitle}
+            subtitle={`« ${lastAddedName || itemLabel} » est enregistré. Votre commercial IA connaît désormais ses spécificités et ses tarifs.`}
+            score={dashboard?.setupStatus?.score || 50}
+            primaryAction={nextActionConfig}
+            secondaryAction={{
+              label: isFood
+                ? "Ajouter un autre plat"
+                : isService
+                ? "Ajouter une autre prestation"
+                : isDigital
+                ? "Ajouter un autre contenu"
+                : `Ajouter un autre ${itemLabel.toLowerCase()}`,
+              onClick: () => {
+                setShowMilestoneModal(false);
+                setIsAddingManual(true);
+              }
+            }}
+            dashboardActionLabel="Retour au Tableau de Bord"
+            autoRedirectSeconds={7}
+            autoRedirectTo={nextActionConfig.href}
+          />
+        );
+      })()}
     </div>
   );
 }

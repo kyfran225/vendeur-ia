@@ -37,3 +37,18 @@ pnpm-debug.log*
 .artifacts/
 .vercel
 .env*.local
+
+# Vendeur IA specific
+**/Capture d'écran *.png
+**/*.png
+**/*.ogg
+apps/api/storage/
+apps/api/uploads/audio/
+apps/web/e2e/
+apps/web/test-results/
+apps/web/playwright.config.ts
+apps/web/public/demo-logo.html
+__pycache__/
+scripts/*.png
+scripts/*.bmp
+scripts/Capture d'écran *.png

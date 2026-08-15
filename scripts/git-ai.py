@@ -42,14 +42,14 @@ def get_env_var(name):
 def get_staged_diff():
     try:
         # Get list of files
-        files = subprocess.check_output(['git', 'diff', '--cached', '--name-only'], text=True).strip()
+        files = subprocess.check_output(['git', 'diff', '--cached', '--name-only'], text=True, encoding='utf-8').strip()
         if not files:
             return None, None
 
         # Get diff summary
-        diff = subprocess.check_output(['git', 'diff', '--cached', '--stat'], text=True).strip()
+        diff = subprocess.check_output(['git', 'diff', '--cached', '--stat'], text=True, encoding='utf-8').strip()
         # Get actual content diff (limited to avoid token limits)
-        content_diff = subprocess.check_output(['git', 'diff', '--cached', '-U1'], text=True)
+        content_diff = subprocess.check_output(['git', 'diff', '--cached', '-U1'], text=True, encoding='utf-8')
         if len(content_diff) > 10000:
             content_diff = content_diff[:10000] + "\n... (diff truncated)"
 

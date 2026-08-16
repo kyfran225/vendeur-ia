@@ -43,6 +43,7 @@ import { WhatsAppConnectionFlow } from "./components/WhatsAppConnectionFlow";
 import { FacebookConnectionModal } from "./components/fb/FacebookConnectionModal";
 import { MarketplaceGuideModal } from "./components/fb/MarketplaceGuideModal";
 import { PackProModal } from "../dashboard/components/PackProModal";
+import { VendeurIALoader } from "@/components/ui/VendeurIALoader";
 import { BillingTab } from "./components/BillingTab";
 import { ReferralCard } from "./components/ReferralCard";
 import { GrowthTab } from "./components/GrowthTab";
@@ -234,7 +235,7 @@ export function SettingsPage() {
   if (isDashboardLoading || isKnowledgeLoading) {
     return (
       <div className="flex h-[70vh] items-center justify-center">
-        <Sparkles className="animate-spin text-vendeur-emerald" size={48} />
+        <VendeurIALoader size="lg" label="Chargement des réglages..." />
       </div>
     );
   }

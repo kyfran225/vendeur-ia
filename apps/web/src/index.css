@@ -114,3 +114,36 @@
   z-index: 25 !important;
   transition: all 0.3s ease-in-out !important;
 }
+
+/* Vendeur IA Brand Loader Animation (GPU-Accelerated & Ultra-Lightweight) */
+@keyframes brandPulse {
+  0%, 100% {
+    transform: scale(0.95);
+    filter: drop-shadow(0 0 10px rgba(16, 185, 129, 0.35));
+    opacity: 0.88;
+  }
+  50% {
+    transform: scale(1.05);
+    filter: drop-shadow(0 0 22px rgba(16, 185, 129, 0.7));
+    opacity: 1;
+  }
+}
+
+@keyframes brandRingSpin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-brand-pulse {
+  animation: brandPulse 2.2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  will-change: transform, filter, opacity;
+}
+
+.animate-brand-ring {
+  animation: brandRingSpin 1.6s cubic-bezier(0.55, 0.15, 0.45, 0.85) infinite;
+  will-change: transform;
+}

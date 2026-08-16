@@ -10,8 +10,6 @@ import {
   Zap,
   Share2,
   ExternalLink,
-  Brain,
-  MessageSquareQuote,
   Play
 } from "lucide-react";
 
@@ -25,10 +23,11 @@ import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { SetupGuide } from "./components/SetupGuide";
 import { SubscriptionBanner } from "./components/SubscriptionBanner";
-import { BriefingRoom } from "./components/BriefingRoom";
 import { VendeurIAPlaygroundModal } from "./components/VendeurIAPlaygroundModal";
 import { SetupCompletionModal } from "./components/SetupCompletionModal";
 import { getMerchantShopUrl, getMerchantShopPath } from "@/lib/slugify";
+
+import { VendeurIALoader } from "@/components/ui/VendeurIALoader";
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -45,19 +44,8 @@ export function SalesDashboard() {
   const socket = useSocket();
   const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
-  const isBriefingOpen = searchParams.get("briefing") === "true";
   const isTestIAOpen = searchParams.get("test_ia") === "true";
   const [isCompletionModalOpen, setIsCompletionModalOpen] = useState(false);
-
-  const setIsBriefingOpen = (open: boolean) => {
-    if (open) {
-      setSearchParams({ briefing: "true" });
-    } else {
-      const newParams = new URLSearchParams(searchParams);
-      newParams.delete("briefing");
-      setSearchParams(newParams);
-    }
-  };
 
   const setIsTestIAOpen = (open: boolean) => {
     if (open) {
@@ -112,8 +100,8 @@ export function SalesDashboard() {
 
   if (isLoading) {
     return (
-      <div className="flex h-[60vh] items-center justify-center">
-        <Sparkles className="animate-spin text-vendeur-emerald" size={48} />
+      <div className="flex h-[65vh] items-center justify-center">
+        <VendeurIALoader size="lg" label="Chargement de votre boutique..." />
       </div>
     );
   }
@@ -157,14 +145,7 @@ export function SalesDashboard() {
 
       <HomePanel 
         dashboard={dashboard} 
-        onOpenBriefing={() => setIsBriefingOpen(true)} 
         onOpenTestIA={() => setIsTestIAOpen(true)}
-      />
-
-      <BriefingRoom
-        isOpen={isBriefingOpen}
-        onClose={() => setIsBriefingOpen(false)}
-        businessName={dashboard?.merchant?.businessName || "Votre boutique"}
       />
 
       <VendeurIAPlaygroundModal
@@ -182,7 +163,7 @@ export function SalesDashboard() {
   );
 }
 
-function HomePanel({ dashboard, onOpenBriefing, onOpenTestIA }: { dashboard: any, onOpenBriefing: () => void, onOpenTestIA: () => void }) {
+function HomePanel({ dashboard, onOpenTestIA }: { dashboard: any, onOpenTestIA: () => void }) {
   const tips = dashboard?.aiGrowthAdvice?.tips || [];
   const status = dashboard?.merchant?.whatsappConfig?.status || 'disconnected';
   const setupStatus = dashboard?.setupStatus;
@@ -257,18 +238,10 @@ function HomePanel({ dashboard, onOpenBriefing, onOpenTestIA }: { dashboard: any
             <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto mt-2 md:mt-0">
               <button
                 onClick={onOpenTestIA}
-                className="flex items-center justify-center gap-2.5 px-5 py-2.5 rounded-xl bg-vendeur-emerald text-vendeur-coal text-[10px] md:text-xs font-black uppercase tracking-widest hover:scale-105 transition-all shadow-lg shadow-vendeur-emerald/20 w-full sm:w-auto"
+                className="flex items-center justify-center gap-2.5 px-6 py-3 rounded-xl bg-vendeur-emerald text-vendeur-coal text-[11px] md:text-xs font-black uppercase tracking-widest hover:scale-105 transition-all shadow-lg shadow-vendeur-emerald/20 w-full sm:w-auto"
               >
                 <Play size={16} className="fill-current" />
                 Tester mon Vendeur IA
-              </button>
-
-              <button
-                onClick={onOpenBriefing}
-                className="flex items-center justify-center gap-2.5 px-5 py-2.5 rounded-xl bg-vendeur-emerald/10 border border-vendeur-emerald/30 text-vendeur-emerald text-[10px] md:text-xs font-black uppercase tracking-widest hover:bg-vendeur-emerald/20 transition-all group/btn w-full sm:w-auto"
-              >
-                <MessageSquareQuote size={18} className="group-hover/btn:rotate-12 transition-transform" />
-                Briefing Room
               </button>
             </div>
           </div>

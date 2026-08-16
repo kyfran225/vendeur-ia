@@ -46,15 +46,16 @@ export class AIGrowthService {
         - Ton ton doit être celui d'un cofondateur expert qui guide le user pour réussir son lancement.
         - Sois très encourageant et pragmatique.
 
-        CONSEILS : donne 3 conseils ultra-courts (max 15 mots chacun).
+        CONSEILS : donne exactement 3 conseils ultra-courts (max 15 mots chacun).
         IMPORTANT : Ne mets PAS d'emoji au début ou à la fin du texte.
         Chaque conseil doit avoir une action associée parmi : "/products", "/settings?tab=connexions", "/settings?tab=boutique", "/inbox", "/marketing", "/orders".
 
-        Réponds au format JSON uniquement :
+        Réponds UNIQUEMENT avec un objet JSON valide au format exact suivant sans texte autour :
         {
           "tips": [
-            { "text": "Conseil sans emoji", "action": "/path" },
-            ...
+            { "text": "Optimisez vos descriptions de produits", "action": "/products" },
+            { "text": "Activez vos alertes de stock pour anticiper", "action": "/products" },
+            { "text": "Configurez vos paiements Mobile Money", "action": "/settings?tab=boutique" }
           ]
         }
       `;

@@ -10,6 +10,7 @@ import { OrderCreationModal } from "@/features/orders/OrderCreationModal";
 import { OrderReceiptModal } from "@/features/orders/OrderReceiptModal";
 import { DeliveryDispatchModal } from "@/features/orders/DeliveryDispatchModal";
 import { PaymentProofAuditorModal } from "@/features/orders/PaymentProofAuditorModal";
+import { VendeurIALoader } from "@/components/ui/VendeurIALoader";
 import { toast } from "sonner";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
@@ -340,9 +341,8 @@ export function OrderManager() {
 
       <div className="grid gap-4">
         {isLoading ? (
-          <div className="py-20 flex flex-col items-center justify-center gap-4 text-white/20">
-            <Loader2 size={48} className="animate-spin text-vendeur-emerald" />
-            <p className="font-black uppercase tracking-[0.2em] text-xs">Chargement des {config.ordersLabel.toLowerCase()}...</p>
+          <div className="py-12">
+            <VendeurIALoader size="lg" label={`Chargement des ${config.ordersLabel.toLowerCase()}...`} />
           </div>
         ) : filteredOrders.length === 0 ? (
           <div className="py-20 border-2 border-dashed border-white/5 rounded-[3rem] flex flex-col items-center justify-center gap-4 text-white/20 text-center">

@@ -784,6 +784,40 @@ Réponds UNIQUEMENT avec le JSON.`;
     }
   }
 
+  async extractCustomerLocation(customerId: string, userMessage: string) {
+    if (!customerId || !userMessage || userMessage.trim().length < 3) return;
+
+    try {
+      const customer = await CommerceCustomerModel.findById(customerId);
+      if (!customer) return;
+
+      const prompt = `Analyse ce message envoyé par un client sur WhatsApp : "${userMessage}".
+Ce client mentionne-t-il explicitement ou implicitement son lieu de résidence, sa ville, sa commune ou son quartier de livraison (ex: Cocody, Marcory, Yopougon, Angré, Riviera, Bouaké, Dakar, Plateau, etc.) ?
+
+Si OUI, donne le nom normalisé et propre de la ville ou du quartier (ex: "Cocody", "Yopougon", "Bouaké", "Plateau", "Dakar").
+Si NON (ou si c'est vague/sans lieu), réponds "NONE".
+
+Réponds UNIQUEMENT avec le nom du lieu ou "NONE".`;
+
+      const response = await aiProvider.generateText({
+        systemPrompt: "Tu es un extracteur d'entités géographiques précis pour le commerce africain.",
+        userMessage: prompt,
+        temperature: 0.1,
+        maxTokens: 20
+      });
+
+      const extracted = response.text?.trim().replace(/['".]/g, "");
+      if (extracted && extracted.toUpperCase() !== "NONE" && extracted.length > 2 && extracted.length < 40) {
+        await CommerceCustomerModel.findByIdAndUpdate(customerId, {
+          $set: { location: extracted }
+        });
+        console.log(`[Location Extraction] Updated location for customer ${customerId}: "${extracted}"`);
+      }
+    } catch (err: any) {
+      console.warn(`[Location Extraction] Failed: ${err?.message}`);
+    }
+  }
+
   async getSalesContext(merchantId: string, customerId: string) {
     const merchant = await CommerceMerchantModel.findById(merchantId);
     if (!merchant) throw new Error("Merchant not found");

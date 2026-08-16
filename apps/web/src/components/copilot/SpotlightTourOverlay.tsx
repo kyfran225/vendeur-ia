@@ -35,9 +35,9 @@ const TOUR_STEPS: ISpotlightStep[] = [
     route: "/dashboard",
     selector: "#tour-dashboard-stats",
     title: "1. Tableau de Bord & Ventes du Jour",
-    description: "Visualisez en un coup d'œil votre chiffre d'affaires, vos commandes actives et votre briefing d'opportunités généré chaque matin par l'IA.",
+    description: "Visualisez en un coup d'œil votre chiffre d'affaires, vos commandes actives et vos opportunités de croissance générées par l'IA.",
     tips: "💡 Astuce : Le bouton 'Tester mon Vendeur IA' simule un vrai client WhatsApp en direct !",
-    badge: "Briefing & Pilotage"
+    badge: "Pilotage & Ventes"
   },
   {
     route: "/products",

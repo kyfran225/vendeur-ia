@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Logo } from "@/components/ui/Logo";
 import { NavLink, useLocation } from "react-router-dom";
-import { LayoutDashboard, Package, MessageCircle, Brain, Settings, Megaphone, ShoppingCart, MoreHorizontal, X, Shield } from "lucide-react";
+import { LayoutDashboard, Package, MessageCircle, Settings, Megaphone, ShoppingCart, MoreHorizontal, X, Shield } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/stores/authStore";
 
@@ -13,7 +13,6 @@ export function Sidebar() {
   const links = [
     { to: "/dashboard", icon: LayoutDashboard, label: "Stats" },
     { to: "/inbox", icon: MessageCircle, label: "Inbox" },
-    { to: "/dashboard?briefing=true", icon: Brain, label: "Briefing" },
     ...(user?.roles.includes("admin") ? [{ to: "/admin", icon: Shield, label: "Admin" }] : []),
     { to: "/products", icon: Package, label: "Catalogue" },
     { to: "/orders", icon: ShoppingCart, label: "Commandes" },
@@ -23,15 +22,15 @@ export function Sidebar() {
 
   const bottomLinks = [
     { to: "/dashboard", icon: LayoutDashboard, label: "Stats" },
-    { to: "/dashboard?briefing=true", icon: Brain, label: "Briefing" },
-    { to: "/products", icon: Package, label: "Catalogue" },
     { to: "/inbox", icon: MessageCircle, label: "Messages" },
+    { to: "/products", icon: Package, label: "Catalogue" },
+    { to: "/orders", icon: ShoppingCart, label: "Commandes" },
   ];
 
-  const bottomLinkPaths = bottomLinks.map(l => l.to.split('?')[0]);
+  const bottomLinkPaths = bottomLinks.map(l => l.to);
   const isMoreActive = links.some((link) =>
-    location.pathname.startsWith(link.to.split('?')[0]) &&
-    !bottomLinkPaths.includes(link.to.split('?')[0])
+    location.pathname.startsWith(link.to) &&
+    !bottomLinkPaths.includes(link.to)
   );
 
   return (
@@ -47,22 +46,12 @@ export function Sidebar() {
             <NavLink
               key={link.to}
               to={link.to}
-              className={({ isActive }) => {
-                const isBriefing = location.search.includes("briefing=true");
-                const isDashboardPath = location.pathname === "/dashboard";
-
-                let active = isActive;
-                if (link.to === "/dashboard") {
-                  active = isDashboardPath && !isBriefing;
-                } else if (link.to.includes("briefing=true")) {
-                  active = isDashboardPath && isBriefing;
-                }
-
-                return cn(
+              className={({ isActive }) =>
+                cn(
                   "flex flex-col items-center gap-1 group transition-all",
-                  active ? "text-vendeur-emerald" : "text-white/30 hover:text-white"
-                );
-              }}
+                  isActive ? "text-vendeur-emerald" : "text-white/30 hover:text-white"
+                )
+              }
             >
               <div className={cn(
                 "h-10 w-10 rounded-xl flex items-center justify-center transition-all",
@@ -82,22 +71,12 @@ export function Sidebar() {
           <NavLink
             key={link.to}
             to={link.to}
-            className={({ isActive }) => {
-              const isBriefing = location.search.includes("briefing=true");
-              const isDashboardPath = location.pathname === "/dashboard";
-
-              let active = isActive;
-              if (link.to === "/dashboard") {
-                active = isDashboardPath && !isBriefing;
-              } else if (link.to.includes("briefing=true")) {
-                active = isDashboardPath && isBriefing;
-              }
-
-              return cn(
+            className={({ isActive }) =>
+              cn(
                 "flex flex-col items-center gap-1 transition-all flex-1 py-1 text-center",
-                active ? "text-vendeur-emerald" : "text-white/30"
-              );
-            }}
+                isActive ? "text-vendeur-emerald" : "text-white/30"
+              )
+            }
           >
             <link.icon size={18} />
             <span className="text-[8px] font-black uppercase tracking-tight truncate max-w-full block">{link.label}</span>
@@ -150,22 +129,12 @@ export function Sidebar() {
                 key={link.to}
                 to={link.to}
                 onClick={() => setIsOpen(false)}
-                className={({ isActive }) => {
-                  const isBriefing = location.search.includes("briefing=true");
-                  const isDashboardPath = location.pathname === "/dashboard";
-
-                  let active = isActive;
-                  if (link.to === "/dashboard") {
-                    active = isDashboardPath && !isBriefing;
-                  } else if (link.to.includes("briefing=true")) {
-                    active = isDashboardPath && isBriefing;
-                  }
-
-                  return cn(
+                className={({ isActive }) =>
+                  cn(
                     "flex flex-col items-center gap-1 group transition-all w-full",
-                    active ? "text-vendeur-emerald" : "text-white/30 hover:text-white"
-                  );
-                }}
+                    isActive ? "text-vendeur-emerald" : "text-white/30 hover:text-white"
+                  )
+                }
               >
                 <div className={cn(
                   "h-10 w-10 rounded-lg flex items-center justify-center transition-all",

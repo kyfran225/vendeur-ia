@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import { Package, Sparkles, Trash2, Edit, Camera, X, Save, Zap, Utensils, Laptop, Palette, Hammer, ShoppingBag, Loader2, MessageSquareText, Plus, Minus, Heart, Monitor, Home, ShoppingCart, Activity, Car, Box, Image as ImageIcon } from "lucide-react";
+import { Package, Sparkles, Trash2, Edit, Camera, X, Save, Zap, Utensils, Laptop, Palette, Hammer, ShoppingBag, Loader2, MessageSquareText, Plus, Minus, Heart, Monitor, Home, ShoppingCart, Activity, Car, Box, Image as ImageIcon, Star } from "lucide-react";
 import { ProductScanner } from "./components/ProductScanner";
 import { CaptionModal } from "./components/CaptionModal";
 import { PosterGenerator } from "./components/PosterGenerator";
@@ -26,6 +26,7 @@ interface Product {
   description?: string;
   imageUrl?: string;
   images?: string[];
+  isFeatured?: boolean;
   isService?: boolean;
   digitalUrl?: string;
   digitalFormat?: string;
@@ -382,6 +383,28 @@ export function ProductManager() {
     },
     onSettled: () => {
       setAnalyzing(false);
+    }
+  });
+
+  const toggleFeaturedMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await axios.patch(
+        `${API_URL}/api/commerce/products/${id}/toggle-featured`,
+        {},
+        { headers: { Authorization: `Bearer ${accessToken}` } }
+      );
+      return res.data;
+    },
+    onSuccess: (updatedProduct) => {
+      queryClient.invalidateQueries({ queryKey: ["products"] });
+      toast.success(
+        updatedProduct.isFeatured
+          ? `⭐ "${updatedProduct.name}" est maintenant en vedette dans le Hero Showcase !`
+          : `Article retiré des vedettes.`
+      );
+    },
+    onError: (err: any) => {
+      toast.error(err.response?.data?.error || "Erreur lors de la mise en vedette.");
     }
   });
 
@@ -853,6 +876,25 @@ export function ProductManager() {
                       <span className="text-[10px] font-black uppercase text-white/20 tracking-widest">{businessCategory}</span>
                     </div>
                   )}
+                  {/* Pin as Featured Spotlight Button */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleFeaturedMutation.mutate(p._id);
+                    }}
+                    disabled={toggleFeaturedMutation.isPending}
+                    className={cn(
+                      "absolute top-4 left-4 px-2.5 py-1 rounded-lg flex items-center gap-1.5 backdrop-blur-md transition-all text-[10px] font-black uppercase tracking-wider z-10",
+                      p.isFeatured
+                        ? "bg-amber-400 text-black shadow-lg shadow-amber-400/30 scale-105"
+                        : "bg-black/60 text-white/60 hover:text-amber-300 hover:bg-black/80 border border-white/10"
+                    )}
+                    title={p.isFeatured ? "Article en Vedette (cliquez pour retirer)" : "Mettre en Vedette sur la vitrine"}
+                  >
+                    <Star size={12} fill={p.isFeatured ? "currentColor" : "none"} />
+                    <span>{p.isFeatured ? "En Vedette" : "Vedette"}</span>
+                  </button>
+
                   <div className="absolute top-4 right-4 bg-sky-500/10 border border-sky-500/30 px-3 py-1 rounded-lg flex items-center gap-1.5 backdrop-blur-md">
                     <Sparkles size={12} className="text-sky-400" />
                     <span className="text-[10px] font-black text-sky-400 uppercase tracking-widest">IA Active</span>

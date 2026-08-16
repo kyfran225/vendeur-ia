@@ -82,6 +82,21 @@ const MerchantSchema = new Schema({
     abandonedCart: { type: Boolean, default: true },
     postPurchaseFollowup: { type: Boolean, default: true }
   },
+  branding: {
+    logoUrl: { type: String, default: "" },
+    coverUrl: { type: String, default: "" },
+    accentColor: { type: String, default: "emerald" }, // emerald | gold | amber | violet | rose | sky
+    announcement: {
+      enabled: { type: Boolean, default: false },
+      text: { type: String, default: "" }
+    },
+    socialLinks: {
+      instagram: { type: String, default: "" },
+      tiktok: { type: String, default: "" },
+      facebook: { type: String, default: "" }
+    },
+    openingHours: { type: String, default: "08:30 - 20:00" }
+  },
   lastWeeklyReportDate: { type: Date, default: null }
 }, { timestamps: true });
 
@@ -125,6 +140,7 @@ const ProductSchema = new Schema({
   images: [String],
   imageUrl: { type: String, default: "" }, // Alias used by frontend uploader
   stock: { type: Number, default: 0 },
+  isFeatured: { type: Boolean, default: false },
   availability: { type: String, enum: ["available", "limited", "sold_out", "hidden"], default: "available" },
   // Domain-specific fields
   isService: { type: Boolean, default: false },

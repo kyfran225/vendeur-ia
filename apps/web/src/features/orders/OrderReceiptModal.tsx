@@ -1,4 +1,5 @@
 import React, { useRef } from "react";
+import { createPortal } from "react-dom";
 import { X, Printer, Download, Share2, ShoppingBag, MapPin, Calendar, CheckCircle2, User, Phone } from "lucide-react";
 import { toast } from "sonner";
 
@@ -50,8 +51,8 @@ export function OrderReceiptModal({ isOpen, onClose, order, merchant }: OrderRec
     toast.success("Bordereau prêt pour WhatsApp !");
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-300">
+  return createPortal(
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-300">
       <div className="bg-vendeur-coal border border-white/10 w-full max-w-lg rounded-[2.5rem] overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300 flex flex-col max-h-[95vh]">
         {/* Header Actions */}
         <header className="p-6 border-b border-white/5 flex items-center justify-between shrink-0 bg-white/[0.02]">
@@ -165,6 +166,7 @@ export function OrderReceiptModal({ isOpen, onClose, order, merchant }: OrderRec
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

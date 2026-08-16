@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { ShoppingCart, Package, Clock, CheckCircle2, XCircle, Truck, Banknote, User, Calendar, Loader2, Search, Filter, MoreVertical, ExternalLink, Plus, MapPin, CreditCard, Receipt, Download, CalendarDays } from "lucide-react";
+import { ShoppingCart, Package, Clock, CheckCircle2, XCircle, Truck, Banknote, User, Calendar, Loader2, Search, Filter, MoreVertical, ExternalLink, Plus, MapPin, CreditCard, Receipt, Download, CalendarDays, Shield } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/apiClient";
 import { useAuthStore } from "@/stores/authStore";
@@ -9,6 +9,7 @@ import { useMerchant } from "@/hooks/useMerchant";
 import { OrderCreationModal } from "@/features/orders/OrderCreationModal";
 import { OrderReceiptModal } from "@/features/orders/OrderReceiptModal";
 import { DeliveryDispatchModal } from "@/features/orders/DeliveryDispatchModal";
+import { PaymentProofAuditorModal } from "@/features/orders/PaymentProofAuditorModal";
 import { toast } from "sonner";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
@@ -34,11 +35,11 @@ const statusLabels: Record<string, string> = {
 };
 
 const statusIcons: Record<string, React.ReactNode> = {
-  pending: <Clock size={14} />,
-  confirmed: <Package size={14} />,
-  paid: <Banknote size={14} />,
-  delivered: <Truck size={14} />,
-  cancelled: <XCircle size={14} />,
+  pending: <Clock size={12} className="shrink-0" />,
+  confirmed: <Package size={12} className="shrink-0" />,
+  paid: <Banknote size={12} className="shrink-0" />,
+  delivered: <Truck size={12} className="shrink-0" />,
+  cancelled: <XCircle size={12} className="shrink-0" />,
 };
 
 // Adaptive Config based on business type
@@ -69,6 +70,7 @@ export function OrderManager() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [selectedReceiptOrder, setSelectedReceiptOrder] = useState<any>(null);
   const [selectedDispatchOrder, setSelectedDispatchOrder] = useState<any>(null);
+  const [isShieldModalOpen, setIsShieldModalOpen] = useState(false);
   const merchant = useMerchant();
   const tabsRef = React.useRef<HTMLDivElement>(null);
   const [showLeftScroll, setShowLeftScroll] = useState(false);
@@ -201,6 +203,16 @@ export function OrderManager() {
         </div>
 
         <div className="flex items-center gap-3">
+          <button
+            onClick={() => setIsShieldModalOpen(true)}
+            className="flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20 px-4 h-12 rounded-2xl font-black uppercase text-xs tracking-wider shadow-lg shadow-emerald-500/10 hover:scale-[1.02] active:scale-95 transition-all"
+            title="Ouvrir le registre d'audit et scanner Shield OCR"
+          >
+            <Shield size={18} className="animate-pulse" />
+            <span className="hidden sm:inline">Shield Preuves IA</span>
+            <span className="sm:hidden">Shield</span>
+          </button>
+
           <button
             onClick={() => setIsCreateOpen(true)}
             className="flex items-center gap-2 bg-vendeur-emerald text-vendeur-coal px-5 h-12 rounded-2xl font-black uppercase text-xs tracking-wider shadow-xl shadow-vendeur-emerald/20 hover:scale-[1.02] active:scale-95 transition-all"
@@ -339,30 +351,32 @@ export function OrderManager() {
           </div>
         ) : (
           filteredOrders.map((order: any) => (
-            <div key={order._id} className="bg-vendeur-coal/40 border border-white/5 rounded-[2rem] p-6 hover:border-white/10 transition-all group shadow-lg">
-              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-                <div className="flex items-start gap-4">
-                  <div className="h-12 w-12 rounded-2xl bg-white/5 flex items-center justify-center text-white/20 shrink-0">
-                    <User size={24} />
+            <div key={order._id} className="bg-vendeur-coal/40 border border-white/5 rounded-2xl lg:rounded-[2rem] p-4 lg:p-6 hover:border-white/10 transition-all group shadow-lg">
+              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 lg:gap-8">
+                
+                {/* 1. Client & Delivery Meta Info */}
+                <div className="flex items-start gap-3.5 lg:w-72 xl:w-80 shrink-0">
+                  <div className="h-11 w-11 lg:h-12 lg:w-12 rounded-2xl bg-white/5 flex items-center justify-center text-white/20 shrink-0 border border-white/5">
+                    <User size={22} className="shrink-0" />
                   </div>
-                  <div>
-                    <h3 className="font-black text-lg text-white">{order.customerId?.phone || "Client inconnu"}</h3>
-                    <div className="flex flex-wrap items-center gap-3 mt-1.5">
+                  <div className="min-w-0 flex-1">
+                    <h3 className="font-black text-base lg:text-lg text-white truncate">{order.customerId?.phone || "Client inconnu"}</h3>
+                    <div className="flex flex-wrap items-center gap-2 mt-1.5">
                       <div className="flex items-center gap-1.5 text-white/40">
-                        <Calendar size={12} />
+                        <Calendar size={12} className="shrink-0" />
                         <span className="text-[10px] uppercase font-bold">
-                          {new Date(order.createdAt).toLocaleDateString("fr-FR", { day: '2-digit', month: 'long', hour: '2-digit', minute: '2-digit' })}
+                          {new Date(order.createdAt).toLocaleDateString("fr-FR", { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
                         </span>
                       </div>
                       {(order.shippingAddress || order.customerId?.location) && (
-                        <div className="flex items-center gap-1 text-emerald-400/80 bg-emerald-500/10 px-2 py-0.5 rounded-md text-[10px] font-bold">
-                          <MapPin size={10} />
-                          <span>{order.shippingAddress || order.customerId?.location}</span>
+                        <div className="flex items-center gap-1 text-emerald-400/90 bg-emerald-500/10 px-2 py-0.5 rounded-md text-[10px] font-bold max-w-[200px] truncate">
+                          <MapPin size={10} className="shrink-0" />
+                          <span className="truncate">{order.shippingAddress || order.customerId?.location}</span>
                         </div>
                       )}
                       {order.paymentMethod && (
-                        <div className="flex items-center gap-1 text-white/50 bg-white/5 px-2 py-0.5 rounded-md text-[10px] font-bold uppercase">
-                          <CreditCard size={10} />
+                        <div className="flex items-center gap-1 text-white/50 bg-white/5 px-2 py-0.5 rounded-md text-[10px] font-bold uppercase shrink-0">
+                          <CreditCard size={10} className="shrink-0" />
                           <span>{order.paymentMethod}</span>
                         </div>
                       )}
@@ -370,74 +384,99 @@ export function OrderManager() {
                   </div>
                 </div>
 
-                <div className="flex-1 lg:px-8 border-t lg:border-t-0 lg:border-l border-white/5 pt-6 lg:pt-0">
-                  <div className="space-y-2">
+                {/* 2. Items and Total Summary */}
+                <div className="flex-1 lg:px-8 border-t lg:border-t-0 lg:border-l border-white/5 pt-3 lg:pt-0">
+                  <div className="space-y-1.5">
                     {order.items.map((item: any, i: number) => (
-                      <div key={i} className="flex justify-between items-center text-sm">
-                        <span className="text-white/60 font-medium">{item.quantity}x {item.name}</span>
-                        <span className="text-white font-bold">{item.price.toLocaleString()} {order.currency || merchantCurrency}</span>
+                      <div key={i} className="flex justify-between items-center text-xs lg:text-sm">
+                        <span className="text-white/70 font-medium truncate pr-3">{item.quantity}x {item.name}</span>
+                        <span className="text-white font-bold shrink-0">{item.price.toLocaleString()} {order.currency || merchantCurrency}</span>
                       </div>
                     ))}
                     <div className="flex justify-between items-center pt-2 border-t border-white/5">
-                       <span className="text-[10px] font-black text-white/20 uppercase tracking-widest">Total</span>
-                       <span className="text-xl font-black text-emerald-400">{order.totalAmount.toLocaleString()} {order.currency || merchantCurrency}</span>
+                       <span className="text-[10px] font-black text-white/30 uppercase tracking-widest">Total</span>
+                       <span className="text-lg lg:text-xl font-black text-emerald-400">{order.totalAmount.toLocaleString()} {order.currency || merchantCurrency}</span>
                     </div>
                   </div>
                 </div>
 
-                <div className="flex flex-col sm:flex-row items-center gap-3 border-t lg:border-t-0 pt-6 lg:pt-0">
-                  <div className={cn(
-                    "px-4 py-2 rounded-xl border text-[10px] font-black uppercase tracking-widest flex items-center gap-2 shrink-0",
-                    statusColors[order.status]
-                  )}>
-                    {statusIcons[order.status]}
-                    {statusLabels[order.status]}
+                {/* 3. Status & Actions Bar */}
+                <div className="border-t lg:border-t-0 lg:border-l border-white/5 pt-3 lg:pt-0 lg:pl-8 flex flex-col gap-2.5 shrink-0">
+                  
+                  {/* Status Badge */}
+                  <div className="flex items-center justify-between lg:justify-start gap-3">
+                    <div className={cn(
+                      "px-3.5 py-1.5 lg:py-2 rounded-xl border text-[10px] font-black uppercase tracking-wider flex items-center justify-center gap-2 shrink-0",
+                      statusColors[order.status]
+                    )}>
+                      {statusIcons[order.status]}
+                      <span>{statusLabels[order.status]}</span>
+                    </div>
                   </div>
 
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => setSelectedReceiptOrder(order)}
-                      className="h-10 w-10 rounded-xl bg-white/5 text-white/70 border border-white/10 flex items-center justify-center hover:bg-white/10 hover:text-white transition-all"
-                      title="Imprimer / Partager le Bon de commande"
-                    >
-                      <Receipt size={18} />
-                    </button>
-                    {order.status !== "delivered" && order.status !== "cancelled" && (
+                  {/* Action Buttons: 3 on same line on mobile, flex row on desktop */}
+                  <div className="space-y-2 w-full lg:w-auto">
+                    
+                    {/* Primary 3 Action Buttons in 1 Row */}
+                    <div className="grid grid-cols-3 lg:flex lg:flex-wrap items-center gap-2 w-full">
+                      {/* 1. Reçu */}
                       <button
-                        onClick={() => setSelectedDispatchOrder(order)}
-                        className="h-10 w-10 rounded-xl bg-purple-500/10 text-purple-400 border border-purple-500/20 flex items-center justify-center hover:bg-purple-500 hover:text-white transition-all"
-                        title="Assigner un livreur (WhatsApp)"
+                        onClick={() => setSelectedReceiptOrder(order)}
+                        className="h-10 px-3 rounded-xl bg-white/5 text-white/85 border border-white/10 hover:bg-white/10 hover:text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-all active:scale-95 shadow-sm"
+                        title="Imprimer ou partager le Bon de commande"
                       >
-                        <Truck size={18} />
+                        <Receipt size={14} className="text-white/60 shrink-0" />
+                        <span className="truncate">Reçu</span>
                       </button>
-                    )}
-                    {order.status !== "paid" && (
-                      <button
-                        onClick={() => updateStatusMutation.mutate({ id: order._id, status: "paid" })}
-                        className="h-10 w-10 rounded-xl bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 flex items-center justify-center hover:bg-emerald-500 hover:text-black transition-all"
-                        title="Confirmer le paiement"
-                      >
-                        <Banknote size={18} />
-                      </button>
-                    )}
-                    {order.status !== "delivered" && order.status !== "cancelled" && (
-                      <button
-                        onClick={() => updateStatusMutation.mutate({ id: order._id, status: "delivered" })}
-                        className="h-10 w-10 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center justify-center hover:bg-emerald-500 hover:text-black transition-all"
-                        title="Marquer comme livré"
-                      >
-                        <CheckCircle2 size={18} />
-                      </button>
-                    )}
+
+                      {/* 2. Livreur */}
+                      {order.status !== "delivered" && order.status !== "cancelled" ? (
+                        <button
+                          onClick={() => setSelectedDispatchOrder(order)}
+                          className="h-10 px-3 rounded-xl bg-purple-500/10 text-purple-300 border border-purple-500/25 hover:bg-purple-500 hover:text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-all active:scale-95 shadow-sm"
+                          title="Assigner un livreur (WhatsApp)"
+                        >
+                          <Truck size={14} className="shrink-0" />
+                          <span className="truncate">Livreur</span>
+                        </button>
+                      ) : (
+                        <div className="hidden lg:hidden" />
+                      )}
+
+                      {/* 3. Action de Validation (Encaissé ou Livré) */}
+                      {order.status === "pending" ? (
+                        <button
+                          onClick={() => updateStatusMutation.mutate({ id: order._id, status: "paid" })}
+                          className="h-10 px-3 rounded-xl bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500 hover:text-black font-bold text-xs flex items-center justify-center gap-1.5 transition-all active:scale-95 shadow-sm"
+                          title="Marquer comme payée / Encaissée"
+                        >
+                          <Banknote size={14} className="shrink-0" />
+                          <span className="truncate">Encaissé</span>
+                        </button>
+                      ) : order.status === "paid" ? (
+                        <button
+                          onClick={() => updateStatusMutation.mutate({ id: order._id, status: "delivered" })}
+                          className="h-10 px-3 rounded-xl bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 hover:bg-emerald-500 hover:text-black font-bold text-xs flex items-center justify-center gap-1.5 transition-all active:scale-95 shadow-sm"
+                          title="Marquer comme livrée"
+                        >
+                          <CheckCircle2 size={14} className="shrink-0" />
+                          <span className="truncate">Livré</span>
+                        </button>
+                      ) : null}
+                    </div>
+
+                    {/* Dedicated Cancel Row at the Bottom */}
                     {order.status !== "cancelled" && order.status !== "delivered" && (
                       <button
                         onClick={() => updateStatusMutation.mutate({ id: order._id, status: "cancelled" })}
-                        className="h-10 w-10 rounded-xl bg-rose-500/10 text-rose-400 border border-rose-500/20 flex items-center justify-center hover:bg-rose-500 hover:text-white transition-all"
-                        title="Annuler"
+                        className="w-full h-9 px-3 rounded-xl bg-rose-500/10 text-rose-400 border border-rose-500/20 hover:bg-rose-500 hover:text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-all active:scale-95"
+                        title="Annuler la commande"
                       >
-                        <XCircle size={18} />
+                        <XCircle size={14} className="shrink-0" />
+                        <span>Annuler la commande</span>
                       </button>
                     )}
+
                   </div>
                 </div>
               </div>
@@ -467,6 +506,13 @@ export function OrderManager() {
           isOpen={!!selectedDispatchOrder}
           onClose={() => setSelectedDispatchOrder(null)}
           order={selectedDispatchOrder}
+        />
+      )}
+
+      {isShieldModalOpen && (
+        <PaymentProofAuditorModal
+          isOpen={isShieldModalOpen}
+          onClose={() => setIsShieldModalOpen(false)}
         />
       )}
     </div>

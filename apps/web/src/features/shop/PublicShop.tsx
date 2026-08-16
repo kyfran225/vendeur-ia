@@ -29,7 +29,9 @@ import {
   Flame,
   Film,
   Grid,
-  Plus
+  Plus,
+  Instagram,
+  Facebook
 } from "lucide-react";
 import { WebChatWidget } from "./components/WebChatWidget";
 import { CartDrawer, type CartItem } from "./components/CartDrawer";
@@ -37,6 +39,7 @@ import { StoryViewerModal } from "./components/StoryViewerModal";
 import { VoiceSearchButton } from "./components/VoiceSearchButton";
 import { SocialProofBanner } from "./components/SocialProofBanner";
 import { ShareShopModal } from "./components/ShareShopModal";
+import { HeroProductShowcase } from "./components/HeroProductShowcase";
 import { MetaHead } from "@/components/seo/MetaHead";
 import { SITE_CONFIG } from "@/lib/seoConfig";
 import { apiClient } from "@/lib/apiClient";
@@ -382,16 +385,55 @@ export function PublicShop() {
         }}
       />
 
+      {/* Top Flash Announcement Banner */}
+      {merchant?.branding?.announcement?.enabled && merchant?.branding?.announcement?.text && (
+        <div className="bg-gradient-to-r from-amber-500 via-rose-500 to-vendeur-emerald text-vendeur-coal px-4 py-2 text-center text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 shadow-md">
+          <Flame size={14} className="animate-bounce" />
+          <span>{merchant.branding.announcement.text}</span>
+          <Flame size={14} className="animate-bounce" />
+        </div>
+      )}
+
       {/* Header / Branding */}
       <header className="sticky top-0 z-50 bg-vendeur-bg/80 backdrop-blur-xl border-b border-white/5">
         <div className="max-w-7xl mx-auto px-4 md:px-6 h-20 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="h-10 w-10 md:h-12 md:w-12 rounded-xl bg-vendeur-emerald flex items-center justify-center text-vendeur-coal shadow-lg shadow-vendeur-emerald/20 shrink-0">
-              <ShoppingBag size={24} />
+          <div className="flex items-center gap-3 md:gap-4">
+            <div className="h-10 w-10 md:h-12 md:w-12 rounded-xl bg-vendeur-emerald flex items-center justify-center text-vendeur-coal shadow-lg shadow-vendeur-emerald/20 overflow-hidden shrink-0">
+              {merchant?.branding?.logoUrl ? (
+                <img src={merchant.branding.logoUrl} alt={merchant.businessName} className="w-full h-full object-cover" />
+              ) : (
+                <ShoppingBag size={24} />
+              )}
             </div>
             <div>
               <h1 className="text-lg md:text-xl font-black uppercase tracking-tighter leading-none">{merchant.businessName}</h1>
-              <p className="text-[9px] md:text-[10px] font-black text-vendeur-emerald uppercase tracking-widest mt-1">Propulsé par Vendeur IA</p>
+              <div className="flex items-center gap-2 mt-1">
+                <p className="text-[9px] md:text-[10px] font-black text-vendeur-emerald uppercase tracking-widest">
+                  {merchant?.branding?.openingHours ? `Ouvert • ${merchant.branding.openingHours.split("(")[0]}` : "Propulsé par Vendeur IA"}
+                </p>
+                {merchant?.branding?.socialLinks?.instagram && (
+                  <a
+                    href={merchant.branding.socialLinks.instagram.startsWith("http") ? merchant.branding.socialLinks.instagram : `https://instagram.com/${merchant.branding.socialLinks.instagram.replace("@", "")}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-white/40 hover:text-rose-400 transition-colors"
+                    title="Instagram"
+                  >
+                    <Instagram size={13} />
+                  </a>
+                )}
+                {merchant?.branding?.socialLinks?.facebook && (
+                  <a
+                    href={merchant.branding.socialLinks.facebook.startsWith("http") ? merchant.branding.socialLinks.facebook : `https://facebook.com/${merchant.branding.socialLinks.facebook}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-white/40 hover:text-blue-400 transition-colors"
+                    title="Facebook"
+                  >
+                    <Facebook size={13} />
+                  </a>
+                )}
+              </div>
             </div>
           </div>
 
@@ -489,7 +531,7 @@ export function PublicShop() {
         )}
 
         {/* Hero Section — Category Adaptive */}
-        <section className="relative overflow-hidden rounded-3xl md:rounded-[3rem] bg-vendeur-coal border border-white/5 p-6 md:p-16 flex flex-col md:flex-row items-center justify-between gap-8 md:gap-12 group">
+        <section className="relative overflow-hidden rounded-3xl md:rounded-[3rem] bg-vendeur-coal border border-white/5 p-5 sm:p-8 md:p-12 lg:p-14 flex flex-col lg:flex-row items-center justify-between gap-8 lg:gap-12 group">
           <div className="relative z-10 space-y-4 md:space-y-6 text-center md:text-left max-w-xl">
             <span className="px-4 py-2 bg-vendeur-emerald/10 border border-vendeur-emerald/20 rounded-full text-[10px] font-black uppercase tracking-widest text-vendeur-emerald">
               Boutique Officielle Certifiée
@@ -504,14 +546,14 @@ export function PublicShop() {
             <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 pt-2">
               <button
                 onClick={() => window.open(`https://wa.me/${merchant.whatsappNumber?.replace(/\+/g, "")}`, "_blank")}
-                className="inline-flex items-center gap-2 h-13 px-6 bg-vendeur-emerald text-vendeur-coal rounded-2xl font-black uppercase text-xs tracking-widest hover:scale-105 active:scale-95 transition-all shadow-xl shadow-vendeur-emerald/20"
+                className="inline-flex items-center gap-2 h-14 px-6 bg-vendeur-emerald text-vendeur-coal rounded-2xl font-black uppercase text-xs tracking-widest hover:scale-105 active:scale-95 transition-all shadow-xl shadow-vendeur-emerald/20"
               >
                 <MessageCircle size={18} />
                 WhatsApp Direct
               </button>
               <button
                 onClick={() => setIsCartOpen(true)}
-                className="inline-flex items-center gap-2 h-13 px-6 bg-white/10 border border-white/15 text-white rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-white/20 transition-all"
+                className="inline-flex items-center gap-2 h-14 px-6 bg-white/10 border border-white/15 text-white rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-white/20 transition-all"
               >
                 <ShoppingCart size={18} />
                 Voir le Panier ({totalCartCount})
@@ -519,11 +561,14 @@ export function PublicShop() {
             </div>
           </div>
 
-          <div className="relative w-full md:w-[380px] h-[260px] md:h-[360px] bg-white/5 rounded-[3.5rem] border border-white/10 flex items-center justify-center overflow-hidden shrink-0">
-            <div className="absolute inset-0 bg-gradient-to-tr from-vendeur-emerald/10 to-transparent opacity-50 group-hover:scale-110 transition-transform duration-1000" />
-            {getCategoryIcon(merchant.category)}
-            <Sparkles className="absolute top-8 right-8 text-vendeur-emerald animate-pulse" size={28} />
-          </div>
+          {/* Dynamic Interactive Product Showcase Carousel */}
+          <HeroProductShowcase
+            products={products}
+            currency={merchant.currency || "XOF"}
+            merchant={merchant}
+            onSelectProduct={(p) => setSelectedProduct(p)}
+            onAddToCart={(p) => handleAddToCart(p)}
+          />
 
           <div className="absolute -top-24 -right-24 h-96 w-96 bg-vendeur-emerald/5 blur-[120px] rounded-full pointer-events-none" />
           <div className="absolute -bottom-24 -left-24 h-96 w-96 bg-blue-500/5 blur-[120px] rounded-full pointer-events-none" />

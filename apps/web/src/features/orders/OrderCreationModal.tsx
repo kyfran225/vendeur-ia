@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import { ShoppingCart, Package, Plus, Minus, X, CheckCheck, Loader2, User, Phone, MapPin } from "lucide-react";
+import { createPortal } from "react-dom";
+import { ShoppingCart, Package, Plus, Minus, X, CheckCheck, Loader2, User, Phone, MapPin, Search } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/apiClient";
 import { useMerchantCurrency } from "@/hooks/useMerchantCurrency";
@@ -26,6 +27,9 @@ export function OrderCreationModal({
   const [phone, setPhone] = useState(initialCustomerPhone || "");
   const [shippingAddress, setShippingAddress] = useState(initialDeliveryAddress);
   const [isCreatingCustomer, setIsCreatingCustomer] = useState(false);
+  const [searchProduct, setSearchProduct] = useState("");
+  const [mobileTab, setMobileTab] = useState<"catalog" | "cart">("catalog");
+
   const queryClient = useQueryClient();
   const merchantCurrency = useMerchantCurrency();
 
@@ -52,6 +56,7 @@ export function OrderCreationModal({
   const [selectedCustomerId, setSelectedCustomerId] = useState<string>(initialCustomerId || "");
 
   const totalAmount = selectedItems.reduce((acc, item) => acc + (item.price * item.quantity), 0);
+  const totalItemCount = selectedItems.reduce((acc, item) => acc + item.quantity, 0);
 
   const createOrderMutation = useMutation({
     mutationFn: async (orderData: any) => {
@@ -145,33 +150,53 @@ export function OrderCreationModal({
     });
   };
 
+  const filteredProducts = products.filter((p: any) =>
+    p.name.toLowerCase().includes(searchProduct.toLowerCase()) ||
+    (p.category && p.category.toLowerCase().includes(searchProduct.toLowerCase()))
+  );
+
   if (!isOpen) return null;
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
-      <div className="bg-vendeur-coal border border-white/10 w-full max-w-3xl rounded-[2.5rem] overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300 flex flex-col max-h-[90vh]">
-        <header className="p-6 md:p-8 border-b border-white/5 flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="h-12 w-12 rounded-2xl bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20">
-              <ShoppingCart size={24} className="text-emerald-400" />
+  return createPortal(
+    <div className="fixed inset-0 z-[100] flex flex-col justify-end sm:justify-center items-center p-0 sm:p-4 bg-black/85 backdrop-blur-md animate-in fade-in duration-200">
+      <div className="bg-[#0B1512] border-t sm:border border-white/10 w-full max-w-3xl h-[94vh] sm:h-auto sm:max-h-[90vh] rounded-t-[2.5rem] sm:rounded-3xl overflow-hidden shadow-2xl flex flex-col animate-in slide-in-from-bottom duration-300">
+        
+        {/* Mobile Pull Handle */}
+        <div className="sm:hidden w-full flex items-center justify-center pt-3 pb-1 shrink-0">
+          <div className="w-12 h-1.5 rounded-full bg-white/20" />
+        </div>
+
+        {/* Header */}
+        <header className="p-4 sm:p-6 border-b border-white/5 flex items-center justify-between shrink-0 bg-white/[0.02] gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-2xl bg-emerald-500/10 flex items-center justify-center border border-emerald-500/30 text-emerald-400 shrink-0 shadow-[0_0_15px_rgba(16,185,129,0.2)]">
+              <ShoppingCart size={22} className="shrink-0" />
             </div>
-            <div>
-              <h2 className="text-xl md:text-2xl font-black text-white">Créer une Commande</h2>
-              <p className="text-xs text-white/40 font-medium">Sélectionnez les articles et configurez la commande du client.</p>
+            <div className="min-w-0">
+              <h2 className="text-base sm:text-xl font-black text-white uppercase tracking-tight truncate">
+                Nouvelle Commande
+              </h2>
+              <p className="text-[11px] sm:text-xs text-white/40 font-medium truncate">
+                Sélectionnez les articles et saisissez les coordonnées.
+              </p>
             </div>
           </div>
-          <button onClick={onClose} className="p-2 text-white/20 hover:text-white transition-colors rounded-xl hover:bg-white/5">
-            <X size={24} />
+          <button
+            onClick={onClose}
+            className="w-10 h-10 rounded-xl bg-white/5 hover:bg-white/10 text-white/70 hover:text-white flex items-center justify-center shrink-0 transition-colors active:scale-95"
+            title="Fermer"
+          >
+            <X size={18} className="shrink-0" />
           </button>
         </header>
 
         {/* Customer & Delivery Form for Direct Order */}
         {!initialCustomerId && (
-          <div className="px-6 md:px-8 py-4 bg-white/[0.02] border-b border-white/5 grid grid-cols-1 sm:grid-cols-2 gap-4 shrink-0">
+          <div className="p-4 sm:px-6 sm:py-3.5 bg-white/[0.01] border-b border-white/5 grid grid-cols-1 sm:grid-cols-2 gap-3 shrink-0">
             <div>
-              <label className="text-[10px] font-black uppercase tracking-widest text-white/40 flex items-center gap-1.5 mb-1.5">
-                <User size={12} className="text-emerald-400" />
-                Sélectionner un Client
+              <label className="text-[10px] font-black uppercase tracking-widest text-white/50 flex items-center gap-1.5 mb-1.5">
+                <User size={12} className="text-emerald-400 shrink-0" />
+                Client
               </label>
               {customers.length > 0 ? (
                 <select
@@ -184,7 +209,7 @@ export function OrderCreationModal({
                       if (matched.location) setShippingAddress(matched.location);
                     }
                   }}
-                  className="w-full bg-vendeur-coal border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white outline-none focus:border-emerald-500"
+                  className="w-full h-11 bg-vendeur-coal border border-white/10 rounded-xl px-3 text-xs text-white outline-none focus:border-emerald-500"
                 >
                   <option value="">-- Choisir un client existant --</option>
                   {customers.map((c: any) => (
@@ -195,97 +220,189 @@ export function OrderCreationModal({
                 </select>
               ) : (
                 <div className="relative">
-                  <Phone size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30" />
+                  <Phone size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30 shrink-0" />
                   <input
                     type="text"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                     placeholder="Numéro WhatsApp (+225...)"
-                    className="w-full bg-vendeur-coal border border-white/10 rounded-xl pl-9 pr-3 py-2 text-xs text-white outline-none focus:border-emerald-500"
+                    className="w-full h-11 bg-vendeur-coal border border-white/10 rounded-xl pl-9 pr-3 text-xs text-white outline-none focus:border-emerald-500"
                   />
                 </div>
               )}
             </div>
 
             <div>
-              <label className="text-[10px] font-black uppercase tracking-widest text-white/40 flex items-center gap-1.5 mb-1.5">
-                <MapPin size={12} className="text-emerald-400" />
-                Lieu de Livraison / Quartier
+              <label className="text-[10px] font-black uppercase tracking-widest text-white/50 flex items-center gap-1.5 mb-1.5">
+                <MapPin size={12} className="text-emerald-400 shrink-0" />
+                Lieu de Livraison
               </label>
               <input
                 type="text"
                 value={shippingAddress}
                 onChange={(e) => setShippingAddress(e.target.value)}
-                placeholder="Ex: Cocody Angré, Marcory..."
-                className="w-full bg-vendeur-coal border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white outline-none focus:border-emerald-500"
+                placeholder="Ex: Cocody Angré, Marcory, Yopougon..."
+                className="w-full h-11 bg-vendeur-coal border border-white/10 rounded-xl px-3 text-xs text-white outline-none focus:border-emerald-500"
               />
             </div>
           </div>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 flex-1 min-h-0">
-          {/* Product List */}
-          <div className="p-6 border-r border-white/5 overflow-y-auto space-y-3 bg-black/20">
-            <h3 className="text-[10px] font-black uppercase tracking-widest text-white/40 mb-2">Catalogue</h3>
-            {loadingProducts ? (
-              <div className="py-12 flex justify-center text-white/20">
-                <Loader2 className="animate-spin text-emerald-400" size={28} />
-              </div>
-            ) : products.length === 0 ? (
-              <p className="text-xs text-white/20 italic py-8 text-center">Aucun produit dans le catalogue.</p>
-            ) : (
-              products.map((p: any) => (
-                <button
-                  key={p._id}
-                  onClick={() => handleAddItem(p)}
-                  className="w-full p-3.5 rounded-2xl bg-white/5 border border-white/5 hover:border-emerald-500/50 hover:bg-white/[0.08] transition-all text-left flex items-center gap-3 group"
-                >
-                  {p.images?.[0] ? (
-                    <img src={p.images[0]} className="h-10 w-10 rounded-xl object-cover" alt="" />
-                  ) : (
-                    <div className="h-10 w-10 rounded-xl bg-white/5 flex items-center justify-center">
-                      <Package className="text-white/20" size={18} />
+        {/* Mobile View Toggle */}
+        <div className="flex md:hidden border-b border-white/5 bg-white/[0.01] px-3 shrink-0">
+          <button
+            onClick={() => setMobileTab("catalog")}
+            className={`flex-1 py-3 text-xs font-black uppercase tracking-wider transition-all border-b-2 flex items-center justify-center gap-2 ${
+              mobileTab === "catalog"
+                ? "border-emerald-500 text-emerald-400"
+                : "border-transparent text-white/40"
+            }`}
+          >
+            <Package size={14} className="shrink-0" />
+            <span>Catalogue</span>
+          </button>
+
+          <button
+            onClick={() => setMobileTab("cart")}
+            className={`flex-1 py-3 text-xs font-black uppercase tracking-wider transition-all border-b-2 flex items-center justify-center gap-2 ${
+              mobileTab === "cart"
+                ? "border-emerald-500 text-emerald-400"
+                : "border-transparent text-white/40"
+            }`}
+          >
+            <ShoppingCart size={14} className="shrink-0" />
+            <span>Panier ({totalItemCount})</span>
+          </button>
+        </div>
+
+        {/* Main Content Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 flex-1 min-h-0 overflow-hidden">
+          
+          {/* Product List / Catalog */}
+          <div className={`p-4 sm:p-6 border-r border-white/5 overflow-y-auto space-y-3 bg-black/20 flex flex-col ${
+            mobileTab === "catalog" ? "flex" : "hidden md:flex"
+          }`}>
+            <div className="flex items-center justify-between gap-2 shrink-0">
+              <h3 className="text-[10px] font-black uppercase tracking-widest text-white/40">Catalogue Produits</h3>
+              <span className="text-[10px] text-white/40">{filteredProducts.length} articles</span>
+            </div>
+
+            {/* Quick Search */}
+            <div className="relative shrink-0">
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30 shrink-0" />
+              <input
+                type="text"
+                value={searchProduct}
+                onChange={(e) => setSearchProduct(e.target.value)}
+                placeholder="Rechercher un article..."
+                className="w-full h-10 bg-white/5 border border-white/10 rounded-xl pl-9 pr-3 text-xs text-white outline-none focus:border-emerald-500"
+              />
+            </div>
+
+            {/* List */}
+            <div className="flex-1 overflow-y-auto space-y-2.5 pr-0.5">
+              {loadingProducts ? (
+                <div className="py-12 flex flex-col items-center justify-center text-white/40 gap-2">
+                  <Loader2 className="animate-spin text-emerald-400 shrink-0" size={24} />
+                  <p className="text-xs">Chargement du catalogue...</p>
+                </div>
+              ) : filteredProducts.length === 0 ? (
+                <p className="text-xs text-white/30 italic py-8 text-center">Aucun produit trouvé.</p>
+              ) : (
+                filteredProducts.map((p: any) => {
+                  const selected = selectedItems.find(i => i.productId === p._id);
+                  return (
+                    <div
+                      key={p._id}
+                      className="p-3 rounded-2xl bg-white/5 border border-white/5 hover:border-emerald-500/40 transition-all flex items-center justify-between gap-3"
+                    >
+                      {p.images?.[0] ? (
+                        <img src={p.images[0]} className="h-11 w-11 rounded-xl object-cover shrink-0" alt="" />
+                      ) : (
+                        <div className="h-11 w-11 rounded-xl bg-white/5 flex items-center justify-center shrink-0 border border-white/5">
+                          <Package className="text-white/30 shrink-0" size={18} />
+                        </div>
+                      )}
+                      
+                      <div className="flex-1 min-w-0">
+                        <p className="font-bold text-xs truncate text-white">{p.name}</p>
+                        <p className="text-xs font-black text-emerald-400 pt-0.5">
+                          {p.price.toLocaleString()} {p.currency || merchantCurrency}
+                        </p>
+                      </div>
+
+                      {selected ? (
+                        <div className="flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-1 shrink-0">
+                          <button
+                            onClick={() => handleRemoveItem(p._id)}
+                            className="w-8 h-8 rounded-lg bg-white/10 hover:bg-rose-500/20 text-white flex items-center justify-center active:scale-95 shrink-0"
+                          >
+                            <Minus size={13} className="shrink-0" />
+                          </button>
+                          <span className="text-xs font-black text-emerald-400 w-5 text-center shrink-0">
+                            {selected.quantity}
+                          </span>
+                          <button
+                            onClick={() => handleAddItem(p)}
+                            className="w-8 h-8 rounded-lg bg-emerald-500 text-black flex items-center justify-center active:scale-95 shrink-0"
+                          >
+                            <Plus size={13} className="shrink-0 font-bold" />
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => handleAddItem(p)}
+                          className="h-9 px-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 hover:bg-emerald-500 hover:text-black text-emerald-400 font-bold text-xs flex items-center gap-1.5 transition-all active:scale-95 shrink-0"
+                        >
+                          <Plus size={14} className="shrink-0" />
+                          <span>Ajouter</span>
+                        </button>
+                      )}
                     </div>
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <p className="font-bold text-xs truncate text-white group-hover:text-emerald-400">{p.name}</p>
-                    <p className="text-[11px] font-black text-white/40">{p.price.toLocaleString()} {p.currency || merchantCurrency}</p>
-                  </div>
-                  <Plus size={16} className="text-white/20 group-hover:text-emerald-400 shrink-0" />
-                </button>
-              ))
-            )}
+                  );
+                })
+              )}
+            </div>
           </div>
 
           {/* Cart & Total */}
-          <div className="p-6 flex flex-col bg-vendeur-coal overflow-hidden">
-            <h3 className="text-[10px] font-black uppercase tracking-widest text-white/40 mb-3">Articles Sélectionnés</h3>
-            <div className="flex-1 overflow-y-auto space-y-2.5 pr-1">
+          <div className={`p-4 sm:p-6 flex flex-col bg-vendeur-coal overflow-hidden ${
+            mobileTab === "cart" ? "flex" : "hidden md:flex"
+          }`}>
+            <div className="flex items-center justify-between mb-3 shrink-0">
+              <h3 className="text-[10px] font-black uppercase tracking-widest text-white/40">Articles Sélectionnés</h3>
+              <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+                {totalItemCount} article{totalItemCount > 1 ? "s" : ""}
+              </span>
+            </div>
+
+            <div className="flex-1 overflow-y-auto space-y-2.5 pr-0.5">
               {selectedItems.length === 0 ? (
-                <div className="h-full flex flex-col items-center justify-center text-center opacity-20 py-12">
-                  <ShoppingCart size={40} className="mb-3" />
-                  <p className="text-xs font-bold uppercase tracking-widest">Panier vide</p>
+                <div className="h-full flex flex-col items-center justify-center text-center opacity-30 py-12 space-y-2">
+                  <ShoppingCart size={36} className="shrink-0 text-white/50" />
+                  <p className="text-xs font-bold uppercase tracking-wider">Panier vide</p>
+                  <p className="text-[11px] text-white/50 max-w-[200px]">Sélectionnez des articles dans le catalogue pour composer la commande.</p>
                 </div>
               ) : (
                 selectedItems.map((item) => (
-                  <div key={item.productId} className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/5">
+                  <div key={item.productId} className="flex items-center justify-between p-3 rounded-2xl bg-white/5 border border-white/5">
                     <div className="min-w-0 flex-1 pr-2">
                       <p className="text-xs font-bold text-white truncate">{item.name}</p>
-                      <p className="text-[10px] text-white/40">{item.price.toLocaleString()} {merchantCurrency}</p>
+                      <p className="text-[11px] font-mono text-emerald-400/90">{item.price.toLocaleString()} {merchantCurrency}</p>
                     </div>
-                    <div className="flex items-center gap-2.5 shrink-0">
+                    <div className="flex items-center gap-2 shrink-0">
                       <button
                         onClick={() => handleRemoveItem(item.productId)}
-                        className="p-1 rounded-md text-white/40 hover:text-rose-400 hover:bg-white/5"
+                        className="w-8 h-8 rounded-lg bg-white/10 hover:bg-rose-500/20 text-white/70 hover:text-rose-400 flex items-center justify-center active:scale-95 shrink-0"
                       >
-                        <Minus size={13} />
+                        <Minus size={13} className="shrink-0" />
                       </button>
-                      <span className="text-xs font-black text-emerald-400 w-4 text-center">{item.quantity}</span>
+                      <span className="text-xs font-black text-emerald-400 w-5 text-center shrink-0">{item.quantity}</span>
                       <button
                         onClick={() => handleAddItem({ _id: item.productId, name: item.name, price: item.price })}
-                        className="p-1 rounded-md text-white/40 hover:text-emerald-400 hover:bg-white/5"
+                        className="w-8 h-8 rounded-lg bg-emerald-500 text-black flex items-center justify-center active:scale-95 shrink-0"
                       >
-                        <Plus size={13} />
+                        <Plus size={13} className="shrink-0 font-bold" />
                       </button>
                     </div>
                   </div>
@@ -293,27 +410,33 @@ export function OrderCreationModal({
               )}
             </div>
 
+            {/* Bottom Checkout Action */}
             <div className="pt-4 border-t border-white/10 mt-4 space-y-3 shrink-0">
               <div className="flex justify-between items-center">
-                <span className="text-[10px] font-black text-white/40 uppercase tracking-widest">Total de la commande</span>
-                <span className="text-xl font-black text-emerald-400">{totalAmount.toLocaleString()} {merchantCurrency}</span>
+                <span className="text-xs font-black text-white/50 uppercase tracking-wider">Total Commande</span>
+                <span className="text-xl sm:text-2xl font-black text-emerald-400">{totalAmount.toLocaleString()} {merchantCurrency}</span>
               </div>
+              
               <button
                 disabled={selectedItems.length === 0 || createOrderMutation.isPending || isCreatingCustomer}
                 onClick={handleValidateOrder}
-                className="w-full h-12 bg-emerald-500 text-black font-black uppercase tracking-widest text-xs rounded-xl flex items-center justify-center gap-2 hover:scale-[1.01] active:scale-98 transition-all shadow-lg shadow-emerald-500/20 disabled:opacity-20"
+                className="w-full h-12 sm:h-13 bg-emerald-500 hover:bg-emerald-400 text-black font-black uppercase tracking-wider text-xs rounded-2xl flex items-center justify-center gap-2 shadow-xl shadow-emerald-500/20 active:scale-98 transition-all disabled:opacity-20"
               >
                 {createOrderMutation.isPending || isCreatingCustomer ? (
-                  <Loader2 className="animate-spin" size={18} />
+                  <Loader2 className="animate-spin shrink-0" size={18} />
                 ) : (
-                  <CheckCheck size={18} />
+                  <CheckCheck size={18} className="shrink-0" />
                 )}
-                Confirmer la Commande
+                <span>Confirmer la Commande</span>
               </button>
             </div>
+
           </div>
+
         </div>
+
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

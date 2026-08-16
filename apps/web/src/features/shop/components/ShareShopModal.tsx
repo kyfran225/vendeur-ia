@@ -90,17 +90,17 @@ export function ShareShopModal({ isOpen, onClose, merchant, shopUrl }: ShareShop
         <div className="grid grid-cols-2 gap-3 pt-2">
           <button
             onClick={handleShareWhatsApp}
-            className="h-12 rounded-xl bg-vendeur-emerald text-vendeur-coal font-black uppercase text-[10px] tracking-widest flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-vendeur-emerald/20"
+            className="h-14 rounded-2xl bg-vendeur-emerald hover:bg-emerald-400 text-vendeur-coal font-black uppercase text-xs tracking-wider flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-vendeur-emerald/20"
           >
-            <MessageCircle size={16} />
+            <MessageCircle size={18} />
             <span>Statut WhatsApp</span>
           </button>
 
           <button
             onClick={handleDownloadQr}
-            className="h-12 rounded-xl bg-white/10 hover:bg-white/15 border border-white/10 text-white font-black uppercase text-[10px] tracking-widest flex items-center justify-center gap-2 transition-all"
+            className="h-14 rounded-2xl bg-white/10 hover:bg-white/15 border border-white/10 text-white font-black uppercase text-xs tracking-wider flex items-center justify-center gap-2 transition-all"
           >
-            <Download size={16} />
+            <Download size={18} />
             <span>Enregistrer QR</span>
           </button>
         </div>

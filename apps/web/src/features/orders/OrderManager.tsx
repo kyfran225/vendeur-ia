@@ -193,7 +193,7 @@ export function OrderManager() {
 
   return (
     <div className="p-4 md:p-10 space-y-8 md:space-y-10 max-w-6xl mx-auto animate-in fade-in duration-700 pb-24 md:pb-12">
-      <header className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+      <header id="tour-orders-management" className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div className="space-y-2">
           <h1 className="text-3xl md:text-5xl font-black tracking-tighter uppercase text-white flex items-center gap-4">
             <ShoppingCart className="text-vendeur-emerald shrink-0" size={32} />

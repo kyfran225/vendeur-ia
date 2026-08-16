@@ -279,7 +279,7 @@ export function StorefrontBrandingTab({ merchant }: StorefrontBrandingTabProps) 
       </div>
 
       {/* 1. Palette de Couleurs & Thème de Marque */}
-      <div className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-vendeur-coal border border-white/10 space-y-4 sm:space-y-6">
+      <div id="theme" className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-vendeur-coal border border-white/10 space-y-4 sm:space-y-6 scroll-mt-28">
         <div className="flex items-start gap-2.5">
           <div className="h-8 w-8 rounded-lg bg-white/5 flex items-center justify-center shrink-0 mt-0.5">
             <Sparkles size={16} className={`${currentPalette.textClass} shrink-0`} />
@@ -330,7 +330,7 @@ export function StorefrontBrandingTab({ merchant }: StorefrontBrandingTabProps) 
       </div>
 
       {/* 2. Logo & Image de Couverture */}
-      <div className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-vendeur-coal border border-white/10 space-y-4 sm:space-y-6">
+      <div id="logo" className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-vendeur-coal border border-white/10 space-y-4 sm:space-y-6 scroll-mt-28">
         <div className="flex items-start gap-2.5">
           <div className="h-8 w-8 rounded-lg bg-white/5 flex items-center justify-center shrink-0 mt-0.5">
             <ImageIcon size={16} className="text-vendeur-emerald shrink-0" />
@@ -385,7 +385,7 @@ export function StorefrontBrandingTab({ merchant }: StorefrontBrandingTabProps) 
           </div>
 
           {/* Cover Banner Field */}
-          <div className="space-y-3 p-4 sm:p-5 rounded-2xl bg-white/[0.02] border border-white/5">
+          <div id="cover" className="space-y-3 p-4 sm:p-5 rounded-2xl bg-white/[0.02] border border-white/5">
             <label className="block text-[11px] sm:text-xs font-black uppercase tracking-wider text-white/80">
               Image de Couverture / Bannière (Optionnel)
             </label>
@@ -425,7 +425,7 @@ export function StorefrontBrandingTab({ merchant }: StorefrontBrandingTabProps) 
       </div>
 
       {/* 3. Bandeau d'Annonce Défilant Promo */}
-      <div className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-vendeur-coal border border-white/10 space-y-4 sm:space-y-6">
+      <div id="announcement" className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-vendeur-coal border border-white/10 space-y-4 sm:space-y-6 scroll-mt-28">
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-start gap-2.5 min-w-0 flex-1">
             <div className="h-8 w-8 rounded-lg bg-white/5 flex items-center justify-center shrink-0 mt-0.5">
@@ -433,10 +433,10 @@ export function StorefrontBrandingTab({ merchant }: StorefrontBrandingTabProps) 
             </div>
             <div className="min-w-0 flex-1">
               <h4 className="text-xs sm:text-sm font-black uppercase tracking-wider text-white leading-tight">
-                3. Bandeau d'Annonce Promo
+                3. Bandeau Promotionnel Défilant
               </h4>
               <p className="text-[11px] sm:text-xs text-white/40 leading-relaxed mt-0.5">
-                Bandeau flash défilant affiché au sommet de la vitrine.
+                Bannière d'accroche tout en haut de votre vitrine.
               </p>
             </div>
           </div>
@@ -472,7 +472,7 @@ export function StorefrontBrandingTab({ merchant }: StorefrontBrandingTabProps) 
       </div>
 
       {/* 4. Réseaux Sociaux & Horaires d'Ouverture */}
-      <div className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-vendeur-coal border border-white/10 space-y-4 sm:space-y-6">
+      <div id="socials" className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-vendeur-coal border border-white/10 space-y-4 sm:space-y-6 scroll-mt-28">
         <div className="flex items-start gap-2.5">
           <div className="h-8 w-8 rounded-lg bg-white/5 flex items-center justify-center shrink-0 mt-0.5">
             <Clock size={16} className="text-sky-400 shrink-0" />

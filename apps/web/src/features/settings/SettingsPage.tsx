@@ -114,9 +114,8 @@ export function SettingsPage() {
     setSearchParams({ tab });
   };
 
-  const { accessToken, logout } = useAuthStore();
+  const { accessToken } = useAuthStore();
   const queryClient = useQueryClient();
-  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   useEffect(() => {
     if (tabsRef.current) {
@@ -138,17 +137,51 @@ export function SettingsPage() {
     const sectionTarget = searchParams.get("section") || hashTarget;
 
     if (sectionTarget) {
-      const timer = setTimeout(() => {
+      let attempts = 0;
+      const maxAttempts = 15;
+
+      const triggerHighlight = () => {
         const el = document.getElementById(sectionTarget);
         if (el) {
-          el.scrollIntoView({ behavior: "smooth", block: "center" });
-          el.classList.add("ring-4", "ring-vendeur-emerald/50", "transition-all", "duration-500");
+          // Find the actual scrollable <main> container from AppLayout
+          const mainContainer = document.querySelector('main') || el.closest('.overflow-y-auto');
+          
+          if (mainContainer) {
+            const containerRect = mainContainer.getBoundingClientRect();
+            const elRect = el.getBoundingClientRect();
+            const relativeTop = elRect.top - containerRect.top;
+            const stickyOffset = window.innerWidth < 768 ? 75 : 95;
+            const targetScrollTop = mainContainer.scrollTop + relativeTop - stickyOffset;
+
+            mainContainer.scrollTo({
+              top: Math.max(0, targetScrollTop),
+              behavior: "smooth"
+            });
+          } else {
+            el.scrollIntoView({ behavior: "smooth", block: "start" });
+          }
+          
+          // Apply universal non-clipped pulsing glow animation
+          el.classList.add("highlight-target-glow");
+
           setTimeout(() => {
-            el.classList.remove("ring-4", "ring-vendeur-emerald/50");
-          }, 3000);
+            el.classList.remove("highlight-target-glow");
+          }, 3800);
+          return true;
         }
-      }, 350);
-      return () => clearTimeout(timer);
+        return false;
+      };
+
+      // Try immediately and at staggered intervals to account for lazy-rendered tabs and images
+      if (!triggerHighlight()) {
+        const interval = setInterval(() => {
+          attempts++;
+          if (triggerHighlight() || attempts >= maxAttempts) {
+            clearInterval(interval);
+          }
+        }, 100);
+        return () => clearInterval(interval);
+      }
     }
   }, [activeTab, searchParams]);
 
@@ -223,33 +256,12 @@ export function SettingsPage() {
 
   return (
     <div className="p-4 md:p-10 max-w-6xl mx-auto space-y-6 md:space-y-8 animate-in fade-in duration-700 pb-24 relative">
-      <ConfirmationModal
-        isOpen={showLogoutConfirm}
-        onClose={() => setShowLogoutConfirm(false)}
-        onConfirm={logout}
-        title="Se déconnecter ?"
-        message="Êtes-vous sûr de vouloir quitter votre session ? Vos données et votre IA continueront de fonctionner en arrière-plan."
-        confirmLabel="Oui, se déconnecter"
-        cancelLabel="Rester connecté"
-        type="logout"
-      />
-
-      <header id="tour-settings-branding" className="flex flex-col md:flex-row md:items-end justify-between gap-4 md:gap-6">
-        <div className="space-y-1.5">
-          <h1 className="text-2xl md:text-5xl font-black tracking-tighter uppercase text-white flex items-center gap-3 md:gap-4">
-            <Settings className="text-vendeur-emerald shrink-0" size={32} />
-            <span className="truncate">Centre de Contrôle</span>
-          </h1>
-          <p className="text-white/40 text-xs sm:text-sm md:text-lg">Pilotez votre machine de vente et configurez votre IA.</p>
-        </div>
-
-        <button
-          onClick={() => setShowLogoutConfirm(true)}
-          className="h-11 md:h-12 px-5 md:px-6 rounded-2xl border border-rose-500/20 bg-rose-500/5 text-rose-500 text-[10px] font-black uppercase tracking-[0.2em] hover:bg-rose-500 hover:text-white transition-all shadow-lg flex items-center justify-center gap-2 shrink-0 self-start md:self-auto"
-        >
-          <LogOut size={16} className="shrink-0" />
-          <span>Déconnexion</span>
-        </button>
+      <header id="tour-settings-branding" className="space-y-1.5">
+        <h1 className="text-2xl md:text-5xl font-black tracking-tighter uppercase text-white flex items-center gap-3 md:gap-4">
+          <Settings className="text-vendeur-emerald shrink-0" size={32} />
+          <span className="truncate">Centre de Contrôle</span>
+        </h1>
+        <p className="text-white/40 text-xs sm:text-sm md:text-lg">Pilotez votre machine de vente et configurez votre IA.</p>
       </header>
 
       {/* Sticky Navigation Tabs Bar (Compact & Sleek Vertical Footprint) */}
@@ -406,7 +418,7 @@ function BoutiqueTab({ merchant, initialKnowledge, accessToken }: { merchant: an
 
   return (
     <div className="space-y-8 animate-in slide-in-from-bottom-2 duration-500">
-      <section id="identity" className="bg-vendeur-coal/50 backdrop-blur-md border border-white/10 p-6 md:p-10 rounded-[2.5rem] md:rounded-[3.5rem] space-y-8 shadow-2xl overflow-hidden">
+      <section id="identity" className="bg-vendeur-coal/50 backdrop-blur-md border border-white/10 p-5 sm:p-7 md:p-10 rounded-2xl sm:rounded-3xl md:rounded-[2.5rem] space-y-6 sm:space-y-8 shadow-2xl scroll-mt-28">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="space-y-1">
             <h2 className="text-xl md:text-2xl font-black text-white flex items-center gap-3">
@@ -708,7 +720,7 @@ function BoutiqueTab({ merchant, initialKnowledge, accessToken }: { merchant: an
       </section>
 
       {/* Grille de Livraison */}
-      <section id="delivery" className="bg-vendeur-coal border border-white/10 p-4 md:p-8 rounded-[2.5rem] md:rounded-[3.5rem] space-y-8 shadow-2xl overflow-hidden">
+      <section id="delivery" className="bg-vendeur-coal border border-white/10 p-5 sm:p-7 md:p-8 rounded-2xl sm:rounded-3xl md:rounded-[2.5rem] space-y-6 sm:space-y-8 shadow-2xl scroll-mt-28">
         <div className="flex items-center gap-3 md:gap-4 px-2">
           <div className="h-12 w-12 md:h-14 md:w-14 bg-sky-500/10 rounded-2xl flex items-center justify-center text-sky-400 border border-sky-500/20 shrink-0">
             <Truck size={24} className="md:w-7 md:h-7" />
@@ -802,7 +814,7 @@ function BoutiqueTab({ merchant, initialKnowledge, accessToken }: { merchant: an
       </section>
 
       {/* Canal de paiement */}
-      <section id="payments" className="bg-vendeur-coal border border-white/10 p-4 md:p-8 rounded-[2.5rem] space-y-8 shadow-2xl overflow-hidden">
+      <section id="payments" className="bg-vendeur-coal border border-white/10 p-5 sm:p-7 md:p-8 rounded-2xl sm:rounded-3xl md:rounded-[2.5rem] space-y-6 sm:space-y-8 shadow-2xl scroll-mt-28">
          <div className="space-y-1 px-2">
             <h2 className="text-xl md:text-2xl font-black text-white flex items-center gap-3">
               <Banknote size={22} className="text-emerald-400 shrink-0" />
@@ -1231,8 +1243,8 @@ function ConnexionsTab({ merchant, systemSettings, qrCode, isConnectingSocket, o
   });
 
   return (
-    <div className="space-y-6 md:space-y-10 animate-in slide-in-from-bottom-2 duration-500 overflow-x-hidden">
-      <section id="whatsapp" className="bg-vendeur-coal border border-white/10 p-4 sm:p-6 md:p-8 rounded-[2rem] md:rounded-[2.5rem] shadow-2xl overflow-hidden">
+    <div className="space-y-6 md:space-y-10 animate-in slide-in-from-bottom-2 duration-500">
+      <section id="whatsapp" className="bg-vendeur-coal border border-white/10 p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl md:rounded-[2.5rem] shadow-2xl scroll-mt-28">
          <WhatsAppConnectionFlow
            qrCode={qrCode}
            isConnectingSocket={isConnectingSocket}

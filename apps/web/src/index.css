@@ -90,3 +90,27 @@
   animation: orbHeartbeat 2.6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
   will-change: transform, box-shadow;
 }
+
+/* Universal Section Target Glow Animation (Clean, Full-Border, No-Clipping) */
+@keyframes targetHighlightPulse {
+  0% {
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.8), 0 0 45px rgba(16, 185, 129, 0.45);
+    border-color: rgba(16, 185, 129, 1);
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgba(16, 185, 129, 0.5), 0 0 65px rgba(16, 185, 129, 0.65);
+    border-color: #10B981;
+  }
+  100% {
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.8), 0 0 45px rgba(16, 185, 129, 0.45);
+    border-color: rgba(16, 185, 129, 1);
+  }
+}
+
+.highlight-target-glow {
+  animation: targetHighlightPulse 1.4s ease-in-out infinite !important;
+  border-color: #10B981 !important;
+  position: relative !important;
+  z-index: 25 !important;
+  transition: all 0.3s ease-in-out !important;
+}

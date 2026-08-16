@@ -286,6 +286,79 @@ router.post("/public/shop/:merchantId/order", async (req, res) => {
   }
 });
 
+// -------------------------------------------------------------
+// PUBLIC META & GOOGLE SHOPPING XML CATALOG FEED (RSS 2.0)
+// -------------------------------------------------------------
+router.get("/storefront/:slugOrId/feed.xml", async (req, res) => {
+  try {
+    const { slugOrId } = req.params;
+    let merchant = await CommerceMerchantModel.findOne({ slug: slugOrId }).lean();
+    if (!merchant) {
+      try {
+        merchant = await CommerceMerchantModel.findById(slugOrId).lean();
+      } catch (err) {
+        // Not a valid ObjectId
+      }
+    }
+
+    if (!merchant) {
+      return res.status(404).send("<error>Marchand non trouvé</error>");
+    }
+
+    const products = await CommerceProductModel.find({
+      merchantId: merchant._id,
+      status: "active"
+    }).lean();
+
+    const baseUrl = env.CLIENT_URL || "https://vendeur.ia";
+    const storeUrl = `${baseUrl}/store/${merchant.slug || merchant._id}`;
+
+    const escapeXml = (str: string = "") =>
+      str
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&apos;");
+
+    let xml = `<?xml version="1.0" encoding="UTF-8"?>\n`;
+    xml += `<rss xmlns:g="http://base.google.com/ns/1.0" version="2.0">\n`;
+    xml += `  <channel>\n`;
+    xml += `    <title>${escapeXml(merchant.businessName)} - Catalogue Vendeur IA</title>\n`;
+    xml += `    <link>${escapeXml(storeUrl)}</link>\n`;
+    xml += `    <description>${escapeXml(merchant.description || "Catalogue officiel de produits en ligne")}</description>\n`;
+
+    for (const product of products) {
+      const productLink = `${storeUrl}?product=${product._id}`;
+      const imageUrl = (product.images && product.images[0]) || merchant.branding?.logoUrl || "";
+      const priceFormatted = `${product.price} ${merchant.currency || "XOF"}`;
+      const availability = (product.stock === undefined || product.stock > 0) ? "in stock" : "out of stock";
+
+      xml += `    <item>\n`;
+      xml += `      <g:id>${product._id}</g:id>\n`;
+      xml += `      <g:title>${escapeXml(product.name)}</g:title>\n`;
+      xml += `      <g:description>${escapeXml(product.description || product.name)}</g:description>\n`;
+      xml += `      <g:link>${escapeXml(productLink)}</g:link>\n`;
+      if (imageUrl) {
+        xml += `      <g:image_link>${escapeXml(imageUrl)}</g:image_link>\n`;
+      }
+      xml += `      <g:price>${priceFormatted}</g:price>\n`;
+      xml += `      <g:condition>new</g:condition>\n`;
+      xml += `      <g:availability>${availability}</g:availability>\n`;
+      xml += `      <g:brand>${escapeXml(merchant.businessName)}</g:brand>\n`;
+      xml += `    </item>\n`;
+    }
+
+    xml += `  </channel>\n`;
+    xml += `</rss>`;
+
+    res.set("Content-Type", "application/xml; charset=utf-8");
+    res.send(xml);
+  } catch (error: any) {
+    res.status(500).send(`<error>${error.message}</error>`);
+  }
+});
+
 router.get("/conversations", authenticate, async (req, res) => {
   try {
     const ownerId = (req as any).user.id;

@@ -1,7 +1,19 @@
 import React, { useState } from "react";
 import { Logo } from "@/components/ui/Logo";
 import { NavLink, useLocation } from "react-router-dom";
-import { LayoutDashboard, Package, MessageCircle, Settings, Megaphone, ShoppingCart, MoreHorizontal, X, Shield } from "lucide-react";
+import { 
+  LayoutDashboard, 
+  Package, 
+  MessageCircle, 
+  Settings, 
+  Megaphone, 
+  ShoppingCart, 
+  MoreHorizontal, 
+  X, 
+  Shield, 
+  ChevronRight,
+  Sparkles
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/stores/authStore";
 
@@ -13,11 +25,11 @@ export function Sidebar() {
   const links = [
     { to: "/dashboard", icon: LayoutDashboard, label: "Stats" },
     { to: "/inbox", icon: MessageCircle, label: "Inbox" },
-    ...(user?.roles.includes("admin") ? [{ to: "/admin", icon: Shield, label: "Admin" }] : []),
+    ...(user?.roles.includes("admin") ? [{ to: "/admin", icon: Shield, label: "Admin", desc: "Console Super Admin" }] : []),
     { to: "/products", icon: Package, label: "Catalogue" },
     { to: "/orders", icon: ShoppingCart, label: "Commandes" },
-    { to: "/marketing", icon: Megaphone, label: "Marketing" },
-    { to: "/settings", icon: Settings, label: "Réglages" },
+    { to: "/marketing", icon: Megaphone, label: "Marketing", desc: "Affiches & Campagnes" },
+    { to: "/settings", icon: Settings, label: "Réglages", desc: "Boutique, Savoir IA & Canaux" },
   ];
 
   const bottomLinks = [
@@ -28,10 +40,8 @@ export function Sidebar() {
   ];
 
   const bottomLinkPaths = bottomLinks.map(l => l.to);
-  const isMoreActive = links.some((link) =>
-    location.pathname.startsWith(link.to) &&
-    !bottomLinkPaths.includes(link.to)
-  );
+  const moreLinks = links.filter(l => !bottomLinkPaths.includes(l.to));
+  const isMoreActive = moreLinks.some((link) => location.pathname.startsWith(link.to));
 
   return (
     <>
@@ -65,8 +75,8 @@ export function Sidebar() {
         </nav>
       </aside>
 
-      {/* Mobile Bottom Navigation */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-vendeur-coal/95 backdrop-blur-lg border-t border-white/5 z-50 flex items-center justify-around px-2 pb-safe">
+      {/* Mobile Bottom Navigation Bar */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-[#0f1714]/95 backdrop-blur-xl border-t border-white/10 z-50 flex items-center justify-around px-2 pb-safe shadow-[0_-4px_25px_rgba(0,0,0,0.4)]">
         {bottomLinks.map((link) => (
           <NavLink
             key={link.to}
@@ -74,78 +84,111 @@ export function Sidebar() {
             className={({ isActive }) =>
               cn(
                 "flex flex-col items-center gap-1 transition-all flex-1 py-1 text-center",
-                isActive ? "text-vendeur-emerald" : "text-white/30"
+                isActive ? "text-vendeur-emerald scale-105 font-bold" : "text-white/40 hover:text-white/70"
               )
             }
           >
-            <link.icon size={18} />
-            <span className="text-[8px] font-black uppercase tracking-tight truncate max-w-full block">{link.label}</span>
+            <link.icon size={19} />
+            <span className="text-[9px] font-black uppercase tracking-tight truncate max-w-full block">{link.label}</span>
           </NavLink>
         ))}
         <button
-          onClick={() => setIsOpen(true)}
+          onClick={() => setIsOpen(prev => !prev)}
           className={cn(
-            "flex flex-col items-center gap-1 transition-all flex-1 py-1 text-center outline-none",
-            isMoreActive ? "text-vendeur-emerald" : "text-white/30 hover:text-white"
+            "flex flex-col items-center gap-1 transition-all flex-1 py-1 text-center outline-none relative",
+            isMoreActive || isOpen ? "text-vendeur-emerald font-bold" : "text-white/40 hover:text-white/70"
           )}
         >
-          <MoreHorizontal size={18} />
-          <span className="text-[8px] font-black uppercase tracking-tight truncate max-w-full block">Plus</span>
+          {isMoreActive && !isOpen && (
+            <span className="absolute top-0 right-[25%] h-2 w-2 rounded-full bg-vendeur-emerald ring-2 ring-[#0f1714]" />
+          )}
+          <MoreHorizontal size={19} />
+          <span className="text-[9px] font-black uppercase tracking-tight truncate max-w-full block">Plus</span>
         </button>
       </nav>
 
-      {/* Sliding Right Drawer for Mobile Menu */}
+      {/* Modern Thumb-Friendly Mobile Bottom Sheet */}
       <div
         className={cn(
-          "fixed inset-0 z-50 md:hidden transition-all duration-300 ease-in-out",
+          "fixed inset-0 z-[80] md:hidden transition-all duration-300 ease-out",
           isOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
         )}
       >
-        {/* Backdrop overlay */}
+        {/* Backdrop */}
         <div
-          className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300"
+          className="absolute inset-0 bg-black/70 backdrop-blur-sm transition-opacity duration-300"
           onClick={() => setIsOpen(false)}
         />
 
-        {/* Drawer panel */}
+        {/* Bottom Sheet Modal Container positioned right in the Thumb Zone */}
         <div
           className={cn(
-            "absolute right-0 top-0 bottom-0 w-32 bg-[#17201c] border-l border-white/10 py-6 px-4 flex flex-col items-center gap-8 shadow-2xl transition-transform duration-300 ease-out pb-safe",
-            isOpen ? "translate-x-0" : "translate-x-full"
+            "absolute bottom-0 left-0 right-0 bg-[#121c18] border-t border-white/10 rounded-t-[2.5rem] p-6 pb-20 shadow-[0_-15px_50px_rgba(0,0,0,0.8)] transition-transform duration-300 ease-out max-h-[80vh] overflow-y-auto",
+            isOpen ? "translate-y-0" : "translate-y-full"
           )}
         >
-          {/* Close button */}
-          <button
-            onClick={() => setIsOpen(false)}
-            className="text-white/40 hover:text-white p-2 rounded-xl hover:bg-white/5 transition-all outline-none"
-          >
-            <X size={20} />
-          </button>
+          {/* Top Drag Handle Indicator */}
+          <div className="flex flex-col items-center justify-center mb-5 cursor-pointer" onClick={() => setIsOpen(false)}>
+            <div className="w-12 h-1.5 bg-white/20 rounded-full hover:bg-white/40 transition-colors" />
+          </div>
 
-          {/* Vertical layout similar to desktop sidebar but slightly smaller */}
-          <nav className="flex-1 w-full flex flex-col items-center gap-6 overflow-y-auto no-scrollbar">
-            {links.filter(l => !bottomLinks.some(bl => bl.to === l.to)).map((link) => (
+          {/* Header */}
+          <div className="flex items-center justify-between mb-5 px-1">
+            <div className="flex items-center gap-2.5">
+              <div className="h-8 w-8 rounded-xl bg-vendeur-emerald/10 border border-vendeur-emerald/20 flex items-center justify-center text-vendeur-emerald">
+                <Sparkles size={16} />
+              </div>
+              <div>
+                <h3 className="text-sm font-black uppercase tracking-wider text-white">Menu & Outils</h3>
+                <p className="text-[10px] text-white/40 font-medium">Accès rapide aux fonctionnalités</p>
+              </div>
+            </div>
+            <button
+              onClick={() => setIsOpen(false)}
+              className="h-8 w-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white/40 hover:text-white hover:bg-white/10 transition-all"
+            >
+              <X size={16} />
+            </button>
+          </div>
+
+          {/* Thumb-friendly Grid Cards */}
+          <div className="grid grid-cols-1 gap-2.5">
+            {moreLinks.map((link) => (
               <NavLink
                 key={link.to}
                 to={link.to}
                 onClick={() => setIsOpen(false)}
                 className={({ isActive }) =>
                   cn(
-                    "flex flex-col items-center gap-1 group transition-all w-full",
-                    isActive ? "text-vendeur-emerald" : "text-white/30 hover:text-white"
+                    "flex items-center justify-between p-4 rounded-2xl border transition-all active:scale-[0.98]",
+                    isActive
+                      ? "bg-vendeur-emerald/15 border-vendeur-emerald/40 text-white shadow-lg shadow-vendeur-emerald/10"
+                      : "bg-white/[0.03] border-white/5 text-white/80 hover:bg-white/[0.07] hover:border-white/10"
                   )
                 }
               >
-                <div className={cn(
-                  "h-10 w-10 rounded-lg flex items-center justify-center transition-all",
-                  "group-hover:bg-white/5"
-                )}>
-                  <link.icon size={20} />
+                <div className="flex items-center gap-3.5">
+                  <div
+                    className={cn(
+                      "h-11 w-11 rounded-xl flex items-center justify-center transition-all",
+                      location.pathname.startsWith(link.to)
+                        ? "bg-vendeur-emerald text-vendeur-coal shadow-md shadow-vendeur-emerald/20 font-bold"
+                        : "bg-white/5 text-vendeur-emerald border border-white/5"
+                    )}
+                  >
+                    <link.icon size={20} />
+                  </div>
+                  <div>
+                    <p className="text-xs font-black uppercase tracking-wider text-white">{link.label}</p>
+                    {link.desc && (
+                      <p className="text-[10px] text-white/40 font-medium mt-0.5">{link.desc}</p>
+                    )}
+                  </div>
                 </div>
-                <span className="text-[9px] font-black uppercase tracking-widest text-center truncate w-full block">{link.label}</span>
+                <ChevronRight size={18} className="text-white/20" />
               </NavLink>
             ))}
-          </nav>
+          </div>
         </div>
       </div>
     </>

@@ -27,6 +27,8 @@ import { VendeurIAPlaygroundModal } from "./components/VendeurIAPlaygroundModal"
 import { SetupCompletionModal } from "./components/SetupCompletionModal";
 import { getMerchantShopUrl, getMerchantShopPath } from "@/lib/slugify";
 
+import { VendeurIALoader } from "@/components/ui/VendeurIALoader";
+
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
@@ -98,8 +100,8 @@ export function SalesDashboard() {
 
   if (isLoading) {
     return (
-      <div className="flex h-[60vh] items-center justify-center">
-        <Sparkles className="animate-spin text-vendeur-emerald" size={48} />
+      <div className="flex h-[65vh] items-center justify-center">
+        <VendeurIALoader size="lg" label="Chargement de votre boutique..." />
       </div>
     );
   }

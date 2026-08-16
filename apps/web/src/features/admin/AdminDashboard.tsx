@@ -29,6 +29,7 @@ import {
   Plus,
   Trash2
 } from "lucide-react";
+import { VendeurIALoader } from "@/components/ui/VendeurIALoader";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuthStore } from "@/stores/authStore";
 import { apiClient } from "@/lib/apiClient";
@@ -125,9 +126,7 @@ export function AdminDashboard() {
 
   if (statsLoading || settingsLoading) {
     return (
-      <div className="flex h-screen items-center justify-center bg-vendeur-bg">
-        <Sparkles className="animate-spin text-vendeur-emerald" size={48} />
-      </div>
+      <VendeurIALoader fullscreen size="xl" label="Chargement de l'administration..." />
     );
   }
 

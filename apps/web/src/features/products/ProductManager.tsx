@@ -5,6 +5,7 @@ import { CaptionModal } from "./components/CaptionModal";
 import { PosterGenerator } from "./components/PosterGenerator";
 import { ConfirmationModal } from "../../components/ui/ConfirmationModal";
 import { StepMilestoneModal } from "../../components/ui/StepMilestoneModal";
+import { VendeurIALoader } from "@/components/ui/VendeurIALoader";
 import { useOnboardingStore } from "@/stores/onboardingStore";
 import { useAuthStore } from "@/stores/authStore";
 import { useMerchant } from "@/hooks/useMerchant";
@@ -854,9 +855,8 @@ export function ProductManager() {
       {/* Grid of items */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {isLoading ? (
-          <div className="col-span-full py-20 flex flex-col items-center justify-center gap-4 text-white/20">
-            <Loader2 size={48} className="animate-spin" />
-            <p className="font-black uppercase tracking-[0.2em] text-xs">Chargement de votre catalogue...</p>
+          <div className="col-span-full py-12">
+            <VendeurIALoader size="lg" label="Chargement de votre catalogue..." />
           </div>
         ) : products.length === 0 ? (
           <div className="col-span-full py-20 border-2 border-dashed border-white/5 rounded-[3rem] flex flex-col items-center justify-center gap-4 text-white/20">

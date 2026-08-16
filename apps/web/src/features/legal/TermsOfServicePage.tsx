@@ -97,7 +97,7 @@ export const TermsOfServicePage: React.FC = () => {
 
       {/* Footer */}
       <footer className="border-t border-white/10 py-6 text-center text-xs text-slate-500">
-        © 2026 Vendeur IA. Tous droits réservés.
+        © 2026 Franck Corp. Tous droits réservés.
       </footer>
     </div>
   );

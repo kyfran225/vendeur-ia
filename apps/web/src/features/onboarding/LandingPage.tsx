@@ -672,7 +672,7 @@ export function LandingPage() {
              </Link>
            </div>
            <p className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] md:tracking-[0.4em] text-white/30 leading-relaxed max-w-md">
-             © 2026 Vendeur IA Tous droits réservés.
+             © 2026 Franck Corp. Tous droits réservés.
            </p>
         </footer>
       </main>

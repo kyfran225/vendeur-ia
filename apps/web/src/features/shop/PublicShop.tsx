@@ -456,16 +456,27 @@ export function PublicShop() {
                       <p className="text-white/40 text-xs mt-2 line-clamp-2 font-medium">{p.description || "Aucune description détaillée."}</p>
                     </div>
 
-                    <div className="flex items-center justify-between pt-3 md:pt-4 border-t border-white/5">
-                      <p className="text-xl font-black text-white">{p.price.toLocaleString()} <span className="text-[10px] text-white/40 ml-1">{p.currency || merchant.currency || "XOF"}</span></p>
-                      {hint ? (
-                        <span className="text-[9px] font-black text-white/30 uppercase tracking-wider text-right max-w-[100px] leading-tight">{hint}</span>
-                      ) : (
-                        <div className="flex items-center gap-1 text-amber-400">
-                          <Star size={10} fill="currentColor" />
-                          <span className="text-[10px] font-black uppercase">Exclusif</span>
-                        </div>
-                      )}
+                    <div className="space-y-3 pt-3 md:pt-4 border-t border-white/5">
+                      <div className="flex items-center justify-between">
+                        <p className="text-xl font-black text-white">{p.price.toLocaleString()} <span className="text-[10px] text-white/40 ml-1">{p.currency || merchant.currency || "XOF"}</span></p>
+                        {hint ? (
+                          <span className="text-[9px] font-black text-white/30 uppercase tracking-wider text-right max-w-[100px] leading-tight">{hint}</span>
+                        ) : (
+                          <div className="flex items-center gap-1 text-amber-400">
+                            <Star size={10} fill="currentColor" />
+                            <span className="text-[10px] font-black uppercase">Exclusif</span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Explicit WhatsApp Action Button on each card */}
+                      <button
+                        onClick={() => handleWhatsAppCTA(p)}
+                        className="w-full h-11 bg-vendeur-emerald text-vendeur-coal font-black uppercase text-[10px] tracking-widest rounded-xl flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all shadow-md shadow-vendeur-emerald/20"
+                      >
+                        <MessageCircle size={14} />
+                        <span>Commander sur WhatsApp</span>
+                      </button>
                     </div>
                   </div>
                 </div>

@@ -23,6 +23,7 @@ import { twMerge } from "tailwind-merge";
 
 import { useMerchant } from "@/hooks/useMerchant";
 import { WhatsAppTypingIndicator } from "@/components/ui/WhatsAppTypingIndicator";
+import { OrderCreationModal } from "@/features/orders/OrderCreationModal";
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -434,157 +435,12 @@ export function SalesInbox() {
         <OrderCreationModal
           isOpen={isOrderModalOpen}
           onClose={() => setIsOrderModalOpen(false)}
-          products={products}
           customerId={activeChatData?.customerId?._id}
+          customerPhone={activeChatData?.customerId?.phone}
+          initialDeliveryAddress={activeChatData?.customerId?.location || ""}
           conversationId={selectedChat || ""}
         />
       )}
-    </div>
-  );
-}
-
-function OrderCreationModal({ isOpen, onClose, products, customerId, conversationId }: any) {
-  const [selectedItems, setSelectedItems] = useState<any[]>([]);
-  const queryClient = useQueryClient();
-  const merchantCurrency = useMerchantCurrency();
-
-  const totalAmount = selectedItems.reduce((acc, item) => acc + (item.price * item.quantity), 0);
-
-  const createOrderMutation = useMutation({
-    mutationFn: async (orderData: any) => {
-      const res = await apiClient.post("/api/commerce/orders", {
-        ...orderData,
-        currency: merchantCurrency
-      });
-      return res.data;
-    },
-    onSuccess: () => {
-      toast.success("Commande validée ! ✨");
-      queryClient.invalidateQueries({ queryKey: ["orders"] });
-      onClose();
-    },
-    onError: () => toast.error("Échec de la validation")
-  });
-
-  const handleAddItem = (product: any) => {
-    const existing = selectedItems.find(i => i.productId === product._id);
-    if (existing) {
-      setSelectedItems(selectedItems.map(i =>
-        i.productId === product._id ? { ...i, quantity: i.quantity + 1 } : i
-      ));
-    } else {
-      setSelectedItems([...selectedItems, {
-        productId: product._id,
-        name: product.name,
-        price: product.price,
-        quantity: 1
-      }]);
-    }
-  };
-
-  const handleRemoveItem = (productId: string) => {
-    const existing = selectedItems.find(i => i.productId === productId);
-    if (existing?.quantity === 1) {
-      setSelectedItems(selectedItems.filter(i => i.productId !== productId));
-    } else {
-      setSelectedItems(selectedItems.map(i =>
-        i.productId === productId ? { ...i, quantity: i.quantity - 1 } : i
-      ));
-    }
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
-      <div className="bg-vendeur-coal border border-white/10 w-full max-w-2xl rounded-[2.5rem] overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300">
-        <header className="p-8 border-b border-white/5 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="h-12 w-12 rounded-2xl bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20">
-              <ShoppingCart size={24} className="text-emerald-400" />
-            </div>
-            <div>
-              <h2 className="text-2xl font-black text-white">Créer une Commande</h2>
-              <p className="text-xs text-white/40 font-medium">Sélectionnez les produits pour conclure la vente.</p>
-            </div>
-          </div>
-          <button onClick={onClose} className="p-2 text-white/20 hover:text-white transition-colors">
-            <X size={24} />
-          </button>
-        </header>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 h-[500px]">
-          {/* Product List */}
-          <div className="p-6 border-r border-white/5 overflow-y-auto space-y-4 bg-black/20">
-            <h3 className="text-[10px] font-black uppercase tracking-widest text-white/40 mb-2">Catalogue</h3>
-            {products.map((p: any) => (
-              <button
-                key={p._id}
-                onClick={() => handleAddItem(p)}
-                className="w-full p-4 rounded-2xl bg-white/5 border border-white/5 hover:border-emerald-500/50 hover:bg-white/[0.08] transition-all text-left flex items-center gap-4 group"
-              >
-                {p.images?.[0] ? (
-                  <img src={p.images[0]} className="h-12 w-12 rounded-xl object-cover" alt="" />
-                ) : (
-                  <div className="h-12 w-12 rounded-xl bg-white/5 flex items-center justify-center"><Package className="text-white/20" size={20} /></div>
-                )}
-                <div className="flex-1 min-w-0">
-                  <p className="font-bold text-sm truncate text-white group-hover:text-emerald-400">{p.name}</p>
-                  <p className="text-xs font-black text-white/40">{p.price.toLocaleString()} {p.currency || merchantCurrency}</p>
-                </div>
-                <Plus size={16} className="text-white/20 group-hover:text-emerald-400" />
-              </button>
-            ))}
-          </div>
-
-          {/* Cart & Total */}
-          <div className="p-6 flex flex-col bg-vendeur-coal">
-            <h3 className="text-[10px] font-black uppercase tracking-widest text-white/40 mb-4">Panier</h3>
-            <div className="flex-1 overflow-y-auto space-y-3">
-              {selectedItems.length === 0 ? (
-                <div className="h-full flex flex-col items-center justify-center text-center opacity-20">
-                  <ShoppingCart size={48} className="mb-4" />
-                  <p className="text-xs font-bold uppercase tracking-widest">Panier vide</p>
-                </div>
-              ) : (
-                selectedItems.map((item) => (
-                  <div key={item.productId} className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/5">
-                    <div className="min-w-0 flex-1">
-                      <p className="text-xs font-bold text-white truncate">{item.name}</p>
-                      <p className="text-[10px] text-white/40">{item.price.toLocaleString()} {merchantCurrency}</p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <button onClick={() => handleRemoveItem(item.productId)} className="text-white/20 hover:text-rose-400"><Minus size={14} /></button>
-                      <span className="text-xs font-black text-emerald-400">{item.quantity}</span>
-                      <button onClick={() => handleAddItem({ _id: item.productId, name: item.name, price: item.price })} className="text-white/20 hover:text-emerald-400"><Plus size={14} /></button>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-
-            <div className="pt-6 border-t border-white/10 mt-6 space-y-4">
-              <div className="flex justify-between items-center">
-                <span className="text-[10px] font-black text-white/40 uppercase tracking-widest">Total à payer</span>
-                <span className="text-2xl font-black text-emerald-400">{totalAmount.toLocaleString()} {merchantCurrency}</span>
-              </div>
-              <button
-                disabled={selectedItems.length === 0 || createOrderMutation.isPending}
-                onClick={() => createOrderMutation.mutate({
-                  customerId,
-                  conversationId,
-                  items: selectedItems,
-                  totalAmount,
-                  currency: merchantCurrency,
-                  status: "pending"
-                })}
-                className="w-full h-14 bg-emerald-500 text-black font-black uppercase tracking-widest rounded-2xl flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all shadow-xl shadow-emerald-500/20 disabled:opacity-20"
-              >
-                {createOrderMutation.isPending ? <Loader2 className="animate-spin" size={20} /> : <CheckCheck size={20} />}
-                Valider la Vente
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }

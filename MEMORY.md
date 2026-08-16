@@ -24,6 +24,11 @@ Le produit doit être utilisable par un commerçant sans formation technique en 
 - **[PROTOCOL.md](file:///C:/Users/Franck/web-apps/vendeur-ia/PROTOCOL.md)** : Règles de qualité et standards IA.
 
 ## Dernières Interventions
+- **Module Commandes Complet (2026-08-16)** :
+  1. *Création Autonome IA* : L'agent IA détecte les intentions d'achat fermes dans le chat (`[[ACTION_CREATE_ORDER]]`), nettoie le texte pour le client et crée automatiquement la commande en base en statut `"pending"`.
+  2. *Bons de Commande & Bordereaux* : Génération et impression immédiate (`OrderReceiptModal.tsx`), avec export textuel formaté en 1 clic vers WhatsApp.
+  3. *Dispatch Livreur* : Assignation d'un coursier (`DeliveryDispatchModal.tsx`) et envoi automatique par WhatsApp de la fiche de livraison (adresse client, liste des articles, montant à encaisser).
+  4. *Filtres Temporels & Export Comptable* : Filtrage instantané (Aujourd'hui, 7 jours, 30 jours, Tout) et export CSV/Excel propre pour la comptabilité du commerçant.
 - **Batch Photo-to-Product / Vision Multi-Articles (2026-08-08)** : Implémentation complète de la détection et création de catalogues multi-produits par photo. Mise à jour de `commerce.service.ts` (analyse multi-articles Gemini/OpenAI), création du composant de révision/édition rapide `BatchReviewModal.tsx` et intégration dans `ProductScanner.tsx` et `ProductManager.tsx`.
 - **Validation Paystack Côte d'Ivoire & Architecture Multi-Pays (2026-08-08)** : Confirmation du compte Live Maât Feed (`pk_live_882659738a53aa8f8cc4c88afeabf58e89edf496`). Validation de la stratégie de paiement (Cartes = Subscriptions récurrentes Paystack / Mobile Money = Recharge + Relances d'échéance automatisées via `billing-queue.service.ts`). Webhook route vérifié sur `/api/payments/webhook/paystack`.
 - **Intégration Facebook (2026-08-05)** : Ajout du support complet Facebook Messenger (Pages) avec redirection Marketplace Pro vers Pack Pro (25.000 FCFA). Mise à jour des contrats Core, API et Web.

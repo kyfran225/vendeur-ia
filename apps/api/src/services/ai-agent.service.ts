@@ -90,7 +90,7 @@ export class AIAgentService {
     const { merchant, products, knowledge, customerPhone, customerLoyalty, platform = "whatsapp" } = context;
 
     const platformInstructions = {
-      whatsapp: "Le client est sur WhatsApp. Si tu as besoin de son adresse, demande-lui de t'envoyer sa localisation WhatsApp ou son quartier précis.",
+      whatsapp: "Le client est DÉJÀ en train de discuter avec toi sur WhatsApp. INTERDICTION FORMELLE de lui dire 'Clique sur commander sur WhatsApp' ou 'Contacte-nous sur WhatsApp' puisqu'il y est déjà. Propose-lui directement de confirmer sa commande par message et demande-lui son quartier pour la livraison.",
       instagram: "Le client est sur Instagram. Tu peux mentionner 'le lien dans ma bio' pour plus de photos ou le catalogue complet. Encourage le partage en story s'il est ravi.",
       facebook: "Le client est sur Facebook Messenger. Réponds aux questions sur les articles en vente. Sois très précis sur la disponibilité et le lieu de retrait/livraison.",
       tiktok: "Le client est sur TikTok. Utilise un ton encore plus dynamique et court. Mentionne que tes produits sont 'ceux de la vidéo' s'il pose des questions sur un post.",
@@ -283,6 +283,11 @@ STRATÉGIE DE VENTE :
 1. Salue brièvement et chaleureusement.
 2. Réponds directement au besoin avec enthousiasme.
 3. Incite à l'action immédiate (valider la commande, choisir une option, planifier la livraison).
+
+DÉTECTION DE COMMANDE FERME (AUTOMATION) :
+- Quand le client CONFIRME EXPLICITEMENT qu'il veut commander ou réserver un ou plusieurs articles précis (ex: "Je prends 2 T-shirts Noirs", "Je confirme pour la robe rouge à Cocody", "Je valide la commande"), insère DISCRÈTEMENT à la TOUTE FIN de ton message la balise JSON suivante :
+[[ACTION_CREATE_ORDER:{"items":[{"name":"NomExactDuProduit","quantity":1}],"deliveryAddress":"Quartier ou Adresse si mentionnée"}]]
+- Cette balise sera automatiquement interceptée par le système pour créer la commande en base de données sans être montrée au client sur WhatsApp.
 
 DÉTECTION DE PAIEMENT :
 - Si le client dit qu'il a payé ou envoyé l'argent, remercie-le poliment.

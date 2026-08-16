@@ -171,7 +171,11 @@ export class AIProvider {
       primaryProvider = primaryProvider === 'gemini' ? 'groq' : 'gemini';
     }
 
-    let response: AIResponse;
+    let response: AIResponse = {
+      text: "",
+      provider: "internal",
+      usage: { promptTokens: 0, completionTokens: 0, totalTokens: 0 }
+    };
 
     // Try Current Provider
     try {

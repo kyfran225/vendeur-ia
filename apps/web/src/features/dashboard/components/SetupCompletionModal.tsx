@@ -1,4 +1,5 @@
 import React from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles, Trophy, CreditCard, Truck, LayoutDashboard, Play, Package, X, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -12,9 +13,9 @@ interface SetupCompletionModalProps {
 export function SetupCompletionModal({ isOpen, onClose, businessName }: SetupCompletionModalProps) {
   if (!isOpen) return null;
 
-  return (
+  return createPortal(
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+      <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
         <motion.div
           initial={{ opacity: 0, scale: 0.9, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -159,6 +160,7 @@ export function SetupCompletionModal({ isOpen, onClose, businessName }: SetupCom
           </div>
         </motion.div>
       </div>
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 }

@@ -71,5 +71,5 @@ pnpm dev
 ---
 
 ## 📄 Licence & Propriété
-**Vendeur IA** - Créé par **Kyfran**. Tous droits réservés.
+**Vendeur IA** - Créé par **Franck Corp**. Tous droits réservés.
 "Votre WhatsApp vend pendant que vous dormez."

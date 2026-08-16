@@ -20,8 +20,10 @@ import { CATEGORY_MOCKS } from "./demo.data.js";
 import { billingReceiptService } from "../../services/billing-receipt.service.js";
 import { marketingService } from "../../services/marketing.service.js";
 import { aiQueue } from "../../services/ai-queue.service.js";
+import { aiProvider } from "../../services/ai-provider.js";
 import axios from "axios";
 import multer from "multer";
+import { emitToUser } from "../../realtime/socketServer.js";
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage() });
@@ -154,10 +156,10 @@ router.get("/verify-transaction/:reference", authenticate, async (req, res) => {
   }
 });
 
-// PUBLIC SHOP ENDPOINT
+// PUBLIC SHOP ENDPOINT (Supports both Mongo ID and Custom Slug, e.g. /shop/chic-abidjan)
 router.get("/public/shop/:merchantId", async (req, res) => {
   try {
-    const merchant = await CommerceMerchantModel.findById(req.params.merchantId);
+    const merchant = await commerceService.findMerchantByIdOrSlug(req.params.merchantId);
     if (!merchant) return res.status(404).json({ error: "Boutique non trouvée" });
 
     const products = await CommerceProductModel.find({
@@ -167,6 +169,117 @@ router.get("/public/shop/:merchantId", async (req, res) => {
 
     res.json({ merchant, products });
   } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// PUBLIC SHOP DIRECT ORDER PLACEMENT (Supports both Mongo ID and Custom Slug)
+router.post("/public/shop/:merchantId/order", async (req, res) => {
+  try {
+    const { merchantId } = req.params;
+    const { customerName, customerPhone, deliveryAddress, deliveryZone, deliveryFee, items, paymentMethod, deliveryNotes, totalAmount } = req.body;
+
+    const merchant = await commerceService.findMerchantByIdOrSlug(merchantId);
+    if (!merchant) return res.status(404).json({ error: "Boutique non trouvée" });
+
+    if (!items || !Array.isArray(items) || items.length === 0) {
+      return res.status(400).json({ error: "Le panier ne peut pas être vide" });
+    }
+
+    if (!customerPhone) {
+      return res.status(400).json({ error: "Le numéro de téléphone est obligatoire pour confirmer la commande" });
+    }
+
+    // 1. Find or create Customer
+    let customer = await CommerceCustomerModel.findOne({
+      merchantId: merchant._id,
+      phone: customerPhone.trim()
+    });
+
+    if (!customer) {
+      customer = await CommerceCustomerModel.create({
+        merchantId: merchant._id,
+        phone: customerPhone.trim(),
+        name: customerName?.trim() || "Client Web",
+        platform: "web",
+        location: deliveryAddress?.trim() || deliveryZone || ""
+      });
+    } else {
+      if (customerName && (!customer.name || customer.name === "Client Web")) {
+        customer.name = customerName.trim();
+      }
+      if (deliveryAddress) {
+        customer.location = deliveryAddress.trim();
+      }
+      await customer.save();
+    }
+
+    // 2. Format Items and update stock
+    const formattedItems = [];
+    let calculatedTotal = 0;
+
+    for (const item of items) {
+      const product = await CommerceProductModel.findOne({
+        _id: item.productId,
+        merchantId: merchant._id
+      });
+
+      if (product) {
+        const qty = Math.max(1, parseInt(item.quantity, 10) || 1);
+        formattedItems.push({
+          productId: product._id,
+          name: product.name,
+          price: product.price,
+          quantity: qty
+        });
+        calculatedTotal += (product.price * qty);
+
+        // Decrement stock if tracked
+        if (typeof product.stock === "number" && product.stock > 0) {
+          product.stock = Math.max(0, product.stock - qty);
+          await product.save();
+        }
+      }
+    }
+
+    const finalDeliveryFee = parseInt(deliveryFee, 10) || 0;
+    const finalTotal = totalAmount ? parseInt(totalAmount, 10) : (calculatedTotal + finalDeliveryFee);
+
+    // 3. Create CommerceOrder in DB
+    const order = await CommerceOrderModel.create({
+      merchantId: merchant._id,
+      customerId: customer._id,
+      items: formattedItems,
+      totalAmount: finalTotal,
+      currency: merchant.currency || "XOF",
+      status: "pending",
+      paymentMethod: paymentMethod || "cash_on_delivery",
+      shippingAddress: `${deliveryZone ? `[${deliveryZone}] ` : ""}${deliveryAddress || "À préciser via WhatsApp"}`,
+      deliveryNotes: deliveryNotes || ""
+    });
+
+    // 4. Realtime Socket notification to merchant dashboard
+    try {
+      emitToUser(merchant.ownerId.toString(), "order:created", {
+        order: order.toObject(),
+        customer: customer.toObject(),
+        fromWebShop: true
+      });
+    } catch (sockErr) {
+      console.warn("[Realtime] Order notification emit failed:", sockErr);
+    }
+
+    res.status(201).json({
+      success: true,
+      order,
+      merchant: {
+        businessName: merchant.businessName,
+        whatsappNumber: merchant.whatsappNumber,
+        currency: merchant.currency
+      }
+    });
+  } catch (error: any) {
+    console.error("[Public Order Error]", error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -268,6 +381,199 @@ router.post("/conversations/:id/messages", authenticate, async (req, res) => {
 
     res.status(201).json(message);
   } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// FAST PAY LINK GENERATOR & SENDER
+router.post("/conversations/:id/fast-pay", authenticate, async (req, res) => {
+  try {
+    const ownerId = (req as any).user.id;
+    const merchant = await CommerceMerchantModel.findOne({ ownerId });
+    if (!merchant) return res.status(404).json({ error: "Marchand non trouvé" });
+
+    const { amount, title, provider, customNumber, sendDirectly } = req.body;
+    if (!amount || isNaN(Number(amount)) || Number(amount) <= 0) {
+      return res.status(400).json({ error: "Montant invalide" });
+    }
+
+    const conversation = await CommerceConversationModel.findOne({
+      _id: req.params.id,
+      merchantId: merchant._id
+    }).populate("customerId");
+
+    if (!conversation) return res.status(404).json({ error: "Conversation non trouvée" });
+
+    const knowledge = await CommerceKnowledgeModel.findOne({ merchantId: merchant._id });
+    const configuredMethods = knowledge?.businessRules?.paymentMethods || [];
+
+    // Fallback numbers
+    const merchantPhone = merchant.whatsappNumber || "";
+    const currency = merchant.currency || "XOF";
+    const numAmount = Number(amount);
+    const itemTitle = title?.trim() || "Commande en cours";
+
+    // Detect provider numbers
+    const waveEntry = configuredMethods.find(m => m.provider.toLowerCase().includes("wave")) ||
+      merchant.paymentChannels?.find(c => c.provider?.toLowerCase().includes("wave"));
+    const omEntry = configuredMethods.find(m => m.provider.toLowerCase().includes("orange")) ||
+      merchant.paymentChannels?.find(c => c.provider?.toLowerCase().includes("orange"));
+    const momoEntry = configuredMethods.find(m => m.provider.toLowerCase().includes("mtn")) ||
+      merchant.paymentChannels?.find(c => c.provider?.toLowerCase().includes("mtn"));
+
+    const waveNum = customNumber || waveEntry?.number || merchantPhone;
+    const omNum = customNumber || omEntry?.number || merchantPhone;
+    const momoNum = customNumber || momoEntry?.number || merchantPhone;
+
+    const cleanWave = waveNum.replace(/\+/g, "").replace(/\s/g, "");
+
+    // Build the formatted text
+    const lines = [
+      `💳 *DEMANDE DE RÈGLEMENT - ${merchant.businessName.toUpperCase()}*`,
+      `━━━━━━━━━━━━━━━━━━━━`,
+      `📦 *Objet* : ${itemTitle}`,
+      `💵 *Montant à payer* : *${numAmount.toLocaleString()} ${currency}*`,
+      `━━━━━━━━━━━━━━━━━━━━`,
+      `📱 *MOYENS DE PAIEMENT DISPONIBLES :*\n`
+    ];
+
+    if (!provider || provider === "all" || provider === "wave") {
+      lines.push(`🌊 *WAVE :*`);
+      lines.push(`Transférez au : *${waveNum}*`);
+      if (cleanWave) {
+        lines.push(`🔗 Lien direct Wave : https://wave.com/send?phone=${cleanWave}\n`);
+      }
+    }
+
+    if (!provider || provider === "all" || provider === "orange") {
+      lines.push(`🍊 *ORANGE MONEY :*`);
+      lines.push(`Transférez au : *${omNum}*`);
+      lines.push(`Composez le : *#144*...#*\n`);
+    }
+
+    if (!provider || provider === "all" || provider === "mtn") {
+      lines.push(`🟡 *MTN MOBILE MONEY :*`);
+      lines.push(`Transférez au : *${momoNum}*`);
+      lines.push(`Composez le : **133#*\n`);
+    }
+
+    lines.push(
+      `━━━━━━━━━━━━━━━━━━━━`,
+      `📸 *Veuillez envoyer la capture d'écran du transfert dès validation pour confirmation immédiate.* ✨`
+    );
+
+    const formattedText = lines.join("\n");
+
+    if (sendDirectly) {
+      // 1. Save to DB
+      const message = await CommerceMessageModel.create({
+        conversationId: conversation._id,
+        sender: "human",
+        content: formattedText
+      });
+
+      // 2. Dispatch to recipient
+      const customer = conversation.customerId as any;
+      const platform = conversation.platform || "whatsapp";
+      const remoteId = platform === "web" ? (customer.platformId || "WEB_VISITOR") : customer.phone;
+
+      try {
+        await messagingService.sendMessage(merchant, platform, remoteId, formattedText);
+      } catch (sendError: any) {
+        console.error(`[FastPay Messaging Error]`, sendError.message);
+      }
+
+      return res.status(201).json({
+        success: true,
+        message,
+        formattedText
+      });
+    }
+
+    res.json({
+      success: true,
+      formattedText,
+      paymentDetails: {
+        waveNum,
+        omNum,
+        momoNum,
+        amount: numAmount,
+        currency
+      }
+    });
+  } catch (error: any) {
+    console.error("[FastPay Error]", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// MERCHANT VOICE MEMO DISPATCH & AUTO TRANSCRIPTION
+router.post("/conversations/:id/voice", authenticate, upload.single("audio"), async (req, res) => {
+  try {
+    const ownerId = (req as any).user.id;
+    const merchant = await CommerceMerchantModel.findOne({ ownerId });
+    if (!merchant) return res.status(404).json({ error: "Marchand non trouvé" });
+
+    if (!req.file || !req.file.buffer) {
+      return res.status(400).json({ error: "Fichier audio manquant" });
+    }
+
+    const conversation = await CommerceConversationModel.findOne({
+      _id: req.params.id,
+      merchantId: merchant._id
+    }).populate("customerId");
+
+    if (!conversation) return res.status(404).json({ error: "Conversation non trouvée" });
+
+    // 1. Transcribe Voice using AI Provider
+    let transcription = "";
+    try {
+      transcription = await aiProvider.transcribeAudio(
+        req.file.buffer,
+        req.file.mimetype || "audio/ogg",
+        `Boutique: ${merchant.businessName}, Catégorie: ${merchant.category}`
+      );
+    } catch (transcribeErr: any) {
+      console.warn("[Voice Transcription Warning]", transcribeErr.message);
+      transcription = "🎤 [Note vocale envoyée]";
+    }
+
+    // 2. Base64 Audio data URI for playback
+    const base64Audio = `data:${req.file.mimetype || "audio/ogg"};base64,${req.file.buffer.toString("base64")}`;
+
+    // 3. Save to DB
+    const message = await CommerceMessageModel.create({
+      conversationId: conversation._id,
+      sender: "human",
+      type: "audio",
+      content: transcription || "🎤 [Note vocale]",
+      mediaUrl: base64Audio
+    });
+
+    conversation.lastMessageAt = new Date();
+    await conversation.save();
+
+    // 4. Dispatch to WhatsApp / Platform
+    const customer = conversation.customerId as any;
+    const platform = conversation.platform || "whatsapp";
+    const remoteId = platform === "web" ? (customer.platformId || "WEB_VISITOR") : customer.phone;
+
+    try {
+      await messagingService.sendMessage(merchant, platform, remoteId, transcription, {
+        type: "audio",
+        audioBuffer: req.file.buffer
+      });
+    } catch (sendError: any) {
+      console.error(`[Voice Messaging Dispatch Error]`, sendError.message);
+    }
+
+    res.status(201).json({
+      success: true,
+      message,
+      transcription
+    });
+  } catch (error: any) {
+    console.error("[Voice Route Error]", error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -1151,7 +1457,6 @@ router.patch("/orders/:id", authenticate, async (req, res) => {
 });
 
 import { aiAgentService } from "../../services/ai-agent.service.js";
-import { aiProvider } from "../../services/ai-provider.js";
 import { pushService } from "../../services/push.service.js";
 
 // ... existing imports ...

@@ -28,10 +28,76 @@ import crypto from "crypto";
 import { SystemSettingsModel } from "./admin.model.js";
 import { TransactionModel } from "./transaction.model.js";
 
+export function slugify(text: string): string {
+  if (!text) return "";
+  return text
+    .toString()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9\s-]/g, "")
+    .replace(/[\s_]+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
 export class CommerceService {
+  async generateUniqueSlug(businessName: string, currentMerchantId?: string): Promise<string> {
+    const baseSlug = slugify(businessName) || "boutique";
+    let uniqueSlug = baseSlug;
+    let counter = 1;
+
+    while (true) {
+      const existing = await CommerceMerchantModel.findOne({
+        slug: uniqueSlug,
+        ...(currentMerchantId ? { _id: { $ne: currentMerchantId } } : {})
+      });
+      if (!existing) return uniqueSlug;
+      counter++;
+      uniqueSlug = `${baseSlug}-${counter}`;
+    }
+  }
+
+  async findMerchantByIdOrSlug(idOrSlug: string) {
+    if (!idOrSlug) return null;
+    const trimmed = idOrSlug.trim();
+    const normalizedSlug = slugify(trimmed);
+
+    // 1. Try finding by slug
+    let merchant = await CommerceMerchantModel.findOne({
+      $or: [
+        { slug: trimmed.toLowerCase() },
+        { slug: normalizedSlug }
+      ]
+    });
+
+    if (merchant) return merchant;
+
+    // 2. Try by ObjectId if valid
+    if (mongoose.Types.ObjectId.isValid(trimmed)) {
+      merchant = await CommerceMerchantModel.findById(trimmed);
+      if (merchant) return merchant;
+    }
+
+    // 3. Match by businessName case-insensitive
+    const cleanName = trimmed.replace(/-/g, " ");
+    merchant = await CommerceMerchantModel.findOne({
+      businessName: { $regex: new RegExp(`^${cleanName}$`, "i") }
+    });
+
+    return merchant;
+  }
+
   async getDashboard(ownerId: string) {
-    const merchant = await CommerceMerchantModel.findOne({ ownerId });
+    let merchant = await CommerceMerchantModel.findOne({ ownerId });
     if (!merchant) return { merchant: null, products: [], metrics: {} };
+
+    // Ensure merchant has a valid slug
+    if (!merchant.slug && merchant.businessName) {
+      merchant.slug = await this.generateUniqueSlug(merchant.businessName, merchant._id.toString());
+      await merchant.save();
+    }
 
     // New Models Data
     const subscription = await SubscriptionModel.findOne({ userId: ownerId }).populate('offerId');
@@ -167,12 +233,15 @@ export class CommerceService {
   }
 
   async createMerchant(ownerId: string, data: any) {
+    const slug = await this.generateUniqueSlug(data.businessName || "boutique");
+
     // 1. Atomic Upsert for Merchant
     const merchant = await CommerceMerchantModel.findOneAndUpdate(
       { ownerId },
       {
         $set: {
           businessName: data.businessName,
+          slug,
           category: data.category,
           description: data.description,
           address: data.address,
@@ -259,6 +328,12 @@ export class CommerceService {
   async updateMerchant(ownerId: string, data: any) {
     const existingMerchant = await CommerceMerchantModel.findOne({ ownerId });
     if (!existingMerchant) throw new Error("Merchant not found");
+
+    if (data.slug) {
+      data.slug = await this.generateUniqueSlug(data.slug, existingMerchant._id.toString());
+    } else if (data.businessName && data.businessName !== existingMerchant.businessName && !existingMerchant.slug) {
+      data.slug = await this.generateUniqueSlug(data.businessName, existingMerchant._id.toString());
+    }
 
     const previousCurrency = existingMerchant.currency || "XOF";
     const targetCurrency = data.currency || existingMerchant.currency || "XOF";

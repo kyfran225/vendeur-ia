@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import {
   MessageCircle, Search, MoreVertical, CheckCheck, ShieldCheck,
   Send, User, Bot, Loader2, Sparkles, X, Instagram, Facebook,
-  ShoppingCart, Plus, Minus, Package, ChevronLeft, Globe
+  ShoppingCart, Plus, Minus, Package, ChevronLeft, Globe, CreditCard
 } from "lucide-react";
 
 // Add TikTok Icon (Lucide doesn't have it natively sometimes, using a custom or placeholder)
@@ -24,6 +24,8 @@ import { twMerge } from "tailwind-merge";
 import { useMerchant } from "@/hooks/useMerchant";
 import { WhatsAppTypingIndicator } from "@/components/ui/WhatsAppTypingIndicator";
 import { OrderCreationModal } from "@/features/orders/OrderCreationModal";
+import { FastPayModal } from "./FastPayModal";
+import { VoiceRecorder } from "./components/VoiceRecorder";
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -56,6 +58,7 @@ export function SalesInbox() {
   const [searchQuery, setSearchQuery] = useState("");
   const [followupData, setFollowupData] = useState<{ text: string; isOpen: boolean }>({ text: "", isOpen: false });
   const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
+  const [isFastPayModalOpen, setIsFastPayModalOpen] = useState(false);
   const [onlineSessions, setOnlineSessions] = useState<Set<string>>(new Set());
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -314,6 +317,14 @@ export function SalesInbox() {
                   <span className="hidden md:inline ml-2 text-[10px] font-black uppercase tracking-widest">Relancer IA</span>
                 </button>
                 <button
+                  onClick={() => setIsFastPayModalOpen(true)}
+                  className="flex items-center justify-center h-10 w-10 md:h-auto md:w-auto md:px-4 md:py-1.5 bg-amber-500/10 border border-amber-500/30 text-amber-400 rounded-full hover:bg-amber-500/20 transition-all group"
+                  title="Fast Pay Mobile Money (Wave / OM / MoMo)"
+                >
+                  <CreditCard size={14} className="group-hover:scale-110 transition-transform" />
+                  <span className="hidden md:inline ml-2 text-[10px] font-black uppercase tracking-widest">Encaisser</span>
+                </button>
+                <button
                   onClick={() => setIsOrderModalOpen(true)}
                   className="flex items-center justify-center h-10 w-10 md:h-auto md:w-auto md:px-4 md:py-1.5 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 rounded-full hover:bg-emerald-500/20 transition-all group"
                   title="Valider Commande"
@@ -403,21 +414,35 @@ export function SalesInbox() {
                   </div>
                 </div>
               )}
-              <div className="flex items-center gap-3 md:gap-4 bg-vendeur-coal border border-white/10 rounded-2xl md:rounded-[2rem] px-4 py-3 md:px-6 md:py-4 focus-within:border-vendeur-emerald transition-all shadow-xl">
+              <div className="flex items-center gap-2 md:gap-3 bg-vendeur-coal border border-white/10 rounded-2xl md:rounded-[2rem] px-3 py-2 md:px-5 md:py-3 focus-within:border-vendeur-emerald transition-all shadow-xl">
+                {selectedChat && (
+                  <VoiceRecorder conversationId={selectedChat} />
+                )}
+                
                 <input
-                  className="flex-1 bg-transparent outline-none text-sm"
+                  className="flex-1 bg-transparent outline-none text-sm px-2 text-white"
                   placeholder="Répondre..."
                   value={manualMessage}
                   onChange={(e) => setManualMessage(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && selectedChat && sendManualMessageMutation.mutate({ id: selectedChat, text: manualMessage })}
                 />
+                
+                <button
+                  type="button"
+                  onClick={() => setIsFastPayModalOpen(true)}
+                  className="p-2.5 rounded-xl bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 transition-all shrink-0"
+                  title="Fast Pay Mobile Money"
+                >
+                  <CreditCard size={18} />
+                </button>
+
                 <button
                   onClick={() => selectedChat && sendManualMessageMutation.mutate({ id: selectedChat, text: manualMessage })}
                   disabled={!manualMessage}
-                  className="flex items-center gap-2 text-vendeur-emerald font-black text-xs uppercase tracking-widest hover:scale-105 transition-all disabled:opacity-20"
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-vendeur-emerald text-vendeur-coal font-black text-xs uppercase tracking-widest hover:scale-105 transition-all disabled:opacity-20 shrink-0"
                 >
-                  <Send size={16} />
-                  <span>Envoyer</span>
+                  <Send size={15} />
+                  <span className="hidden sm:inline">Envoyer</span>
                 </button>
               </div>
             </footer>
@@ -439,6 +464,15 @@ export function SalesInbox() {
           customerPhone={activeChatData?.customerId?.phone}
           initialDeliveryAddress={activeChatData?.customerId?.location || ""}
           conversationId={selectedChat || ""}
+        />
+      )}
+
+      {isFastPayModalOpen && selectedChat && (
+        <FastPayModal
+          isOpen={isFastPayModalOpen}
+          onClose={() => setIsFastPayModalOpen(false)}
+          conversationId={selectedChat}
+          customerName={activeChatData?.customerId?.name || "Client"}
         />
       )}
     </div>

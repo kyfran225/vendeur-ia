@@ -24,15 +24,20 @@ import {
   Mail,
   Camera,
   LogOut,
-  ChevronDown
+  ChevronDown,
+  Link2,
+  ExternalLink,
+  Copy,
+  Check
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, Link } from "react-router-dom";
 import { useAuthStore } from "@/stores/authStore";
 import { apiClient } from "@/lib/apiClient";
 import { toast } from "sonner";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { slugify } from "@/lib/slugify";
 import { WhatsAppConnectionFlow } from "./components/WhatsAppConnectionFlow";
 import { FacebookConnectionModal } from "./components/fb/FacebookConnectionModal";
 import { MarketplaceGuideModal } from "./components/fb/MarketplaceGuideModal";
@@ -443,8 +448,58 @@ function BoutiqueTab({ merchant, initialKnowledge, accessToken }: { merchant: an
         </div>
 
         <div className="grid gap-6 md:grid-cols-2">
-          <InputGroup label="Nom du commerce" value={localMerchant?.businessName} onChange={v => { setLocalMerchant({...localMerchant, businessName: v}); setIsDirty(true); }} placeholder="Ex: Ma Boutique Chic" />
+          <InputGroup label="Nom du commerce" value={localMerchant?.businessName} onChange={v => { setLocalMerchant({...localMerchant, businessName: v, slug: slugify(v)}); setIsDirty(true); }} placeholder="Ex: Ma Boutique Chic" />
           <InputGroup label="WhatsApp Business" value={localMerchant?.whatsappNumber} onChange={v => { setLocalMerchant({...localMerchant, whatsappNumber: v}); setIsDirty(true); }} placeholder="Ex: 07 00 00 00 00" />
+
+          {/* Custom Slug / Storefront URL Display */}
+          <div className="md:col-span-2 p-4 rounded-2xl bg-white/[0.03] border border-white/5 space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Link2 size={16} className="text-vendeur-emerald" />
+                <span className="text-[10px] font-black uppercase tracking-wider text-white">Lien Personnalisé de votre Boutique</span>
+              </div>
+              <span className="text-[9px] font-bold text-vendeur-emerald bg-vendeur-emerald/10 px-2.5 py-0.5 rounded-full">
+                100% Automatique &amp; Normalisé
+              </span>
+            </div>
+
+            <div className="flex flex-col sm:flex-row items-center gap-2">
+              <div className="flex-1 w-full h-12 bg-black/50 border border-white/10 rounded-xl px-4 flex items-center gap-1.5 text-xs text-white/70 overflow-x-auto font-mono">
+                <span className="text-white/30">{window.location.origin}/shop/</span>
+                <span className="font-bold text-vendeur-emerald">
+                  {slugify(localMerchant?.slug || localMerchant?.businessName || "boutique")}
+                </span>
+              </div>
+
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const slug = slugify(localMerchant?.slug || localMerchant?.businessName || "boutique");
+                    const url = `${window.location.origin}/shop/${slug}`;
+                    navigator.clipboard.writeText(url);
+                    toast.success("Lien personnalisé copié !");
+                  }}
+                  className="flex-1 sm:flex-none h-12 px-4 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 transition-all"
+                >
+                  <Copy size={14} />
+                  <span>Copier</span>
+                </button>
+
+                <Link
+                  to={`/shop/${slugify(localMerchant?.slug || localMerchant?.businessName || "boutique")}`}
+                  target="_blank"
+                  className="flex-1 sm:flex-none h-12 px-4 rounded-xl bg-vendeur-emerald hover:bg-emerald-400 text-vendeur-coal text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-vendeur-emerald/20 hover:scale-105 active:scale-95 transition-all"
+                >
+                  <ExternalLink size={14} />
+                  <span>Tester</span>
+                </Link>
+              </div>
+            </div>
+            <p className="text-[9px] text-white/30 font-medium">
+              Les espaces, accents et caractères spéciaux sont automatiquement normalisés pour garantir un lien web fiable sur tous les téléphones et réseaux sociaux.
+            </p>
+          </div>
 
           <div className="space-y-1.5">
             <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Devise du Catalogue &amp; Offres</label>

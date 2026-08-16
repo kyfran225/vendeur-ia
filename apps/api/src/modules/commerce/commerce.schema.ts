@@ -41,8 +41,9 @@ export const UpdateProductSchema = z.object({
 export const CreateOrderSchema = z.object({
   body: z.object({
     customerId: z.string(),
+    conversationId: z.string().optional(),
     items: z.array(z.object({
-      productId: z.string(),
+      productId: z.string().optional(),
       name: z.string(),
       price: z.number(),
       quantity: z.number().int().positive()
@@ -50,6 +51,7 @@ export const CreateOrderSchema = z.object({
     totalAmount: z.number(),
     currency: z.string().default("XOF"),
     shippingAddress: z.string().optional(),
+    deliveryAddress: z.string().optional(),
     paymentMethod: z.string().optional(),
   })
 });

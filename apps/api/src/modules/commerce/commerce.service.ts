@@ -1083,6 +1083,64 @@ Résumé actuel :`;
     return paystackService.initializeSubscription(email, finalAmount, metadata);
   }
 
+  async createOrderByAiIntent(merchantId: string, customerId: string, conversationId: string, orderData: {
+    items: Array<{ name: string; quantity: number; price?: number }>;
+    deliveryAddress?: string;
+    notes?: string;
+  }) {
+    const merchant = await CommerceMerchantModel.findById(merchantId);
+    if (!merchant) return null;
+
+    const allProducts = await CommerceProductModel.find({ merchantId });
+    const matchedItems: Array<{ productId?: any; name: string; price: number; quantity: number }> = [];
+
+    let calculatedTotal = 0;
+
+    for (const item of orderData.items) {
+      // Find matching product in catalog
+      const product = allProducts.find(p =>
+        p.name.toLowerCase().includes(item.name.toLowerCase()) ||
+        item.name.toLowerCase().includes(p.name.toLowerCase())
+      );
+
+      const price = item.price && item.price > 0 ? item.price : (product?.price || 0);
+      const quantity = item.quantity && item.quantity > 0 ? item.quantity : 1;
+
+      matchedItems.push({
+        productId: product?._id,
+        name: product?.name || item.name,
+        price,
+        quantity
+      });
+
+      calculatedTotal += price * quantity;
+    }
+
+    if (matchedItems.length === 0 || calculatedTotal <= 0) {
+      return null;
+    }
+
+    const order = await CommerceOrderModel.create({
+      merchantId,
+      customerId,
+      conversationId,
+      items: matchedItems,
+      totalAmount: calculatedTotal,
+      currency: merchant.currency || "XOF",
+      status: "pending",
+      shippingAddress: orderData.deliveryAddress || undefined
+    });
+
+    if (orderData.deliveryAddress) {
+      await CommerceCustomerModel.findByIdAndUpdate(customerId, {
+        $set: { location: orderData.deliveryAddress }
+      });
+    }
+
+    console.log(`[AI Order] Automatically created order ${order._id} for customer ${customerId} (${calculatedTotal} ${order.currency})`);
+    return order;
+  }
+
   async updateWhatsAppStatus(userId: string, status: string, details?: any) {
     return WhatsAppConnectionModel.findOneAndUpdate(
       { userId },

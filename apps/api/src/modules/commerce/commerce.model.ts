@@ -207,6 +207,9 @@ const OrderSchema = new Schema({
   },
   paymentMethod: String,
   shippingAddress: String,
+  deliveryGuyName: String,
+  deliveryGuyPhone: String,
+  deliveryNotes: String,
   paidAt: Date,
   deliveredAt: Date,
   recoveredByAi: { type: Boolean, default: false }

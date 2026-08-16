@@ -1,10 +1,14 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { ShoppingCart, Package, Clock, CheckCircle2, XCircle, Truck, Banknote, User, Calendar, Loader2, Search, Filter, MoreVertical, ExternalLink } from "lucide-react";
+import { ShoppingCart, Package, Clock, CheckCircle2, XCircle, Truck, Banknote, User, Calendar, Loader2, Search, Filter, MoreVertical, ExternalLink, Plus, MapPin, CreditCard, Receipt, Download, CalendarDays } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/apiClient";
 import { useAuthStore } from "@/stores/authStore";
 import { useOnboardingStore } from "@/stores/onboardingStore";
 import { useMerchantCurrency } from "@/hooks/useMerchantCurrency";
+import { useMerchant } from "@/hooks/useMerchant";
+import { OrderCreationModal } from "@/features/orders/OrderCreationModal";
+import { OrderReceiptModal } from "@/features/orders/OrderReceiptModal";
+import { DeliveryDispatchModal } from "@/features/orders/DeliveryDispatchModal";
 import { toast } from "sonner";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
@@ -60,7 +64,12 @@ export function OrderManager() {
   const config = BUSINESS_CONFIGS[businessCategory] || BUSINESS_CONFIGS.default;
 
   const [filter, setFilter] = useState("all");
+  const [timeRange, setTimeRange] = useState("all"); // all, today, week, month
   const [search, setSearch] = useState("");
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [selectedReceiptOrder, setSelectedReceiptOrder] = useState<any>(null);
+  const [selectedDispatchOrder, setSelectedDispatchOrder] = useState<any>(null);
+  const merchant = useMerchant();
   const tabsRef = React.useRef<HTMLDivElement>(null);
   const [showLeftScroll, setShowLeftScroll] = useState(false);
   const [showRightScroll, setShowRightScroll] = useState(false);
@@ -126,14 +135,59 @@ export function OrderManager() {
   });
 
   const filteredOrders = useMemo(() => {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    const oneWeekAgo = now.getTime() - (7 * 24 * 60 * 60 * 1000);
+    const oneMonthAgo = now.getTime() - (30 * 24 * 60 * 60 * 1000);
+
     return orders.filter((o: any) => {
       const matchesFilter = filter === "all" || o.status === filter;
+
+      const orderTime = new Date(o.createdAt).getTime();
+      let matchesTime = true;
+      if (timeRange === "today") matchesTime = orderTime >= today;
+      else if (timeRange === "week") matchesTime = orderTime >= oneWeekAgo;
+      else if (timeRange === "month") matchesTime = orderTime >= oneMonthAgo;
+
       const matchesSearch = !search ||
         o.customerId?.phone?.includes(search) ||
+        o.shippingAddress?.toLowerCase().includes(search.toLowerCase()) ||
         o.items?.some((i: any) => i.name.toLowerCase().includes(search.toLowerCase()));
-      return matchesFilter && matchesSearch;
+
+      return matchesFilter && matchesTime && matchesSearch;
     });
-  }, [orders, filter, search]);
+  }, [orders, filter, timeRange, search]);
+
+  const exportToCSV = () => {
+    if (filteredOrders.length === 0) {
+      toast.error("Aucune commande à exporter.");
+      return;
+    }
+
+    const headers = ["ID Commande", "Date", "Client", "Articles", "Total", "Devise", "Statut", "Adresse Livraison", "Paiement", "Livreur"];
+    const rows = filteredOrders.map((o: any) => [
+      `#${o._id.toString().slice(-6).toUpperCase()}`,
+      new Date(o.createdAt).toLocaleDateString("fr-FR"),
+      o.customerId?.phone || "Inconnu",
+      o.items?.map((i: any) => `${i.quantity}x ${i.name}`).join(" | ") || "",
+      o.totalAmount || 0,
+      o.currency || merchantCurrency,
+      o.status,
+      o.shippingAddress || "",
+      o.paymentMethod || "",
+      o.deliveryGuyPhone || ""
+    ]);
+
+    const csvContent = "data:text/csv;charset=utf-8,\uFEFF" + [headers.join(";"), ...rows.map((e: any[]) => e.map((val: any) => `"${val}"`).join(";"))].join("\n");
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `commandes_${merchant?.businessName || "export"}_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success("Export CSV téléchargé ! 📊");
+  };
 
   return (
     <div className="p-4 md:p-10 space-y-8 md:space-y-10 max-w-6xl mx-auto animate-in fade-in duration-700 pb-24 md:pb-12">
@@ -146,30 +200,40 @@ export function OrderManager() {
           <p className="text-white/40 text-sm md:text-lg">Suivez vos ventes et gérez le cycle de vie de vos {config.ordersLabel.toLowerCase()}.</p>
         </div>
 
-        {/* Desktop Filter Menu */}
-        <div className="hidden md:flex gap-2 p-1.5 bg-vendeur-coal/80 backdrop-blur-md rounded-3xl border border-white/10 w-fit shadow-2xl overflow-hidden">
-          {[
-            { id: "all", label: "Tous", icon: <Package size={18} /> },
-            { id: "pending", label: "En attente", icon: <Clock size={18} /> },
-            { id: "paid", label: "Payée", icon: <Banknote size={18} /> },
-            { id: "delivered", label: "Livrée", icon: <Truck size={18} /> },
-            { id: "cancelled", label: "Annulée", icon: <XCircle size={18} /> }
-          ].map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setFilter(tab.id)}
-              data-active={filter === tab.id}
-              className={cn(
-                "flex items-center justify-center gap-2 px-4 h-11 rounded-2xl text-[10px] font-black uppercase tracking-tight transition-all shrink-0 whitespace-nowrap",
-                filter === tab.id
-                  ? "bg-vendeur-emerald text-vendeur-coal shadow-lg"
-                  : "text-white/40 hover:bg-white/5 hover:text-white"
-              )}
-            >
-              <div className="shrink-0">{tab.icon}</div>
-              <span className="leading-none">{tab.label}</span>
-            </button>
-          ))}
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setIsCreateOpen(true)}
+            className="flex items-center gap-2 bg-vendeur-emerald text-vendeur-coal px-5 h-12 rounded-2xl font-black uppercase text-xs tracking-wider shadow-xl shadow-vendeur-emerald/20 hover:scale-[1.02] active:scale-95 transition-all"
+          >
+            <Plus size={18} />
+            <span>Nouvelle {config.orderLabel}</span>
+          </button>
+
+          {/* Desktop Filter Menu */}
+          <div className="hidden md:flex gap-2 p-1.5 bg-vendeur-coal/80 backdrop-blur-md rounded-3xl border border-white/10 w-fit shadow-2xl overflow-hidden">
+            {[
+              { id: "all", label: "Tous", icon: <Package size={18} /> },
+              { id: "pending", label: "En attente", icon: <Clock size={18} /> },
+              { id: "paid", label: "Payée", icon: <Banknote size={18} /> },
+              { id: "delivered", label: "Livrée", icon: <Truck size={18} /> },
+              { id: "cancelled", label: "Annulée", icon: <XCircle size={18} /> }
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setFilter(tab.id)}
+                data-active={filter === tab.id}
+                className={cn(
+                  "flex items-center justify-center gap-2 px-4 h-11 rounded-2xl text-[10px] font-black uppercase tracking-tight transition-all shrink-0 whitespace-nowrap",
+                  filter === tab.id
+                    ? "bg-vendeur-emerald text-vendeur-coal shadow-lg"
+                    : "text-white/40 hover:bg-white/5 hover:text-white"
+                )}
+              >
+                <div className="shrink-0">{tab.icon}</div>
+                <span className="leading-none">{tab.label}</span>
+              </button>
+            ))}
+          </div>
         </div>
       </header>
 
@@ -215,14 +279,51 @@ export function OrderManager() {
         </div>
       </div>
 
-      <div className="relative">
-        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" size={18} />
-        <input
-          className="w-full bg-vendeur-coal/50 border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-sm text-white outline-none focus:border-vendeur-emerald/50 transition-all shadow-xl"
-          placeholder="Rechercher par client ou produit..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 justify-between">
+        <div className="relative flex-1">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" size={18} />
+          <input
+            className="w-full bg-vendeur-coal/50 border border-white/10 rounded-2xl py-3.5 pl-12 pr-4 text-sm text-white outline-none focus:border-vendeur-emerald/50 transition-all shadow-xl"
+            placeholder="Rechercher par client, article ou lieu..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
+
+        <div className="flex items-center gap-2 shrink-0">
+          {/* Time Range Selector */}
+          <div className="flex items-center bg-vendeur-coal/60 border border-white/10 rounded-2xl p-1 shadow-lg">
+            {[
+              { id: "all", label: "Tout" },
+              { id: "today", label: "Aujourd'hui" },
+              { id: "week", label: "7 jours" },
+              { id: "month", label: "30 jours" }
+            ].map((t) => (
+              <button
+                key={t.id}
+                onClick={() => setTimeRange(t.id)}
+                className={cn(
+                  "px-3 py-2 rounded-xl text-[10px] font-bold transition-all whitespace-nowrap",
+                  timeRange === t.id
+                    ? "bg-white/10 text-white"
+                    : "text-white/40 hover:text-white"
+                )}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Export CSV Button */}
+          <button
+            onClick={exportToCSV}
+            className="h-11 px-4 bg-white/5 hover:bg-white/10 text-white/80 hover:text-white border border-white/10 rounded-2xl text-xs font-bold flex items-center gap-2 transition-all shrink-0"
+            title="Exporter en CSV / Excel"
+          >
+            <Download size={14} />
+            <span className="hidden sm:inline">Exporter CSV</span>
+          </button>
+        </div>
       </div>
 
       <div className="grid gap-4">
@@ -246,11 +347,25 @@ export function OrderManager() {
                   </div>
                   <div>
                     <h3 className="font-black text-lg text-white">{order.customerId?.phone || "Client inconnu"}</h3>
-                    <div className="flex items-center gap-2 mt-1">
-                      <Calendar size={12} className="text-white/20" />
-                      <span className="text-[10px] text-white/40 uppercase font-bold">
-                        {new Date(order.createdAt).toLocaleDateString("fr-FR", { day: '2-digit', month: 'long', hour: '2-digit', minute: '2-digit' })}
-                      </span>
+                    <div className="flex flex-wrap items-center gap-3 mt-1.5">
+                      <div className="flex items-center gap-1.5 text-white/40">
+                        <Calendar size={12} />
+                        <span className="text-[10px] uppercase font-bold">
+                          {new Date(order.createdAt).toLocaleDateString("fr-FR", { day: '2-digit', month: 'long', hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      </div>
+                      {(order.shippingAddress || order.customerId?.location) && (
+                        <div className="flex items-center gap-1 text-emerald-400/80 bg-emerald-500/10 px-2 py-0.5 rounded-md text-[10px] font-bold">
+                          <MapPin size={10} />
+                          <span>{order.shippingAddress || order.customerId?.location}</span>
+                        </div>
+                      )}
+                      {order.paymentMethod && (
+                        <div className="flex items-center gap-1 text-white/50 bg-white/5 px-2 py-0.5 rounded-md text-[10px] font-bold uppercase">
+                          <CreditCard size={10} />
+                          <span>{order.paymentMethod}</span>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -280,6 +395,22 @@ export function OrderManager() {
                   </div>
 
                   <div className="flex gap-2">
+                    <button
+                      onClick={() => setSelectedReceiptOrder(order)}
+                      className="h-10 w-10 rounded-xl bg-white/5 text-white/70 border border-white/10 flex items-center justify-center hover:bg-white/10 hover:text-white transition-all"
+                      title="Imprimer / Partager le Bon de commande"
+                    >
+                      <Receipt size={18} />
+                    </button>
+                    {order.status !== "delivered" && order.status !== "cancelled" && (
+                      <button
+                        onClick={() => setSelectedDispatchOrder(order)}
+                        className="h-10 w-10 rounded-xl bg-purple-500/10 text-purple-400 border border-purple-500/20 flex items-center justify-center hover:bg-purple-500 hover:text-white transition-all"
+                        title="Assigner un livreur (WhatsApp)"
+                      >
+                        <Truck size={18} />
+                      </button>
+                    )}
                     {order.status !== "paid" && (
                       <button
                         onClick={() => updateStatusMutation.mutate({ id: order._id, status: "paid" })}
@@ -292,10 +423,10 @@ export function OrderManager() {
                     {order.status !== "delivered" && order.status !== "cancelled" && (
                       <button
                         onClick={() => updateStatusMutation.mutate({ id: order._id, status: "delivered" })}
-                        className="h-10 w-10 rounded-xl bg-purple-500/10 text-purple-500 border border-purple-500/20 flex items-center justify-center hover:bg-purple-500 hover:text-white transition-all"
+                        className="h-10 w-10 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center justify-center hover:bg-emerald-500 hover:text-black transition-all"
                         title="Marquer comme livré"
                       >
-                        <Truck size={18} />
+                        <CheckCircle2 size={18} />
                       </button>
                     )}
                     {order.status !== "cancelled" && order.status !== "delivered" && (
@@ -314,6 +445,30 @@ export function OrderManager() {
           ))
         )}
       </div>
+
+      {isCreateOpen && (
+        <OrderCreationModal
+          isOpen={isCreateOpen}
+          onClose={() => setIsCreateOpen(false)}
+        />
+      )}
+
+      {selectedReceiptOrder && (
+        <OrderReceiptModal
+          isOpen={!!selectedReceiptOrder}
+          onClose={() => setSelectedReceiptOrder(null)}
+          order={selectedReceiptOrder}
+          merchant={merchant}
+        />
+      )}
+
+      {selectedDispatchOrder && (
+        <DeliveryDispatchModal
+          isOpen={!!selectedDispatchOrder}
+          onClose={() => setSelectedDispatchOrder(null)}
+          order={selectedDispatchOrder}
+        />
+      )}
     </div>
   );
 }

@@ -16,6 +16,7 @@ import fs from 'fs';
 import path from 'path';
 
 import { messagingService } from './messaging.service.js';
+import { commerceService } from '../modules/commerce/commerce.service.js';
 
 const REDIS_URL = env.REDIS_URL || 'redis://localhost:6379';
 const API_URL = env.API_URL || 'http://localhost:3001';
@@ -210,7 +211,49 @@ Réponds UNIQUEMENT avec le texte final du message.`;
 
       // Generate AI response
       const aiResponse = await aiAgentService.generateResponse({ ...context, platform } as any);
-      const reply = aiResponse.text;
+      let reply = aiResponse.text;
+
+      // Check for automated Order Creation Intent tag: [[ACTION_CREATE_ORDER:{...}]]
+      const orderActionMatch = reply.match(/\[\[ACTION_CREATE_ORDER:([\s\S]*?)\]\]/);
+      if (orderActionMatch) {
+        try {
+          const orderJsonStr = orderActionMatch[1];
+          const orderPayload = JSON.parse(orderJsonStr);
+          // Remove the tag from the final visible message to the customer
+          reply = reply.replace(/\[\[ACTION_CREATE_ORDER:[\s\S]*?\]\]/, '').trim();
+
+          const merchantId = context.merchant._id?.toString();
+          const conv = await CommerceConversationModel.findById(conversationId);
+          const customerId = conv?.customerId?.toString();
+
+          if (merchantId && customerId && orderPayload?.items?.length > 0) {
+            const createdOrder = await commerceService.createOrderByAiIntent(
+              merchantId,
+              customerId,
+              conversationId,
+              orderPayload
+            );
+
+            if (createdOrder) {
+              // Notify Merchant in real-time via Socket.io
+              emitToUser(userId, 'order:created', {
+                order: createdOrder,
+                source: 'ai_autonomous'
+              });
+
+              // Push Notification to merchant
+              pushService.sendNotification(userId, {
+                title: "🛍️ Nouvelle Commande IA !",
+                body: `Une commande de ${createdOrder.totalAmount} ${createdOrder.currency} vient d'être enregistrée automatiquement.`,
+                data: { orderId: createdOrder._id.toString(), url: "/orders" }
+              }).catch(() => {});
+            }
+          }
+        } catch (actionErr: any) {
+          console.warn("[AI Order Intent] Failed to parse or create automated order:", actionErr.message);
+          reply = reply.replace(/\[\[ACTION_CREATE_ORDER:[\s\S]*?\]\]/, '').trim();
+        }
+      }
 
       const merchant = await CommerceMerchantModel.findById(context.merchant._id);
       let voiceMode = merchant?.aiSettings?.voiceMode && platform === 'whatsapp';

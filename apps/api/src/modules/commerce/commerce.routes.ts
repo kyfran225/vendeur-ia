@@ -1079,9 +1079,9 @@ router.patch("/orders/:id", authenticate, async (req, res) => {
       const receipt = await commerceService.generateDigitalReceipt(orderId);
 
       // Send receipt via WhatsApp (Meta or Baileys)
-      const order = await CommerceOrderModel.findById(orderId).populate("customerId");
-      if (order) {
-        const customer = order.customerId as any;
+      const updatedOrder = await CommerceOrderModel.findById(orderId).populate("customerId");
+      if (updatedOrder) {
+        const customer = updatedOrder.customerId as any;
         const merchantObj = await CommerceMerchantModel.findById(merchant._id);
 
         if (merchantObj?.whatsappConfig?.provider === 'meta') {
@@ -1094,7 +1094,7 @@ router.patch("/orders/:id", authenticate, async (req, res) => {
         }
       }
 
-      return res.json({ success: true, message: "Paiement confirmé et reçu envoyé." });
+      return res.json(updatedOrder);
     }
 
     const order = await CommerceOrderModel.findOneAndUpdate(
@@ -1120,6 +1120,27 @@ router.patch("/orders/:id", authenticate, async (req, res) => {
           }
         );
         logger.info(`[Commerce] Scheduled automated post-purchase followup (J+3) for order ${order._id}`);
+      }
+    }
+
+    // Handle delivery guy assignment & WhatsApp notification if provided
+    if (order && updateData.deliveryGuyPhone && updateData.notifyDeliveryGuy) {
+      const customer = await CommerceCustomerModel.findById(order.customerId);
+      const itemsList = order.items.map((i: any) => `• ${i.quantity}x ${i.name}`).join("\n");
+      const deliveryMsg = `🛵 *NOUVELLE COURSE - ${merchant.businessName}*\n\n` +
+        `📦 *Commande:* #${order._id.toString().slice(-6).toUpperCase()}\n` +
+        `👤 *Client à livrer:* ${customer?.phone || "Client"}\n` +
+        `📍 *Adresse / Quartier:* ${order.shippingAddress || customer?.location || "À convenir avec le client"}\n\n` +
+        `📦 *Articles :*\n${itemsList}\n\n` +
+        `💰 *Montant à encaisser :* ${order.status === "paid" ? "0 (Déjà payé ✅)" : `${order.totalAmount.toLocaleString()} ${order.currency || "XOF"} (À encaisser)`}\n` +
+        (updateData.deliveryNotes ? `📝 *Note :* ${updateData.deliveryNotes}\n` : "") +
+        `\nMerci d'assurer la livraison dès que possible ! 🚀`;
+
+      try {
+        await messagingService.sendMessage(merchant, 'whatsapp', updateData.deliveryGuyPhone, deliveryMsg);
+        logger.info(`[Delivery Dispatch] Dispatched order ${order._id} to courier ${updateData.deliveryGuyPhone}`);
+      } catch (err: any) {
+        logger.warn(`[Delivery Dispatch] Could not send WhatsApp to delivery guy: ${err.message}`);
       }
     }
 

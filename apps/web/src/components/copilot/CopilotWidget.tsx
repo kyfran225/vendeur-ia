@@ -27,11 +27,14 @@ import {
   ExternalLink,
   Store,
   Layers,
-  Crown
+  Crown,
+  Compass
 } from "lucide-react";
 import { Logo } from "@/components/ui/Logo";
 import { useCopilotStore, SuggestedAction } from "@/stores/copilotStore";
 import { FounderContactModal } from "./FounderContactModal";
+import { StoreAuditModal } from "./StoreAuditModal";
+import { SpotlightTourOverlay } from "./SpotlightTourOverlay";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
@@ -42,6 +45,10 @@ function cn(...inputs: ClassValue[]) {
 // Icon resolver helper for quick suggestions & action tags
 function getIconForSuggestion(iconName: string) {
   switch (iconName) {
+    case "compass":
+    case "tour":
+      return <Compass size={14} className="text-cyan-400 shrink-0" />;
+    case "audit":
     case "camera":
     case "sparkles":
       return <Sparkles size={14} className="text-vendeur-emerald shrink-0" />;
@@ -85,6 +92,8 @@ export function CopilotWidget() {
     toggleCopilot,
     setMinimized,
     setFounderModalOpen,
+    runStoreAudit,
+    startTour,
     fetchSuggestions,
     fetchHistory,
     sendMessage,
@@ -164,6 +173,17 @@ export function CopilotWidget() {
     if (!inputPrompt.trim() || isLoading) return;
     const text = inputPrompt;
     setInputPrompt("");
+
+    // Quick command triggers
+    if (text.toLowerCase().includes("audit") || text.toLowerCase().includes("score")) {
+      runStoreAudit();
+      return;
+    }
+    if (text.toLowerCase().includes("visite") || text.toLowerCase().includes("tour") || text.toLowerCase().includes("guider")) {
+      startTour();
+      return;
+    }
+
     sendMessage(text, location.pathname);
   };
 
@@ -174,6 +194,10 @@ export function CopilotWidget() {
     } else if (action.type === "modal") {
       if (action.payload === "dispatch_founder") {
         setFounderModalOpen(true);
+      } else if (action.payload === "audit") {
+        runStoreAudit();
+      } else if (action.payload === "tour") {
+        startTour();
       } else if (action.payload === "pack_pro") {
         if ((window as any).openPackPro) {
           (window as any).openPackPro();
@@ -189,6 +213,8 @@ export function CopilotWidget() {
   return (
     <>
       <FounderContactModal />
+      <StoreAuditModal />
+      <SpotlightTourOverlay />
 
       {/* Floating Trigger Orb / Button */}
       {!isOpen && (
@@ -262,6 +288,24 @@ export function CopilotWidget() {
 
             {/* Header Actions */}
             <div className="flex items-center gap-1">
+              <button
+                onClick={() => runStoreAudit()}
+                title="Lancer l'Audit IA et Score de Conversion"
+                className="px-2 py-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 text-[10px] font-black uppercase tracking-wider flex items-center gap-1 border border-emerald-500/30 transition-colors"
+              >
+                <Sparkles size={12} />
+                <span className="hidden sm:inline">Audit</span>
+              </button>
+
+              <button
+                onClick={() => startTour()}
+                title="Lancer la Visite Guidée 30s"
+                className="px-2 py-1 rounded-lg bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 text-[10px] font-black uppercase tracking-wider flex items-center gap-1 border border-cyan-500/30 transition-colors"
+              >
+                <Compass size={12} />
+                <span className="hidden sm:inline">Tour</span>
+              </button>
+
               <button
                 onClick={() => setFounderModalOpen(true)}
                 title="Envoyer un message au Fondateur"

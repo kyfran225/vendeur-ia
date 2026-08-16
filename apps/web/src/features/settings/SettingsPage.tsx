@@ -234,7 +234,7 @@ export function SettingsPage() {
         type="logout"
       />
 
-      <header className="flex flex-col md:flex-row md:items-end justify-between gap-4 md:gap-6">
+      <header id="tour-settings-branding" className="flex flex-col md:flex-row md:items-end justify-between gap-4 md:gap-6">
         <div className="space-y-1.5">
           <h1 className="text-2xl md:text-5xl font-black tracking-tighter uppercase text-white flex items-center gap-3 md:gap-4">
             <Settings className="text-vendeur-emerald shrink-0" size={32} />
@@ -422,53 +422,45 @@ function BoutiqueTab({ merchant, initialKnowledge, accessToken }: { merchant: an
           <InputGroup label="WhatsApp Business" value={localMerchant?.whatsappNumber} onChange={v => { setLocalMerchant({...localMerchant, whatsappNumber: v}); setIsDirty(true); }} placeholder="Ex: 07 00 00 00 00" />
 
           {/* Custom Slug / Storefront URL Display */}
-          <div className="md:col-span-2 p-4 rounded-2xl bg-white/[0.03] border border-white/5 space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Link2 size={16} className="text-vendeur-emerald" />
-                <span className="text-[10px] font-black uppercase tracking-wider text-white">Lien Personnalisé de votre Boutique</span>
-              </div>
-              <span className="text-[9px] font-bold text-vendeur-emerald bg-vendeur-emerald/10 px-2.5 py-0.5 rounded-full">
-                100% Automatique &amp; Normalisé
-              </span>
+          <div className="md:col-span-2 p-4 md:p-5 rounded-2xl bg-white/[0.03] border border-white/5 space-y-3">
+            <div className="flex items-center gap-2">
+              <Globe size={16} className="text-vendeur-emerald" />
+              <span className="text-[11px] font-black uppercase tracking-wider text-white">Lien de votre boutique</span>
             </div>
 
-            <div className="flex flex-col sm:flex-row items-center gap-2">
-              <div className="flex-1 w-full h-12 bg-black/50 border border-white/10 rounded-xl px-4 flex items-center gap-1.5 text-xs text-white/70 overflow-x-auto font-mono">
-                <span className="text-white/30">{window.location.origin}/shop/</span>
-                <span className="font-bold text-vendeur-emerald">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+              <div className="flex-1 min-w-0 h-12 bg-black/40 border border-white/10 rounded-xl px-3.5 flex items-center gap-1.5 text-xs text-white/80 font-mono overflow-hidden">
+                <span className="text-white/40 select-none truncate shrink-0">{window.location.origin}/shop/</span>
+                <span className="font-bold text-vendeur-emerald truncate">
                   {slugify(localMerchant?.slug || localMerchant?.businessName || "boutique")}
                 </span>
               </div>
 
-              <div className="flex items-center gap-2 w-full sm:w-auto">
+              <div className="grid grid-cols-2 sm:flex items-center gap-2 shrink-0">
                 <button
                   type="button"
                   onClick={() => {
                     const slug = slugify(localMerchant?.slug || localMerchant?.businessName || "boutique");
                     const url = `${window.location.origin}/shop/${slug}`;
                     navigator.clipboard.writeText(url);
-                    toast.success("Lien personnalisé copié !");
+                    toast.success("Lien copié !");
                   }}
-                  className="flex-1 sm:flex-none h-12 px-4 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 transition-all"
+                  className="h-12 px-4 rounded-xl bg-white/5 hover:bg-white/10 active:scale-95 border border-white/10 text-white text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer"
                 >
-                  <Copy size={14} />
+                  <Copy size={14} className="text-white/60" />
                   <span>Copier</span>
                 </button>
 
                 <Link
                   to={`/shop/${slugify(localMerchant?.slug || localMerchant?.businessName || "boutique")}`}
                   target="_blank"
-                  className="flex-1 sm:flex-none h-12 px-4 rounded-xl bg-vendeur-emerald hover:bg-emerald-400 text-vendeur-coal text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-vendeur-emerald/20 hover:scale-105 active:scale-95 transition-all"
+                  className="h-12 px-4 rounded-xl bg-vendeur-emerald hover:bg-emerald-400 active:scale-95 text-vendeur-coal text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-vendeur-emerald/20 transition-all font-bold"
                 >
                   <ExternalLink size={14} />
-                  <span>Tester</span>
+                  <span>Visiter</span>
                 </Link>
               </div>
             </div>
-            <p className="text-[9px] text-white/30 font-medium">
-              Les espaces, accents et caractères spéciaux sont automatiquement normalisés pour garantir un lien web fiable sur tous les téléphones et réseaux sociaux.
-            </p>
           </div>
 
           <div className="space-y-1.5">

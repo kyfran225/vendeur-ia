@@ -824,7 +824,7 @@ export function ProductManager() {
       )}
 
       {/* Main Header */}
-      <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+      <header id="tour-products-catalog" className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
         <div>
           <h1 className="text-3xl md:text-5xl font-black tracking-tighter text-white uppercase">{config.title}</h1>
           <p className="text-white/40 mt-1 md:text-lg">Gérez vos {config.itemLabel.toLowerCase()}s et laissez le Vendeur IA conclure les transactions.</p>

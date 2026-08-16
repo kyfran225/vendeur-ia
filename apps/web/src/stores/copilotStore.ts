@@ -31,10 +31,57 @@ export interface StoreHealthSummary {
   plan: string;
 }
 
+export interface StoreAuditResult {
+  score: number;
+  grade: string;
+  summaryTitle: string;
+  badgeColor: "emerald" | "amber" | "rose" | "blue";
+  totalIssues: number;
+  criticalCount: number;
+  warningCount: number;
+  tipCount: number;
+  issues: Array<{
+    id: string;
+    category: "catalog" | "payment" | "delivery" | "branding" | "whatsapp";
+    severity: "critical" | "warning" | "tip";
+    title: string;
+    description: string;
+    impact: string;
+    actionType: "navigate" | "fix" | "modal";
+    actionPayload: string;
+    actionLabel: string;
+    pointsLost: number;
+  }>;
+  storeStats: {
+    productsCount: number;
+    ordersCount: number;
+    isWhatsAppConnected: boolean;
+    paymentChannelsCount: number;
+    deliveryFeesCount: number;
+  };
+  auditedAt: string;
+}
+
+export interface TourStep {
+  targetId: string;
+  title: string;
+  description: string;
+  route: string;
+  icon: string;
+}
+
 interface CopilotState {
   isOpen: boolean;
   isMinimized: boolean;
   isFounderModalOpen: boolean;
+  isAuditModalOpen: boolean;
+  auditData: StoreAuditResult | null;
+  isAuditLoading: boolean;
+
+  // Spotlight Tour
+  isTourActive: boolean;
+  tourStepIndex: number;
+
   messages: CopilotMessage[];
   suggestions: SuggestionChip[];
   storeHealth: StoreHealthSummary | null;
@@ -49,6 +96,13 @@ interface CopilotState {
   toggleCopilot: () => void;
   setMinimized: (minimized: boolean) => void;
   setFounderModalOpen: (open: boolean) => void;
+  setAuditModalOpen: (open: boolean) => void;
+  runStoreAudit: () => Promise<StoreAuditResult | null>;
+  startTour: () => void;
+  nextTourStep: () => void;
+  prevTourStep: () => void;
+  endTour: () => void;
+
   fetchSuggestions: (pageRoute?: string) => Promise<void>;
   fetchHistory: () => Promise<void>;
   sendMessage: (text: string, pageRoute?: string) => Promise<void>;
@@ -68,6 +122,13 @@ export const useCopilotStore = create<CopilotState>((set, get) => ({
   isOpen: false,
   isMinimized: false,
   isFounderModalOpen: false,
+  isAuditModalOpen: false,
+  auditData: null,
+  isAuditLoading: false,
+
+  isTourActive: false,
+  tourStepIndex: 0,
+
   messages: [
     {
       id: "welcome-1",
@@ -106,6 +167,39 @@ export const useCopilotStore = create<CopilotState>((set, get) => ({
   setMinimized: (isMinimized) => set({ isMinimized }),
 
   setFounderModalOpen: (isFounderModalOpen) => set({ isFounderModalOpen }),
+  setAuditModalOpen: (isAuditModalOpen) => set({ isAuditModalOpen }),
+
+  runStoreAudit: async () => {
+    set({ isAuditLoading: true });
+    try {
+      const res = await apiClient.get("/api/copilot/audit");
+      const audit: StoreAuditResult = res.data;
+      set({ auditData: audit, isAuditModalOpen: true });
+      return audit;
+    } catch (err: any) {
+      toast.error(err.response?.data?.error || "Erreur lors de l'audit de la boutique");
+      return null;
+    } finally {
+      set({ isAuditLoading: false });
+    }
+  },
+
+  startTour: () => {
+    set({ isTourActive: true, tourStepIndex: 0, isOpen: false });
+  },
+
+  nextTourStep: () => {
+    set((state) => ({ tourStepIndex: state.tourStepIndex + 1 }));
+  },
+
+  prevTourStep: () => {
+    set((state) => ({ tourStepIndex: Math.max(0, state.tourStepIndex - 1) }));
+  },
+
+  endTour: () => {
+    set({ isTourActive: false, tourStepIndex: 0 });
+    toast.success("Visite guidée terminée avec succès ! 🌟");
+  },
 
   fetchSuggestions: async (pageRoute = window.location.pathname) => {
     try {

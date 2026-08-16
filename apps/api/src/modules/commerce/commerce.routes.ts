@@ -18,6 +18,8 @@ import { TransactionModel } from "./transaction.model.js";
 import { SystemSettingsModel } from "./admin.model.js";
 import { CATEGORY_MOCKS } from "./demo.data.js";
 import { billingReceiptService } from "../../services/billing-receipt.service.js";
+import { marketingService } from "../../services/marketing.service.js";
+import { aiQueue } from "../../services/ai-queue.service.js";
 import axios from "axios";
 import multer from "multer";
 
@@ -1028,6 +1030,16 @@ router.post("/orders", authenticate, validate(CreateOrderSchema), async (req, re
       );
     }
 
+    // Record campaign conversion & ROI attribution if customer bought following a broadcast
+    if (req.body.customerId) {
+      await marketingService.recordCampaignConversion(
+        merchant._id.toString(),
+        req.body.customerId,
+        order._id.toString(),
+        order.totalAmount || 0
+      );
+    }
+
     // If created from Inbox, we might want to send a confirmation message automatically
     if (req.body.conversationId) {
       const customer = await CommerceCustomerModel.findById(req.body.customerId);
@@ -1090,6 +1102,27 @@ router.patch("/orders/:id", authenticate, async (req, res) => {
       { $set: updateData },
       { new: true }
     );
+
+    // Schedule automated J+3 post-purchase loyalty followup if order is delivered / completed
+    if (order && (updateData.status === "delivered" || updateData.status === "completed")) {
+      const customerId = order.customerId?.toString();
+      if (customerId) {
+        await aiQueue.add(
+          'post-purchase-followup',
+          {
+            merchantId: merchant._id.toString(),
+            customerId,
+            orderId: order._id.toString(),
+            items: order.items
+          },
+          {
+            delay: 3 * 24 * 60 * 60 * 1000 // 72h delay
+          }
+        );
+        logger.info(`[Commerce] Scheduled automated post-purchase followup (J+3) for order ${order._id}`);
+      }
+    }
+
     res.json(order);
   } catch (error: any) {
     res.status(500).json({ error: error.message });

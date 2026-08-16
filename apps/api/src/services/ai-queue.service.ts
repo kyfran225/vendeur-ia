@@ -30,6 +30,60 @@ export async function processJobLogic(jobData: any, jobName: string = 'process-m
   const { userId, conversationId, remoteJid, platform = 'whatsapp', ...context } = jobData;
 
   try {
+    if (jobName === 'post-purchase-followup') {
+      const { merchantId, customerId, orderId, items } = jobData;
+      const merchant = await CommerceMerchantModel.findById(merchantId);
+      const customer = await CommerceCustomerModel.findById(customerId);
+      if (!merchant || !customer || !customer.phone) return { status: 'skipped_missing_info' };
+
+      if (merchant.marketingAutomations?.postPurchaseFollowup === false) {
+        console.log(`[AI Queue] Post-purchase follow-up disabled by merchant ${merchant._id}`);
+        return { status: 'skipped_disabled_by_merchant' };
+      }
+
+      const itemNames = items?.map((i: any) => i.name).join(", ") || "votre commande";
+      const prompt = `Tu es l'assistant de "${merchant.businessName}".
+Rédige un message WhatsApp de suivi post-achat et fidélisation pour ${customer.name || "cher client"} qui a reçu son article (${itemNames}) il y a quelques jours.
+
+Objectifs :
+1. Demander chaleureusement si tout se passe bien avec son achat.
+2. Rappeler ses points de fidélité accumulés (${customer.loyaltyPoints || 0} pts) pour sa prochaine commande.
+3. L'inviter avec bienveillance à nous écrire s'il a la moindre question ou s'il souhaite découvrir les nouveautés ✨.
+4. Ton très courtois, chaleureux et court (max 45 mots).
+
+Réponds UNIQUEMENT avec le message.`;
+
+      const aiRes = await aiProvider.generateText({
+        systemPrompt: "Tu es un expert de la fidélisation client et du service après-vente sur WhatsApp.",
+        userMessage: prompt,
+        temperature: 0.7
+      });
+
+      let conversation = await CommerceConversationModel.findOne({ merchantId, customerId });
+      if (!conversation) {
+        conversation = await CommerceConversationModel.create({ merchantId, customerId, platform: 'whatsapp' });
+      }
+
+      const aiMsg = await CommerceMessageModel.create({
+        conversationId: conversation._id,
+        sender: 'ai',
+        content: aiRes.text
+      });
+
+      await CommerceConversationModel.findByIdAndUpdate(conversation._id, { updatedAt: new Date() });
+
+      if (merchant.ownerId) {
+        emitToUser(merchant.ownerId.toString(), 'conversation:update', {
+          conversationId: conversation._id,
+          message: aiMsg,
+        });
+      }
+
+      await messagingService.sendMessage(merchant, 'whatsapp', customer.phone, aiRes.text);
+      console.log(`[AI Queue] Sent automated post-purchase followup (J+3) to ${customer.phone} for order ${orderId}`);
+      return { status: 'post_purchase_followup_sent' };
+    }
+
     if (jobName === 'broadcast-message') {
       const { content, merchantId, customerId, remoteJid, personalization, campaignId, imageUrl, productDetails } = jobData;
       const merchant = await CommerceMerchantModel.findById(merchantId);

@@ -97,7 +97,32 @@ export class MarketingService {
     }
   }
 
-  async generateBroadcastPreview(merchantId: string, productId: string, segment: string) {
+  async recordCampaignConversion(merchantId: string, customerId: string, orderId: string, orderAmount: number) {
+    try {
+      const fortyEightHoursAgo = new Date(Date.now() - 48 * 60 * 60 * 1000);
+
+      const campaign = await MarketingCampaignModel.findOne({
+        merchantId,
+        createdAt: { $gte: fortyEightHoursAgo },
+        convertedOrderIds: { $ne: new mongoose.Types.ObjectId(orderId) }
+      }).sort({ createdAt: -1 });
+
+      if (campaign && orderAmount > 0) {
+        await MarketingCampaignModel.updateOne(
+          { _id: campaign._id },
+          {
+            $inc: { revenueGenerated: orderAmount, ordersCount: 1 },
+            $addToSet: { convertedOrderIds: new mongoose.Types.ObjectId(orderId) }
+          }
+        );
+        logger.info(`[Marketing] Recorded campaign ROI conversion: +${orderAmount} XOF on campaign ${campaign._id} from order ${orderId}`);
+      }
+    } catch (err: any) {
+      logger.warn(`[Marketing] Failed to record campaign conversion: ${err.message}`);
+    }
+  }
+
+  async generateBroadcastPreview(merchantId: string, productId: string, segment: string, template: string = "standard") {
     const product = await CommerceProductModel.findById(productId);
     const merchant = await CommerceMerchantModel.findById(merchantId);
     if (!product || !merchant) throw new Error("Produit ou Marchand non trouvé");
@@ -107,29 +132,41 @@ export class MarketingService {
     else if (segment === "inactive") segmentLabel = "Clients Inactifs (> 30 jours)";
     else if (segment.startsWith("city:")) segmentLabel = `Clients situés à ${segment.replace("city:", "")}`;
 
+    let templateInstruction = "Ton accroche doit être très vendeuse, enthousiaste et percutante.";
+    if (template === "flash_sale") {
+      templateInstruction = "Angle VENTE FLASH ⚡ : Insiste sur l'urgence extrême (valable seulement 24h ou aujourd'hui), stock très limité et réduction immédiate.";
+    } else if (template === "new_arrival") {
+      templateInstruction = "Angle NOUVEL ARRIVAGE ✨ : Présente ce produit comme la grande nouveauté tendance qui vient d'arriver en boutique, en exclusivité.";
+    } else if (template === "vip_privilege") {
+      templateInstruction = "Angle PRIVILÈGE VIP 👑 : Remercie le client pour sa fidélité et offre-lui un traitement spécial ou une réservation prioritaire avant tout le monde.";
+    } else if (template === "clearance") {
+      templateInstruction = "Angle DÉSTOCKAGE / LIQUIDATION 📦 : Insiste sur les derniers articles en stock avant rupture définitive à prix imbattable.";
+    } else if (template === "friendly_checkin") {
+      templateInstruction = "Angle CONSEIL & RELATION CLIENT 💬 : Adopte un ton très amical, prends des nouvelles chaleureuses et recommande ce produit comme une pépite pensée pour lui.";
+    }
+
     const prompt = `Génère un message de diffusion WhatsApp pour promouvoir ce produit auprès de mes clients : ${segmentLabel}.
 Produit : ${product.name}
 Prix : ${product.price} ${product.currency}
 Boutique : ${merchant.businessName}
 
-Le message doit être :
-- Très vendeur et enthousiaste
-- Utiliser des emojis locaux ✨🚀
+Directive commerciale :
+- ${templateInstruction}
+- Emojis locaux et attractifs ✨🚀
 - Ciblage : ${segmentLabel}
-- Si VIP, mentionne un traitement spécial ou une avant-première.
-- Si Inactifs, mentionne qu'ils nous ont manqué ou offre un petit privilège de retour.
-- Inclure un appel à l'action clair : "Répondez à ce message pour réserver !"
+- Inclure un appel à l'action clair : "Répondez à ce message pour réserver !" ou "Tapez 1 pour commander !"
+- Utiliser la variable {{name}} pour le prénom du client.
 
 Réponds UNIQUEMENT avec le texte du message.`;
 
     const response = await aiProvider.generateText({
-      systemPrompt: "Tu es un expert en marketing WhatsApp spécialisé dans la vente directe.",
+      systemPrompt: "Tu es un expert d'élite en copywriting WhatsApp et social commerce africain.",
       userMessage: prompt,
       temperature: 0.8,
-      maxTokens: 200
+      maxTokens: 220
     });
 
-    return { preview: response.text };
+    return { preview: response.text, template };
   }
 
   async launchBroadcast(

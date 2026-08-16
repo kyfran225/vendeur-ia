@@ -28,6 +28,7 @@ import { SubscriptionBanner } from "./components/SubscriptionBanner";
 import { BriefingRoom } from "./components/BriefingRoom";
 import { VendeurIAPlaygroundModal } from "./components/VendeurIAPlaygroundModal";
 import { SetupCompletionModal } from "./components/SetupCompletionModal";
+import { getMerchantShopUrl, getMerchantShopPath } from "@/lib/slugify";
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -118,9 +119,9 @@ export function SalesDashboard() {
   }
 
   const handleShareShop = () => {
-     const url = `${window.location.origin}/shop/${dashboard?.merchant?._id}`;
+     const url = getMerchantShopUrl(dashboard?.merchant);
      navigator.clipboard.writeText(url);
-     toast.success("Lien de votre vitrine copié ! 🚀");
+     toast.success("Lien personnalisé de votre vitrine copié ! 🚀");
   };
 
   return (
@@ -144,7 +145,7 @@ export function SalesDashboard() {
           </button>
 
           <Link
-            to={`/shop/${dashboard?.merchant?._id}`}
+            to={getMerchantShopPath(dashboard?.merchant)}
             target="_blank"
             className="h-12 px-6 rounded-2xl bg-vendeur-emerald text-vendeur-coal text-[10px] font-black uppercase tracking-widest hover:scale-105 active:scale-95 transition-all flex items-center justify-center text-center gap-2 shadow-lg shadow-vendeur-emerald/20"
           >
@@ -208,9 +209,9 @@ function HomePanel({ dashboard, onOpenBriefing, onOpenTestIA }: { dashboard: any
       <div className="grid grid-cols-2 md:hidden gap-3">
         <button
           onClick={() => {
-            const url = `${window.location.origin}/shop/${dashboard?.merchant?._id}`;
+            const url = getMerchantShopUrl(dashboard?.merchant);
             navigator.clipboard.writeText(url);
-            toast.success("Lien de votre vitrine copié ! 🚀");
+            toast.success("Lien personnalisé de votre vitrine copié ! 🚀");
           }}
           className="h-14 px-4 rounded-2xl bg-white/5 border border-white/10 text-white text-[10px] font-black uppercase tracking-wider hover:bg-white/10 transition-all flex items-center justify-center text-center gap-2"
         >
@@ -219,7 +220,7 @@ function HomePanel({ dashboard, onOpenBriefing, onOpenTestIA }: { dashboard: any
         </button>
 
         <Link
-          to={`/shop/${dashboard?.merchant?._id}`}
+          to={getMerchantShopPath(dashboard?.merchant)}
           target="_blank"
           className="h-14 px-4 rounded-2xl bg-vendeur-emerald text-vendeur-coal text-[10px] font-black uppercase tracking-wider hover:scale-105 active:scale-95 transition-all flex items-center justify-center text-center gap-2 shadow-lg shadow-vendeur-emerald/20"
         >

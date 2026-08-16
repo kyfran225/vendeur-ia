@@ -1,7 +1,8 @@
 import React, { useState, useMemo } from "react";
-import { Package, Sparkles, Trash2, Edit, Camera, X, Save, Zap, Utensils, Laptop, Palette, Hammer, ShoppingBag, Loader2, MessageSquareText, Plus, Minus, Heart, Monitor, Home, ShoppingCart, Activity, Car, Box } from "lucide-react";
+import { Package, Sparkles, Trash2, Edit, Camera, X, Save, Zap, Utensils, Laptop, Palette, Hammer, ShoppingBag, Loader2, MessageSquareText, Plus, Minus, Heart, Monitor, Home, ShoppingCart, Activity, Car, Box, Image as ImageIcon } from "lucide-react";
 import { ProductScanner } from "./components/ProductScanner";
 import { CaptionModal } from "./components/CaptionModal";
+import { PosterGenerator } from "./components/PosterGenerator";
 import { ConfirmationModal } from "../../components/ui/ConfirmationModal";
 import { StepMilestoneModal } from "../../components/ui/StepMilestoneModal";
 import { useOnboardingStore } from "@/stores/onboardingStore";
@@ -222,6 +223,7 @@ export function ProductManager() {
     productName: ""
   });
 
+  const [posterProduct, setPosterProduct] = useState<Product | null>(null);
   const [showMilestoneModal, setShowMilestoneModal] = useState(false);
   const [lastAddedName, setLastAddedName] = useState("");
 
@@ -913,7 +915,14 @@ export function ProductManager() {
                     </span>
                   )}
 
-                  <div className="flex gap-2">
+                  <div className="flex gap-1.5 md:gap-2">
+                    <button
+                      onClick={() => setPosterProduct(p)}
+                      className="p-2 bg-emerald-500/10 text-emerald-400 rounded-xl hover:bg-emerald-500/20 transition-all flex items-center gap-1.5"
+                      title="Créer Affiche Statut WhatsApp / Story"
+                    >
+                      <ImageIcon size={16} />
+                    </button>
                     <button
                       onClick={() => generateCaptionMutation.mutate(p._id)}
                       disabled={generateCaptionMutation.isPending}
@@ -1027,6 +1036,27 @@ export function ProductManager() {
           />
         );
       })()}
+
+      {/* Instant Studio V2 Poster Generator */}
+      {posterProduct && (
+        <PosterGenerator
+          productData={{
+            _id: posterProduct._id,
+            name: posterProduct.name,
+            price: posterProduct.price,
+            category: posterProduct.category,
+            imageUrl: (posterProduct as any).imageUrl || (posterProduct as any).images?.[0] || "",
+            currency: (posterProduct as any).currency || activeCurrency
+          }}
+          boutiqueName={dashboard?.merchant?.businessName || tempData?.businessName || "Ma Boutique"}
+          businessCategory={businessCategory}
+          currency={(posterProduct as any).currency || activeCurrency}
+          whatsappNumber={dashboard?.merchant?.whatsappNumber || ""}
+          merchantId={dashboard?.merchant?._id || ""}
+          onBack={() => setPosterProduct(null)}
+          onSave={(_img) => setPosterProduct(null)}
+        />
+      )}
     </div>
   );
 }

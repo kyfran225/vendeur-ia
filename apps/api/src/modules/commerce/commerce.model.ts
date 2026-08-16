@@ -4,6 +4,7 @@ import mongoose, { Schema, Document } from "mongoose";
 const MerchantSchema = new Schema({
   ownerId: { type: String, required: true, unique: true, index: true },
   businessName: { type: String, default: "" },
+  slug: { type: String, index: true, lowercase: true, trim: true },
   category: { type: String, default: "" },
   description: { type: String, default: "" },
   country: { type: String, default: "CI" },

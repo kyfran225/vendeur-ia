@@ -24,6 +24,29 @@ Le produit doit être utilisable par un commerçant sans formation technique en 
 - **[PROTOCOL.md](file:///C:/Users/Franck/web-apps/vendeur-ia/PROTOCOL.md)** : Règles de qualité et standards IA.
 
 ## Dernières Interventions
+- **Personnalisation & Normalisation des Liens de Boutique (Clean Slugs) (2026-08-16)** :
+  1. *Normalisation Automatique des Noms* : Moteur `slugify` (gestion des accents, suppression des caractères interdits, conversion des espaces en tirets). Exemple : `"Boutique L'Élégance & Co 225"` &rarr; `http://localhost:5173/shop/boutique-lelegance-co-225`.
+  2. *Résolveur Backend Hybride (`findMerchantByIdOrSlug`)* : Les routes `/api/commerce/public/shop/:idOrSlug` et `/order` résolvent en toute transparence les identifiants MongoDB et les slugs personnalisés.
+  3. *Diffusion Partout* : QR Codes de l'Instant Studio, boutons de partage WhatsApp, Tableau de bord et Paramètres utilisent désormais automatiquement l'URL personnalisée mémorable de chaque marchand.
+- **Envoi de Notes Vocales Marchand / Voice Memo dans l'Inbox (2026-08-16)** :
+  1. *Enregistreur Audio Natif Web (`VoiceRecorder.tsx`)* : Capture audio directe via l'API `MediaRecorder` avec timer en direct, visualiseur d'ondes, bouton d'annulation et d'envoi.
+  2. *Transcription IA Automatique & Stockage* : Route backend `POST /api/commerce/conversations/:id/voice` avec transcription immédiate par `aiProvider` (Gemini Flash / Whisper) et enregistrement en base.
+  3. *Dispatch WhatsApp Natif PTT* : Expédition du message audio sous forme de véritable Push-To-Talk WhatsApp (note vocale officielle) via Baileys & Meta API.
+- **Fast Pay Mobile Money dans la Boîte de Réception (2026-08-16)** :
+  1. *Génération Instantanée 1-Clic* : Route backend dédiée `POST /api/commerce/conversations/:id/fast-pay` pour construire et expédier instantanément des demandes de règlement stylisées (Wave avec lien direct `wave.com/send?phone=...`, Orange Money avec code USSD `#144#`, MTN MoMo `*133#`).
+  2. *Modal d'Encaissement Dédié (`FastPayModal.tsx`)* : Saisie du montant avec pilules d'ajout rapide (+5 000, +10 000, +25 000, +50 000 FCFA), sélection du moyen ou multi-moyens, et envoi direct dans la discussion.
+  3. *Accès Rapide Inbox* : Boutons d'accès rapide "Encaisser" dans le header de conversation et dans la barre de saisie de `SalesInbox.tsx`.
+- **Instant Studio V2 — Générateur d'Affiches Promo Statut WhatsApp (2026-08-16)** :
+  1. *Multi-Formats Réseaux Sociaux* : Génération instantanée au format Story 9:16 (1080x1920), Post Carré 1:1 (1080x1080) et Flyer 4:5 (1080x1350).
+  2. *Stickers Promo & Prix Barrés* : Badges configurables (*Promo Flash, -20%, -30%, -50%, Nouveauté, Livraison Offerte*), calcul de prix barré et générateur d'accroches IA en 1 clic.
+  3. *QR Code Boutique & Partage Direct* : Intégration automatique d'un QR code de commande direct et partage direct vers le Statut WhatsApp (`navigator.share` avec image HD et légende commerciale).
+  4. *Accès Direct Catalogue* : Bouton Studio Affiche disponible directement sur chaque fiche article dans `ProductManager.tsx` et `ProductScanner.tsx`.
+- **Boutique Publique & Social Commerce "Effet Waouh" (2026-08-16)** :
+  1. *Panier Intelligent Multi-Articles & Fast-Checkout* : Panier interactif fluide avec calcul en temps réel des frais par zone de livraison (Cocody, Yopougon, Plateau, Intérieur...), choix du mode de paiement (Espèces vs Mobile Money Wave/OM/MoMo) et enregistrement direct en base via `POST /api/commerce/public/shop/:merchantId/order` avec notification temps réel socket au commerçant.
+  2. *Recherche Vocale IA (Voice-to-Search)* : Reconnaissance vocale Web Speech intégrée avec visualiseur audio pour chercher et filtrer les produits en dictant sa recherche au micro.
+  3. *Stories & Reels Plein Écran* : Showcase interactif façon TikTok / Instagram Stories avec barre de progression, micro-animations, et actions rapides d'ajout au panier et commande WhatsApp.
+  4. *Social Proof & Trust Engine* : Alertes dynamiques de commandes en direct, badges de confiance certifiés Vendeur IA et statistiques de réactivité en temps réel.
+  5. *Partage & QR Code Instantanés* : Générateur de QR Code haute définition pour magasin physique et partage 1-clic du catalogue vers le statut WhatsApp.
 - **Module Commandes Complet (2026-08-16)** :
   1. *Création Autonome IA* : L'agent IA détecte les intentions d'achat fermes dans le chat (`[[ACTION_CREATE_ORDER]]`), nettoie le texte pour le client et crée automatiquement la commande en base en statut `"pending"`.
   2. *Bons de Commande & Bordereaux* : Génération et impression immédiate (`OrderReceiptModal.tsx`), avec export textuel formaté en 1 clic vers WhatsApp.

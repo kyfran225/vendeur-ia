@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { createPortal } from "react-dom";
 import { X, Truck, Send, Phone, User, MapPin, Loader2, CheckCircle2 } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/apiClient";
@@ -38,8 +39,8 @@ export function DeliveryDispatchModal({ isOpen, onClose, order }: DeliveryDispat
 
   if (!isOpen || !order) return null;
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-300">
+  return createPortal(
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-300">
       <div className="bg-vendeur-coal border border-white/10 w-full max-w-md rounded-[2.5rem] overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300 flex flex-col">
         <header className="p-6 border-b border-white/5 flex items-center justify-between bg-white/[0.02]">
           <div className="flex items-center gap-3">
@@ -129,6 +130,7 @@ export function DeliveryDispatchModal({ isOpen, onClose, order }: DeliveryDispat
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

@@ -28,7 +28,8 @@ import {
   Link2,
   ExternalLink,
   Copy,
-  Check
+  Check,
+  Palette
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useSearchParams, Link } from "react-router-dom";
@@ -46,6 +47,7 @@ import { BillingTab } from "./components/BillingTab";
 import { ReferralCard } from "./components/ReferralCard";
 import { GrowthTab } from "./components/GrowthTab";
 import { ProfileTab } from "./components/ProfileTab";
+import { StorefrontBrandingTab } from "./components/StorefrontBrandingTab";
 import { subscribeToPush } from "@/lib/pushUtils";
 import { AddressAutocomplete } from "../onboarding/components/AddressAutocomplete";
 import { ZoneAutocomplete } from "../onboarding/components/ZoneAutocomplete";
@@ -75,7 +77,7 @@ const InstagramIcon = ({ size = 22, className = "" }: { size?: number; className
 
 import { Gift, TrendingUp } from "lucide-react";
 
-type SettingsTab = "boutique" | "savoir" | "personnalite" | "connexions" | "growth" | "billing" | "referral" | "compte";
+type SettingsTab = "boutique" | "apparence" | "savoir" | "personnalite" | "connexions" | "growth" | "billing" | "referral" | "compte";
 
 export function SettingsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -207,8 +209,20 @@ export function SettingsPage() {
   const merchant = dashboard?.merchant;
   const systemSettings = dashboard?.systemSettings;
 
+  const SETTINGS_TABS = [
+    { id: "boutique" as const, label: "Boutique", icon: Store },
+    { id: "apparence" as const, label: "Apparence & Vitrine", icon: Palette },
+    { id: "savoir" as const, label: "Savoir IA", icon: Brain },
+    { id: "personnalite" as const, label: "Personnalité", icon: Bot },
+    { id: "connexions" as const, label: "Connexions", icon: Globe },
+    { id: "growth" as const, label: "Croissance", icon: TrendingUp },
+    { id: "billing" as const, label: "Facturation", icon: Banknote },
+    { id: "referral" as const, label: "Parrainage", icon: Gift },
+    { id: "compte" as const, label: "Mon Profil", icon: UserIcon },
+  ];
+
   return (
-    <div className="p-4 md:p-10 max-w-6xl mx-auto space-y-8 md:space-y-10 animate-in fade-in duration-700 pb-24 overflow-x-hidden">
+    <div className="p-4 md:p-10 max-w-6xl mx-auto space-y-6 md:space-y-8 animate-in fade-in duration-700 pb-24 relative">
       <ConfirmationModal
         isOpen={showLogoutConfirm}
         onClose={() => setShowLogoutConfirm(false)}
@@ -220,95 +234,69 @@ export function SettingsPage() {
         type="logout"
       />
 
-      <header className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-        <div className="space-y-2">
+      <header className="flex flex-col md:flex-row md:items-end justify-between gap-4 md:gap-6">
+        <div className="space-y-1.5">
           <h1 className="text-2xl md:text-5xl font-black tracking-tighter uppercase text-white flex items-center gap-3 md:gap-4">
             <Settings className="text-vendeur-emerald shrink-0" size={32} />
             <span className="truncate">Centre de Contrôle</span>
           </h1>
-          <p className="text-white/40 text-sm md:text-lg">Pilotez votre machine de vente et configurez votre IA.</p>
+          <p className="text-white/40 text-xs sm:text-sm md:text-lg">Pilotez votre machine de vente et configurez votre IA.</p>
         </div>
 
         <button
           onClick={() => setShowLogoutConfirm(true)}
-          className="h-12 px-6 rounded-2xl border border-rose-500/20 bg-rose-500/5 text-rose-500 text-[10px] font-black uppercase tracking-[0.2em] hover:bg-rose-500 hover:text-white transition-all shadow-lg flex items-center justify-center gap-2 shrink-0"
+          className="h-11 md:h-12 px-5 md:px-6 rounded-2xl border border-rose-500/20 bg-rose-500/5 text-rose-500 text-[10px] font-black uppercase tracking-[0.2em] hover:bg-rose-500 hover:text-white transition-all shadow-lg flex items-center justify-center gap-2 shrink-0 self-start md:self-auto"
         >
-          <LogOut size={16} />
-          Déconnexion
+          <LogOut size={16} className="shrink-0" />
+          <span>Déconnexion</span>
         </button>
       </header>
 
-      {/* Navigation Onglets */}
-      <div className="sticky top-0 z-30 -mx-4 px-4 py-3 bg-vendeur-bg/95 backdrop-blur-xl">
-        <div className="relative max-w-full w-full group">
-          {/* Indicateurs de Scroll */}
+      {/* Sticky Navigation Tabs Bar (Compact & Sleek Vertical Footprint) */}
+      <div className="sticky top-0 z-40 bg-vendeur-bg/95 backdrop-blur-2xl border-b border-white/10 -mx-4 md:-mx-10 px-4 md:px-10 py-2 md:py-2.5 shadow-lg">
+        <div className="relative max-w-full w-full">
+          {/* Scroll Fade Indicators */}
           <div className={cn(
-            "absolute left-0 top-0 bottom-0 w-12 z-10 bg-gradient-to-r from-vendeur-coal to-transparent pointer-events-none rounded-l-2xl md:rounded-l-3xl transition-opacity duration-300",
+            "absolute left-0 top-0 bottom-0 w-6 z-10 bg-gradient-to-r from-vendeur-bg to-transparent pointer-events-none transition-opacity duration-300",
             showLeftScroll ? "opacity-100" : "opacity-0"
           )} />
           <div className={cn(
-            "absolute right-0 top-0 bottom-0 w-12 z-10 bg-gradient-to-l from-vendeur-coal to-transparent pointer-events-none rounded-r-2xl md:rounded-r-3xl transition-opacity duration-300",
+            "absolute right-0 top-0 bottom-0 w-6 z-10 bg-gradient-to-l from-vendeur-bg to-transparent pointer-events-none transition-opacity duration-300",
             showRightScroll ? "opacity-100" : "opacity-0"
           )} />
 
           <div
             ref={tabsRef}
-            className="flex gap-2 p-1.5 bg-vendeur-coal/80 backdrop-blur-md rounded-2xl md:rounded-3xl border border-white/10 w-fit shadow-2xl overflow-x-auto no-scrollbar max-w-full relative"
+            className="flex items-center gap-1.5 md:gap-2 overflow-x-auto no-scrollbar py-0.5 w-full"
           >
-            <TabButton
-              active={activeTab === "boutique"}
-              onClick={() => setActiveTab("boutique")}
-              icon={<Store size={18} />}
-              label="Boutique"
-            />
-            <TabButton
-              active={activeTab === "savoir"}
-              onClick={() => setActiveTab("savoir")}
-              icon={<Brain size={18} />}
-              label="Savoir IA"
-            />
-            <TabButton
-              active={activeTab === "personnalite"}
-              onClick={() => setActiveTab("personnalite")}
-              icon={<Bot size={18} />}
-              label="Personnalité"
-            />
-            <TabButton
-              active={activeTab === "connexions"}
-              onClick={() => setActiveTab("connexions")}
-              icon={<Globe size={18} />}
-              label="Connexions"
-            />
-            <TabButton
-              active={activeTab === "growth"}
-              onClick={() => setActiveTab("growth")}
-              icon={<TrendingUp size={18} />}
-              label="Croissance"
-            />
-            <TabButton
-              active={activeTab === "billing"}
-              onClick={() => setActiveTab("billing")}
-              icon={<Banknote size={18} />}
-              label="Facturation"
-            />
-            <TabButton
-              active={activeTab === "referral"}
-              onClick={() => setActiveTab("referral")}
-              icon={<Gift size={18} />}
-              label="Parrainage"
-            />
-            <TabButton
-              active={activeTab === "compte"}
-              onClick={() => setActiveTab("compte")}
-              icon={<UserIcon size={18} />}
-              label="Mon Profil"
-            />
+            {SETTINGS_TABS.map((t) => {
+              const Icon = t.icon;
+              const isActive = activeTab === t.id;
+              return (
+                <button
+                  key={t.id}
+                  type="button"
+                  data-active={isActive}
+                  onClick={() => setActiveTab(t.id)}
+                  className={cn(
+                    "flex items-center gap-2 px-3.5 md:px-4 h-9 md:h-10 rounded-xl text-[11px] font-black uppercase tracking-tight transition-all shrink-0 whitespace-nowrap active:scale-95",
+                    isActive
+                      ? "bg-vendeur-emerald text-vendeur-coal shadow-md shadow-vendeur-emerald/20 font-black"
+                      : "bg-white/[0.03] text-white/50 hover:text-white hover:bg-white/[0.08] border border-white/5 font-bold"
+                  )}
+                >
+                  <Icon size={15} className="shrink-0" />
+                  <span>{t.label}</span>
+                </button>
+              );
+            })}
           </div>
         </div>
       </div>
 
-      <div className="mt-8">
+      <div className="pt-2">
         {activeTab === "boutique" && <BoutiqueTab merchant={merchant} initialKnowledge={knowledge} accessToken={accessToken || ""} />}
+        {activeTab === "apparence" && <StorefrontBrandingTab merchant={merchant} />}
         {activeTab === "savoir" && <SavoirTab initialKnowledge={knowledge} />}
         {activeTab === "personnalite" && <PersonnaliteTab merchant={merchant} />}
         {activeTab === "connexions" && (
@@ -330,24 +318,6 @@ export function SettingsPage() {
         {activeTab === "compte" && <ProfileTab merchant={merchant} />}
       </div>
     </div>
-  );
-}
-
-function TabButton({ active, onClick, icon, label }: { active: boolean; onClick: () => void; icon: React.ReactNode; label: string }) {
-  return (
-    <button
-      onClick={onClick}
-      data-active={active}
-      className={cn(
-        "flex items-center justify-center gap-2 px-4 md:px-5 h-12 rounded-xl md:rounded-2xl text-[10px] md:text-[11px] font-black uppercase tracking-tight transition-all shrink-0 whitespace-nowrap",
-        active ? "bg-vendeur-emerald text-vendeur-coal shadow-lg" : "text-white/40 hover:bg-white/5 hover:text-white"
-      )}
-    >
-      <div className="shrink-0">
-        {React.isValidElement(icon) ? React.cloneElement(icon as React.ReactElement, { size: 16 }) : icon}
-      </div>
-      <span className="leading-none">{label}</span>
-    </button>
   );
 }
 
@@ -1007,26 +977,28 @@ function BoutiqueTab({ merchant, initialKnowledge, accessToken }: { merchant: an
 
       </section>
 
-      {/* Floating Sticky Save/Cancel Bar */}
+      {/* Sticky Floating Save Bar (Centered & Glassmorphism, only visible when modified) */}
       {isModified && (
-        <div className="fixed bottom-20 md:bottom-8 left-4 right-4 md:left-auto md:right-8 z-50 animate-in slide-in-from-bottom-5 duration-300">
-          <div className="bg-vendeur-coal/90 backdrop-blur-xl border border-white/15 p-2 sm:p-3 rounded-2xl md:rounded-3xl shadow-2xl shadow-black/80 flex items-center justify-between sm:justify-start gap-2 sm:gap-3 ring-1 ring-white/10">
+        <div className="fixed bottom-6 inset-x-0 z-50 flex items-center justify-center px-3 sm:px-4 pointer-events-none animate-in fade-in slide-in-from-bottom-5 duration-300">
+          <div className="pointer-events-auto p-1.5 sm:p-2.5 rounded-2xl sm:rounded-3xl bg-vendeur-coal/95 backdrop-blur-2xl border border-white/20 shadow-[0_20px_50px_rgba(0,0,0,0.8)] flex items-center gap-2 sm:gap-3 max-w-full">
             <button
+              type="button"
               onClick={handleCancel}
               disabled={updateMutation.isPending}
-              className="flex h-12 md:h-14 items-center justify-center gap-2 rounded-xl md:rounded-2xl bg-white/10 hover:bg-white/15 px-4 md:px-6 text-xs font-black uppercase text-white/80 transition-all disabled:opacity-50 active:scale-95 whitespace-nowrap"
+              className="h-11 sm:h-12 px-3.5 sm:px-5 rounded-xl sm:rounded-2xl bg-white/5 hover:bg-white/10 text-white/70 hover:text-white font-black uppercase text-xs tracking-wider flex items-center justify-center gap-1.5 transition-all shrink-0 active:scale-95"
             >
-              <RotateCcw size={16} />
+              <RotateCcw size={15} className="shrink-0" />
               <span>Annuler</span>
             </button>
 
             <button
+              type="button"
               onClick={() => updateMutation.mutate()}
               disabled={updateMutation.isPending}
-              className="flex h-12 md:h-14 flex-1 md:flex-none items-center justify-center gap-2.5 rounded-xl md:rounded-2xl bg-vendeur-emerald px-6 md:px-8 text-xs font-black uppercase text-vendeur-coal shadow-lg shadow-vendeur-emerald/30 hover:scale-105 active:scale-95 transition-all disabled:opacity-50 whitespace-nowrap"
+              className="h-11 sm:h-12 px-5 sm:px-8 rounded-xl sm:rounded-2xl bg-vendeur-emerald hover:bg-emerald-400 text-vendeur-coal font-black uppercase text-xs tracking-widest flex items-center justify-center gap-2 hover:scale-105 active:scale-95 transition-all shadow-xl shadow-vendeur-emerald/30 disabled:opacity-50 shrink-0 whitespace-nowrap"
             >
-              {updateMutation.isPending ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />}
-              Enregistrer
+              {updateMutation.isPending ? <Loader2 className="animate-spin shrink-0" size={16} /> : <Save size={16} className="shrink-0" />}
+              <span>{updateMutation.isPending ? "Enregistrement..." : "Enregistrer"}</span>
             </button>
           </div>
         </div>

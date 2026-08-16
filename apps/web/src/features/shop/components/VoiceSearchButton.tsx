@@ -78,22 +78,22 @@ export function VoiceSearchButton({ onSearch, className = "" }: VoiceSearchButto
       <button
         type="button"
         onClick={startListening}
-        className={`h-9 px-3 rounded-xl flex items-center gap-1.5 transition-all text-xs font-black uppercase tracking-wider ${
+        className={`h-12 px-4 rounded-2xl flex items-center gap-2 transition-all text-xs font-black uppercase tracking-wider shrink-0 ${
           isListening
             ? "bg-rose-500 text-white animate-pulse shadow-lg shadow-rose-500/40"
-            : "bg-white/5 hover:bg-white/10 text-white/60 hover:text-white border border-white/10"
+            : "bg-white/5 hover:bg-white/10 text-white/70 hover:text-white border border-white/10"
         } ${className}`}
         title="Rechercher par la voix"
       >
         {isListening ? (
           <>
-            <MicOff size={14} className="animate-spin" />
+            <MicOff size={16} className="animate-spin" />
             <span className="text-[10px]">Écoute...</span>
           </>
         ) : (
           <>
-            <Mic size={14} className="text-vendeur-emerald" />
-            <span className="hidden sm:inline text-[10px]">Parler</span>
+            <Mic size={16} className="text-vendeur-emerald" />
+            <span className="hidden sm:inline text-[10px]">Vocal</span>
           </>
         )}
       </button>

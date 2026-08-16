@@ -16,6 +16,7 @@ export const CreateProductSchema = z.object({
     serviceDeliveryType: z.string().optional(),
     preparationTime: z.string().optional(),
     foodOptions: z.string().optional(),
+    isFeatured: z.boolean().optional(),
   })
 });
 
@@ -35,6 +36,7 @@ export const UpdateProductSchema = z.object({
     serviceDeliveryType: z.string().optional(),
     preparationTime: z.string().optional(),
     foodOptions: z.string().optional(),
+    isFeatured: z.boolean().optional(),
   })
 });
 
@@ -59,6 +61,7 @@ export const CreateOrderSchema = z.object({
 export const UpdateMerchantSchema = z.object({
   body: z.object({
     businessName: z.string().min(2).optional(),
+    slug: z.string().optional(),
     category: z.string().optional(),
     description: z.string().optional(),
     city: z.string().optional(),
@@ -84,6 +87,21 @@ export const UpdateMerchantSchema = z.object({
       pointsPerOrder: z.number().optional(),
       threshold: z.number().optional(),
       rewardDescription: z.string().optional(),
+    }).optional(),
+    branding: z.object({
+      logoUrl: z.string().optional(),
+      coverUrl: z.string().optional(),
+      accentColor: z.string().optional(),
+      announcement: z.object({
+        enabled: z.boolean().optional(),
+        text: z.string().optional()
+      }).optional(),
+      socialLinks: z.object({
+        instagram: z.string().optional(),
+        tiktok: z.string().optional(),
+        facebook: z.string().optional()
+      }).optional(),
+      openingHours: z.string().optional()
     }).optional()
   })
 });

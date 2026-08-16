@@ -87,7 +87,7 @@ export function ShellHeader() {
   const showBanner = isUnexpectedDisconnect && !isPackPro && !isConnexionsPage;
 
   return (
-    <header className="h-14 md:h-20 border-b border-white/5 bg-vendeur-bg/80 backdrop-blur-md flex items-center justify-between px-4 md:px-12 sticky top-0 z-40 w-full gap-4">
+    <header className="h-14 md:h-20 border-b border-white/5 bg-vendeur-bg/80 backdrop-blur-md flex items-center justify-between px-4 md:px-12 sticky top-0 z-20 w-full gap-4">
       <PackProModal isOpen={isPackProOpen} onClose={() => setIsPackProOpen(false)} />
 
       {/* Connection Status Banner - uniquement en cas de déconnexion inopinée d'un WhatsApp précédemment relié */}
@@ -132,16 +132,16 @@ export function ShellHeader() {
       </div>
 
       <div className="flex items-center gap-3 md:gap-6 shrink-0">
-         <Link
-           to="/settings"
-           className="h-9 w-9 md:h-12 md:w-12 rounded-xl md:rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-white/60 hover:bg-white/10 hover:border-vendeur-emerald/30 hover:text-vendeur-emerald transition-all overflow-hidden group shadow-lg"
-         >
-           {user?.avatarUrl ? (
-             <img src={user.avatarUrl} alt="Profil" className="h-full w-full object-cover group-hover:scale-110 transition-transform" />
-           ) : (
-             <User size={18} />
-           )}
-         </Link>
+        <Link
+          to="/settings"
+          className="h-9 w-9 md:h-12 md:w-12 rounded-xl md:rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-white/60 hover:bg-white/10 hover:border-vendeur-emerald/30 hover:text-vendeur-emerald transition-all overflow-hidden group shadow-lg"
+        >
+          {user?.avatarUrl ? (
+            <img src={user.avatarUrl} alt="Profil" className="h-full w-full object-cover group-hover:scale-110 transition-transform" />
+          ) : (
+            <User size={18} />
+          )}
+        </Link>
       </div>
     </header>
   );

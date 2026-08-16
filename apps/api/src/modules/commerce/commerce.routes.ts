@@ -16,9 +16,11 @@ import { SubscriptionModel } from "./subscription.model.js";
 import { WhatsAppConnectionModel } from "./whatsapp-connection.model.js";
 import { TransactionModel } from "./transaction.model.js";
 import { SystemSettingsModel } from "./admin.model.js";
+import { PaymentProofLogModel } from "./payment-proof.model.js";
 import { CATEGORY_MOCKS } from "./demo.data.js";
 import { billingReceiptService } from "../../services/billing-receipt.service.js";
 import { marketingService } from "../../services/marketing.service.js";
+import { paymentShieldService } from "../../services/payment-shield.service.js";
 import { aiQueue } from "../../services/ai-queue.service.js";
 import { aiProvider } from "../../services/ai-provider.js";
 import axios from "axios";
@@ -1252,6 +1254,27 @@ router.patch("/products/:id", authenticate, validate(UpdateProductSchema), async
   }
 });
 
+router.patch("/products/:id/toggle-featured", authenticate, async (req, res) => {
+  try {
+    const ownerId = (req as any).user.id;
+    const merchant = await CommerceMerchantModel.findOne({ ownerId });
+    if (!merchant) return res.status(404).json({ error: "Marchand non trouvé" });
+
+    const product = await CommerceProductModel.findOne({
+      _id: req.params.id,
+      merchantId: merchant._id
+    });
+    if (!product) return res.status(404).json({ error: "Produit non trouvé" });
+
+    product.isFeatured = !product.isFeatured;
+    await product.save();
+
+    res.json(product);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 router.delete("/products/:id", authenticate, async (req, res) => {
   try {
     const ownerId = (req as any).user.id;
@@ -1622,6 +1645,96 @@ router.post("/briefing", authenticate, async (req, res) => {
   } catch (error) {
     console.error("Briefing Error:", error);
     res.status(500).json({ error: "briefing_error" });
+  }
+});
+
+// GET /api/commerce/payment-proofs - List payment proofs audit log
+router.get("/payment-proofs", authenticate, async (req, res) => {
+  try {
+    const ownerId = (req as any).user.id;
+    const merchant = await CommerceMerchantModel.findOne({ ownerId });
+    if (!merchant) return res.status(404).json({ error: "Merchant not found" });
+
+    const { decision, limit = 50 } = req.query;
+    const query: any = { merchantId: merchant._id };
+    if (decision) query.decision = decision;
+
+    const proofs = await PaymentProofLogModel.find(query)
+      .populate("customerId", "phone name")
+      .populate("orderId", "totalAmount currency status items")
+      .sort({ createdAt: -1 })
+      .limit(Number(limit));
+
+    res.json({ proofs });
+  } catch (error: any) {
+    logger.error(`[Payment Proofs] Error fetching proofs: ${error.message}`);
+    res.status(500).json({ error: "failed_to_fetch_proofs" });
+  }
+});
+
+// POST /api/commerce/payment-proofs/:logId/review - Review flagged proof
+router.post("/payment-proofs/:logId/review", authenticate, async (req, res) => {
+  try {
+    const ownerId = (req as any).user.id;
+    const merchant = await CommerceMerchantModel.findOne({ ownerId });
+    if (!merchant) return res.status(404).json({ error: "Merchant not found" });
+
+    const { logId } = req.params;
+    const { action } = req.body; // "approve" | "reject"
+
+    const proof = await PaymentProofLogModel.findOne({ _id: logId, merchantId: merchant._id });
+    if (!proof) return res.status(404).json({ error: "Proof log not found" });
+
+    proof.reviewedByMerchant = true;
+    proof.merchantDecision = action === "approve" ? "approved" : "rejected";
+
+    if (action === "approve" && proof.orderId) {
+      const order = await CommerceOrderModel.findById(proof.orderId);
+      if (order && order.status !== "paid") {
+        await commerceService.confirmOrderPayment(order._id.toString());
+        order.paymentMethod = proof.platform;
+        order.status = "paid";
+        await order.save();
+      }
+    }
+
+    await proof.save();
+    res.json({ success: true, proof });
+  } catch (error: any) {
+    logger.error(`[Payment Proofs Review] Error: ${error.message}`);
+    res.status(500).json({ error: "review_failed" });
+  }
+});
+
+// POST /api/commerce/payment-proofs/scan - Direct forensic scan test
+router.post("/payment-proofs/scan", authenticate, upload.single("image"), async (req, res) => {
+  try {
+    const ownerId = (req as any).user.id;
+    const merchant = await CommerceMerchantModel.findOne({ ownerId });
+    if (!merchant) return res.status(404).json({ error: "Merchant not found" });
+
+    if (!req.file) {
+      return res.status(400).json({ error: "image_required" });
+    }
+
+    const { orderId } = req.body;
+    const expectedOrder = orderId ? await CommerceOrderModel.findById(orderId) : undefined;
+    const customer = expectedOrder
+      ? await CommerceCustomerModel.findById(expectedOrder.customerId)
+      : { _id: merchant._id, phone: "SCAN_TEST" };
+
+    const result = await paymentShieldService.evaluatePaymentProof({
+      merchant,
+      customer: customer as any,
+      expectedOrder,
+      imageBuffer: req.file.buffer,
+      mimeType: req.file.mimetype || "image/jpeg"
+    });
+
+    res.json(result);
+  } catch (error: any) {
+    logger.error(`[Payment Proof Scan] Error: ${error.message}`);
+    res.status(500).json({ error: error.message || "scan_failed" });
   }
 });
 

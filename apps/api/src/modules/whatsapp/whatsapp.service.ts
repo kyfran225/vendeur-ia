@@ -457,40 +457,53 @@ class WhatsAppService {
       console.log("[WhatsApp] Image received, checking for payment proof...");
       try {
         const buffer = await whatsappMediaService.downloadBaileysMedia(msg, 'image');
-        const paymentInfo = await commerceService.validatePaymentProof(buffer, 'image/jpeg');
+        const auditResult = await commerceService.auditAndLinkPaymentToOrder({
+          merchant,
+          customer,
+          imageBuffer: buffer,
+          mimeType: 'image/jpeg'
+        });
 
-        if (paymentInfo && paymentInfo.isPaymentProof) {
-          // Automatic linking to order
-          const linkResult = await commerceService.linkPaymentToOrder(customer._id.toString(), paymentInfo);
-
+        if (auditResult && auditResult.extraction?.isPaymentProof) {
           emitToUser(userId, "payment:detected", {
             conversationId: conversation._id,
-            linkResult,
-            ...paymentInfo
+            auditResult,
+            ...auditResult.extraction
           });
 
-          // Push Notification to Merchant
-          pushService.sendNotification(userId, {
-            title: linkResult?.matched ? "💰 Paiement Reçu & Validé !" : "📸 Preuve de Paiement Reçue",
-            body: linkResult?.matched
-              ? `Le client ${customer.phone} a payé ${paymentInfo.amount} XOF. Commande validée.`
-              : `Une capture d'écran de ${paymentInfo.amount} XOF a été reçue pour ${customer.phone}.`,
-            data: { conversationId: conversation._id.toString() }
-          }).catch((err: any) => console.error("[WhatsApp] Push notification error:", err));
+          if (auditResult.decision === "AUTO_APPROVED") {
+            pushService.sendNotification(userId, {
+              title: "💰 Paiement Validé par Shield OCR !",
+              body: `Reçu authentifié (${auditResult.confidenceScore}%). ${customer.phone} a payé ${auditResult.amount} XOF via ${auditResult.platform}.`,
+              data: { conversationId: conversation._id.toString(), orderId: auditResult.orderId?.toString() }
+            }).catch((err: any) => console.error("[WhatsApp] Push notification error:", err));
 
-          if (linkResult?.matched) {
-             text = `[PAIEMENT VALIDÉ AUTOMATIQUEMENT: ${paymentInfo.platform} - ${paymentInfo.amount} XOF]`;
+            text = `[PAIEMENT SHIELD VALIDÉ AUTOMATIQUEMENT: ${auditResult.platform} - ${auditResult.amount} XOF (Score: ${auditResult.confidenceScore}%)]`;
 
-             // Send digital receipt automatically
-             const receipt = await commerceService.generateDigitalReceipt(linkResult.orderId.toString());
-             const sock = this.activeSessions.get(userId);
-             if (sock) {
-               await sock.sendMessage(from, { text: receipt });
-             }
-          } else if (linkResult) {
-             text = `[PREUVE DÉTECTÉE MAIS MONTANT INCORRECT: Attendu ${linkResult.expected} XOF, Reçu ${linkResult.actual} XOF]`;
+            // Send digital receipt automatically
+            if (auditResult.orderId) {
+              const receipt = await commerceService.generateDigitalReceipt(auditResult.orderId.toString());
+              const sock = this.activeSessions.get(userId);
+              if (sock) {
+                await sock.sendMessage(from, { text: receipt });
+              }
+            }
+          } else if (auditResult.decision === "FLAGGED_FOR_REVIEW") {
+            pushService.sendNotification(userId, {
+              title: "⚠️ Preuve Suspecte à Vérifier",
+              body: `Capture de ${auditResult.amount} XOF reçue mais nécessite votre confirmation manuelle (Score: ${auditResult.confidenceScore}%).`,
+              data: { conversationId: conversation._id.toString() }
+            }).catch((err: any) => console.error("[WhatsApp] Push notification error:", err));
+
+            text = `[PREUVE SUSPECTE - VÉRIFICATION MANUELLE REQUISE: ${auditResult.platform} ${auditResult.amount} XOF (Alertes: ${auditResult.flags.join(", ")})]`;
           } else {
-             text = `[PREUVE DE PAIEMENT DÉTECTÉE: ${paymentInfo.platform} - ${paymentInfo.amount} XOF]`;
+            pushService.sendNotification(userId, {
+              title: "🚨 Alerte Fraude / Fausse Preuve",
+              body: `Tentative de fausse capture d'écran détectée pour ${customer.phone} (${auditResult.flags.join(", ")}).`,
+              data: { conversationId: conversation._id.toString() }
+            }).catch((err: any) => console.error("[WhatsApp] Push notification error:", err));
+
+            text = `[ALERTE SHIELD FRAUDE DÉTECTÉE: Reçu rejeté (${auditResult.flags.join(", ")})]`;
           }
         } else {
           text = "[Image / Capture d'écran reçue]";
@@ -725,44 +738,58 @@ class WhatsAppService {
         const buffer = await whatsappMediaService.downloadMetaMedia(media.mediaId);
 
         if (media.mediaType === 'image') {
-          // Mocking Baileys-like structure for handleIncomingMessage compatibility
           msg.message.imageMessage = true;
 
-          const paymentInfo = await commerceService.validatePaymentProof(buffer, 'image/jpeg');
-          if (paymentInfo && paymentInfo.isPaymentProof) {
-            // Find or create customer to get the ID for linking
-            let customer = await CommerceCustomerModel.findOne({ merchantId: merchant._id, phone: from });
-            if (!customer) {
-              customer = await CommerceCustomerModel.create({ merchantId: merchant._id, phone: from });
-            }
+          // Find or create customer to get the ID for linking
+          let customer = await CommerceCustomerModel.findOne({ merchantId: merchant._id, phone: from });
+          if (!customer) {
+            customer = await CommerceCustomerModel.create({ merchantId: merchant._id, phone: from });
+          }
 
-            const linkResult = await commerceService.linkPaymentToOrder(customer._id.toString(), paymentInfo);
+          const auditResult = await commerceService.auditAndLinkPaymentToOrder({
+            merchant,
+            customer,
+            imageBuffer: buffer,
+            mimeType: 'image/jpeg'
+          });
 
+          if (auditResult && auditResult.extraction?.isPaymentProof) {
             emitToUser(merchant.ownerId, "payment:detected", {
                conversationId: latestConversation?._id,
-               linkResult,
-               ...paymentInfo
+               auditResult,
+               ...auditResult.extraction
             });
 
-            // Push Notification via Meta flow
-            pushService.sendNotification(merchant.ownerId, {
-              title: linkResult?.matched ? "💰 Paiement Reçu & Validé ! (API)" : "📸 Preuve de Paiement Reçue (API)",
-              body: linkResult?.matched
-                ? `Le client ${customer.phone} a payé ${paymentInfo.amount} XOF. Commande validée.`
-                : `Une capture d'écran de ${paymentInfo.amount} XOF a été reçue for ${customer.phone}.`,
-              data: { conversationId: latestConversation?._id?.toString() }
-            }).catch((err: any) => console.error("[WhatsApp Meta] Push notification error:", err));
+            if (auditResult.decision === "AUTO_APPROVED") {
+              pushService.sendNotification(merchant.ownerId, {
+                title: "💰 Paiement Validé par Shield OCR ! (API)",
+                body: `Reçu authentifié (${auditResult.confidenceScore}%). ${customer.phone} a payé ${auditResult.amount} XOF via ${auditResult.platform}.`,
+                data: { conversationId: latestConversation?._id?.toString(), orderId: auditResult.orderId?.toString() }
+              }).catch((err: any) => console.error("[WhatsApp Meta] Push notification error:", err));
 
-            if (linkResult?.matched) {
-               text = `[PAIEMENT VALIDÉ AUTOMATIQUEMENT: ${paymentInfo.platform} - ${paymentInfo.amount} XOF]`;
+              text = `[PAIEMENT SHIELD VALIDÉ AUTOMATIQUEMENT: ${auditResult.platform} - ${auditResult.amount} XOF (Score: ${auditResult.confidenceScore}%)]`;
 
-               // Send digital receipt automatically via Meta
-               const receipt = await commerceService.generateDigitalReceipt(linkResult.orderId.toString());
-               await this.sendMetaMessage(merchant, from, receipt);
-            } else if (linkResult) {
-               text = `[PREUVE DÉTECTÉE MAIS MONTANT INCORRECT: Attendu ${linkResult.expected} XOF, Reçu ${linkResult.actual} XOF]`;
+              // Send digital receipt automatically via Meta
+              if (auditResult.orderId) {
+                const receipt = await commerceService.generateDigitalReceipt(auditResult.orderId.toString());
+                await this.sendMetaMessage(merchant, from, receipt);
+              }
+            } else if (auditResult.decision === "FLAGGED_FOR_REVIEW") {
+              pushService.sendNotification(merchant.ownerId, {
+                title: "⚠️ Preuve Suspecte à Vérifier (API)",
+                body: `Capture de ${auditResult.amount} XOF reçue mais nécessite votre confirmation manuelle (Score: ${auditResult.confidenceScore}%).`,
+                data: { conversationId: latestConversation?._id?.toString() }
+              }).catch((err: any) => console.error("[WhatsApp Meta] Push notification error:", err));
+
+              text = `[PREUVE SUSPECTE - VÉRIFICATION MANUELLE REQUISE: ${auditResult.platform} ${auditResult.amount} XOF (Alertes: ${auditResult.flags.join(", ")})]`;
             } else {
-               text = `[PREUVE DE PAIEMENT DÉTECTÉE: ${paymentInfo.platform} - ${paymentInfo.amount} XOF]`;
+              pushService.sendNotification(merchant.ownerId, {
+                title: "🚨 Alerte Fraude / Fausse Preuve (API)",
+                body: `Tentative de fausse capture d'écran détectée pour ${customer.phone} (${auditResult.flags.join(", ")}).`,
+                data: { conversationId: latestConversation?._id?.toString() }
+              }).catch((err: any) => console.error("[WhatsApp Meta] Push notification error:", err));
+
+              text = `[ALERTE SHIELD FRAUDE DÉTECTÉE: Reçu rejeté (${auditResult.flags.join(", ")})]`;
             }
             msg.message.conversation = text;
           }

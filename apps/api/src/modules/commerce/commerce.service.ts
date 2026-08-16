@@ -18,6 +18,7 @@ import { aiProvider } from "../../services/ai-provider.js";
 import { messagingService } from "../../services/messaging.service.js";
 import { pushService } from "../../services/push.service.js";
 import { paystackService } from "../../services/paystack.service.js";
+import { paymentShieldService } from "../../services/payment-shield.service.js";
 import { logger } from "../../services/logger.service.js";
 import { env } from "../../config/env.js";
 import { GEMINI_DEFAULT_VISION_MODEL, resolveGeminiModel } from "../../config/gemini.js";
@@ -438,44 +439,7 @@ export class CommerceService {
   }
 
   async validatePaymentProof(imageBuffer: Buffer, mimeType: string) {
-    if (!env.GEMINI_API_KEY) throw new Error("GEMINI_API_KEY not configured");
-
-    const prompt = `Analyse cette capture d'écran de paiement Mobile Money ou de transfert bancaire d'Afrique (Wave, Orange Money, MTN MoMo, Moov Money, Airtel Money, Telecel Cash, Djamo, KPay, Paystack, M-Pesa, Flutterwave, Wari, etc.).
-Extrait les informations exactes au format JSON strict :
-{
-  "isPaymentProof": true/false,
-  "amount": number,
-  "transactionId": "string (numéro de référence / ID de la transaction)",
-  "platform": "Wave" | "Orange Money" | "MTN MoMo" | "Moov Money" | "Airtel Money" | "Telecel Cash" | "Djamo" | "KPay" | "Virement Bancaire" | "Autre",
-  "status": "success" | "pending" | "failed",
-  "date": "string"
-}
-Réponds UNIQUEMENT avec le JSON. Si ce n'est pas une preuve de paiement valide ou lisible, mets isPaymentProof à false.`;
-
-    try {
-      const response = await axios.post(`https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_DEFAULT_VISION_MODEL}:generateContent?key=${env.GEMINI_API_KEY}`, {
-        contents: [{
-          parts: [
-            { text: prompt },
-            {
-              inlineData: {
-                mimeType,
-                data: imageBuffer.toString("base64")
-              }
-            }
-          ]
-        }]
-      });
-
-      const text = response.data.candidates[0].content.parts[0].text;
-      const jsonMatch = text.match(/\{[\s\S]*\}/);
-      if (!jsonMatch) throw new Error("Failed to parse AI response");
-
-      return JSON.parse(jsonMatch[0]);
-    } catch (error: any) {
-      console.error("[Payment Validation] Error:", error.response?.data || error.message);
-      throw new Error("Erreur lors de la validation du paiement par l'IA");
-    }
+    return paymentShieldService.runForensicVisionAudit(imageBuffer, mimeType);
   }
 
   async analyzeProductImage(imageBuffer: Buffer, mimeType: string, currency: string = "XOF", country: string = "CI") {
@@ -776,6 +740,83 @@ Merci de votre confiance ! 🚀
     }
   }
 
+  async auditAndLinkPaymentToOrder(params: {
+    merchant: any;
+    customer: any;
+    imageBuffer: Buffer;
+    mimeType: string;
+  }) {
+    const { merchant, customer, imageBuffer, mimeType } = params;
+
+    // 1. Find the latest pending order for this customer
+    const expectedOrder = await CommerceOrderModel.findOne({
+      merchantId: merchant._id,
+      customerId: customer._id,
+      status: "pending"
+    }).sort({ createdAt: -1 });
+
+    // 2. Run Deep Forensic Payment Shield Evaluation
+    const shieldResult = await paymentShieldService.evaluatePaymentProof({
+      merchant,
+      customer,
+      expectedOrder,
+      imageBuffer,
+      mimeType
+    });
+
+    if (shieldResult.decision === "AUTO_APPROVED" && expectedOrder) {
+      // 3. Mark as paid automatically
+      await this.confirmOrderPayment(expectedOrder._id.toString());
+      expectedOrder.paymentMethod = shieldResult.extraction.platform;
+      expectedOrder.status = "paid";
+      await expectedOrder.save();
+
+      return {
+        orderId: expectedOrder._id,
+        matched: true,
+        decision: "AUTO_APPROVED",
+        confidenceScore: shieldResult.confidenceScore,
+        amount: shieldResult.extraction.amount,
+        platform: shieldResult.extraction.platform,
+        transactionId: shieldResult.extraction.transactionId,
+        flags: shieldResult.flags,
+        extraction: shieldResult.extraction,
+        logId: shieldResult.logId
+      };
+    }
+
+    if (shieldResult.decision === "FLAGGED_FOR_REVIEW") {
+      return {
+        orderId: expectedOrder?._id,
+        matched: false,
+        decision: "FLAGGED_FOR_REVIEW",
+        confidenceScore: shieldResult.confidenceScore,
+        amount: shieldResult.extraction.amount,
+        expected: expectedOrder?.totalAmount,
+        platform: shieldResult.extraction.platform,
+        transactionId: shieldResult.extraction.transactionId,
+        flags: shieldResult.flags,
+        extraction: shieldResult.extraction,
+        logId: shieldResult.logId
+      };
+    }
+
+    // REJECTED_FRAUD
+    return {
+      orderId: expectedOrder?._id,
+      matched: false,
+      decision: "REJECTED_FRAUD",
+      confidenceScore: shieldResult.confidenceScore,
+      amount: shieldResult.extraction.amount,
+      expected: expectedOrder?.totalAmount,
+      platform: shieldResult.extraction.platform,
+      transactionId: shieldResult.extraction.transactionId,
+      flags: shieldResult.flags,
+      extraction: shieldResult.extraction,
+      logId: shieldResult.logId
+    };
+  }
+
   async linkPaymentToOrder(customerId: string, paymentInfo: any) {
     // 1. Find the latest pending order for this customer
     const order = await CommerceOrderModel.findOne({
@@ -803,10 +844,10 @@ Merci de votre confiance ! 🚀
       order.status = "paid";
       await order.save();
 
-      return { orderId: order._id, matched: true, amount: detectedAmount };
+      return { orderId: order._id, matched: true, amount: detectedAmount, decision: "AUTO_APPROVED" };
     } else {
       console.warn(`[Payment Link] Amount mismatch: Order=${orderAmount}, Detected=${detectedAmount}`);
-      return { orderId: order._id, matched: false, expected: orderAmount, actual: detectedAmount };
+      return { orderId: order._id, matched: false, expected: orderAmount, actual: detectedAmount, decision: "FLAGGED_FOR_REVIEW" };
     }
   }
 

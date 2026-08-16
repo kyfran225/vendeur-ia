@@ -10,24 +10,26 @@ Donner à chaque petit commerçant une équipe commerciale d'élite fonctionnant
 ## 🛠️ Fonctionnalités Clés
 
 ### 1. Magic Onboarding & Simulateur
-Un tunnel de conversion ultra-rapide où le marchand configure son business et teste immédiatement son IA sur une interface WhatsApp simulée avant même de finaliser son inscription.
+Un tunnel de conversion ultra-rapide où le marchand configure son business et teste immédiatement son IA sur une interface WhatsApp simulée avant même de finaliser son inscription. Inclut désormais un système de **Spotlight Tour** pour guider les nouveaux utilisateurs.
 
 ### 2. Money Board (Dashboard)
 Le centre de commande du marchand. Suivi du pipeline de vente en temps réel :
 - **TikTok/Insta Discovery** → **WhatsApp Chat** → **Payment Initiated** → **Order Confirmed**.
-- Métriques de revenus journaliers et performance de l'IA.
+- Métriques de revenus journaliers et performance de l'IA via **AI Growth Service**.
+- Interface optimisée avec le nouveau **Vendeur IA Loader**.
 
-### 3. Sales Inbox Intelligent
+### 3. Sales Inbox Intelligent & Copilot
 Une messagerie centralisée pour surveiller les conversations de l'IA Sales Agent :
+- **Copilot Widget** : Assistant IA intégré pour aider le marchand à gérer ses ventes.
 - **Détection de Preuve de Paiement** : Alertes automatiques dès qu'un client confirme un transfert.
 - **Human Takeover** : Possibilité pour le marchand de reprendre la main instantanément.
 - **Canaux de Paiement Locaux** : Gestion native de Wave, Orange Money, MTN, Moov et Visa.
 
-### 4. Catalogue IA Vision
-Gestionnaire de produits boosté par l'IA. Prenez une photo, et l'IA génère :
-- La fiche produit détaillée.
-- Le prix suggéré et les tags.
-- Les captions prêtes pour TikTok/Instagram.
+### 4. Catalogue & Order Management
+Gestionnaire de produits et commandes boosté par l'IA :
+- **AI Vision** : Prenez une photo, et l'IA génère la fiche produit.
+- **Order Manager** : Suivi précis des commandes et des statuts de livraison.
+- **Product Manager** : Interface d'édition fluide pour le catalogue.
 
 ### 5. Cerveau IA (Knowledge Base)
 Enseignez les spécificités de votre boutique à votre agent :

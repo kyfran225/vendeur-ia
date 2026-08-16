@@ -26,17 +26,21 @@ import { toast } from "sonner";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { DateTimePicker } from "@/components/ui/DateTimePicker";
+import { WhatsAppPreview } from "./WhatsAppPreview";
+import { useAuthStore } from "@/stores/authStore";
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
 export function MarketingHub() {
+  const { user } = useAuthStore();
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [selectedSegment, setSelectedSegment] = useState<string>("all");
   const [personalization, setPersonalization] = useState<"basic" | "ai_creative">("ai_creative");
   const [previewText, setPreviewText] = useState("");
   const [activeCampaign, setActiveCampaign] = useState<any>(null);
+  const [previewTab, setPreviewTab] = useState<"editor" | "whatsapp">("editor");
 
   // Scheduling state
   const [isScheduled, setIsScheduled] = useState(false);
@@ -90,6 +94,28 @@ export function MarketingHub() {
     }
   });
 
+  const { data: automations = { abandonedCart: true, postPurchaseFollowup: true } } = useQuery({
+    queryKey: ["marketingAutomations"],
+    queryFn: async () => {
+      const res = await apiClient.get("/api/marketing/automations");
+      return res.data;
+    }
+  });
+
+  const updateAutomationMutation = useMutation({
+    mutationFn: async (payload: { abandonedCart?: boolean; postPurchaseFollowup?: boolean }) => {
+      const res = await apiClient.patch("/api/marketing/automations", payload);
+      return res.data;
+    },
+    onSuccess: (data) => {
+      queryClient.setQueryData(["marketingAutomations"], data);
+      toast.success("Paramètres d'automatisation mis à jour ! ⚙️");
+    },
+    onError: () => {
+      toast.error("Impossible de modifier l'automatisation.");
+    }
+  });
+
   const { data: serverActiveCampaign } = useQuery({
     queryKey: ["activeCampaign"],
     queryFn: async () => {
@@ -127,11 +153,17 @@ export function MarketingHub() {
 
   const selectedCount = getSelectedCount();
 
+  const [selectedTemplate, setSelectedTemplate] = useState<string>("standard");
+
   const previewMutation = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (templateOverride?: string) => {
+      const templateToUse = templateOverride || selectedTemplate || "standard";
+      if (templateOverride) setSelectedTemplate(templateOverride);
+
       const res = await apiClient.post("/api/marketing/preview", {
         productId: selectedProduct?._id,
-        segment: selectedSegment
+        segment: selectedSegment,
+        template: templateToUse
       });
       return res.data;
     },
@@ -417,25 +449,40 @@ export function MarketingHub() {
                <Sparkles size={120} />
             </div>
 
-            {/* Header avec vrai bouton interactif et visible */}
-            <div className="flex flex-row items-center justify-between gap-2">
-              <div className="space-y-0.5">
-                <h3 className="font-black text-white uppercase tracking-widest text-[11px] sm:text-xs flex items-center gap-1.5">
-                  <Sparkles size={13} className="text-sky-400" />
-                  Aperçu du message IA
-                </h3>
-                <p className="text-[8px] sm:text-[9px] text-white/40 font-bold uppercase tracking-tight">
-                  Utilisez <span className="text-sky-400 font-mono">{"{{name}}"}</span> pour le nom
-                </p>
+            {/* Header avec switcher d'onglets (Éditeur / Rendu WhatsApp) et bouton Ré-écrire */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+              <div className="flex items-center gap-2">
+                <div className="flex bg-black/50 p-1 rounded-xl border border-white/10">
+                  <button
+                    type="button"
+                    onClick={() => setPreviewTab("editor")}
+                    className={cn(
+                      "px-3 py-1 rounded-lg text-[10px] sm:text-[11px] font-black uppercase tracking-wider transition-all cursor-pointer flex items-center gap-1.5",
+                      previewTab === "editor" ? "bg-white/15 text-white shadow-sm" : "text-white/40 hover:text-white"
+                    )}
+                  >
+                    <span>📝 Éditeur</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPreviewTab("whatsapp")}
+                    className={cn(
+                      "px-3 py-1 rounded-lg text-[10px] sm:text-[11px] font-black uppercase tracking-wider transition-all cursor-pointer flex items-center gap-1.5",
+                      previewTab === "whatsapp" ? "bg-[#00a884] text-black font-black shadow-sm" : "text-white/40 hover:text-white"
+                    )}
+                  >
+                    <span>📱 Rendu WhatsApp</span>
+                  </button>
+                </div>
               </div>
 
               {/* Bouton Ré-écrire avec l'IA */}
               <button
                 type="button"
-                onClick={() => previewMutation.mutate()}
+                onClick={() => previewMutation.mutate(selectedTemplate)}
                 disabled={!selectedProduct || previewMutation.isPending}
                 className={cn(
-                  "px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl text-[10px] sm:text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 shrink-0 border cursor-pointer",
+                  "px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl text-[10px] sm:text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 shrink-0 border cursor-pointer self-start sm:self-auto",
                   selectedProduct
                     ? "bg-sky-500/10 border-sky-500/30 text-sky-400 hover:bg-sky-500/20 hover:border-sky-500/50 shadow-sm active:scale-95"
                     : "bg-white/5 border-white/10 text-white/30 cursor-not-allowed opacity-50"
@@ -449,10 +496,41 @@ export function MarketingHub() {
                 ) : (
                   <>
                     <RefreshCw size={11} />
-                    <span>Ré-écrire</span>
+                    <span>Ré-écrire avec l'IA</span>
                   </>
                 )}
               </button>
+            </div>
+
+            {/* Quick Marketing Scenarios / Angles (1-Clic) */}
+            <div className="space-y-1.5">
+              <span className="text-[10px] sm:text-[11px] font-bold text-white/50 uppercase tracking-wider block">
+                Angle de vente (1-clic) :
+              </span>
+              <div className="flex flex-wrap gap-1.5 sm:gap-2">
+                {[
+                  { id: "flash_sale", label: "🔥 Vente Flash 24h" },
+                  { id: "new_arrival", label: "✨ Nouvel Arrivage" },
+                  { id: "vip_privilege", label: "👑 Privilège VIP" },
+                  { id: "clearance", label: "📦 Déstockage" },
+                  { id: "friendly_checkin", label: "💬 Conseil Amical" }
+                ].map((t) => (
+                  <button
+                    key={t.id}
+                    type="button"
+                    disabled={!selectedProduct || previewMutation.isPending}
+                    onClick={() => previewMutation.mutate(t.id)}
+                    className={cn(
+                      "px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-xl border text-[10px] sm:text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed",
+                      selectedTemplate === t.id
+                        ? "bg-sky-500/20 border-sky-400 text-sky-400 shadow-sm"
+                        : "bg-white/5 border-white/5 text-white/70 hover:text-white hover:border-white/20"
+                    )}
+                  >
+                    <span>{t.label}</span>
+                  </button>
+                ))}
+              </div>
             </div>
 
             {/* Zone de contenu / Prévisualisation */}
@@ -467,6 +545,13 @@ export function MarketingHub() {
                    <Loader2 className="animate-spin text-sky-400" size={28} />
                    <p className="text-xs text-white/50 font-bold uppercase tracking-wider">L'IA rédige une offre sur-mesure...</p>
                 </div>
+              ) : previewTab === "whatsapp" ? (
+                <WhatsAppPreview
+                  product={selectedProduct}
+                  text={previewText}
+                  businessName={user?.name || "Votre Boutique"}
+                  sampleCustomerName="Marc"
+                />
               ) : previewText ? (
                 <div className="space-y-4">
                   <div className="flex gap-2">
@@ -641,9 +726,86 @@ export function MarketingHub() {
           </div>
         </section>
 
-        {/* Step 3: History & Engagement Tracking */}
+        {/* Step 3: Autopilot Automations & Campaign History */}
         <section className="lg:col-span-3 space-y-4 pt-4 sm:pt-6">
-           <header className="flex items-center justify-between">
+           {/* Pilote Automatique Marketing */}
+           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+             {/* Relance Panier Abandonné */}
+             <div className={cn(
+               "border p-3.5 sm:p-4 rounded-2xl flex items-center justify-between gap-3 transition-all",
+               automations.abandonedCart
+                 ? "bg-gradient-to-br from-emerald-500/10 to-transparent border-emerald-500/20 shadow-sm shadow-emerald-500/5"
+                 : "bg-white/[0.02] border-white/5 opacity-60"
+             )}>
+               <div className="flex items-center gap-3">
+                 <div className={cn(
+                   "h-9 w-9 rounded-xl flex items-center justify-center shrink-0 transition-colors",
+                   automations.abandonedCart ? "bg-emerald-500/20 text-emerald-400" : "bg-white/5 text-white/30"
+                 )}>
+                   <Sparkles size={18} />
+                 </div>
+                 <div>
+                   <p className="text-xs sm:text-sm font-black text-white">Relance Panier Abandonné</p>
+                   <p className="text-[10px] sm:text-[11px] text-white/50">Relance automatique 2h après inactivité</p>
+                 </div>
+               </div>
+               <button
+                 type="button"
+                 onClick={() => updateAutomationMutation.mutate({ abandonedCart: !automations.abandonedCart })}
+                 disabled={updateAutomationMutation.isPending}
+                 className={cn(
+                   "relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none",
+                   automations.abandonedCart ? "bg-emerald-500" : "bg-white/20"
+                 )}
+               >
+                 <span
+                   className={cn(
+                     "pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out",
+                     automations.abandonedCart ? "translate-x-5" : "translate-x-0"
+                   )}
+                 />
+               </button>
+             </div>
+
+             {/* Fidélisation Post-Achat */}
+             <div className={cn(
+               "border p-3.5 sm:p-4 rounded-2xl flex items-center justify-between gap-3 transition-all",
+               automations.postPurchaseFollowup
+                 ? "bg-gradient-to-br from-purple-500/10 to-transparent border-purple-500/20 shadow-sm shadow-purple-500/5"
+                 : "bg-white/[0.02] border-white/5 opacity-60"
+             )}>
+               <div className="flex items-center gap-3">
+                 <div className={cn(
+                   "h-9 w-9 rounded-xl flex items-center justify-center shrink-0 transition-colors",
+                   automations.postPurchaseFollowup ? "bg-purple-500/20 text-purple-400" : "bg-white/5 text-white/30"
+                 )}>
+                   <Clock size={18} />
+                 </div>
+                 <div>
+                   <p className="text-xs sm:text-sm font-black text-white">Fidélisation Post-Achat</p>
+                   <p className="text-[10px] sm:text-[11px] text-white/50">Suivi satisfaction & points fidélité (J+3)</p>
+                 </div>
+               </div>
+               <button
+                 type="button"
+                 onClick={() => updateAutomationMutation.mutate({ postPurchaseFollowup: !automations.postPurchaseFollowup })}
+                 disabled={updateAutomationMutation.isPending}
+                 className={cn(
+                   "relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none",
+                   automations.postPurchaseFollowup ? "bg-purple-500" : "bg-white/20"
+                 )}
+               >
+                 <span
+                   className={cn(
+                     "pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out",
+                     automations.postPurchaseFollowup ? "translate-x-5" : "translate-x-0"
+                   )}
+                 />
+               </button>
+             </div>
+           </div>
+
+           <header className="flex items-center justify-between pt-2">
               <h2 className="text-xs sm:text-sm font-black uppercase tracking-widest text-white/60 flex items-center gap-2">
                 <History className="text-white/20" size={16} />
                 Dernières Campagnes & Performance
@@ -689,13 +851,18 @@ export function MarketingHub() {
                                      {new Date(c.createdAt).toLocaleDateString("fr-FR")}
                                    </p>
                                    <span className="h-1 w-1 rounded-full bg-white/10" />
-                                   <p className="text-[9px] font-black uppercase tracking-widest text-emerald-400">
+                                   <p className="text-[9px] font-black uppercase tracking-widest text-white/60">
                                      {c.sentCount}/{c.targetCount} envoyés
                                    </p>
                                    <span className="h-1 w-1 rounded-full bg-white/10" />
                                    <p className="text-[9px] font-black uppercase tracking-widest text-sky-400 flex items-center gap-1">
                                      <MessageSquare size={9} />
                                      {c.repliedCount || 0} ({replyRate}%)
+                                   </p>
+                                   <span className="h-1 w-1 rounded-full bg-white/10" />
+                                   <p className="text-[9px] font-black uppercase tracking-widest text-emerald-400 flex items-center gap-1">
+                                     <TrendingUp size={9} />
+                                     {(c.revenueGenerated || 0).toLocaleString()} XOF ({c.ordersCount || 0} vente{(c.ordersCount || 0) > 1 ? "s" : ""})
                                    </p>
                                 </div>
                              </div>

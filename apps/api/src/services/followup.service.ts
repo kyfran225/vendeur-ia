@@ -43,6 +43,11 @@ class FollowUpService {
     const merchant = conversation.merchantId;
     const customer = conversation.customerId;
 
+    if (merchant?.marketingAutomations?.abandonedCart === false) {
+      logger.info(`[FollowUp] Abandoned cart follow-up disabled by merchant ${merchant._id}`);
+      return;
+    }
+
     try {
       logger.info(`[FollowUp] Triggering re-engagement for customer ${customer.phone} on ${merchant.businessName}`);
 

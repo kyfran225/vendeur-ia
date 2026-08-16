@@ -77,6 +77,10 @@ const MerchantSchema = new Schema({
     threshold: { type: Number, default: 50 }, // e.g. 5 orders
     rewardDescription: { type: String, default: "une surprise offerte sur votre prochaine commande" }
   },
+  marketingAutomations: {
+    abandonedCart: { type: Boolean, default: true },
+    postPurchaseFollowup: { type: Boolean, default: true }
+  },
   lastWeeklyReportDate: { type: Date, default: null }
 }, { timestamps: true });
 
@@ -222,6 +226,9 @@ const MarketingCampaignSchema = new Schema({
   failedCount: { type: Number, default: 0 },
   repliedCount: { type: Number, default: 0 }, // Engagement tracking
   repliedCustomerIds: [{ type: Schema.Types.ObjectId, ref: "CommerceCustomer" }],
+  revenueGenerated: { type: Number, default: 0 }, // Total revenue attributed to this campaign (in local currency)
+  ordersCount: { type: Number, default: 0 }, // Converted orders count
+  convertedOrderIds: [{ type: Schema.Types.ObjectId, ref: "CommerceOrder" }],
   scheduledAt: { type: Date, default: null },
   status: { type: String, enum: ["pending", "scheduled", "active", "completed", "failed", "paused"], default: "pending" },
   personalizationLevel: { type: String, enum: ["basic", "ai_creative"], default: "basic" },

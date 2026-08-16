@@ -12,6 +12,7 @@ import { emitToUser } from "../../realtime/socketServer.js";
 import axios from "axios";
 import { addAIJob } from "../../services/ai-queue.service.js";
 import { scheduleRecovery } from "../../services/marketing-queue.service.js";
+import { marketingService } from "../../services/marketing.service.js";
 import { pushService } from "../../services/push.service.js";
 import { whatsappMediaService } from "./whatsapp-media.service.js";
 import { aiProvider } from "../../services/ai-provider.js";
@@ -515,6 +516,11 @@ class WhatsAppService {
     // --- SCHEDULE MARKETING RELANCE (2h) ---
     scheduleRecovery(conversation._id.toString(), merchant._id.toString(), customer._id.toString()).catch(err =>
       console.error("[Marketing] Failed to schedule recovery:", err)
+    );
+
+    // --- TRACK MARKETING CAMPAIGN ENGAGEMENT ---
+    marketingService.recordCustomerReply(merchant._id.toString(), customer._id.toString()).catch(err =>
+      console.error("[Marketing] Failed to record customer reply:", err)
     );
 
     // Fetch conversation history

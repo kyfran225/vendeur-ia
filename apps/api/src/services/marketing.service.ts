@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import {
   CommerceCustomerModel,
   CommerceProductModel,
@@ -27,12 +28,43 @@ export class MarketingService {
         merchantId,
         updatedAt: { $gte: thirtyDaysAgo }
     });
+    const inactiveCount = await CommerceCustomerModel.countDocuments({
+        merchantId,
+        updatedAt: { $lt: thirtyDaysAgo }
+    });
     const totalCount = await CommerceCustomerModel.countDocuments({ merchantId });
+
+    // Aggregate customers by location/city
+    const rawCities = await CommerceCustomerModel.aggregate([
+      {
+        $match: {
+          merchantId: new mongoose.Types.ObjectId(merchantId),
+          location: { $exists: true, $ne: "" }
+        }
+      },
+      {
+        $group: {
+          _id: { $toLower: { $trim: { input: "$location" } } },
+          displayName: { $first: "$location" },
+          count: { $sum: 1 }
+        }
+      },
+      { $sort: { count: -1 } },
+      { $limit: 10 }
+    ]);
+
+    const cities = rawCities.map(c => ({
+      name: c.displayName,
+      slug: c._id,
+      count: c.count
+    }));
 
     return {
       vip: vipCount,
       active: activeCount,
-      all: totalCount
+      inactive: inactiveCount,
+      all: totalCount,
+      cities
     };
   }
 
@@ -40,12 +72,42 @@ export class MarketingService {
     return MarketingCampaignModel.find({ merchantId }).sort({ createdAt: -1 }).limit(10);
   }
 
+  async recordCustomerReply(merchantId: string, customerId: string) {
+    try {
+      const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+      
+      const campaign = await MarketingCampaignModel.findOne({
+        merchantId,
+        createdAt: { $gte: twentyFourHoursAgo },
+        repliedCustomerIds: { $ne: new mongoose.Types.ObjectId(customerId) }
+      }).sort({ createdAt: -1 });
+
+      if (campaign) {
+        await MarketingCampaignModel.updateOne(
+          { _id: campaign._id },
+          {
+            $inc: { repliedCount: 1 },
+            $addToSet: { repliedCustomerIds: new mongoose.Types.ObjectId(customerId) }
+          }
+        );
+        logger.info(`[Marketing] Recorded engagement reply from customer ${customerId} for campaign ${campaign._id}`);
+      }
+    } catch (err: any) {
+      logger.warn(`[Marketing] Failed to record customer reply engagement: ${err.message}`);
+    }
+  }
+
   async generateBroadcastPreview(merchantId: string, productId: string, segment: string) {
     const product = await CommerceProductModel.findById(productId);
     const merchant = await CommerceMerchantModel.findById(merchantId);
     if (!product || !merchant) throw new Error("Produit ou Marchand non trouvé");
 
-    const prompt = `Génère un message de diffusion WhatsApp pour promouvoir ce produit auprès de mes clients ${segment}.
+    let segmentLabel = "Tous les clients";
+    if (segment === "vip") segmentLabel = "Clients Fidèles / VIP";
+    else if (segment === "inactive") segmentLabel = "Clients Inactifs (> 30 jours)";
+    else if (segment.startsWith("city:")) segmentLabel = `Clients situés à ${segment.replace("city:", "")}`;
+
+    const prompt = `Génère un message de diffusion WhatsApp pour promouvoir ce produit auprès de mes clients : ${segmentLabel}.
 Produit : ${product.name}
 Prix : ${product.price} ${product.currency}
 Boutique : ${merchant.businessName}
@@ -53,8 +115,9 @@ Boutique : ${merchant.businessName}
 Le message doit être :
 - Très vendeur et enthousiaste
 - Utiliser des emojis locaux ✨🚀
-- Segment : ${segment === 'vip' ? 'Clients Fidèles/VIP' : 'Tous les clients'}
+- Ciblage : ${segmentLabel}
 - Si VIP, mentionne un traitement spécial ou une avant-première.
+- Si Inactifs, mentionne qu'ils nous ont manqué ou offre un petit privilège de retour.
 - Inclure un appel à l'action clair : "Répondez à ce message pour réserver !"
 
 Réponds UNIQUEMENT avec le texte du message.`;
@@ -69,22 +132,42 @@ Réponds UNIQUEMENT avec le texte du message.`;
     return { preview: response.text };
   }
 
-  async launchBroadcast(merchantId: string, productId: string, segment: string, customText: string, personalization: "basic" | "ai_creative" = "basic") {
+  async launchBroadcast(
+    merchantId: string,
+    productId: string,
+    segment: string,
+    customText: string,
+    personalization: "basic" | "ai_creative" = "basic",
+    scheduledAt?: string | Date
+  ) {
     const merchant = await CommerceMerchantModel.findById(merchantId);
     if (!merchant) throw new Error("Marchand non trouvé");
+
+    if (!customText || !customText.trim()) {
+      throw new Error("Le message de la campagne ne peut pas être vide.");
+    }
 
     // 1. Precise Segmentation
     const query: any = { merchantId };
     const vipThreshold = merchant.loyaltySettings?.threshold || 50;
-    if (segment === 'vip') query.loyaltyPoints = { $gte: vipThreshold };
-    if (segment === 'inactive') {
-        const thirtyDaysAgo = new Date();
-        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-        query.updatedAt = { $lt: thirtyDaysAgo };
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+    if (segment === 'vip') {
+      query.loyaltyPoints = { $gte: vipThreshold };
+    } else if (segment === 'active') {
+      query.updatedAt = { $gte: thirtyDaysAgo };
+    } else if (segment === 'inactive') {
+      query.updatedAt = { $lt: thirtyDaysAgo };
+    } else if (segment.startsWith("city:")) {
+      const cityName = segment.replace("city:", "").trim();
+      query.location = { $regex: new RegExp(`^${cityName}$`, "i") };
     }
 
     const customers = await CommerceCustomerModel.find(query);
-    if (customers.length === 0) throw new Error("Aucun client trouvé dans ce segment.");
+    if (customers.length === 0) {
+      throw new Error(`Aucun client trouvé dans le segment "${segment}".`);
+    }
 
     // 1.2 Fetch Product Media if applicable
     let imageUrl = "";
@@ -100,22 +183,37 @@ Réponds UNIQUEMENT avec le texte du message.`;
     // 1.5 Quota Check
     await broadcastLimiter.checkQuota(merchantId, customers.length);
 
+    // 1.8 Handle Scheduling
+    let initialDelay = 5000;
+    let campaignStatus: "active" | "scheduled" = "active";
+    let scheduledDate: Date | null = null;
+
+    if (scheduledAt) {
+      const targetTime = new Date(scheduledAt).getTime();
+      const now = Date.now();
+      if (!isNaN(targetTime) && targetTime > now) {
+        initialDelay = targetTime - now;
+        campaignStatus = "scheduled";
+        scheduledDate = new Date(scheduledAt);
+      }
+    }
+
     // 2. Create Campaign for detailed tracking
     const campaign = await MarketingCampaignModel.create({
         merchantId,
-        productId,
+        productId: productId || null,
         segment,
         content: customText,
         targetCount: customers.length,
         personalizationLevel: personalization,
-        status: "active"
+        scheduledAt: scheduledDate,
+        status: campaignStatus
     });
 
-    logger.info(`[Marketing] Launching ${personalization} broadcast to ${customers.length} customers for ${merchant.businessName}`);
+    logger.info(`[Marketing] Launching ${personalization} broadcast to ${customers.length} customers for ${merchant.businessName} (Status: ${campaignStatus})`);
 
     // 3. Queue jobs with "Human Throttling" (Safe Delivery)
-    // Delay starts at 5s, increments randomly to avoid patterns
-    let currentDelay = 5000;
+    let currentDelay = initialDelay;
 
     for (let i = 0; i < customers.length; i++) {
         const customer = customers[i];
@@ -141,7 +239,12 @@ Réponds UNIQUEMENT avec le texte du message.`;
         });
     }
 
-    return { count: customers.length, campaignId: campaign._id };
+    return {
+      count: customers.length,
+      campaignId: campaign._id,
+      status: campaignStatus,
+      scheduledAt: scheduledDate
+    };
   }
 
   async generateReconquestMessage(merchantId: string) {

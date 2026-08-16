@@ -1019,6 +1019,15 @@ router.post("/orders", authenticate, validate(CreateOrderSchema), async (req, re
       merchantId: merchant._id
     });
 
+    // Update customer location if delivery address is provided
+    if (req.body.customerId && req.body.deliveryAddress) {
+      await CommerceCustomerModel.findByIdAndUpdate(
+        req.body.customerId,
+        { $set: { location: req.body.deliveryAddress } },
+        { new: true }
+      );
+    }
+
     // If created from Inbox, we might want to send a confirmation message automatically
     if (req.body.conversationId) {
       const customer = await CommerceCustomerModel.findById(req.body.customerId);

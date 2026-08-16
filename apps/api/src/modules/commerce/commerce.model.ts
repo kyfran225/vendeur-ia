@@ -215,13 +215,15 @@ const MarketingCampaignSchema = new Schema({
   merchantId: { type: Schema.Types.ObjectId, ref: "CommerceMerchant", required: true, index: true },
   productId: { type: Schema.Types.ObjectId, ref: "CommerceProduct" },
   name: { type: String, default: "Campagne Sans Nom" },
-  segment: { type: String, required: true }, // vip, inactive, all
+  segment: { type: String, required: true }, // vip, active, inactive, city:xxx, all
   content: { type: String, required: true }, // The core idea/offer
   targetCount: { type: Number, default: 0 },
   sentCount: { type: Number, default: 0 },
   failedCount: { type: Number, default: 0 },
   repliedCount: { type: Number, default: 0 }, // Engagement tracking
-  status: { type: String, enum: ["pending", "active", "completed", "failed", "paused"], default: "pending" },
+  repliedCustomerIds: [{ type: Schema.Types.ObjectId, ref: "CommerceCustomer" }],
+  scheduledAt: { type: Date, default: null },
+  status: { type: String, enum: ["pending", "scheduled", "active", "completed", "failed", "paused"], default: "pending" },
   personalizationLevel: { type: String, enum: ["basic", "ai_creative"], default: "basic" },
   createdAt: { type: Date, default: Date.now }
 }, { timestamps: true });

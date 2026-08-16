@@ -193,40 +193,34 @@ export class AIProvider {
 
       console.warn(`[AI Provider] ${primaryProvider} failed (Quota=${isQuotaError}), trying fallback...`);
 
-      const fallbackProvider = primaryProvider === 'gemini' ? 'groq' : 'gemini';
+      const candidateFallbacks = ['groq', 'openrouter', 'gemini', 'openai'].filter(p => p !== primaryProvider);
+      let success = false;
 
-      if (this.isDegraded(fallbackProvider)) {
-        console.warn(`[AI Provider] Fallback ${fallbackProvider} also degraded, trying OpenRouter...`);
+      for (const fallbackProvider of candidateFallbacks) {
+        const key = this.getProviderKey(config, fallbackProvider);
+        if (!key || this.isDegraded(fallbackProvider)) continue;
+
         try {
-          response = await this.generateWithProvider('openrouter', request, config);
-        } catch (openRouterError: any) {
-          console.error("[AI Provider] All fallbacks failed:", openRouterError.message);
-          return {
-            text: "Désolé, nos services d'IA sont saturés. Veuillez réessayer plus tard.",
-            provider: 'error',
-            usage: { promptTokens: 0, completionTokens: 0, totalTokens: 0 }
-          };
-        }
-      } else {
-        try {
+          console.log(`[AI Provider] Trying fallback provider ${fallbackProvider}...`);
           response = await this.generateWithProvider(fallbackProvider, request, config);
+          success = true;
+          break;
         } catch (fallbackError: any) {
           const fallbackMsg = (fallbackError.message || "") + (fallbackError.response?.data?.error?.message || "");
-          if (fallbackMsg.toLowerCase().includes("quota") || fallbackMsg.includes("429")) {
+          if (fallbackMsg.toLowerCase().includes("quota") || fallbackMsg.includes("429") || fallbackMsg.toLowerCase().includes("credits")) {
             this.markDegraded(fallbackProvider);
           }
-          console.warn("[AI Provider] Secondary fallback failed, trying OpenRouter...");
-          try {
-            response = await this.generateWithProvider('openrouter', request, config);
-          } catch (openRouterError: any) {
-            console.error("[AI Provider] All fallbacks failed:", openRouterError.message);
-            return {
-              text: "Désolé, nos services d'IA sont saturés. Veuillez réessayer plus tard.",
-              provider: 'error',
-              usage: { promptTokens: 0, completionTokens: 0, totalTokens: 0 }
-            };
-          }
+          console.warn(`[AI Provider] Fallback ${fallbackProvider} failed:`, fallbackMsg);
         }
+      }
+
+      if (!success) {
+        console.error("[AI Provider] All providers failed");
+        return {
+          text: "Désolé, nos services d'IA sont saturés. Veuillez réessayer plus tard.",
+          provider: 'error',
+          usage: { promptTokens: 0, completionTokens: 0, totalTokens: 0 }
+        };
       }
     }
 

@@ -523,6 +523,13 @@ class WhatsAppService {
       console.error("[Marketing] Failed to record customer reply:", err)
     );
 
+    // --- AUTO-EXTRACT CUSTOMER LOCATION FROM CONVERSATION ---
+    if (text) {
+      commerceService.extractCustomerLocation(customer._id.toString(), text).catch(err =>
+        console.error("[Location Extraction Error]:", err)
+      );
+    }
+
     // Fetch conversation history
     const historyMessages = await CommerceMessageModel.find({ conversationId: conversation._id })
       .sort({ timestamp: -1 })

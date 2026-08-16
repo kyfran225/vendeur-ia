@@ -549,7 +549,7 @@ export function MarketingHub() {
                 <WhatsAppPreview
                   product={selectedProduct}
                   text={previewText}
-                  businessName={user?.name || "Votre Boutique"}
+                  businessName={user?.displayName || "Votre Boutique"}
                   sampleCustomerName="Marc"
                 />
               ) : previewText ? (
@@ -591,7 +591,7 @@ export function MarketingHub() {
               ) : (
                 <button
                   type="button"
-                  onClick={() => previewMutation.mutate()}
+                  onClick={() => previewMutation.mutate(undefined)}
                   className="w-full h-[140px] border-2 border-dashed border-sky-500/20 bg-sky-500/[0.02] hover:bg-sky-500/[0.06] hover:border-sky-500/40 rounded-2xl flex flex-col items-center justify-center gap-2.5 text-sky-400 transition-all group cursor-pointer"
                 >
                    <div className="h-10 w-10 rounded-xl bg-sky-500/10 flex items-center justify-center group-hover:scale-110 transition-transform">

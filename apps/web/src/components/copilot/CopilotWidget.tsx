@@ -42,6 +42,65 @@ function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+// Resolve precise route for settings tabs and general routes
+export function resolveTargetRoute(rawUrl: string, contextText?: string): string {
+  let url = (rawUrl || "").trim();
+  if (!url) return "/dashboard";
+
+  const text = (contextText || "").toLowerCase();
+
+  // If already has tab and section query parameter, return as is
+  if (url.includes("?tab=") && url.includes("&section=")) return url;
+
+  if (url.startsWith("/settings")) {
+    if (text.includes("whatsapp") || text.includes("qr") || text.includes("connect") || text.includes("meta")) {
+      return "/settings?tab=connexions&section=whatsapp";
+    }
+    if (text.includes("logo") || text.includes("uploader mon logo")) {
+      return "/settings?tab=apparence&section=logo";
+    }
+    if (text.includes("couleur") || text.includes("palette") || text.includes("thème")) {
+      return "/settings?tab=apparence&section=theme";
+    }
+    if (text.includes("bannière") || text.includes("promo") || text.includes("annonce")) {
+      return "/settings?tab=apparence&section=announcement";
+    }
+    if (text.includes("réseaux") || text.includes("instagram") || text.includes("tiktok") || text.includes("social")) {
+      return "/settings?tab=apparence&section=socials";
+    }
+    if (text.includes("vitrine") || text.includes("apparence")) {
+      return "/settings?tab=apparence&section=logo";
+    }
+    if (text.includes("personnalité") || text.includes("attitude") || text.includes("ton") || text.includes("ia") || text.includes("caractère")) {
+      return "/settings?tab=personnalite&section=personality";
+    }
+    if (text.includes("savoir") || text.includes("faq") || text.includes("connaissance") || text.includes("règle") || text.includes("question")) {
+      return "/settings?tab=savoir&section=faq";
+    }
+    if (text.includes("croissance") || text.includes("growth") || text.includes("facebook") || text.includes("marketplace")) {
+      return "/settings?tab=growth&section=facebook";
+    }
+    if (text.includes("abonnement") || text.includes("formule") || text.includes("factur") || text.includes("billing") || text.includes("pro")) {
+      return "/settings?tab=billing";
+    }
+    if (text.includes("parrainage") || text.includes("referral") || text.includes("invit")) {
+      return "/settings?tab=referral";
+    }
+    if (text.includes("profil") || text.includes("compte") || text.includes("coordonn") || text.includes("sécurité")) {
+      return "/settings?tab=compte&section=identity";
+    }
+    if (text.includes("paiement") || text.includes("wave") || text.includes("orange") || text.includes("momo") || text.includes("canal")) {
+      return "/settings?tab=boutique&section=payments";
+    }
+    if (text.includes("livraison") || text.includes("tarif") || text.includes("zone") || text.includes("frais")) {
+      return "/settings?tab=boutique&section=delivery";
+    }
+    if (url.includes("?tab=")) return url;
+    return "/settings?tab=boutique";
+  }
+  return url;
+}
+
 // Icon resolver helper for quick suggestions & action tags
 function getIconForSuggestion(iconName: string) {
   switch (iconName) {
@@ -72,6 +131,47 @@ function getIconForSuggestion(iconName: string) {
     default:
       return <HelpCircle size={14} className="text-white/60 shrink-0" />;
   }
+}
+
+// Format message text with bold and clickable markdown links
+function FormattedMessageContent({ text, onNavigate }: { text: string; onNavigate: (url: string, label?: string) => void }) {
+  const parts = text.split(/(\[[^\]]+\]\([^)]+\)|\*\*[^*]+\*\*)/g);
+
+  return (
+    <div className="whitespace-pre-wrap space-y-1.5 min-w-0 break-words [overflow-wrap:anywhere]">
+      {parts.map((part, idx) => {
+        // Match [Label](URL)
+        const linkMatch = part.match(/^\[([^\]]+)\]\(([^)]+)\)$/);
+        if (linkMatch) {
+          const label = linkMatch[1];
+          const rawUrl = linkMatch[2];
+          return (
+            <button
+              key={idx}
+              type="button"
+              onClick={() => onNavigate(rawUrl, label)}
+              className="inline-flex items-center gap-1 font-bold text-emerald-400 hover:text-emerald-300 underline underline-offset-2 transition-colors cursor-pointer text-left"
+            >
+              <span>{label}</span>
+              <ExternalLink size={11} className="inline shrink-0 opacity-70" />
+            </button>
+          );
+        }
+
+        // Match **Bold**
+        const boldMatch = part.match(/^\*\*([^*]+)\*\*$/);
+        if (boldMatch) {
+          return (
+            <strong key={idx} className="font-black text-white">
+              {boldMatch[1]}
+            </strong>
+          );
+        }
+
+        return <React.Fragment key={idx}>{part}</React.Fragment>;
+      })}
+    </div>
+  );
 }
 
 export function CopilotWidget() {
@@ -189,26 +289,134 @@ export function CopilotWidget() {
 
   const handleActionClick = (action: SuggestedAction) => {
     if (action.type === "navigate") {
-      navigate(action.payload);
-      // On mobile we might minimize or keep open
+      const targetUrl = resolveTargetRoute(action.payload, action.label);
+      navigate(targetUrl);
+      closeCopilot();
     } else if (action.type === "modal") {
       if (action.payload === "dispatch_founder") {
         setFounderModalOpen(true);
       } else if (action.payload === "audit") {
         runStoreAudit();
       } else if (action.payload === "tour") {
+        closeCopilot();
         startTour();
       } else if (action.payload === "pack_pro") {
+        closeCopilot();
         if ((window as any).openPackPro) {
           (window as any).openPackPro();
         } else {
           navigate("/offers");
         }
       } else if (action.payload === "scanner") {
+        closeCopilot();
         navigate("/products?scanner=open");
       }
     }
   };
+
+  // --- Draggable Floating Orb Button (Rock-solid transform-based drag & drop) ---
+  const [orbPos, setOrbPos] = useState<{ x: number; y: number }>(() => {
+    try {
+      const saved = localStorage.getItem("vendeur_copilot_orb_coords");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (typeof parsed.x === "number" && typeof parsed.y === "number") {
+          return parsed;
+        }
+      }
+    } catch (_) {}
+    // Default initial position (bottom-right)
+    return {
+      x: typeof window !== "undefined" ? window.innerWidth - 72 : 300,
+      y: typeof window !== "undefined" ? window.innerHeight - 84 : 500,
+    };
+  });
+
+  const [isDraggingOrb, setIsDraggingOrb] = useState(false);
+  const dragInfoRef = useRef({
+    startX: 0,
+    startY: 0,
+    originX: 0,
+    originY: 0,
+    hasMoved: false,
+  });
+
+  // Re-adjust if window resizes
+  useEffect(() => {
+    const handleResize = () => {
+      setOrbPos((prev) => {
+        const btnSize = 56;
+        const padding = 16;
+        const boundedX = Math.min(Math.max(padding, prev.x), window.innerWidth - btnSize - padding);
+        const boundedY = Math.min(Math.max(padding, prev.y), window.innerHeight - btnSize - padding);
+        return { x: boundedX, y: boundedY };
+      });
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  const onOrbPointerDown = (e: React.PointerEvent) => {
+    if (e.button !== 0) return;
+    const target = e.currentTarget as HTMLElement;
+    
+    dragInfoRef.current = {
+      startX: e.clientX,
+      startY: e.clientY,
+      originX: orbPos.x,
+      originY: orbPos.y,
+      hasMoved: false,
+    };
+    setIsDraggingOrb(true);
+    target.setPointerCapture(e.pointerId);
+  };
+
+  const onOrbPointerMove = (e: React.PointerEvent) => {
+    if (!isDraggingOrb) return;
+    const dx = e.clientX - dragInfoRef.current.startX;
+    const dy = e.clientY - dragInfoRef.current.startY;
+
+    if (Math.hypot(dx, dy) > 5) {
+      dragInfoRef.current.hasMoved = true;
+    }
+
+    const btnSize = 56;
+    const padding = 12;
+    const newX = Math.min(Math.max(padding, dragInfoRef.current.originX + dx), window.innerWidth - btnSize - padding);
+    const newY = Math.min(Math.max(padding, dragInfoRef.current.originY + dy), window.innerHeight - btnSize - padding);
+
+    setOrbPos({ x: newX, y: newY });
+  };
+
+  const onOrbPointerUp = (e: React.PointerEvent) => {
+    if (!isDraggingOrb) return;
+    setIsDraggingOrb(false);
+    (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
+
+    if (dragInfoRef.current.hasMoved) {
+      // Snap to closest edge (left or right)
+      const btnSize = 56;
+      const padding = 16;
+      const snapRight = orbPos.x + btnSize / 2 > window.innerWidth / 2;
+      const snappedX = snapRight ? window.innerWidth - btnSize - padding : padding;
+      const finalCoords = { x: snappedX, y: orbPos.y };
+      setOrbPos(finalCoords);
+      try {
+        localStorage.setItem("vendeur_copilot_orb_coords", JSON.stringify(finalCoords));
+      } catch (_) {}
+    }
+  };
+
+  const onOrbClick = (e: React.MouseEvent) => {
+    // If user dragged, do not trigger opening
+    if (dragInfoRef.current.hasMoved) {
+      e.stopPropagation();
+      return;
+    }
+    openCopilot();
+  };
+
+  const isDockedOnRight = orbPos.x + 28 > (typeof window !== "undefined" ? window.innerWidth / 2 : 400);
 
   return (
     <>
@@ -216,33 +424,57 @@ export function CopilotWidget() {
       <StoreAuditModal />
       <SpotlightTourOverlay />
 
-      {/* Floating Trigger Orb / Button */}
+      {/* Floating Trigger Orb: Circular, Clean, 100% Precise Drag */}
       {!isOpen && (
-        <button
-          onClick={openCopilot}
-          className="fixed bottom-20 right-4 sm:bottom-6 sm:right-6 z-[60] group flex items-center gap-3 bg-vendeur-coal/95 border border-vendeur-emerald/40 text-white p-2 sm:px-4 sm:py-2.5 rounded-full shadow-[0_0_20px_rgba(16,185,129,0.25)] hover:shadow-[0_0_28px_rgba(16,185,129,0.45)] hover:border-vendeur-emerald transition-all duration-300 transform hover:-translate-y-0.5 active:scale-95 backdrop-blur-md"
-          title="Ouvrir le Copilote Vendeur IA"
+        <div
+          onPointerDown={onOrbPointerDown}
+          onPointerMove={onOrbPointerMove}
+          onPointerUp={onOrbPointerUp}
+          onClick={onOrbClick}
+          style={{
+            position: "fixed",
+            left: 0,
+            top: 0,
+            transform: `translate3d(${orbPos.x}px, ${orbPos.y}px, 0)`,
+            touchAction: "none",
+          }}
+          className={cn(
+            "fixed z-[60] select-none cursor-grab active:cursor-grabbing group",
+            isDraggingOrb ? "transition-none scale-105 shadow-2xl" : "transition-transform duration-300 ease-out"
+          )}
+          title="Copilote Vendeur IA (Cliquez pour ouvrir, glissez pour déplacer)"
         >
-          <div className="relative flex items-center justify-center">
-            <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-white/5 border border-white/10 flex items-center justify-center p-2.5 animate-orb-beat group-hover:scale-105 transition-all duration-300">
+          {/* Main Round Orb Button */}
+          <div className="relative w-14 h-14 rounded-full bg-vendeur-coal/90 hover:bg-vendeur-coal/98 border border-white/10 hover:border-vendeur-emerald/60 text-white flex items-center justify-center shadow-[0_6px_24px_rgba(0,0,0,0.45)] hover:shadow-[0_0_26px_rgba(16,185,129,0.45)] backdrop-blur-xl transition-all duration-300">
+            {/* Green Online Dot */}
+            <span className="absolute top-1 right-1 w-3 h-3 bg-vendeur-emerald rounded-full ring-2 ring-vendeur-coal animate-pulse pointer-events-none" />
+
+            {/* Logo Heartbeat Sphere */}
+            <div className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center p-2 animate-orb-beat group-hover:bg-vendeur-emerald/10 group-hover:scale-105 transition-all duration-300 pointer-events-none">
               <Logo
                 size={22}
                 leftBranchColor="#ffffff"
                 rightBranchColor="#10b981"
-                className="animate-pulse drop-shadow-[0_0_3px_rgba(16,185,129,0.35)] group-hover:rotate-6 group-hover:scale-110 transition-transform duration-300"
+                className="animate-pulse drop-shadow-[0_0_8px_rgba(16,185,129,0.5)] group-hover:rotate-6 group-hover:scale-110 transition-transform duration-300"
               />
             </div>
-          </div>
 
-          <div className="hidden sm:flex flex-col text-left">
-            <span className="text-xs font-black uppercase tracking-wider text-vendeur-emerald flex items-center gap-1">
-              Copilote IA <span className="text-[10px] text-white/50 font-normal">v1.0</span>
-            </span>
-            <span className="text-[11px] text-white/80 font-medium truncate max-w-[140px]">
-              Besoin d'aide ou d'un conseil ?
-            </span>
+            {/* Smart Non-disruptive Tooltip on Hover (Always faces inward) */}
+            <div
+              className={cn(
+                "absolute top-1/2 -translate-y-1/2 pointer-events-none opacity-0 group-hover:opacity-100 transition-all duration-200 ease-out z-50 whitespace-nowrap bg-vendeur-coal/95 border border-white/10 text-white px-3 py-1.5 rounded-xl shadow-xl backdrop-blur-md flex flex-col",
+                isDockedOnRight ? "right-[calc(100%+10px)] items-end" : "left-[calc(100%+10px)] items-start"
+              )}
+            >
+              <span className="text-[11px] font-black uppercase tracking-wider text-vendeur-emerald flex items-center gap-1 leading-tight">
+                Copilote IA <span className="text-[9px] text-white/40 font-normal">v1.0</span>
+              </span>
+              <span className="text-[10px] text-white/70 font-medium leading-tight">
+                Cliquez pour ouvrir • Glissez
+              </span>
+            </div>
           </div>
-        </button>
+        </div>
       )}
 
       {/* Main Drawer Container */}
@@ -266,117 +498,127 @@ export function CopilotWidget() {
             <div className="w-12 h-1 bg-white/20 rounded-full mx-auto mt-2 sm:hidden shrink-0" />
 
             {/* Header Bar */}
-            <div className="flex items-center justify-between px-4 py-3 sm:py-3.5 border-b border-white/10 bg-vendeur-slate/80 select-none">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-xl bg-vendeur-emerald/20 border border-vendeur-emerald/40 flex items-center justify-center p-1.5 text-vendeur-emerald shrink-0 shadow-inner">
-                  <Logo size={18} leftBranchColor="#ffffff" rightBranchColor="#10b981" className="animate-pulse" />
-                </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <h3 className="font-black text-white text-xs sm:text-sm tracking-wide uppercase">
-                    Copilote Vendeur IA
-                  </h3>
-                  <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-vendeur-emerald/20 text-vendeur-emerald font-bold border border-vendeur-emerald/30">
-                    Live
+            <div className="flex items-center justify-between px-4 py-3 sm:px-5 sm:py-3.5 border-b border-white/10 bg-vendeur-slate/90 backdrop-blur-md select-none gap-3">
+              {/* Identity & Live indicator */}
+              <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
+                <div className="relative w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-gradient-to-br from-vendeur-emerald/25 to-vendeur-emerald/5 border border-vendeur-emerald/40 flex items-center justify-center p-1.5 text-vendeur-emerald shrink-0 shadow-[inset_0_1px_1px_rgba(255,255,255,0.2)]">
+                  <Logo size={20} leftBranchColor="#ffffff" rightBranchColor="#10b981" className="animate-pulse" />
+                  {/* Glowing Live Dot */}
+                  <span className="absolute -top-0.5 -right-0.5 flex h-3 w-3">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500 ring-2 ring-vendeur-coal border border-white/40"></span>
                   </span>
                 </div>
-                <p className="text-[10px] text-white/50 truncate">
-                  Votre guide intelligent & sans formation
-                </p>
+
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-black text-white text-xs sm:text-sm tracking-wide uppercase truncate">
+                      Copilote Vendeur IA
+                    </h3>
+                    <span className="px-1.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 shrink-0">
+                      Live
+                    </span>
+                  </div>
+                  <p className="text-[10px] sm:text-[11px] text-white/50 truncate font-medium">
+                    Votre guide intelligent & proactif
+                  </p>
+                </div>
+              </div>
+
+              {/* Window Management Controls */}
+              <div className="flex items-center gap-1 shrink-0">
+                <button
+                  onClick={clearHistory}
+                  title="Effacer la discussion"
+                  className="w-8 h-8 rounded-xl bg-white/5 hover:bg-red-500/20 text-white/60 hover:text-red-400 border border-white/5 hover:border-red-500/30 flex items-center justify-center transition-all duration-200"
+                >
+                  <Trash2 size={14} />
+                </button>
+
+                <button
+                  onClick={() => setMinimized(!isMinimized)}
+                  title={isMinimized ? "Agrandir" : "Réduire"}
+                  className="hidden sm:flex w-8 h-8 rounded-xl bg-white/5 hover:bg-white/10 text-white/60 hover:text-white border border-white/5 flex items-center justify-center transition-all duration-200"
+                >
+                  {isMinimized ? <Maximize2 size={14} /> : <Minimize2 size={14} />}
+                </button>
+
+                <button
+                  onClick={closeCopilot}
+                  title="Fermer"
+                  className="w-8 h-8 rounded-xl bg-white/5 hover:bg-white/15 text-white/70 hover:text-white border border-white/5 flex items-center justify-center transition-all duration-200 active:scale-95"
+                >
+                  <X size={16} />
+                </button>
               </div>
             </div>
 
-            {/* Header Actions */}
-            <div className="flex items-center gap-1">
-              <button
-                onClick={() => runStoreAudit()}
-                title="Lancer l'Audit IA et Score de Conversion"
-                className="px-2 py-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 text-[10px] font-black uppercase tracking-wider flex items-center gap-1 border border-emerald-500/30 transition-colors"
-              >
-                <Sparkles size={12} />
-                <span className="hidden sm:inline">Audit</span>
-              </button>
+            {!isMinimized && (
+              <>
+                {/* Premium Quick Actions Bar */}
+                <div className="px-3.5 py-2 bg-black/40 border-b border-white/5 flex items-center gap-2 overflow-x-auto no-scrollbar">
+                  <button
+                    onClick={() => runStoreAudit()}
+                    title="Lancer l'Audit IA et Score de Conversion"
+                    className="shrink-0 px-2.5 py-1.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 text-[11px] font-black uppercase tracking-wider flex items-center gap-1.5 border border-emerald-500/30 transition-all active:scale-95 shadow-sm"
+                  >
+                    <Sparkles size={13} className="text-emerald-400" />
+                    <span>Audit IA</span>
+                  </button>
 
-              <button
-                onClick={() => startTour()}
-                title="Lancer la Visite Guidée 30s"
-                className="px-2 py-1 rounded-lg bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 text-[10px] font-black uppercase tracking-wider flex items-center gap-1 border border-cyan-500/30 transition-colors"
-              >
-                <Compass size={12} />
-                <span className="hidden sm:inline">Tour</span>
-              </button>
+                  <button
+                    onClick={() => startTour()}
+                    title="Lancer la Visite Guidée 30s"
+                    className="shrink-0 px-2.5 py-1.5 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 text-[11px] font-black uppercase tracking-wider flex items-center gap-1.5 border border-cyan-500/30 transition-all active:scale-95 shadow-sm"
+                  >
+                    <Compass size={13} className="text-cyan-400" />
+                    <span>Visite 30s</span>
+                  </button>
 
-              <button
-                onClick={() => setFounderModalOpen(true)}
-                title="Envoyer un message au Fondateur"
-                className="px-2 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-white/70 hover:text-white text-[10px] font-bold flex items-center gap-1 border border-white/5 transition-colors"
-              >
-                <Crown size={12} className="text-amber-400" />
-                <span className="hidden sm:inline">Fondateur</span>
-              </button>
-
-              <button
-                onClick={clearHistory}
-                title="Effacer la discussion"
-                className="p-1.5 rounded-lg hover:bg-white/10 text-white/50 hover:text-red-400 transition-colors"
-              >
-                <Trash2 size={15} />
-              </button>
-
-              <button
-                onClick={() => setMinimized(!isMinimized)}
-                title={isMinimized ? "Agrandir" : "Réduire"}
-                className="hidden sm:flex p-1.5 rounded-lg hover:bg-white/10 text-white/50 hover:text-white transition-colors items-center justify-center"
-              >
-                {isMinimized ? <Maximize2 size={15} /> : <Minimize2 size={15} />}
-              </button>
-
-              <button
-                onClick={closeCopilot}
-                title="Fermer"
-                className="p-1.5 rounded-lg hover:bg-white/10 text-white/50 hover:text-white transition-colors"
-              >
-                <X size={17} />
-              </button>
-            </div>
-          </div>
-
-          {!isMinimized && (
-            <>
-              {/* Store Health Live Pill */}
-              {storeHealth && (
-                <div className="px-4 py-2 bg-black/40 border-b border-white/5 flex items-center justify-between text-[11px] text-white/70 overflow-x-auto gap-2">
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    <Store size={12} className="text-vendeur-emerald" />
-                    <span className="font-bold text-white truncate max-w-[120px]">
-                      {storeHealth.businessName}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <span className={cn(
-                      "px-1.5 py-0.5 rounded text-[9px] font-bold uppercase",
-                      storeHealth.whatsappStatus === "connected"
-                        ? "bg-vendeur-emerald/20 text-vendeur-emerald"
-                        : "bg-amber-500/20 text-amber-300"
-                    )}>
-                      {storeHealth.whatsappStatus === "connected" ? "WhatsApp Prêt" : "WhatsApp Off"}
-                    </span>
-                    <span className="text-[10px] text-white/40">
-                      • {storeHealth.productCount || 0} art. • {storeHealth.pendingOrdersCount || 0} cmd(s)
-                    </span>
-                  </div>
+                  <button
+                    onClick={() => setFounderModalOpen(true)}
+                    title="Envoyer un message au Fondateur"
+                    className="shrink-0 px-2.5 py-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 text-[11px] font-bold flex items-center gap-1.5 border border-amber-500/30 transition-all active:scale-95 shadow-sm"
+                  >
+                    <Crown size={13} className="text-amber-400" />
+                    <span>Fondateur</span>
+                  </button>
                 </div>
-              )}
+
+                {/* Store Health Live Pill */}
+                {storeHealth && (
+                  <div className="px-4 py-1.5 bg-black/20 border-b border-white/5 flex items-center justify-between text-[11px] text-white/70 overflow-x-auto gap-2">
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <Store size={12} className="text-vendeur-emerald" />
+                      <span className="font-bold text-white truncate max-w-[130px]">
+                        {storeHealth.businessName}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className={cn(
+                        "px-1.5 py-0.5 rounded-md text-[9px] font-bold uppercase tracking-wider",
+                        storeHealth.whatsappStatus === "connected"
+                          ? "bg-vendeur-emerald/20 text-vendeur-emerald border border-vendeur-emerald/30"
+                          : "bg-amber-500/20 text-amber-300 border border-amber-500/30"
+                      )}>
+                        {storeHealth.whatsappStatus === "connected" ? "WhatsApp Prêt" : "WhatsApp Off"}
+                      </span>
+                      <span className="text-[10px] text-white/40">
+                        • {storeHealth.productCount || 0} art. • {storeHealth.pendingOrdersCount || 0} cmd(s)
+                      </span>
+                    </div>
+                  </div>
+                )}
 
               {/* Messages Stream */}
-              <div className="flex-1 overflow-y-auto p-4 space-y-4 scroll-smooth">
+              <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-4 scroll-smooth min-w-0">
                 {messages.map((msg) => {
                   const isAssistant = msg.role === "assistant";
                   return (
                     <div
                       key={msg.id}
                       className={cn(
-                        "flex gap-3 max-w-[92%]",
+                        "flex gap-2.5 sm:gap-3 max-w-[95%] sm:max-w-[90%] min-w-0",
                         isAssistant ? "mr-auto" : "ml-auto flex-row-reverse"
                       )}
                     >
@@ -392,15 +634,20 @@ export function CopilotWidget() {
 
                       {/* Bubble */}
                       <div className={cn(
-                        "rounded-2xl p-3.5 text-xs sm:text-[13px] leading-relaxed relative group",
+                        "rounded-2xl p-3 sm:p-3.5 text-xs sm:text-[13px] leading-relaxed relative group min-w-0 break-words [overflow-wrap:anywhere]",
                         isAssistant
                           ? "bg-vendeur-slate/90 border border-white/10 text-white/90 shadow-md"
                           : "bg-vendeur-emerald text-vendeur-coal font-medium shadow-md"
                       )}>
                         {/* Text Content */}
-                        <div className="whitespace-pre-wrap space-y-2">
-                          {msg.content}
-                        </div>
+                        <FormattedMessageContent
+                          text={msg.content}
+                          onNavigate={(url, label) => {
+                            const targetUrl = resolveTargetRoute(url, label);
+                            navigate(targetUrl);
+                            closeCopilot();
+                          }}
+                        />
 
                         {/* Speech output button for assistant */}
                         {isAssistant && (
@@ -435,10 +682,10 @@ export function CopilotWidget() {
                               <button
                                 key={aIdx}
                                 onClick={() => handleActionClick(action)}
-                                className="px-2.5 py-1.5 rounded-xl bg-vendeur-emerald/15 hover:bg-vendeur-emerald border border-vendeur-emerald/30 hover:border-vendeur-emerald text-vendeur-emerald hover:text-vendeur-coal text-[11px] font-bold transition-all flex items-center gap-1.5 shadow-sm active:scale-95"
+                                className="px-2.5 py-1.5 rounded-xl bg-vendeur-emerald/15 hover:bg-vendeur-emerald border border-vendeur-emerald/30 hover:border-vendeur-emerald text-vendeur-emerald hover:text-vendeur-coal text-[11px] font-bold transition-all flex items-center gap-1.5 shadow-sm active:scale-95 shrink-0 max-w-full truncate"
                               >
-                                <span>{action.label}</span>
-                                <ArrowRight size={11} />
+                                <span className="truncate">{action.label}</span>
+                                <ArrowRight size={11} className="shrink-0" />
                               </button>
                             ))}
                           </div>
@@ -450,17 +697,17 @@ export function CopilotWidget() {
 
                 {/* Loading Indicator */}
                 {isLoading && (
-                  <div className="flex items-center gap-3 mr-auto max-w-[80%]">
+                  <div className="flex items-center gap-3 mr-auto max-w-[85%] min-w-0">
                     <div className="w-7 h-7 rounded-xl bg-vendeur-emerald/20 border border-vendeur-emerald/40 flex items-center justify-center p-1 text-vendeur-emerald shrink-0">
                       <Logo size={14} leftBranchColor="#ffffff" rightBranchColor="#10b981" className="animate-spin" />
                     </div>
-                    <div className="bg-vendeur-slate/90 border border-white/10 rounded-2xl px-4 py-3 text-xs text-white/70 flex items-center gap-2">
-                      <div className="flex gap-1">
+                    <div className="bg-vendeur-slate/90 border border-white/10 rounded-2xl px-4 py-3 text-xs text-white/70 flex items-center gap-2 min-w-0">
+                      <div className="flex gap-1 shrink-0">
                         <div className="w-1.5 h-1.5 rounded-full bg-vendeur-emerald animate-bounce" style={{ animationDelay: "0ms" }} />
                         <div className="w-1.5 h-1.5 rounded-full bg-vendeur-emerald animate-bounce" style={{ animationDelay: "150ms" }} />
                         <div className="w-1.5 h-1.5 rounded-full bg-vendeur-emerald animate-bounce" style={{ animationDelay: "300ms" }} />
                       </div>
-                      <span className="text-[11px] text-white/50">Le Copilote analyse votre boutique...</span>
+                      <span className="text-[11px] text-white/50 truncate">Le Copilote analyse votre boutique...</span>
                     </div>
                   </div>
                 )}
@@ -470,7 +717,7 @@ export function CopilotWidget() {
 
               {/* Suggestions Bar */}
               {suggestions.length > 0 && (
-                <div className="px-4 py-2 border-t border-white/5 bg-vendeur-slate/40">
+                <div className="px-4 py-2 border-t border-white/5 bg-vendeur-slate/40 min-w-0">
                   <div className="flex items-center gap-1.5 mb-1.5">
                     <HelpCircle size={12} className="text-vendeur-emerald" />
                     <span className="text-[10px] font-bold uppercase tracking-wider text-white/60">
@@ -498,7 +745,7 @@ export function CopilotWidget() {
               {/* Input Form */}
               <form
                 onSubmit={handleSendMessage}
-                className="p-3 border-t border-white/10 bg-vendeur-slate/80 flex items-center gap-2"
+                className="p-3 border-t border-white/10 bg-vendeur-slate/80 flex items-center gap-2 min-w-0"
               >
                 {/* Voice Input Button */}
                 <button
@@ -525,7 +772,7 @@ export function CopilotWidget() {
                       ? "Écoute en cours, parlez..."
                       : "Posez votre question ou demandez une action..."
                   }
-                  className="flex-1 bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-white placeholder-white/40 focus:outline-none focus:border-vendeur-emerald transition-colors"
+                  className="flex-1 min-w-0 bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-white placeholder-white/40 focus:outline-none focus:border-vendeur-emerald transition-colors"
                 />
 
                 {/* Send Button */}

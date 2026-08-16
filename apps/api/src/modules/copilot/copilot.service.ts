@@ -167,7 +167,7 @@ Ton objectif absolu : GUIDER, ORIENTER ET AIDER le marchand avec une clarté tot
   - Tarifs de livraison configurés : ${setupHealth.hasDeliveryFees ? 'OUI' : 'NON'}
 
 ---
-### 🧭 CARTE COMPLÈTE DE L'APPLICATION VENDEUR IA (Pour orienter le marchand) :
+### 🧭 CARTE COMPLÈTE DE L'APPLICATION VENDEUR IA (Pour orienter précisément le marchand) :
 1. **/dashboard** (Tableau de Bord) : Vue d'ensemble des ventes, briefing IA du jour, QR code WhatsApp rapide, raccourci simulateur IA "Tester mon Vendeur IA", et boutique publique.
 2. **/products** (Gestion Catalogue) :
    - Ajouter un produit individuel ou scanner un rayon entier en 1 photo (Batch Vision IA).
@@ -186,23 +186,32 @@ Ton objectif absolu : GUIDER, ORIENTER ET AIDER le marchand avec une clarté tot
    - Relance automatique des paniers abandonnés.
    - Diffusion de campagnes WhatsApp segmentées (VIP, Inactifs, etc.).
    - Programme de fidélité par points automatiques.
-6. **/settings** (Paramètres & Studio Apparence) :
-   - Connexion WhatsApp QR Code ou Meta Cloud API (Pack Pro).
-   - Moyens d'encaissement Mobile Money & Coordonnées.
-   - Studio d'Apparence & Vitrine (Logo, Couverture, Palette Émeraude/Or/Indigo, Annonce flash défilante).
-   - Personnalité et instructions spéciales de l'agent Vendeur IA.
-   - Grille tarifaire de livraison par zone (Cocody, Yopougon, Intérieur...).
+6. **/settings** (Paramètres Détaillés par Onglets) :
+   - **/settings?tab=connexions** : Connexion WhatsApp QR Code & passerelle Meta Cloud API.
+   - **/settings?tab=boutique** : Moyens d'encaissement Mobile Money (Wave, Orange Money, MTN MoMo) et Grille tarifaire de livraison par quartier (Cocody, Yopougon, etc.).
+   - **/settings?tab=apparence** : Studio Vitrine & Design (Logo, Bannière de couverture, Thème de couleurs, Annonce flash défilante, Réseaux sociaux).
+   - **/settings?tab=personnalite** : Personnalité, ton et consignes d'attitude de l'agent Vendeur IA.
+   - **/settings?tab=savoir** : Base de connaissances, FAQ, conditions de vente et règles métier.
+   - **/settings?tab=growth** : Canaux de vente externes & Facebook Marketplace.
+   - **/settings?tab=billing** : Gestion d'abonnement & facturation.
+   - **/settings?tab=compte** : Profil, coordonnées et sécurité du compte.
 7. **/offers** : Mise à niveau d'abonnement (Starter, Premium, Pack Pro Clé en Main).
 
 ---
 ### ⚡ ACTIONS INTERACTIVES & BOUTONS D'ACTION CLICABLES :
-Pour offrir une expérience hors-norme, insère toujours des balises d'action utiles à la fin de tes explications si pertinent :
-- \`[[ACTION_NAVIGATE:/route,Libellé du bouton]]\` : pour emmener l'utilisateur directement sur la bonne page.
-  Exemples :
+Pour offrir une expérience hors-norme, insère TOUJOURS des balises d'action précises à la fin de tes explications si pertinent :
+- \`[[ACTION_NAVIGATE:/route,Libellé du bouton]]\` : pour emmener l'utilisateur directement sur la bonne page et le bon onglet.
+  Exemples précis :
+  \`[[ACTION_NAVIGATE:/settings?tab=connexions,📱 Connecter WhatsApp QR]]\`
+  \`[[ACTION_NAVIGATE:/settings?tab=boutique,💳 Configurer Paiements & Livraison]]\`
+  \`[[ACTION_NAVIGATE:/settings?tab=apparence,🎨 Personnaliser Logo & Vitrine]]\`
+  \`[[ACTION_NAVIGATE:/settings?tab=personnalite,🧠 Ajuster la Personnalité IA]]\`
+  \`[[ACTION_NAVIGATE:/settings?tab=savoir,📚 Base de Connaissances]]\`
+  \`[[ACTION_NAVIGATE:/settings?tab=growth,🚀 Facebook & Croissance]]\`
+  \`[[ACTION_NAVIGATE:/settings?tab=billing,💎 Gérer mon Abonnement]]\`
   \`[[ACTION_NAVIGATE:/products,📸 Aller aux Produits & Scanner]]\`
   \`[[ACTION_NAVIGATE:/orders,📦 Voir les Commandes en attente]]\`
   \`[[ACTION_NAVIGATE:/inbox,💬 Ouvrir la Boîte de Réception]]\`
-  \`[[ACTION_NAVIGATE:/settings,⚙️ Configurer WhatsApp / Paiements]]\`
   \`[[ACTION_NAVIGATE:/marketing,🚀 Lancer une Campagne Marketing]]\`
   \`[[ACTION_NAVIGATE:/offers,🌟 Découvrir les Formules & Pack Pro]]\`
 - \`[[ACTION_OPEN_MODAL:modalName,Libellé]]\` : pour ouvrir directement une fenêtre d'action (scanner, pack_pro, fast_pay, dispatch_founder).
@@ -264,10 +273,37 @@ Pour offrir une expérience hors-norme, insère toujours des balises d'action ut
     // Parse [[ACTION_NAVIGATE:url,label]]
     const navMatches = [...rawText.matchAll(/\[\[ACTION_NAVIGATE:([^,]+),([^\]]+)\]\]/g)];
     for (const match of navMatches) {
+      let navPayload = match[1].trim();
+      const navLabel = match[2].trim();
+
+      // Normalize generic /settings routes
+      if ((navPayload === "/settings" || navPayload === "/settings/") && !navPayload.includes("?tab=")) {
+        const text = (navLabel + " " + userMessage).toLowerCase();
+        if (text.includes("whatsapp") || text.includes("qr") || text.includes("connect") || text.includes("meta")) {
+          navPayload = "/settings?tab=connexions";
+        } else if (text.includes("logo") || text.includes("vitrine") || text.includes("apparence") || text.includes("couleur") || text.includes("bannière") || text.includes("thème")) {
+          navPayload = "/settings?tab=apparence";
+        } else if (text.includes("personnalité") || text.includes("attitude") || text.includes("ton") || text.includes("ia")) {
+          navPayload = "/settings?tab=personnalite";
+        } else if (text.includes("savoir") || text.includes("faq") || text.includes("connaissance") || text.includes("règle")) {
+          navPayload = "/settings?tab=savoir";
+        } else if (text.includes("croissance") || text.includes("growth") || text.includes("facebook") || text.includes("marketplace")) {
+          navPayload = "/settings?tab=growth";
+        } else if (text.includes("abonnement") || text.includes("formule") || text.includes("factur") || text.includes("billing") || text.includes("pro")) {
+          navPayload = "/settings?tab=billing";
+        } else if (text.includes("parrainage") || text.includes("referral")) {
+          navPayload = "/settings?tab=referral";
+        } else if (text.includes("profil") || text.includes("compte") || text.includes("coordonn")) {
+          navPayload = "/settings?tab=compte";
+        } else {
+          navPayload = "/settings?tab=boutique";
+        }
+      }
+
       actions.push({
         type: "navigate",
-        payload: match[1].trim(),
-        label: match[2].trim()
+        payload: navPayload,
+        label: navLabel
       });
       rawText = rawText.replace(match[0], "");
     }
@@ -429,7 +465,7 @@ Pour offrir une expérience hors-norme, insère toujours des balises d'action ut
         description: "Votre agent IA ne peut pas répondre automatiquement aux clients sur WhatsApp.",
         impact: "-25 pts (Ventes perdues immédiates)",
         actionType: "navigate",
-        actionPayload: "/settings",
+        actionPayload: "/settings?tab=connexions&section=whatsapp",
         actionLabel: "Connecter WhatsApp QR",
         pointsLost: 25
       });
@@ -535,7 +571,7 @@ Pour offrir une expérience hors-norme, insère toujours des balises d'action ut
         description: "Wave, Orange Money ou MTN MoMo non renseignés pour générer les liens de paiement.",
         impact: "-20 pts",
         actionType: "navigate",
-        actionPayload: "/settings",
+        actionPayload: "/settings?tab=boutique&section=payments",
         actionLabel: "Configurer Wave / OM / MoMo",
         pointsLost: 20
       });
@@ -553,7 +589,7 @@ Pour offrir une expérience hors-norme, insère toujours des balises d'action ut
         description: "L'IA ne pourra pas calculer automatiquement le total avec frais de livraison.",
         impact: "-15 pts",
         actionType: "navigate",
-        actionPayload: "/settings",
+        actionPayload: "/settings?tab=boutique&section=delivery",
         actionLabel: "Ajouter zones & tarifs livraison",
         pointsLost: 15
       });
@@ -575,7 +611,7 @@ Pour offrir une expérience hors-norme, insère toujours des balises d'action ut
         description: "Un logo professionnel renforce la confiance des nouveaux acheteurs.",
         impact: "-5 pts",
         actionType: "navigate",
-        actionPayload: "/settings",
+        actionPayload: "/settings?tab=apparence&section=logo",
         actionLabel: "Uploader mon logo",
         pointsLost: 5
       });
@@ -591,7 +627,7 @@ Pour offrir une expérience hors-norme, insère toujours des balises d'action ut
         description: "Activez un bandeau d'annonce (ex: 'Livraison offerte dès 20.000 XOF !').",
         impact: "-3 pts",
         actionType: "navigate",
-        actionPayload: "/settings",
+        actionPayload: "/settings?tab=apparence&section=announcement",
         actionLabel: "Activer le bandeau promo",
         pointsLost: 3
       });
@@ -607,7 +643,7 @@ Pour offrir une expérience hors-norme, insère toujours des balises d'action ut
         description: "Liez Instagram / TikTok pour rediriger le trafic vers votre boutique Vendeur IA.",
         impact: "-2 pts",
         actionType: "navigate",
-        actionPayload: "/settings",
+        actionPayload: "/settings?tab=apparence&section=socials",
         actionLabel: "Lier mes réseaux",
         pointsLost: 2
       });

@@ -43,21 +43,33 @@ class FollowUpService {
     const merchant = conversation.merchantId;
     const customer = conversation.customerId;
 
+    // Safety checks: if customer or merchant was deleted or not populated
+    if (!merchant || !customer) {
+      logger.warn(`[FollowUp] Skipping conversation ${conversation._id}: merchant or customer is missing`);
+      // Mark as followed up so we don't repeatedly fail on this broken conversation
+      await CommerceConversationModel.findByIdAndUpdate(conversation._id, {
+        $set: { followUpSent: true }
+      });
+      return;
+    }
+
     if (merchant?.marketingAutomations?.abandonedCart === false) {
       logger.info(`[FollowUp] Abandoned cart follow-up disabled by merchant ${merchant._id}`);
       return;
     }
 
+    const customerIdentifier = customer.phone || customer.platformId || "Unknown";
+
     try {
-      logger.info(`[FollowUp] Triggering re-engagement for customer ${customer.phone} on ${merchant.businessName}`);
+      logger.info(`[FollowUp] Triggering re-engagement for customer ${customerIdentifier} on ${merchant.businessName || "Unknown"}`);
 
       // 1. Generate personalized follow-up content using AI
       const messages = await CommerceMessageModel.find({ conversationId: conversation._id }).sort({ timestamp: -1 }).limit(6);
       const history = messages.reverse().map(m => `${m.sender === "customer" ? "Client" : "IA"}: ${m.content}`).join("\n");
 
       const prompt = `Génère un message de relance court et bienveillant pour ce client qui n'a pas fini sa commande.
-Boutique : ${merchant.businessName}
-Ville : ${merchant.city}
+Boutique : ${merchant.businessName || "Boutique"}
+Ville : ${merchant.city || "Abidjan"}
 
 Historique :
 ${history}
@@ -96,9 +108,9 @@ Réponds UNIQUEMENT avec le texte du message.`;
         aiMetadata: { provider: aiResponse.provider, tokensUsed: aiResponse.usage.totalTokens }
       });
 
-      logger.info(`[FollowUp] Re-engagement sent successfully to ${customer.phone}`);
+      logger.info(`[FollowUp] Re-engagement sent successfully to ${customerIdentifier}`);
     } catch (err: any) {
-      logger.error(`[FollowUp] Failed to execute for ${customer.phone}:`, err.message);
+      logger.error(`[FollowUp] Failed to execute for ${customerIdentifier}:`, err.message);
     }
   }
 }

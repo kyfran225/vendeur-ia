@@ -1,6 +1,5 @@
 param(
     [switch]$AddAll,
-    [switch]$Grouped,
     [switch]$MergeMain,
     [string]$Provider = "groq",
     [switch]$DryRun
@@ -8,26 +7,19 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-Write-Host "--- Git AI Automation ---" -ForegroundColor Cyan
+Write-Host "--- Git AI Automation (Stable Version) ---" -ForegroundColor Cyan
 
 $env:GIT_AI_PROVIDER = $Provider
 $cmdArgs = @("scripts/gitai.py")
 
-if ($Grouped) {
-    $cmdArgs += "--grouped"
-}
-elseif ($AddAll) {
-    $cmdArgs += "--add-all"
-}
-
+if ($AddAll) { $cmdArgs += "--add-all" }
 if ($DryRun) { $cmdArgs += "--dry-run" }
 
-# Exécution du script Python
+# 1. Run AI Commit
 python $cmdArgs
 
 if ($LASTEXITCODE -ne 0) {
-    Write-Host "Une erreur est survenue pendant le processus de commit." -ForegroundColor Red
-    exit
+    Write-Host "Le processus de commit a été ignoré ou a échoué." -ForegroundColor Yellow
 }
 
 # 2. Push to Preview
@@ -43,7 +35,7 @@ if ($MergeMain -and -not $DryRun) {
 
     try {
         git checkout main
-        # Merge de preview dans main sans éditeur interactif
+        # Merge simple
         git merge preview --no-edit
         git push origin main
         Write-Host "Fusion et push sur main terminés avec succès." -ForegroundColor Green

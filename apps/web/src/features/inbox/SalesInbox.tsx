@@ -209,7 +209,7 @@ export function SalesInbox() {
   };
 
   return (
-    <div className="flex h-[calc(100vh-120px)] md:h-[calc(100vh-160px)] md:max-h-[1000px] bg-vendeur-bg md:rounded-[3rem] overflow-hidden border-0 md:border md:border-white/10 shadow-2xl animate-in fade-in duration-700 md:my-8">
+    <div id="tour-inbox-channels" className="flex h-[calc(100vh-120px)] md:h-[calc(100vh-160px)] md:max-h-[1000px] bg-vendeur-bg md:rounded-[3rem] overflow-hidden border-0 md:border md:border-white/10 shadow-2xl animate-in fade-in duration-700 md:my-8">
       {/* Sidebar List */}
       <aside className={cn(
         "w-full md:w-96 border-r border-white/5 flex flex-col bg-vendeur-coal/30 transition-all",

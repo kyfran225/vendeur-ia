@@ -36,15 +36,28 @@ import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { toast } from "sonner";
 import { AIControlCenter } from "./components/AIControlCenter";
+import { FounderTicketsInbox } from "./components/FounderTicketsInbox";
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
 export function AdminDashboard() {
-  const [activeTab, setActiveTab] = useState<"overview" | "merchants" | "settings" | "ai" | "billing">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "merchants" | "tickets" | "settings" | "ai" | "billing">("overview");
   const { accessToken } = useAuthStore();
   const queryClient = useQueryClient();
+
+  // 0. Fetch Unread Tickets Count
+  const { data: unreadTicketsData } = useQuery({
+    queryKey: ["admin:copilot:tickets:unreadCount"],
+    queryFn: async () => {
+      const res = await apiClient.get("/api/copilot/admin/tickets?status=unread");
+      return res.data;
+    },
+    enabled: !!accessToken,
+    refetchInterval: 15000
+  });
+  const unreadTicketsCount = unreadTicketsData?.tickets?.length || 0;
 
   // 1. Fetch Admin Stats
   const { data: stats, isLoading: statsLoading } = useQuery({
@@ -126,6 +139,7 @@ export function AdminDashboard() {
           <nav className="flex gap-1.5 md:gap-2 p-1 bg-white/5 rounded-2xl border border-white/5 w-full md:w-fit overflow-x-auto scrollbar-hide">
             <AdminTabButton active={activeTab === "overview"} onClick={() => setActiveTab("overview")} icon={<LayoutDashboard size={18}/>} label="Overview" />
             <AdminTabButton active={activeTab === "merchants"} onClick={() => setActiveTab("merchants")} icon={<Users size={18}/>} label="Merchants" />
+            <AdminTabButton active={activeTab === "tickets"} onClick={() => setActiveTab("tickets")} icon={<MessageSquare size={18}/>} label="Tickets" badge={unreadTicketsCount > 0 ? unreadTicketsCount : undefined} />
             <AdminTabButton active={activeTab === "billing"} onClick={() => setActiveTab("billing")} icon={<Banknote size={18}/>} label="Finance" />
             <AdminTabButton active={activeTab === "ai"} onClick={() => setActiveTab("ai")} icon={<Bot size={18}/>} label="AI Brain" />
             <AdminTabButton active={activeTab === "settings"} onClick={() => setActiveTab("settings")} icon={<Settings size={18}/>} label="System" />
@@ -152,6 +166,15 @@ export function AdminDashboard() {
             <MerchantsPanel merchants={merchants} loading={merchantsLoading} />
           </div>
         )}
+        {activeTab === "tickets" && (
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-2xl md:text-3xl font-black uppercase tracking-tighter">Boîte de Réception Fondateur & Tickets</h2>
+              <p className="text-xs text-white/50 mt-1">Messages directs, suggestions, signalements de bugs et demandes reçus des commerçants.</p>
+            </div>
+            <FounderTicketsInbox />
+          </div>
+        )}
         {activeTab === "settings" && (
           <div className="space-y-6">
             <h2 className="text-2xl md:text-3xl font-black uppercase tracking-tighter">Système</h2>
@@ -175,12 +198,12 @@ export function AdminDashboard() {
   );
 }
 
-function AdminTabButton({ active, onClick, icon, label }: { active: boolean; onClick: () => void; icon: React.ReactNode; label: string }) {
+function AdminTabButton({ active, onClick, icon, label, badge }: { active: boolean; onClick: () => void; icon: React.ReactNode; label: string; badge?: number }) {
   return (
     <button
       onClick={onClick}
       className={cn(
-        "flex-1 md:flex-none flex flex-col md:flex-row items-center justify-center gap-1 md:gap-2 px-1 md:px-6 py-2 md:py-3 rounded-xl transition-all whitespace-nowrap",
+        "relative flex-1 md:flex-none flex flex-col md:flex-row items-center justify-center gap-1 md:gap-2 px-1 md:px-6 py-2 md:py-3 rounded-xl transition-all whitespace-nowrap",
         active ? "bg-vendeur-emerald text-vendeur-coal shadow-lg shadow-vendeur-emerald/20" : "text-white/40 hover:bg-white/5 hover:text-white"
       )}
     >
@@ -188,6 +211,14 @@ function AdminTabButton({ active, onClick, icon, label }: { active: boolean; onC
       <span className="text-[7px] md:text-xs font-black uppercase tracking-[0.05em] md:tracking-widest leading-none">
         {label}
       </span>
+      {badge !== undefined && (
+        <span className={cn(
+          "px-1.5 py-0.5 rounded-full text-[9px] font-black leading-none",
+          active ? "bg-black text-white" : "bg-emerald-500 text-black animate-pulse"
+        )}>
+          {badge}
+        </span>
+      )}
     </button>
   );
 }

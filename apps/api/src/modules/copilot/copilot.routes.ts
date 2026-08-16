@@ -62,6 +62,20 @@ router.post("/chat", authenticate, resolveMerchant, async (req: any, res) => {
 });
 
 /**
+ * GET /api/copilot/audit
+ * Run real-time AI conversion score and checklist audit
+ */
+router.get("/audit", authenticate, resolveMerchant, async (req: any, res) => {
+  try {
+    const audit = await copilotService.runStoreAudit(req.merchant._id.toString());
+    res.json(audit);
+  } catch (error: any) {
+    logger.error(`[Copilot Audit Router] Erreur: ${error.message}`);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
  * GET /api/copilot/suggestions
  * Retrieve 1-tap quick suggestions based on current route and store state
  */
@@ -158,6 +172,18 @@ router.patch("/admin/tickets/:id", authenticate, isAdmin, async (req: any, res) 
     const { status, adminNotes } = req.body;
     const updated = await copilotService.updateTicketStatus(req.params.id, status, adminNotes);
     res.json({ success: true, ticket: updated });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * ADMIN ONLY: DELETE /api/copilot/admin/tickets/:id
+ */
+router.delete("/admin/tickets/:id", authenticate, isAdmin, async (req: any, res) => {
+  try {
+    await copilotService.deleteTicket(req.params.id);
+    res.json({ success: true });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }

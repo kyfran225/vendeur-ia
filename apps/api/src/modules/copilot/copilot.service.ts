@@ -385,6 +385,277 @@ Pour offrir une expérience hors-norme, insère toujours des balises d'action ut
   }
 
   /**
+   * Run Real-Time AI Conversion Audit for the Merchant Store
+   */
+  async runStoreAudit(merchantId: string) {
+    const merchantObjId = new mongoose.Types.ObjectId(merchantId);
+
+    const [merchant, products, knowledge, ordersCount] = await Promise.all([
+      CommerceMerchantModel.findById(merchantObjId).lean(),
+      CommerceProductModel.find({ merchantId: merchantObjId }).lean(),
+      CommerceKnowledgeModel.findOne({ merchantId: merchantObjId }).lean(),
+      CommerceOrderModel.countDocuments({ merchantId: merchantObjId })
+    ]);
+
+    if (!merchant) {
+      throw new Error("Commerçant introuvable");
+    }
+
+    // 1. Audit Checkpoints & Calculations
+    const issues: Array<{
+      id: string;
+      category: "catalog" | "payment" | "delivery" | "branding" | "whatsapp";
+      severity: "critical" | "warning" | "tip";
+      title: string;
+      description: string;
+      impact: string;
+      actionType: "navigate" | "fix" | "modal";
+      actionPayload: string;
+      actionLabel: string;
+      pointsLost: number;
+    }> = [];
+
+    let score = 100;
+
+    // Check 1: WhatsApp Connection (Max 25 pts)
+    const isWhatsAppConnected = merchant.whatsappConfig?.status === "connected";
+    if (!isWhatsAppConnected) {
+      score -= 25;
+      issues.push({
+        id: "whatsapp_disconnected",
+        category: "whatsapp",
+        severity: "critical",
+        title: "WhatsApp Business non connecté",
+        description: "Votre agent IA ne peut pas répondre automatiquement aux clients sur WhatsApp.",
+        impact: "-25 pts (Ventes perdues immédiates)",
+        actionType: "navigate",
+        actionPayload: "/settings",
+        actionLabel: "Connecter WhatsApp QR",
+        pointsLost: 25
+      });
+    }
+
+    // Check 2: Catalog Products (Max 25 pts)
+    if (products.length === 0) {
+      score -= 25;
+      issues.push({
+        id: "catalog_empty",
+        category: "catalog",
+        severity: "critical",
+        title: "Aucun produit dans le catalogue",
+        description: "Les clients qui visitent votre lien vitrine ne peuvent rien acheter.",
+        impact: "-25 pts",
+        actionType: "modal",
+        actionPayload: "scanner",
+        actionLabel: "Scanner un rayon en 1 photo",
+        pointsLost: 25
+      });
+    } else {
+      const productsWithoutImages = products.filter(p => !p.images || p.images.length === 0);
+      const productsWithoutPrices = products.filter(p => !p.price || p.price <= 0);
+      const productsShortDesc = products.filter(p => !p.description || p.description.trim().length < 15);
+      const featuredProducts = products.filter(p => p.isFeatured);
+
+      if (productsWithoutImages.length > 0) {
+        const penalty = Math.min(10, productsWithoutImages.length * 3);
+        score -= penalty;
+        issues.push({
+          id: "products_no_image",
+          category: "catalog",
+          severity: "warning",
+          title: `${productsWithoutImages.length} produit(s) sans photo`,
+          description: `Ex: "${productsWithoutImages[0].name}". Un produit avec photo convertit 4x plus vite.`,
+          impact: `-${penalty} pts sur l'attractivité visuelle`,
+          actionType: "navigate",
+          actionPayload: "/products",
+          actionLabel: "Ajouter des photos",
+          pointsLost: penalty
+        });
+      }
+
+      if (productsWithoutPrices.length > 0) {
+        score -= 10;
+        issues.push({
+          id: "products_no_price",
+          category: "catalog",
+          severity: "critical",
+          title: `${productsWithoutPrices.length} produit(s) sans prix défini`,
+          description: "L'IA ne peut pas encaisser ni générer de liens de paiement pour ces articles.",
+          impact: "-10 pts",
+          actionType: "navigate",
+          actionPayload: "/products",
+          actionLabel: "Renseigner les prix",
+          pointsLost: 10
+        });
+      }
+
+      if (productsShortDesc.length > 0 && products.length > 0) {
+        const penalty = Math.min(5, productsShortDesc.length * 2);
+        score -= penalty;
+        issues.push({
+          id: "products_short_desc",
+          category: "catalog",
+          severity: "tip",
+          title: `${productsShortDesc.length} description(s) trop succinctes`,
+          description: "Des descriptions détaillées aident l'IA à répondre avec précision aux clients.",
+          impact: `-${penalty} pts sur le SEO & RAG`,
+          actionType: "navigate",
+          actionPayload: "/products",
+          actionLabel: "Enrichir les fiches",
+          pointsLost: penalty
+        });
+      }
+
+      if (featuredProducts.length === 0) {
+        score -= 5;
+        issues.push({
+          id: "no_featured_products",
+          category: "catalog",
+          severity: "tip",
+          title: "Aucun produit mis en vedette ⭐",
+          description: "Mettre 2 ou 3 best-sellers en vedette booste les ventes coup de cœur dès l'arrivée.",
+          impact: "-5 pts",
+          actionType: "navigate",
+          actionPayload: "/products",
+          actionLabel: "Mettre en vedette",
+          pointsLost: 5
+        });
+      }
+    }
+
+    // Check 3: Payment Channels (Max 20 pts)
+    const paymentChannels = merchant.paymentChannels || [];
+    if (paymentChannels.length === 0) {
+      score -= 20;
+      issues.push({
+        id: "no_payment_channels",
+        category: "payment",
+        severity: "critical",
+        title: "Aucun compte Mobile Money configuré",
+        description: "Wave, Orange Money ou MTN MoMo non renseignés pour générer les liens de paiement.",
+        impact: "-20 pts",
+        actionType: "navigate",
+        actionPayload: "/settings",
+        actionLabel: "Configurer Wave / OM / MoMo",
+        pointsLost: 20
+      });
+    }
+
+    // Check 4: Delivery Fees (Max 15 pts)
+    const deliveryFees = knowledge?.businessRules?.deliveryFees || [];
+    if (deliveryFees.length === 0) {
+      score -= 15;
+      issues.push({
+        id: "no_delivery_fees",
+        category: "delivery",
+        severity: "warning",
+        title: "Aucun tarif de livraison par zone",
+        description: "L'IA ne pourra pas calculer automatiquement le total avec frais de livraison.",
+        impact: "-15 pts",
+        actionType: "navigate",
+        actionPayload: "/settings",
+        actionLabel: "Ajouter zones & tarifs livraison",
+        pointsLost: 15
+      });
+    }
+
+    // Check 5: Branding & Vitrine (Max 15 pts)
+    const hasLogo = !!merchant.branding?.logoUrl;
+    const hasCover = !!merchant.branding?.coverUrl;
+    const hasAnnouncement = merchant.branding?.announcement?.enabled && !!merchant.branding?.announcement?.text;
+    const hasSocials = !!(merchant.branding?.socialLinks?.instagram || merchant.branding?.socialLinks?.tiktok || merchant.branding?.socialLinks?.facebook);
+
+    if (!hasLogo) {
+      score -= 5;
+      issues.push({
+        id: "no_logo",
+        category: "branding",
+        severity: "tip",
+        title: "Logo de boutique manquant",
+        description: "Un logo professionnel renforce la confiance des nouveaux acheteurs.",
+        impact: "-5 pts",
+        actionType: "navigate",
+        actionPayload: "/settings",
+        actionLabel: "Uploader mon logo",
+        pointsLost: 5
+      });
+    }
+
+    if (!hasAnnouncement) {
+      score -= 3;
+      issues.push({
+        id: "no_announcement",
+        category: "branding",
+        severity: "tip",
+        title: "Bannière promo défilante inactive",
+        description: "Activez un bandeau d'annonce (ex: 'Livraison offerte dès 20.000 XOF !').",
+        impact: "-3 pts",
+        actionType: "navigate",
+        actionPayload: "/settings",
+        actionLabel: "Activer le bandeau promo",
+        pointsLost: 3
+      });
+    }
+
+    if (!hasSocials) {
+      score -= 2;
+      issues.push({
+        id: "no_social_links",
+        category: "branding",
+        severity: "tip",
+        title: "Réseaux sociaux non liés",
+        description: "Liez Instagram / TikTok pour rediriger le trafic vers votre boutique Vendeur IA.",
+        impact: "-2 pts",
+        actionType: "navigate",
+        actionPayload: "/settings",
+        actionLabel: "Lier mes réseaux",
+        pointsLost: 2
+      });
+    }
+
+    const finalScore = Math.max(0, Math.min(100, score));
+
+    // Determine Grade & Summary Message
+    let grade = "A+";
+    let summaryTitle = "Boutique d'élite optimisée pour convertir ! 🚀";
+    let badgeColor = "emerald";
+
+    if (finalScore < 50) {
+      grade = "C";
+      summaryTitle = "Configuration urgente requise pour commencer à vendre ⚠️";
+      badgeColor = "rose";
+    } else if (finalScore < 75) {
+      grade = "B";
+      summaryTitle = "Bonne base ! Quelques réglages clés pour débloquer votre plein potentiel 📈";
+      badgeColor = "amber";
+    } else if (finalScore < 90) {
+      grade = "A";
+      summaryTitle = "Très bonne boutique ! Finitions recommandées pour maximiser le taux de conversion ⭐";
+      badgeColor = "blue";
+    }
+
+    return {
+      score: finalScore,
+      grade,
+      summaryTitle,
+      badgeColor,
+      totalIssues: issues.length,
+      criticalCount: issues.filter(i => i.severity === "critical").length,
+      warningCount: issues.filter(i => i.severity === "warning").length,
+      tipCount: issues.filter(i => i.severity === "tip").length,
+      issues,
+      storeStats: {
+        productsCount: products.length,
+        ordersCount,
+        isWhatsAppConnected,
+        paymentChannelsCount: paymentChannels.length,
+        deliveryFeesCount: deliveryFees.length
+      },
+      auditedAt: new Date().toISOString()
+    };
+  }
+
+  /**
    * Return dynamic contextual question suggestions for quick 1-tap interaction
    */
   async getSuggestions(merchantId: string, pageRoute: string = "/dashboard") {
@@ -400,6 +671,18 @@ Pour offrir une expérience hors-norme, insère toujours des balises d'action ut
         icon: "qr"
       });
     }
+
+    suggestions.push({
+      text: "🔍 Fais l'audit complet et donne-moi mon score de conversion",
+      category: "audit",
+      icon: "sparkles"
+    });
+
+    suggestions.push({
+      text: "🧭 Fais-moi visiter l'application (Tour guidé 30s)",
+      category: "tour",
+      icon: "compass"
+    });
 
     if (context.stats.pendingOrdersCount > 0) {
       suggestions.push({
@@ -443,17 +726,10 @@ Pour offrir une expérience hors-norme, insère toujours des balises d'action ut
         { text: "Comment personnaliser l'apparence et le logo de ma vitrine ?", category: "settings", icon: "palette" },
         { text: "Comment configurer mes tarifs de livraison par quartier ?", category: "settings", icon: "map-pin" }
       );
-    } else {
-      // Default / Dashboard
-      suggestions.push(
-        { text: "Fais-moi un bilan rapide de ma boutique aujourd'hui", category: "summary", icon: "activity" },
-        { text: "Quels sont les meilleurs conseils pour booster mes ventes ce mois-ci ?", category: "growth", icon: "trending-up" },
-        { text: "J'aimerais faire passer une suggestion ou un message au Fondateur", category: "founder", icon: "send" }
-      );
     }
 
     return {
-      suggestions: suggestions.slice(0, 4),
+      suggestions: suggestions.slice(0, 5),
       storeHealth: {
         businessName: context.merchant.businessName,
         isWhatsAppConnected: context.setupHealth.isWhatsAppConnected,
@@ -496,14 +772,24 @@ Pour offrir une expérience hors-norme, insère toujours des balises d'action ut
   }
 
   /**
-   * Update ticket status (Admin)
+   * Update ticket status and/or admin notes (Admin)
    */
-  async updateTicketStatus(ticketId: string, status: string, adminNotes?: string) {
-    const update: any = { status };
+  async updateTicketStatus(ticketId: string, status?: string, adminNotes?: string) {
+    const update: any = {};
+    if (status) {
+      update.status = status;
+      if (status === "resolved") update.resolvedAt = new Date();
+    }
     if (adminNotes !== undefined) update.adminNotes = adminNotes;
-    if (status === "resolved") update.resolvedAt = new Date();
 
     return CopilotTicketModel.findByIdAndUpdate(ticketId, { $set: update }, { new: true });
+  }
+
+  /**
+   * Delete a ticket (Admin)
+   */
+  async deleteTicket(ticketId: string) {
+    return CopilotTicketModel.findByIdAndDelete(ticketId);
   }
 }
 

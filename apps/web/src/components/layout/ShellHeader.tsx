@@ -14,7 +14,11 @@ function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export function ShellHeader() {
+interface ShellHeaderProps {
+  isVisible?: boolean;
+}
+
+export function ShellHeader({ isVisible = true }: ShellHeaderProps) {
   const location = useLocation();
   const [searchParams] = useSearchParams();
   const isProParam = searchParams.get("pro") === "true";
@@ -87,7 +91,14 @@ export function ShellHeader() {
   const showBanner = isUnexpectedDisconnect && !isPackPro && !isConnexionsPage;
 
   return (
-    <header className="h-14 md:h-20 border-b border-white/5 bg-vendeur-bg/80 backdrop-blur-md flex items-center justify-between px-4 md:px-12 sticky top-0 z-20 w-full gap-4">
+    <header
+      className={cn(
+        "h-14 md:h-16 border-b border-white/5 bg-vendeur-bg/80 backdrop-blur-md flex items-center justify-between px-4 md:px-10 sticky top-0 z-20 w-full gap-4 shrink-0 transition-all duration-300 ease-in-out",
+        isVisible
+          ? "translate-y-0 opacity-100 mt-0"
+          : "-translate-y-full opacity-0 pointer-events-none -mt-14 md:-mt-16"
+      )}
+    >
       <PackProModal isOpen={isPackProOpen} onClose={() => setIsPackProOpen(false)} />
 
       {/* Connection Status Banner - uniquement en cas de déconnexion inopinée d'un WhatsApp précédemment relié */}

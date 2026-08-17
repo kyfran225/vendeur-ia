@@ -33,7 +33,7 @@ async function runBackup() {
 
       const result = await cloudinary.uploader.upload(BACKUP_PATH, {
         resource_type: "raw",
-        folder: "vendeur-ia/backups",
+        folder: "vendeuria/backups",
         public_id: BACKUP_NAME
       });
 

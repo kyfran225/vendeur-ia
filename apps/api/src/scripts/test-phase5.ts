@@ -5,7 +5,7 @@ import mongoose from "mongoose";
 import { env } from "../config/env.js";
 
 async function test() {
-  await mongoose.connect(env.MONGODB_URI || "mongodb://localhost:27017/vendeur-ia");
+  await mongoose.connect(env.MONGODB_URI || "mongodb://localhost:27017/vendeuria-local");
   console.log("Connected to MongoDB");
 
   try {

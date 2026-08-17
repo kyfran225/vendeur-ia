@@ -87,7 +87,7 @@ export class AIProvider {
     // Defaults
     switch (providerName) {
       case 'gemini': return GEMINI_DEFAULT_TEXT_MODEL;
-      case 'groq': return 'llama-3.3-70b-versatile';
+      case 'groq': return 'qwen/qwen3.6-27b';
       case 'openai': return type === 'audio' ? 'whisper-1' : 'gpt-4o-mini';
       case 'openrouter': return 'meta-llama/llama-3.3-70b-instruct';
       case 'elevenlabs': return 'eleven_multilingual_v2';
@@ -171,32 +171,44 @@ export class AIProvider {
       primaryProvider = primaryProvider === 'gemini' ? 'groq' : 'gemini';
     }
 
+    // Check if primary provider has a key - if not, skip directly to fallbacks
+    const primaryKey = this.getProviderKey(config, primaryProvider);
+    if (!primaryKey) {
+      console.warn(`[AI Provider] ${primaryProvider} has no API key configured, skipping to fallback...`);
+    }
+
     let response: AIResponse = {
       text: "",
       provider: "internal",
       usage: { promptTokens: 0, completionTokens: 0, totalTokens: 0 }
     };
 
-    // Try Current Provider
-    try {
-      response = await this.generateWithProvider(primaryProvider, request, config);
-    } catch (error: any) {
-      const errorMsg = error.message || "";
-      const errorData = error.response?.data?.error?.message || error.response?.data?.message || "";
-      const fullError = `${errorMsg} ${errorData}`.toLowerCase();
+    // Try Current Provider (only if it has a key)
+    let primarySucceeded = false;
+    if (primaryKey) {
+      try {
+        response = await this.generateWithProvider(primaryProvider, request, config);
+        primarySucceeded = true;
+      } catch (error: any) {
+        const errorMsg = error.message || "";
+        const errorData = error.response?.data?.error?.message || error.response?.data?.message || "";
+        const fullError = `${errorMsg} ${errorData}`.toLowerCase();
 
-      const isQuotaError = fullError.includes("quota") ||
-                          fullError.includes("429") ||
-                          fullError.includes("limit") ||
-                          fullError.includes("credits") ||
-                          fullError.includes("billing");
+        const isQuotaError = fullError.includes("quota") ||
+                            fullError.includes("429") ||
+                            fullError.includes("limit") ||
+                            fullError.includes("credits") ||
+                            fullError.includes("billing");
 
-      if (isQuotaError) {
-        this.markDegraded(primaryProvider);
+        if (isQuotaError) {
+          this.markDegraded(primaryProvider);
+        }
+
+        console.warn(`[AI Provider] ${primaryProvider} failed (Quota=${isQuotaError}), trying fallback...`);
       }
+    }
 
-      console.warn(`[AI Provider] ${primaryProvider} failed (Quota=${isQuotaError}), trying fallback...`);
-
+    if (!primarySucceeded) {
       const candidateFallbacks = ['gemini', 'groq', 'openrouter', 'openai'].filter(p => p !== primaryProvider);
       let success = false;
 
@@ -211,10 +223,11 @@ export class AIProvider {
           break;
         } catch (fallbackError: any) {
           const fallbackMsg = (fallbackError.message || "") + (fallbackError.response?.data?.error?.message || "");
-          if (fallbackMsg.toLowerCase().includes("quota") || fallbackMsg.includes("429") || fallbackMsg.toLowerCase().includes("credits")) {
+          const fallbackMsgLower = fallbackMsg.toLowerCase();
+          if (fallbackMsgLower.includes("quota") || fallbackMsg.includes("429") || fallbackMsgLower.includes("credits") || fallbackMsgLower.includes("rate limit") || fallbackMsgLower.includes("rate_limit")) {
             this.markDegraded(fallbackProvider);
           }
-          console.warn(`[AI Provider] Fallback ${fallbackProvider} failed:`, fallbackMsg);
+          console.warn(`[AI Provider] Fallback ${fallbackProvider} failed:`, fallbackMsg.substring(0, 150));
         }
       }
 
@@ -354,8 +367,15 @@ export class AIProvider {
     }
     messages.push({ role: "user", content: request.userMessage });
 
-    const groqModel = (model && model !== "qwen/qwen3.6-27b" && !model.includes("gpt-oss")) ? model : "llama-3.3-70b-versatile";
-    const modelsToTry = [groqModel, "llama-3.3-70b-versatile", "llama-3.1-8b-instant", "mixtral-8x7b-32768", "gemma2-9b-it"].filter((m, i, arr) => arr.indexOf(m) === i && !!m);
+    const groqModel = (model && model.trim()) ? model : "qwen/qwen3.6-27b";
+
+    // qwen/qwen3.6-27b does not support json_object response_format — prefer gpt-oss models for jsonMode
+    let modelsToTry: string[];
+    if (request.jsonMode) {
+      modelsToTry = ["openai/gpt-oss-120b", "openai/gpt-oss-20b", groqModel].filter((m, i, arr) => arr.indexOf(m) === i && !!m);
+    } else {
+      modelsToTry = [groqModel, "qwen/qwen3.6-27b", "openai/gpt-oss-120b", "openai/gpt-oss-20b"].filter((m, i, arr) => arr.indexOf(m) === i && !!m);
+    }
 
     let lastError: any;
     for (const currentModel of modelsToTry) {
@@ -388,15 +408,26 @@ export class AIProvider {
       } catch (error: any) {
         lastError = error;
         const msg = error.response?.data?.error?.message || error.message;
-        console.warn(`[Groq] Model ${currentModel} failed: ${msg}`);
+        const isRateLimit = msg?.toLowerCase().includes("rate limit") || msg?.includes("429");
+
+        if (isRateLimit) {
+          // Extract retry-after from message e.g. "Please try again in 4.305s"
+          const retryMatch = msg?.match(/try again in ([\d.]+)s/);
+          const retryAfterMs = retryMatch ? Math.ceil(parseFloat(retryMatch[1]) * 1000) + 500 : 3000;
+          console.warn(`[Groq] Model ${currentModel} rate limited. Waiting ${retryAfterMs}ms before next model...`);
+          await new Promise(r => setTimeout(r, retryAfterMs));
+        } else {
+          console.warn(`[Groq] Model ${currentModel} failed: ${msg?.substring(0, 100)}`);
+        }
       }
     }
 
     const finalMsg = lastError?.response?.data?.error?.message || lastError?.message || "Groq request failed";
-    console.error("Groq API Error:", finalMsg);
+    console.error("Groq API Error:", finalMsg?.substring(0, 150));
     this.logProviderError('groq', finalMsg);
     throw new Error("Groq failed");
   }
+
 
   private async generateWithOpenAI(request: AIRequest, apiKey: string, model: string): Promise<AIResponse> {
     const messages = [{ role: "system", content: request.systemPrompt }];

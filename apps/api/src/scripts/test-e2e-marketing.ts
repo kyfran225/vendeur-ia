@@ -13,7 +13,7 @@ import {
 } from "../modules/commerce/commerce.model.js";
 
 async function runEndToEndMarketingTest() {
-  const mongoUri = env.MONGODB_URI || "mongodb://localhost:27017/vendeur-ia";
+  const mongoUri = env.MONGODB_URI || "mongodb://localhost:27017/vendeuria-local";
   await mongoose.connect(mongoUri);
   console.log("✅ Connecté à MongoDB");
 

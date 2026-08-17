@@ -11,7 +11,7 @@ import { env } from "../config/env.js";
 
 async function testBroadcastReal() {
   console.log("🚀 Starting Real Diffusion Test...");
-  await mongoose.connect(env.MONGODB_URI || "mongodb://localhost:27017/vendeur-ia");
+  await mongoose.connect(env.MONGODB_URI || "mongodb://localhost:27017/vendeuria-local");
 
   try {
     // 1. Setup Test Merchant

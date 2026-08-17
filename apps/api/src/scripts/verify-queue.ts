@@ -4,7 +4,7 @@ import mongoose from "mongoose";
 import { env } from "../config/env.js";
 
 async function verify() {
-  await mongoose.connect(env.MONGODB_URI || "mongodb://localhost:27017/vendeur-ia");
+  await mongoose.connect(env.MONGODB_URI || "mongodb://localhost:27017/vendeuria-local");
 
   try {
     const campaignId = "6a6e2c9fa1f9a6f6d38bd3d8"; // From previous output

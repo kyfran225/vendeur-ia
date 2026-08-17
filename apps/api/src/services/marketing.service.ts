@@ -337,6 +337,59 @@ Réponds UNIQUEMENT avec le texte du message.`;
       data: { type: "billing", action: "renew" }
     });
   }
+
+  /**
+   * Scans conversations inactive for 2h - 24h where a client inquired about a product
+   * or expressed purchase intent without completing the order, and sends a smart follow-up.
+   */
+  async recoverAbandonedConversations(merchantId: string) {
+    const merchant = await CommerceMerchantModel.findById(merchantId);
+    if (!merchant) return { recovered: 0 };
+
+    const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000);
+    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+
+    const staleConversations = await CommerceConversationModel.find({
+      merchantId,
+      status: "active",
+      updatedAt: { $gte: twentyFourHoursAgo, $lte: twoHoursAgo }
+    }).populate("customerId").limit(10);
+
+    let queuedCount = 0;
+
+    for (const conv of staleConversations) {
+      const customer = conv.customerId as any;
+      if (!customer || !customer.phone) continue;
+
+      const lastMsg = await CommerceMessageModel.findOne({ conversationId: conv._id })
+        .sort({ timestamp: -1 });
+
+      if (lastMsg && lastMsg.sender === "ai") {
+        const followUpPrompt = `Génère une relance courte, bienveillante et courtoise pour un client sur WhatsApp.
+Boutique : "${merchant.businessName}"
+Client : "${customer.name || 'Client'}"
+Dernier échange : "${lastMsg.content?.slice(0, 150)}"
+Objectif : Savoir s'il a encore besoin d'aide ou s'il souhaite valider sa commande avant rupture de stock.
+Format : 2 phrases courtes maximum, chaleureux avec 1 emoji.`;
+
+        const aiFollowUp = await aiProvider.generateText({
+          systemPrompt: `Tu es le conseiller commercial de ${merchant.businessName}.`,
+          userMessage: followUpPrompt,
+          maxTokens: 120,
+          temperature: 0.7
+        }).catch(() => null);
+
+        if (aiFollowUp?.text) {
+          await messagingService.sendMessage(merchant, 'whatsapp', customer.phone, aiFollowUp.text).catch(err =>
+            logger.warn(`[CartRecovery] Follow-up failed for customer ${customer.phone}:`, err.message)
+          );
+          queuedCount++;
+        }
+      }
+    }
+
+    return { recovered: queuedCount };
+  }
 }
 
 export const marketingService = new MarketingService();

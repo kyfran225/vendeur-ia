@@ -3,6 +3,9 @@ import { authenticate } from "../../middleware/authenticate.js";
 import { SystemSettingsModel } from "./admin.model.js";
 import { CommerceMerchantModel, CommerceConversationModel, CommerceMessageModel, CommerceOrderModel } from "./commerce.model.js";
 import { TransactionModel } from "./transaction.model.js";
+import { UserModel } from "../auth/user.model.js";
+import { messagingService } from "../../services/messaging.service.js";
+import { pushService } from "../../services/push.service.js";
 import { aiQueue } from "../../services/ai-queue.service.js";
 import { aiProvider } from "../../services/ai-provider.js";
 
@@ -358,6 +361,108 @@ router.post("/merchants/:id/reactivate", authenticate, isAdmin, async (req, res)
     );
 
     res.json({ message: "Marchand réactivé avec succès pour 30 jours", merchant });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// LIST ALL EXPERT SETUPS (Pack Pro Orders)
+router.get("/expert-setups", authenticate, isAdmin, async (req, res) => {
+  try {
+    const merchants = await CommerceMerchantModel.find({
+      $or: [
+        { "expertSetup.status": { $in: ["pending", "in_progress", "completed"] } },
+        { "whatsappConfig.packProAssistance": true }
+      ]
+    }).sort({ "expertSetup.orderedAt": -1, createdAt: -1 }).lean();
+
+    const enriched = await Promise.all(merchants.map(async (m) => {
+      const user = await UserModel.findOne({ ownerId: m.ownerId }).select("email displayName phone");
+      const transaction = await TransactionModel.findOne({
+        merchantId: m._id,
+        $or: [{ type: "pack_pro" }, { "metadata.setupOption": "EXPERT" }]
+      }).sort({ createdAt: -1 });
+
+      return {
+        _id: m._id,
+        businessName: m.businessName,
+        slug: m.slug,
+        whatsappNumber: m.whatsappNumber,
+        userEmail: user?.email,
+        userName: user?.displayName,
+        expertSetup: m.expertSetup || {
+          status: m.whatsappConfig?.packProAssistance ? "pending" : "none",
+          orderedAt: transaction?.createdAt || m.createdAt
+        },
+        transaction: transaction ? {
+          reference: transaction.reference,
+          amount: transaction.amount,
+          currency: transaction.currency,
+          paidAt: transaction.paidAt
+        } : null,
+        whatsappStatus: m.whatsappConfig?.status || "disconnected",
+        provider: m.whatsappConfig?.provider || "meta"
+      };
+    }));
+
+    res.json(enriched);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// UPDATE EXPERT SETUP STATUS
+router.patch("/expert-setups/:id", authenticate, isAdmin, async (req, res) => {
+  try {
+    const { status, assignedTo, notes } = req.body;
+    const update: any = {};
+
+    if (status) {
+      update["expertSetup.status"] = status;
+      if (status === "completed") {
+        update["expertSetup.completedAt"] = new Date();
+        update["whatsappConfig.status"] = "connected";
+        update["whatsappConfig.provider"] = "meta";
+      }
+    }
+    if (assignedTo !== undefined) update["expertSetup.assignedTo"] = assignedTo;
+    if (notes !== undefined) update["expertSetup.notes"] = notes;
+
+    const merchant = await CommerceMerchantModel.findByIdAndUpdate(
+      req.params.id,
+      { $set: update },
+      { new: true }
+    );
+
+    if (!merchant) {
+      return res.status(404).json({ error: "Marchand non trouvé." });
+    }
+
+    // If marked as completed, notify merchant via WhatsApp & Push
+    if (status === "completed") {
+      const completionMessage = `🎉 *VOTRE INSTALLATION VIP PACK PRO EST TERMINÉE !*\n\n` +
+        `Excellente nouvelle *${merchant.businessName}* : Votre API WhatsApp Meta officielle et votre catalogue sont 100% opérationnels !\n\n` +
+        `Votre Vendeur IA répond dès maintenant à vos clients 24h/24. 🚀\n\n` +
+        `Rendez-vous sur votre tableau de bord pour tester vos premières conversations en direct.`;
+
+      if (merchant.whatsappNumber) {
+        await messagingService.sendMessage(merchant, "whatsapp", merchant.whatsappNumber, completionMessage).catch(err =>
+          console.warn("[Admin Expert Setup] Completion WhatsApp message failed:", err.message)
+        );
+      }
+
+      if (merchant.ownerId) {
+        await pushService.sendNotification(merchant.ownerId, {
+          title: "Installation Pack Pro Terminée ! 🚀",
+          body: "Votre Vendeur IA Meta Cloud officiel est 100% opérationnel.",
+          data: { url: "/dashboard" }
+        }).catch(err =>
+          console.warn("[Admin Expert Setup] Completion Push notification failed:", err.message)
+        );
+      }
+    }
+
+    res.json({ success: true, merchant });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }

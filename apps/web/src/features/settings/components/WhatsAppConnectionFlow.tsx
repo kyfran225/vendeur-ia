@@ -88,7 +88,7 @@ export function WhatsAppConnectionFlow({ qrCode, isConnectingSocket, onInitBaile
   }, [merchant?.whatsappConfig]);
 
   const isProPlan = isProParam || subscription?.plan === 'pro' || subscription?.offerId?.slug === 'pro' || whatsapp?.connectionType === 'meta';
-  const isPackPro = isExpertParam || subscription?.plan === 'business' || subscription?.type === 'pack_pro' || whatsapp?.connectionType === 'expert';
+  const isPackPro = isExpertParam || subscription?.plan === 'business' || subscription?.type === 'pack_pro' || whatsapp?.connectionType === 'expert' || merchant?.expertSetup?.status === 'pending' || merchant?.expertSetup?.status === 'in_progress' || merchant?.whatsappConfig?.packProAssistance === true;
   const isSubscribed = isProPlan || isPackPro || subscription?.status === 'active' || merchant?.subscription?.status === 'active';
   const isConnected = whatsapp?.status === 'CONNECTED' || merchant?.whatsappConfig?.status === 'connected';
 

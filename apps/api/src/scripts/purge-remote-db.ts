@@ -1,6 +1,11 @@
 import mongoose from "mongoose";
 
 async function purgeRemote(uri: string, envName: string) {
+  if (!uri) {
+    console.warn(`⚠️ Skipped ${envName}: URI not provided in environment variables.`);
+    return;
+  }
+
   console.log(`\n⚠️  STARTING PURGE OF ${envName.toUpperCase()} DATABASE...`);
   try {
     console.log(`Connecting to ${envName}...`);
@@ -20,14 +25,13 @@ async function purgeRemote(uri: string, envName: string) {
   }
 }
 
-const PREVIEW_URI = "mongodb+srv://kyfran6_db_user:aF4BAHfgfMckfcDH@vendeuriacluster.uyo7eob.mongodb.net/vendeuria-preview?retryWrites=true&w=majority&appName=VendeuriaCluster";
-const PROD_URI = "mongodb+srv://kyfran6_db_user:aF4BAHfgfMckfcDH@vendeuriacluster.uyo7eob.mongodb.net/vendeuria-prod?retryWrites=true&w=majority&appName=VendeuriaCluster";
-
 async function run() {
     // 1. Purge Preview
+    const PREVIEW_URI = process.env.PREVIEW_MONGODB_URI || "";
     await purgeRemote(PREVIEW_URI, "preview");
 
     // 2. Purge Production
+    const PROD_URI = process.env.PROD_MONGODB_URI || "";
     await purgeRemote(PROD_URI, "production");
 
     console.log("\n🏁 All remote purge operations completed.");

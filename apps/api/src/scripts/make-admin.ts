@@ -2,23 +2,35 @@ import mongoose from "mongoose";
 import bcrypt from "bcrypt";
 import { UserModel } from "../modules/auth/user.model.js";
 import { CommerceMerchantModel, CommerceKnowledgeModel } from "../modules/commerce/commerce.model.js";
-
-const ENV_MAP: Record<string, string> = {
-  dev: "mongodb://localhost:27017/vendeuria-local",
-  preview: "mongodb+srv://kyfran6_db_user:aF4BAHfgfMckfcDH@vendeuriacluster.uyo7eob.mongodb.net/vendeuria-preview?retryWrites=true&w=majority&appName=VendeuriaCluster",
-  prod: "mongodb+srv://kyfran6_db_user:aF4BAHfgfMckfcDH@vendeuriacluster.uyo7eob.mongodb.net/vendeuria-prod?retryWrites=true&w=majority&appName=VendeuriaCluster"
-};
+import { env } from "../config/env.js";
 
 async function makeAdmin(targetEnv: string, email: string, customPassword?: string) {
   if (!targetEnv || !email) {
-    console.error("❌ Usage: pnpm tsx src/scripts/make-admin.ts <dev|preview|prod> <user_email> [password]");
+    console.error("❌ Usage: pnpm tsx src/scripts/make-admin.ts <dev|preview|prod|uri> <user_email> [password]");
+    console.log("   Exemple: pnpm tsx src/scripts/make-admin.ts prod admin@example.com");
     process.exit(1);
   }
 
+  let mongoUri = "";
   const envKey = targetEnv.toLowerCase();
-  const mongoUri = ENV_MAP[envKey] || (envKey.startsWith("mongodb") ? targetEnv : null);
 
-  if (!mongoUri) {
+  if (envKey === "dev" || envKey === "local") {
+    mongoUri = env.MONGODB_URI || "mongodb://localhost:27017/vendeuria-local";
+  } else if (envKey === "preview") {
+    mongoUri = process.env.PREVIEW_MONGODB_URI || "";
+    if (!mongoUri) {
+        console.error("❌ Erreur: PREVIEW_MONGODB_URI non définie dans les variables d'environnement.");
+        process.exit(1);
+    }
+  } else if (envKey === "prod" || envKey === "production") {
+    mongoUri = process.env.PROD_MONGODB_URI || "";
+    if (!mongoUri) {
+        console.error("❌ Erreur: PROD_MONGODB_URI non définie dans les variables d'environnement.");
+        process.exit(1);
+    }
+  } else if (envKey.startsWith("mongodb")) {
+    mongoUri = targetEnv;
+  } else {
     console.error(`❌ Environnement invalide: '${targetEnv}'. Choisissez parmi: dev, preview, prod ou fournissez un URI MongoDB complet.`);
     process.exit(1);
   }
@@ -49,13 +61,14 @@ async function makeAdmin(targetEnv: string, email: string, customPassword?: stri
       });
       console.log(`✨ Compte utilisateur créé avec succès avec le mot de passe : ${defaultPassword}`);
     } else {
-      console.log(`👤 Utilisateur existant trouvé. Mise à jour des rôles...`);
+      console.log(`👤 Utilisateur existant trouvé. Mise à jour des rôles et réinitialisation du mot de passe...`);
       if (!user.roles.includes("admin")) {
         user.roles.push("admin");
       }
+      user.passwordHash = await bcrypt.hash(defaultPassword, 10);
       user.onboardingCompleted = true;
       await user.save();
-      console.log(`🎉 SUCCÈS : L'utilisateur existant ${cleanEmail} est désormais Admin ! 🛡️`);
+      console.log(`🎉 SUCCÈS : L'utilisateur ${cleanEmail} est désormais Admin avec le mot de passe : ${defaultPassword} ! 🛡️`);
     }
 
     // Vérifier / Créer la boutique système par défaut si aucune boutique n'est associée

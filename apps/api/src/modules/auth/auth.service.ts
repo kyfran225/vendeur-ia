@@ -131,14 +131,15 @@ export class AuthService {
 
   async register(input: any) {
     const { email, password, displayName } = input;
-    const existingUser = await UserModel.findOne({ email });
-    if (existingUser) throw new Error("Email already registered");
+    const cleanEmail = (email || "").trim().toLowerCase();
+    const existingUser = await UserModel.findOne({ email: cleanEmail });
+    if (existingUser) throw new Error("Cet email est déjà utilisé.");
 
     const passwordHash = await bcrypt.hash(password, 10);
     const user = await UserModel.create({
-      email,
+      email: cleanEmail,
       passwordHash,
-      displayName,
+      displayName: displayName?.trim(),
     });
 
     return this.generateTokens(user);
@@ -146,11 +147,18 @@ export class AuthService {
 
   async login(input: any) {
     const { email, password } = input;
-    const user = await UserModel.findOne({ email });
-    if (!user || !user.passwordHash) throw new Error("Invalid credentials");
+    const cleanEmail = (email || "").trim().toLowerCase();
+    const user = await UserModel.findOne({ email: cleanEmail });
+    if (!user || !user.passwordHash) {
+      console.warn(`[Auth] Connexion refusée pour '${cleanEmail}': utilisateur non trouvé ou mot de passe non configuré.`);
+      throw new Error("Identifiants incorrects ou compte sans mot de passe.");
+    }
 
     const isMatch = await bcrypt.compare(password, user.passwordHash);
-    if (!isMatch) throw new Error("Invalid credentials");
+    if (!isMatch) {
+      console.warn(`[Auth] Mot de passe incorrect pour '${cleanEmail}'.`);
+      throw new Error("Identifiants incorrects.");
+    }
 
     return this.generateTokens(user);
   }

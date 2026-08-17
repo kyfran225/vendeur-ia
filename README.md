@@ -14,6 +14,7 @@ Le projet est organisé en Monorepo (Turborepo) pour une propreté et une perfor
 ### 📘 Documentation Centrale
 - **[Architecture & Technique](file:///doc/architecture/system-overview.md)** : Schémas, flux de données et orchestration IA.
 - **[Catalogue des Fonctionnalités](file:///doc/product/features-catalog.md)** : Vision détaillée des capacités du système.
+- **[Guides Pratiques](file:///doc/guides/merchant-onboarding.md)** : Onboarding, gestion du catalogue et dépannage.
 - **[Guide Développeur](file:///doc/dev/getting-started.md)** : Setup local, standards de code et tests.
 - **[Référence API](file:///doc/api/rest-api-reference.md)** : Documentation des points d'entrée et webhooks.
 

@@ -22,22 +22,31 @@ export function Sidebar() {
   const location = useLocation();
   const { user } = useAuthStore();
 
+  const isAdmin = !!user?.roles?.includes("admin");
+
   const links = [
     { to: "/dashboard", icon: LayoutDashboard, label: "Stats" },
+    ...(isAdmin ? [{ to: "/admin", icon: Shield, label: "Admin", desc: "Console Super Admin" }] : []),
     { to: "/inbox", icon: MessageCircle, label: "Inbox" },
-    ...(user?.roles.includes("admin") ? [{ to: "/admin", icon: Shield, label: "Admin", desc: "Console Super Admin" }] : []),
-    { to: "/products", icon: Package, label: "Catalogue" },
     { to: "/orders", icon: ShoppingCart, label: "Commandes" },
+    { to: "/products", icon: Package, label: "Catalogue", desc: "Gestion des stocks & articles" },
     { to: "/marketing", icon: Megaphone, label: "Marketing", desc: "Affiches & Campagnes" },
     { to: "/settings", icon: Settings, label: "Réglages", desc: "Boutique, Savoir IA & Canaux" },
   ];
 
-  const bottomLinks = [
-    { to: "/dashboard", icon: LayoutDashboard, label: "Stats" },
-    { to: "/inbox", icon: MessageCircle, label: "Messages" },
-    { to: "/products", icon: Package, label: "Catalogue" },
-    { to: "/orders", icon: ShoppingCart, label: "Commandes" },
-  ];
+  const bottomLinks = isAdmin
+    ? [
+        { to: "/dashboard", icon: LayoutDashboard, label: "Stats" },
+        { to: "/admin", icon: Shield, label: "Admin" },
+        { to: "/inbox", icon: MessageCircle, label: "Messages" },
+        { to: "/orders", icon: ShoppingCart, label: "Commandes" },
+      ]
+    : [
+        { to: "/dashboard", icon: LayoutDashboard, label: "Stats" },
+        { to: "/inbox", icon: MessageCircle, label: "Messages" },
+        { to: "/orders", icon: ShoppingCart, label: "Commandes" },
+        { to: "/products", icon: Package, label: "Catalogue" },
+      ];
 
   const bottomLinkPaths = bottomLinks.map(l => l.to);
   const moreLinks = links.filter(l => !bottomLinkPaths.includes(l.to));

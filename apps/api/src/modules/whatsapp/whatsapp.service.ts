@@ -589,7 +589,8 @@ class WhatsAppService {
         threshold: merchant.loyaltySettings?.enabled ? merchant.loyaltySettings.threshold : undefined,
         rewardDescription: merchant.loyaltySettings?.rewardDescription
       } : undefined,
-      aiSummary: (conversation as any).aiSummary || ""
+      aiSummary: (conversation as any).aiSummary || "",
+      platform: "whatsapp"
     });
   }
 
@@ -883,6 +884,30 @@ class WhatsAppService {
       } else {
         throw new Error("WhatsApp session not active or authenticated");
       }
+    }
+  }
+
+  getActiveSocket(userId: string) {
+    return this.activeSessions.get(userId);
+  }
+
+  async postStatus(userId: string, content: { text?: string; imageBuffer?: Buffer; caption?: string }) {
+    const sock = this.activeSessions.get(userId);
+    if (!sock) {
+      throw new Error("Session WhatsApp non connectée");
+    }
+
+    const statusJid = "status@broadcast";
+
+    if (content.imageBuffer) {
+      return await sock.sendMessage(statusJid, {
+        image: content.imageBuffer,
+        caption: content.caption || content.text || ""
+      });
+    } else if (content.text) {
+      return await sock.sendMessage(statusJid, {
+        text: content.text
+      });
     }
   }
 

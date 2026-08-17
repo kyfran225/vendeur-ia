@@ -1,5 +1,6 @@
 import { aiProvider, AIResponse } from "./ai-provider.js";
 import { commerceService } from "../modules/commerce/commerce.service.js";
+import { env } from "../config/env.js";
 
 export interface SalesContext {
   merchant: SalesMerchant;
@@ -32,6 +33,7 @@ export interface SalesContext {
 export interface SalesMerchant {
   _id?: string;
   businessName: string;
+  slug?: string;
   category: string;
   city: string;
   country: string;
@@ -89,12 +91,17 @@ export class AIAgentService {
   private buildSystemPrompt(context: SalesContext, ragProducts: any[] = []): string {
     const { merchant, products, knowledge, customerPhone, customerLoyalty, platform = "whatsapp" } = context;
 
-    const platformInstructions = {
-      whatsapp: "Le client est DÉJÀ en train de discuter avec toi sur WhatsApp. INTERDICTION FORMELLE de lui dire 'Clique sur commander sur WhatsApp' ou 'Contacte-nous sur WhatsApp' puisqu'il y est déjà. Propose-lui directement de confirmer sa commande par message et demande-lui son quartier pour la livraison.",
-      instagram: "Le client est sur Instagram. Tu peux mentionner 'le lien dans ma bio' pour plus de photos ou le catalogue complet. Encourage le partage en story s'il est ravi.",
-      facebook: "Le client est sur Facebook Messenger. Réponds aux questions sur les articles en vente. Sois très précis sur la disponibilité et le lieu de retrait/livraison.",
-      tiktok: "Le client est sur TikTok. Utilise un ton encore plus dynamique et court. Mentionne que tes produits sont 'ceux de la vidéo' s'il pose des questions sur un post.",
-      web: "Le client est sur ton Site Web (Vitrine). Sois très accueillant et pro. Invite-le à cliquer sur 'Commander sur WhatsApp' pour finaliser ses achats rapidement ou pour poser des questions plus personnelles."
+    // Storefront link computation
+    const clientBaseUrl = env.CLIENT_URL || "https://vendeur-ia.com";
+    const shopSlug = merchant.slug || (merchant.businessName ? merchant.businessName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") : merchant._id);
+    const shopUrl = `${clientBaseUrl}/shop/${shopSlug}`;
+
+    const platformInstructions: Record<string, string> = {
+      whatsapp: `Le client est DÉJÀ en train de discuter avec toi sur WhatsApp. INTERDICTION FORMELLE ET STRICTE de lui dire 'Clique sur commander sur WhatsApp', 'Contacte-nous sur WhatsApp' ou de parler de boutons d'interface. Conclus la vente directement dans cette discussion : demande-lui de confirmer l'article souhaité, sa quantité et son quartier pour la livraison.\nLIEN BOUTIQUE / CATALOGUE COMPLET : Notre vitrine officielle en ligne est disponible ici : ${shopUrl}. Si le client demande à voir tout le catalogue, d'autres photos/modèles, hésite ou cherche de la nouveauté, PARTAGE-LUI PROACTIVEMENT ce lien avec enthousiasme : "Tu peux aussi explorer tous nos articles et nouveautés sur notre boutique officielle : ${shopUrl} 🛍️✨".`,
+      instagram: `Le client est sur Instagram Direct (DM). Réponds directement à ses questions. N'utilise PAS de mention de boutons de site web. Tu peux partager notre lien direct boutique (${shopUrl}) ou mentionner 'le lien dans notre bio' pour lui faire découvrir tout le catalogue et finaliser directement.`,
+      facebook: `Le client est sur Facebook Messenger. Réponds aux questions et finalise l'échange. Ne fais aucune référence à des boutons de site web ('Commander sur WhatsApp', etc.). Tu peux lui transmettre le lien de notre boutique en ligne (${shopUrl}) s'il souhaite parcourir tout le catalogue.`,
+      tiktok: `Le client est sur TikTok. Utilise un ton dynamique et direct. Transmets le lien de notre boutique (${shopUrl}) ou mentionne le lien en profil pour voir toutes les offres.`,
+      web: "Le client est déjà sur la boutique en ligne (Site Web). Sois très accueillant et conseille-le sur les produits. Si le client souhaite commander ou finaliser, explique-lui clairement que pour commander, il peut soit cliquer sur le bouton vert 'Commander sur WhatsApp' présent sous la fiche du produit ou dans son panier, soit utiliser le bouton d'action WhatsApp situé juste au-dessus. S'il a des questions spécifiques, réponds-y directement dans ce chat."
     };
 
     // --- HYBRID CATALOG STRATEGY ---
@@ -308,6 +315,7 @@ RÈGLES D'OR :
 - Ne demande JAMAIS l'adresse au premier message de salutation.
 - Inculque un sentiment d'urgence ou d'exclusivité avec naturel.
 - Si le client demande le prix, donne-le CLAIREMENT avec la devise.
+- PROACTIVITÉ VITRINE : N'hésite pas à partager le lien de la boutique en ligne dès que le client cherche à voir plus de choix, demande des photos ou hésite, pour lui offrir une expérience d'achat visuelle et complète.
 `;
   }
 }

@@ -199,7 +199,7 @@ export function WebChatWidget({ merchant }: { merchant: any }) {
                  ref={scrollRef}
                  className="flex-1 overflow-y-auto p-3 md:p-6 space-y-3 md:space-y-6 scrollbar-hide bg-black/20"
                >
-                  {messages.map((msg) => (
+                   {messages.map((msg) => (
                     <div
                       key={msg.id}
                       className={cn(
@@ -215,6 +215,24 @@ export function WebChatWidget({ merchant }: { merchant: any }) {
                        )}>
                           {msg.text}
                        </div>
+
+                       {/* Action CTA for AI responses */}
+                       {msg.role === 'ai' && merchant.whatsappNumber && (
+                         <div className="mt-2 flex flex-wrap gap-2">
+                           <button
+                             onClick={() => {
+                               const cleanPhone = merchant.whatsappNumber.replace(/[^0-9]/g, "");
+                               const text = encodeURIComponent(`Bonjour ${merchant.businessName}, je discute sur votre boutique en ligne et j'aimerais commander !`);
+                               window.open(`https://wa.me/${cleanPhone}?text=${text}`, "_blank");
+                             }}
+                             className="px-3 py-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all shadow-sm active:scale-95"
+                           >
+                             <MessageCircle size={13} className="text-emerald-400" />
+                             Ouvrir WhatsApp direct
+                           </button>
+                         </div>
+                       )}
+
                        <span className="text-[8px] font-black uppercase text-white/20 mt-1 tracking-widest">
                           {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                        </span>

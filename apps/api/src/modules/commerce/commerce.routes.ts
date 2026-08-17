@@ -21,6 +21,7 @@ import { CATEGORY_MOCKS } from "./demo.data.js";
 import { billingReceiptService } from "../../services/billing-receipt.service.js";
 import { marketingService } from "../../services/marketing.service.js";
 import { paymentShieldService } from "../../services/payment-shield.service.js";
+import { whatsappStatusService } from "../../services/whatsapp-status.service.js";
 import { aiQueue } from "../../services/ai-queue.service.js";
 import { aiProvider } from "../../services/ai-provider.js";
 import axios from "axios";
@@ -1738,6 +1739,54 @@ router.post("/payment-proofs/scan", authenticate, upload.single("image"), async 
   } catch (error: any) {
     logger.error(`[Payment Proof Scan] Error: ${error.message}`);
     res.status(500).json({ error: error.message || "scan_failed" });
+  }
+});
+
+// --- WHATSAPP STATUS ASSISTANT ROUTES ---
+
+// GET /api/commerce/whatsapp-status/pack - Generate 3 daily status propositions
+router.get("/whatsapp-status/pack", authenticate, async (req, res) => {
+  try {
+    const ownerId = (req as any).user.id;
+    const merchant = await CommerceMerchantModel.findOne({ ownerId });
+    if (!merchant) return res.status(404).json({ error: "Merchant not found" });
+
+    const pack = await whatsappStatusService.generateStatusPack(merchant._id.toString());
+    res.json({ pack });
+  } catch (error: any) {
+    logger.error(`[WhatsApp Status Pack] Error: ${error.message}`);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// POST /api/commerce/whatsapp-status/send-to-me - Send status pack to merchant's WhatsApp
+router.post("/whatsapp-status/send-to-me", authenticate, async (req, res) => {
+  try {
+    const ownerId = (req as any).user.id;
+    const merchant = await CommerceMerchantModel.findOne({ ownerId });
+    if (!merchant) return res.status(404).json({ error: "Merchant not found" });
+
+    await whatsappStatusService.sendDailyStatusPackToMerchant(merchant._id.toString());
+    res.json({ success: true, message: "Pack statuts envoyé avec succès sur votre WhatsApp !" });
+  } catch (error: any) {
+    logger.error(`[WhatsApp Status Send] Error: ${error.message}`);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// POST /api/commerce/whatsapp-status/auto-publish - Direct broadcast publication (Baileys only)
+router.post("/whatsapp-status/auto-publish", authenticate, async (req, res) => {
+  try {
+    const ownerId = (req as any).user.id;
+    const merchant = await CommerceMerchantModel.findOne({ ownerId });
+    if (!merchant) return res.status(404).json({ error: "Merchant not found" });
+
+    const { statusIndex = 0 } = req.body;
+    const result = await whatsappStatusService.publishAutoStatus(merchant._id.toString(), statusIndex);
+    res.json(result);
+  } catch (error: any) {
+    logger.error(`[WhatsApp Status Auto Publish] Error: ${error.message}`);
+    res.status(400).json({ error: error.message });
   }
 });
 

@@ -5,6 +5,7 @@ export interface IOffer extends Document {
   name: string;
   description: string;
   monthlyPrice: number;
+  yearlyPrice?: number;
   currency: string;
   features: string[];
   isActive: boolean;
@@ -23,6 +24,7 @@ const OfferSchema = new Schema({
   name: { type: String, required: true },
   description: { type: String, default: "" },
   monthlyPrice: { type: Number, required: true },
+  yearlyPrice: { type: Number },
   currency: { type: String, default: "XOF" },
   features: [String],
   isActive: { type: Boolean, default: true },

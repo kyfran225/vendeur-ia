@@ -1,6 +1,7 @@
 import { Queue, Worker, Job } from 'bullmq';
 import { env } from '../config/env.js';
 import { CommerceMerchantModel } from '../modules/commerce/commerce.model.js';
+import { SubscriptionModel } from '../modules/commerce/subscription.model.js';
 import { UserModel } from '../modules/auth/user.model.js';
 import { messagingService } from './messaging.service.js';
 import { pushService } from './push.service.js';
@@ -120,6 +121,11 @@ export const billingWorker = new Worker(
           merchant.subscription.status = "past_due";
           await merchant.save();
         }
+
+        await SubscriptionModel.findOneAndUpdate(
+          { userId: merchant.ownerId },
+          { $set: { status: "past_due" } }
+        );
 
         const waMessage = `🛑 *Service Suspendu - ${businessName}*\n\n` +
           `Votre abonnement a expiré. Votre IA est désormais inactive.\n\n` +

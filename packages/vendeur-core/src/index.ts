@@ -26,6 +26,7 @@ export const offerSchema = z.object({
   name: z.string(),
   description: z.string(),
   monthlyPrice: z.number(),
+  yearlyPrice: z.number().optional(),
   currency: z.string(),
   features: z.array(z.string()),
   isActive: z.boolean(),

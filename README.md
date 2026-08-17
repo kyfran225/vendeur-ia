@@ -12,11 +12,20 @@ Donner à chaque petit commerçant une équipe commerciale d'élite fonctionnant
 Le projet est organisé en Monorepo (Turborepo) pour une propreté et une performance maximales. Pour une immersion complète dans le projet, consultez notre documentation structurée :
 
 ### 📘 Documentation Centrale
-- **[Architecture & Technique](file:///doc/architecture/system-overview.md)** : Schémas, flux de données et orchestration IA.
-- **[Catalogue des Fonctionnalités](file:///doc/product/features-catalog.md)** : Vision détaillée des capacités du système.
-- **[Guides Pratiques](file:///doc/guides/merchant-onboarding.md)** : Onboarding, gestion du catalogue et dépannage.
-- **[Guide Développeur](file:///doc/dev/getting-started.md)** : Setup local, standards de code et tests.
-- **[Référence API](file:///doc/api/rest-api-reference.md)** : Documentation des points d'entrée et webhooks.
+
+#### 🇫🇷 Français (Principal)
+- **[Architecture & Technique](file:///doc/fr/architecture/vue-ensemble-systeme.md)**
+- **[Catalogue des Fonctionnalités](file:///doc/fr/product/catalogue-fonctionnalites.md)**
+- **[Guides Pratiques](file:///doc/fr/guides/onboarding-marchand.md)**
+- **[Guide Développeur](file:///doc/fr/dev/demarrage-rapide.md)**
+- **[Référence API](file:///doc/fr/api/reference-api-rest.md)**
+
+#### 🇺🇸 English
+- **[Architecture & Technical](file:///doc/en/architecture/system-overview.md)**
+- **[Features Catalog](file:///doc/en/product/features-catalog.md)**
+- **[Practical Guides](file:///doc/en/guides/merchant-onboarding.md)**
+- **[Developer Guide](file:///doc/en/dev/getting-started.md)**
+- **[API Reference](file:///doc/en/api/rest-api-reference.md)**
 
 ---
 

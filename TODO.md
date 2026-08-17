@@ -22,10 +22,10 @@ Ce document trace la route vers une version production "Over-Delivered".
     - [x] Frontend: Dropzone d'image dans le dashboard.
     - [x] Frontend: Animation de "Scannage IA" haute fidélité.
     - [x] Frontend: Auto-remplissage intelligent du formulaire de création.
-- [ ] **IA Audio : Voice Commerce**
-    - [ ] Backend: Intégration Speech-to-Text (Whisper ou Gemini Audio).
-    - [ ] Backend: Analyse de l'intention dans les messages vocaux.
-    - [ ] Backend: Synthèse vocale (TTS) pour les réponses IA (optionnel V1.1).
+- [x] **IA Audio : Voice Commerce**
+    - [x] Backend: Intégration Speech-to-Text (Whisper ou Gemini Audio) via `VoiceRecorder`.
+    - [x] Backend: Analyse de l'intention dans les messages vocaux.
+    - [x] Frontend: Envoi de notes vocales PTT nativement dans l'Inbox.
 
 ## 💬 PHASE 3 : Communication & Temps Réel (100% Sales)
 - [x] **Inbox Live Sync**

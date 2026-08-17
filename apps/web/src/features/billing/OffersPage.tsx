@@ -13,6 +13,7 @@ function cn(...inputs: ClassValue[]) {
 
 import { MetaHead } from "@/components/seo/MetaHead";
 import { SITE_CONFIG } from "@/lib/seoConfig";
+import { VendeurIALoader } from "@/components/ui/VendeurIALoader";
 
 export function OffersPage() {
   const navigate = useNavigate();
@@ -26,11 +27,11 @@ export function OffersPage() {
     }
   });
 
-  if (isLoading) return (
-    <div className="min-h-screen bg-black flex items-center justify-center">
-      <div className="h-12 w-12 border-4 border-vendeur-emerald border-t-transparent rounded-full animate-spin" />
-    </div>
-  );
+  if (isLoading) {
+    return (
+      <VendeurIALoader fullscreen size="xl" label="Chargement des formules..." />
+    );
+  }
 
   return (
     <div className="min-h-screen bg-black text-white p-4 sm:p-6 md:p-12 animate-in fade-in duration-700">

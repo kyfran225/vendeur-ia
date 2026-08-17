@@ -436,12 +436,18 @@ export class AIProvider {
     messages.push({ role: "user", content: request.userMessage });
 
     try {
-      const response = await axios.post("https://openrouter.ai/api/v1/chat/completions", {
+      const payload: any = {
         model,
         messages,
         max_tokens: request.maxTokens || 2500,
         temperature: request.temperature || 0.7,
-      }, {
+      };
+
+      if (request.jsonMode) {
+        payload.response_format = { type: "json_object" };
+      }
+
+      const response = await axios.post("https://openrouter.ai/api/v1/chat/completions", payload, {
         headers: {
           "Authorization": `Bearer ${apiKey}`,
           "Content-Type": "application/json",
@@ -450,9 +456,16 @@ export class AIProvider {
         }
       });
 
+      const message = response.data?.choices?.[0]?.message;
+      const text = message?.content?.trim() || "";
+
+      if (!text) {
+        throw new Error("Empty response received from OpenRouter");
+      }
+
       const usage = response.data.usage || {};
       return {
-        text: response.data.choices[0].message.content.trim(),
+        text,
         provider: 'openrouter',
         usage: {
           promptTokens: usage.prompt_tokens || 0,

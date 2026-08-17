@@ -23,6 +23,7 @@ Une messagerie centralisée pour surveiller les conversations de l'IA Sales Agen
 - **Copilot Widget** : Assistant IA intégré pour aider le marchand à gérer ses ventes.
 - **Détection de Preuve de Paiement** : Alertes automatiques dès qu'un client confirme un transfert.
 - **Human Takeover** : Possibilité pour le marchand de reprendre la main instantanément.
+- **Intégration WhatsApp Avancée** : Nouveau service de statut WhatsApp et gestion des sessions améliorée.
 - **Canaux de Paiement Locaux** : Gestion native de Wave, Orange Money, MTN, Moov et Visa.
 
 ### 4. Catalogue & Order Management

@@ -9,41 +9,48 @@ Donner à chaque petit commerçant une équipe commerciale d'élite fonctionnant
 
 ## 🛠️ Fonctionnalités Clés
 
-### 1. Magic Onboarding & Expérience Guidée
-Un tunnel de conversion ultra-rapide où le marchand configure son business et teste immédiatement son IA sur une interface WhatsApp simulée.
-- **Spotlight Tour** : Visite guidée interactive lors de la première connexion.
-- **Setup Completion Modal** : Parcours d'activation structuré pour un démarrage sans friction.
+### 1. Magic Onboarding & Simulateur
+Un tunnel de conversion ultra-rapide où le marchand configure son business et teste immédiatement son IA sur une interface WhatsApp simulée avant même de finaliser son inscription. Inclut désormais un système de **Spotlight Tour** pour guider les nouveaux utilisateurs.
 
-### 2. Money Board (Dashboard) & Copilot
+### 2. Money Board (Dashboard)
 Le centre de commande du marchand. Suivi du pipeline de vente en temps réel :
-- **Copilote IA Intelligent** : Widget flottant contextuel qui guide le marchand, suggère des actions (encaisser, livrer, auditer) et répond vocalement.
-- **Audit de Boutique** : Analyse automatique de la configuration pour maximiser les ventes.
-- **Métriques & AI Growth** : Suivi des revenus journaliers et performance de conversion.
+- **TikTok/Insta Discovery** → **WhatsApp Chat** → **Payment Initiated** → **Order Confirmed**.
+- Métriques de revenus journaliers et performance de l'IA via **AI Growth Service**.
+- Interface optimisée avec le nouveau **Vendeur IA Loader**.
 
-### 3. Sales Inbox & Payment Shield
-Une messagerie centralisée synchronisée avec WhatsApp :
-- **Payment Shield (OCR Antifraude)** : Analyse médico-légale des captures Mobile Money (Wave, Orange, MTN) pour valider automatiquement les commandes et prévenir les falsifications.
-- **Fast Pay** : Génération de demandes de paiement Mobile Money stylisées en 1 clic.
-- **Voice Memo** : Enregistrement et envoi de notes vocales directement depuis l'interface web.
+### 3. Sales Inbox Intelligent & Copilot
+Une messagerie centralisée pour surveiller les conversations de l'IA Sales Agent :
+- **Copilot Widget** : Assistant IA intégré pour aider le marchand à gérer ses ventes.
+- **Détection de Preuve de Paiement** : Alertes automatiques dès qu'un client confirme un transfert.
+- **Human Takeover** : Possibilité pour le marchand de reprendre la main instantanément.
+- **Intégration WhatsApp Avancée** : Nouveau service de statut WhatsApp et gestion des sessions améliorée.
+- **Canaux de Paiement Locaux** : Gestion native de Wave, Orange Money, MTN, Moov et Visa.
 
-### 4. Catalogue & Storefront Branding
-- **AI Vision** : Création automatique de fiches produits par simple photo de rayon.
-- **Studio de Marque** : Personnalisation complète des couleurs (Émeraude, Or, Cyber Indigo), du logo et des bannières d'annonce.
-- **Instant Studio V2** : Générateur d'affiches promo haute définition optimisées pour le statut WhatsApp.
-- **Boutique Publique** : Vitrine web élégante avec panier intelligent, recherche vocale et stories interactives.
+### 4. Catalogue & Order Management
+Gestionnaire de produits et commandes boosté par l'IA :
+- **AI Vision** : Prenez une photo, et l'IA génère la fiche produit.
+- **Order Manager** : Suivi précis des commandes et des statuts de livraison.
+- **Product Manager** : Interface d'édition fluide pour le catalogue.
+
+### 5. Cerveau IA (Knowledge Base)
+Enseignez les spécificités de votre boutique à votre agent :
+- Zones et frais de livraison.
+- FAQ personnalisée.
+- Ton de voix (Amical, Professionnel, Premium, Dynamique).
 
 ---
 
 ## 🏗️ Architecture Technique
 
-Projet construit en architecture Monorepo (Turborepo) pour une modularité totale :
+Projet construit **from scratch** en architecture Monorepo (Turborepo) pour une propreté et une performance maximales :
 
-- **`@vendeur-ia/core`** : Contrats de données, schémas de validation et constantes partagées.
-- **`@vendeur-ia/api`** : Cerveau du système (Node/Express), orchestration IA multimodale, intégration Paystack.
-- **`@vendeur-ia/web`** : Interface React ultra-rapide (Vite, Tailwind, Framer Motion), mobile-first et installable (PWA).
-- **Automation Git IA** : Outils de productivité intégrés pour des déploiements sûrs et documentés par IA.
+- **`@vendeur-ia/core`** : Contrats de données et validation (Zod).
+- **`@vendeur-ia/api`** : Backend Node/Express (Brain, AI Orchestration, Paystack Subscriptions).
+- **`@vendeur-ia/web`** : Interface React moderne et mobile-first (Vite, Tailwind, Framer Motion).
 
 ## 🚀 Installation & Build
+
+Le projet utilise `pnpm` pour une gestion optimale des workspaces.
 
 ```bash
 # Installer les dépendances
@@ -55,6 +62,12 @@ pnpm build
 # Lancer en mode développement
 pnpm dev
 ```
+
+---
+
+## 💳 Système de Paiement
+- **Abonnement Marchand** : Intégration Paystack (5.000 FCFA/mois).
+- **Ventes Clients** : Utilisation directe des numéros Mobile Money du marchand configurés dans l'OS.
 
 ---
 

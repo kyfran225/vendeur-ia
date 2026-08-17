@@ -7,57 +7,31 @@
 ## 🌟 Vision
 Donner à chaque petit commerçant une équipe commerciale d'élite fonctionnant 24h/24. Vendeur IA ne se contente pas de répondre ; il conseille, convainc et accompagne le client jusqu'au paiement Mobile Money.
 
-## 🛠️ Fonctionnalités Clés
+## 🏗️ Architecture & Documentation
 
-### 1. Magic Onboarding & Simulateur
-Un tunnel de conversion ultra-rapide où le marchand configure son business et teste immédiatement son IA sur une interface WhatsApp simulée avant même de finaliser son inscription. Inclut désormais un système de **Spotlight Tour** pour guider les nouveaux utilisateurs.
+Le projet est organisé en Monorepo (Turborepo) pour une propreté et une performance maximales. Pour une immersion complète dans le projet, consultez notre documentation structurée :
 
-### 2. Money Board (Dashboard)
-Le centre de commande du marchand. Suivi du pipeline de vente en temps réel :
-- **TikTok/Insta Discovery** → **WhatsApp Chat** → **Payment Initiated** → **Order Confirmed**.
-- Métriques de revenus journaliers et performance de l'IA via **AI Growth Service**.
-- Interface optimisée avec le nouveau **Vendeur IA Loader**.
-
-### 3. Sales Inbox Intelligent & Copilot
-Une messagerie centralisée pour surveiller les conversations de l'IA Sales Agent :
-- **Copilot Widget** : Assistant IA intégré pour aider le marchand à gérer ses ventes.
-- **Détection de Preuve de Paiement** : Alertes automatiques dès qu'un client confirme un transfert.
-- **Human Takeover** : Possibilité pour le marchand de reprendre la main instantanément.
-- **Intégration WhatsApp Avancée** : Nouveau service de statut WhatsApp et gestion des sessions améliorée.
-- **Canaux de Paiement Locaux** : Gestion native de Wave, Orange Money, MTN, Moov et Visa.
-
-### 4. Catalogue & Order Management
-Gestionnaire de produits et commandes boosté par l'IA :
-- **AI Vision** : Prenez une photo, et l'IA génère la fiche produit.
-- **Order Manager** : Suivi précis des commandes et des statuts de livraison.
-- **Product Manager** : Interface d'édition fluide pour le catalogue.
-
-### 5. Cerveau IA (Knowledge Base)
-Enseignez les spécificités de votre boutique à votre agent :
-- Zones et frais de livraison.
-- FAQ personnalisée.
-- Ton de voix (Amical, Professionnel, Premium, Dynamique).
+### 📘 Documentation Centrale
+- **[Architecture & Technique](file:///doc/architecture/system-overview.md)** : Schémas, flux de données et orchestration IA.
+- **[Catalogue des Fonctionnalités](file:///doc/product/features-catalog.md)** : Vision détaillée des capacités du système.
+- **[Guide Développeur](file:///doc/dev/getting-started.md)** : Setup local, standards de code et tests.
+- **[Référence API](file:///doc/api/rest-api-reference.md)** : Documentation des points d'entrée et webhooks.
 
 ---
 
-## 🏗️ Architecture Technique
+## 🛠️ Fonctionnalités Phares
+- **Magic Onboarding** : Configuration et test immédiat de l'IA.
+- **AI Vision** : Création de produits par simple photo.
+- **Payment Shield** : Détection automatique de fraude sur les reçus Mobile Money.
+- **AI Growth Stats** : Tableau de bord de performance et productivité.
 
-Projet construit **from scratch** en architecture Monorepo (Turborepo) pour une propreté et une performance maximales :
+---
 
-- **`@vendeur-ia/core`** : Contrats de données et validation (Zod).
-- **`@vendeur-ia/api`** : Backend Node/Express (Brain, AI Orchestration, Paystack Subscriptions).
-- **`@vendeur-ia/web`** : Interface React moderne et mobile-first (Vite, Tailwind, Framer Motion).
-
-## 🚀 Installation & Build
-
-Le projet utilise `pnpm` pour une gestion optimale des workspaces.
+## 🚀 Démarrage Rapide
 
 ```bash
 # Installer les dépendances
 pnpm install
-
-# Lancer le build global (Core, API, Web)
-pnpm build
 
 # Lancer en mode développement
 pnpm dev
@@ -65,12 +39,6 @@ pnpm dev
 
 ---
 
-## 💳 Système de Paiement
-- **Abonnement Marchand** : Intégration Paystack (5.000 FCFA/mois).
-- **Ventes Clients** : Utilisation directe des numéros Mobile Money du marchand configurés dans l'OS.
-
----
-
-## 📄 Licence & Propriété
+## 📄 Licence
 **Vendeur IA** - Créé par **Franck Corp**. Tous droits réservés.
 "Votre WhatsApp vend pendant que vous dormez."

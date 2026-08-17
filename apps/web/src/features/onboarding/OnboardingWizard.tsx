@@ -20,9 +20,10 @@ import { apiClient } from "@/lib/apiClient";
 import { useRef } from "react";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
-import { CountrySelector, COUNTRIES } from "./components/CountrySelector";
+import { CountrySelector, COUNTRIES, Country } from "./components/CountrySelector";
 import { AddressAutocomplete } from "./components/AddressAutocomplete";
 import { ConfirmationModal } from "@/components/ui/ConfirmationModal";
+import { VendeurIALoader } from "@/components/ui/VendeurIALoader";
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -42,14 +43,18 @@ export function OnboardingWizard() {
   // Restore data from backend on mount if not present locally
   useEffect(() => {
     const restoreData = async () => {
-      if (user && accessToken && !tempData) {
+      if (user && accessToken) {
+        // Strict guard: If tempData belongs to a different phone number, clear it immediately
+        if (tempData?.whatsappNumber && user.whatsappNumber && tempData.whatsappNumber !== user.whatsappNumber) {
+          clearOnboarding();
+        }
+
         try {
           const res = await apiClient.get("/api/commerce/dashboard");
           if (res.data?.merchant) {
             const m = res.data.merchant;
             const knowledge = res.data.knowledge;
 
-            // Reconstruct OnboardingData from Merchant and Knowledge models
             const restoredData = {
               businessName: m.businessName,
               category: m.category,
@@ -57,10 +62,9 @@ export function OnboardingWizard() {
               country: m.country,
               currency: m.currency,
               address: m.address,
-              whatsappNumber: m.whatsappNumber,
+              whatsappNumber: m.whatsappNumber || user.whatsappNumber,
               city: m.city,
               paymentMethods: knowledge?.businessRules?.paymentMethods?.map((pm: any) => pm.provider) || [],
-              // First product is more complex to restore perfectly but we can try the latest one
               firstProduct: res.data.products?.[0] ? {
                 name: res.data.products[0].name,
                 price: res.data.products[0].price,
@@ -82,14 +86,13 @@ export function OnboardingWizard() {
       setIsRestoring(false);
     };
     restoreData();
-  }, [user, accessToken, tempData, setTempData]);
+  }, [user, accessToken, tempData, setTempData, clearOnboarding]);
 
   // Create or Update merchant record (Auto-save)
   useEffect(() => {
     const saveMerchant = async () => {
       if (user && accessToken && tempData && !isRestoring) {
         try {
-          console.log("[Onboarding] Auto-saving merchant data...");
           await apiClient.post("/api/commerce/merchant", {
             ...tempData,
             city: tempData.city || ""
@@ -108,7 +111,6 @@ export function OnboardingWizard() {
       }
     };
 
-    // Debounce auto-save
     const timer = setTimeout(saveMerchant, 2000);
     return () => clearTimeout(timer);
   }, [user, accessToken, tempData, isRestoring]);
@@ -117,9 +119,8 @@ export function OnboardingWizard() {
   const handleBack = () => setStep(currentStep - 1);
 
   const steps = [
-    { title: "Bienvenue", component: <WelcomeStep onNext={handleNext} onBack={() => navigate("/")} /> },
+    { title: "Profil Boutique", component: <WelcomeStep onNext={handleNext} onBack={() => navigate("/")} /> },
     { title: "IA Vision", component: <VisionStep onNext={async () => {
-      // Final sync before dashboard
       try {
         if (tempData) {
           await apiClient.post("/api/commerce/merchant", {
@@ -127,7 +128,6 @@ export function OnboardingWizard() {
             onboardingCompleted: true
           });
         }
-        // Update local state to reflect onboarding success
         useAuthStore.getState().updateUser({ onboardingCompleted: true });
       } catch (err) {
         console.warn("[Onboarding] Final sync failed", err);
@@ -137,7 +137,6 @@ export function OnboardingWizard() {
     }} onBack={handleBack} /> },
   ];
 
-  // Safety check: if currentStep is out of bounds, reset to 0 or last valid step
   useEffect(() => {
     if (currentStep >= steps.length) {
       setStep(steps.length - 1);
@@ -145,27 +144,21 @@ export function OnboardingWizard() {
   }, [currentStep, steps.length, setStep]);
 
   if (isRestoring) {
-    return (
-      <div className="min-h-screen bg-vendeur-coal flex flex-col items-center justify-center p-4">
-        <Loader2 className="text-vendeur-emerald animate-spin mb-4" size={48} />
-        <p className="text-white/50 font-black uppercase tracking-widest text-xs">Restauration de votre session...</p>
-      </div>
-    );
+    return <VendeurIALoader fullscreen label="Préparation de votre espace..." size="lg" />;
   }
 
-  // Pre-render check to avoid crash
   if (!steps[currentStep]) return null;
 
   return (
-    <div className="min-h-screen bg-vendeur-coal flex flex-col items-center justify-center p-4 md:p-12 overflow-x-hidden">
+    <div className="min-h-screen bg-vendeur-coal flex flex-col items-center justify-start sm:justify-center p-4 sm:p-6 md:p-12 overflow-x-hidden">
       {/* Modern Minimal Progress Bar */}
-      <div className="w-full max-w-md mb-8 md:mb-16 flex gap-2 px-6">
+      <div className="w-full max-w-md mb-6 sm:mb-10 flex gap-2 px-2">
         {steps.map((s, i) => (
-          <div key={i} className="flex-1 flex flex-col gap-2">
+          <div key={i} className="flex-1 flex flex-col gap-1.5">
             <div className={`h-1.5 rounded-full transition-all duration-500 ${
-              i <= currentStep ? "bg-vendeur-emerald shadow-[0_0_10px_rgba(16,185,129,0.3)]" : "bg-white/5"
+              i <= currentStep ? "bg-vendeur-emerald shadow-[0_0_10px_rgba(16,185,129,0.4)]" : "bg-white/10"
             }`} />
-            <span className={`text-[9px] font-black uppercase tracking-[0.2em] text-center transition-colors ${
+            <span className={`text-[10px] font-black uppercase tracking-wider text-center transition-colors ${
               i <= currentStep ? "text-vendeur-emerald" : "text-white/20"
             }`}>
               {s.title}
@@ -178,10 +171,10 @@ export function OnboardingWizard() {
         <AnimatePresence mode="wait">
           <motion.div
             key={currentStep}
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            transition={{ duration: 0.3 }}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.25 }}
             className="w-full"
           >
             {steps[currentStep].component}
@@ -195,43 +188,67 @@ export function OnboardingWizard() {
 function WelcomeStep({ onNext, onBack }: { onNext: () => void; onBack: () => void }) {
   const navigate = useNavigate();
   const { tempData, setTempData } = useOnboardingStore();
+  const { user } = useAuthStore();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+
+  // Helper to parse phone number into country and local digits
+  const parsePhone = (phoneStr?: string) => {
+    if (!phoneStr) return { country: COUNTRIES[0], local: "" };
+    const clean = phoneStr.trim();
+    const sorted = [...COUNTRIES].sort((a, b) => b.dialCode.length - a.dialCode.length);
+    const matched = sorted.find(c => clean.startsWith(c.dialCode));
+    if (matched) {
+      return { country: matched, local: clean.slice(matched.dialCode.length) };
+    }
+    return { country: COUNTRIES[0], local: clean.replace(/\D/g, "") };
+  };
+
+  const initialNumber = tempData?.whatsappNumber || user?.whatsappNumber || "";
+  const initialParsed = parsePhone(initialNumber);
+
+  const [selectedCountry, setSelectedCountry] = useState<Country>(
+    (tempData?.country ? COUNTRIES.find(c => c.code === tempData.country) : null) || initialParsed.country
+  );
+  const [localPhone, setLocalPhone] = useState(initialParsed.local);
+
   const [form, setForm] = useState(tempData || {
     businessName: "",
     category: "fashion",
     description: "",
-    country: "CI",
+    country: initialParsed.country.code,
+    currency: initialParsed.country.currency,
     address: "",
-    whatsappNumber: ""
+    whatsappNumber: initialNumber
   });
 
-  const [selectedCountry, setSelectedCountry] = useState(
-    COUNTRIES.find(c => c.code === (form.country || "CI")) || COUNTRIES[0]
-  );
-
-  // Extract local phone from whatsappNumber if it already has the dialCode
-  const initialLocalPhone = form.whatsappNumber?.startsWith(selectedCountry.dialCode)
-    ? form.whatsappNumber.replace(selectedCountry.dialCode, "")
-    : form.whatsappNumber || "";
-
-  const [localPhone, setLocalPhone] = useState(initialLocalPhone);
+  // Sync if user.whatsappNumber hydrates after initial render
+  useEffect(() => {
+    const rawNumber = tempData?.whatsappNumber || user?.whatsappNumber;
+    if (rawNumber && (!localPhone || !form.whatsappNumber)) {
+      const parsed = parsePhone(rawNumber);
+      setSelectedCountry(parsed.country);
+      setLocalPhone(parsed.local);
+      setForm(prev => ({
+        ...prev,
+        country: parsed.country.code,
+        currency: parsed.country.currency,
+        whatsappNumber: rawNumber
+      }));
+    }
+  }, [user?.whatsappNumber, tempData?.whatsappNumber]);
 
   useEffect(() => {
     if (selectedCountry) {
       const newWhatsappNumber = `${selectedCountry.dialCode}${localPhone}`;
-      setForm(prev => {
-        const updated = {
-          ...prev,
-          country: selectedCountry.code,
-          currency: selectedCountry.currency,
-          whatsappNumber: newWhatsappNumber
-        };
-        return updated;
-      });
+      setForm(prev => ({
+        ...prev,
+        country: selectedCountry.code,
+        currency: selectedCountry.currency,
+        whatsappNumber: newWhatsappNumber
+      }));
     }
   }, [localPhone, selectedCountry]);
 
-  // Debounced store update for auto-save
   useEffect(() => {
     const timer = setTimeout(() => {
       setTempData(form);
@@ -244,57 +261,63 @@ function WelcomeStep({ onNext, onBack }: { onNext: () => void; onBack: () => voi
       setTempData(form);
       onNext();
     } else {
-      toast.error("Veuillez remplir tous les champs obligatoires (Nom, WhatsApp et Adresse).");
+      toast.error("Veuillez renseigner le nom de la boutique, le numéro WhatsApp et l'adresse.");
     }
   };
 
   return (
-    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-700 w-full max-w-7xl mx-auto">
-      <section className="w-full flex flex-col lg:flex-row items-center justify-center gap-8 lg:gap-24 text-left">
-        <div className="w-full lg:max-w-lg">
-          <h1 className="text-4xl md:text-5xl font-black text-white mb-6 uppercase tracking-tighter leading-tight flex flex-col gap-4">
-            <div className="flex items-center gap-4">
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-vendeur-emerald/10 border border-vendeur-emerald/20">
-                <Rocket className="text-vendeur-emerald" size={24} />
-              </div>
-              <span>{tempData?.businessName ? "Vérifiez votre" : "Lancez votre"}</span>
-            </div>
-            <span className="text-vendeur-emerald">machine de vente.</span>
+    <div className="space-y-6 animate-in fade-in duration-500 w-full max-w-6xl mx-auto">
+      <section className="w-full flex flex-col lg:flex-row items-center justify-center gap-6 lg:gap-16 text-left">
+        
+        {/* Left Headline */}
+        <div className="w-full lg:max-w-md text-left">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-vendeur-emerald/10 border border-vendeur-emerald/20 text-vendeur-emerald text-[10px] font-black uppercase tracking-wider mb-4">
+            <Rocket size={14} />
+            <span>Configuration 2 Min</span>
+          </div>
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-white mb-4 uppercase tracking-tight leading-tight">
+            Lancez votre <br />
+            <span className="text-vendeur-emerald">Vendeur IA.</span>
           </h1>
-          <p className="text-lg text-white/50 mb-8 max-w-xl leading-relaxed font-medium">
-            Ces informations permettent à l'IA de personnaliser ses réponses et de vendre vos produits avec votre propre style.
+          <p className="text-sm sm:text-base text-white/50 mb-6 leading-relaxed font-medium">
+            Ces informations permettent à votre IA de répondre aux clients avec vos prix, votre catalogue et vos règles de livraison.
           </p>
         </div>
 
-        <div className="relative w-full lg:w-auto">
-          <div className="relative rounded-[2.5rem] border border-white/10 bg-[#0c0f0d] p-8 text-left w-full lg:min-w-[600px] shadow-2xl">
-            <div className="mb-8 flex items-center gap-4 relative z-10">
-              <div className="grid h-12 w-12 place-items-center rounded-2xl bg-vendeur-emerald/10 text-vendeur-emerald border border-vendeur-emerald/20">
-                <Store size={24} />
+        {/* Right Form Card */}
+        <div className="w-full lg:w-auto flex-1 max-w-xl">
+          <div className="rounded-[2rem] sm:rounded-[2.5rem] border border-white/10 bg-[#0c0f0d] p-5 sm:p-8 text-left shadow-2xl space-y-5">
+            <div className="flex items-center gap-3.5 pb-2 border-b border-white/5">
+              <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-2xl bg-vendeur-emerald/10 text-vendeur-emerald border border-vendeur-emerald/20 flex items-center justify-center shrink-0">
+                <Store size={22} />
               </div>
               <div>
-                <h2 className="text-xl font-black text-white">Profil du commerce</h2>
-                <p className="text-xs text-white/40 font-medium">Ceci aidera l'IA à mieux vendre pour vous.</p>
+                <h2 className="text-lg sm:text-xl font-black text-white leading-tight">Profil de votre Boutique</h2>
+                <p className="text-xs text-white/40 font-medium">Modifiable à tout moment dans vos paramètres.</p>
               </div>
             </div>
 
-            <div className="grid gap-6 relative z-10">
-               <label className="grid gap-2">
-                <span className="text-[10px] font-black uppercase tracking-widest text-white/20 ml-1">Nom du commerce</span>
+            <div className="grid gap-4">
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">
+                  Nom de votre Boutique / Marque
+                </label>
                 <input
-                   className="h-12 rounded-xl border border-white/10 bg-black/40 px-4 text-white outline-none focus:border-vendeur-emerald transition-all"
-                   value={form.businessName}
-                   onChange={(e) => setForm({ ...form, businessName: e.target.value })}
-                   placeholder="Ex: Aicha Mode"
+                  className="w-full h-12 sm:h-14 rounded-2xl border border-white/10 bg-black/40 px-4 text-white text-sm outline-none focus:border-vendeur-emerald transition-all placeholder:text-white/20"
+                  value={form.businessName}
+                  onChange={(e) => setForm({ ...form, businessName: e.target.value })}
+                  placeholder="Ex: Aicha Mode Abidjan"
                 />
-              </label>
+              </div>
 
-              <div className="flex flex-col sm:flex-row gap-4">
-                <label className="flex-1 min-w-0 grid gap-2">
-                  <span className="text-[10px] font-black uppercase tracking-widest text-white/20 ml-1">Catégorie</span>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">
+                    Catégorie
+                  </label>
                   <div className="relative">
                     <select
-                      className="h-12 w-full rounded-xl border border-white/10 bg-black/20 px-4 text-white outline-none focus:border-vendeur-emerald transition-all appearance-none cursor-pointer"
+                      className="w-full h-12 sm:h-14 rounded-2xl border border-white/10 bg-black/40 px-4 text-white text-sm outline-none focus:border-vendeur-emerald transition-all appearance-none cursor-pointer"
                       value={form.category}
                       onChange={(e) => setForm({ ...form, category: e.target.value })}
                     >
@@ -304,7 +327,7 @@ function WelcomeStep({ onNext, onBack }: { onNext: () => void; onBack: () => voi
                       <option value="electronics">📱 Électronique & High-Tech</option>
                       <option value="artisan">🛠️ Artisanat & Fait Main</option>
                       <option value="services">💼 Prestations de Services</option>
-                      <option value="digital">📚 Produits Digitaux & Formations</option>
+                      <option value="digital">📚 Produits Digitaux</option>
                       <option value="home">🏠 Maison & Décoration</option>
                       <option value="grocery">🛒 Épicerie & Supérette</option>
                       <option value="health">💊 Santé & Bien-être</option>
@@ -313,9 +336,12 @@ function WelcomeStep({ onNext, onBack }: { onNext: () => void; onBack: () => voi
                     </select>
                     <ChevronRight size={16} className="absolute right-4 top-1/2 -translate-y-1/2 rotate-90 text-white/30 pointer-events-none" />
                   </div>
-                </label>
-                <label className="flex-1 min-w-0 grid gap-2">
-                  <span className="text-[10px] font-black uppercase tracking-widest text-white/20 ml-1">WhatsApp Business</span>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">
+                    WhatsApp Business
+                  </label>
                   <div className="flex gap-2 items-center w-full">
                     <CountrySelector
                       selected={selectedCountry}
@@ -323,7 +349,7 @@ function WelcomeStep({ onNext, onBack }: { onNext: () => void; onBack: () => voi
                     />
                     <div className="flex-1 min-w-0">
                       <input
-                        className="h-12 w-full rounded-xl border border-white/10 bg-black/40 px-4 text-white outline-none focus:border-vendeur-emerald transition-all placeholder:text-white/10 text-sm"
+                        className="w-full h-12 sm:h-14 rounded-2xl border border-white/10 bg-black/40 px-4 text-white font-mono text-sm outline-none focus:border-vendeur-emerald transition-all placeholder:text-white/20"
                         value={localPhone}
                         onChange={(e) => setLocalPhone(e.target.value.replace(/\D/g, ""))}
                         placeholder="07 00 00 00 00"
@@ -331,11 +357,13 @@ function WelcomeStep({ onNext, onBack }: { onNext: () => void; onBack: () => voi
                       />
                     </div>
                   </div>
-                </label>
+                </div>
               </div>
 
-              <label className="grid gap-2">
-                <span className="text-[10px] font-black uppercase tracking-widest text-white/20 ml-1">Adresse précise</span>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">
+                  Adresse & Ville de livraison
+                </label>
                 <AddressAutocomplete
                   value={form.address}
                   onChange={(value) => setForm({ ...form, address: value })}
@@ -362,45 +390,52 @@ function WelcomeStep({ onNext, onBack }: { onNext: () => void; onBack: () => voi
                     setForm(prev => ({ ...prev, ...updates }));
                   }}
                 />
-              </label>
+              </div>
 
-              <label className="grid gap-2">
-                <span className="text-[10px] font-black uppercase tracking-widest text-white/20 ml-1">Ce que vous vendez / Instructions</span>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">
+                  Ce que vous vendez / Modalités
+                </label>
                 <textarea
-                  className="min-h-[100px] rounded-xl border border-white/10 bg-black/40 p-4 text-white outline-none focus:border-vendeur-emerald transition-all resize-none text-sm"
+                  className="w-full min-h-[90px] rounded-2xl border border-white/10 bg-black/40 p-4 text-white text-sm outline-none focus:border-vendeur-emerald transition-all resize-none placeholder:text-white/20"
                   value={form.description}
                   onChange={(e) => setForm({ ...form, description: e.target.value })}
-                  placeholder="Ex: Je vends des sacs de luxe. Livraison partout sous 2h."
+                  placeholder="Ex: Robes, chaussures et sacs de luxe. Livraison partout sous 24h."
                 />
-              </label>
+              </div>
 
               <button
                 onClick={handleNext}
-                className="mt-4 flex h-16 items-center justify-center gap-3 rounded-2xl bg-vendeur-emerald px-8 text-sm font-black uppercase tracking-widest text-vendeur-coal shadow-xl shadow-vendeur-emerald/10 transition-all hover:scale-[1.02] active:scale-95"
+                className="w-full h-12 sm:h-14 rounded-2xl bg-vendeur-emerald text-vendeur-coal font-black uppercase tracking-widest text-xs sm:text-sm flex items-center justify-center gap-2 hover:scale-[1.01] active:scale-95 transition-all shadow-xl shadow-vendeur-emerald/20 cursor-pointer mt-2"
               >
-                <Sparkles size={18} /> Continuer vers l'IA Vision
+                <Sparkles size={18} />
+                <span>Continuer vers l'IA Vision</span>
+                <ChevronRight size={18} />
               </button>
 
-              <ConfirmationModal
-                isOpen={showLogoutConfirm}
-                onClose={() => setShowLogoutConfirm(false)}
-                onConfirm={() => {
-                  useAuthStore.getState().logout();
-                  navigate("/");
-                }}
-                title="Quitter la configuration ?"
-                message="Votre progression sera sauvegardée, mais vous devrez vous réauthentifier pour continuer l'assistant."
-                confirmLabel="Se déconnecter"
-                cancelLabel="Continuer l'assistant"
-                type="logout"
-              />
+              <div className="pt-2 flex flex-col items-center gap-2">
+                <ConfirmationModal
+                  isOpen={showLogoutConfirm}
+                  onClose={() => setShowLogoutConfirm(false)}
+                  onConfirm={() => {
+                    useAuthStore.getState().logout();
+                    navigate("/");
+                  }}
+                  title="Quitter la configuration ?"
+                  message="Votre progression sera sauvegardée, mais vous devrez vous reconnecter pour continuer."
+                  confirmLabel="Se déconnecter"
+                  cancelLabel="Continuer"
+                  type="logout"
+                />
 
-              <button
-                onClick={() => setShowLogoutConfirm(true)}
-                className="mt-4 text-white/20 text-[10px] font-black uppercase tracking-widest hover:text-rose-400 transition-colors text-center w-full"
-              >
-                Quitter la configuration (Déconnexion)
-              </button>
+                <button
+                  type="button"
+                  onClick={() => setShowLogoutConfirm(true)}
+                  className="text-white/25 text-[11px] font-medium hover:text-rose-400/80 transition-colors cursor-pointer"
+                >
+                  Quitter la configuration
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -416,14 +451,12 @@ function VisionStep({ onNext, onBack }: { onNext: () => void; onBack: () => void
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [result, setResult] = useState<any>(tempData?.firstProduct || null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(tempData?.productImage || null);
-  const { accessToken } = useAuthStore();
   const currency: string = (tempData as any)?.currency || "XOF";
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const selected = e.target.files?.[0];
     if (!selected) return;
 
-    // Create a preview and store it
     const reader = new FileReader();
     reader.onloadend = () => {
       const base64String = reader.result as string;
@@ -444,9 +477,9 @@ function VisionStep({ onNext, onBack }: { onNext: () => void; onBack: () => void
 
       setResult(res.data);
       setTempData({ firstProduct: res.data });
-      toast.success("Produit analysé par l'IA ! ✨");
+      toast.success("Produit analysé avec succès ! ✨");
     } catch (err) {
-      toast.error("Échec de l'analyse IA");
+      toast.error("Échec de l'analyse IA de la photo");
     } finally {
       setAnalyzing(false);
     }
@@ -459,133 +492,141 @@ function VisionStep({ onNext, onBack }: { onNext: () => void; onBack: () => void
   };
 
   return (
-    <div className="bg-white/5 border border-white/10 rounded-[3rem] p-4 md:p-8">
-      <div className="flex flex-col md:flex-row gap-12 items-center">
-        <div className="flex-1 space-y-6">
-          <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-vendeur-emerald/10 border border-vendeur-emerald/20">
-            <Sparkles className="text-vendeur-emerald" size={24} />
+    <div className="bg-[#0c0f0d] border border-white/10 rounded-[2rem] sm:rounded-[2.5rem] p-5 sm:p-8 md:p-10 shadow-2xl max-w-4xl mx-auto text-left">
+      <div className="flex flex-col md:flex-row gap-8 md:gap-12 items-center">
+        
+        {/* Left Explanation */}
+        <div className="flex-1 space-y-4 sm:space-y-6 text-left">
+          <div className="inline-flex h-11 w-11 sm:h-12 sm:w-12 items-center justify-center rounded-2xl bg-vendeur-emerald/10 border border-vendeur-emerald/20 text-vendeur-emerald">
+            <Sparkles size={22} />
           </div>
-          <h2 className="text-4xl font-black text-white uppercase tracking-tighter leading-none">
-            La Magie <br/> <span className="text-vendeur-emerald">IA Vision.</span>
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-black text-white uppercase tracking-tight leading-tight">
+            Magie <br />
+            <span className="text-vendeur-emerald">IA Vision.</span>
           </h2>
-          <p className="text-white/50 text-lg leading-relaxed">
-            Ajoutez votre premier produit en prenant simplement une photo. Notre IA se charge du reste : titre, prix, description et tags.
+          <p className="text-white/60 text-sm sm:text-base leading-relaxed font-medium">
+            Ajoutez votre premier produit en prenant simplement une photo. L'IA génère automatiquement le nom, le prix suggéré et la description commerciale.
           </p>
 
-          <div className="space-y-4">
-             <div className="flex items-center gap-3 text-white/40 text-sm">
-                <CheckCircle2 className="text-vendeur-emerald" size={18} />
-                Gain de temps massif
-             </div>
-             <div className="flex items-center gap-3 text-white/40 text-sm">
-                <CheckCircle2 className="text-vendeur-emerald" size={18} />
-                Descriptions vendeuses
-             </div>
+          <div className="space-y-2.5 pt-1">
+            <div className="flex items-center gap-2.5 text-white/50 text-xs sm:text-sm">
+              <CheckCircle2 className="text-vendeur-emerald shrink-0" size={16} />
+              <span>Génération instantanée en 3 secondes</span>
+            </div>
+            <div className="flex items-center gap-2.5 text-white/50 text-xs sm:text-sm">
+              <CheckCircle2 className="text-vendeur-emerald shrink-0" size={16} />
+              <span>Descriptions attractives prêtes pour WhatsApp</span>
+            </div>
           </div>
         </div>
 
-        <div className="w-full max-w-xl">
+        {/* Right Photo Zone / Result */}
+        <div className="w-full md:max-w-md">
           {!result ? (
-            <label className={`relative flex flex-col items-center justify-center aspect-square rounded-[2.5rem] border-2 border-dashed border-white/10 bg-black/40 hover:border-vendeur-emerald/40 transition-all cursor-pointer overflow-hidden ${analyzing ? "pointer-events-none" : ""}`}>
-               {analyzing ? (
-                 <div className="flex flex-col items-center gap-4 text-center p-8">
-                    <Loader2 className="text-vendeur-emerald animate-spin" size={48} />
-                    <p className="text-vendeur-emerald font-black uppercase tracking-widest text-xs">L'IA analyse votre produit...</p>
-                 </div>
-               ) : (
-                 <>
-                   <div className="h-20 w-20 rounded-3xl bg-white/5 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                      <ImageIcon className="text-white/20" size={32} />
-                   </div>
-                   <p className="text-white/60 font-bold uppercase tracking-widest text-[10px]">Prendre une photo</p>
-                   <input type="file" className="hidden" accept="image/*" onChange={handleUpload} />
-                 </>
-               )}
+            <label className={cn(
+              "relative flex flex-col items-center justify-center aspect-[4/3] sm:aspect-square rounded-[2rem] border-2 border-dashed border-white/15 bg-black/40 hover:border-vendeur-emerald/50 transition-all cursor-pointer overflow-hidden p-6 text-center group",
+              analyzing && "pointer-events-none"
+            )}>
+              {analyzing ? (
+                <div className="flex flex-col items-center justify-center p-6">
+                  <VendeurIALoader label="L'IA analyse votre photo..." size="sm" />
+                </div>
+              ) : (
+                <>
+                  <div className="h-16 w-16 sm:h-20 sm:w-20 rounded-2xl bg-white/5 flex items-center justify-center mb-3 group-hover:scale-105 transition-transform text-white/40 group-hover:text-vendeur-emerald">
+                    <ImageIcon size={32} />
+                  </div>
+                  <p className="text-white font-black uppercase tracking-wider text-xs sm:text-sm">Prendre ou Choisir une photo</p>
+                  <p className="text-white/30 text-[10px] mt-1">PNG, JPG ou WEBP</p>
+                  <input type="file" className="hidden" accept="image/*" onChange={handleUpload} />
+                </>
+              )}
             </label>
           ) : (
-            <div className="bg-black/40 border border-white/10 rounded-[2.5rem] overflow-hidden animate-in zoom-in-95 duration-300">
-               <div className="aspect-video bg-white/5 relative">
-                  {previewUrl && <img src={previewUrl} className="h-full w-full object-cover opacity-50" />}
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <CheckCircle2 className="text-vendeur-emerald" size={48} />
-                  </div>
-               </div>
-               <div className="p-4 md:p-6 space-y-4">
-                  <div>
-                    <h3 className="text-sm font-black text-white/40 uppercase tracking-widest mb-1">Nom suggéré</h3>
-                    <input
-                      className="w-full bg-transparent border-b border-white/10 text-xl font-bold text-white outline-none focus:border-vendeur-emerald transition-colors"
-                      value={result.name}
-                      onChange={(e) => handleUpdateResult({ name: e.target.value })}
-                    />
-                  </div>
-                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-6">
-                    <div className="flex-1">
-                      <h3 className="text-sm font-black text-white/40 uppercase tracking-widest mb-1">Prix suggéré</h3>
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="number"
-                          className="w-full bg-transparent border-b border-white/10 text-2xl font-black text-vendeur-emerald outline-none focus:border-vendeur-emerald transition-colors"
-                          value={result.price}
-                          onChange={(e) => handleUpdateResult({ price: Number(e.target.value) })}
-                        />
-                        <span className="text-xl font-black text-vendeur-emerald">{currency}</span>
-                      </div>
+            <div className="bg-black/40 border border-white/10 rounded-[2rem] overflow-hidden animate-in zoom-in-95 duration-300">
+              <div className="aspect-video bg-white/5 relative">
+                {previewUrl && <img src={previewUrl} alt="Produit" className="h-full w-full object-cover" />}
+                <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-md px-3 py-1 rounded-full border border-white/10 flex items-center gap-1.5 text-vendeur-emerald text-[11px] font-bold">
+                  <CheckCircle2 size={14} />
+                  <span>Analysé</span>
+                </div>
+              </div>
+              <div className="p-4 sm:p-5 space-y-3.5">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black text-white/40 uppercase tracking-widest ml-1">Nom suggéré</label>
+                  <input
+                    className="w-full bg-black/40 border border-white/10 focus:border-vendeur-emerald rounded-xl px-3.5 py-2.5 text-base font-bold text-white outline-none transition-all"
+                    value={result.name}
+                    onChange={(e) => handleUpdateResult({ name: e.target.value })}
+                  />
+                </div>
+                <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-end gap-3 pt-1">
+                  <div className="flex-1 space-y-1">
+                    <label className="text-[10px] font-black text-white/40 uppercase tracking-widest ml-1">Prix suggéré</label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="number"
+                        className="w-full bg-black/40 border border-white/10 focus:border-vendeur-emerald rounded-xl px-3.5 py-2.5 text-lg font-black text-vendeur-emerald outline-none transition-all"
+                        value={result.price}
+                        onChange={(e) => handleUpdateResult({ price: Number(e.target.value) })}
+                      />
+                      <span className="text-sm font-black text-vendeur-emerald px-2">{currency}</span>
                     </div>
-                    <button onClick={onNext} className="w-full sm:w-auto h-12 px-8 rounded-xl bg-vendeur-emerald text-vendeur-coal font-black uppercase tracking-widest text-xs shrink-0">
-                      Confirmer
-                    </button>
                   </div>
-               </div>
+                  <button
+                    onClick={onNext}
+                    className="h-12 px-6 rounded-xl bg-vendeur-emerald text-vendeur-coal font-black uppercase tracking-wider text-xs shrink-0 flex items-center justify-center gap-1.5 cursor-pointer hover:scale-105 active:scale-95 transition-all"
+                  >
+                    <span>Valider</span>
+                    <ChevronRight size={16} />
+                  </button>
+                </div>
+              </div>
             </div>
           )}
         </div>
       </div>
 
-      <div className="mt-12 flex flex-col items-center gap-6 w-full max-w-sm mx-auto">
+      {/* Bottom Actions */}
+      <div className="mt-8 pt-6 border-t border-white/5 flex flex-col items-center gap-4 w-full max-w-sm mx-auto">
         {!result && !analyzing && (
-          <div className="w-full space-y-4">
-            <button
-              onClick={onNext}
-              className="w-full h-16 rounded-2xl bg-white/5 border border-white/10 text-white font-black uppercase tracking-widest text-xs hover:bg-white/10 transition-all active:scale-95 flex items-center justify-center gap-2"
-            >
-              Terminer la configuration <ChevronRight size={18} />
-            </button>
-            <p className="text-[10px] text-white/30 text-center font-medium italic">
-              Vous pourrez ajouter vos produits plus tard depuis votre tableau de bord.
-            </p>
-          </div>
+          <button
+            onClick={onNext}
+            className="w-full h-12 sm:h-14 rounded-2xl bg-white/5 border border-white/10 text-white font-black uppercase tracking-wider text-xs hover:bg-white/10 transition-all active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
+          >
+            <span>Passer cette étape</span>
+            <ChevronRight size={16} />
+          </button>
         )}
 
-        <div className="flex flex-col items-center gap-4 w-full">
-          <button
-            onClick={onBack}
-            className="text-white/40 text-[10px] font-black uppercase tracking-widest hover:text-white transition-colors flex items-center gap-2"
-          >
-            <ChevronLeft size={14} /> Retour aux informations
-          </button>
+        <button
+          onClick={onBack}
+          className="text-white/40 text-xs font-bold hover:text-white transition-colors flex items-center gap-1.5 cursor-pointer"
+        >
+          <ChevronLeft size={14} />
+          <span>Retour aux informations boutique</span>
+        </button>
 
-          <ConfirmationModal
-            isOpen={showLogoutConfirm}
-            onClose={() => setShowLogoutConfirm(false)}
-            onConfirm={() => {
-              useAuthStore.getState().logout();
-              navigate("/");
-            }}
-            title="Quitter la configuration ?"
-            message="Votre progression sera sauvegardée, mais vous devrez vous réauthentifier pour continuer l'assistant."
-            confirmLabel="Se déconnecter"
-            cancelLabel="Continuer l'assistant"
-            type="logout"
-          />
+        <ConfirmationModal
+          isOpen={showLogoutConfirm}
+          onClose={() => setShowLogoutConfirm(false)}
+          onConfirm={() => {
+            useAuthStore.getState().logout();
+            navigate("/");
+          }}
+          title="Quitter la configuration ?"
+          message="Votre progression sera sauvegardée, mais vous devrez vous reconnecter pour continuer."
+          confirmLabel="Se déconnecter"
+          cancelLabel="Continuer"
+          type="logout"
+        />
 
-          <button
-            onClick={() => setShowLogoutConfirm(true)}
-            className="text-white/10 text-[9px] font-black uppercase tracking-widest hover:text-rose-400/50 transition-colors"
-          >
-            Quitter (Déconnexion)
-          </button>
-        </div>
+        <button
+          onClick={() => setShowLogoutConfirm(true)}
+          className="text-white/20 text-[10px] font-medium hover:text-rose-400 transition-colors cursor-pointer"
+        >
+          Quitter la configuration
+        </button>
       </div>
     </div>
   );

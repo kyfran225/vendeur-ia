@@ -420,7 +420,7 @@ export function OrderCreationModal({
               <button
                 disabled={selectedItems.length === 0 || createOrderMutation.isPending || isCreatingCustomer}
                 onClick={handleValidateOrder}
-                className="w-full h-12 sm:h-13 bg-emerald-500 hover:bg-emerald-400 text-black font-black uppercase tracking-wider text-xs rounded-2xl flex items-center justify-center gap-2 shadow-xl shadow-emerald-500/20 active:scale-98 transition-all disabled:opacity-20"
+                className="w-full h-12 sm:h-14 bg-emerald-500 hover:bg-emerald-400 text-black font-black uppercase tracking-wider text-xs rounded-2xl flex items-center justify-center gap-2 shadow-xl shadow-emerald-500/20 active:scale-98 transition-all disabled:opacity-20"
               >
                 {createOrderMutation.isPending || isCreatingCustomer ? (
                   <Loader2 className="animate-spin shrink-0" size={18} />

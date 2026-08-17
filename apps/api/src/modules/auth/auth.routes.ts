@@ -61,6 +61,48 @@ router.post("/google", validate(googleAuthSchema), async (req, res) => {
   }
 });
 
+// WhatsApp Native Quick Access (Phone based instant access or return)
+router.post("/whatsapp-quick-access", async (req, res) => {
+  try {
+    const { phoneNumber, displayName } = req.body;
+    if (!phoneNumber) {
+      return res.status(400).json({ error: "Le numéro WhatsApp est obligatoire." });
+    }
+    const tokens = await authService.loginOrRegisterWithWhatsApp(phoneNumber, displayName);
+    res.json(tokens);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+// WhatsApp Request OTP
+router.post("/whatsapp-otp-request", async (req, res) => {
+  try {
+    const { phoneNumber } = req.body;
+    if (!phoneNumber) {
+      return res.status(400).json({ error: "Le numéro WhatsApp est obligatoire." });
+    }
+    const result = await authService.requestWhatsAppOtp(phoneNumber);
+    res.json(result);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+// WhatsApp Verify OTP
+router.post("/whatsapp-otp-verify", async (req, res) => {
+  try {
+    const { phoneNumber, code } = req.body;
+    if (!phoneNumber || !code) {
+      return res.status(400).json({ error: "Le numéro et le code OTP sont requis." });
+    }
+    const tokens = await authService.verifyWhatsAppOtp(phoneNumber, code);
+    res.json(tokens);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
 router.post("/forgot-password", validate(forgotPasswordSchema), async (req, res) => {
   try {
     await authService.forgotPassword(req.body.email);

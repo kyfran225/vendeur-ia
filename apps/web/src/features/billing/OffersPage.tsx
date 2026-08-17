@@ -141,7 +141,7 @@ export function OffersPage() {
 
           <button
              onClick={() => navigate(`/checkout?offer=pro&setup=EXPERT&interval=${billingInterval}`)}
-             className="w-full md:w-auto h-13 sm:h-14 px-6 sm:px-8 bg-white hover:bg-vendeur-emerald text-vendeur-coal rounded-2xl font-black uppercase tracking-wider text-xs flex items-center justify-center gap-2.5 transition-all active:scale-95 shadow-xl shrink-0 cursor-pointer"
+             className="w-full md:w-auto h-12 sm:h-14 px-6 sm:px-8 bg-white hover:bg-vendeur-emerald text-vendeur-coal rounded-2xl font-black uppercase tracking-wider text-xs flex items-center justify-center gap-2.5 transition-all active:scale-95 shadow-xl shrink-0 cursor-pointer"
           >
             <span>En savoir plus</span>
             <ArrowRight size={16} />
@@ -249,7 +249,7 @@ function OfferCard({
         <button
           onClick={onSelect}
           className={cn(
-            "w-full h-13 sm:h-15 rounded-2xl font-black uppercase tracking-wider text-xs flex items-center justify-center gap-2.5 transition-all active:scale-95 shadow-xl cursor-pointer",
+            "w-full h-12 sm:h-14 rounded-2xl font-black uppercase tracking-wider text-xs flex items-center justify-center gap-2.5 transition-all active:scale-95 shadow-xl cursor-pointer",
             isPro
               ? "bg-vendeur-emerald text-vendeur-coal hover:scale-[1.02] shadow-vendeur-emerald/25"
               : "bg-white text-vendeur-coal hover:bg-vendeur-emerald hover:text-vendeur-coal"

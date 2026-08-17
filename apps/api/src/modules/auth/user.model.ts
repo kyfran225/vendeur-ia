@@ -1,7 +1,9 @@
 import mongoose, { Schema } from "mongoose";
 
 const userSchema = new Schema({
-  email: { type: String, required: true, unique: true, lowercase: true, trim: true, index: true },
+  email: { type: String, sparse: true, unique: true, lowercase: true, trim: true, index: true },
+  whatsappNumber: { type: String, sparse: true, unique: true, trim: true, index: true },
+  authProvider: { type: String, enum: ["email", "google", "whatsapp"], default: "email" },
   passwordHash: { type: String },
   googleId: { type: String, sparse: true, unique: true, index: true },
   displayName: { type: String, required: true },
@@ -13,6 +15,8 @@ const userSchema = new Schema({
   emailVerificationExpiresAt: { type: Date },
   passwordResetTokenHash: { type: String, index: true },
   passwordResetExpiresAt: { type: Date },
+  otpCodeHash: { type: String },
+  otpExpiresAt: { type: Date },
   onboardingCompleted: { type: Boolean, default: false },
   lastSeenAt: { type: Date, default: Date.now }
 }, {

@@ -14,8 +14,10 @@ const googleClient = new OAuth2Client(env.GOOGLE_CLIENT_ID);
 
 export class AuthService {
   async generateTokens(user: any) {
+    const userEmail = user.email || (user.whatsappNumber ? `${user.whatsappNumber.replace(/[^0-9]/g, '')}@whatsapp.vendeur-ia.com` : undefined);
+    
     const accessToken = jwt.sign(
-      { id: user._id, email: user.email, roles: user.roles },
+      { id: user._id, email: userEmail, roles: user.roles },
       env.JWT_SECRET,
       { expiresIn: ACCESS_TOKEN_EXPIRES_IN }
     );
@@ -27,20 +29,104 @@ export class AuthService {
     );
 
     const refreshTokenHash = await bcrypt.hash(refreshToken, 10);
-    await UserModel.findByIdAndUpdate(user._id, { refreshTokenHash });
+    await UserModel.findByIdAndUpdate(user._id, { refreshTokenHash, lastSeenAt: new Date() });
 
     return {
       accessToken,
       refreshToken,
       user: {
         id: user._id.toString(),
-        email: user.email,
+        email: user.email || userEmail,
+        whatsappNumber: user.whatsappNumber,
         displayName: user.displayName,
         avatarUrl: user.avatarUrl,
         roles: user.roles,
         onboardingCompleted: !!user.onboardingCompleted
       }
     };
+  }
+
+  async loginOrRegisterWithWhatsApp(whatsappNumber: string, displayName?: string) {
+    const cleanNumber = whatsappNumber.replace(/[\s\-\(\)]/g, "");
+    if (!cleanNumber || cleanNumber.length < 8) {
+      throw new Error("Numéro WhatsApp invalide.");
+    }
+
+    let user = await UserModel.findOne({ whatsappNumber: cleanNumber });
+
+    if (!user) {
+      // Auto-create user with WhatsApp identity
+      const fallbackEmail = `${cleanNumber.replace(/[^0-9]/g, "")}@whatsapp.vendeur-ia.com`;
+      user = await UserModel.create({
+        whatsappNumber: cleanNumber,
+        email: fallbackEmail,
+        authProvider: "whatsapp",
+        displayName: displayName?.trim() || `Commerçant WhatsApp (${cleanNumber.slice(-4)})`,
+        onboardingCompleted: false
+      });
+    } else if (displayName && user.displayName.startsWith("Commerçant WhatsApp")) {
+      user.displayName = displayName.trim();
+      await user.save();
+    }
+
+    return this.generateTokens(user);
+  }
+
+  async requestWhatsAppOtp(whatsappNumber: string) {
+    const cleanNumber = whatsappNumber.replace(/[\s\-\(\)]/g, "");
+    if (!cleanNumber || cleanNumber.length < 8) {
+      throw new Error("Numéro WhatsApp invalide.");
+    }
+
+    // Generate 6-digit code
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    const codeHash = await bcrypt.hash(code, 10);
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 min
+
+    let user = await UserModel.findOne({ whatsappNumber: cleanNumber });
+    if (!user) {
+      const fallbackEmail = `${cleanNumber.replace(/[^0-9]/g, "")}@whatsapp.vendeur-ia.com`;
+      user = await UserModel.create({
+        whatsappNumber: cleanNumber,
+        email: fallbackEmail,
+        authProvider: "whatsapp",
+        displayName: `Commerçant WhatsApp (${cleanNumber.slice(-4)})`,
+        otpCodeHash: codeHash,
+        otpExpiresAt: expiresAt,
+        onboardingCompleted: false
+      });
+    } else {
+      user.otpCodeHash = codeHash;
+      user.otpExpiresAt = expiresAt;
+      await user.save();
+    }
+
+    // In local/dev or standard deployment, return or log the code
+    console.log(`[WhatsApp Auth] Code OTP pour ${cleanNumber}: ${code}`);
+    return { success: true, message: "Code OTP envoyé", code: process.env.NODE_ENV !== "production" ? code : undefined };
+  }
+
+  async verifyWhatsAppOtp(whatsappNumber: string, code: string) {
+    const cleanNumber = whatsappNumber.replace(/[\s\-\(\)]/g, "");
+    const user = await UserModel.findOne({
+      whatsappNumber: cleanNumber,
+      otpExpiresAt: { $gt: new Date() }
+    });
+
+    if (!user || !user.otpCodeHash) {
+      throw new Error("Code OTP expiré ou numéro invalide.");
+    }
+
+    const isValid = await bcrypt.compare(code, user.otpCodeHash);
+    if (!isValid) {
+      throw new Error("Code OTP incorrect.");
+    }
+
+    user.otpCodeHash = undefined;
+    user.otpExpiresAt = undefined;
+    await user.save();
+
+    return this.generateTokens(user);
   }
 
   async register(input: any) {
@@ -155,7 +241,7 @@ export class AuthService {
 
   async forgotPassword(email: string) {
     const user = await UserModel.findOne({ email });
-    if (!user) return; // Silent return for security
+    if (!user || !user.email) return; // Silent return for security
 
     const token = randomBytes(32).toString("hex");
     const hash = createHash("sha256").update(token).digest("hex");
@@ -188,7 +274,7 @@ export class AuthService {
 
   async sendEmailVerification(userId: string) {
     const user = await UserModel.findById(userId);
-    if (!user || user.emailVerifiedAt) return;
+    if (!user || !user.email || user.emailVerifiedAt) return;
 
     const token = randomBytes(32).toString("hex");
     const hash = createHash("sha256").update(token).digest("hex");
@@ -242,7 +328,7 @@ export class AuthService {
 
     return {
       id: user._id.toString(),
-      email: user.email,
+      email: user.email || (user.whatsappNumber ? `${user.whatsappNumber}@whatsapp.vendeur-ia.com` : ""),
       displayName: user.displayName,
       avatarUrl: user.avatarUrl,
       roles: user.roles,

@@ -52,6 +52,17 @@ const SystemSettingsSchema = new Schema({
       alertThreshold: { type: String, enum: ['always', 'high_frequency'], default: 'always' }
     }
   },
+  manualPaymentConfig: {
+    enabled: { type: Boolean, default: true },
+    recipientName: { type: String, default: "Vendeur IA" },
+    waveNumber: { type: String, default: "+2250700000000" },
+    orangeMoneyNumber: { type: String, default: "+2250700000000" },
+    mtnNumber: { type: String, default: "+2250500000000" },
+    moovNumber: { type: String, default: "+2250100000000" },
+    djamoTag: { type: String, default: "$vendeuria" },
+    instructions: { type: String, default: "Effectuez votre transfert vers le numéro correspondant, puis renseignez l'ID de transaction ci-dessous." },
+    autoApproveConfidenceThreshold: { type: Number, default: 95 }
+  },
   maintenanceMode: { type: Boolean, default: false }
 }, { timestamps: true });
 

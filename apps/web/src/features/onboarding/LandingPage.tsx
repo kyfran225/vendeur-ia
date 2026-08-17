@@ -51,6 +51,7 @@ import {
 import { AddressAutocomplete } from "./components/AddressAutocomplete";
 import { PaymentMethodSelector } from "./components/PaymentMethodSelector";
 import { AuthSheet } from "../auth/components/AuthSheet";
+import { WhatsAppIcon } from "@/components/ui/WhatsAppIcon";
 import { useAuthStore } from "@/stores/authStore";
 import { AudioRecorder } from "@/lib/audioUtils";
 import { apiClient } from "@/lib/apiClient";
@@ -327,8 +328,8 @@ function LandingHero({
     <section className="w-full px-0 py-2 md:py-4 lg:py-6 flex flex-col lg:flex-row items-start justify-center gap-8 lg:gap-16 text-left max-w-6xl mx-auto">
       <div className="animate-in fade-in slide-in-from-left-4 duration-700 w-full lg:max-w-lg lg:pt-12">
         <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-emerald-300/20 bg-emerald-300/10 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-emerald-300">
-          <Sparkles size={12} />
-          vendeurIa™
+          <Zap size={12} className="text-emerald-300" />
+          <span>Assistant Commercial WhatsApp 24/7</span>
         </div>
         <h1 className="text-5xl md:text-6xl font-black leading-[1.05] text-white mb-6 tracking-tighter">
           Votre WhatsApp <br/>
@@ -359,14 +360,14 @@ function LandingHero({
             <div className="grid gap-4 relative z-10">
               <label className="grid gap-1.5">
                 <span className="text-[10px] font-black uppercase tracking-widest text-white/40">Nom de votre commerce</span>
-                <input className="h-11 rounded-xl border border-white/10 bg-black/40 px-4 text-white outline-none focus:border-emerald-300 transition-all placeholder:text-white/10 text-sm" value={form.businessName} onChange={(e) => setForm({ ...form, businessName: e.target.value })} placeholder="Aicha Mode, Koffi Restaurant..." />
+                <input className="h-12 rounded-2xl border border-white/10 bg-black/40 px-4 text-white outline-none focus:border-emerald-300 transition-all placeholder:text-white/10 text-sm" value={form.businessName} onChange={(e) => setForm({ ...form, businessName: e.target.value })} placeholder="Aicha Mode, Koffi Restaurant..." />
               </label>
 
               <div className="flex flex-col sm:flex-row gap-4">
                 <label className="flex-1 min-w-0 grid gap-1.5">
                   <span className="text-[10px] font-black uppercase tracking-widest text-white/40">Catégorie</span>
                   <div className="relative">
-                    <select className="h-11 w-full rounded-xl border border-white/10 bg-black/40 px-4 text-white outline-none focus:border-emerald-300 transition-all appearance-none cursor-pointer text-sm" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value as any })}>
+                    <select className="h-12 w-full rounded-2xl border border-white/10 bg-black/40 px-4 text-white outline-none focus:border-emerald-300 transition-all appearance-none cursor-pointer text-sm" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value as any })}>
                       <option value="fashion">👗 Mode & Beauté</option>
                       <option value="food">🍔 Restauration & Food</option>
                       <option value="beauty">💄 Soins & Cosmétiques</option>
@@ -395,7 +396,7 @@ function LandingHero({
                     />
                     <div className="flex-1 min-w-0">
                       <input
-                        className="h-11 w-full rounded-xl border border-white/10 bg-black/40 px-4 text-white outline-none focus:border-emerald-300 transition-all placeholder:text-white/10 text-sm"
+                        className="h-12 w-full rounded-2xl border border-white/10 bg-black/40 px-4 text-white outline-none focus:border-emerald-300 transition-all placeholder:text-white/10 text-sm"
                         value={localPhone}
                         onChange={(e) => setLocalPhone(e.target.value.replace(/\D/g, ""))}
                         placeholder="07 00 00 00 00"
@@ -421,7 +422,7 @@ function LandingHero({
               <label className="grid gap-1.5">
                 <span className="text-[10px] font-black uppercase tracking-widest text-white/40">Ce que vous vendez / Instructions de livraison</span>
                 <textarea
-                  className="min-h-[100px] rounded-xl border border-white/10 bg-black/40 p-4 text-white outline-none focus:border-emerald-300 transition-all resize-none placeholder:text-white/10 text-sm"
+                  className="min-h-[100px] rounded-2xl border border-white/10 bg-black/40 p-4 text-white outline-none focus:border-emerald-300 transition-all resize-none placeholder:text-white/10 text-sm"
                   value={form.description}
                   onChange={(e) => setForm({ ...form, description: e.target.value })}
                   placeholder="Ex: Robes, chaussures. Livraison partout sous 2h."
@@ -438,15 +439,15 @@ function LandingHero({
               <button
                 onClick={handleCreateVendeur}
                 disabled={!form.businessName || !form.address}
-                className="mt-2 flex h-12 items-center justify-center gap-3 rounded-2xl bg-emerald-300 px-6 text-sm font-black uppercase tracking-widest text-[#06130d] shadow-xl shadow-emerald-500/10 transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-30"
+                className="mt-2 flex h-12 sm:h-14 items-center justify-center gap-3 rounded-2xl bg-emerald-300 px-6 text-sm font-black uppercase tracking-widest text-[#06130d] shadow-xl shadow-emerald-500/10 transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-30 cursor-pointer"
               >
-                {user ? "Lancer ma configuration" : "Tester mon vendeurIa"} <ChevronRight size={18} />
+                {user ? "Configurer ma Boutique" : "Tester la Démo IA"} <ChevronRight size={18} />
               </button>
 
               {user && (
                 <button
                   onClick={() => window.location.href = "/dashboard"}
-                  className="mt-1 flex h-12 items-center justify-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-6 text-sm font-black uppercase tracking-widest text-white transition-all hover:bg-white/10"
+                  className="mt-1 flex h-12 sm:h-14 items-center justify-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-6 text-sm font-black uppercase tracking-widest text-white transition-all hover:bg-white/10 cursor-pointer"
                 >
                   <LayoutDashboard size={18} /> Mon Tableau de bord
                 </button>
@@ -548,10 +549,10 @@ function LandingHero({
 
                <button
                   onClick={handleActivate}
-                  className="w-full flex h-16 items-center justify-between px-8 rounded-[2rem] bg-gradient-to-r from-[#00a884] to-[#00c9a0] text-sm font-black uppercase tracking-[0.15em] text-white transition-all hover:scale-[1.02] hover:shadow-[0_0_40px_rgba(0,168,132,0.4)] active:scale-95 shadow-2xl relative overflow-hidden group/btn"
+                  className="w-full flex h-16 items-center justify-between px-8 rounded-[2rem] bg-gradient-to-r from-[#00a884] to-[#00c9a0] text-sm font-black uppercase tracking-[0.15em] text-white transition-all hover:scale-[1.02] hover:shadow-[0_0_40px_rgba(0,168,132,0.4)] active:scale-95 shadow-2xl relative overflow-hidden group/btn cursor-pointer"
                 >
                   <Sparkles className="animate-pulse shrink-0" size={18} />
-                  <span className="flex-1 text-center px-4">Créer mon vendeurIa</span>
+                  <span className="flex-1 text-center px-4">Créer mon Vendeur IA</span>
                   <ChevronRight size={22} className="group-hover/btn:translate-x-1 transition-transform shrink-0" />
                 </button>
 
@@ -628,23 +629,28 @@ export function LandingPage() {
             </div>
           </div>
 
-          <div className="flex items-center gap-3 md:gap-6 shrink-0">
+          <div className="flex items-center gap-2 md:gap-4 shrink-0">
             {user ? (
               <Link
                 to="/dashboard"
-                className="h-9 md:h-12 px-6 rounded-xl md:rounded-2xl bg-vendeur-emerald text-vendeur-coal text-[10px] font-black uppercase tracking-widest flex items-center justify-center text-center gap-2 shadow-lg shadow-vendeur-emerald/20 transition-all hover:scale-105 active:scale-95"
+                className="h-9 md:h-11 px-3.5 md:px-6 rounded-xl md:rounded-2xl bg-vendeur-emerald text-vendeur-coal text-[10px] md:text-xs font-black uppercase tracking-widest flex items-center justify-center text-center gap-1.5 shadow-lg shadow-vendeur-emerald/20 transition-all hover:scale-105 active:scale-95"
               >
-                Tableau de Bord
+                <span className="hidden sm:inline">Tableau de Bord</span>
+                <span className="sm:hidden">Dashboard</span>
               </Link>
             ) : (
               <button
                 onClick={() => setIsAuthOpen(true)}
-                className="h-9 w-9 md:h-12 md:w-12 rounded-xl md:rounded-2xl bg-white/5 border border-emerald-300/20 md:border-white/10 flex items-center justify-center text-emerald-300 md:text-white/60 hover:bg-white/10 hover:border-emerald-300/30 hover:text-emerald-300 transition-all shadow-lg group relative overflow-hidden"
+                className="h-9 md:h-11 px-3 md:px-5 rounded-xl md:rounded-2xl bg-vendeur-emerald/10 border border-vendeur-emerald/30 hover:bg-vendeur-emerald hover:text-vendeur-coal text-vendeur-emerald transition-all flex items-center gap-1.5 md:gap-2 shadow-lg shadow-vendeur-emerald/10 group cursor-pointer"
+                title="Connexion WhatsApp"
               >
-                <User size={20} className="group-hover:scale-110 transition-transform" />
-
-                {/* Subtle Glow Effect - Visible by default on mobile, hover only on desktop */}
-                <div className="absolute inset-0 bg-emerald-300/5 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+                <WhatsAppIcon size={16} className="group-hover:scale-110 transition-transform shrink-0" />
+                <span className="text-[10px] md:text-xs font-black uppercase tracking-wider hidden sm:inline">
+                  Connexion WhatsApp
+                </span>
+                <span className="text-[10px] font-black uppercase tracking-wider sm:hidden">
+                  Connexion
+                </span>
               </button>
             )}
           </div>

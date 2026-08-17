@@ -197,7 +197,7 @@ export class AIProvider {
 
       console.warn(`[AI Provider] ${primaryProvider} failed (Quota=${isQuotaError}), trying fallback...`);
 
-      const candidateFallbacks = ['groq', 'openrouter', 'gemini', 'openai'].filter(p => p !== primaryProvider);
+      const candidateFallbacks = ['gemini', 'groq', 'openrouter', 'openai'].filter(p => p !== primaryProvider);
       let success = false;
 
       for (const fallbackProvider of candidateFallbacks) {
@@ -341,7 +341,12 @@ export class AIProvider {
   }
 
   private async generateWithGroq(request: AIRequest, apiKey: string, model: string): Promise<AIResponse> {
-    const messages = [{ role: "system", content: request.systemPrompt }];
+    let systemPrompt = request.systemPrompt;
+    if (request.jsonMode && !systemPrompt.toLowerCase().includes("json")) {
+      systemPrompt += "\nYou must respond with a valid JSON object only.";
+    }
+
+    const messages = [{ role: "system", content: systemPrompt }];
     if (request.history) {
       for (const msg of request.history) {
         messages.push({ role: msg.role === "customer" ? "user" : "assistant", content: msg.text });
@@ -349,38 +354,48 @@ export class AIProvider {
     }
     messages.push({ role: "user", content: request.userMessage });
 
-    try {
-      const payload: any = {
-        model,
-        messages,
-        max_tokens: request.maxTokens || 2500,
-        temperature: request.temperature || 0.7,
-      };
+    const groqModel = (model && model !== "qwen/qwen3.6-27b" && !model.includes("gpt-oss")) ? model : "llama-3.3-70b-versatile";
+    const modelsToTry = [groqModel, "llama-3.3-70b-versatile", "llama-3.1-8b-instant", "mixtral-8x7b-32768", "gemma2-9b-it"].filter((m, i, arr) => arr.indexOf(m) === i && !!m);
 
-      if (request.jsonMode) {
-        payload.response_format = { type: "json_object" };
-      }
+    let lastError: any;
+    for (const currentModel of modelsToTry) {
+      try {
+        const payload: any = {
+          model: currentModel,
+          messages,
+          max_tokens: request.maxTokens || 2500,
+          temperature: request.temperature || 0.7,
+        };
 
-      const response = await axios.post("https://api.groq.com/openai/v1/chat/completions", payload, {
-        headers: { "Authorization": `Bearer ${apiKey}`, "Content-Type": "application/json" }
-      });
-
-      const usage = response.data.usage || {};
-      return {
-        text: response.data.choices[0].message.content.trim(),
-        provider: 'groq',
-        usage: {
-          promptTokens: usage.prompt_tokens || 0,
-          completionTokens: usage.completion_tokens || 0,
-          totalTokens: usage.total_tokens || 0
+        if (request.jsonMode) {
+          payload.response_format = { type: "json_object" };
         }
-      };
-    } catch (error: any) {
-      const msg = error.response?.data?.error?.message || error.message;
-      console.error("Groq API Error:", msg);
-      this.logProviderError('groq', msg);
-      throw new Error("Groq failed");
+
+        const response = await axios.post("https://api.groq.com/openai/v1/chat/completions", payload, {
+          headers: { "Authorization": `Bearer ${apiKey}`, "Content-Type": "application/json" }
+        });
+
+        const usage = response.data.usage || {};
+        return {
+          text: response.data.choices[0].message.content.trim(),
+          provider: 'groq',
+          usage: {
+            promptTokens: usage.prompt_tokens || 0,
+            completionTokens: usage.completion_tokens || 0,
+            totalTokens: usage.total_tokens || 0
+          }
+        };
+      } catch (error: any) {
+        lastError = error;
+        const msg = error.response?.data?.error?.message || error.message;
+        console.warn(`[Groq] Model ${currentModel} failed: ${msg}`);
+      }
     }
+
+    const finalMsg = lastError?.response?.data?.error?.message || lastError?.message || "Groq request failed";
+    console.error("Groq API Error:", finalMsg);
+    this.logProviderError('groq', finalMsg);
+    throw new Error("Groq failed");
   }
 
   private async generateWithOpenAI(request: AIRequest, apiKey: string, model: string): Promise<AIResponse> {

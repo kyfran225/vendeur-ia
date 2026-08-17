@@ -5,6 +5,7 @@ import { useOnboardingStore } from "./onboardingStore";
 interface AuthUser {
   id: string;
   email: string;
+  whatsappNumber?: string;
   displayName: string;
   avatarUrl?: string;
   roles: string[];
@@ -30,11 +31,17 @@ export const useAuthStore = create<AuthState>()(
       refreshToken: null,
       _hasHydrated: false,
       setHasHydrated: (val) => set({ _hasHydrated: val }),
-      setSession: (session) => set({
-        user: session.user,
-        accessToken: session.accessToken,
-        refreshToken: session.refreshToken
-      }),
+      setSession: (session) => {
+        const currentUser = (useAuthStore.getState() as any)?.user;
+        if (!currentUser || currentUser.id !== session.user.id || currentUser.whatsappNumber !== session.user.whatsappNumber) {
+          useOnboardingStore.getState().clearOnboarding();
+        }
+        set({
+          user: session.user,
+          accessToken: session.accessToken,
+          refreshToken: session.refreshToken
+        });
+      },
       logout: () => {
         // Clear onboarding data as well to prevent cross-account pollution
         useOnboardingStore.getState().clearOnboarding();

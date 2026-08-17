@@ -46,6 +46,20 @@ Le produit doit être utilisable par un commerçant sans formation technique en 
   2. *Fast Pay Mobile Money* : Génération instantanée de demandes de paiement Wave/OM/MTN.
   3. *Instant Studio V2* : Générateur d'affiches promo haute définition pour le statut WhatsApp.
 
+- **Intégration WhatsApp Avancée & Surveillance du Statut (2026-08-16)** :
+  1. *Service de Statut Dédié (`whatsapp-status.service.ts`)* : Système de monitoring temps réel de l'état de la session WhatsApp (Connecté, En attente de scan, Déconnecté, Erreur).
+  2. *Gestion des Sessions & Auto-Reconnexion* : Amélioration de la résilience de `whatsapp.service.ts` pour gérer les déconnexions inattendues et fournir des retours précis au frontend.
+  3. *Interface de Statut en Direct (`SettingsPage.tsx`)* : Nouveau widget visuel dans les paramètres pour scanner le QR Code et visualiser la santé de la connexion avec indicateurs colorés (🟢/🟡/🔴).
+- **IA Growth Service & Analytics de Performance (2026-08-16)** :
+  1. *Moteur d'Analyse de Croissance (`ai-growth.service.ts`)* : Calcul automatique des gains de productivité générés par l'IA (messages traités, temps gagné, ventes boostées).
+  2. *Money Board Dynamique (`SalesDashboard.tsx`)* : Intégration des métriques de croissance IA directement dans le tableau de bord principal pour démontrer la valeur ajoutée immédiate.
+- **Expérience d'Embarquement "Magic Onboarding" (2026-08-16)** :
+  1. *Spotlight Tour Interactif (`SpotlightTourOverlay.tsx`)* : Guidage pas-à-pas des nouveaux marchands pour découvrir les fonctionnalités clés (Inbox, Catalogue, Settings).
+  2. *Vendeur IA Loader & Branding Visuel (`VendeurIALoader.tsx`)* : Nouvel écran de chargement premium avec logo animé pour renforcer l'identité de marque lors des transitions lourdes.
+- **Optimisation du Sales Inbox & Web Chat Widget (2026-08-16)** :
+  1. *Web Chat Widget Harmonisé (`WebChatWidget.tsx`)* : Amélioration de l'intégration du chat sur la boutique publique, supportant mieux les interactions avec l'agent de vente IA.
+  2. *Refonte du Sidebar & Navigation (`Sidebar.tsx`)* : Organisation plus intuitive des modules pour un accès rapide aux commandes, au catalogue et à l'IA.
+
 ## Bugs Bloquants Identifiés
 - **Groq API Rate Limits** : Les gros commits peuvent déclencher des limites de jetons sur le tier gratuit de Groq.
 - **Indefinite Spinner (Configuration IA)** : Le composant frontend `AiSettings` boucle indéfiniment si `aiSettings` n'est pas initialisé.

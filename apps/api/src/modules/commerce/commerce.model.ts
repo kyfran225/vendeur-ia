@@ -53,6 +53,13 @@ const MerchantSchema = new Schema({
     reconnectAttempts: { type: Number, default: 0 },
     packProAssistance: { type: Boolean, default: false }
   },
+  expertSetup: {
+    status: { type: String, enum: ['none', 'pending', 'in_progress', 'completed'], default: 'none' },
+    orderedAt: { type: Date, default: null },
+    assignedTo: { type: String, default: null },
+    notes: { type: String, default: null },
+    completedAt: { type: Date, default: null }
+  },
   instagramConfig: {
     pageId: String,
     accessToken: String,

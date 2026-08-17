@@ -69,7 +69,7 @@ router.get("/verify-transaction/:reference", authenticate, async (req, res) => {
       const data = await paystackService.verifyTransaction(reference);
 
       if (data && data.status === 'success') {
-        const { type, offerSlug, billingInterval } = data.metadata || {};
+        const { type, offerSlug, billingInterval, setupOption } = data.metadata || {};
         const offer = await OfferModel.findOne({ slug: offerSlug || (type === 'pack_pro' ? 'pro' : 'essential') });
 
         const isYearly = billingInterval === 'yearly';
@@ -158,9 +158,15 @@ router.get("/verify-transaction/:reference", authenticate, async (req, res) => {
         const merchant = await CommerceMerchantModel.findOne({ ownerId: userId });
 
         if (merchant && transaction) {
-          billingReceiptService.sendDigitalReceipt(merchant._id.toString(), transaction as any).catch(err =>
-            console.error("[Verify Route] sendDigitalReceipt failed:", err)
-          );
+          if (type === 'pack_pro' || setupOption === 'EXPERT') {
+            billingReceiptService.notifyExpertSetupOrdered(merchant._id.toString(), transaction as any).catch(err =>
+              console.error("[Verify Route] notifyExpertSetupOrdered failed:", err)
+            );
+          } else {
+            billingReceiptService.sendDigitalReceipt(merchant._id.toString(), transaction as any).catch(err =>
+              console.error("[Verify Route] sendDigitalReceipt failed:", err)
+            );
+          }
         }
 
         return res.json({ status: 'success', data, merchant });
@@ -886,11 +892,17 @@ router.post("/checkout/confirm", authenticate, async (req, res) => {
       );
     }
 
-    // 7. Send receipt
+    // 7. Send receipt & trigger Expert Setup notifications if applicable
     if (newTransaction && merchant) {
-      billingReceiptService.sendDigitalReceipt(merchant._id.toString(), newTransaction as any).catch((err: any) =>
-        console.error("[Receipt] sendDigitalReceipt failed:", err)
-      );
+      if (type === 'pack_pro' || setupOption === 'EXPERT') {
+        billingReceiptService.notifyExpertSetupOrdered(merchant._id.toString(), newTransaction as any).catch((err: any) =>
+          console.error("[Receipt] notifyExpertSetupOrdered failed:", err)
+        );
+      } else {
+        billingReceiptService.sendDigitalReceipt(merchant._id.toString(), newTransaction as any).catch((err: any) =>
+          console.error("[Receipt] sendDigitalReceipt failed:", err)
+        );
+      }
     }
 
     console.log(`[Checkout Confirm] ✅ Subscription activated for user ${userId} (${reference})`);
@@ -970,14 +982,19 @@ router.post("/buy-pack-pro", authenticate, async (req, res) => {
     let amount = 25000;
     const regional = settings?.pricing?.regional?.find(r => r.currency === currency);
     if (regional) {
-      amount = regional.businessMonthly; // Or a specific packProFee from regional
+      amount = regional.businessMonthly;
     } else if (settings?.pricing?.packProFee) {
       amount = settings.pricing.packProFee;
+    } else if (currency !== "XOF") {
+      const conv = CURRENCY_CONVERSION_RATES[currency.toUpperCase()] || CURRENCY_CONVERSION_RATES.XOF;
+      const raw = 25000 * conv.rate;
+      amount = Math.ceil(raw / conv.round) * conv.round;
     }
 
-    // Pack Pro – amount is in the merchant's regional billing currency
-    const data = await paystackService.initializeSubscription(email, amount, {
+    // Pack Pro standalone setup – one-off payment
+    const data = await paystackService.initializeSubscription(email || "billing@vendeur-ia.com", amount, {
       type: "pack_pro",
+      setupOption: "EXPERT",
       userId,
       currency
     });
@@ -1193,7 +1210,13 @@ router.post("/webhooks/paystack", express.raw({ type: 'application/json' }), asy
 
       if (newTransaction) {
         const m = await CommerceMerchantModel.findOne({ ownerId: userId });
-        if (m) await billingReceiptService.sendDigitalReceipt(m._id.toString(), newTransaction as any);
+        if (m) {
+          if (type === 'pack_pro' || setupOption === 'EXPERT') {
+            await billingReceiptService.notifyExpertSetupOrdered(m._id.toString(), newTransaction as any);
+          } else {
+            await billingReceiptService.sendDigitalReceipt(m._id.toString(), newTransaction as any);
+          }
+        }
       }
     }
   }

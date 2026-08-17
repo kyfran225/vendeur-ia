@@ -474,6 +474,42 @@ export function BillingTab({ merchant }: { merchant: any }) {
             );
           })}
         </div>
+
+        {/* 3.1 Pack Pro Expert Clé en Main */}
+        <div className="bg-gradient-to-r from-vendeur-coal via-vendeur-coal to-black border border-white/10 hover:border-vendeur-emerald/30 p-6 sm:p-8 rounded-2xl sm:rounded-3xl flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative overflow-hidden transition-all shadow-2xl">
+          <div className="space-y-3 relative z-10 text-left max-w-xl">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-vendeur-emerald/10 text-vendeur-emerald border border-vendeur-emerald/20 text-[10px] font-black uppercase tracking-wider">
+              <Sparkles size={12} />
+              <span>Pack Pro Expert • Accompagnement VIP</span>
+            </div>
+            <h4 className="text-lg sm:text-xl font-black uppercase tracking-tight text-white leading-tight">
+              Besoin d'une installation clé en main par notre équipe ?
+            </h4>
+            <p className="text-white/60 text-xs sm:text-sm font-medium leading-relaxed">
+              Nous configurons votre compte Meta Cloud WhatsApp API, créons votre page professionnelle, intégrons votre catalogue et paramétrons votre IA pour un résultat prêt à vendre.
+            </p>
+            <div className="flex flex-wrap gap-2 pt-1">
+              <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-white/5 text-white/80 border border-white/10">✓ Configuration Meta WhatsApp</span>
+              <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-white/5 text-white/80 border border-white/10">✓ Import Catalogue</span>
+              <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-white/5 text-white/80 border border-white/10">✓ Support VIP Dédié</span>
+            </div>
+          </div>
+
+          <div className="w-full md:w-auto flex flex-col gap-2 shrink-0 pt-2 md:pt-0 relative z-10">
+            <button
+              onClick={() => navigate(`/checkout?offer=pro&setup=EXPERT&interval=${billingInterval}`)}
+              className="w-full md:w-auto h-12 sm:h-14 px-6 sm:px-8 bg-white hover:bg-vendeur-emerald text-vendeur-coal rounded-2xl font-black uppercase tracking-wider text-xs flex items-center justify-center gap-2.5 transition-all active:scale-95 shadow-xl cursor-pointer hover:scale-105"
+            >
+              <span>Commander le Pack Pro</span>
+              <ArrowRight size={16} />
+            </button>
+            <p className="text-[10px] text-center text-white/40 font-bold uppercase tracking-wider">
+              Installation + Forfait Pro
+            </p>
+          </div>
+
+          <div className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/4 h-64 w-64 bg-vendeur-emerald/5 blur-[100px] rounded-full pointer-events-none" />
+        </div>
       </section>
 
       {/* 4. Préférence de Devise de Paiement de l'Abonnement */}

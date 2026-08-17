@@ -43,6 +43,7 @@ import { HeroProductShowcase } from "./components/HeroProductShowcase";
 import { MetaHead } from "@/components/seo/MetaHead";
 import { SITE_CONFIG } from "@/lib/seoConfig";
 import { apiClient } from "@/lib/apiClient";
+import { VendeurIALoader } from "@/components/ui/VendeurIALoader";
 import { slugify } from "@/lib/slugify";
 import { toast } from "sonner";
 import { clsx, type ClassValue } from "clsx";
@@ -260,12 +261,7 @@ export function PublicShop() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-vendeur-bg flex items-center justify-center">
-        <div className="text-center space-y-4">
-          <Sparkles className="animate-spin text-vendeur-emerald mx-auto" size={48} />
-          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/20">Chargement de la vitrine...</p>
-        </div>
-      </div>
+      <VendeurIALoader fullscreen size="xl" label="Chargement de la vitrine..." />
     );
   }
 

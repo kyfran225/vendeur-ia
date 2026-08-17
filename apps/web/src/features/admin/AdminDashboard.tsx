@@ -29,6 +29,7 @@ import {
   Trash2,
   Menu,
   X,
+  Plus,
   ChevronDown
 } from "lucide-react";
 import { VendeurIALoader } from "@/components/ui/VendeurIALoader";

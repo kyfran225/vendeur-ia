@@ -52,7 +52,7 @@ export function CheckoutPage() {
   const [copiedField, setCopiedField] = useState<string | null>(null);
 
   // 1. Fetch Offers
-  const { data: offers } = useQuery({
+  const { data: offers, isLoading } = useQuery({
     queryKey: ["offers", currency],
     queryFn: async () => {
       const res = await apiClient.get(`/api/commerce/offers?currency=${currency}`);
@@ -69,7 +69,24 @@ export function CheckoutPage() {
     }
   });
 
+  if (isLoading) {
+    return <VendeurIALoader fullscreen label="Chargement de votre session de paiement..." />;
+  }
+
   const offer = offers?.find((o: any) => o.slug === offerSlug);
+
+  if (!offer && !isLoading) {
+    return (
+      <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center p-6 text-center">
+        <div className="h-16 w-16 rounded-2xl bg-amber-500/10 flex items-center justify-center text-amber-500 mb-6">
+          <AlertCircle size={32} />
+        </div>
+        <h2 className="text-2xl font-black uppercase mb-2">Offre Introuvable</h2>
+        <p className="text-white/40 mb-8 max-w-sm">L'offre "{offerSlug}" n'existe plus ou est momentanément indisponible.</p>
+        <button onClick={() => navigate("/offers")} className="px-8 py-3 bg-vendeur-emerald text-vendeur-coal font-black uppercase rounded-xl">Voir les offres disponibles</button>
+      </div>
+    );
+  }
 
   const isYearly = billingInterval === "yearly";
   const monthlyPrice = offer?.monthlyPrice || 5000;
@@ -193,7 +210,6 @@ export function CheckoutPage() {
     }
   };
 
-  if (!offer) return null;
 
   const currentMethodConfig = paymentConfig?.methods?.find((m: any) => m.id === selectedMethod);
 

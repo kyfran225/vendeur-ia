@@ -23,6 +23,7 @@ import { CATEGORY_MOCKS } from "./demo.data.js";
 import { billingReceiptService } from "../../services/billing-receipt.service.js";
 import { marketingService } from "../../services/marketing.service.js";
 import { paymentShieldService } from "../../services/payment-shield.service.js";
+import { DEFAULT_OFFERS } from "./offers.constants.js";
 import { whatsappStatusService } from "../../services/whatsapp-status.service.js";
 import { aiQueue } from "../../services/ai-queue.service.js";
 import { aiProvider } from "../../services/ai-provider.js";
@@ -725,11 +726,17 @@ router.get("/offers", async (req, res) => {
       }
     }
 
-    const offers = await OfferModel.find({ isActive: true }).sort({ sortOrder: 1 });
+    let offers = await OfferModel.find({ isActive: true }).sort({ sortOrder: 1 });
+
+    // Fallback to defaults if DB is empty (helps in local dev and first boot)
+    if (!offers || offers.length === 0) {
+      offers = DEFAULT_OFFERS as any;
+    }
+
     const conv = CURRENCY_CONVERSION_RATES[currency.toUpperCase()] || CURRENCY_CONVERSION_RATES.XOF;
 
     const formattedOffers = offers.map(offer => {
-      const obj = offer.toObject();
+      const obj = (offer as any).toObject ? (offer as any).toObject() : { ...offer };
       const yearlyPrice = obj.yearlyPrice || Math.round(obj.monthlyPrice * 10);
       obj.yearlyPrice = yearlyPrice;
 

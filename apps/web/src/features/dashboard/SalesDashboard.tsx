@@ -237,6 +237,24 @@ function HomePanel({ dashboard, onOpenTestIA }: { dashboard: any, onOpenTestIA: 
 
             <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto mt-2 md:mt-0">
               <button
+                onClick={async () => {
+                  try {
+                    toast.loading("Génération de vos 3 statuts WhatsApp...");
+                    await apiClient.post("/api/commerce/whatsapp-status/send-to-me");
+                    toast.dismiss();
+                    toast.success("Pack de 3 Statuts WhatsApp envoyé sur votre WhatsApp ! 📲");
+                  } catch (err: any) {
+                    toast.dismiss();
+                    toast.error(err.response?.data?.error || "Erreur lors de l'envoi des statuts");
+                  }
+                }}
+                className="flex items-center justify-center gap-2.5 px-5 py-3 rounded-xl bg-white/10 hover:bg-white/15 border border-white/15 text-white text-[11px] md:text-xs font-black uppercase tracking-widest transition-all w-full sm:w-auto shadow-md"
+              >
+                <Sparkles size={16} className="text-vendeur-emerald" />
+                Recevoir mes Statuts du Jour
+              </button>
+
+              <button
                 onClick={onOpenTestIA}
                 className="flex items-center justify-center gap-2.5 px-6 py-3 rounded-xl bg-vendeur-emerald text-vendeur-coal text-[11px] md:text-xs font-black uppercase tracking-widest hover:scale-105 transition-all shadow-lg shadow-vendeur-emerald/20 w-full sm:w-auto"
               >

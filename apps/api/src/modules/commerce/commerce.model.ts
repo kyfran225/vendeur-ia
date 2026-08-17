@@ -35,7 +35,9 @@ const MerchantSchema = new Schema({
     autoReply: { type: Boolean, default: true },
     voiceMode: { type: Boolean, default: false },
     localSlang: { type: Boolean, default: false },
-    weeklyReport: { type: Boolean, default: true }
+    weeklyReport: { type: Boolean, default: true },
+    dailyStatusAssistant: { type: Boolean, default: true },
+    autoPostStatus: { type: Boolean, default: false }
   },
   whatsappConfig: {
     provider: { type: String, enum: ['baileys', 'meta'], default: 'baileys' },

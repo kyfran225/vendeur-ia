@@ -1220,6 +1220,48 @@ function PersonnaliteTab({ merchant }: { merchant: any }) {
                     <p className="text-xs text-white/40 mt-1">Utilise le Nouchi/etc pour plus de proximité.</p>
                   </div>
                </div>
+
+               {/* Assistant Statuts WhatsApp du Matin */}
+                <div className={cn(
+                  "p-8 rounded-[2rem] border transition-all space-y-6",
+                  aiSettings.dailyStatusAssistant !== false ? "bg-emerald-500/5 border-emerald-400/30" : "bg-white/5 border-white/5"
+                )}>
+                   <div className="flex items-center justify-between">
+                      <div className="h-12 w-12 rounded-2xl bg-emerald-400/10 flex items-center justify-center text-emerald-400">
+                         <Sparkles size={24} />
+                      </div>
+                      <ToggleButton
+                         active={aiSettings.dailyStatusAssistant !== false}
+                         onToggle={() => setAiSettings({...aiSettings, dailyStatusAssistant: aiSettings.dailyStatusAssistant === false ? true : false})}
+                         color="bg-emerald-400"
+                      />
+                   </div>
+                   <div>
+                     <h4 className="font-black text-white">Pack Statuts WhatsApp Quotidien</h4>
+                     <p className="text-xs text-white/40 mt-1">Reçois chaque matin 3 textes percutants prêts à être postés en statut.</p>
+                   </div>
+                </div>
+
+                {/* Auto-Publication Statut WhatsApp (QR Code / Baileys) */}
+                <div className={cn(
+                  "p-8 rounded-[2rem] border transition-all space-y-6",
+                  aiSettings.autoPostStatus ? "bg-purple-500/5 border-purple-400/30" : "bg-white/5 border-white/5"
+                )}>
+                   <div className="flex items-center justify-between">
+                      <div className="h-12 w-12 rounded-2xl bg-purple-400/10 flex items-center justify-center text-purple-400">
+                         <Zap size={24} />
+                      </div>
+                      <ToggleButton
+                         active={aiSettings.autoPostStatus}
+                         onToggle={() => setAiSettings({...aiSettings, autoPostStatus: !aiSettings.autoPostStatus})}
+                         color="bg-purple-400"
+                      />
+                   </div>
+                   <div>
+                     <h4 className="font-black text-white">Publication Automatique en Statut</h4>
+                     <p className="text-xs text-white/40 mt-1">Poste automatiquement 1 produit en statut chaque matin (Connexion QR Code).</p>
+                   </div>
+                </div>
             </div>
          </div>
       </section>

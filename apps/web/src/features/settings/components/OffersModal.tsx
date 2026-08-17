@@ -1,12 +1,14 @@
 import React, { useState } from "react";
-import { X, Zap, Rocket, Check, ShieldCheck, Loader2, Server, Sparkles } from "lucide-react";
+import { X, Zap, Rocket, Check, ShieldCheck, Loader2, Server, Sparkles, AlertCircle } from "lucide-react";
 import { apiClient } from "@/lib/apiClient";
 import { toast } from "sonner";
 import { useAuthStore } from "@/stores/authStore";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMerchantCurrency } from "@/hooks/useMerchantCurrency";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { useNavigate } from "react-router-dom";
+import { VendeurIALoader } from "@/components/ui/VendeurIALoader";
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -18,33 +20,38 @@ interface OffersModalProps {
 }
 
 export function OffersModal({ isOpen, onClose }: OffersModalProps) {
-  const [loading, setLoading] = useState<string | null>(null);
+  const [isRedirecting, setIsRedirecting] = useState<string | null>(null);
   const { user } = useAuthStore();
-  const queryClient = useQueryClient();
   const currency = useMerchantCurrency();
+  const navigate = useNavigate();
+
+  const { data: offers, isLoading, isError } = useQuery({
+    queryKey: ["offers", currency],
+    queryFn: async () => {
+      const res = await apiClient.get(`/api/commerce/offers?currency=${currency}`);
+      return res.data;
+    },
+    enabled: isOpen
+  });
 
   if (!isOpen) return null;
 
-  const handlePayment = async (type: "ram_contribution" | "pack_pro") => {
-    setLoading(type);
-    try {
-      const endpoint = type === "ram_contribution" ? "/api/commerce/activate-premium" : "/api/commerce/buy-pack-pro";
-      const res = await apiClient.post(endpoint, {
-        email: user?.email,
-        type: type,
-        userId: user?.id
-      });
+  if (isLoading) {
+    return (
+      <div className="fixed inset-0 z-[300] flex items-center justify-center bg-black/90 backdrop-blur-sm">
+        <VendeurIALoader label="Chargement des formules..." />
+      </div>
+    );
+  }
 
-      if (res.data.authorization_url) {
-        window.location.href = res.data.authorization_url;
-      } else {
-        toast.error("Impossible de générer le lien de paiement.");
-      }
-    } catch (err) {
-      toast.error("Erreur lors de l'initialisation du paiement.");
-    } finally {
-      setLoading(null);
-    }
+  const essential = offers?.find((o: any) => o.slug === 'essential');
+  const pro = offers?.find((o: any) => o.slug === 'pro');
+
+  const handleSelect = (offerSlug: string, setup?: string) => {
+    setIsRedirecting(offerSlug);
+    onClose();
+    const url = setup ? `/checkout?offer=${offerSlug}&setup=${setup}` : `/checkout?offer=${offerSlug}`;
+    navigate(url);
   };
 
   return (
@@ -56,7 +63,7 @@ export function OffersModal({ isOpen, onClose }: OffersModalProps) {
           <X size={20} />
         </button>
 
-        {/* Option 1: RAM Contribution */}
+        {/* Option 1: Essential / RAM Contribution */}
         <div className="flex-1 p-8 md:p-12 border-b md:border-b-0 md:border-r border-white/5 flex flex-col justify-between min-h-[450px] md:min-h-[600px]">
           <div className="space-y-8">
             <div className="flex items-center gap-4">
@@ -64,37 +71,43 @@ export function OffersModal({ isOpen, onClose }: OffersModalProps) {
                 <Server size={20} />
               </div>
               <div>
-                <h3 className="text-xl font-black text-white uppercase tracking-tighter leading-none">Contribution RAM</h3>
-                <p className="text-white/40 text-[8px] font-black uppercase tracking-[0.15em] mt-1">Maintenance session serveur</p>
+                <h3 className="text-xl font-black text-white uppercase tracking-tighter leading-none">{essential?.name || "Formule Essentiel"}</h3>
+                <p className="text-white/40 text-[8px] font-black uppercase tracking-[0.15em] mt-1">Lancement rapide & efficace</p>
               </div>
             </div>
 
             <div className="space-y-4">
-              <OfferFeature text="Session WhatsApp 24h/7 active" />
-              <OfferFeature text="Utilisation du serveur partagé" />
-              <OfferFeature text="Support standard par ticket" />
-              <OfferFeature text="Mises à jour IA incluses" />
+              {essential?.features?.slice(0, 5).map((f: string, i: number) => (
+                <OfferFeature key={i} text={f} />
+              )) || (
+                <>
+                  <OfferFeature text="Session WhatsApp 24h/7 active" />
+                  <OfferFeature text="Réponses automatiques IA" />
+                  <OfferFeature text="Support standard par ticket" />
+                  <OfferFeature text="Mises à jour IA incluses" />
+                </>
+              )}
             </div>
           </div>
 
           <div className="pt-10">
             <div className="flex items-baseline gap-2 mb-8 h-12">
-              <span className="text-4xl font-black text-vendeur-emerald">5 000</span>
-              <span className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em]">{currency} / MOIS</span>
+              <span className="text-4xl font-black text-vendeur-emerald">{essential?.monthlyPrice?.toLocaleString() || "5 000"}</span>
+              <span className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em]">{essential?.currency || currency} / MOIS</span>
             </div>
 
             <button
-              onClick={() => handlePayment("ram_contribution")}
-              disabled={!!loading}
+              onClick={() => handleSelect("essential")}
+              disabled={!!isRedirecting}
               className="w-full h-16 bg-white text-vendeur-coal rounded-2xl font-black uppercase tracking-[0.2em] text-[10px] flex items-center justify-center gap-3 hover:bg-vendeur-emerald transition-all active:scale-95 disabled:opacity-50 shadow-xl shadow-white/5"
             >
-              {loading === "ram_contribution" ? <Loader2 className="animate-spin" size={18} /> : <Zap size={18} />}
+              {isRedirecting === "essential" ? <Loader2 className="animate-spin" size={18} /> : <Zap size={18} />}
               Choisir cette offre
             </button>
           </div>
         </div>
 
-        {/* Option 2: Pack Pro (Recommended) */}
+        {/* Option 2: Pro + Expert Setup */}
         <div className="flex-1 p-8 md:p-12 bg-vendeur-emerald/5 flex flex-col justify-between min-h-[450px] md:min-h-[600px] relative">
           <div className="absolute top-6 left-8 md:left-12 z-10">
              <span className="bg-vendeur-emerald text-vendeur-coal text-[8px] font-black uppercase px-4 py-2 rounded-full tracking-[0.2em] shadow-lg shadow-vendeur-emerald/20 border border-vendeur-emerald/20">
@@ -114,32 +127,36 @@ export function OffersModal({ isOpen, onClose }: OffersModalProps) {
             </div>
 
             <div className="space-y-4">
-              <OfferFeature text="Création Page Facebook Business" highlight />
-              <OfferFeature text="Configuration API Meta Cloud" highlight />
-              <OfferFeature text="Import Catalogue (20 produits)" highlight />
-              <OfferFeature text="Formation IA & Vente (30min)" highlight />
+              <OfferFeature text="Configuration Meta Cloud WhatsApp" highlight />
+              <OfferFeature text="Import Catalogue & Inventaire" highlight />
+              <OfferFeature text="Personnalisation IA Avancée" highlight />
+              <OfferFeature text="Formation IA & Vente" highlight />
               <OfferFeature text="Support VIP 24h/7 WhatsApp" highlight />
             </div>
           </div>
 
           <div className="pt-10">
              <div className="flex items-baseline gap-2 mb-8 h-12">
-              <span className="text-4xl font-black text-white">25 000</span>
-              <span className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em]">{currency} (UNIQUE)</span>
+              <span className="text-4xl font-black text-white">
+                {pro ? (pro.monthlyPrice + (pro.setupOptions?.find((o: any) => o.type === 'EXPERT')?.price || 0)).toLocaleString() : "25 000"}
+              </span>
+              <span className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em]">{pro?.currency || currency} (UNIQUE)</span>
             </div>
 
             <button
-              onClick={() => handlePayment("pack_pro")}
-              disabled={!!loading}
+              onClick={() => handleSelect("pro", "EXPERT")}
+              disabled={!!isRedirecting}
               className="w-full h-16 bg-vendeur-emerald text-vendeur-coal rounded-2xl font-black uppercase tracking-[0.2em] text-[10px] flex items-center justify-center gap-3 hover:scale-[1.02] transition-all active:scale-95 shadow-2xl shadow-vendeur-emerald/20 disabled:opacity-50"
             >
-              {loading === "pack_pro" ? <Loader2 className="animate-spin" size={18} /> : <Sparkles size={18} />}
+              {isRedirecting === "pro" ? <Loader2 className="animate-spin" size={18} /> : <Sparkles size={18} />}
               Activer mon Pack Pro
             </button>
           </div>
         </div>
       </div>
     </div>
+  );
+}
   );
 }
 

@@ -1,26 +1,25 @@
 import React, { useState } from "react";
-import { Zap, Rocket, Check, Sparkles, Server, ArrowRight, ArrowLeft, ShieldCheck, Tag } from "lucide-react";
+import { Zap, Rocket, Check, Sparkles, Server, ArrowRight, ArrowLeft, ShieldCheck, Tag, AlertCircle } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { apiClient } from "@/lib/apiClient";
 import { useMerchantCurrency } from "@/hooks/useMerchantCurrency";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { useNavigate } from "react-router-dom";
+import { MetaHead } from "@/components/seo/MetaHead";
+import { SITE_CONFIG } from "@/lib/seoConfig";
+import { VendeurIALoader } from "@/components/ui/VendeurIALoader";
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
-
-import { MetaHead } from "@/components/seo/MetaHead";
-import { SITE_CONFIG } from "@/lib/seoConfig";
-import { VendeurIALoader } from "@/components/ui/VendeurIALoader";
 
 export function OffersPage() {
   const navigate = useNavigate();
   const currency = useMerchantCurrency();
   const [billingInterval, setBillingInterval] = useState<"monthly" | "yearly">("yearly");
 
-  const { data: offers, isLoading } = useQuery({
+  const { data: offers, isLoading, isError } = useQuery({
     queryKey: ["offers", currency],
     queryFn: async () => {
       const res = await apiClient.get(`/api/commerce/offers?currency=${currency}`);
@@ -31,6 +30,19 @@ export function OffersPage() {
   if (isLoading) {
     return (
       <VendeurIALoader fullscreen size="xl" label="Chargement des formules..." />
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center p-6 text-center">
+        <div className="h-16 w-16 rounded-2xl bg-rose-500/10 flex items-center justify-center text-rose-500 mb-6">
+          <AlertCircle size={32} />
+        </div>
+        <h2 className="text-2xl font-black uppercase mb-2">Erreur de chargement</h2>
+        <p className="text-white/40 mb-8 max-w-sm">Impossible de récupérer les offres. Veuillez vérifier votre connexion ou réessayer plus tard.</p>
+        <button onClick={() => window.location.reload()} className="px-8 py-3 bg-white text-black font-black uppercase rounded-xl">Réessayer</button>
+      </div>
     );
   }
 

@@ -1,5 +1,5 @@
-import React from "react";
-import { Zap, Rocket, Check, Sparkles, Server, ArrowRight, ArrowLeft } from "lucide-react";
+import React, { useState } from "react";
+import { Zap, Rocket, Check, Sparkles, Server, ArrowRight, ArrowLeft, ShieldCheck, Tag } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { apiClient } from "@/lib/apiClient";
 import { useMerchantCurrency } from "@/hooks/useMerchantCurrency";
@@ -18,6 +18,7 @@ import { VendeurIALoader } from "@/components/ui/VendeurIALoader";
 export function OffersPage() {
   const navigate = useNavigate();
   const currency = useMerchantCurrency();
+  const [billingInterval, setBillingInterval] = useState<"monthly" | "yearly">("yearly");
 
   const { data: offers, isLoading } = useQuery({
     queryKey: ["offers", currency],
@@ -55,22 +56,69 @@ export function OffersPage() {
           <ArrowLeft size={16} /> Retour
         </button>
 
-        <div className="text-center space-y-3 sm:space-y-4">
-          <h1 className="text-3xl sm:text-5xl md:text-6xl font-black uppercase tracking-tight italic">
+        <div className="text-center space-y-4 max-w-2xl mx-auto">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-vendeur-emerald/10 border border-vendeur-emerald/20 text-vendeur-emerald text-[10px] font-black uppercase tracking-widest">
+            <Sparkles size={13} />
+            <span>Tarifs Transparents & Sans Surprise</span>
+          </div>
+
+          <h1 className="text-3xl sm:text-5xl md:text-6xl font-black uppercase tracking-tight italic text-white">
             Choisissez votre <span className="text-vendeur-emerald">Vendeur IA</span>
           </h1>
-          <p className="text-white/50 font-bold uppercase tracking-wider text-xs sm:text-sm max-w-xl mx-auto">
-            Démarrez simplement. Vous pouvez ajuster ou changer votre offre à tout moment.
+
+          <p className="text-white/60 font-medium text-xs sm:text-sm max-w-xl mx-auto leading-relaxed">
+            Activez votre commercial IA autonome 24h/24. Changez ou ajustez votre forfait à tout moment depuis vos paramètres.
           </p>
+
+          {/* Monthly / Yearly Billing Toggle */}
+          <div className="pt-3 flex items-center justify-center">
+            <div className="inline-flex items-center p-1.5 rounded-2xl bg-vendeur-coal border border-white/10 shadow-2xl">
+              <button
+                type="button"
+                onClick={() => setBillingInterval("monthly")}
+                className={cn(
+                  "px-4 sm:px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer",
+                  billingInterval === "monthly"
+                    ? "bg-white text-vendeur-coal shadow-lg"
+                    : "text-white/40 hover:text-white"
+                )}
+              >
+                Mensuel
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setBillingInterval("yearly")}
+                className={cn(
+                  "px-4 sm:px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-2 transition-all cursor-pointer",
+                  billingInterval === "yearly"
+                    ? "bg-vendeur-emerald text-vendeur-coal shadow-lg shadow-vendeur-emerald/20"
+                    : "text-white/40 hover:text-white"
+                )}
+              >
+                <span>Annuel</span>
+                <span className={cn(
+                  "text-[9px] px-2 py-0.5 rounded-full font-black uppercase tracking-tight",
+                  billingInterval === "yearly"
+                    ? "bg-vendeur-coal text-vendeur-emerald"
+                    : "bg-vendeur-emerald/20 text-vendeur-emerald"
+                )}>
+                  2 mois offerts
+                </span>
+              </button>
+            </div>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-8 items-stretch">
+        {/* Pricing Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 items-stretch">
           {offers?.map((offer: any) => (
             <OfferCard
               key={offer._id || offer.slug || offer.id}
               offer={offer}
               currency={currency}
-              onSelect={() => navigate(`/checkout?offer=${offer.slug}`)}
+              billingInterval={billingInterval}
+              onSelect={() => navigate(`/checkout?offer=${offer.slug}&interval=${billingInterval}`)}
             />
           ))}
         </div>
@@ -92,7 +140,7 @@ export function OffersPage() {
           </div>
 
           <button
-             onClick={() => navigate('/checkout?offer=pro&setup=EXPERT')}
+             onClick={() => navigate(`/checkout?offer=pro&setup=EXPERT&interval=${billingInterval}`)}
              className="w-full md:w-auto h-13 sm:h-14 px-6 sm:px-8 bg-white hover:bg-vendeur-emerald text-vendeur-coal rounded-2xl font-black uppercase tracking-wider text-xs flex items-center justify-center gap-2.5 transition-all active:scale-95 shadow-xl shrink-0 cursor-pointer"
           >
             <span>En savoir plus</span>
@@ -106,8 +154,27 @@ export function OffersPage() {
   );
 }
 
-function OfferCard({ offer, currency, onSelect }: { offer: any, currency: string, onSelect: () => void }) {
+function OfferCard({
+  offer,
+  currency,
+  billingInterval,
+  onSelect
+}: {
+  offer: any;
+  currency: string;
+  billingInterval: "monthly" | "yearly";
+  onSelect: () => void;
+}) {
   const isPro = offer.slug === 'pro';
+  const curr = offer.currency || currency;
+
+  const monthlyPrice = offer.monthlyPrice;
+  const yearlyPrice = offer.yearlyPrice || Math.round(monthlyPrice * 10);
+  const isYearly = billingInterval === "yearly";
+
+  // Monthly equivalent when paying yearly
+  const monthlyEquivalent = isYearly ? Math.round(yearlyPrice / 12) : monthlyPrice;
+  const savingsAmount = isYearly ? (monthlyPrice * 12 - yearlyPrice) : 0;
 
   return (
     <div className={cn(
@@ -135,7 +202,7 @@ function OfferCard({ offer, currency, onSelect }: { offer: any, currency: string
         </div>
 
         <div className="space-y-3">
-          {offer.features.map((feature: string, i: number) => (
+          {offer.features?.map((feature: string, i: number) => (
             <div key={i} className="flex items-start gap-3">
               <div className={cn(
                 "h-4 w-4 rounded-full flex items-center justify-center shrink-0 mt-0.5",
@@ -149,10 +216,34 @@ function OfferCard({ offer, currency, onSelect }: { offer: any, currency: string
         </div>
       </div>
 
-      <div className="pt-8 sm:pt-10 mt-6 border-t border-white/5">
-        <div className="flex items-baseline gap-2 mb-6">
-          <span className="text-3xl sm:text-5xl font-black italic tracking-tight text-white font-mono">{offer.monthlyPrice.toLocaleString()}</span>
-          <span className="text-xs font-black uppercase text-white/40 tracking-wider">{offer.currency || currency} / MOIS</span>
+      <div className="pt-8 sm:pt-10 mt-6 border-t border-white/5 space-y-4">
+        {/* Pricing Area */}
+        <div className="space-y-1">
+          <div className="flex items-baseline gap-2">
+            <span className="text-3xl sm:text-5xl font-black italic tracking-tight text-white font-mono">
+              {monthlyEquivalent.toLocaleString()}
+            </span>
+            <span className="text-xs font-black uppercase text-white/40 tracking-wider">
+              {curr} / MOIS
+            </span>
+          </div>
+
+          {isYearly ? (
+            <div className="flex flex-wrap items-center gap-2 pt-0.5">
+              <span className="text-[11px] font-bold text-white/50">
+                Facturé annuellement {yearlyPrice.toLocaleString()} {curr}
+              </span>
+              {savingsAmount > 0 && (
+                <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-wider text-vendeur-emerald bg-vendeur-emerald/10 px-2 py-0.5 rounded-full border border-vendeur-emerald/20">
+                  <Tag size={10} /> -{savingsAmount.toLocaleString()} {curr} d'économie
+                </span>
+              )}
+            </div>
+          ) : (
+            <p className="text-[11px] font-medium text-white/40">
+              Facturation mensuelle sans engagement
+            </p>
+          )}
         </div>
 
         <button
@@ -164,7 +255,7 @@ function OfferCard({ offer, currency, onSelect }: { offer: any, currency: string
               : "bg-white text-vendeur-coal hover:bg-vendeur-emerald hover:text-vendeur-coal"
           )}
         >
-          <span>{isPro ? 'Activer Forfait Pro' : 'Commencer avec ce Forfait'}</span>
+          <span>{isYearly ? `Souscrire à l'Annuel (${isPro ? 'Pro' : 'Essentiel'})` : (isPro ? 'Activer Forfait Pro' : 'Commencer avec ce Forfait')}</span>
           <ArrowRight size={16} />
         </button>
       </div>

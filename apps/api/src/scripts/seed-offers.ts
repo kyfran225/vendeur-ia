@@ -8,6 +8,7 @@ const OFFERS = [
     name: "Vendeur IA Essentiel",
     description: "Votre vendeur IA pour WhatsApp. Un vendeur IA qui répond à vos clients, présente vos produits et vous aide à vendre automatiquement.",
     monthlyPrice: 5000,
+    yearlyPrice: 50000, // 2 mois offerts (10x le prix mensuel au lieu de 12x)
     currency: "XOF",
     features: [
       "Réponses automatiques",
@@ -29,7 +30,8 @@ const OFFERS = [
     slug: "pro",
     name: "Vendeur IA Pro",
     description: "Pour les vendeurs qui veulent une expérience plus avancée.",
-    monthlyPrice: 20000, // Example price, spec says to verify
+    monthlyPrice: 20000,
+    yearlyPrice: 200000, // 2 mois offerts (10x le prix mensuel au lieu de 12x)
     currency: "XOF",
     features: [
       "Tout Essentiel",

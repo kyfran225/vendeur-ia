@@ -103,7 +103,12 @@ export class CommerceService {
     // New Models Data
     const subscription = await SubscriptionModel.findOne({ userId: ownerId }).populate('offerId');
     const whatsappConnection = await WhatsAppConnectionModel.findOne({ userId: ownerId });
-    const offers = await OfferModel.find({ isActive: true }).sort({ sortOrder: 1 });
+    const rawOffers = await OfferModel.find({ isActive: true }).sort({ sortOrder: 1 });
+    const offers = rawOffers.map(o => {
+      const obj = o.toObject();
+      obj.yearlyPrice = obj.yearlyPrice || Math.round(obj.monthlyPrice * 10);
+      return obj;
+    });
 
     const products = await CommerceProductModel.find({ merchantId: merchant._id });
 
@@ -1144,7 +1149,7 @@ Résumé actuel :`;
 
   // --- NEW SUBSCRIPTION LOGIC ---
 
-  async initializeCheckout(userId: string, offerSlug: string, email: string, setupOption?: string) {
+  async initializeCheckout(userId: string, offerSlug: string, email: string, setupOption?: string, billingInterval: 'monthly' | 'yearly' = 'monthly') {
     const offer = await OfferModel.findOne({ slug: offerSlug });
     if (!offer) throw new Error("Offre non trouvée");
 
@@ -1170,7 +1175,10 @@ Résumé actuel :`;
       ZAR: { rate: 0.03, round: 5 }
     };
 
-    let baseAmount = offer.monthlyPrice;
+    const isYearly = billingInterval === 'yearly';
+    const planBasePrice = isYearly ? (offer.yearlyPrice || Math.round(offer.monthlyPrice * 10)) : offer.monthlyPrice;
+    let baseAmount = planBasePrice;
+
     if (setupOption) {
       const option = offer.setupOptions.find(o => o.type === setupOption);
       if (option) {
@@ -1190,6 +1198,7 @@ Résumé actuel :`;
       merchantId: merchant?._id,
       offerSlug: offer.slug,
       setupOption,
+      billingInterval: isYearly ? 'yearly' : 'monthly',
       currency,
       country,
       baseAmount,

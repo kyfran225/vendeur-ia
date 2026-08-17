@@ -27,7 +27,8 @@ const MerchantSchema = new Schema({
     subscriptionCode: { type: String, default: null },
     emailToken: { type: String, default: null },
     nextPaymentDate: { type: Date, default: null },
-    paymentMethod: { type: String, enum: ['card', 'mobile_money', 'unknown'], default: 'unknown' }
+    paymentMethod: { type: String, enum: ['card', 'mobile_money', 'unknown'], default: 'unknown' },
+    billingInterval: { type: String, enum: ['monthly', 'yearly'], default: 'monthly' }
   },
   aiSettings: {
     personality: { type: String, default: "friendly" },

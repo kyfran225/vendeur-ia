@@ -69,11 +69,25 @@ router.get("/verify-transaction/:reference", authenticate, async (req, res) => {
       const data = await paystackService.verifyTransaction(reference);
 
       if (data && data.status === 'success') {
-        const { type, offerSlug } = data.metadata || {};
+        const { type, offerSlug, billingInterval } = data.metadata || {};
         const offer = await OfferModel.findOne({ slug: offerSlug || (type === 'pack_pro' ? 'pro' : 'essential') });
 
-        const expiresAt = new Date();
-        expiresAt.setMonth(expiresAt.getMonth() + 1);
+        const isYearly = billingInterval === 'yearly';
+        const existingSub = await SubscriptionModel.findOne({ userId });
+        const existingMerchant = await CommerceMerchantModel.findOne({ ownerId: userId });
+        const now = new Date();
+        const currentValidUntil = (existingSub?.currentPeriodEnd && new Date(existingSub.currentPeriodEnd) > now)
+          ? new Date(existingSub.currentPeriodEnd)
+          : (existingMerchant?.subscription?.expiresAt && new Date(existingMerchant.subscription.expiresAt) > now)
+          ? new Date(existingMerchant.subscription.expiresAt)
+          : now;
+
+        const expiresAt = new Date(currentValidUntil);
+        if (isYearly) {
+          expiresAt.setFullYear(expiresAt.getFullYear() + 1);
+        } else {
+          expiresAt.setMonth(expiresAt.getMonth() + 1);
+        }
 
         await SubscriptionModel.findOneAndUpdate(
           { userId },
@@ -81,6 +95,7 @@ router.get("/verify-transaction/:reference", authenticate, async (req, res) => {
             $set: {
               offerId: offer?._id,
               status: 'active',
+              billingInterval: isYearly ? 'yearly' : 'monthly',
               price: data.amount / 100,
               currency: data.currency,
               currentPeriodStart: new Date(),
@@ -131,6 +146,7 @@ router.get("/verify-transaction/:reference", authenticate, async (req, res) => {
             $set: {
               "subscription.plan": offerSlug || (type === 'pack_pro' ? 'pro' : 'essential'),
               "subscription.status": "active",
+              "subscription.billingInterval": isYearly ? 'yearly' : 'monthly',
               "subscription.expiresAt": expiresAt,
               "whatsappConfig.provider": offerSlug === 'pro' || type === 'pack_pro' ? 'meta' : 'baileys',
               "whatsappConfig.status": currentMerchantForStatus?.whatsappConfig?.status || "disconnected"
@@ -138,8 +154,15 @@ router.get("/verify-transaction/:reference", authenticate, async (req, res) => {
           }
         );
 
-        console.log(`[Verify Route] Activation effectuée avec succès pour le paiement ${reference}`);
+        console.log(`[Verify Route] Activation/Renouvellement effectué avec succès pour le paiement ${reference}`);
         const merchant = await CommerceMerchantModel.findOne({ ownerId: userId });
+
+        if (merchant && transaction) {
+          billingReceiptService.sendDigitalReceipt(merchant._id.toString(), transaction as any).catch(err =>
+            console.error("[Verify Route] sendDigitalReceipt failed:", err)
+          );
+        }
+
         return res.json({ status: 'success', data, merchant });
       } else {
         console.warn(`[Verify Route] Transaction ${reference} refusée ou échouée chez Paystack: ${data?.gateway_response || 'Unknown'}`);
@@ -699,10 +722,18 @@ router.get("/offers", async (req, res) => {
 
     const formattedOffers = offers.map(offer => {
       const obj = offer.toObject();
+      const yearlyPrice = obj.yearlyPrice || Math.round(obj.monthlyPrice * 10);
+      obj.yearlyPrice = yearlyPrice;
+
       if (currency !== "XOF") {
         // Convert monthly price
         const rawPrice = obj.monthlyPrice * conv.rate;
         obj.monthlyPrice = Math.ceil(rawPrice / conv.round) * conv.round;
+
+        // Convert yearly price
+        const rawYearly = yearlyPrice * conv.rate;
+        obj.yearlyPrice = Math.ceil(rawYearly / conv.round) * conv.round;
+
         obj.currency = currency;
 
         // Convert setup options
@@ -725,10 +756,10 @@ router.get("/offers", async (req, res) => {
 // INITIALIZE CHECKOUT
 router.post("/checkout", authenticate, async (req, res) => {
   const userId = (req as any).user.id;
-  const { offerSlug, email, setupOption } = req.body;
+  const { offerSlug, email, setupOption, billingInterval } = req.body;
 
   try {
-    const data = await commerceService.initializeCheckout(userId, offerSlug, email, setupOption);
+    const data = await commerceService.initializeCheckout(userId, offerSlug, email, setupOption, billingInterval || 'monthly');
     res.json(data);
   } catch (error: any) {
     res.status(500).json({ error: error.message });
@@ -762,14 +793,28 @@ router.post("/checkout/confirm", authenticate, async (req, res) => {
       return res.status(400).json({ error: "Transaction non confirmée par Paystack", status: data?.status });
     }
 
-    const { type, offerSlug, setupOption } = data.metadata || {};
+    const { type, offerSlug, setupOption, billingInterval } = data.metadata || {};
 
     // 1. Find offer
     const offer = await OfferModel.findOne({ slug: offerSlug || "essential" });
 
     // 2. Upsert Subscription
-    const expiresAt = new Date();
-    expiresAt.setMonth(expiresAt.getMonth() + 1);
+    const isYearly = billingInterval === 'yearly';
+    const existingSub = await SubscriptionModel.findOne({ userId });
+    const existingMerchant = await CommerceMerchantModel.findOne({ ownerId: userId });
+    const now = new Date();
+    const currentValidUntil = (existingSub?.currentPeriodEnd && new Date(existingSub.currentPeriodEnd) > now)
+      ? new Date(existingSub.currentPeriodEnd)
+      : (existingMerchant?.subscription?.expiresAt && new Date(existingMerchant.subscription.expiresAt) > now)
+      ? new Date(existingMerchant.subscription.expiresAt)
+      : now;
+
+    const expiresAt = new Date(currentValidUntil);
+    if (isYearly) {
+      expiresAt.setFullYear(expiresAt.getFullYear() + 1);
+    } else {
+      expiresAt.setMonth(expiresAt.getMonth() + 1);
+    }
 
     await SubscriptionModel.findOneAndUpdate(
       { userId },
@@ -777,6 +822,7 @@ router.post("/checkout/confirm", authenticate, async (req, res) => {
         $set: {
           offerId: offer?._id,
           status: "active",
+          billingInterval: isYearly ? 'yearly' : 'monthly',
           price: data.amount / 100,
           currency: data.currency,
           currentPeriodStart: new Date(),
@@ -825,6 +871,7 @@ router.post("/checkout/confirm", authenticate, async (req, res) => {
         $set: {
           "subscription.plan": offerSlug || "essential",
           "subscription.status": "active",
+          "subscription.billingInterval": isYearly ? 'yearly' : 'monthly',
           "subscription.expiresAt": expiresAt,
           "whatsappConfig.status": currentMerchantManual?.whatsappConfig?.status || "disconnected"
         }
@@ -1008,7 +1055,8 @@ router.post("/verify-payment", authenticate, async (req, res) => {
           plan: type === "ram_contribution" ? "premium" : "business",
           status: "active",
           expiresAt: expiresAt,
-          paymentMethod: 'card'
+          paymentMethod: 'card',
+          billingInterval: 'monthly'
         };
 
         await merchant.save();
@@ -1046,17 +1094,31 @@ router.post("/webhooks/paystack", express.raw({ type: 'application/json' }), asy
   if (event.event === 'charge.success') {
     const data = event.data;
     console.log(`[Paystack Webhook] Charge SUCCESS for reference ${data.reference}, amount: ${data.amount / 100} ${data.currency}, channel: ${data.channel}`);
-    const { type, userId, offerSlug, setupOption } = data.metadata || {};
+    const { type, userId, offerSlug, setupOption, billingInterval } = data.metadata || {};
 
     if (userId && (type === 'SUBSCRIPTION_INITIAL' || type === 'subscription' || type === 'pack_pro' || type === 'ram_contribution')) {
-      console.log(`[Paystack Webhook] Charge Success for User: ${userId} (${type})`);
+      console.log(`[Paystack Webhook] Charge Success for User: ${userId} (${type}, interval: ${billingInterval || 'monthly'})`);
 
       // 1. Find Offer or fallback to essential
       const offer = await OfferModel.findOne({ slug: offerSlug || (type === 'pack_pro' ? 'pro' : 'essential') });
 
       // 2. Update/Create Subscription
-      const expiresAt = new Date();
-      expiresAt.setMonth(expiresAt.getMonth() + 1);
+      const isYearly = billingInterval === 'yearly';
+      const existingSub = await SubscriptionModel.findOne({ userId });
+      const existingMerchant = await CommerceMerchantModel.findOne({ ownerId: userId });
+      const now = new Date();
+      const currentValidUntil = (existingSub?.currentPeriodEnd && new Date(existingSub.currentPeriodEnd) > now)
+        ? new Date(existingSub.currentPeriodEnd)
+        : (existingMerchant?.subscription?.expiresAt && new Date(existingMerchant.subscription.expiresAt) > now)
+        ? new Date(existingMerchant.subscription.expiresAt)
+        : now;
+
+      const expiresAt = new Date(currentValidUntil);
+      if (isYearly) {
+        expiresAt.setFullYear(expiresAt.getFullYear() + 1);
+      } else {
+        expiresAt.setMonth(expiresAt.getMonth() + 1);
+      }
 
       const subscription = await SubscriptionModel.findOneAndUpdate(
         { userId },
@@ -1064,6 +1126,7 @@ router.post("/webhooks/paystack", express.raw({ type: 'application/json' }), asy
           $set: {
             offerId: offer?._id,
             status: 'active',
+            billingInterval: isYearly ? 'yearly' : 'monthly',
             price: data.amount / 100,
             currency: data.currency,
             currentPeriodStart: new Date(),
@@ -1111,6 +1174,7 @@ router.post("/webhooks/paystack", express.raw({ type: 'application/json' }), asy
           $set: {
             "subscription.plan": offerSlug || (type === 'pack_pro' ? 'pro' : 'essential'),
             "subscription.status": "active",
+            "subscription.billingInterval": isYearly ? 'yearly' : 'monthly',
             "subscription.expiresAt": expiresAt,
             "whatsappConfig.status": currentMerchant?.whatsappConfig?.status || "disconnected"
           }

@@ -17,6 +17,8 @@ import { WhatsAppConnectionModel } from "./whatsapp-connection.model.js";
 import { TransactionModel } from "./transaction.model.js";
 import { SystemSettingsModel } from "./admin.model.js";
 import { PaymentProofLogModel } from "./payment-proof.model.js";
+import { PaymentIntentModel } from "./payment-intent.model.js";
+import { paymentService } from "../../services/payment.service.js";
 import { CATEGORY_MOCKS } from "./demo.data.js";
 import { billingReceiptService } from "../../services/billing-receipt.service.js";
 import { marketingService } from "../../services/marketing.service.js";
@@ -1874,6 +1876,88 @@ router.post("/whatsapp-status/auto-publish", authenticate, async (req, res) => {
   } catch (error: any) {
     logger.error(`[WhatsApp Status Auto Publish] Error: ${error.message}`);
     res.status(400).json({ error: error.message });
+  }
+});
+
+// ==========================================
+// --- PAYMENT INTENTS & MANUAL MONEY RAILS ---
+// ==========================================
+
+// GET /api/commerce/payments/config - Get available payment methods and recipient numbers
+router.get("/payments/config", async (req, res) => {
+  try {
+    const config = await paymentService.getPaymentConfig();
+    res.json(config);
+  } catch (error: any) {
+    logger.error(`[Payment Config] Error: ${error.message}`);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// POST /api/commerce/payments/intent - Create a new payment intent
+router.post("/payments/intent", authenticate, async (req, res) => {
+  try {
+    const userId = (req as any).user.id;
+    const { offerSlug, billingInterval, paymentMethod, senderPhoneNumber, senderName } = req.body;
+
+    const intent = await paymentService.createPaymentIntent(userId, {
+      offerSlug: offerSlug || "essential",
+      billingInterval: billingInterval || "monthly",
+      paymentMethod: paymentMethod || "wave",
+      senderPhoneNumber,
+      senderName
+    });
+
+    res.status(201).json(intent);
+  } catch (error: any) {
+    logger.error(`[Payment Intent Create] Error: ${error.message}`);
+    res.status(400).json({ error: error.message });
+  }
+});
+
+// GET /api/commerce/payments/intent/:id - Fetch intent by ID
+router.get("/payments/intent/:id", authenticate, async (req, res) => {
+  try {
+    const userId = (req as any).user.id;
+    const intent = await PaymentIntentModel.findOne({ _id: req.params.id, userId });
+    if (!intent) {
+      return res.status(404).json({ error: "Intention de paiement introuvable." });
+    }
+    res.json(intent);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// POST /api/commerce/payments/intent/:id/submit-proof - Submit transaction proof
+router.post("/payments/intent/:id/submit-proof", authenticate, async (req, res) => {
+  try {
+    const userId = (req as any).user.id;
+    const { transactionId, proofImageUrl, senderPhoneNumber, senderName, notes } = req.body;
+
+    const result = await paymentService.submitPaymentProof(req.params.id, userId, {
+      transactionId,
+      proofImageUrl,
+      senderPhoneNumber,
+      senderName,
+      notes
+    });
+
+    res.json(result);
+  } catch (error: any) {
+    logger.error(`[Payment Submit Proof] Error: ${error.message}`);
+    res.status(400).json({ error: error.message });
+  }
+});
+
+// GET /api/commerce/payments/history - Get payment intents history for merchant
+router.get("/payments/history", authenticate, async (req, res) => {
+  try {
+    const userId = (req as any).user.id;
+    const intents = await PaymentIntentModel.find({ userId }).sort({ createdAt: -1 }).limit(30);
+    res.json(intents);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
   }
 });
 

@@ -1,0 +1,728 @@
+PROMPT DE REFONTE MAJEURE — VENDEUR IA WhatsApp-Native Authentication,
+Onboarding, Subscription & Payment Architecture
+
+CONTEXTE
+
+Vendeur IA est un SaaS dont l’univers principal est WhatsApp.
+
+Positionnement produit : « Votre vendeur IA sur WhatsApp. »
+
+L’objectif n’est pas de construire un SaaS générique auquel on ajoute
+WhatsApp comme une fonctionnalité secondaire. WhatsApp doit être au cœur
+de l’expérience produit : identité opérationnelle, connexion du canal
+commercial, interaction avec le vendeur IA, notifications et, lorsque
+pertinent, parcours de paiement.
+
+Le produit doit rester extrêmement simple pour les commerçants et
+entrepreneurs, notamment dans les marchés où WhatsApp et le Mobile Money
+sont des usages quotidiens.
+
+IMPORTANT : Il s’agit d’une demande de REFONTE de l’expérience et
+potentiellement de certaines parties de l’architecture existante. Ne
+modifie pas le code aveuglément. Commence par auditer l’implémentation
+actuelle, comprendre les flux existants, identifier ce qui peut être
+conservé, ce qui doit être refactoré et ce qui doit être remplacé.
+
+Ne casse pas les fonctionnalités existantes sans raison. Préserve les
+données, les intégrations et les comportements utiles. La refonte doit
+être progressive, cohérente et production-ready.
+
+================================================== 1. NOUVELLE
+PHILOSOPHIE PRODUIT ==================================================
+
+Nous ne voulons plus penser :
+
+Créer un compte → Se connecter → Choisir un abonnement → Connecter
+WhatsApp → Configurer le business
+
+Nous voulons penser :
+
+CONNECTER WHATSAPP → IDENTITÉ ÉTABLIE → BUSINESS CONFIGURÉ → FORMULE →
+PAIEMENT → VENDEUR IA OPÉRATIONNEL
+
+La connexion WhatsApp n’est donc pas une fonctionnalité secondaire après
+la création du compte.
+
+Elle constitue le point d’entrée principal du produit.
+
+L’utilisateur doit avoir l’impression de faire une seule chose :
+
+« Je connecte mon WhatsApp à Vendeur IA. »
+
+Le système peut évidemment créer derrière cela un compte utilisateur,
+une session, une identité, des relations avec le business, etc. Mais
+cette complexité doit rester sous le capot.
+
+================================================== 2. ÉCRAN D’ENTRÉE
+PRINCIPAL ==================================================
+
+Premier écran souhaité :
+
+VENDEUR IA
+
+Votre vendeur IA sur WhatsApp.
+
+Deux possibilités principales :
+
+A. Connecter avec un numéro WhatsApp B. Connecter avec un QR code
+
+Exemple conceptuel :
+
+[ 📱 Connecter avec mon numéro WhatsApp ]
+
+ou
+
+[ ▦ Scanner un QR code ]
+
+L’interface doit expliquer simplement que la connexion WhatsApp permet
+de commencer.
+
+Ne pas demander immédiatement : - email - mot de passe - création
+manuelle de compte - formulaire long
+
+Ces éléments peuvent devenir secondaires ou être demandés ultérieurement
+uniquement s’ils sont nécessaires.
+
+================================================== 3. AUTHENTIFICATION
+VS CONNEXION DU NUMÉRO COMMERCIAL
+==================================================
+
+POINT ARCHITECTURAL CRITIQUE.
+
+Le système doit distinguer deux concepts :
+
+A. L’identité du propriétaire/utilisateur B. Le numéro WhatsApp
+commercial utilisé par le vendeur IA
+
+Cas simple :
+
+Jean utilise un seul numéro WhatsApp. Ce numéro peut servir à
+l’identifier et à connecter son activité.
+
+Cas plus complexe :
+
+Jean se connecte avec son WhatsApp personnel → puis connecte le WhatsApp
+Business de sa boutique.
+
+Le modèle de données et l’architecture doivent donc pouvoir représenter
+:
+
+User Business WhatsApp Identity WhatsApp Business Channel / Connected
+Number Subscription Payment Account / Payment History
+
+Ne pas supposer que le numéro utilisé pour authentifier le propriétaire
+sera toujours le même numéro que celui utilisé par Vendeur IA pour
+communiquer avec les clients.
+
+Cette distinction doit être prévue dès maintenant pour éviter une
+refonte future.
+
+================================================== 4. COMPTE UTILISATEUR
+==================================================
+
+La création de compte doit être autant que possible implicite.
+
+Lorsqu’une connexion WhatsApp est correctement établie :
+
+→ identifier ou créer l’utilisateur → identifier ou créer son business →
+associer le canal WhatsApp → restaurer son état si le compte existe déjà
+→ poursuivre son onboarding là où il s’était arrêté
+
+L’utilisateur ne doit pas être forcé à recréer un compte s’il revient
+avec le même WhatsApp.
+
+Le système doit être idempotent.
+
+Exemples :
+
+Premier passage : WhatsApp connecté → création du User → création du
+Business → connexion du canal → onboarding
+
+Retour : WhatsApp reconnu → récupération du User → récupération du
+Business → récupération du canal → reprise directe du dashboard ou de
+l’étape incomplète
+
+================================================== 5. EMAIL ET AUTRES
+MÉTHODES ==================================================
+
+L’email ne disparaît pas nécessairement.
+
+Il devient secondaire.
+
+Il peut servir pour : - récupération de compte - facturation -
+notifications - sécurité - administration - support
+
+Google ou d’autres méthodes peuvent également exister comme
+alternatives, mais ne doivent pas détrôner WhatsApp comme expérience
+principale si elles ne sont pas nécessaires.
+
+Ne pas transformer l’écran d’accueil en catalogue de méthodes
+d’authentification.
+
+WhatsApp doit être le chemin évident.
+
+================================================== 6. ONBOARDING APRÈS
+CONNEXION ==================================================
+
+Une fois WhatsApp connecté :
+
+Le système doit dire clairement :
+
+« Votre vendeur IA est presque prêt. »
+
+Puis demander uniquement les informations réellement nécessaires.
+
+Exemples : - nom du business - catégorie - produits/services -
+informations commerciales - horaires - zone de livraison si nécessaire -
+moyens de paiement acceptés - autres informations utiles au vendeur IA
+
+Éviter les formulaires interminables.
+
+Le système doit exploiter au maximum les informations déjà disponibles.
+
+Objectif : mettre le vendeur IA en service avec le minimum de friction.
+
+================================================== 7. ABONNEMENT
+==================================================
+
+Le choix de formule doit apparaître au moment logique du parcours.
+
+Exemple :
+
+Votre vendeur IA est prêt.
+
+Choisissez votre formule :
+
+STARTER X XOF / mois
+
+PRO X XOF / mois
+
+etc.
+
+L’utilisateur ne doit pas : choisir une formule → cliquer → recevoir un
+autre écran demandant de choisir encore une formule.
+
+Les offres doivent être visibles AVANT le choix.
+
+Une fois une formule sélectionnée : → afficher clairement ce qui va être
+payé → montant → période → formule → moyen de paiement → bouton de
+paiement
+
+================================================== 8. PHILOSOPHIE DE
+PAIEMENT ==================================================
+
+Nous sommes dans l’univers WhatsApp et du commerce africain.
+
+Nous devons donc concevoir une infrastructure de paiement capable de
+fonctionner même pendant la phase où Vendeur IA n’a pas encore accès à
+un PSP idéal.
+
+IMPORTANT : Nous ne prétendons PAS construire une API bancaire ou
+rivaliser techniquement avec une confirmation officielle de paiement.
+
+Nous voulons construire un système de vérification et de rapprochement
+de paiement très performant autour de moyens de paiement accessibles
+localement.
+
+Le système doit pouvoir fonctionner avec plusieurs rails de paiement.
+
+Architecture souhaitée :
+
+Payment Provider / Payment Method → Payment Intent → Payment Detection →
+Verification Engine → Confidence / Risk Assessment → Automatic
+Confirmation si suffisamment fiable OU → Manual Admin Review →
+Subscription Activation
+
+================================================== 9. PAIEMENT MANUEL /
+SEMI-AUTOMATIQUE ==================================================
+
+Pendant la phase de lancement, un utilisateur peut potentiellement payer
+via un numéro Mobile Money contrôlé par Vendeur IA.
+
+Exemple :
+
+FORMULE PRO 5 000 XOF / mois
+
+Payer avec : Wave Orange Money MTN Moov Carte etc.
+
+Pour un moyen de paiement manuel/semi-automatique :
+
+1.  Créer un Payment Intent unique
+2.  Générer une référence unique
+3.  Afficher clairement le montant
+4.  Afficher le numéro ou moyen de paiement
+5.  Demander au client d’effectuer le paiement
+6.  Permettre au système de rechercher/détecter les signaux disponibles
+7.  Vérifier la cohérence
+8.  Attribuer un niveau de confiance
+9.  Activer automatiquement si les règles le permettent
+10. Sinon envoyer à l’administration pour validation
+
+================================================== 10. PAYMENT INTENT
+==================================================
+
+Chaque paiement doit être représenté par un objet/entité propre.
+
+Exemple conceptuel :
+
+PaymentIntent - id - userId - businessId - subscriptionId - planId -
+amount - currency - paymentMethod - provider - reference - status -
+createdAt - expiresAt - detectedAt - verifiedAt - verifiedBy -
+confidenceScore - providerTransactionId - senderNumber - metadata -
+auditTrail
+
+Les noms exacts doivent respecter l’architecture actuelle du projet.
+
+Le système doit empêcher : - double activation - réutilisation d’une
+transaction - paiement expiré réutilisé - paiement d’un montant
+incorrect considéré comme valide - activation multiple d’un même
+paiement
+
+================================================== 11. PAYMENT
+VERIFICATION ENGINE ==================================================
+
+Créer une logique robuste de vérification.
+
+Signaux possibles :
+
+1.  Montant exact
+2.  Numéro de l’expéditeur
+3.  Correspondance avec le compte WhatsApp
+4.  Date/heure
+5.  Fenêtre temporelle
+6.  Identifiant de transaction
+7.  Référence unique lorsque disponible
+8.  Transaction déjà utilisée ou non
+9.  Correspondance avec PaymentIntent
+10. Cohérence du provider
+11. Détection de doublons
+12. Historique du compte
+13. Autres signaux disponibles légalement et techniquement
+
+Exemple :
+
+Montant attendu : 5 000 Montant détecté : 5 000 Numéro attendu : +225…
+Numéro détecté : +225… Transaction unique : oui Fenêtre temporelle :
+valide PaymentIntent : valide
+
+→ confiance élevée
+
+Autre cas :
+
+Montant correct mais numéro différent → confiance moyenne → revue
+humaine
+
+Montant incorrect → rejet / revue
+
+Transaction déjà utilisée → blocage
+
+IMPORTANT : Ne jamais considérer une simple capture d’écran fournie par
+l’utilisateur comme une preuve suffisante.
+
+Un screenshot peut être falsifié.
+
+================================================== 12. STATUTS DE
+PAIEMENT ==================================================
+
+Prévoir des statuts explicites, par exemple :
+
+INITIATED AWAITING_PAYMENT PAYMENT_DETECTED UNDER_VERIFICATION
+PENDING_ADMIN_REVIEW CONFIRMED FAILED REJECTED EXPIRED REFUNDED
+DUPLICATE
+
+Les noms peuvent être adaptés au code existant.
+
+Chaque changement d’état important doit être traçable.
+
+================================================== 13. ADMIN PAYMENT
+REVIEW ==================================================
+
+L’administration doit disposer d’une interface claire pour les paiements
+nécessitant une validation.
+
+Exemple :
+
+Paiement à vérifier
+
+Client : Jean Kouassi
+
+WhatsApp : +225 XX XX XX XX
+
+Plan : PRO
+
+Montant attendu : 5 000 XOF
+
+Montant détecté : 5 000 XOF
+
+Heure : 10:42
+
+Transaction : XXXXXXXX
+
+Confiance : 96 %
+
+Signaux : ✓ Montant ✓ Numéro ✓ Fenêtre temporelle ✓ Transaction unique
+
+Actions :
+
+[ CONFIRMER ]
+
+[ REJETER ]
+
+[ DEMANDER DES INFORMATIONS ]
+
+L’admin doit toujours pouvoir confirmer ou refuser manuellement.
+
+La confirmation manuelle doit être auditée : - qui - quand - pourquoi -
+quelle décision
+
+================================================== 14. ACTIVATION DE
+L’ABONNEMENT ==================================================
+
+Ne jamais activer simplement parce qu’un PaymentIntent existe.
+
+Activation :
+
+Payment CONFIRMED → Subscription ACTIVE
+
+Puis :
+
+-   date de début
+-   date d’expiration
+-   plan
+-   limites
+-   fonctionnalités
+
+Une activation doit être idempotente.
+
+Si le même événement arrive plusieurs fois : → une seule activation.
+
+================================================== 15. NOTIFICATION
+WHATSAPP ==================================================
+
+WhatsApp doit devenir le canal naturel de notification.
+
+Après confirmation :
+
+« Votre paiement de 5 000 XOF a été confirmé.
+
+Votre abonnement Vendeur IA Pro est maintenant actif.
+
+Expiration : 17 septembre 2026. »
+
+Autres notifications possibles : - paiement reçu/détecté - paiement en
+vérification - paiement confirmé - paiement rejeté - abonnement bientôt
+expiré - abonnement expiré - renouvellement - problème de paiement
+
+Ne pas envoyer des notifications inutiles.
+
+================================================== 16. ÉVOLUTION VERS
+DES PSP OFFICIELS ==================================================
+
+L’architecture de paiement doit être provider-agnostic.
+
+Nous devons pouvoir commencer avec un système manuel/semi-automatique
+puis brancher progressivement :
+
+-   Lygos
+-   CinetPay
+-   Paystack
+-   autre PSP
+-   autre moyen de paiement
+
+sans refaire toute l’expérience utilisateur.
+
+Architecture souhaitée :
+
+PaymentService ↓ PaymentProvider interface ├── ManualMobileMoneyProvider
+├── LygosProvider ├── CinetPayProvider ├── PaystackProvider └──
+FutureProvider
+
+L’interface utilisateur ne doit pas dépendre directement d’un
+fournisseur.
+
+Le même PaymentIntent doit pouvoir être traité par différents providers.
+
+================================================== 17. IMPORTANT :
+NUMÉRO PERSONNEL / MOBILE MONEY
+==================================================
+
+Pendant la phase de lancement, un numéro personnel peut éventuellement
+servir de rail temporaire uniquement si cela est autorisé par le
+fournisseur concerné et compatible avec les règles applicables.
+
+NE PAS concevoir l’architecture comme si l’utilisation d’un compte
+personnel était la solution définitive.
+
+Prévoir dès maintenant la migration vers : - compte marchand - compte
+professionnel - PSP officiel - compte bancaire professionnel
+
+sans casser les abonnements existants.
+
+================================================== 18. ÉTAT DU PRODUIT
+APRÈS ABONNEMENT ==================================================
+
+Une fois connecté et abonné, l’utilisateur ne doit plus voir l’écran
+initial comme s’il n’avait rien configuré.
+
+Il doit voir quelque chose comme :
+
+WHATSAPP CONNECTÉ
+
+🟢 +225 XX XX XX XX
+
+Connecté
+
+Votre vendeur IA est actif.
+
+[ Gérer ]
+
+La section de gestion peut contenir : - état de connexion - numéro -
+reconnecter - changer de numéro - déconnecter - statut du service -
+abonnement
+
+================================================== 19. CHANGEMENT DE
+FORMULE ==================================================
+
+Après abonnement, les anciennes cartes/boutons d’offre ne doivent pas
+rester comme au premier jour.
+
+Afficher plutôt :
+
+Votre abonnement
+
+PRO 5 000 XOF / mois
+
+Actif jusqu’au 17 septembre 2026
+
+[ Gérer mon abonnement ]
+
+Dans cette section : - formule actuelle - prochaine échéance - changer
+de formule - renouveler - annuler - historique des paiements
+
+Si l’utilisateur veut changer de formule : → afficher les formules
+disponibles → expliquer clairement le changement → calculer/préciser
+l’effet financier → confirmer → traiter le paiement si nécessaire.
+
+================================================== 20. UX PRINCIPES
+==================================================
+
+Le produit doit être :
+
+-   mobile-first
+-   extrêmement simple
+-   clair
+-   rassurant
+-   rapide
+-   adapté aux commerçants
+-   adapté aux utilisateurs peu techniques
+
+Éviter : - jargon technique - OAuth - webhook - API - token - gateway -
+KYC dans l’interface utilisateur sauf nécessité - multiples modals
+inutiles - choix successifs qui répètent la même question - parcours de
+paiement inutilement complexe
+
+Le système doit expliquer ce qui se passe en langage humain.
+
+================================================== 21. CE QU’IL FAUT
+AUDITER DANS LE CODE EXISTANT
+==================================================
+
+AVANT DE MODIFIER :
+
+1.  Identifier le système actuel d’authentification.
+2.  Identifier les écrans d’onboarding.
+3.  Identifier la connexion WhatsApp actuelle.
+4.  Identifier les modèles User / Business / WhatsApp.
+5.  Identifier le système d’abonnement.
+6.  Identifier les plans existants.
+7.  Identifier les paiements existants.
+8.  Identifier Paystack et les autres providers.
+9.  Identifier les webhooks.
+10. Identifier les états d’abonnement.
+11. Identifier les notifications.
+12. Identifier les interfaces admin.
+13. Identifier les routes API concernées.
+14. Identifier les middleware d’authentification.
+15. Identifier les risques de régression.
+
+Produire d’abord un audit clair.
+
+================================================== 22. NE PAS FAIRE
+==================================================
+
+Ne pas :
+
+-   supprimer les fonctionnalités existantes sans justification
+-   casser les données existantes
+-   réécrire toute l’application juste pour changer quelques écrans
+-   introduire une nouvelle librairie sans nécessité
+-   créer plusieurs systèmes concurrents pour la même fonction
+-   stocker des données sensibles inutilement
+-   faire confiance à un screenshot comme preuve de paiement
+-   considérer un paiement manuel comme une confirmation bancaire
+    officielle
+-   coder des contournements des protections WhatsApp
+-   prétendre que Vendeur IA possède une confirmation bancaire
+    automatique lorsque ce n’est pas le cas
+-   coupler toute l’architecture au numéro personnel utilisé
+    temporairement
+-   coupler le frontend directement à un PSP
+
+================================================== 23. OBJECTIF FINAL
+==================================================
+
+Le parcours idéal doit être proche de :
+
+ÉCRAN 1
+
+Vendeur IA
+
+Votre vendeur IA sur WhatsApp.
+
+[ Connecter avec WhatsApp ]
+
+→ QR ou numéro
+
+↓
+
+WHATSAPP CONNECTÉ
+
+↓
+
+Votre vendeur IA est presque prêt.
+
+↓
+
+CONFIGURATION MINIMALE DU BUSINESS
+
+↓
+
+CHOIX DU PLAN
+
+↓
+
+PAIEMENT
+
+↓
+
+VÉRIFICATION
+
+↓
+
+ABONNEMENT ACTIF
+
+↓
+
+DASHBOARD
+
+Et à partir de là :
+
+WhatsApp devient le canal principal de communication et de notification.
+
+Le dashboard devient le cockpit de gestion.
+
+================================================== 24. VISION
+ARCHITECTURALE ==================================================
+
+Nous voulons une architecture qui permette :
+
+WhatsApp-native identity + WhatsApp-connected business channel +
+Provider-agnostic payments + Manual/semi-automatic payment
+verification + Official PSP integrations later + Human admin
+verification + Subscription lifecycle management
+
+Le système doit être conçu pour évoluer de :
+
+PHASE 1 Paiement manuel/semi-automatique
+
+vers
+
+PHASE 2 PSP local
+
+vers
+
+PHASE 3 PSP officiel avec webhooks
+
+sans réécrire le produit.
+
+================================================== 25. TA MISSION EN
+TANT QU’AGENT CODEUR ==================================================
+
+Tu dois maintenant travailler comme un agent senior chargé d’une refonte
+réelle de Vendeur IA.
+
+NE COMMENCE PAS immédiatement à modifier le code.
+
+Étape 1 : Audite le dépôt complet.
+
+Étape 2 : Cartographie l’architecture actuelle.
+
+Étape 3 : Identifie précisément les différences entre l’architecture
+actuelle et cette nouvelle vision.
+
+Étape 4 : Propose une stratégie de migration.
+
+Étape 5 : Identifie les changements : - frontend - backend - base de
+données - auth - WhatsApp - abonnement - paiement - admin -
+notifications
+
+Étape 6 : Identifie les risques et régressions.
+
+Étape 7 : Présente un plan d’implémentation par phases.
+
+Étape 8 : Après validation du plan, implémente progressivement.
+
+IMPORTANT : Si tu découvres que certains éléments de cette vision sont
+incompatibles avec l’implémentation WhatsApp actuelle ou avec les API
+réellement utilisées, ne les invente pas. Signale précisément la
+contrainte et propose la meilleure architecture compatible.
+
+Tu dois privilégier : - robustesse - simplicité UX - sécurité -
+idempotence - maintenabilité - évolutivité - compatibilité avec les PSP
+futurs - protection des données - expérience mobile-first
+
+Le résultat attendu n’est pas un simple redesign visuel.
+
+Il s’agit d’une refonte cohérente du parcours :
+
+IDENTITÉ → WHATSAPP → BUSINESS → PLAN → PAIEMENT → VÉRIFICATION →
+ABONNEMENT → ACTIVATION → GESTION
+
+Le produit doit donner l’impression que tout cela constitue un seul
+parcours naturel.
+
+================================================== 26. LIVRABLES
+ATTENDUS DE L’AGENT ==================================================
+
+Avant toute modification :
+
+1.  Audit de l’existant
+2.  Architecture actuelle résumée
+3.  Architecture cible proposée
+4.  Liste des fichiers/modules concernés
+5.  Schéma des nouveaux flux
+6.  Plan de migration
+7.  Risques
+8.  Tests à prévoir
+
+Après implémentation :
+
+1.  Code fonctionnel
+2.  Migration de données si nécessaire
+3.  Tests
+4.  Vérification des flux d’authentification
+5.  Vérification WhatsApp
+6.  Vérification abonnement
+7.  Vérification paiement
+8.  Vérification idempotence
+9.  Vérification admin
+10. Vérification responsive/mobile
+11. Rapport final des modifications
+
+RÈGLE ABSOLUE :
+
+Ne jamais sacrifier la sécurité ou la conformité pour obtenir un
+parcours plus simple.
+
+Le but est de rendre la complexité invisible pour l’utilisateur, pas de
+supprimer les contrôles nécessaires au système.

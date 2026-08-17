@@ -38,17 +38,43 @@ import { twMerge } from "tailwind-merge";
 import { toast } from "sonner";
 import { AIControlCenter } from "./components/AIControlCenter";
 import { FounderTicketsInbox } from "./components/FounderTicketsInbox";
+import { AdminVIPOnboarding } from "./components/AdminVIPOnboarding";
+import { AdminPaymentsTab } from "./components/AdminPaymentsTab";
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
 export function AdminDashboard() {
-  const [activeTab, setActiveTab] = useState<"overview" | "merchants" | "tickets" | "settings" | "ai" | "billing">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "vip" | "payments" | "merchants" | "tickets" | "settings" | "ai" | "billing">("overview");
   const { accessToken } = useAuthStore();
   const queryClient = useQueryClient();
 
-  // 0. Fetch Unread Tickets Count
+  // 0a. Fetch Pending Payments Count
+  const { data: pendingPaymentsData } = useQuery({
+    queryKey: ["admin:payments:pendingCount"],
+    queryFn: async () => {
+      const res = await apiClient.get("/api/admin/payments?status=under_verification");
+      return res.data;
+    },
+    enabled: !!accessToken,
+    refetchInterval: 10000
+  });
+  const pendingPaymentsCount = pendingPaymentsData?.length || 0;
+
+  // 0. Fetch Pending VIP Setups Count
+  const { data: vipData } = useQuery({
+    queryKey: ["admin:expert-setups:count"],
+    queryFn: async () => {
+      const res = await apiClient.get("/api/admin/expert-setups");
+      return res.data;
+    },
+    enabled: !!accessToken,
+    refetchInterval: 15000
+  });
+  const pendingVipCount = (vipData || []).filter((s: any) => s.expertSetup?.status === "pending" || s.expertSetup?.status === "none").length;
+
+  // 0b. Fetch Unread Tickets Count
   const { data: unreadTicketsData } = useQuery({
     queryKey: ["admin:copilot:tickets:unreadCount"],
     queryFn: async () => {
@@ -137,6 +163,8 @@ export function AdminDashboard() {
         <div className="flex-1 max-w-2xl">
           <nav className="flex gap-1.5 md:gap-2 p-1 bg-white/5 rounded-2xl border border-white/5 w-full md:w-fit overflow-x-auto scrollbar-hide">
             <AdminTabButton active={activeTab === "overview"} onClick={() => setActiveTab("overview")} icon={<LayoutDashboard size={18}/>} label="Overview" />
+            <AdminTabButton active={activeTab === "payments"} onClick={() => setActiveTab("payments")} icon={<Banknote size={18}/>} label="Paiements" badge={pendingPaymentsCount > 0 ? pendingPaymentsCount : undefined} />
+            <AdminTabButton active={activeTab === "vip"} onClick={() => setActiveTab("vip")} icon={<Sparkles size={18}/>} label="VIP Onboarding" badge={pendingVipCount > 0 ? pendingVipCount : undefined} />
             <AdminTabButton active={activeTab === "merchants"} onClick={() => setActiveTab("merchants")} icon={<Users size={18}/>} label="Merchants" />
             <AdminTabButton active={activeTab === "tickets"} onClick={() => setActiveTab("tickets")} icon={<MessageSquare size={18}/>} label="Tickets" badge={unreadTicketsCount > 0 ? unreadTicketsCount : undefined} />
             <AdminTabButton active={activeTab === "billing"} onClick={() => setActiveTab("billing")} icon={<Banknote size={18}/>} label="Finance" />
@@ -158,6 +186,18 @@ export function AdminDashboard() {
             <h2 className="text-2xl md:text-3xl font-black uppercase tracking-tighter">Vue d'ensemble</h2>
             <OverviewPanel stats={stats} failedJobs={failedJobs} statsLoading={statsLoading} />
           </div>
+        )}
+        {activeTab === "payments" && (
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-2xl md:text-3xl font-black uppercase tracking-tighter">Gestion des Paiements & Trésorerie</h2>
+              <p className="text-xs text-white/50 mt-1">Validation des transferts Mobile Money, signaux anti-fraude et configuration des numéros de réception.</p>
+            </div>
+            <AdminPaymentsTab />
+          </div>
+        )}
+        {activeTab === "vip" && (
+          <AdminVIPOnboarding />
         )}
         {activeTab === "merchants" && (
           <div className="space-y-6">

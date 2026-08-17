@@ -54,6 +54,16 @@ async function start() {
       }
     }, 60 * 60 * 1000);
 
+    // Run VIP Onboarding Follow-Up & Escalation Check every 1 hour
+    setInterval(async () => {
+      try {
+        const { vipFollowUpService } = await import("./services/vip-followup.service.js");
+        await vipFollowUpService.checkPendingVIPOnboardings();
+      } catch (err) {
+        logger.error("[Server] VIP Onboarding check failed:", err);
+      }
+    }, 60 * 60 * 1000);
+
     // Run Weekly Reporting Check every 24 hours
     setInterval(async () => {
       try {

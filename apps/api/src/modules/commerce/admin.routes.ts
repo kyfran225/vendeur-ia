@@ -8,6 +8,8 @@ import { messagingService } from "../../services/messaging.service.js";
 import { pushService } from "../../services/push.service.js";
 import { aiQueue } from "../../services/ai-queue.service.js";
 import { aiProvider } from "../../services/ai-provider.js";
+import { PaymentIntentModel } from "./payment-intent.model.js";
+import { paymentService } from "../../services/payment.service.js";
 
 const router = Router();
 
@@ -401,7 +403,12 @@ router.get("/expert-setups", authenticate, isAdmin, async (req, res) => {
           paidAt: transaction.paidAt
         } : null,
         whatsappStatus: m.whatsappConfig?.status || "disconnected",
-        provider: m.whatsappConfig?.provider || "meta"
+        provider: m.whatsappConfig?.provider || "meta",
+        metaConfig: m.whatsappConfig?.meta || {
+          phoneNumberId: "",
+          accessToken: "",
+          wabaId: ""
+        }
       };
     }));
 
@@ -411,10 +418,10 @@ router.get("/expert-setups", authenticate, isAdmin, async (req, res) => {
   }
 });
 
-// UPDATE EXPERT SETUP STATUS
+// UPDATE EXPERT SETUP STATUS & META CONFIG
 router.patch("/expert-setups/:id", authenticate, isAdmin, async (req, res) => {
   try {
-    const { status, assignedTo, notes } = req.body;
+    const { status, assignedTo, notes, metaConfig } = req.body;
     const update: any = {};
 
     if (status) {
@@ -427,6 +434,16 @@ router.patch("/expert-setups/:id", authenticate, isAdmin, async (req, res) => {
     }
     if (assignedTo !== undefined) update["expertSetup.assignedTo"] = assignedTo;
     if (notes !== undefined) update["expertSetup.notes"] = notes;
+
+    if (metaConfig) {
+      if (metaConfig.phoneNumberId !== undefined) update["whatsappConfig.meta.phoneNumberId"] = metaConfig.phoneNumberId;
+      if (metaConfig.accessToken !== undefined) update["whatsappConfig.meta.accessToken"] = metaConfig.accessToken;
+      if (metaConfig.wabaId !== undefined) update["whatsappConfig.meta.wabaId"] = metaConfig.wabaId;
+      if (metaConfig.phoneNumberId && metaConfig.accessToken) {
+        update["whatsappConfig.provider"] = "meta";
+        update["whatsappConfig.status"] = "connected";
+      }
+    }
 
     const merchant = await CommerceMerchantModel.findByIdAndUpdate(
       req.params.id,
@@ -463,6 +480,82 @@ router.patch("/expert-setups/:id", authenticate, isAdmin, async (req, res) => {
     }
 
     res.json({ success: true, merchant });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+import { vipFollowUpService } from "../../services/vip-followup.service.js";
+
+// TRIGGER SMART REMINDER TO MERCHANT
+router.post("/expert-setups/:id/remind", authenticate, isAdmin, async (req, res) => {
+  try {
+    const merchant = await CommerceMerchantModel.findById(req.params.id);
+    if (!merchant) {
+      return res.status(404).json({ error: "Marchand non trouvé." });
+    }
+
+    await vipFollowUpService.sendMerchantReminder(merchant, true);
+
+    const updated = await CommerceMerchantModel.findById(req.params.id);
+    res.json({ success: true, message: "Rappel bienveillant envoyé avec succès au marchand !", merchant: updated });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ==========================================
+// --- ADMIN PAYMENT INTENTS & AUDIT ---
+// ==========================================
+
+// GET /api/commerce/admin/payments - List all payment intents with filters
+router.get("/payments", authenticate, isAdmin, async (req, res) => {
+  try {
+    const { status, limit = 50 } = req.query;
+    const filter: any = {};
+    if (status) filter.status = status;
+
+    const intents = await PaymentIntentModel.find(filter)
+      .sort({ createdAt: -1 })
+      .limit(Number(limit))
+      .populate("merchantId", "businessName phone whatsappNumber");
+
+    res.json(intents);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// POST /api/commerce/admin/payments/:id/decision - Approve or Reject a payment intent
+router.post("/payments/:id/decision", authenticate, isAdmin, async (req, res) => {
+  try {
+    const adminId = (req as any).user.id || (req as any).user.email;
+    const { action, adminNotes } = req.body;
+
+    if (!action || !["approve", "reject"].includes(action)) {
+      return res.status(400).json({ error: "L'action doit être 'approve' ou 'reject'." });
+    }
+
+    const result = await paymentService.processAdminDecision(req.params.id, adminId, {
+      action,
+      adminNotes
+    });
+
+    res.json(result);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+// PATCH /api/commerce/admin/payments/config - Update manual payment configuration & numbers
+router.patch("/payments/config", authenticate, isAdmin, async (req, res) => {
+  try {
+    const settings = await SystemSettingsModel.findOneAndUpdate(
+      {},
+      { $set: { manualPaymentConfig: req.body } },
+      { new: true, upsert: true }
+    );
+    res.json({ success: true, manualPaymentConfig: (settings as any).manualPaymentConfig });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }

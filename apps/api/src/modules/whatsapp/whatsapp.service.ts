@@ -23,6 +23,7 @@ class WhatsAppService {
   private activeSessions: Map<string, any> = new Map();
   private pendingInitializations: Map<string, Promise<void>> = new Map();
   private heartbeatInterval: NodeJS.Timeout | null = null;
+  private processedMessageIds: Set<string> = new Set();
 
   constructor() {
     this.startHeartbeat();
@@ -366,9 +367,45 @@ class WhatsAppService {
   }
 
   async handleIncomingMessage(userId: string, msg: any) {
+    if (!msg?.key) return;
+
+    // Deduplication check
+    const messageId = msg.key.id;
+    if (messageId) {
+      if (this.processedMessageIds.has(messageId)) {
+        return;
+      }
+      this.processedMessageIds.add(messageId);
+      // Keep bounded memory cache size
+      if (this.processedMessageIds.size > 5000) {
+        const firstKey = this.processedMessageIds.values().next().value;
+        if (firstKey) this.processedMessageIds.delete(firstKey);
+      }
+    }
+
     // Extract phone or normalized remoteJid
-    let rawFrom = msg.key.remoteJid;
+    let rawFrom = msg.key.remoteJid || "";
     let from = rawFrom;
+
+    // Ignore status broadcast messages & newsletter/channels
+    if (from.includes("@broadcast") || rawFrom.includes("@broadcast") || from.includes("@newsletter")) {
+      return;
+    }
+
+    // Ignore WhatsApp group messages
+    if (from.endsWith("@g.us") || rawFrom.endsWith("@g.us")) {
+      return;
+    }
+
+    // Ignore historical/backlog messages received upon reconnection (> 2 minutes old)
+    const msgTimestamp = typeof msg.messageTimestamp === "number"
+      ? msg.messageTimestamp
+      : (typeof msg.messageTimestamp?.low === "number" ? msg.messageTimestamp.low : Number(msg.messageTimestamp || 0));
+
+    if (msgTimestamp > 0 && (Date.now() / 1000 - msgTimestamp) > 120) {
+      console.log(`[WhatsApp] Ignored stale historical message from sync (${Math.round(Date.now() / 1000 - msgTimestamp)}s old)`);
+      return;
+    }
     
     // If Baileys uses LID (@lid), try to get the real phone number (sender_pn or remoteJidAlt)
     if (msg.key?.remoteJidAlt && msg.key.remoteJidAlt.includes('@s.whatsapp.net')) {

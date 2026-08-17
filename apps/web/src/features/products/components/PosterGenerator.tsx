@@ -577,7 +577,7 @@ export function PosterGenerator({
           <div className="pt-4 grid grid-cols-2 gap-3">
             <button
               onClick={handleShareWhatsApp}
-              className="h-13 rounded-2xl bg-vendeur-emerald text-vendeur-coal font-black uppercase text-[10px] tracking-widest flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all shadow-xl shadow-vendeur-emerald/20"
+              className="h-12 sm:h-14 rounded-2xl bg-vendeur-emerald text-vendeur-coal font-black uppercase text-[10px] tracking-widest flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all shadow-xl shadow-vendeur-emerald/20 cursor-pointer"
             >
               <Share2 size={16} />
               <span>Statut WhatsApp</span>
@@ -585,7 +585,7 @@ export function PosterGenerator({
 
             <button
               onClick={handleDownload}
-              className="h-13 rounded-2xl bg-white/10 hover:bg-white/15 border border-white/10 text-white font-black uppercase text-[10px] tracking-widest flex items-center justify-center gap-2 transition-all"
+              className="h-12 sm:h-14 rounded-2xl bg-white/10 hover:bg-white/15 border border-white/10 text-white font-black uppercase text-[10px] tracking-widest flex items-center justify-center gap-2 transition-all cursor-pointer"
             >
               <Download size={16} />
               <span>Télécharger HD</span>

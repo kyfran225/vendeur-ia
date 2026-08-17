@@ -58,7 +58,9 @@ const MerchantSchema = new Schema({
     orderedAt: { type: Date, default: null },
     assignedTo: { type: String, default: null },
     notes: { type: String, default: null },
-    completedAt: { type: Date, default: null }
+    completedAt: { type: Date, default: null },
+    lastFollowUpAt: { type: Date, default: null },
+    followUpCount: { type: Number, default: 0 }
   },
   instagramConfig: {
     pageId: String,

@@ -15,9 +15,9 @@ import {
 import { TransactionModel } from "../modules/commerce/transaction.model.js";
 
 const ENV_MAP: Record<string, string> = {
-  dev: "mongodb://localhost:27017/vendeur-ia",
-  preview: "mongodb+srv://kyfran6_db_user:aF4BAHfgfMckfcDH@vendeuriacluster.uyo7eob.mongodb.net/vendeur-ia-preview?retryWrites=true&w=majority&appName=VendeuriaCluster",
-  prod: "mongodb+srv://kyfran6_db_user:aF4BAHfgfMckfcDH@vendeuriacluster.uyo7eob.mongodb.net/vendeur-ia-prod?retryWrites=true&w=majority&appName=VendeuriaCluster"
+  dev: "mongodb://localhost:27017/vendeuria-local",
+  preview: "mongodb+srv://kyfran6_db_user:aF4BAHfgfMckfcDH@vendeuriacluster.uyo7eob.mongodb.net/vendeuria-preview?retryWrites=true&w=majority&appName=VendeuriaCluster",
+  prod: "mongodb+srv://kyfran6_db_user:aF4BAHfgfMckfcDH@vendeuriacluster.uyo7eob.mongodb.net/vendeuria-prod?retryWrites=true&w=majority&appName=VendeuriaCluster"
 };
 
 async function deleteUserByEmail(targetEnv: string, email: string) {

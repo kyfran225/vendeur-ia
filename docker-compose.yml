@@ -7,7 +7,7 @@ services:
       - "3001:3001"
     environment:
       - NODE_ENV=development
-      - MONGODB_URI=mongodb://mongodb:27017/vendeur-ia
+      - MONGODB_URI=mongodb://mongodb:27017/vendeuria-local
       - REDIS_URL=redis://redis:6379
     depends_on:
       mongodb:

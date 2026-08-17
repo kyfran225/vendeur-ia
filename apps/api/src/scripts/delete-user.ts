@@ -14,23 +14,33 @@ import {
 } from "../modules/commerce/commerce.model.js";
 import { TransactionModel } from "../modules/commerce/transaction.model.js";
 
-const ENV_MAP: Record<string, string> = {
-  dev: "mongodb://localhost:27017/vendeuria-local",
-  preview: "mongodb+srv://kyfran6_db_user:aF4BAHfgfMckfcDH@vendeuriacluster.uyo7eob.mongodb.net/vendeuria-preview?retryWrites=true&w=majority&appName=VendeuriaCluster",
-  prod: "mongodb+srv://kyfran6_db_user:aF4BAHfgfMckfcDH@vendeuriacluster.uyo7eob.mongodb.net/vendeuria-prod?retryWrites=true&w=majority&appName=VendeuriaCluster"
-};
-
 async function deleteUserByEmail(targetEnv: string, email: string) {
   if (!targetEnv || !email) {
-    console.error("❌ Usage: pnpm tsx src/scripts/delete-user.ts <dev|preview|prod> <user_email>");
+    console.error("❌ Usage: pnpm tsx src/scripts/delete-user.ts <dev|preview|prod|uri> <user_email>");
     process.exit(1);
   }
 
+  let mongoUri = "";
   const envKey = targetEnv.toLowerCase();
-  const mongoUri = ENV_MAP[envKey] || (envKey.startsWith("mongodb") ? targetEnv : null);
 
-  if (!mongoUri) {
-    console.error(`❌ Environnement invalide: '${targetEnv}'. Choisissez parmi: dev, preview, prod ou fournissez un URI MongoDB complet.`);
+  if (envKey === "dev" || envKey === "local") {
+    mongoUri = env.MONGODB_URI || "mongodb://localhost:27017/vendeuria-local";
+  } else if (envKey === "preview") {
+    mongoUri = process.env.PREVIEW_MONGODB_URI || "";
+    if (!mongoUri) {
+        console.error("❌ Erreur: PREVIEW_MONGODB_URI non définie.");
+        process.exit(1);
+    }
+  } else if (envKey === "prod" || envKey === "production") {
+    mongoUri = process.env.PROD_MONGODB_URI || "";
+    if (!mongoUri) {
+        console.error("❌ Erreur: PROD_MONGODB_URI non définie.");
+        process.exit(1);
+    }
+  } else if (envKey.startsWith("mongodb")) {
+    mongoUri = targetEnv;
+  } else {
+    console.error(`❌ Environnement invalide: '${targetEnv}'.`);
     process.exit(1);
   }
 

@@ -29,7 +29,9 @@ import {
   ExternalLink,
   Copy,
   Check,
-  Palette
+  Palette,
+  Menu,
+  X
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useSearchParams, Link } from "react-router-dom";
@@ -82,6 +84,7 @@ type SettingsTab = "boutique" | "apparence" | "savoir" | "personnalite" | "conne
 
 export function SettingsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const tabsRef = React.useRef<HTMLDivElement>(null);
   const [showLeftScroll, setShowLeftScroll] = useState(false);
   const [showRightScroll, setShowRightScroll] = useState(false);
@@ -265,46 +268,145 @@ export function SettingsPage() {
         <p className="text-white/40 text-xs sm:text-sm md:text-lg">Pilotez votre machine de vente et configurez votre IA.</p>
       </header>
 
-      {/* Sticky Navigation Tabs Bar (Compact & Sleek Vertical Footprint) */}
+      {/* Sticky Navigation Tabs Bar (Responsive: Drawer on Mobile, Tabs on Desktop) */}
       <div className="sticky top-0 z-40 bg-vendeur-bg/95 backdrop-blur-2xl border-b border-white/10 -mx-4 md:-mx-10 px-4 md:px-10 py-2 md:py-2.5 shadow-lg">
         <div className="relative max-w-full w-full">
-          {/* Scroll Fade Indicators */}
-          <div className={cn(
-            "absolute left-0 top-0 bottom-0 w-6 z-10 bg-gradient-to-r from-vendeur-bg to-transparent pointer-events-none transition-opacity duration-300",
-            showLeftScroll ? "opacity-100" : "opacity-0"
-          )} />
-          <div className={cn(
-            "absolute right-0 top-0 bottom-0 w-6 z-10 bg-gradient-to-l from-vendeur-bg to-transparent pointer-events-none transition-opacity duration-300",
-            showRightScroll ? "opacity-100" : "opacity-0"
-          )} />
 
-          <div
-            ref={tabsRef}
-            className="flex items-center gap-1.5 md:gap-2 overflow-x-auto no-scrollbar py-0.5 w-full"
+          {/* Mobile Tab Trigger */}
+          <button
+            onClick={() => setIsMobileMenuOpen(true)}
+            className="md:hidden w-full flex items-center justify-between px-4 py-2.5 bg-white/5 rounded-2xl border border-white/10 text-white/80 active:scale-[0.98] transition-all"
           >
-            {SETTINGS_TABS.map((t) => {
-              const Icon = t.icon;
-              const isActive = activeTab === t.id;
-              return (
-                <button
-                  key={t.id}
-                  type="button"
-                  data-active={isActive}
-                  onClick={() => setActiveTab(t.id)}
-                  className={cn(
-                    "flex items-center gap-2 px-3.5 md:px-4 h-9 md:h-10 rounded-xl text-[11px] font-black uppercase tracking-tight transition-all shrink-0 whitespace-nowrap active:scale-95",
-                    isActive
-                      ? "bg-vendeur-emerald text-vendeur-coal shadow-md shadow-vendeur-emerald/20 font-black"
-                      : "bg-white/[0.03] text-white/50 hover:text-white hover:bg-white/[0.08] border border-white/5 font-bold"
-                  )}
-                >
-                  <Icon size={15} className="shrink-0" />
-                  <span>{t.label}</span>
-                </button>
-              );
-            })}
+            <div className="flex items-center gap-3">
+              <div className="h-9 w-9 rounded-xl bg-vendeur-emerald/10 flex items-center justify-center text-vendeur-emerald border border-vendeur-emerald/20">
+                {React.createElement(SETTINGS_TABS.find(t => t.id === activeTab)?.icon || Settings, { size: 18 })}
+              </div>
+              <div className="flex flex-col items-start">
+                <span className="text-[8px] font-black uppercase tracking-widest text-vendeur-emerald/60 leading-none">Réglages</span>
+                <span className="text-xs font-black uppercase tracking-tight">
+                  {SETTINGS_TABS.find(t => t.id === activeTab)?.label}
+                </span>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 px-3 py-1 bg-white/5 rounded-lg border border-white/5 text-[9px] font-black uppercase tracking-wider text-white/40">
+              Modifier <ChevronDown size={12} />
+            </div>
+          </button>
+
+          {/* Desktop Navigation */}
+          <div className="hidden md:block relative w-full">
+            <div className={cn(
+              "absolute left-0 top-0 bottom-0 w-6 z-10 bg-gradient-to-r from-vendeur-bg to-transparent pointer-events-none transition-opacity duration-300",
+              showLeftScroll ? "opacity-100" : "opacity-0"
+            )} />
+            <div className={cn(
+              "absolute right-0 top-0 bottom-0 w-6 z-10 bg-gradient-to-l from-vendeur-bg to-transparent pointer-events-none transition-opacity duration-300",
+              showRightScroll ? "opacity-100" : "opacity-0"
+            )} />
+
+            <div
+              ref={tabsRef}
+              className="flex items-center gap-1.5 md:gap-2 overflow-x-auto no-scrollbar py-0.5 w-full"
+            >
+              {SETTINGS_TABS.map((t) => {
+                const Icon = t.icon;
+                const isActive = activeTab === t.id;
+                return (
+                  <button
+                    key={t.id}
+                    type="button"
+                    data-active={isActive}
+                    onClick={() => setActiveTab(t.id)}
+                    className={cn(
+                      "flex items-center gap-2 px-3.5 md:px-4 h-9 md:h-10 rounded-xl text-[11px] font-black uppercase tracking-tight transition-all shrink-0 whitespace-nowrap active:scale-95",
+                      isActive
+                        ? "bg-vendeur-emerald text-vendeur-coal shadow-md shadow-vendeur-emerald/20 font-black"
+                        : "bg-white/[0.03] text-white/50 hover:text-white hover:bg-white/[0.08] border border-white/5 font-bold"
+                    )}
+                  >
+                    <Icon size={15} className="shrink-0" />
+                    <span>{t.label}</span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
+      </div>
+
+      {/* Settings Mobile Sidebar Drawer */}
+      <div
+        className={cn(
+          "fixed inset-0 z-[100] md:hidden transition-all duration-300",
+          isMobileMenuOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+        )}
+      >
+        <div
+          className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+          onClick={() => setIsMobileMenuOpen(false)}
+        />
+        <aside
+          className={cn(
+            "absolute top-0 left-0 bottom-0 w-[300px] bg-vendeur-coal border-r border-white/10 shadow-2xl transition-transform duration-300 ease-out flex flex-col",
+            isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"
+          )}
+        >
+          <div className="p-6 border-b border-white/5 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-xl bg-vendeur-emerald/10 flex items-center justify-center border border-vendeur-emerald/20">
+                <Settings className="text-vendeur-emerald" size={24} />
+              </div>
+              <div>
+                <h3 className="text-sm font-black uppercase tracking-wider">Réglages</h3>
+                <p className="text-[10px] text-vendeur-emerald font-bold tracking-widest uppercase">Configuration IA</p>
+              </div>
+            </div>
+            <button
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="h-8 w-8 rounded-full bg-white/5 flex items-center justify-center text-white/40"
+            >
+              <X size={18} />
+            </button>
+          </div>
+
+          <nav className="flex-1 overflow-y-auto p-4 space-y-2">
+            {SETTINGS_TABS.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => {
+                  setActiveTab(tab.id);
+                  setIsMobileMenuOpen(false);
+                }}
+                className={cn(
+                  "w-full flex items-center justify-between p-4 rounded-2xl border transition-all",
+                  activeTab === tab.id
+                    ? "bg-vendeur-emerald border-vendeur-emerald text-vendeur-coal font-black shadow-lg shadow-vendeur-emerald/20"
+                    : "bg-white/[0.02] border-white/5 text-white/60 hover:bg-white/5 hover:text-white"
+                )}
+              >
+                <div className="flex items-center gap-4">
+                  <div className={cn(
+                    "h-10 w-10 rounded-xl flex items-center justify-center transition-all",
+                    activeTab === tab.id ? "bg-black/20 text-vendeur-coal" : "bg-white/5 text-vendeur-emerald"
+                  )}>
+                    <tab.icon size={20} />
+                  </div>
+                  <span className="text-xs uppercase font-black tracking-widest">{tab.label}</span>
+                </div>
+                {activeTab === tab.id && <ChevronDown size={14} className="-rotate-90 opacity-40" />}
+              </button>
+            ))}
+          </nav>
+
+          <div className="p-6 border-t border-white/5">
+             <div className="p-4 rounded-2xl bg-vendeur-emerald/5 border border-vendeur-emerald/10 flex items-center gap-3">
+                <Bot size={20} className="text-vendeur-emerald" />
+                <p className="text-[10px] font-bold text-white/60 leading-tight">
+                  Toutes vos modifications sont appliquées instantanément à votre Vendeur IA.
+                </p>
+             </div>
+          </div>
+        </aside>
       </div>
 
       <div className="pt-2">

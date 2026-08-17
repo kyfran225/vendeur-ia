@@ -13,6 +13,7 @@ Le produit doit être utilisable par un commerçant sans formation technique en 
 1. **The 30-Second Rule**: From sign-up to first product scan must take < 30s.
 2. **Local Context First**: Every prompt must enforce local city/country context and tone.
 3. **Automated Everything**: Receipts, follow-ups, stock alerts must be automated.
+4. **Dense Navigation (Mobile UX)**: When a feature has > 5 navigation tabs, replace horizontal scrolling with a **Vertical Sidebar Drawer** on mobile to avoid fatigue and improve discoverability.
 
 ## 📜 Official Documentation Structure
 La documentation a été entièrement refondue en Août 2026 pour suivre les standards industriels :

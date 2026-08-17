@@ -26,8 +26,10 @@ import {
   Download,
   FileSpreadsheet,
   Globe,
-  Plus,
-  Trash2
+  Trash2,
+  Menu,
+  X,
+  ChevronDown
 } from "lucide-react";
 import { VendeurIALoader } from "@/components/ui/VendeurIALoader";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -47,8 +49,12 @@ function cn(...inputs: ClassValue[]) {
 
 export function AdminDashboard() {
   const [activeTab, setActiveTab] = useState<"overview" | "vip" | "payments" | "merchants" | "tickets" | "settings" | "ai" | "billing">("overview");
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { accessToken } = useAuthStore();
   const queryClient = useQueryClient();
+
+  // ... rest of data fetching ...
+
 
   // 0a. Fetch Pending Payments Count
   const { data: pendingPaymentsData } = useQuery({
@@ -150,6 +156,19 @@ export function AdminDashboard() {
     }
   });
 
+  const tabs = [
+    { id: "overview", label: "Overview", icon: <LayoutDashboard size={18}/> },
+    { id: "payments", label: "Paiements", icon: <Banknote size={18}/>, badge: pendingPaymentsCount },
+    { id: "vip", label: "VIP Onboarding", icon: <Sparkles size={18}/>, badge: pendingVipCount },
+    { id: "merchants", label: "Merchants", icon: <Users size={18}/> },
+    { id: "tickets", label: "Tickets", icon: <MessageSquare size={18}/>, badge: unreadTicketsCount },
+    { id: "billing", label: "Finance", icon: <Banknote size={18}/> },
+    { id: "ai", label: "AI Brain", icon: <Bot size={18}/> },
+    { id: "settings", label: "System", icon: <Settings size={18}/> },
+  ];
+
+  const activeTabData = tabs.find(t => t.id === activeTab);
+
   if (statsLoading || settingsLoading) {
     return (
       <VendeurIALoader fullscreen size="xl" label="Chargement de l'administration..." />
@@ -159,26 +178,125 @@ export function AdminDashboard() {
   return (
     <div className="min-h-screen bg-vendeur-bg text-white pb-24">
       {/* Admin Header / Navigation */}
-      <header className="h-16 md:h-20 border-b border-white/5 bg-vendeur-bg/80 backdrop-blur-md flex items-center justify-between px-4 md:px-8 sticky top-0 z-50">
-        <div className="flex-1 max-w-2xl">
-          <nav className="flex gap-1.5 md:gap-2 p-1 bg-white/5 rounded-2xl border border-white/5 w-full md:w-fit overflow-x-auto scrollbar-hide">
-            <AdminTabButton active={activeTab === "overview"} onClick={() => setActiveTab("overview")} icon={<LayoutDashboard size={18}/>} label="Overview" />
-            <AdminTabButton active={activeTab === "payments"} onClick={() => setActiveTab("payments")} icon={<Banknote size={18}/>} label="Paiements" badge={pendingPaymentsCount > 0 ? pendingPaymentsCount : undefined} />
-            <AdminTabButton active={activeTab === "vip"} onClick={() => setActiveTab("vip")} icon={<Sparkles size={18}/>} label="VIP Onboarding" badge={pendingVipCount > 0 ? pendingVipCount : undefined} />
-            <AdminTabButton active={activeTab === "merchants"} onClick={() => setActiveTab("merchants")} icon={<Users size={18}/>} label="Merchants" />
-            <AdminTabButton active={activeTab === "tickets"} onClick={() => setActiveTab("tickets")} icon={<MessageSquare size={18}/>} label="Tickets" badge={unreadTicketsCount > 0 ? unreadTicketsCount : undefined} />
-            <AdminTabButton active={activeTab === "billing"} onClick={() => setActiveTab("billing")} icon={<Banknote size={18}/>} label="Finance" />
-            <AdminTabButton active={activeTab === "ai"} onClick={() => setActiveTab("ai")} icon={<Bot size={18}/>} label="AI Brain" />
-            <AdminTabButton active={activeTab === "settings"} onClick={() => setActiveTab("settings")} icon={<Settings size={18}/>} label="System" />
+      <header className="h-16 md:h-20 border-b border-white/5 bg-vendeur-bg/80 backdrop-blur-md flex items-center justify-between gap-4 px-4 md:px-8 sticky top-0 z-50">
+        <div className="flex-1 min-w-0">
+          {/* Mobile Tab Trigger */}
+          <button
+            onClick={() => setIsMobileMenuOpen(true)}
+            className="md:hidden flex items-center gap-3 px-4 py-2 bg-white/5 rounded-xl border border-white/10 text-white/80 active:scale-95 transition-all"
+          >
+            <Menu size={20} className="text-vendeur-emerald" />
+            <div className="flex flex-col items-start">
+              <span className="text-[8px] font-black uppercase tracking-widest text-vendeur-emerald/60 leading-none">Console Admin</span>
+              <span className="text-xs font-black uppercase tracking-tight flex items-center gap-2">
+                {activeTabData?.label}
+                <ChevronDown size={14} className="opacity-40" />
+              </span>
+            </div>
+          </button>
+
+          {/* Desktop Navigation */}
+          <nav className="hidden md:flex gap-1.5 md:gap-2 p-1 bg-white/5 rounded-2xl border border-white/5 w-fit max-w-full overflow-x-auto scrollbar-hide">
+            {tabs.map(tab => (
+              <AdminTabButton
+                key={tab.id}
+                active={activeTab === tab.id}
+                onClick={() => setActiveTab(tab.id as any)}
+                icon={tab.icon}
+                label={tab.label}
+                badge={tab.badge && tab.badge > 0 ? tab.badge : undefined}
+              />
+            ))}
           </nav>
         </div>
 
-        <div className="hidden lg:flex items-center gap-4 ml-4">
+        <div className="hidden lg:flex items-center shrink-0">
             <div className="px-4 py-1.5 rounded-full bg-vendeur-emerald/10 border border-vendeur-emerald/20 text-[10px] font-black uppercase tracking-widest text-vendeur-emerald whitespace-nowrap">
                 MASTER CONTROL
             </div>
         </div>
       </header>
+
+      {/* Admin Mobile Sidebar Drawer */}
+      <div
+        className={cn(
+          "fixed inset-0 z-[100] md:hidden transition-all duration-300",
+          isMobileMenuOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+        )}
+      >
+        <div
+          className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+          onClick={() => setIsMobileMenuOpen(false)}
+        />
+        <aside
+          className={cn(
+            "absolute top-0 left-0 bottom-0 w-[280px] bg-vendeur-coal border-r border-white/10 shadow-2xl transition-transform duration-300 ease-out flex flex-col",
+            isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"
+          )}
+        >
+          <div className="p-6 border-b border-white/5 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-xl bg-vendeur-emerald/10 flex items-center justify-center border border-vendeur-emerald/20">
+                <ShieldCheck className="text-vendeur-emerald" size={24} />
+              </div>
+              <div>
+                <h3 className="text-sm font-black uppercase tracking-wider">Admin</h3>
+                <p className="text-[10px] text-vendeur-emerald font-bold tracking-widest uppercase">System Core</p>
+              </div>
+            </div>
+            <button
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="h-8 w-8 rounded-full bg-white/5 flex items-center justify-center text-white/40"
+            >
+              <X size={18} />
+            </button>
+          </div>
+
+          <nav className="flex-1 overflow-y-auto p-4 space-y-2">
+            {tabs.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => {
+                  setActiveTab(tab.id as any);
+                  setIsMobileMenuOpen(false);
+                }}
+                className={cn(
+                  "w-full flex items-center justify-between p-4 rounded-2xl border transition-all",
+                  activeTab === tab.id
+                    ? "bg-vendeur-emerald border-vendeur-emerald text-vendeur-coal font-black shadow-lg shadow-vendeur-emerald/20"
+                    : "bg-white/[0.02] border-white/5 text-white/60 hover:bg-white/5 hover:text-white"
+                )}
+              >
+                <div className="flex items-center gap-4">
+                  <div className={cn(
+                    "h-10 w-10 rounded-xl flex items-center justify-center transition-all",
+                    activeTab === tab.id ? "bg-black/20 text-vendeur-coal" : "bg-white/5 text-vendeur-emerald"
+                  )}>
+                    {tab.icon}
+                  </div>
+                  <span className="text-xs uppercase font-black tracking-widest">{tab.label}</span>
+                </div>
+                {tab.badge && tab.badge > 0 && (
+                  <span className={cn(
+                    "px-2 py-1 rounded-full text-[10px] font-black",
+                    activeTab === tab.id ? "bg-vendeur-coal text-white" : "bg-vendeur-emerald text-vendeur-coal"
+                  )}>
+                    {tab.badge}
+                  </span>
+                )}
+              </button>
+            ))}
+          </nav>
+
+          <div className="p-6 border-t border-white/5">
+             <div className="px-4 py-3 rounded-2xl bg-vendeur-emerald/5 border border-vendeur-emerald/10">
+                <p className="text-[9px] font-black text-vendeur-emerald/60 uppercase tracking-[0.2em]">Version Admin</p>
+                <p className="text-xs font-black text-white mt-0.5">2.4.0-STABLE</p>
+             </div>
+          </div>
+        </aside>
+      </div>
+
 
       <main className="max-w-7xl mx-auto p-4 md:p-8 space-y-6 md:space-y-8">
         {activeTab === "overview" && (
@@ -242,7 +360,7 @@ function AdminTabButton({ active, onClick, icon, label, badge }: { active: boole
     <button
       onClick={onClick}
       className={cn(
-        "relative flex-1 md:flex-none flex flex-col md:flex-row items-center justify-center gap-1 md:gap-2 px-1 md:px-6 py-2 md:py-3 rounded-xl transition-all whitespace-nowrap",
+        "relative flex-1 md:flex-none min-w-[80px] md:min-w-0 flex flex-col md:flex-row items-center justify-center gap-1 md:gap-2 px-1 md:px-6 py-2 md:py-3 rounded-xl transition-all whitespace-nowrap",
         active ? "bg-vendeur-emerald text-vendeur-coal shadow-lg shadow-vendeur-emerald/20" : "text-white/40 hover:bg-white/5 hover:text-white"
       )}
     >

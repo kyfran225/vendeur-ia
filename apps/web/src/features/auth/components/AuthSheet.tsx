@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { X, Mail, Lock, User, ChevronRight, Loader2, ShieldCheck, Sparkles, Phone, ArrowLeft } from "lucide-react";
+import { X, Mail, Lock, User, ChevronRight, Loader2, ShieldCheck, Sparkles, Phone, ArrowLeft, Eye, EyeOff } from "lucide-react";
 import { Logo } from "@/components/ui/Logo";
 import { WhatsAppIcon } from "@/components/ui/WhatsAppIcon";
 import { CountrySelector, COUNTRIES, Country } from "@/features/onboarding/components/CountrySelector";
@@ -30,6 +30,7 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
   const [mode, setMode] = useState<"login" | "register" | "forgot">("login");
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const { setSession } = useAuthStore();
   const navigate = useNavigate();
 
@@ -131,15 +132,21 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
     setLoading(true);
 
     try {
+      const cleanForm = {
+        ...form,
+        email: form.email.trim().toLowerCase(),
+        password: form.password
+      };
+
       if (mode === "forgot") {
-        await apiClient.post("/api/auth/forgot-password", { email: form.email });
+        await apiClient.post("/api/auth/forgot-password", { email: cleanForm.email });
         toast.success("Lien de réinitialisation envoyé !");
         setMode("login");
         return;
       }
 
       const endpoint = mode === "login" ? "/api/auth/login" : "/api/auth/register";
-      const res = await apiClient.post(endpoint, form);
+      const res = await apiClient.post(endpoint, cleanForm);
 
       setSession(res.data);
       const user = res.data.user;
@@ -310,12 +317,21 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
                   <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/30" size={16} />
                   <input
                     required
-                    type="password"
-                    className="w-full h-11 bg-black/50 border border-white/10 focus:border-white rounded-xl pl-10 pr-3 text-white text-sm outline-none transition-all"
+                    type={showPassword ? "text" : "password"}
+                    className="w-full h-11 bg-black/50 border border-white/10 focus:border-white rounded-xl pl-10 pr-10 text-white text-sm outline-none transition-all"
                     placeholder="••••••••"
                     value={form.password}
                     onChange={(e) => setForm({ ...form, password: e.target.value })}
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-white/30 hover:text-white transition-colors cursor-pointer"
+                    title={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
+                    tabIndex={-1}
+                  >
+                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
                 </div>
               </div>
             )}

@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { useAuthStore } from "@/stores/authStore";
 import { useQueryClient } from "@tanstack/react-query";
 import { useBillingCurrency } from "@/hooks/useBillingCurrency";
+import { convertCurrencyAmount } from "@vendeur-ia/core";
 
 interface PackProModalProps {
   isOpen: boolean;
@@ -71,7 +72,9 @@ export function PackProModal({ isOpen, onClose }: PackProModalProps) {
         <div className="pt-4 space-y-6">
           <div className="flex items-center justify-between">
             <p className="text-xs font-black uppercase tracking-[0.2em] text-white/40">Investissement unique</p>
-            <p className="text-3xl font-black text-vendeur-emerald">25 000 {currency}</p>
+            <p className="text-3xl font-black text-vendeur-emerald">
+              {convertCurrencyAmount(25000, "XOF", currency).toLocaleString()} {currency}
+            </p>
           </div>
 
           <button

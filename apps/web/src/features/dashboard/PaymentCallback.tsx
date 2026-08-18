@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { CheckCircle2, Loader2, XCircle, Sparkles } from "lucide-react";
+import { VendeurIALoader } from "@/components/ui/VendeurIALoader";
 import { apiClient } from "@/lib/apiClient";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
@@ -66,17 +67,11 @@ export function PaymentCallback() {
   }, [reference, attempts, navigate, queryClient, user]);
 
   return (
-    <div className="min-h-screen bg-vendeur-coal flex items-center justify-center p-6 text-center">
+    <div className="min-h-[100dvh] bg-[#07100d] flex items-center justify-center p-6 text-center">
       <div className="max-w-md w-full space-y-8 animate-in fade-in zoom-in-95 duration-500">
         <div className="relative">
           {status === "loading" && (
-            <div className="flex flex-col items-center space-y-6">
-              <div className="h-24 w-24 rounded-full border-4 border-vendeur-emerald/20 border-t-vendeur-emerald animate-spin" />
-              <div className="space-y-2">
-                <h1 className="text-2xl font-black text-white uppercase tracking-tighter">Vérification du paiement...</h1>
-                <p className="text-white/40 text-sm uppercase font-bold tracking-widest">Nous synchronisons votre compte</p>
-              </div>
-            </div>
+            <VendeurIALoader fullscreen label="Vérification de votre paiement..." size="xl" />
           )}
 
           {status === "success" && (

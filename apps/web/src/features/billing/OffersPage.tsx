@@ -35,7 +35,7 @@ export function OffersPage() {
 
   if (isError) {
     return (
-      <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center p-6 text-center">
+      <div className="min-h-[100dvh] bg-black text-white flex flex-col items-center justify-center p-6 text-center">
         <div className="h-16 w-16 rounded-2xl bg-rose-500/10 flex items-center justify-center text-rose-500 mb-6">
           <AlertCircle size={32} />
         </div>
@@ -47,7 +47,7 @@ export function OffersPage() {
   }
 
   return (
-    <div className="min-h-screen bg-black text-white p-4 sm:p-6 md:p-12 animate-in fade-in duration-700">
+    <div className="min-h-[100dvh] bg-black text-white p-4 sm:p-6 md:p-12 animate-in fade-in duration-700">
       <MetaHead
         title="Offres & Tarifs | Vendeur IA WhatsApp Commercial"
         description="Découvrez nos formules Vendeur IA pour automatiser vos ventes sur WhatsApp Business. Tarifs transparents, sans engagement avec période d'essai."

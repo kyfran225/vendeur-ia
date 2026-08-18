@@ -43,13 +43,14 @@ export function OnboardingWizard() {
   // Restore data from backend on mount if not present locally
   useEffect(() => {
     const restoreData = async () => {
-      if (user && accessToken) {
+      if (user && accessToken && !creationStarted.current) {
         // Strict guard: If tempData belongs to a different phone number, clear it immediately
         if (tempData?.whatsappNumber && user.whatsappNumber && tempData.whatsappNumber !== user.whatsappNumber) {
           clearOnboarding();
         }
 
         try {
+          creationStarted.current = true;
           const res = await apiClient.get("/api/commerce/dashboard");
           if (res.data?.merchant) {
             const m = res.data.merchant;
@@ -77,16 +78,16 @@ export function OnboardingWizard() {
 
             setTempData(restoredData);
             setIsMerchantCreated(true);
-            creationStarted.current = true;
           }
         } catch (err) {
           console.error("[Onboarding] Failed to restore data", err);
+          creationStarted.current = false;
         }
       }
       setIsRestoring(false);
     };
     restoreData();
-  }, [user, accessToken, tempData, setTempData, clearOnboarding]);
+  }, [user, accessToken, clearOnboarding, setTempData]); // Removed tempData from dependencies
 
   // Create or Update merchant record (Auto-save)
   useEffect(() => {
@@ -150,7 +151,7 @@ export function OnboardingWizard() {
   if (!steps[currentStep]) return null;
 
   return (
-    <div className="min-h-screen bg-vendeur-coal flex flex-col items-center justify-start sm:justify-center p-4 sm:p-6 md:p-12 overflow-x-hidden">
+    <div className="min-h-[100dvh] bg-vendeur-coal flex flex-col items-center justify-start sm:justify-center p-4 sm:p-6 md:p-12 overflow-x-hidden">
       {/* Modern Minimal Progress Bar */}
       <div className="w-full max-w-md mb-6 sm:mb-10 flex gap-2 px-2">
         {steps.map((s, i) => (

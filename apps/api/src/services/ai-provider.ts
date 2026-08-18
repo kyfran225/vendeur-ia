@@ -173,6 +173,15 @@ export class AIProvider {
 
     // Check if primary provider has a key - if not, skip directly to fallbacks
     const primaryKey = this.getProviderKey(config, primaryProvider);
+
+    // --- Developer Mock Mode (FORCED) ---
+    // If AI_MOCK_MODE is true, we use mock immediately to avoid using credits or getting errors
+    if (env.AI_MOCK_MODE) {
+      const source = request.jsonMode ? "GROWTH/AUDIT (JSON)" : (request.systemPrompt.includes("relance") ? "MARKETING/FOLLOWUP" : "CHAT/DEMO");
+      console.log(`[AI Mock] 🛠️  Simulating response for: ${source}`);
+      return this.generateMockResponse(request);
+    }
+
     if (!primaryKey) {
       console.warn(`[AI Provider] ${primaryProvider} has no API key configured, skipping to fallback...`);
     }
@@ -530,7 +539,13 @@ export class AIProvider {
   async testConnectivity(providerName: string): Promise<{ success: boolean; message: string }> {
     const config = await this.getDynamicConfig();
     const apiKey = this.getProviderKey(config, providerName);
-    if (!apiKey) return { success: false, message: "Clé API non configurée" };
+
+    if (!apiKey) {
+      if (env.AI_MOCK_MODE) {
+        return { success: true, message: `Connectivité simulée (Mode Développeur) pour ${providerName}` };
+      }
+      return { success: false, message: "Clé API non configurée" };
+    }
 
     try {
       if (providerName === 'gemini') {
@@ -563,6 +578,12 @@ export class AIProvider {
 
   async transcribeAudio(audioBuffer: Buffer, mimeType: string, context?: string): Promise<string> {
     const config = await this.getDynamicConfig();
+
+    if (env.AI_MOCK_MODE) {
+      console.log("[AI Provider] Mocking Transcription 🎙️");
+      return "Ceci est une transcription fictive (Mode Développeur). L'utilisateur demande des informations sur les prix et la disponibilité.";
+    }
+
     const geminiKey = this.getProviderKey(config, 'gemini');
 
     if (geminiKey) {
@@ -601,6 +622,12 @@ export class AIProvider {
 
   async generateSpeech(text: string): Promise<Buffer> {
     const config = await this.getDynamicConfig();
+
+    if (env.AI_MOCK_MODE) {
+       console.log("[AI Provider] Mocking Speech Generation 🔊");
+       return Buffer.from("MOCK_AUDIO_DATA");
+    }
+
     const provider = config?.defaultAudioProvider || 'elevenlabs';
     const apiKey = this.getProviderKey(config, provider);
 
@@ -638,10 +665,17 @@ export class AIProvider {
   }
 
   async generateEmbeddings(text: string): Promise<number[]> {
+    if (env.AI_MOCK_MODE) {
+      console.log("[AI Provider] Mocking Embeddings 🧬");
+      return Array(1536).fill(0).map(() => Math.random());
+    }
+
     const config = await this.getDynamicConfig();
     const apiKey = this.getProviderKey(config, 'openai');
 
-    if (!apiKey) throw new Error("OpenAI API Key missing for embeddings");
+    if (!apiKey) {
+      throw new Error("OpenAI API Key missing for embeddings");
+    }
 
     try {
       const response = await axios.post("https://api.openai.com/v1/embeddings", {
@@ -657,6 +691,57 @@ export class AIProvider {
       console.error("[AI Provider] Embedding generation failed:", msg);
       throw new Error(`Embedding failed: ${msg}`);
     }
+  }
+
+  private generateMockResponse(request: AIRequest): AIResponse {
+    if (request.jsonMode) {
+      // Check if the prompt suggests it's for the growth service
+      const isGrowth = request.systemPrompt.toLowerCase().includes("coach") || request.userMessage.toLowerCase().includes("tips");
+
+      if (isGrowth) {
+        return {
+          text: JSON.stringify({
+            tips: [
+              { text: "Optimisez vos photos de produits (Mode Mock)", action: "/products" },
+              { text: "Connectez WhatsApp pour automatiser vos ventes", action: "/settings?tab=connexions" },
+              { text: "Configurez vos zones de livraison", action: "/settings?tab=boutique" }
+            ]
+          }),
+          provider: "mock",
+          usage: { promptTokens: 10, completionTokens: 20, totalTokens: 30 }
+        };
+      }
+
+      // Generic JSON mock
+      return {
+        text: JSON.stringify({
+          success: true,
+          message: "Réponse simulée en format JSON",
+          data: {}
+        }),
+        provider: "mock",
+        usage: { promptTokens: 10, completionTokens: 20, totalTokens: 30 }
+      };
+    }
+
+    const userMsg = request.userMessage.toLowerCase();
+    let text = "Bonjour ! Je suis l'assistant IA de votre boutique en mode développement. Je peux simuler des réponses pour vous aider à tester l'interface sans utiliser de crédits API.";
+
+    if (userMsg.includes("prix") || userMsg.includes("combien")) {
+      text = "Ce produit est actuellement disponible en stock ! Son prix est de 15 000 XOF. C'est une excellente affaire, souhaitez-vous que je l'ajoute à votre panier ou que nous parlions de la livraison ?";
+    } else if (userMsg.includes("commande") || userMsg.includes("acheter") || userMsg.includes("prends")) {
+      text = "C'est une excellente décision ! Je prépare tout pour votre commande. Quel est votre quartier pour la livraison ? ✨\n\n[[ACTION_CREATE_ORDER:{\"items\":[{\"name\":\"Article Test\",\"quantity\":1}],\"deliveryAddress\":\"À préciser\"}]]";
+    } else if (userMsg.includes("merci") || userMsg.includes("super")) {
+      text = "Avec grand plaisir ! Je reste à votre entière disposition si vous avez d'autres questions sur nos articles. À très bientôt ! 👋";
+    } else if (userMsg.includes("bonjour") || userMsg.includes("salut")) {
+      text = "Bonjour ! Bienvenue chez nous. Je suis votre conseiller de vente IA. Comment puis-je vous aider aujourd'hui ? Je peux vous présenter nos nouveautés ou répondre à vos questions sur nos produits.";
+    }
+
+    return {
+      text,
+      provider: "mock",
+      usage: { promptTokens: 10, completionTokens: 20, totalTokens: 30 }
+    };
   }
 }
 

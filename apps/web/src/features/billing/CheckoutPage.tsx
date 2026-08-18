@@ -25,6 +25,7 @@ import {
 import { toast } from "sonner";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { VendeurIALoader } from "@/components/ui/VendeurIALoader";
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -68,34 +69,6 @@ export function CheckoutPage() {
       return res.data;
     }
   });
-
-  if (isLoading) {
-    return <VendeurIALoader fullscreen label="Chargement de votre session de paiement..." />;
-  }
-
-  const offer = offers?.find((o: any) => o.slug === offerSlug);
-
-  if (!offer && !isLoading) {
-    return (
-      <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center p-6 text-center">
-        <div className="h-16 w-16 rounded-2xl bg-amber-500/10 flex items-center justify-center text-amber-500 mb-6">
-          <AlertCircle size={32} />
-        </div>
-        <h2 className="text-2xl font-black uppercase mb-2">Offre Introuvable</h2>
-        <p className="text-white/40 mb-8 max-w-sm">L'offre "{offerSlug}" n'existe plus ou est momentanément indisponible.</p>
-        <button onClick={() => navigate("/offers")} className="px-8 py-3 bg-vendeur-emerald text-vendeur-coal font-black uppercase rounded-xl">Voir les offres disponibles</button>
-      </div>
-    );
-  }
-
-  const isYearly = billingInterval === "yearly";
-  const monthlyPrice = offer?.monthlyPrice || 5000;
-  const yearlyPrice = offer?.yearlyPrice || Math.round(monthlyPrice * 10);
-  const planPrice = isYearly ? yearlyPrice : monthlyPrice;
-
-  const setupFee = setupOption ? (offer?.setupOptions?.find((o: any) => o.type === setupOption)?.price || 0) : 0;
-  const totalToday = planPrice + setupFee;
-  const savings = isYearly ? (monthlyPrice * 12 - yearlyPrice) : 0;
 
   // Auto-create or refresh PaymentIntent when method or interval changes
   useEffect(() => {
@@ -147,6 +120,34 @@ export function CheckoutPage() {
 
     return () => clearInterval(interval);
   }, [activeIntent?._id, proofSubmitted, navigate]);
+
+  if (isLoading) {
+    return <VendeurIALoader fullscreen label="Chargement de votre session de paiement..." />;
+  }
+
+  const offer = offers?.find((o: any) => o.slug === offerSlug);
+
+  if (!offer && !isLoading) {
+    return (
+      <div className="min-h-[100dvh] bg-black text-white flex flex-col items-center justify-center p-6 text-center">
+        <div className="h-16 w-16 rounded-2xl bg-amber-500/10 flex items-center justify-center text-amber-500 mb-6">
+          <AlertCircle size={32} />
+        </div>
+        <h2 className="text-2xl font-black uppercase mb-2">Offre Introuvable</h2>
+        <p className="text-white/40 mb-8 max-w-sm">L'offre "{offerSlug}" n'existe plus ou est momentanément indisponible.</p>
+        <button onClick={() => navigate("/offers")} className="px-8 py-3 bg-vendeur-emerald text-vendeur-coal font-black uppercase rounded-xl">Voir les offres disponibles</button>
+      </div>
+    );
+  }
+
+  const isYearly = billingInterval === "yearly";
+  const monthlyPrice = offer?.monthlyPrice || 5000;
+  const yearlyPrice = offer?.yearlyPrice || Math.round(monthlyPrice * 10);
+  const planPrice = isYearly ? yearlyPrice : monthlyPrice;
+
+  const setupFee = setupOption ? (offer?.setupOptions?.find((o: any) => o.type === setupOption)?.price || 0) : 0;
+  const totalToday = planPrice + setupFee;
+  const savings = isYearly ? (monthlyPrice * 12 - yearlyPrice) : 0;
 
   const copyToClipboard = (text: string, fieldKey: string) => {
     navigator.clipboard.writeText(text);
@@ -214,7 +215,7 @@ export function CheckoutPage() {
   const currentMethodConfig = paymentConfig?.methods?.find((m: any) => m.id === selectedMethod);
 
   return (
-    <div className="min-h-screen bg-black text-white p-3 sm:p-6 md:p-12 animate-in slide-in-from-right-4 duration-500">
+    <div className="min-h-[100dvh] bg-black text-white p-3 sm:p-6 md:p-12 animate-in slide-in-from-right-4 duration-500">
       <div className="max-w-5xl mx-auto space-y-6 sm:space-y-10">
         <button
           onClick={() => navigate(-1)}

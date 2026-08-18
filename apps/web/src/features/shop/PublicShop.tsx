@@ -267,7 +267,7 @@ export function PublicShop() {
 
   if (error || !data) {
     return (
-      <div className="min-h-screen bg-vendeur-bg flex items-center justify-center p-8 text-center">
+      <div className="min-h-[100dvh] bg-vendeur-bg flex items-center justify-center p-8 text-center">
         <div className="max-w-sm space-y-6">
           <X className="text-rose-500 mx-auto" size={64} />
           <h1 className="text-2xl font-black uppercase text-white">Boutique Introuvable</h1>
@@ -355,7 +355,7 @@ export function PublicShop() {
   const shopUrl = `${window.location.origin}/shop/${merchantSlug}`;
 
   return (
-    <div className="min-h-screen bg-vendeur-bg text-white selection:bg-vendeur-emerald selection:text-vendeur-coal pb-24">
+    <div className="min-h-[100dvh] bg-vendeur-bg text-white selection:bg-vendeur-emerald selection:text-vendeur-coal pb-24">
       <MetaHead
         title={`${merchant.businessName} | Boutique Officielle WhatsApp Vendeur IA`}
         description={`Achetez directement chez ${merchant.businessName} (${merchant.category}). Commandes instantanées et réponses 24/7 via WhatsApp sur Vendeur IA.`}

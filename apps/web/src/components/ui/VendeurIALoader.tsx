@@ -28,7 +28,7 @@ export const VendeurIALoader: React.FC<VendeurIALoaderProps> = ({
     <div
       className={cn(
         "flex flex-col items-center justify-center gap-4 select-none animate-in fade-in duration-300",
-        fullscreen ? "min-h-screen w-full bg-[#07100d] p-4" : "py-12 w-full",
+        fullscreen ? "fixed inset-0 z-[60] bg-[#07100d] p-4" : "py-12 w-full",
         className
       )}
     >

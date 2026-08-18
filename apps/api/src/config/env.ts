@@ -36,6 +36,7 @@ const envSchema = z.object({
   ELEVENLABS_VOICE_ID: z.string().optional(),
   VAPID_PUBLIC_KEY: z.string().optional(),
   VAPID_PRIVATE_KEY: z.string().optional(),
+  AI_MOCK_MODE: z.preprocess((val) => val === "true" || val === "1", z.boolean()).default(true),
 });
 
 export const env = envSchema.parse(process.env);

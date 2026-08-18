@@ -174,7 +174,7 @@ export function ActivationPage() {
                           nextStep?.id === 'payments' ? 'Configurer mes paiements' : 'Étape suivante : Ajouter mes produits';
 
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center p-6 animate-in zoom-in-95 duration-700">
+      <div className="min-h-[100dvh] bg-black flex items-center justify-center p-6 animate-in zoom-in-95 duration-700">
         <div className="max-w-md w-full bg-vendeur-coal border border-white/10 p-8 md:p-12 rounded-[3.5rem] text-center space-y-6 shadow-2xl">
           <div className="h-24 w-24 bg-vendeur-emerald rounded-[2rem] flex items-center justify-center text-vendeur-coal mx-auto shadow-2xl shadow-vendeur-emerald/20 animate-bounce">
             <Bot size={48} />
@@ -245,7 +245,7 @@ export function ActivationPage() {
   }
 
   return (
-    <div className="min-h-screen bg-black text-white p-6 md:p-12 animate-in fade-in duration-500">
+    <div className="min-h-[100dvh] bg-black text-white p-6 md:p-12 animate-in fade-in duration-500">
       <div className="max-w-4xl mx-auto space-y-12">
         <div className="space-y-4">
           <h1 className="text-4xl font-black uppercase tracking-tighter italic">Votre Vendeur IA est presque prêt</h1>

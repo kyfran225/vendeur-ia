@@ -492,7 +492,7 @@ export function ProductManager() {
 
   if (isMerchantLoading) {
     return (
-      <div className="p-6 space-y-8 min-h-screen animate-pulse">
+      <div className="p-6 space-y-8 min-h-full animate-pulse">
         <div className="flex justify-between items-center">
           <div className="space-y-3">
             <div className="h-10 w-72 bg-white/10 rounded-2xl" />
@@ -510,7 +510,7 @@ export function ProductManager() {
   }
 
   return (
-    <div className="p-6 space-y-8 relative min-h-screen">
+    <div className="p-6 space-y-8 relative min-h-full">
       {isScannerOpen && (
         <ProductScanner
           onClose={() => setIsScannerOpen(false)}

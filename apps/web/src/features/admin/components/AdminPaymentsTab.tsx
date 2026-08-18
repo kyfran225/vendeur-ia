@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { VendeurIALoader } from "@/components/ui/VendeurIALoader";
 import { apiClient } from "@/lib/apiClient";
 import {
   Banknote,
@@ -190,9 +191,8 @@ export function AdminPaymentsTab() {
           </div>
 
           {isLoading ? (
-            <div className="p-12 text-center text-white/40 text-xs">
-              <Loader2 className="animate-spin mx-auto mb-2" size={24} />
-              Chargement des intentions de paiement...
+            <div className="py-12">
+              <VendeurIALoader size="md" label="Chargement des intentions de paiement..." />
             </div>
           ) : filteredPayments.length === 0 ? (
             <div className="p-12 text-center rounded-3xl bg-[#0c0f0d] border border-white/5 text-white/40 text-xs">

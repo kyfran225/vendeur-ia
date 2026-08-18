@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { VendeurIALoader } from "@/components/ui/VendeurIALoader";
 import { apiClient } from "@/lib/apiClient";
 import { 
   MessageSquare, 
@@ -295,9 +296,8 @@ export function FounderTicketsInbox() {
 
       {/* 3. Ticket Cards List */}
       {isLoading ? (
-        <div className="py-20 flex flex-col items-center justify-center gap-3 text-white/30">
-          <RefreshCw size={28} className="animate-spin text-emerald-400" />
-          <p className="text-xs">Chargement de la boîte de réception Fondateur...</p>
+        <div className="py-20">
+          <VendeurIALoader size="lg" label="Boîte de réception Fondateur..." />
         </div>
       ) : filteredTickets.length === 0 ? (
         <div className="p-12 text-center rounded-3xl bg-vendeur-coal/30 border border-white/5 space-y-3">

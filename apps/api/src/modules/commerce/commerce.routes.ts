@@ -753,7 +753,7 @@ router.get("/offers", async (req, res) => {
 
         // Convert setup options
         if (obj.setupOptions) {
-          obj.setupOptions = obj.setupOptions.map(opt => ({
+          obj.setupOptions = obj.setupOptions.map((opt: any) => ({
             ...opt,
             price: opt.price > 0 ? Math.ceil((opt.price * conv.rate) / conv.round) * conv.round : 0
           }));

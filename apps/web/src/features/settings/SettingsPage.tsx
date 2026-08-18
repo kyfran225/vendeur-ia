@@ -118,8 +118,9 @@ export function SettingsPage() {
     setSearchParams({ tab });
   };
 
-  const { accessToken } = useAuthStore();
+  const { accessToken, logout } = useAuthStore();
   const queryClient = useQueryClient();
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
 
   useEffect(() => {
     if (tabsRef.current) {
@@ -288,8 +289,8 @@ export function SettingsPage() {
                 </span>
               </div>
             </div>
-            <div className="flex items-center gap-2 px-3 py-1 bg-white/5 rounded-lg border border-white/5 text-[9px] font-black uppercase tracking-wider text-white/40">
-              Modifier <ChevronDown size={12} />
+            <div className="flex items-center gap-2 px-3 py-2 bg-white/5 rounded-xl border border-white/5 text-white/40">
+              <Menu size={18} />
             </div>
           </button>
 
@@ -337,17 +338,17 @@ export function SettingsPage() {
       {/* Settings Mobile Sidebar Drawer */}
       <div
         className={cn(
-          "fixed inset-0 z-[100] md:hidden transition-all duration-300",
+          "fixed inset-0 z-[150] md:hidden transition-all duration-300",
           isMobileMenuOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
         )}
       >
         <div
-          className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+          className="fixed inset-0 bg-black/90 backdrop-blur-md transition-opacity"
           onClick={() => setIsMobileMenuOpen(false)}
         />
         <aside
           className={cn(
-            "absolute top-0 left-0 bottom-0 w-[300px] bg-vendeur-coal border-r border-white/10 shadow-2xl transition-transform duration-300 ease-out flex flex-col",
+            "fixed top-0 left-0 bottom-0 w-[300px] bg-vendeur-coal border-r border-white/10 shadow-2xl transition-transform duration-300 ease-out flex flex-col",
             isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"
           )}
         >
@@ -399,12 +400,15 @@ export function SettingsPage() {
           </nav>
 
           <div className="p-6 border-t border-white/5">
-             <div className="p-4 rounded-2xl bg-vendeur-emerald/5 border border-vendeur-emerald/10 flex items-center gap-3">
-                <Bot size={20} className="text-vendeur-emerald" />
-                <p className="text-[10px] font-bold text-white/60 leading-tight">
-                  Toutes vos modifications sont appliquées instantanément à votre Vendeur IA.
-                </p>
-             </div>
+            <button
+              onClick={() => setShowLogoutModal(true)}
+              className="w-full flex items-center gap-4 p-4 rounded-2xl bg-red-500/5 border border-red-500/10 text-red-400 hover:bg-red-500/10 transition-all active:scale-95 group"
+            >
+              <div className="h-10 w-10 rounded-xl bg-red-500/10 flex items-center justify-center text-red-500 group-hover:scale-110 transition-transform">
+                <LogOut size={20} />
+              </div>
+              <span className="text-xs uppercase font-black tracking-widest">Déconnexion</span>
+            </button>
           </div>
         </aside>
       </div>
@@ -432,6 +436,20 @@ export function SettingsPage() {
         {activeTab === "referral" && <ReferralCard merchant={merchant} />}
         {activeTab === "compte" && <ProfileTab merchant={merchant} />}
       </div>
+
+      <ConfirmationModal
+        isOpen={showLogoutModal}
+        title="Se déconnecter ?"
+        message="Êtes-vous sûr de vouloir fermer votre session ? Vous pourrez vous reconnecter à tout moment."
+        confirmLabel="Déconnexion"
+        cancelLabel="Annuler"
+        type="logout"
+        onConfirm={() => {
+          setShowLogoutModal(false);
+          logout();
+        }}
+        onClose={() => setShowLogoutModal(false)}
+      />
     </div>
   );
 }
@@ -675,7 +693,16 @@ function BoutiqueTab({ merchant, initialKnowledge, accessToken }: { merchant: an
                     Annuler
                   </button>
                   <button
-                    onClick={() => setCurrencyChangeWarning(null)}
+                    onClick={() => {
+                      // Convert delivery fees in local state to avoid overwriting backend conversion with old values
+                      const oldCurr = currencyChangeWarning.oldCurrency;
+                      const newCurr = currencyChangeWarning.newCurrency;
+                      setDeliveryFees((prev: any[]) => prev.map(f => ({
+                        ...f,
+                        price: convertCurrencyAmount(f.price || 0, oldCurr, newCurr)
+                      })));
+                      setCurrencyChangeWarning(null);
+                    }}
                     className="h-12 rounded-2xl bg-amber-500 text-black font-black text-[10px] uppercase tracking-widest hover:bg-amber-400 transition-all"
                   >
                     Confirmer

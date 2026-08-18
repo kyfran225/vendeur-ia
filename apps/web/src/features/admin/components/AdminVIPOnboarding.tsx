@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { VendeurIALoader } from "@/components/ui/VendeurIALoader";
 import {
   Sparkles,
   Search,
@@ -344,11 +345,8 @@ export function AdminVIPOnboarding() {
 
       {/* Main List */}
       {isLoading ? (
-        <div className="py-24 text-center space-y-4">
-          <Loader2 size={36} className="animate-spin text-vendeur-emerald mx-auto" />
-          <p className="text-xs font-black uppercase tracking-widest text-white/40">
-            Chargement des commandes VIP...
-          </p>
+        <div className="py-24">
+          <VendeurIALoader size="lg" label="Chargement des commandes VIP..." />
         </div>
       ) : filteredSetups.length === 0 ? (
         <div className="py-20 text-center bg-vendeur-coal border border-white/5 rounded-[2.5rem] p-8 space-y-3">

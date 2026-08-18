@@ -16,9 +16,11 @@ export const COUNTRIES = GLOBAL_COUNTRIES;
 export function CountrySelector({
   selected,
   onSelect,
+  dropdownPosition = "bottom",
 }: {
   selected: Country;
   onSelect: (country: Country) => void;
+  dropdownPosition?: "top" | "bottom";
 }) {
   const [open, setOpen] = useState(false);
 
@@ -37,7 +39,12 @@ export function CountrySelector({
       {open && (
         <>
           <div className="fixed inset-0 z-[100]" onClick={() => setOpen(false)} />
-          <div className="absolute left-0 top-full z-[110] mt-2 w-56 max-h-64 overflow-y-auto rounded-xl border border-white/10 bg-vendeur-coal shadow-2xl animate-in fade-in zoom-in-95 duration-200 no-scrollbar">
+          <div className={cn(
+            "absolute left-0 z-[110] w-56 max-h-64 overflow-y-auto rounded-xl border border-white/10 bg-vendeur-coal shadow-2xl animate-in fade-in duration-200 no-scrollbar",
+            dropdownPosition === "top"
+              ? "bottom-full mb-2 slide-in-from-bottom-2 origin-bottom"
+              : "top-full mt-2 slide-in-from-top-2 origin-top"
+          )}>
             {COUNTRIES.map((country) => (
               <button
                 key={country.code}

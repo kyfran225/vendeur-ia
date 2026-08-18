@@ -6,7 +6,8 @@ import {
   CommerceConversationModel,
   CommerceMessageModel,
   CommerceCustomerModel,
-  CommerceOrderModel
+  CommerceOrderModel,
+  MarketingCampaignModel
 } from "./commerce.model.js";
 import { OfferModel } from "./offer.model.js";
 import { SubscriptionModel } from "./subscription.model.js";
@@ -380,6 +381,17 @@ export class CommerceService {
         await CommerceKnowledgeModel.findByIdAndUpdate(knowledge._id, {
           "businessRules.deliveryFees": updatedFees
         });
+      }
+
+      // 3. Convert marketing campaigns revenue
+      const campaigns = await MarketingCampaignModel.find({ merchantId: merchant._id });
+      for (const camp of campaigns) {
+        if (camp.revenueGenerated && camp.revenueGenerated > 0) {
+          const newRevenue = convertCurrencyAmount(camp.revenueGenerated, previousCurrency, targetCurrency);
+          await MarketingCampaignModel.findByIdAndUpdate(camp._id, {
+            revenueGenerated: newRevenue
+          });
+        }
       }
     }
 

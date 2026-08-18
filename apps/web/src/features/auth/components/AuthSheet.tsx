@@ -171,7 +171,7 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
       <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={onClose} />
 
       {/* Sheet Container: Ultra Compact & Non-scrolling */}
-      <div className="relative w-full max-w-md bg-[#0b120f] border-t sm:border border-white/10 rounded-t-[2rem] sm:rounded-[2.5rem] p-5 sm:p-7 shadow-2xl animate-in slide-in-from-bottom-8 sm:zoom-in-95 duration-300 text-left overflow-hidden">
+      <div className="relative w-full max-w-md bg-[#0b120f] border-t sm:border border-white/10 rounded-t-[2rem] sm:rounded-[2.5rem] p-5 sm:p-7 shadow-2xl animate-in slide-in-from-bottom-8 sm:zoom-in-95 duration-300 text-left overflow-visible">
         
         {/* Mobile Pull Handle */}
         <div className="w-10 h-1 rounded-full bg-white/20 mx-auto mb-3 sm:hidden" />
@@ -215,6 +215,7 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
                 <CountrySelector
                   selected={selectedCountry}
                   onSelect={(c) => setSelectedCountry(c)}
+                  dropdownPosition="top"
                 />
                 <div className="relative flex-1 min-w-0">
                   <input

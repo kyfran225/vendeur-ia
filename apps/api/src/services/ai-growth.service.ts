@@ -1,10 +1,20 @@
 import { CommerceProductModel, CommerceConversationModel, CommerceMessageModel, CommerceMerchantModel } from "../modules/commerce/commerce.model.js";
 import { aiProvider } from "./ai-provider.js";
 import { parseJsonFromAI } from "../utils/parse-ai-json.js";
+import { getRedisClient } from "../config/redis.js";
 
 export class AIGrowthService {
+  private redis = getRedisClient();
+
   async generateGrowthAdvice(merchantId: string) {
     try {
+      // 0. Cache Check (Avoid re-generating every minute)
+      const cacheKey = `growth_advice:${merchantId}`;
+      if (this.redis) {
+        const cached = await this.redis.get(cacheKey);
+        if (cached) return JSON.parse(cached);
+      }
+
       // 1. Collect real data for analysis
       const merchant = await CommerceMerchantModel.findById(merchantId);
       const products = await CommerceProductModel.find({ merchantId });
@@ -86,6 +96,11 @@ export class AIGrowthService {
 
       if (parsed.tips.length === 0) {
         throw new Error("No valid tips found in AI response");
+      }
+
+      // Save to cache for 30 minutes
+      if (this.redis) {
+        await this.redis.set(cacheKey, JSON.stringify(parsed), 'EX', 1800);
       }
 
       return parsed;

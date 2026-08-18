@@ -23,6 +23,7 @@ import { twMerge } from "tailwind-merge";
 
 import { useMerchant } from "@/hooks/useMerchant";
 import { WhatsAppTypingIndicator } from "@/components/ui/WhatsAppTypingIndicator";
+import { VendeurIALoader } from "@/components/ui/VendeurIALoader";
 import { OrderCreationModal } from "@/features/orders/OrderCreationModal";
 import { FastPayModal } from "./FastPayModal";
 import { VoiceRecorder } from "./components/VoiceRecorder";
@@ -209,7 +210,7 @@ export function SalesInbox() {
   };
 
   return (
-    <div id="tour-inbox-channels" className="flex h-[calc(100vh-120px)] md:h-[calc(100vh-160px)] md:max-h-[1000px] bg-vendeur-bg md:rounded-[3rem] overflow-hidden border-0 md:border md:border-white/10 shadow-2xl animate-in fade-in duration-700 md:my-8">
+    <div id="tour-inbox-channels" className="flex h-[calc(100dvh-130px)] md:h-[calc(100vh-160px)] md:max-h-[1000px] bg-vendeur-bg md:rounded-[3rem] overflow-hidden border-0 md:border md:border-white/10 shadow-2xl animate-in fade-in duration-700 md:my-8">
       {/* Sidebar List */}
       <aside className={cn(
         "w-full md:w-96 border-r border-white/5 flex flex-col bg-vendeur-coal/30 transition-all",
@@ -235,7 +236,9 @@ export function SalesInbox() {
 
         <div className="flex-1 overflow-y-auto">
           {loadingChats ? (
-            <div className="flex justify-center p-8"><Loader2 className="animate-spin text-white/20" /></div>
+            <div className="flex justify-center p-12">
+              <VendeurIALoader size="md" label="Chargement..." />
+            </div>
           ) : (
             filteredConversations?.map((chat: any) => (
               <ChatListItem
@@ -364,7 +367,9 @@ export function SalesInbox() {
               style={{ backgroundImage: "url('https://static.whatsapp.net/rsrc.php/v3/y6/r/wa669ae5qee.png')", backgroundSize: "400px" }}
             >
               {loadingMessages ? (
-                <div className="flex justify-center"><Loader2 className="animate-spin text-white/10" /></div>
+                <div className="flex flex-col items-center justify-center py-12">
+                  <VendeurIALoader size="md" label="Messages..." />
+                </div>
               ) : (
                 messages?.map((msg: any) => (
                   <ChatBubble

@@ -26,6 +26,7 @@ import { toast } from "sonner";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { DateTimePicker } from "@/components/ui/DateTimePicker";
+import { VendeurIALoader } from "@/components/ui/VendeurIALoader";
 import { WhatsAppPreview } from "./WhatsAppPreview";
 import { useAuthStore } from "@/stores/authStore";
 
@@ -541,9 +542,8 @@ export function MarketingHub() {
                    <p className="text-xs font-medium">Sélectionnez un produit à l'étape 1 pour rédiger l'annonce.</p>
                 </div>
               ) : previewMutation.isPending ? (
-                <div className="h-[140px] flex flex-col items-center justify-center gap-2.5 border border-white/5 rounded-2xl bg-white/[0.02]">
-                   <Loader2 className="animate-spin text-sky-400" size={28} />
-                   <p className="text-xs text-white/50 font-bold uppercase tracking-wider">L'IA rédige une offre sur-mesure...</p>
+                <div className="h-[140px] flex flex-col items-center justify-center border border-white/5 rounded-2xl bg-white/[0.02]">
+                   <VendeurIALoader size="md" label="L'IA rédige une offre sur-mesure..." />
                 </div>
               ) : previewTab === "whatsapp" ? (
                 <WhatsAppPreview

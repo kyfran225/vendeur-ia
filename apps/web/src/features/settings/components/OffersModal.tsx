@@ -157,8 +157,6 @@ export function OffersModal({ isOpen, onClose }: OffersModalProps) {
     </div>
   );
 }
-  );
-}
 
 function OfferFeature({ text, highlight = false }: { text: string; highlight?: boolean }) {
   return (

@@ -12,15 +12,18 @@ import {
   X, 
   Shield, 
   ChevronRight,
-  Sparkles
+  Sparkles,
+  LogOut
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/stores/authStore";
+import { ConfirmationModal } from "@/components/ui/ConfirmationModal";
 
 export function Sidebar() {
   const [isOpen, setIsOpen] = useState(false);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
   const location = useLocation();
-  const { user } = useAuthStore();
+  const { user, logout } = useAuthStore();
 
   const isAdmin = !!user?.roles?.includes("admin");
 
@@ -82,6 +85,20 @@ export function Sidebar() {
             </NavLink>
           ))}
         </nav>
+
+        {/* Desktop Logout Button */}
+        <div className="w-full px-4 pt-4 border-t border-white/5">
+          <button
+            onClick={() => setShowLogoutModal(true)}
+            className="w-full flex flex-col items-center gap-1 group text-white/30 hover:text-red-400 transition-all active:scale-95 py-2"
+            title="Se déconnecter"
+          >
+            <div className="h-10 w-10 rounded-xl flex items-center justify-center group-hover:bg-red-500/10 transition-all">
+              <LogOut size={20} />
+            </div>
+            <span className="text-[9px] font-black uppercase tracking-widest">Sortie</span>
+          </button>
+        </div>
       </aside>
 
       {/* Mobile Bottom Navigation Bar */}
@@ -197,8 +214,42 @@ export function Sidebar() {
                 <ChevronRight size={18} className="text-white/20" />
               </NavLink>
             ))}
+
+            {/* Mobile Logout Button in More Menu */}
+            <button
+              onClick={() => {
+                setIsOpen(false);
+                setShowLogoutModal(true);
+              }}
+              className="flex items-center justify-between p-4 rounded-2xl border border-red-500/10 bg-red-500/5 text-red-400 transition-all active:scale-[0.98] mt-2"
+            >
+              <div className="flex items-center gap-3.5">
+                <div className="h-11 w-11 rounded-xl flex items-center justify-center bg-red-500/10 text-red-500">
+                  <LogOut size={20} />
+                </div>
+                <div>
+                  <p className="text-xs font-black uppercase tracking-wider text-white">Déconnexion</p>
+                  <p className="text-[10px] text-red-400/60 font-medium mt-0.5">Fermer votre session</p>
+                </div>
+              </div>
+              <ChevronRight size={18} className="opacity-40" />
+            </button>
           </div>
         </div>
+
+        <ConfirmationModal
+          isOpen={showLogoutModal}
+          title="Se déconnecter ?"
+          message="Êtes-vous sûr de vouloir fermer votre session ? Vous pourrez vous reconnecter à tout moment."
+          confirmLabel="Déconnexion"
+          cancelLabel="Annuler"
+          type="logout"
+          onConfirm={() => {
+            setShowLogoutModal(false);
+            logout();
+          }}
+          onClose={() => setShowLogoutModal(false)}
+        />
       </div>
     </>
   );

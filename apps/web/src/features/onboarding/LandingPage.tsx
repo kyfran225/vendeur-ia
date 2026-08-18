@@ -182,7 +182,7 @@ function BentoFeatures() {
                   <img
                     src="https://www.wave.com/img/favicon.png"
                     alt="Wave"
-                    className="h-8 w-8 rounded-lg shadow-xl group-hover:scale-110 transition-transform bg-[#1fb3e5] object-contain p-1.5"
+                    className="h-8 w-8 rounded-lg shadow-xl group-hover:scale-110 transition-transform object-contain"
                   />
                   {/* Orange */}
                   <div className="h-8 w-8 rounded-lg bg-[#FF7900] overflow-hidden shadow-xl group-hover:scale-110 transition-transform flex items-center justify-center">

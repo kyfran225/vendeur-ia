@@ -19,6 +19,7 @@ import { aiProvider } from "../../services/ai-provider.js";
 import { messagingService } from "../../services/messaging.service.js";
 import { pushService } from "../../services/push.service.js";
 import { paystackService } from "../../services/paystack.service.js";
+import { paymentService, PaymentService } from "../../services/payment.service.js";
 import { paymentShieldService } from "../../services/payment-shield.service.js";
 import { logger } from "../../services/logger.service.js";
 import { env } from "../../config/env.js";
@@ -1169,24 +1170,6 @@ Résumé actuel :`;
     const currency = merchant?.billingCurrency || merchant?.currency || "XOF";
     const country = merchant?.country || "CI";
 
-    // Dynamic currency conversion table (1 XOF = rate)
-    const rates: Record<string, { rate: number; round: number }> = {
-      XOF: { rate: 1, round: 500 },
-      XAF: { rate: 1, round: 500 },
-      GNF: { rate: 14, round: 5000 },
-      NGN: { rate: 2.5, round: 100 },
-      GHS: { rate: 0.025, round: 5 },
-      KES: { rate: 0.22, round: 50 },
-      MAD: { rate: 0.016, round: 10 },
-      DZD: { rate: 0.22, round: 50 },
-      TND: { rate: 0.005, round: 1 },
-      CDF: { rate: 4.6, round: 500 },
-      MRU: { rate: 0.065, round: 10 },
-      EUR: { rate: 0.00152, round: 1 },
-      USD: { rate: 0.00165, round: 1 },
-      ZAR: { rate: 0.03, round: 5 }
-    };
-
     const isYearly = billingInterval === 'yearly';
     const planBasePrice = isYearly ? (offer.yearlyPrice || Math.round(offer.monthlyPrice * 10)) : offer.monthlyPrice;
     let baseAmount = planBasePrice;
@@ -1200,7 +1183,7 @@ Résumé actuel :`;
 
     // Convert amount if currency is not XOF
     let finalAmount = baseAmount;
-    const conv = rates[currency.toUpperCase()];
+    const conv = PaymentService.RATES[currency.toUpperCase()];
     if (conv && currency !== "XOF") {
       finalAmount = Math.ceil((baseAmount * conv.rate) / conv.round) * conv.round;
     }

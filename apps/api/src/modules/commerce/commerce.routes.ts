@@ -1893,7 +1893,8 @@ router.post("/whatsapp-status/auto-publish", authenticate, async (req, res) => {
 // GET /api/commerce/payments/config - Get available payment methods and recipient numbers
 router.get("/payments/config", async (req, res) => {
   try {
-    const config = await paymentService.getPaymentConfig();
+    const country = req.query.country as string;
+    const config = await paymentService.getPaymentConfig(country);
     res.json(config);
   } catch (error: any) {
     logger.error(`[Payment Config] Error: ${error.message}`);
@@ -1905,14 +1906,15 @@ router.get("/payments/config", async (req, res) => {
 router.post("/payments/intent", authenticate, async (req, res) => {
   try {
     const userId = (req as any).user.id;
-    const { offerSlug, billingInterval, paymentMethod, senderPhoneNumber, senderName } = req.body;
+    const { offerSlug, billingInterval, paymentMethod, senderPhoneNumber, senderName, country } = req.body;
 
     const intent = await paymentService.createPaymentIntent(userId, {
       offerSlug: offerSlug || "essential",
       billingInterval: billingInterval || "monthly",
       paymentMethod: paymentMethod || "wave",
       senderPhoneNumber,
-      senderName
+      senderName,
+      country
     });
 
     res.status(201).json(intent);

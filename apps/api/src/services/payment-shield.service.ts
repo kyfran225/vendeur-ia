@@ -88,9 +88,9 @@ export class PaymentShieldService {
     const systemPrompt = `Tu es un EXPERT EN AUDIT MÉDICO-LÉGAL FORENSIC ET CYBERSÉCURITÉ BANCAIRE spécialisé dans la détection de fraudes de paiements mobiles en Afrique (Wave, Orange Money, MTN MoMo, Moov Money, Djamo, KPay, etc.).
 
 Ta mission : Examiner cette capture d'écran avec une vigilance extrême contre :
-1. Les modifications PHOTOSHOP / CANVA (montant modifié, chiffres collés, police de caractères non conforme, flou de compression JPEG anormal autour des chiffres du montant ou du destinataire).
-2. Les faux reçus GÉNÉRÉS PAR IA (Midjourney, Stable Diffusion, faux générateurs de reçus Wave/OM : typographie déformée, icônes système Android/iOS bizarres, texte d'arrière-plan flou ou incohérent).
-3. Les reçus falsifiés ou incomplets.
+1. Les modifications PHOTOSHOP / CANVA : Cherche les bords de texte trop nets, les polices de caractères qui diffèrent légèrement (ex: police Orange Money vs Helvetica classique), les décalages de pixels, et surtout le flou JPEG anormal autour des chiffres du MONTANT ou du DESTINATAIRE.
+2. Les faux reçus GÉNÉRÉS PAR IA : Typographie déformée, logos système Android/iOS incohérents, barre d'état (batterie, heure) qui semble dessinée ou floue.
+3. Le REUSE de captures : Si la date semble ancienne ou si le reçu appartient à une autre plateforme.
 
 Extrais TOUTES les informations au format JSON STRICT suivant :
 {
@@ -101,21 +101,21 @@ Extrais TOUTES les informations au format JSON STRICT suivant :
   "transactionId": "Identifiant exact de la transaction (numéro de référence ou TID)",
   "senderName": "Nom de l'expéditeur si visible",
   "senderPhone": "Numéro de l'expéditeur si visible",
-  "recipientName": "Nom du destinataire / marchand affiché sur le reçu",
-  "recipientPhone": "Numéro du destinataire affiché sur le reçu",
+  "recipientName": "Nom du destinataire / marchand affiché sur le reçu (ex: Vendeur IA)",
+  "recipientPhone": "Numéro du destinataire affiché sur le reçu (ex: +225...)",
   "extractedDateStr": "Date et heure exactes affichées (ex: 2026-08-16 16:45)",
   "status": "success" | "pending" | "failed" | "unknown",
   "forensics": {
-    "isAiGenerated": boolean (true si l'image semble synthétisée par une IA),
-    "isPhotoshopTampered": boolean (true si le texte du montant, du nom ou de la date a été altéré ou collé),
-    "fontMismatchDetected": boolean (true si la police des chiffres du montant ne correspond pas exactement à la police native de l'opérateur),
-    "compressionArtifactsDetected": boolean (true si un bloc de retouche pixel est visible autour des zones clés),
-    "uiInconsistencies": ["liste", "des", "anomalies", "visuelles"],
-    "confidenceRating": number (note de 0 à 100 de l'authenticité visuelle de la capture),
-    "analysisSummary": "Explication concise de l'audit visuel"
+    "isAiGenerated": boolean,
+    "isPhotoshopTampered": boolean (true si une zone de texte semble collée ou retouchée),
+    "fontMismatchDetected": boolean (true si la police des chiffres du montant ne correspond pas au standard de l'opérateur),
+    "compressionArtifactsDetected": boolean (true si des pixels "sales" entourent uniquement le montant),
+    "uiInconsistencies": ["liste", "des", "anomalies"],
+    "confidenceRating": number (0-100),
+    "analysisSummary": "Verdict forensic détaillé"
   }
 }
-Réponds UNIQUEMENT avec le JSON strict, sans aucun texte autour.`;
+Réponds UNIQUEMENT avec le JSON strict.`;
 
     // Attempt Gemini first
     if (primaryProvider === 'gemini' && env.GEMINI_API_KEY) {
@@ -347,10 +347,14 @@ Réponds UNIQUEMENT avec le JSON strict, sans aucun texte autour.`;
     const merchantPhones = [
       (merchant.whatsappNumber || "").replace(/[^0-9]/g, ""),
       (merchant.phone || "").replace(/[^0-9]/g, ""),
+      "2250505111157",
+      "2250708292693",
       ...(merchant.paymentChannels || []).map((c: any) => (c.number || "").replace(/[^0-9]/g, ""))
     ].filter(p => p.length >= 8);
 
     const merchantNames = [
+      "vendeur ia",
+      "vendeuria",
       (merchant.businessName || "").toLowerCase().trim(),
       ...(merchant.paymentChannels || []).map((c: any) => (c.label || "").toLowerCase().trim())
     ].filter(n => n.length >= 2);
@@ -401,13 +405,32 @@ Réponds UNIQUEMENT avec le JSON strict, sans aucun texte autour.`;
     let amountMatch = false;
     if (expectedOrder) {
       const expectedAmount = expectedOrder.totalAmount || 0;
-      const actualAmount = extraction.amount || 0;
-      const diff = Math.abs(expectedAmount - actualAmount);
+      let actualAmountInXof = extraction.amount || 0;
 
-      if (diff <= 100) { // Tolerates up to 100 XOF difference (rounding / fee)
+      // Handle currency conversion for verification if needed
+      if (extraction.currency !== "XOF") {
+          const rates: any = {
+            GHS: 40, // 1 GHS approx 40 XOF (Secure fixed rate for validation)
+            GNF: 0.07, // 1 GNF approx 0.07 XOF
+            NGN: 0.4, // 1 NGN approx 0.4 XOF
+            USD: 600,
+            EUR: 655.95
+          };
+          const rate = rates[extraction.currency.toUpperCase()];
+          if (rate) {
+              actualAmountInXof = (extraction.amount || 0) * rate;
+          }
+      }
+
+      const diff = Math.abs(expectedAmount - actualAmountInXof);
+
+      // Tolerance is higher for international transfers due to fees/fx (5% or 500 XOF)
+      const tolerance = extraction.currency === "XOF" ? 100 : Math.max(500, expectedAmount * 0.05);
+
+      if (diff <= tolerance) {
         amountMatch = true;
       } else {
-        flags.push(`AMOUNT_MISMATCH (Expected: ${expectedAmount}, Screen: ${actualAmount})`);
+        flags.push(`AMOUNT_MISMATCH (Expected XOF: ${expectedAmount}, Screen ${extraction.currency}: ${extraction.amount} -> approx ${Math.round(actualAmountInXof)} XOF)`);
         confidenceScore -= 40;
       }
     }

@@ -632,6 +632,10 @@ class WhatsAppService {
   }
 
   async sendMetaMessage(merchant: any, to: string, text: string) {
+    if (env.AI_MOCK_MODE) {
+      console.log(`[AI_MOCK_MODE] Skip Meta Message to ${to}: ${text.substring(0, 50)}...`);
+      return;
+    }
     const config = await this.getMetaConfig(merchant);
 
     if (!config.phoneNumberId || !config.accessToken) {
@@ -667,6 +671,10 @@ class WhatsAppService {
   }
 
   async sendAuthMagicLink(to: string, loginUrl: string, otpCode: string) {
+    if (env.AI_MOCK_MODE) {
+      console.log(`[AI_MOCK_MODE] Skip Auth Magic Link to ${to}. Code: ${otpCode}, URL: ${loginUrl}`);
+      return;
+    }
     // Get Global System Settings for Meta
     const settings = await SystemSettingsModel.findOne();
     const config = settings?.metaConfig?.whatsappDefaults;
@@ -707,6 +715,10 @@ class WhatsAppService {
   }
 
   async sendMetaAudio(merchant: any, to: string, audioBuffer: Buffer) {
+    if (env.AI_MOCK_MODE) {
+      console.log(`[AI_MOCK_MODE] Skip Meta Audio to ${to}`);
+      return;
+    }
     const config = await this.getMetaConfig(merchant);
 
     if (!config.phoneNumberId || !config.accessToken) return;

@@ -229,7 +229,7 @@ export function BillingTab({ merchant }: { merchant: any }) {
                   <AlertCircle size={28} />
                 </div>
                 <div className="space-y-1.5">
-                  <h3 className="text-lg font-black uppercase tracking-tight text-white">Arrêter l'IA ?</h3>
+                  <h3 className="text-lg font-black uppercase tracking-tight text-white">Arrêter Vendeur IA ?</h3>
                   <p className="text-[11px] font-medium text-white/60 leading-relaxed">
                     Votre service restera actif jusqu'au {nextDate ? new Date(nextDate).toLocaleDateString('fr-FR') : 'prochain terme'}.
                     Ensuite, l'agent IA se mettra en veille.
@@ -486,7 +486,7 @@ export function BillingTab({ merchant }: { merchant: any }) {
               Besoin d'une installation clé en main par notre équipe ?
             </h4>
             <p className="text-white/60 text-xs sm:text-sm font-medium leading-relaxed">
-              Nous configurons votre compte Meta Cloud WhatsApp API, créons votre page professionnelle, intégrons votre catalogue et paramétrons votre IA pour un résultat prêt à vendre.
+              Nous configurons votre compte Meta Cloud WhatsApp API, créons votre page professionnelle, intégrons votre catalogue et paramétrons votre Vendeur IA pour un résultat prêt à vendre.
             </p>
             <div className="flex flex-wrap gap-2 pt-1">
               <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-white/5 text-white/80 border border-white/10">✓ Configuration Meta WhatsApp</span>

@@ -62,7 +62,7 @@ export function VendeurIAPlaygroundModal({ isOpen, onClose, merchant }: VendeurI
         {
           id: "welcome",
           role: "ai",
-          text: `Bonjour ! 👋 Je suis l'assistant IA de **${merchant?.businessName || merchant?.storeName || "votre boutique"}**. Je suis actif et prêt à répondre à vos clients ! Posez-moi une question pour m'essayer.`,
+          text: `Bonjour ! 👋 Je suis l'assistant Vendeur IA de **${merchant?.businessName || merchant?.storeName || "votre boutique"}**. Je suis actif et prêt à répondre à vos clients ! Posez-moi une question pour m'essayer.`,
           timestamp: new Date()
         }
       ]);
@@ -115,7 +115,7 @@ export function VendeurIAPlaygroundModal({ isOpen, onClose, merchant }: VendeurI
       const errorMsg: Message = {
         id: (Date.now() + 1).toString(),
         role: "ai",
-        text: "⚠️ [Mode Simulateur] Impossible d'obtenir la réponse de l'IA pour le moment. Vérifiez votre connexion.",
+        text: "⚠️ [Mode Simulateur] Impossible d'obtenir la réponse de Vendeur IA pour le moment. Vérifiez votre connexion.",
         timestamp: new Date()
       };
       setMessages((prev) => [...prev, errorMsg]);
@@ -129,7 +129,7 @@ export function VendeurIAPlaygroundModal({ isOpen, onClose, merchant }: VendeurI
       {
         id: Date.now().toString(),
         role: "ai",
-        text: `Conversation réinitialisée. Posez une nouvelle question à l'IA de **${merchant?.businessName || merchant?.storeName || "votre boutique"}** !`,
+        text: `Conversation réinitialisée. Posez une nouvelle question à Vendeur IA de **${merchant?.businessName || merchant?.storeName || "votre boutique"}** !`,
         timestamp: new Date()
       }
     ]);
@@ -146,12 +146,12 @@ export function VendeurIAPlaygroundModal({ isOpen, onClose, merchant }: VendeurI
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-300">
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-300">
         <motion.div
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
-          className="relative w-full max-w-2xl bg-vendeur-coal border border-vendeur-emerald/30 rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col h-[90vh] max-h-[750px]"
+          className="relative w-full max-w-2xl bg-vendeur-coal border-white/10 sm:border-vendeur-emerald/30 rounded-none sm:rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col h-full sm:h-[90vh] sm:max-h-[750px]"
         >
           {/* Top Header */}
           <div className="p-4 sm:p-5 md:p-6 bg-vendeur-bg border-b border-white/10 flex items-center justify-between shrink-0 gap-3">

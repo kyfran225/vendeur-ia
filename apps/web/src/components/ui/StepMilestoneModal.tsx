@@ -193,7 +193,7 @@ export function StepMilestoneModal({
               <p className="text-[10px] text-white/40 font-medium italic text-right">
                 {progressPercent === 100
                   ? "Votre boutique est prête à vendre 24/7 !"
-                  : "Complétez les étapes pour rendre l'IA 100% autonome."}
+                  : "Complétez les étapes pour rendre Vendeur IA 100% autonome."}
               </p>
             </div>
 

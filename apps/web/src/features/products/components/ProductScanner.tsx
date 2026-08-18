@@ -139,7 +139,7 @@ export function ProductScanner({ onClose, onScanComplete, boutiqueName }: Produc
       setScanStep("batch_review");
     } catch (error) {
       console.error("Vision API Error:", error);
-      toast.error("L'IA n'a pas pu analyser l'image. Utilisation du mode manuel.");
+      toast.error("Vendeur IA n'a pas pu analyser l'image. Utilisation du mode manuel.");
       const fallbackItem = {
         name: "Produit sans nom",
         price: 0,
@@ -255,7 +255,7 @@ export function ProductScanner({ onClose, onScanComplete, boutiqueName }: Produc
                 <Check size={48} className="text-emerald-500" strokeWidth={4} />
              </div>
              <h2 className="text-4xl font-black text-white mb-2">PRODUIT DÉTECTÉ</h2>
-             <p className="text-white/80 font-medium">L'IA a généré votre fiche automatiquement.</p>
+             <p className="text-white/80 font-medium">Vendeur IA a généré votre fiche automatiquement.</p>
           </div>
         )}
       </div>

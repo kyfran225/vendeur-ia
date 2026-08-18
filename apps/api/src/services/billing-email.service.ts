@@ -45,7 +45,7 @@ export class BillingEmailService {
     const template = {
       subject: "🛑 Service Vendeur IA suspendu",
       title: "Action requise : Service Suspendu",
-      intro: `Bonjour ${displayName}, votre abonnement a expiré. Votre IA ne répond plus à vos clients sur WhatsApp et les autres canaux.`,
+      intro: `Bonjour ${displayName}, votre abonnement a expiré. Votre Vendeur IA ne répond plus à vos clients sur WhatsApp et les autres canaux.`,
       ctaLabel: "Réactiver mon service",
       url: `${env.CLIENT_URL}/settings/billing`,
       footnote: "Une fois le paiement effectué, votre service sera réactivé instantanément."

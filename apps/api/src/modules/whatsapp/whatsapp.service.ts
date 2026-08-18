@@ -632,6 +632,10 @@ class WhatsAppService {
   }
 
   async sendMetaMessage(merchant: any, to: string, text: string) {
+    if (env.AI_MOCK_MODE) {
+      console.log(`[AI_MOCK_MODE] Skip Meta Message to ${to}: ${text.substring(0, 50)}...`);
+      return;
+    }
     const config = await this.getMetaConfig(merchant);
 
     if (!config.phoneNumberId || !config.accessToken) {
@@ -645,7 +649,7 @@ class WhatsAppService {
         {
           messaging_product: "whatsapp",
           recipient_type: "individual",
-          to,
+          to: to.replace(/\+/g, ""),
           type: "text",
           text: { body: text },
         },
@@ -666,7 +670,55 @@ class WhatsAppService {
     }
   }
 
+  async sendAuthMagicLink(to: string, loginUrl: string, otpCode: string) {
+    if (env.AI_MOCK_MODE) {
+      console.log(`[AI_MOCK_MODE] Skip Auth Magic Link to ${to}. Code: ${otpCode}, URL: ${loginUrl}`);
+      return;
+    }
+    // Get Global System Settings for Meta
+    const settings = await SystemSettingsModel.findOne();
+    const config = settings?.metaConfig?.whatsappDefaults;
+
+    const phoneNumberId = config?.phoneNumberId || env.WHATSAPP_PHONE_ID;
+    const accessToken = config?.accessToken || env.WHATSAPP_ACCESS_TOKEN;
+
+    if (!phoneNumberId || !accessToken) {
+      console.warn("[WhatsApp Auth] WhatsApp System credentials not configured. SMS fallback might be needed or error generated.");
+      throw new Error("Le service d'authentification WhatsApp n'est pas configuré.");
+    }
+
+    const cleanTo = to.replace(/[\s\-\+\(\)]/g, "");
+    const text = `🚀 *Bienvenue sur Vendeur IA !*\n\nPour accéder à votre espace :\n\n🔗 Touchez ce lien : ${loginUrl}\n\n🔢 Ou saisissez ce code : *${otpCode}*\n\n_Valable pendant 15 minutes._`;
+
+    try {
+      await axios.post(
+        `https://graph.facebook.com/v20.0/${phoneNumberId}/messages`,
+        {
+          messaging_product: "whatsapp",
+          recipient_type: "individual",
+          to: cleanTo,
+          type: "text",
+          text: { body: text },
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      console.log(`[WhatsApp Auth] Magic Link sent to ${to}`);
+    } catch (error: any) {
+      console.error("[WhatsApp Auth] Failed to send Magic Link:", error.response?.data || error.message);
+      throw new Error("Échec de l'envoi du message WhatsApp. Vérifiez que votre numéro est correct.");
+    }
+  }
+
   async sendMetaAudio(merchant: any, to: string, audioBuffer: Buffer) {
+    if (env.AI_MOCK_MODE) {
+      console.log(`[AI_MOCK_MODE] Skip Meta Audio to ${to}`);
+      return;
+    }
     const config = await this.getMetaConfig(merchant);
 
     if (!config.phoneNumberId || !config.accessToken) return;

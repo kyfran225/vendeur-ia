@@ -154,7 +154,7 @@ export function StoreAuditModal() {
             {isAuditLoading ? (
               <div className="py-12 flex flex-col items-center justify-center gap-3 text-white/40">
                 <RefreshCw size={28} className="animate-spin text-emerald-400" />
-                <p className="text-xs">L'IA diagnostique votre catalogue, paiements et vitrine...</p>
+                <p className="text-xs">Vendeur IA diagnostique votre catalogue, paiements et vitrine...</p>
               </div>
             ) : !auditData || auditData.issues.length === 0 ? (
               <div className="p-8 text-center rounded-3xl bg-emerald-500/10 border border-emerald-500/20 space-y-2">

@@ -288,7 +288,7 @@ export function SalesInbox() {
                     )}
                   </div>
                   {typingChats[selectedChat] ? (
-                    <WhatsAppTypingIndicator variant="header" label="L'IA est en train d'écrire" />
+                    <WhatsAppTypingIndicator variant="header" label="Vendeur IA est en train d'écrire" />
                   ) : (
                     <p className="text-[10px] font-black uppercase tracking-widest flex items-center gap-1 text-vendeur-emerald">
                       {activeChatData?.platform === 'instagram' && <Instagram size={14} />}
@@ -552,7 +552,7 @@ function ChatBubble({ role, text, time, type, mediaUrl }: any) {
         {isVoiceMessage && (
           <div className="flex items-center gap-1.5 mb-1.5 px-2 py-0.5 bg-sky-500/10 border border-sky-500/20 text-sky-400 rounded-md text-[9px] font-black uppercase tracking-widest w-fit">
             <span className="h-1.5 w-1.5 rounded-full bg-sky-400 animate-pulse" />
-            🎙️ Message Vocal • Transcrit par l'IA
+            🎙️ Message Vocal • Transcrit par Vendeur IA
           </div>
         )}
 

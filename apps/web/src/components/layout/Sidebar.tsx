@@ -236,21 +236,21 @@ export function Sidebar() {
             </button>
           </div>
         </div>
-
-        <ConfirmationModal
-          isOpen={showLogoutModal}
-          title="Se déconnecter ?"
-          message="Êtes-vous sûr de vouloir fermer votre session ? Vous pourrez vous reconnecter à tout moment."
-          confirmLabel="Déconnexion"
-          cancelLabel="Annuler"
-          type="logout"
-          onConfirm={() => {
-            setShowLogoutModal(false);
-            logout();
-          }}
-          onClose={() => setShowLogoutModal(false)}
-        />
       </div>
+
+      <ConfirmationModal
+        isOpen={showLogoutModal}
+        title="Se déconnecter ?"
+        message="Êtes-vous sûr de vouloir fermer votre session ? Vous pourrez vous reconnecter à tout moment."
+        confirmLabel="Déconnexion"
+        cancelLabel="Annuler"
+        type="logout"
+        onConfirm={() => {
+          setShowLogoutModal(false);
+          logout();
+        }}
+        onClose={() => setShowLogoutModal(false)}
+      />
     </>
   );
 }

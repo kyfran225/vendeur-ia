@@ -281,7 +281,7 @@ function WelcomeStep({ onNext, onBack }: { onNext: () => void; onBack: () => voi
             <span className="text-vendeur-emerald">Vendeur IA.</span>
           </h1>
           <p className="text-sm sm:text-base text-white/50 mb-6 leading-relaxed font-medium">
-            Ces informations permettent à votre IA de répondre aux clients avec vos prix, votre catalogue et vos règles de livraison.
+            Ces informations permettent à votre Vendeur IA de répondre aux clients avec vos prix, votre catalogue et vos règles de livraison.
           </p>
         </div>
 
@@ -410,7 +410,7 @@ function WelcomeStep({ onNext, onBack }: { onNext: () => void; onBack: () => voi
                 className="w-full h-12 sm:h-14 rounded-2xl bg-vendeur-emerald text-vendeur-coal font-black uppercase tracking-widest text-xs sm:text-sm flex items-center justify-center gap-2 hover:scale-[1.01] active:scale-95 transition-all shadow-xl shadow-vendeur-emerald/20 cursor-pointer mt-2"
               >
                 <Sparkles size={18} />
-                <span>Continuer vers l'IA Vision</span>
+                <span>Continuer vers Vendeur IA Vision</span>
                 <ChevronRight size={18} />
               </button>
 
@@ -506,7 +506,7 @@ function VisionStep({ onNext, onBack }: { onNext: () => void; onBack: () => void
             <span className="text-vendeur-emerald">IA Vision.</span>
           </h2>
           <p className="text-white/60 text-sm sm:text-base leading-relaxed font-medium">
-            Ajoutez votre premier produit en prenant simplement une photo. L'IA génère automatiquement le nom, le prix suggéré et la description commerciale.
+            Ajoutez votre premier produit en prenant simplement une photo. Vendeur IA génère automatiquement le nom, le prix suggéré et la description commerciale.
           </p>
 
           <div className="space-y-2.5 pt-1">
@@ -530,7 +530,7 @@ function VisionStep({ onNext, onBack }: { onNext: () => void; onBack: () => void
             )}>
               {analyzing ? (
                 <div className="flex flex-col items-center justify-center p-6">
-                  <VendeurIALoader label="L'IA analyse votre photo..." size="sm" />
+                  <VendeurIALoader label="Vendeur IA analyse votre photo..." size="sm" />
                 </div>
               ) : (
                 <>

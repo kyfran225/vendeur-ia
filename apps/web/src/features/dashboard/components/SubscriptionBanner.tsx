@@ -47,7 +47,7 @@ export function SubscriptionBanner({ status, expiresAt }: SubscriptionBannerProp
             </h3>
             <p className="text-xs opacity-80 font-medium">
               {isExpired
-                ? "Votre abonnement a expiré. Votre IA ne répond plus à vos clients."
+                ? "Votre abonnement a expiré. Votre Vendeur IA ne répond plus à vos clients."
                 : `Votre abonnement expire dans ${diffDays} jour${diffDays > 1 ? 's' : ''}. Pensez à renouveler.`}
             </p>
           </div>

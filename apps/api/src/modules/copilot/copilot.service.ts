@@ -174,7 +174,7 @@ Ton objectif absolu : GUIDER, ORIENTER ET AIDER le marchand avec une clarté tot
    - Définir prix, stock, catégorie, options et mettre "En Vedette ⭐" pour le carrousel vitrine.
    - Studio Affiche Promo WhatsApp (générateur d'affiches flyers Story 9:16 / Post 1:1 en 1 clic).
 3. **/orders** (Commandes) :
-   - Suivre les commandes créées automatiquement par l'IA ou passées sur la boutique publique.
+   - Suivre les commandes créées automatiquement par Vendeur IA ou passées sur la boutique publique.
    - Imprimer / Partager le Bon de commande WhatsApp en 1 tap.
    - Assigner un livreur avec fiche de course WhatsApp automatique.
    - Filtrer par date et exporter en CSV comptable.
@@ -516,7 +516,7 @@ Pour offrir une expérience hors-norme, insère TOUJOURS des balises d'action pr
           category: "catalog",
           severity: "critical",
           title: `${productsWithoutPrices.length} produit(s) sans prix défini`,
-          description: "L'IA ne peut pas encaisser ni générer de liens de paiement pour ces articles.",
+          description: "Vendeur IA ne peut pas encaisser ni générer de liens de paiement pour ces articles.",
           impact: "-10 pts",
           actionType: "navigate",
           actionPayload: "/products",
@@ -533,7 +533,7 @@ Pour offrir une expérience hors-norme, insère TOUJOURS des balises d'action pr
           category: "catalog",
           severity: "tip",
           title: `${productsShortDesc.length} description(s) trop succinctes`,
-          description: "Des descriptions détaillées aident l'IA à répondre avec précision aux clients.",
+          description: "Des descriptions détaillées aident Vendeur IA à répondre avec précision aux clients.",
           impact: `-${penalty} pts sur le SEO & RAG`,
           actionType: "navigate",
           actionPayload: "/products",
@@ -586,7 +586,7 @@ Pour offrir une expérience hors-norme, insère TOUJOURS des balises d'action pr
         category: "delivery",
         severity: "warning",
         title: "Aucun tarif de livraison par zone",
-        description: "L'IA ne pourra pas calculer automatiquement le total avec frais de livraison.",
+        description: "Vendeur IA ne pourra pas calculer automatiquement le total avec frais de livraison.",
         impact: "-15 pts",
         actionType: "navigate",
         actionPayload: "/settings?tab=boutique&section=delivery",

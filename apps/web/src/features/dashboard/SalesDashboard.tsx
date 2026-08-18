@@ -307,7 +307,7 @@ function HomePanel({ dashboard, onOpenTestIA }: { dashboard: any, onOpenTestIA: 
         <section className="bg-vendeur-coal border border-white/5 rounded-[2.5rem] p-8 shadow-2xl">
           <div className="flex items-center gap-3 mb-6">
             <Sparkles className="text-amber-400" size={20} />
-            <h2 className="text-xl font-black uppercase tracking-tight">Conseils Rentables de votre IA</h2>
+            <h2 className="text-xl font-black uppercase tracking-tight">Conseils Rentables de votre Vendeur IA</h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {dashboard.merchant.knowledge.businessRules.dynamicInsights.slice(-4).reverse().map((insight: any, i: number) => (

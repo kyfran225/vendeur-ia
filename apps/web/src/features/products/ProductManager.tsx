@@ -576,7 +576,7 @@ export function ProductManager() {
                           {analyzing ? (
                             <>
                               <Loader2 size={28} className="animate-spin text-sky-400" />
-                              <span className="text-xs font-black uppercase text-sky-400 tracking-wider">Analyse de la photo par l'IA...</span>
+                              <span className="text-xs font-black uppercase text-sky-400 tracking-wider">Analyse de la photo par Vendeur IA...</span>
                             </>
                           ) : (
                             <>
@@ -618,7 +618,7 @@ export function ProductManager() {
                         className="w-4 h-4 rounded border-white/20 text-emerald-400 focus:ring-emerald-400 accent-emerald-400"
                       />
                       <Sparkles size={14} className="text-sky-400 shrink-0" />
-                      <span className="text-[10px] font-black uppercase tracking-wider">Pré-remplir automatiquement les infos avec l'IA</span>
+                      <span className="text-[10px] font-black uppercase tracking-wider">Pré-remplir automatiquement les infos avec Vendeur IA</span>
                     </label>
                   )}
                 </div>

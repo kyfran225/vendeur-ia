@@ -170,7 +170,7 @@ export function MarketingHub() {
     },
     onSuccess: (data) => {
       setPreviewText(data.preview);
-      toast.success("Nouveau texte généré par l'IA ! ✨");
+      toast.success("Nouveau texte généré par Vendeur IA ! ✨");
     },
     onError: (err: any) => {
       toast.error(err.response?.data?.error || "Impossible de générer le message");
@@ -439,7 +439,7 @@ export function MarketingHub() {
               ) : (
                 <div className="px-3.5 py-2.5 rounded-xl bg-white/[0.03] border border-white/5 flex items-center gap-2.5 text-xs text-white/60 leading-relaxed">
                   <MapPin size={14} className="shrink-0 text-sky-400" />
-                  <span>L'IA détectera automatiquement les villes de vos clients (ex: <em>Cocody, Yopougon, Marcory</em>) dès leurs commandes.</span>
+                  <span>Vendeur IA détectera automatiquement les villes de vos clients (ex: <em>Cocody, Yopougon, Marcory</em>) dès leurs commandes.</span>
                 </div>
               )}
             </div>
@@ -477,7 +477,7 @@ export function MarketingHub() {
                 </div>
               </div>
 
-              {/* Bouton Ré-écrire avec l'IA */}
+              {/* Bouton Ré-écrire avec Vendeur IA */}
               <button
                 type="button"
                 onClick={() => previewMutation.mutate(selectedTemplate)}
@@ -497,7 +497,7 @@ export function MarketingHub() {
                 ) : (
                   <>
                     <RefreshCw size={11} />
-                    <span>Ré-écrire avec l'IA</span>
+                    <span>Ré-écrire avec Vendeur IA</span>
                   </>
                 )}
               </button>
@@ -543,7 +543,7 @@ export function MarketingHub() {
                 </div>
               ) : previewMutation.isPending ? (
                 <div className="h-[140px] flex flex-col items-center justify-center border border-white/5 rounded-2xl bg-white/[0.02]">
-                   <VendeurIALoader size="md" label="L'IA rédige une offre sur-mesure..." />
+                   <VendeurIALoader size="md" label="Vendeur IA rédige une offre sur-mesure..." />
                 </div>
               ) : previewTab === "whatsapp" ? (
                 <WhatsAppPreview
@@ -598,7 +598,7 @@ export function MarketingHub() {
                      <Sparkles size={20} className="text-sky-400" />
                    </div>
                    <div className="text-center">
-                     <span className="text-xs font-black uppercase tracking-wider block">Générer le message avec l'IA</span>
+                     <span className="text-xs font-black uppercase tracking-wider block">Générer le message avec Vendeur IA</span>
                      <span className="text-[9px] text-white/40 font-normal">Cliquez pour créer le texte vendeur</span>
                    </div>
                 </button>

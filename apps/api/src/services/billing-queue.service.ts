@@ -73,7 +73,7 @@ export const billingWorker = new Worker(
         let waMessage = "";
         if (isGracePeriod) {
           waMessage = `🎁 *Délai de Grâce Activé - ${businessName}*\n\n` +
-            `Votre abonnement a expiré, mais nous avons maintenu votre IA active pour *24h supplémentaires* afin de ne pas interrompre vos ventes.\n\n` +
+            `Votre abonnement a expiré, mais nous avons maintenu votre Vendeur IA actif pour *24h supplémentaires* afin de ne pas interrompre vos ventes.\n\n` +
             `⚠️ Réactivez maintenant pour éviter la coupure demain :\n👉 ${renewalLink || env.CLIENT_URL + '/settings?tab=billing'}`;
         } else {
           waMessage = `⚠️ *Rappel Réabonnement - ${businessName}*\n\n` +
@@ -103,7 +103,7 @@ export const billingWorker = new Worker(
         await pushService.sendNotification(merchant.ownerId, {
           title: isGracePeriod ? "Délai de Grâce Offert ! 🎁" : "Réabonnement imminent ⏳",
           body: isGracePeriod
-            ? "Votre abonnement est fini, mais l'IA reste active encore 24h pour vous. Cliquez ici pour recharger."
+            ? "Votre abonnement est fini, mais Vendeur IA reste actif encore 24h pour vous. Cliquez ici pour recharger."
             : `Votre abonnement expire dans ${daysLeft} jour(s). Cliquez pour renouveler.`,
           data: { type: "billing", url: renewalLink || "/settings?tab=billing" }
         });
@@ -128,7 +128,7 @@ export const billingWorker = new Worker(
         );
 
         const waMessage = `🛑 *Service Suspendu - ${businessName}*\n\n` +
-          `Votre abonnement a expiré. Votre IA est désormais inactive.\n\n` +
+          `Votre abonnement a expiré. Votre Vendeur IA est désormais inactive.\n\n` +
           `Pour réactiver immédiatement votre service, cliquez ici :\n👉 ${env.CLIENT_URL}/settings?tab=billing`;
 
         try {
@@ -149,7 +149,7 @@ export const billingWorker = new Worker(
 
         await pushService.sendNotification(merchant.ownerId, {
           title: "Service Suspendu 🛑",
-          body: "Votre abonnement a expiré. Réactivez pour relancer votre IA.",
+          body: "Votre abonnement a expiré. Réactivez pour relancer votre Vendeur IA.",
           data: { type: "billing", action: "renew" }
         });
 

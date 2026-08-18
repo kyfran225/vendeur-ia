@@ -7,6 +7,9 @@ interface AuthUser {
   email: string;
   whatsappNumber?: string;
   displayName: string;
+  firstName?: string;
+  lastName?: string;
+  businessName?: string;
   avatarUrl?: string;
   roles: string[];
   onboardingCompleted?: boolean;

@@ -198,7 +198,7 @@ export function BatchReviewModal({ image, rawItems, boutiqueName, currency = "XO
                     Proposition IA pour cet article
                   </h3>
                   <p className="text-xs text-white/70">
-                    L'IA a généré ces données. Vous avez le contrôle total pour les modifier.
+                    Vendeur IA a généré ces données. Vous avez le contrôle total pour les modifier.
                   </p>
                 </div>
               </div>
@@ -288,7 +288,7 @@ export function BatchReviewModal({ image, rawItems, boutiqueName, currency = "XO
                 value={activeItem.description}
                 onChange={(e) => updateItem(activeItem.id, "description", e.target.value)}
                 className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-sm text-white/90 focus:border-emerald-500 focus:outline-none leading-relaxed"
-                placeholder="Description rédigée par l'IA..."
+                placeholder="Description rédigée par Vendeur IA..."
               />
             </div>
           </div>

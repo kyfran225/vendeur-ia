@@ -13,6 +13,23 @@ import { logger } from "./logger.service.js";
 import { emitToUser } from "../realtime/socketServer.js";
 
 export class PaymentService {
+  public static readonly RATES: Record<string, { rate: number; round: number; symbol: string }> = {
+    XOF: { rate: 1, round: 500, symbol: "CFA" },
+    XAF: { rate: 1, round: 500, symbol: "FCFA" },
+    GNF: { rate: 14, round: 5000, symbol: "FG" },
+    NGN: { rate: 2.5, round: 100, symbol: "₦" },
+    GHS: { rate: 0.025, round: 5, symbol: "GH₵" },
+    KES: { rate: 0.22, round: 50, symbol: "KSh" },
+    MAD: { rate: 0.016, round: 10, symbol: "DH" },
+    DZD: { rate: 0.22, round: 50, symbol: "DA" },
+    TND: { rate: 0.005, round: 1, symbol: "DT" },
+    CDF: { rate: 4.6, round: 500, symbol: "FC" },
+    MRU: { rate: 0.065, round: 10, symbol: "UM" },
+    EUR: { rate: 0.00152, round: 1, symbol: "€" },
+    USD: { rate: 0.00165, round: 1, symbol: "$" },
+    ZAR: { rate: 0.03, round: 5, symbol: "R" }
+  };
+
   /**
    * Generates a clean human-readable reference, e.g. VIA-2608-A7K9
    */
@@ -26,7 +43,7 @@ export class PaymentService {
   /**
    * Retrieves public/operational manual payment settings for the checkout screen
    */
-  async getPaymentConfig() {
+  async getPaymentConfig(countryCode?: string, amountXof?: number) {
     let settings = await SystemSettingsModel.findOne();
     if (!settings) {
       settings = await SystemSettingsModel.create({});
@@ -35,42 +52,126 @@ export class PaymentService {
     const cfg = (settings as any).manualPaymentConfig || {
       enabled: true,
       recipientName: "Vendeur IA",
-      waveNumber: "+2250700000000",
-      orangeMoneyNumber: "+2250700000000",
-      mtnNumber: "+2250500000000",
+      waveNumber: "+2250505111157",
+      orangeMoneyNumber: "+2250708292693",
+      mtnNumber: "+2250505111157",
       moovNumber: "+2250100000000",
       djamoTag: "$vendeuria",
       instructions: "Effectuez votre transfert vers le numéro correspondant avec votre référence en motif.",
+      regionalRoutes: [],
       autoApproveConfidenceThreshold: 95
     };
+
+    // Regional override logic
+    let regional = cfg.regionalRoutes?.find((r: any) => r.countryCode === (countryCode || "").toUpperCase());
+
+    // Regional smart routing based on 2024-2025 fintech corridors (UEMOA Interoperability)
+    const regionalData: Record<string, any> = {
+      BF: {
+        instructions: "Depuis le Burkina Faso, utilisez Orange Money (menu #144#7# ou App Max It) pour envoyer vers MTN CI (+2250505111157) ou Moov Money BF pour envoyer vers Moov CI. L'interopérabilité permet aussi d'envoyer de Orange vers MTN.",
+        methods: ["wave", "orange_money", "mtn_momo"],
+        currency: "XOF"
+      },
+      SN: {
+        instructions: "Depuis le Sénégal, utilisez Wave (bouton 'Transfert International') ou Orange Money (#144#7#) pour envoyer directement vers nos comptes Wave ou Orange en Côte d'Ivoire.",
+        methods: ["wave", "orange_money"],
+        currency: "XOF"
+      },
+      ML: {
+        instructions: "Depuis le Mali, utilisez Orange Money Mali (#144#7#) ou Wave Mali pour envoyer vers nos numéros Orange ou Wave en Côte d'Ivoire.",
+        methods: ["orange_money", "wave"],
+        currency: "XOF"
+      },
+      BJ: {
+        instructions: "Depuis le Bénin, utilisez MTN MoMo (*122# menu International) pour envoyer directement vers notre numéro MTN CI (+2250505111157).",
+        methods: ["mtn_momo", "moov"],
+        currency: "XOF"
+      },
+      TG: {
+        instructions: "Depuis le Togo, utilisez Moov Money (Flooz *155#) ou T-Money (*145#) pour envoyer vers nos numéros Moov ou MTN en Côte d'Ivoire via les transferts régionaux.",
+        methods: ["moov", "mtn_momo"],
+        currency: "XOF"
+      },
+      GH: {
+        instructions: "Depuis le Ghana, utilisez MTN MoMo (*170#), sélectionnez 'Transfer' puis 'International' pour envoyer vers notre MTN CI (+2250505111157). La conversion Cedi/CFA est automatique.",
+        methods: ["mtn_momo"],
+        currency: "GHS"
+      },
+      GN: {
+        instructions: "Depuis la Guinée, utilisez Orange Money Guinée (#144# menu International) pour envoyer vers notre numéro Orange Côte d'Ivoire (+2250708292693).",
+        methods: ["orange_money"],
+        currency: "GNF"
+      }
+    };
+
+    const countryKey = (countryCode || "").toUpperCase();
+    let regionalInfo = regionalData[countryKey];
+
+    // Fallback logic for UEMOA countries not explicitly listed
+    if (!regionalInfo && (countryKey === "NE" || countryKey === "GW")) {
+       regionalInfo = {
+         instructions: `Depuis ${countryKey}, utilisez les services de transfert régionaux UEMOA pour envoyer vers nos numéros en Côte d'Ivoire.`,
+         methods: ["orange_money", "mtn_momo"],
+         currency: "XOF"
+       };
+    }
+
+    const instructions = regionalInfo?.instructions || cfg.instructions;
+    const isLocal = !countryCode || countryCode.toUpperCase() === "CI";
+    const targetCurrency = regionalInfo?.currency || "XOF";
+
+    let localAmount = amountXof || 5000;
+    let currencySymbol = "CFA";
+
+    if (amountXof && targetCurrency !== "XOF") {
+      const conv = PaymentService.RATES[targetCurrency];
+      if (conv) {
+        localAmount = Math.ceil((amountXof * conv.rate) / conv.round) * conv.round;
+        currencySymbol = conv.symbol;
+      }
+    } else {
+        currencySymbol = PaymentService.RATES[targetCurrency]?.symbol || "CFA";
+    }
 
     return {
       manualPaymentsEnabled: cfg.enabled ?? true,
       recipientName: cfg.recipientName || "Vendeur IA Trésorerie",
+      targetCurrency,
+      currencySymbol,
+      localAmount,
       methods: [
         {
           id: "wave",
           name: "Wave Mobile Money",
-          number: cfg.waveNumber || "+2250700000000",
+          number: regional?.waveNumber || cfg.waveNumber || "+2250505111157",
           color: "#1dc5d8",
-          badge: "Instantané & 0% frais",
-          instructions: "Ouvrez l'app Wave, sélectionnez 'Transférer' et envoyez le montant exact au numéro ci-dessus."
+          badge: isLocal ? "Instantané & 0% frais" : "Wave International",
+          instructions: isLocal
+            ? "Ouvrez l'app Wave, sélectionnez 'Transférer' et envoyez le montant exact au numéro ci-dessus."
+            : instructions,
+          visible: !regionalInfo || regionalInfo.methods.includes("wave")
         },
         {
           id: "orange_money",
           name: "Orange Money (OM)",
-          number: cfg.orangeMoneyNumber || "+2250700000000",
+          number: regional?.orangeMoneyNumber || cfg.orangeMoneyNumber || "+2250708292693",
           color: "#ff7900",
-          badge: "Côte d'Ivoire & Sous-région",
-          instructions: "Composez #144# ou utilisez Orange Money Max pour envoyer le montant exact."
+          badge: isLocal ? "Côte d'Ivoire" : "OM Afrique / International",
+          instructions: isLocal
+            ? "Composez #144# ou utilisez Orange Money Max pour envoyer le montant exact."
+            : instructions,
+          visible: !regionalInfo || regionalInfo.methods.includes("orange_money")
         },
         {
           id: "mtn_momo",
           name: "MTN Mobile Money (MoMo)",
-          number: cfg.mtnNumber || "+2250500000000",
+          number: regional?.mtnNumber || cfg.mtnNumber || "+2250505111157",
           color: "#ffcc00",
-          badge: "MoMo CI",
-          instructions: "Composez *133# ou utilisez l'app MoMo pour transférer le montant exact."
+          badge: isLocal ? "MoMo CI" : "MoMo International",
+          instructions: isLocal
+            ? "Composez *133# ou utilisez l'app MoMo pour transférer le montant exact."
+            : instructions,
+          visible: !regionalInfo || regionalInfo.methods.includes("mtn_momo")
         },
         {
           id: "moov",
@@ -78,7 +179,10 @@ export class PaymentService {
           number: cfg.moovNumber || "+2250100000000",
           color: "#0066b2",
           badge: "Moov CI",
-          instructions: "Composez *155# ou utilisez l'app Moov Money pour effectuer le transfert."
+          instructions: isLocal
+            ? "Composez *155# ou utilisez l'app Moov Money pour effectuer le transfert."
+            : instructions,
+          visible: !regionalInfo || regionalInfo.methods.includes("moov")
         },
         {
           id: "djamo",
@@ -86,9 +190,19 @@ export class PaymentService {
           number: cfg.djamoTag || "$vendeuria",
           color: "#10b981",
           badge: "Tag Djamo",
-          instructions: "Ouvrez l'app Djamo, envoyez au Djamo Tag indiqué avec votre référence."
+          instructions: "Ouvrez l'app Djamo, envoyez au Djamo Tag indiqué avec votre référence.",
+          visible: isLocal
+        },
+        {
+          id: "google_play",
+          name: "Google Play / Carte",
+          number: "In-App Purchase",
+          color: "#4285F4",
+          badge: "International / Cartes",
+          instructions: "Utilisez le bouton 'Payer avec Google Play' pour régler par carte bancaire internationale en toute sécurité.",
+          visible: true
         }
-      ],
+      ].filter(m => m.visible),
       supportWhatsApp: settings.supportWhatsApp || "+2250700000000"
     };
   }
@@ -99,12 +213,13 @@ export class PaymentService {
   async createPaymentIntent(userId: string, data: {
     offerSlug: string;
     billingInterval?: "monthly" | "yearly";
-    paymentMethod?: "wave" | "orange_money" | "mtn_momo" | "moov" | "djamo" | "card" | "other";
+    paymentMethod?: "wave" | "orange_money" | "mtn_momo" | "moov" | "djamo" | "card" | "google_play" | "other";
     provider?: string;
     senderPhoneNumber?: string;
     senderName?: string;
+    country?: string;
   }) {
-    const { offerSlug, billingInterval = "monthly", paymentMethod = "wave", provider = "manual_mobile_money", senderPhoneNumber, senderName } = data;
+    const { offerSlug, billingInterval = "monthly", paymentMethod = "wave", provider = "manual_mobile_money", senderPhoneNumber, senderName, country } = data;
 
     // Find offer and compute exact price
     const offer = await OfferModel.findOne({ slug: offerSlug });
@@ -135,7 +250,7 @@ export class PaymentService {
     }
 
     const merchant = await CommerceMerchantModel.findOne({ ownerId: userId });
-    const paymentConfig = await this.getPaymentConfig();
+    const paymentConfig = await this.getPaymentConfig(country || merchant?.country, amount);
     const selectedMethodCfg = paymentConfig.methods.find(m => m.id === paymentMethod);
 
     const reference = this.generateReference();
@@ -150,7 +265,7 @@ export class PaymentService {
       amount,
       currency,
       reference,
-      provider: (provider as any) || "manual_mobile_money",
+      provider: paymentMethod === "google_play" ? "google_play" : ((provider as any) || "manual_mobile_money"),
       paymentMethod,
       senderPhoneNumber: senderPhoneNumber || merchant?.phone || merchant?.whatsappNumber || "",
       senderName: senderName || merchant?.businessName || "",
@@ -158,10 +273,11 @@ export class PaymentService {
       recipientName: paymentConfig.recipientName,
       status: "initiated",
       confidenceScore: 0,
-      expiresAt
+      expiresAt,
+      metadata: { country, localAmount: paymentConfig.localAmount, localCurrency: paymentConfig.targetCurrency }
     });
 
-    logger.info(`[PaymentService] Intent créé: ${reference} (${amount} ${currency}) pour user ${userId}`);
+    logger.info(`[PaymentService] Intent créé: ${reference} (${amount} ${currency}) pour user ${userId} [Method: ${paymentMethod}]`);
     return intent;
   }
 

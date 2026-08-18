@@ -136,7 +136,7 @@ function BentoFeatures() {
     },
     {
       title: "Marketing Prédictif",
-      desc: "Relancez les clients qui n'ont pas finalisé leur achat au moment parfait, sans spammer.",
+      desc: "Relances automatiques des clients qui n'ont pas finalisé leur achat au moment parfait, sans spammer.",
       icon: <Megaphone className="text-amber-400" size={24} />,
       size: "medium",
       color: "bg-amber-500/10 border-amber-500/20"
@@ -200,11 +200,11 @@ function BentoFeatures() {
                     </svg>
                   </div>
                   {/* Google Play */}
-                  <div className="h-8 px-2 rounded-lg bg-black border border-white/10 flex items-center justify-center shadow-xl group-hover:scale-110 transition-transform overflow-hidden">
+                  <div className="h-[34px] w-[116px] rounded-lg bg-black border border-white/10 flex items-center justify-center shadow-xl group-hover:scale-110 transition-transform overflow-hidden px-1">
                     <img
                       src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png"
                       alt="Google Play"
-                      className="h-12 w-auto object-contain max-w-none"
+                      className="h-[54px] w-auto object-contain max-w-none"
                     />
                   </div>
                 </div>
@@ -422,20 +422,35 @@ function LandingHero({
         </FadeIn>
 
         <FadeIn delay={0.6}>
-           <div className="flex items-center justify-center lg:justify-start gap-8 pt-4">
-              <div className="text-center lg:text-left">
-                <p className="text-2xl font-black text-white">98%</p>
-                <p className="text-[10px] uppercase font-black tracking-widest text-white/30">Taux de Satisfaction</p>
+           <div className="grid grid-cols-3 gap-2 md:gap-8 pt-6 max-w-lg mx-auto lg:mx-0">
+              <div className="flex flex-col sm:flex-row items-center sm:gap-3 bg-white/5 border border-white/10 px-2 py-3 sm:px-4 sm:py-2 rounded-2xl backdrop-blur-sm">
+                <div className="h-7 w-7 sm:h-8 sm:w-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-400 mb-2 sm:mb-0">
+                  <ShieldCheck size={16} className="sm:w-[18px] sm:h-[18px]" />
+                </div>
+                <div className="text-center sm:text-left">
+                  <p className="text-lg sm:text-xl font-black text-white leading-none">98%</p>
+                  <p className="text-[7px] sm:text-[9px] uppercase font-black tracking-widest text-white/30 mt-1">Satisfait</p>
+                </div>
               </div>
-              <div className="h-8 w-px bg-white/10" />
-              <div className="text-center lg:text-left">
-                <p className="text-2xl font-black text-white">3s</p>
-                <p className="text-[10px] uppercase font-black tracking-widest text-white/30">Temps de Réponse</p>
+
+              <div className="flex flex-col sm:flex-row items-center sm:gap-3 bg-white/5 border border-white/10 px-2 py-3 sm:px-4 sm:py-2 rounded-2xl backdrop-blur-sm">
+                <div className="h-7 w-7 sm:h-8 sm:w-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-400 mb-2 sm:mb-0">
+                  <Zap size={16} className="sm:w-[18px] sm:h-[18px]" />
+                </div>
+                <div className="text-center sm:text-left">
+                  <p className="text-lg sm:text-xl font-black text-white leading-none">3s</p>
+                  <p className="text-[7px] sm:text-[9px] uppercase font-black tracking-widest text-white/30 mt-1">Réponse</p>
+                </div>
               </div>
-              <div className="h-8 w-px bg-white/10" />
-              <div className="text-center lg:text-left">
-                <p className="text-2xl font-black text-white">24h/7</p>
-                <p className="text-[10px] uppercase font-black tracking-widest text-white/30">Disponibilité Vendeur IA</p>
+
+              <div className="flex flex-col sm:flex-row items-center sm:gap-3 bg-white/5 border border-white/10 px-2 py-3 sm:px-4 sm:py-2 rounded-2xl backdrop-blur-sm">
+                <div className="h-7 w-7 sm:h-8 sm:w-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-400 mb-2 sm:mb-0">
+                  <Sparkles size={16} className="sm:w-[18px] sm:h-[18px]" />
+                </div>
+                <div className="text-center sm:text-left">
+                  <p className="text-lg sm:text-xl font-black text-white leading-none">24/7</p>
+                  <p className="text-[7px] sm:text-[9px] uppercase font-black tracking-widest text-white/30 mt-1">Actif</p>
+                </div>
               </div>
            </div>
         </FadeIn>
@@ -666,20 +681,31 @@ export function LandingPage() {
         />
 
         {/* LOGOS / TRUST BAR */}
-        <div className="py-20 flex flex-col items-center justify-center gap-8 opacity-40">
-           <p className="text-[10px] font-black uppercase tracking-[0.4em] text-white/50">Compatible avec les meilleurs canaux</p>
-           <div className="flex flex-wrap items-center justify-center gap-8 md:gap-16 px-6 grayscale">
-              <div className="flex items-center gap-3 text-white">
-                <WhatsAppIcon size={24} />
-                <span className="text-xl font-bold tracking-tighter">WhatsApp</span>
+        <div className="py-24 flex flex-col items-center justify-center gap-10">
+           <div className="flex items-center gap-4 w-full max-w-lg px-6">
+              <div className="h-px flex-1 bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+              <p className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.3em] text-white/30 whitespace-nowrap">Compatible avec les meilleurs canaux</p>
+              <div className="h-px flex-1 bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+           </div>
+
+           <div className="flex items-center justify-center gap-6 md:gap-20 px-4 opacity-40 hover:opacity-100 transition-opacity duration-500 grayscale hover:grayscale-0">
+              <div className="flex flex-col md:flex-row items-center gap-2 md:gap-3 text-white group cursor-default">
+                <div className="p-1.5 md:p-2 rounded-lg md:rounded-xl bg-white/5 border border-white/10 group-hover:border-emerald-500/50 group-hover:bg-emerald-500/10 transition-all">
+                  <WhatsAppIcon size={20} className="md:w-6 md:h-6" />
+                </div>
+                <span className="text-[10px] md:text-xl font-black tracking-tighter uppercase">WhatsApp</span>
               </div>
-              <div className="flex items-center gap-3 text-white">
-                <Globe size={24} />
-                <span className="text-xl font-bold tracking-tighter">Instagram</span>
+              <div className="flex flex-col md:flex-row items-center gap-2 md:gap-3 text-white group cursor-default">
+                <div className="p-1.5 md:p-2 rounded-lg md:rounded-xl bg-white/5 border border-white/10 group-hover:border-pink-500/50 group-hover:bg-pink-500/10 transition-all">
+                  <Globe size={20} className="md:w-6 md:h-6" />
+                </div>
+                <span className="text-[10px] md:text-xl font-black tracking-tighter uppercase">Instagram</span>
               </div>
-              <div className="flex items-center gap-3 text-white">
-                <Zap size={24} />
-                <span className="text-xl font-bold tracking-tighter">Meta Ads</span>
+              <div className="flex flex-col md:flex-row items-center gap-2 md:gap-3 text-white group cursor-default">
+                <div className="p-1.5 md:p-2 rounded-lg md:rounded-xl bg-white/5 border border-white/10 group-hover:border-blue-500/50 group-hover:bg-blue-500/10 transition-all">
+                  <Zap size={20} className="md:w-6 md:h-6" />
+                </div>
+                <span className="text-[10px] md:text-xl font-black tracking-tighter uppercase">Meta Ads</span>
               </div>
            </div>
         </div>
@@ -688,22 +714,22 @@ export function LandingPage() {
         <BentoFeatures />
 
         {/* CTA FINAL SECTION */}
-        <section className="py-32 px-6">
-           <div className="max-w-4xl mx-auto rounded-[3rem] bg-gradient-to-br from-emerald-500/20 to-emerald-900/10 border border-emerald-500/20 p-10 md:p-20 text-center relative overflow-hidden">
-              <div className="absolute top-0 left-0 w-full h-full bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 pointer-events-none" />
+        <section className="py-24 md:py-32 px-4 md:px-6">
+           <div className="max-w-4xl mx-auto rounded-[2.5rem] md:rounded-[3rem] bg-gradient-to-br from-emerald-500/20 via-emerald-900/10 to-transparent border border-emerald-500/20 p-8 md:p-20 text-center relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-full h-full opacity-20 pointer-events-none bg-[radial-gradient(#ffffff10_1px,transparent_1px)] [background-size:16px_16px]" />
 
               <FadeIn>
-                <h2 className="text-4xl md:text-6xl font-black text-white uppercase tracking-tighter mb-6">
+                <h2 className="text-4xl md:text-6xl font-black text-white uppercase tracking-tighter mb-6 leading-[0.95]">
                   Prêt à <span className="text-emerald-400">multiplier</span> vos ventes ?
                 </h2>
-                <p className="text-white/60 text-lg mb-10 max-w-xl mx-auto font-medium">
+                <p className="text-white/60 text-base md:text-lg mb-10 max-w-xl mx-auto font-medium">
                   Rejoignez des centaines de commerçants qui ont déjà automatisé leur croissance avec Vendeur IA.
                 </p>
                 <button
                   onClick={() => setIsAuthOpen(true)}
-                  className="h-16 px-12 rounded-2xl bg-vendeur-emerald text-vendeur-coal font-black uppercase tracking-widest text-sm hover:scale-110 active:scale-95 transition-all shadow-[0_20px_50px_rgba(16,185,129,0.3)]"
+                  className="w-full sm:w-auto h-16 px-10 rounded-2xl bg-vendeur-emerald text-vendeur-coal font-black uppercase tracking-widest text-xs sm:text-sm hover:scale-105 active:scale-95 transition-all shadow-[0_20px_60px_rgba(16,185,129,0.4)] border-t border-white/30 flex items-center justify-center gap-3 mx-auto"
                 >
-                  Configurer mon Vendeur IA <Sparkles size={18} className="ml-2 inline" />
+                  Configurer mon Vendeur IA <Sparkles size={18} />
                 </button>
               </FadeIn>
            </div>

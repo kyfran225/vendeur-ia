@@ -179,13 +179,11 @@ function BentoFeatures() {
               {f.isPayment && (
                 <div className="flex flex-wrap items-center gap-3 mt-6">
                   {/* Wave */}
-                  <div className="h-8 w-8 rounded-lg bg-[#1fb3e5] overflow-hidden shadow-xl group-hover:scale-110 transition-transform flex items-center justify-center">
-                    <img
-                      src="https://www.wave.com/img/favicon.png"
-                      alt="Wave"
-                      className="h-full w-full object-contain p-1.5"
-                    />
-                  </div>
+                  <img
+                    src="https://www.wave.com/img/favicon.png"
+                    alt="Wave"
+                    className="h-8 w-8 rounded-lg shadow-xl group-hover:scale-110 transition-transform bg-[#1fb3e5] object-contain p-1.5"
+                  />
                   {/* Orange */}
                   <div className="h-8 w-8 rounded-lg bg-[#FF7900] overflow-hidden shadow-xl group-hover:scale-110 transition-transform flex items-center justify-center">
                     <img

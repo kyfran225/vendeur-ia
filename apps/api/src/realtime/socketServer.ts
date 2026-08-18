@@ -20,6 +20,12 @@ export function initSocketServer(httpServer: HttpServer) {
       console.log(`[Socket] Merchant ${userId} joined their room`);
     });
 
+    socket.on("join_auth", (phoneNumber: string) => {
+      const clean = phoneNumber.replace(/[\s\-\+\(\)]/g, "");
+      socket.join(`auth:${clean}`);
+      console.log(`[Socket] Anonymous guest joined auth room for ${clean}`);
+    });
+
     socket.on("join_session", (sessionId: string) => {
       socket.join(`session:${sessionId}`);
       onlineSessions.add(sessionId);

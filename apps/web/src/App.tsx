@@ -19,6 +19,7 @@ import { PaymentCallback } from "./features/dashboard/PaymentCallback";
 import { PrivacyPolicyPage } from "./features/legal/PrivacyPolicyPage";
 import { DataDeletionPage } from "./features/legal/DataDeletionPage";
 import { TermsOfServicePage } from "./features/legal/TermsOfServicePage";
+import { MagicLoginPage } from "./features/auth/MagicLoginPage";
 import { AppLayout } from "./components/layout/AppLayout";
 import { useAuthStore } from "./stores/authStore";
 import { useOnboardingStore } from "./stores/onboardingStore";
@@ -49,52 +50,59 @@ function App() {
     );
   }
 
+  const content = (
+    <BrowserRouter>
+      <WifiOff />
+      <Routes>
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/auth/magic-login" element={<MagicLoginPage />} />
+
+        <Route path="/onboarding" element={
+          user ? (
+            !!user.onboardingCompleted ? <Navigate to="/dashboard" /> : <OnboardingWizard />
+          ) : (
+            <Navigate to="/" />
+          )
+        } />
+
+        <Route path="/offers" element={<OffersPage />} />
+        <Route path="/checkout" element={<CheckoutPage />} />
+        <Route path="/activation" element={<ActivationPage />} />
+        <Route path="/payment/callback" element={<PaymentCallback />} />
+
+        <Route element={
+          user ? (
+            !!user.onboardingCompleted ? <AppLayout /> : <Navigate to="/onboarding" />
+          ) : (
+            <Navigate to="/" />
+          )
+        }>
+          <Route path="/dashboard" element={<SalesDashboard />} />
+          <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/products" element={<ProductManager />} />
+          <Route path="/orders" element={<OrderManager />} />
+          <Route path="/inbox" element={<SalesInbox />} />
+          <Route path="/marketing" element={<MarketingHub />} />
+          <Route path="/settings" element={<SettingsPage />} />
+        </Route>
+
+        <Route path="/privacy" element={<PrivacyPolicyPage />} />
+        <Route path="/data-deletion" element={<DataDeletionPage />} />
+        <Route path="/terms" element={<TermsOfServicePage />} />
+
+        <Route path="/shop/:merchantId" element={<PublicShopPage />} />
+      </Routes>
+      <Toaster theme="dark" position="top-center" />
+    </BrowserRouter>
+  );
+
   return (
     <ErrorBoundary>
-      <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
-        <BrowserRouter>
-          <WifiOff />
-          <Routes>
-            <Route path="/" element={<LandingPage />} />
-
-            <Route path="/onboarding" element={
-              user ? (
-                !!user.onboardingCompleted ? <Navigate to="/dashboard" /> : <OnboardingWizard />
-              ) : (
-                <Navigate to="/" />
-              )
-            } />
-
-            <Route path="/offers" element={<OffersPage />} />
-            <Route path="/checkout" element={<CheckoutPage />} />
-            <Route path="/activation" element={<ActivationPage />} />
-            <Route path="/payment/callback" element={<PaymentCallback />} />
-
-            <Route element={
-              user ? (
-                !!user.onboardingCompleted ? <AppLayout /> : <Navigate to="/onboarding" />
-              ) : (
-                <Navigate to="/" />
-              )
-            }>
-              <Route path="/dashboard" element={<SalesDashboard />} />
-              <Route path="/admin" element={<AdminDashboard />} />
-              <Route path="/products" element={<ProductManager />} />
-              <Route path="/orders" element={<OrderManager />} />
-              <Route path="/inbox" element={<SalesInbox />} />
-              <Route path="/marketing" element={<MarketingHub />} />
-              <Route path="/settings" element={<SettingsPage />} />
-            </Route>
-
-            <Route path="/privacy" element={<PrivacyPolicyPage />} />
-            <Route path="/data-deletion" element={<DataDeletionPage />} />
-            <Route path="/terms" element={<TermsOfServicePage />} />
-
-            <Route path="/shop/:merchantId" element={<PublicShopPage />} />
-          </Routes>
-          <Toaster theme="dark" position="top-center" />
-        </BrowserRouter>
-      </GoogleOAuthProvider>
+      {GOOGLE_CLIENT_ID ? (
+        <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
+          {content}
+        </GoogleOAuthProvider>
+      ) : content}
     </ErrorBoundary>
   );
 }

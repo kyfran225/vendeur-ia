@@ -7,6 +7,9 @@ const userSchema = new Schema({
   passwordHash: { type: String },
   googleId: { type: String, sparse: true, unique: true, index: true },
   displayName: { type: String, required: true },
+  firstName: { type: String },
+  lastName: { type: String },
+  businessName: { type: String },
   avatarUrl: { type: String },
   roles: [{ type: String, enum: ["user", "admin", "creator"], default: ["user"] }],
   refreshTokenHash: { type: String },
@@ -17,6 +20,8 @@ const userSchema = new Schema({
   passwordResetExpiresAt: { type: Date },
   otpCodeHash: { type: String },
   otpExpiresAt: { type: Date },
+  magicTokenHash: { type: String, index: true },
+  magicTokenExpiresAt: { type: Date },
   onboardingCompleted: { type: Boolean, default: false },
   lastSeenAt: { type: Date, default: Date.now }
 }, {

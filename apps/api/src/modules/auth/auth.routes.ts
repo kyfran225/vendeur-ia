@@ -68,10 +68,40 @@ router.post("/whatsapp-quick-access", async (req, res) => {
     if (!phoneNumber) {
       return res.status(400).json({ error: "Le numéro WhatsApp est obligatoire." });
     }
+    // WARNING: This is insecure as it allows access without verification.
+    // We should migrate to magic links.
     const tokens = await authService.loginOrRegisterWithWhatsApp(phoneNumber, displayName);
     res.json(tokens);
   } catch (error: any) {
     res.status(400).json({ error: error.message });
+  }
+});
+
+// WhatsApp Request Magic Link (Zéro Friction)
+router.post("/whatsapp-magic-link", async (req, res) => {
+  try {
+    const { phoneNumber, clientUrl } = req.body;
+    if (!phoneNumber) {
+      return res.status(400).json({ error: "Le numéro WhatsApp est obligatoire." });
+    }
+    const result = await authService.requestWhatsAppMagicLink(phoneNumber, clientUrl || "https://app.vendeur-ia.com");
+    res.json(result);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+// WhatsApp Verify Magic Link
+router.post("/verify-magic-link", async (req, res) => {
+  try {
+    const { phoneNumber, token } = req.body;
+    if (!phoneNumber || !token) {
+      return res.status(400).json({ error: "Le numéro et le token sont requis." });
+    }
+    const tokens = await authService.verifyMagicLink(phoneNumber, token);
+    res.json(tokens);
+  } catch (error: any) {
+    res.status(401).json({ error: error.message });
   }
 });
 

@@ -491,7 +491,7 @@ export function CopilotWidget() {
               "fixed z-[70] transition-all duration-300 ease-out flex flex-col bg-vendeur-coal/98 backdrop-blur-2xl border border-white/10 shadow-2xl overflow-hidden",
               isMinimized
                 ? "bottom-20 right-4 sm:bottom-6 sm:right-6 w-[calc(100%-2rem)] sm:w-96 h-14 sm:h-16 rounded-2xl sm:rounded-3xl"
-                : "bottom-0 left-0 right-0 sm:left-auto sm:bottom-6 sm:right-6 w-full sm:w-[450px] md:w-[480px] h-[88vh] sm:h-[680px] sm:max-h-[88vh] rounded-t-3xl sm:rounded-3xl border-b-0 sm:border-b"
+                : "bottom-0 left-0 right-0 sm:left-auto sm:bottom-6 sm:right-6 w-full sm:w-[450px] md:w-[480px] h-full sm:h-[680px] sm:max-h-[88vh] rounded-none sm:rounded-3xl border-b-0 sm:border-b"
             )}
           >
             {/* Mobile Sheet Handle */}

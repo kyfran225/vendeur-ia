@@ -266,7 +266,7 @@ export function SettingsPage() {
           <Settings className="text-vendeur-emerald shrink-0" size={32} />
           <span className="truncate">Centre de Contrôle</span>
         </h1>
-        <p className="text-white/40 text-xs sm:text-sm md:text-lg">Pilotez votre machine de vente et configurez votre IA.</p>
+        <p className="text-white/40 text-xs sm:text-sm md:text-lg">Pilotez votre machine de vente et configurez votre Vendeur IA.</p>
       </header>
 
       {/* Sticky Navigation Tabs Bar (Responsive: Drawer on Mobile, Tabs on Desktop) */}
@@ -546,7 +546,7 @@ function BoutiqueTab({ merchant, initialKnowledge, accessToken }: { merchant: an
               <Store size={22} className="text-vendeur-emerald shrink-0" />
               <span className="whitespace-nowrap">Profil de la Boutique</span>
             </h2>
-            <p className="text-[10px] md:text-xs text-white/40 font-medium">L'IA utilise ces infos pour présenter votre business.</p>
+            <p className="text-[10px] md:text-xs text-white/40 font-medium">Vendeur IA utilise ces infos pour présenter votre business.</p>
           </div>
         </div>
 
@@ -674,7 +674,7 @@ function BoutiqueTab({ merchant, initialKnowledge, accessToken }: { merchant: an
                 </div>
 
                 <p className="text-[10px] text-white/30 font-medium">
-                  Tous les libellés de la vitrine et de l'IA WhatsApp seront instantanément mis à jour.
+                  Tous les libellés de la vitrine et de Vendeur IA WhatsApp seront instantanément mis à jour.
                 </p>
 
                 <div className="grid grid-cols-2 gap-3 pt-2">
@@ -783,7 +783,7 @@ function BoutiqueTab({ merchant, initialKnowledge, accessToken }: { merchant: an
                 </div>
 
                 <p className="text-[10px] text-white/30 font-medium">
-                  Vos produits existants ne seront pas supprimés. Seule l'interface et le comportement de l'IA seront mis à jour après sauvegarde.
+                  Vos produits existants ne seront pas supprimés. Seule l'interface et le comportement de Vendeur IA seront mis à jour après sauvegarde.
                 </p>
 
                 <div className="grid grid-cols-2 gap-3 pt-2">
@@ -1174,8 +1174,8 @@ function SavoirTab({ initialKnowledge }: { initialKnowledge: any }) {
                 <HelpCircle size={24} className="md:w-7 md:h-7" />
               </div>
               <div>
-                <h2 className="text-xl md:text-2xl font-black uppercase text-white leading-tight whitespace-nowrap">Mémoire de l'IA (FAQ)</h2>
-                <p className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] text-white/30">Donnez des réponses précises à votre IA.</p>
+                <h2 className="text-xl md:text-2xl font-black uppercase text-white leading-tight whitespace-nowrap">Mémoire de Vendeur IA (FAQ)</h2>
+                <p className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] text-white/30">Donnez des réponses précises à votre Vendeur IA.</p>
               </div>
             </div>
             <button
@@ -1205,7 +1205,7 @@ function SavoirTab({ initialKnowledge }: { initialKnowledge: any }) {
                     />
                  </div>
                  <div className="space-y-2">
-                    <label className="text-[9px] font-black uppercase text-white/20 ml-1">Réponse de l'IA</label>
+                    <label className="text-[9px] font-black uppercase text-white/20 ml-1">Réponse de Vendeur IA</label>
                     <textarea
                       className="w-full bg-vendeur-coal border border-white/5 rounded-xl px-4 py-4 text-sm text-white/70 focus:border-vendeur-emerald outline-none min-h-[100px] transition-all resize-none"
                       placeholder="Oui, nous livrons partout à Bassam..."
@@ -1254,7 +1254,7 @@ function PersonnaliteTab({ merchant }: { merchant: any }) {
       await apiClient.patch("/api/commerce/ai-settings", aiSettings);
     },
     onSuccess: () => {
-      toast.success("Style de l'IA mis à jour ! ✨");
+      toast.success("Style de Vendeur IA mis à jour ! ✨");
       queryClient.invalidateQueries({ queryKey: ["dashboard"] });
     }
   });
@@ -1268,7 +1268,7 @@ function PersonnaliteTab({ merchant }: { merchant: any }) {
                  <Sparkles size={22} className="text-amber-400 shrink-0" />
                  <span className="whitespace-nowrap">Style de Communication</span>
                </h2>
-               <p className="text-[10px] md:text-xs text-white/40">Définissez le caractère de votre IA.</p>
+               <p className="text-[10px] md:text-xs text-white/40">Définissez le caractère de votre Vendeur IA.</p>
             </div>
             <button
                onClick={() => updateMutation.mutate()}
@@ -1326,7 +1326,7 @@ function PersonnaliteTab({ merchant }: { merchant: any }) {
                   </div>
                   <div>
                     <h4 className="font-black text-white">Mode Note Vocale</h4>
-                    <p className="text-xs text-white/40 mt-1">L'IA répondra par audio.</p>
+                    <p className="text-xs text-white/40 mt-1">Vendeur IA répondra par audio.</p>
                   </div>
                </div>
 
@@ -1432,7 +1432,7 @@ function ConnexionsTab({ merchant, systemSettings, qrCode, isConnectingSocket, o
            </div>
            <div>
               <h2 className="text-xl md:text-2xl font-black text-white uppercase tracking-tighter leading-tight whitespace-nowrap">Canaux Connectés</h2>
-              <p className="text-xs md:text-sm text-white/40">Gérez les plateformes où votre IA est active.</p>
+              <p className="text-xs md:text-sm text-white/40">Gérez les plateformes où votre Vendeur IA est active.</p>
            </div>
         </div>
 

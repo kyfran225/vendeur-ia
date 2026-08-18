@@ -301,7 +301,7 @@ export function WhatsAppConnectionFlow({ qrCode, isConnectingSocket, onInitBaile
                 <div className="inline-block px-3 py-1 sm:px-4 sm:py-1.5 rounded-full bg-vendeur-emerald/10 border border-vendeur-emerald/20 text-vendeur-emerald text-[9px] sm:text-[10px] font-black uppercase tracking-widest mb-1 sm:mb-2">
                   Pack Pro Clé en Main Activé
                 </div>
-                <h3 className="text-xl sm:text-2xl md:text-3xl font-black uppercase tracking-tighter text-white">Votre IA est en cours de déploiement !</h3>
+                <h3 className="text-xl sm:text-2xl md:text-3xl font-black uppercase tracking-tighter text-white">Votre Vendeur IA est prêt !</h3>
                 <p className="text-xs md:text-sm text-white/60 font-medium leading-relaxed">
                   Vous avez choisi la formule <strong className="text-white">Clé en Main</strong>. Notre équipe technique s'occupe de la configuration complète de votre Vendeur IA et de votre catalogue.
                 </p>
@@ -314,7 +314,7 @@ export function WhatsAppConnectionFlow({ qrCode, isConnectingSocket, onInitBaile
                 <ul className="space-y-2 text-xs font-bold text-white/70">
                   <li className="flex items-center gap-3">✓ Configuration du serveur WhatsApp Pro</li>
                   <li className="flex items-center gap-3">✓ Importation de vos produits & grille tarifaire</li>
-                  <li className="flex items-center gap-3">✓ Entraînement de l'IA aux réponses de votre boutique</li>
+                  <li className="flex items-center gap-3">✓ Entraînement de Vendeur IA aux réponses de votre boutique</li>
                   <li className="flex items-center gap-3">✓ Session d'accompagnement direct (30 min)</li>
                 </ul>
               </div>
@@ -726,7 +726,7 @@ export function WhatsAppConnectionFlow({ qrCode, isConnectingSocket, onInitBaile
             score={dashboard?.setupStatus?.score || 60}
             primaryAction={nextActionConfig}
             secondaryAction={{
-              label: "Personnaliser le ton de l'IA",
+              label: "Personnaliser le ton de Vendeur IA",
               href: "/settings?tab=personnalite"
             }}
             dashboardActionLabel="Retour au Tableau de Bord"

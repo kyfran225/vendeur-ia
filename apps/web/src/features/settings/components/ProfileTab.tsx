@@ -37,6 +37,9 @@ export function ProfileTab({ merchant }: { merchant?: any }) {
 
   // Profile Form State
   const [displayName, setDisplayName] = useState(user?.displayName || "");
+  const [firstName, setFirstName] = useState(user?.firstName || "");
+  const [lastName, setLastName] = useState(user?.lastName || "");
+  const [businessName, setBusinessName] = useState(user?.businessName || merchant?.businessName || "");
   const [avatarUrl, setAvatarUrl] = useState(user?.avatarUrl || "");
   const [showCustomUrlInput, setShowCustomUrlInput] = useState(false);
   const [customUrl, setCustomUrl] = useState("");
@@ -224,6 +227,9 @@ export function ProfileTab({ merchant }: { merchant?: any }) {
     try {
       const res = await apiClient.patch("/api/auth/me", {
         displayName: displayName.trim(),
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        businessName: businessName.trim(),
         avatarUrl
       });
       updateUser(res.data);
@@ -481,7 +487,7 @@ export function ProfileTab({ merchant }: { merchant?: any }) {
             {/* Display Name Input */}
             <div className="space-y-1.5">
               <label className="text-[10px] sm:text-[11px] font-black uppercase tracking-widest text-white/50 ml-1">
-                Nom d'affichage
+                Nom d'affichage (Public)
               </label>
               <div className="relative">
                 <UserIcon className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30 shrink-0" size={18} />
@@ -510,6 +516,52 @@ export function ProfileTab({ merchant }: { merchant?: any }) {
                   className="w-full h-12 sm:h-14 rounded-xl sm:rounded-2xl bg-black/20 border border-white/5 pl-11 sm:pl-12 pr-4 text-white/40 outline-none cursor-not-allowed font-medium text-xs sm:text-sm"
                 />
               </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+            {/* FirstName */}
+            <div className="space-y-1.5">
+              <label className="text-[10px] sm:text-[11px] font-black uppercase tracking-widest text-white/50 ml-1">
+                Prénom
+              </label>
+              <input
+                type="text"
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                placeholder="Votre prénom"
+                className="w-full h-12 sm:h-14 rounded-xl sm:rounded-2xl bg-black/40 border border-white/10 px-5 text-white focus:border-vendeur-emerald outline-none transition-all shadow-inner font-medium text-xs sm:text-sm"
+              />
+            </div>
+            {/* LastName */}
+            <div className="space-y-1.5">
+              <label className="text-[10px] sm:text-[11px] font-black uppercase tracking-widest text-white/50 ml-1">
+                Nom
+              </label>
+              <input
+                type="text"
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+                placeholder="Votre nom"
+                className="w-full h-12 sm:h-14 rounded-xl sm:rounded-2xl bg-black/40 border border-white/10 px-5 text-white focus:border-vendeur-emerald outline-none transition-all shadow-inner font-medium text-xs sm:text-sm"
+              />
+            </div>
+          </div>
+
+          {/* Business Name */}
+          <div className="space-y-1.5">
+            <label className="text-[10px] sm:text-[11px] font-black uppercase tracking-widest text-white/50 ml-1">
+              Nom de la Boutique (Marchand)
+            </label>
+            <div className="relative">
+              <Store className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30 shrink-0" size={18} />
+              <input
+                type="text"
+                value={businessName}
+                onChange={(e) => setBusinessName(e.target.value)}
+                placeholder="Ex: Ma Boutique"
+                className="w-full h-12 sm:h-14 rounded-xl sm:rounded-2xl bg-black/40 border border-white/10 pl-11 sm:pl-12 pr-4 text-white focus:border-vendeur-emerald outline-none transition-all shadow-inner font-medium text-xs sm:text-sm"
+              />
             </div>
           </div>
 

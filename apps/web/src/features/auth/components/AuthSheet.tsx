@@ -8,6 +8,7 @@ import { useGoogleLogin } from "@react-oauth/google";
 import { toast } from "sonner";
 import { apiClient } from "@/lib/apiClient";
 import { useNavigate } from "react-router-dom";
+import { io } from "socket.io-client";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
@@ -25,8 +26,71 @@ const GoogleIcon = () => (
   </svg>
 );
 
+const GoogleLoginButton = ({
+  onSuccess,
+  onLoading,
+  disabled
+}: {
+  onSuccess: (session: any) => void;
+  onLoading: (loading: boolean) => void;
+  disabled: boolean;
+}) => {
+  const navigate = useNavigate();
+  const { setSession } = useAuthStore();
+  const [internalLoading, setInternalLoading] = useState(false);
+
+  const loginWithGoogle = useGoogleLogin({
+    onSuccess: async (tokenResponse) => {
+      onLoading(true);
+      setInternalLoading(true);
+      try {
+        const res = await apiClient.post("/api/auth/google", {
+          token: tokenResponse.access_token,
+        });
+        setSession(res.data);
+        const user = res.data.user;
+        toast.success(`Bienvenue ${user?.displayName || ''} ! ✨`);
+        onSuccess(res.data);
+
+        if (user?.onboardingCompleted) {
+          navigate("/dashboard");
+        } else {
+          navigate("/onboarding");
+        }
+      } catch (err: any) {
+        console.error("Google Auth Error:", err);
+        toast.error(err.response?.data?.error || "Erreur d'authentification Google");
+      } finally {
+        onLoading(false);
+        setInternalLoading(false);
+      }
+    },
+    onError: (error) => {
+      console.error("Google Login Failed:", error);
+      toast.error("Échec de la connexion Google");
+      onLoading(false);
+      setInternalLoading(false);
+    },
+  });
+
+  return (
+    <button
+      type="button"
+      disabled={disabled || internalLoading}
+      onClick={() => loginWithGoogle()}
+      className="w-full h-11 bg-white/5 border border-white/10 hover:bg-white/10 text-white rounded-xl flex items-center justify-center gap-3 transition-all active:scale-95 disabled:opacity-50 font-bold text-sm"
+    >
+      {internalLoading ? <Loader2 className="animate-spin" size={18} /> : <GoogleIcon />}
+      <span>Continuer avec Google</span>
+    </button>
+  );
+};
+
 export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const [authMethod, setAuthMethod] = useState<"whatsapp" | "email">("whatsapp");
+  const [whatsappStep, setWhatsappStep] = useState<"input" | "waiting">("input");
+  const [otpValue, setOtpValue] = useState("");
+  const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
   const [mode, setMode] = useState<"login" | "register" | "forgot">("login");
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
@@ -39,6 +103,32 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
   const [localPhone, setLocalPhone] = useState("");
   const [whatsappName, setWhatsappName] = useState("");
 
+  const GOOGLE_CLIENT_ID = (import.meta as any).env.VITE_GOOGLE_CLIENT_ID;
+
+  useEffect(() => {
+    if (whatsappStep === "waiting" && localPhone) {
+      const fullPhoneNumber = `${selectedCountry.dialCode}${localPhone}`.replace(/\D/g, "");
+      const socket = io(import.meta.env.VITE_API_URL || window.location.origin.replace("5173", "3001"));
+
+      socket.emit("join_auth", fullPhoneNumber);
+
+      socket.on("auth:success", (sessionData) => {
+        setSession(sessionData);
+        toast.success(`Authentification réussie ! ✨`);
+        onClose();
+        if (sessionData.user?.onboardingCompleted) {
+          navigate("/dashboard");
+        } else {
+          navigate("/onboarding");
+        }
+      });
+
+      return () => {
+        socket.disconnect();
+      };
+    }
+  }, [whatsappStep, localPhone, selectedCountry, setSession, onClose, navigate]);
+
   // Email form
   const [form, setForm] = useState({
     email: "",
@@ -46,52 +136,7 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
     displayName: ""
   });
 
-  const GOOGLE_CLIENT_ID = (import.meta as any).env.VITE_GOOGLE_CLIENT_ID;
-
-  const loginWithGoogle = useGoogleLogin({
-    onSuccess: async (tokenResponse) => {
-      setGoogleLoading(true);
-      try {
-        const res = await apiClient.post("/api/auth/google", {
-          token: tokenResponse.access_token,
-        });
-        setSession(res.data);
-        const user = res.data.user;
-        toast.success(`Bienvenue ${user?.displayName || ''} ! ✨`);
-        onClose();
-
-        if (user?.onboardingCompleted) {
-          navigate("/dashboard");
-        } else {
-          navigate("/onboarding");
-        }
-      } catch (err: any) {
-        console.error("Google Auth Error:", err);
-        toast.error(err.response?.data?.error || "Erreur d'authentification Google");
-      } finally {
-        setGoogleLoading(false);
-      }
-    },
-    onError: (error) => {
-      console.error("Google Login Failed:", error);
-      toast.error("Échec de la connexion Google");
-      setGoogleLoading(false);
-    },
-    onNonOAuthError: () => {
-      setGoogleLoading(false);
-    },
-  });
-
   if (!isOpen) return null;
-
-  const handleGoogleAuth = () => {
-    if (!GOOGLE_CLIENT_ID) {
-      toast.error("Connexion Google non configurée sur ce serveur.");
-      return;
-    }
-    setGoogleLoading(true);
-    loginWithGoogle();
-  };
 
   const handleWhatsAppAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -105,27 +150,52 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
 
     setLoading(true);
     try {
-      const res = await apiClient.post("/api/auth/whatsapp-quick-access", {
+      await apiClient.post("/api/auth/whatsapp-magic-link", {
         phoneNumber: fullPhoneNumber,
-        displayName: whatsappName.trim() || undefined
+        clientUrl: window.location.origin
+      });
+
+      setWhatsappStep("waiting");
+      toast.success("Lien de connexion envoyé sur votre WhatsApp ! 📲");
+    } catch (err: any) {
+      toast.error(err.response?.data?.error || "Erreur lors de l'envoi du lien");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerifyOtp = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (otpValue.length !== 6) return;
+
+    const fullPhoneNumber = `${selectedCountry.dialCode}${localPhone}`.replace(/\D/g, "");
+    setIsVerifyingOtp(true);
+    try {
+      const res = await apiClient.post("/api/auth/whatsapp-otp-verify", {
+        phoneNumber: fullPhoneNumber,
+        code: otpValue
       });
 
       setSession(res.data);
-      const user = res.data.user;
-      toast.success(`Bienvenue sur Vendeur IA, ${user?.displayName || ""} ! 🚀`);
+      toast.success("Connexion réussie !");
       onClose();
-
-      if (user?.onboardingCompleted) {
+      if (res.data.user?.onboardingCompleted) {
         navigate("/dashboard");
       } else {
         navigate("/onboarding");
       }
     } catch (err: any) {
-      toast.error(err.response?.data?.error || "Erreur lors de la connexion WhatsApp");
+      toast.error(err.response?.data?.error || "Code incorrect ou expiré.");
     } finally {
-      setLoading(false);
+      setIsVerifyingOtp(false);
     }
   };
+
+  useEffect(() => {
+    if (otpValue.length === 6) {
+      handleVerifyOtp();
+    }
+  }, [otpValue]);
 
   const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -206,64 +276,134 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
 
         {/* PURE WHATSAPP HERO FORM */}
         {authMethod === "whatsapp" && (
-          <form onSubmit={handleWhatsAppAuth} className="space-y-4">
-            <div className="space-y-1.5">
-              <label className="text-[10px] font-black uppercase tracking-widest text-white/50 ml-1">
-                Votre Numéro WhatsApp
-              </label>
-              <div className="flex gap-2 items-center w-full">
-                <CountrySelector
-                  selected={selectedCountry}
-                  onSelect={(c) => setSelectedCountry(c)}
-                  dropdownPosition="top"
-                />
-                <div className="relative flex-1 min-w-0">
-                  <input
-                    required
-                    type="tel"
-                    inputMode="tel"
-                    className="w-full h-12 bg-black/50 border border-white/10 focus:border-vendeur-emerald rounded-xl px-4 text-white font-mono text-sm placeholder:text-white/20 outline-none transition-all"
-                    placeholder="07 00 00 00 00"
-                    value={localPhone}
-                    onChange={(e) => setLocalPhone(e.target.value.replace(/\D/g, ""))}
-                    autoFocus
+          whatsappStep === "input" ? (
+            <form onSubmit={handleWhatsAppAuth} className="space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-black uppercase tracking-widest text-white/50 ml-1">
+                  Votre Numéro WhatsApp
+                </label>
+                <div className="flex gap-2 items-center w-full">
+                  <CountrySelector
+                    selected={selectedCountry}
+                    onSelect={(c) => setSelectedCountry(c)}
+                    dropdownPosition="top"
                   />
+                  <div className="relative flex-1 min-w-0">
+                    <input
+                      required
+                      type="tel"
+                      inputMode="tel"
+                      className="w-full h-12 bg-black/50 border border-white/10 focus:border-vendeur-emerald rounded-xl px-4 text-white font-mono text-sm placeholder:text-white/20 outline-none transition-all"
+                      placeholder="07 00 00 00 00"
+                      value={localPhone}
+                      onChange={(e) => setLocalPhone(e.target.value.replace(/\D/g, ""))}
+                      autoFocus
+                    />
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full h-12 sm:h-13 bg-vendeur-emerald text-vendeur-coal font-black uppercase tracking-widest text-xs rounded-xl flex items-center justify-center gap-2 hover:scale-[1.01] active:scale-95 transition-all disabled:opacity-50 shadow-lg shadow-vendeur-emerald/25 cursor-pointer mt-2"
-            >
-              {loading ? (
-                <Loader2 className="animate-spin" size={18} />
-              ) : (
-                <>
-                  <WhatsAppIcon size={18} />
-                  <span>Accéder à ma Boutique</span>
-                  <ChevronRight size={18} />
-                </>
-              )}
-            </button>
-
-            <div className="flex items-center justify-center gap-1.5 pt-1 text-[11px] text-white/40">
-              <ShieldCheck size={13} className="text-vendeur-emerald shrink-0" />
-              <span>Connexion instantanée, sécurisée & sans mot de passe</span>
-            </div>
-
-            {/* Discrete Email Fallback Link */}
-            <div className="pt-2 text-center border-t border-white/5 mt-3">
               <button
-                type="button"
-                onClick={() => setAuthMethod("email")}
-                className="text-[11px] text-white/30 hover:text-white/70 transition-colors font-medium cursor-pointer"
+                type="submit"
+                disabled={loading}
+                className="w-full h-12 sm:h-13 bg-vendeur-emerald text-vendeur-coal font-black uppercase tracking-widest text-xs rounded-xl flex items-center justify-center gap-2 hover:scale-[1.01] active:scale-95 transition-all disabled:opacity-50 shadow-lg shadow-vendeur-emerald/25 cursor-pointer mt-2"
               >
-                Connexion par Email / Équipe →
+                {loading ? (
+                  <Loader2 className="animate-spin" size={18} />
+                ) : (
+                  <>
+                    <WhatsAppIcon size={18} />
+                    <span>Accéder à ma Boutique</span>
+                    <ChevronRight size={18} />
+                  </>
+                )}
               </button>
+
+              <div className="flex items-center justify-center gap-1.5 pt-1 text-[11px] text-white/40">
+                <ShieldCheck size={13} className="text-vendeur-emerald shrink-0" />
+                <span>Connexion instantanée par lien magique</span>
+              </div>
+
+              {/* Google Social Login */}
+              {GOOGLE_CLIENT_ID && (
+                <div className="pt-2 space-y-3">
+                  <div className="flex items-center gap-3">
+                    <div className="h-px flex-1 bg-white/5" />
+                    <span className="text-[10px] font-black text-white/20 uppercase tracking-widest">ou</span>
+                    <div className="h-px flex-1 bg-white/5" />
+                  </div>
+                  <GoogleLoginButton
+                    onSuccess={onClose}
+                    onLoading={setGoogleLoading}
+                    disabled={loading}
+                  />
+                </div>
+              )}
+
+              {/* Discrete Email Fallback Link */}
+              <div className="pt-2 text-center border-t border-white/5 mt-3">
+                <button
+                  type="button"
+                  onClick={() => setAuthMethod("email")}
+                  className="text-[11px] text-white/30 hover:text-white/70 transition-colors font-medium cursor-pointer"
+                >
+                  Connexion par Email / Équipe →
+                </button>
+              </div>
+            </form>
+          ) : (
+            <div className="space-y-6 text-center py-2 animate-in zoom-in-95 duration-300">
+              <div className="mx-auto w-16 h-16 bg-vendeur-emerald/10 rounded-full flex items-center justify-center text-vendeur-emerald animate-pulse">
+                <Sparkles size={32} />
+              </div>
+              <div className="space-y-1">
+                <h3 className="font-bold text-white uppercase tracking-wider text-sm">Vérifiez WhatsApp !</h3>
+                <p className="text-[11px] text-white/50 leading-relaxed px-4">
+                  Lien envoyé au <strong className="text-white">+{selectedCountry.dialCode} {localPhone}</strong>.
+                  <br />
+                  Touchez le lien ou saisissez le code ci-dessous.
+                </p>
+              </div>
+
+              {/* OTP Input Field */}
+              <div className="space-y-3 px-4">
+                <div className="relative">
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    autoFocus
+                    maxLength={6}
+                    placeholder="· · · · · ·"
+                    className="w-full h-16 bg-black/50 border border-white/10 focus:border-vendeur-emerald rounded-2xl text-center text-3xl font-mono tracking-[0.4em] text-vendeur-emerald outline-none transition-all placeholder:text-white/10"
+                    value={otpValue}
+                    onChange={(e) => setOtpValue(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                  />
+                  {isVerifyingOtp && (
+                    <div className="absolute inset-0 bg-black/40 backdrop-blur-[1px] rounded-2xl flex items-center justify-center">
+                      <Loader2 className="animate-spin text-vendeur-emerald" size={24} />
+                    </div>
+                  )}
+                </div>
+
+                <p className="text-[10px] text-white/20 uppercase tracking-widest font-black">
+                  Connexion Automatique Active ✨
+                </p>
+              </div>
+
+              <div className="pt-2 flex flex-col gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setWhatsappStep("input");
+                    setOtpValue("");
+                  }}
+                  className="text-[11px] text-white/30 font-medium hover:text-white hover:underline transition-all"
+                >
+                  ← Modifier mon numéro
+                </button>
+              </div>
             </div>
-          </form>
+          )
         )}
 
         {/* EMAIL FORM (DISCREET FALLBACK) */}

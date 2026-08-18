@@ -115,7 +115,7 @@ Réponds UNIQUEMENT au format JSON strict suivant :
     const statuses = await this.generateStatusPack(merchantId);
 
     let message = `☀️ *BONJOUR ${merchant.businessName.toUpperCase()} !* 🚀\n`;
-    message += `Voici vos *3 Idées de Statuts WhatsApp du Jour* préparées par votre IA pour booster vos ventes aujourd'hui :\n`;
+    message += `Voici vos *3 Idées de Statuts WhatsApp du Jour* préparées par votre Vendeur IA pour booster vos ventes aujourd'hui :\n`;
     message += `━━━━━━━━━━━━━━━━━━━━━\n\n`;
 
     statuses.forEach((s, idx) => {

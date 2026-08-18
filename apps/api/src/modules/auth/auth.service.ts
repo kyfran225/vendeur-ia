@@ -6,6 +6,8 @@ import { UserModel } from "./user.model.js";
 import { authEmailService } from "./auth-email.service.js";
 import axios from "axios";
 import { randomBytes, createHash } from "node:crypto";
+import { whatsappService } from "../whatsapp/whatsapp.service.js";
+import { getSocketServer } from "../../realtime/socketServer.js";
 
 const ACCESS_TOKEN_EXPIRES_IN = "15m";
 const REFRESH_TOKEN_EXPIRES_IN = "7d";
@@ -47,7 +49,7 @@ export class AuthService {
   }
 
   async loginOrRegisterWithWhatsApp(whatsappNumber: string, displayName?: string) {
-    const cleanNumber = whatsappNumber.replace(/[\s\-\(\)]/g, "");
+    const cleanNumber = whatsappNumber.replace(/[\s\-\(\)\+]/g, "");
     if (!cleanNumber || cleanNumber.length < 8) {
       throw new Error("Numéro WhatsApp invalide.");
     }
@@ -70,6 +72,85 @@ export class AuthService {
     }
 
     return this.generateTokens(user);
+  }
+
+  async requestWhatsAppMagicLink(whatsappNumber: string, clientUrl: string) {
+    const cleanNumber = whatsappNumber.replace(/[\s\-\+\(\)]/g, "");
+    if (!cleanNumber || cleanNumber.length < 8) {
+      throw new Error("Numéro WhatsApp invalide. Veuillez inclure l'indicatif pays (ex: 225...)");
+    }
+
+    // 1. Generate Magic Token (for link)
+    const token = randomBytes(32).toString("hex");
+    const magicHash = createHash("sha256").update(token).digest("hex");
+
+    // 2. Generate 6-digit OTP (for manual input)
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    const codeHash = await bcrypt.hash(code, 10);
+
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 min
+
+    let user = await UserModel.findOne({ whatsappNumber: cleanNumber });
+    if (!user) {
+      const fallbackEmail = `${cleanNumber}@whatsapp.vendeur-ia.com`;
+      user = await UserModel.create({
+        whatsappNumber: cleanNumber,
+        email: fallbackEmail,
+        authProvider: "whatsapp",
+        displayName: `Commerçant (${cleanNumber.slice(-4)})`,
+        magicTokenHash: magicHash,
+        magicTokenExpiresAt: expiresAt,
+        otpCodeHash: codeHash,
+        otpExpiresAt: expiresAt,
+        onboardingCompleted: false
+      });
+    } else {
+      user.magicTokenHash = magicHash;
+      user.magicTokenExpiresAt = expiresAt;
+      user.otpCodeHash = codeHash;
+      user.otpExpiresAt = expiresAt;
+      await user.save();
+    }
+
+    // Build Login URL
+    const loginUrl = `${clientUrl}/auth/magic-login?t=${token}&p=${cleanNumber}`;
+
+    // Send via WhatsApp Service
+    await whatsappService.sendAuthMagicLink(cleanNumber, loginUrl, code);
+
+    return { success: true, message: "Lien de connexion envoyé sur WhatsApp", code: process.env.NODE_ENV !== "production" ? code : undefined };
+  }
+
+  async verifyMagicLink(phoneNumber: string, token: string) {
+    const cleanNumber = phoneNumber.replace(/[\s\-\+\(\)]/g, "");
+    const hash = createHash("sha256").update(token).digest("hex");
+
+    const user = await UserModel.findOne({
+      whatsappNumber: cleanNumber,
+      magicTokenHash: hash,
+      magicTokenExpiresAt: { $gt: new Date() }
+    });
+
+    if (!user) {
+      throw new Error("Lien de connexion invalide ou expiré. Veuillez en redemander un.");
+    }
+
+    // Clear the token after use
+    user.magicTokenHash = undefined;
+    user.magicTokenExpiresAt = undefined;
+    user.otpCodeHash = undefined;
+    user.otpExpiresAt = undefined;
+    await user.save();
+
+    const tokens = await this.generateTokens(user);
+
+    // Notify other devices on same phone number via Socket.io
+    const io = getSocketServer();
+    if (io) {
+      io.to(`auth:${cleanNumber}`).emit("auth:success", tokens);
+    }
+
+    return tokens;
   }
 
   async requestWhatsAppOtp(whatsappNumber: string) {
@@ -107,7 +188,7 @@ export class AuthService {
   }
 
   async verifyWhatsAppOtp(whatsappNumber: string, code: string) {
-    const cleanNumber = whatsappNumber.replace(/[\s\-\(\)]/g, "");
+    const cleanNumber = whatsappNumber.replace(/[\s\-\(\)\+]/g, "");
     const user = await UserModel.findOne({
       whatsappNumber: cleanNumber,
       otpExpiresAt: { $gt: new Date() }
@@ -124,9 +205,19 @@ export class AuthService {
 
     user.otpCodeHash = undefined;
     user.otpExpiresAt = undefined;
+    user.magicTokenHash = undefined;
+    user.magicTokenExpiresAt = undefined;
     await user.save();
 
-    return this.generateTokens(user);
+    const tokens = await this.generateTokens(user);
+
+    // Notify other devices
+    const io = getSocketServer();
+    if (io) {
+      io.to(`auth:${cleanNumber}`).emit("auth:success", tokens);
+    }
+
+    return tokens;
   }
 
   async register(input: any) {
@@ -326,7 +417,14 @@ export class AuthService {
     return { success: true };
   }
 
-  async updateProfile(userId: string, data: { displayName?: string; avatarUrl?: string }) {
+  async updateProfile(userId: string, data: {
+    displayName?: string;
+    firstName?: string;
+    lastName?: string;
+    businessName?: string;
+    avatarUrl?: string;
+    onboardingCompleted?: boolean;
+  }) {
     const user = await UserModel.findByIdAndUpdate(
       userId,
       { $set: data },
@@ -338,6 +436,9 @@ export class AuthService {
       id: user._id.toString(),
       email: user.email || (user.whatsappNumber ? `${user.whatsappNumber}@whatsapp.vendeur-ia.com` : ""),
       displayName: user.displayName,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      businessName: user.businessName,
       avatarUrl: user.avatarUrl,
       roles: user.roles,
       onboardingCompleted: !!user.onboardingCompleted

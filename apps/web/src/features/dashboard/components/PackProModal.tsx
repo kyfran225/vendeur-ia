@@ -57,7 +57,7 @@ export function PackProModal({ isOpen, onClose }: PackProModalProps) {
             "Création de votre Page Facebook Business",
             "Configuration de l'API WhatsApp Cloud officielle",
             "Importation de votre catalogue (jusqu'à 20 produits)",
-            "Formation de 30min à l'usage de l'IA",
+            "Formation de 30min à l'usage de Vendeur IA",
             "Support prioritaire 24h/7 sur WhatsApp"
           ].map((text, i) => (
             <div key={i} className="flex items-center gap-4 p-4 bg-white/5 rounded-2xl border border-white/5">

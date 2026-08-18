@@ -35,7 +35,7 @@ const TOUR_STEPS: ISpotlightStep[] = [
     route: "/dashboard",
     selector: "#tour-dashboard-stats",
     title: "1. Tableau de Bord & Ventes du Jour",
-    description: "Visualisez en un coup d'œil votre chiffre d'affaires, vos commandes actives et vos opportunités de croissance générées par l'IA.",
+    description: "Visualisez en un coup d'œil votre chiffre d'affaires, vos commandes actives et vos opportunités de croissance générées par Vendeur IA.",
     tips: "💡 Astuce : Le bouton 'Tester mon Vendeur IA' simule un vrai client WhatsApp en direct !",
     badge: "Pilotage & Ventes"
   },
@@ -43,7 +43,7 @@ const TOUR_STEPS: ISpotlightStep[] = [
     route: "/products",
     selector: "#tour-products-catalog",
     title: "2. Catalogue & Scan Rayon Vision IA",
-    description: "Ajoutez vos articles en 1 seconde : prenez une simple photo de vos rayons ou cartons pour que l'IA détecte prix, noms et stock sans saisie manuelle.",
+    description: "Ajoutez vos articles en 1 seconde : prenez une simple photo de vos rayons ou cartons pour que Vendeur IA détecte prix, noms et stock sans saisie manuelle.",
     tips: "⭐ Astuce : Cliquez sur l'étoile pour mettre vos best-sellers en vedette sur votre boutique.",
     badge: "Catalogue Magique"
   },
@@ -67,7 +67,7 @@ const TOUR_STEPS: ISpotlightStep[] = [
     route: "/settings",
     selector: "#tour-settings-branding",
     title: "5. Studio Vitrine & Mobile Money",
-    description: "Personnalisez votre identité (logo, couverture, palette), connectez vos numéros de réception Wave / OM et ajustez les instructions de votre agent IA.",
+    description: "Personnalisez votre identité (logo, couverture, palette), connectez vos numéros de réception Wave / OM et ajustez les instructions de votre agent Vendeur IA.",
     tips: "✨ Astuce : Activez le bandeau promo défilant pour annoncer vos offres spéciales.",
     badge: "Identité & Encaissement"
   }

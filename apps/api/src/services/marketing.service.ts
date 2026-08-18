@@ -306,7 +306,7 @@ Activité manquée : Environ ${activeConvs > 0 ? activeConvs : 5} conversations 
 Le message doit :
 - Être bienveillant mais montrer ce que le marchand perd (FOMO).
 - Utiliser un ton d'assistant business dévoué ("Chef", "Patron").
-- Mentionner que l'IA attend ses instructions pour reprendre le travail.
+- Mentionner que Vendeur IA attend ses instructions pour reprendre le travail.
 - Inclure un lien vers le renouvellement : ${env.CLIENT_URL}/settings?tab=billing
 - Utiliser des expressions ivoiriennes/locales discrètes (ex: "On est ensemble", "Ça bouge pas").
 
@@ -332,7 +332,7 @@ Réponds UNIQUEMENT avec le texte du message.`;
 
     // 2. Push
     await pushService.sendNotification(merchant.ownerId, {
-      title: "Votre IA vous attend ! 🤖",
+      title: "Votre Vendeur IA vous attend ! 🤖",
       body: "Ne laissez pas vos clients sans réponse. Réactivez votre service en un clic.",
       data: { type: "billing", action: "renew" }
     });

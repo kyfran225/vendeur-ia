@@ -368,7 +368,7 @@ export function PaymentProofAuditorModal({ isOpen, onClose }: PaymentProofAudito
 
                   {scanMutation.data.extraction?.forensics?.analysisSummary && (
                     <div className="p-3.5 sm:p-4 rounded-2xl bg-white/[0.03] border border-white/5 text-xs text-white/80 leading-relaxed">
-                      <strong className="text-emerald-400">Rapport de l'IA : </strong>
+                      <strong className="text-emerald-400">Rapport Vendeur IA : </strong>
                       {scanMutation.data.extraction.forensics.analysisSummary}
                     </div>
                   )}

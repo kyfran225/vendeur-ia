@@ -138,7 +138,7 @@ Période : 7 derniers jours
 🏆 *${metrics.topProduct}*
 
 💡 *CONSEIL DU PATRON :*
-"L'IA a travaillé dur pour vous cette semaine ! Continuez à charger vos nouveaux produits pour maximiser vos ventes."
+"Vendeur IA a travaillé dur pour vous cette semaine ! Continuez à charger vos nouveaux produits pour maximiser vos ventes."
 
 ━━━━━━━━━━━━━━━━━━━━━
 _Envoyé avec ❤️ par Vendeur IA_

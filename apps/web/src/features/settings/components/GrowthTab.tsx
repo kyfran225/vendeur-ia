@@ -110,7 +110,7 @@ export function GrowthTab({ merchant }: { merchant: any }) {
                 )}
               </div>
               <p className="text-xs text-white/50 font-medium leading-relaxed">
-                L'IA attribue des points après chaque commande et récompense automatiquement vos clients réguliers.
+                Vendeur IA attribue des points après chaque commande et récompense automatiquement vos clients réguliers.
               </p>
             </div>
           </div>
@@ -175,7 +175,7 @@ export function GrowthTab({ merchant }: { merchant: any }) {
                   onChange={(e) => setLocalSettings({ ...localSettings, rewardDescription: e.target.value })}
                 />
                 <p className="text-[10px] text-white/40 font-medium">
-                  Texte exact mentionné par l'IA lors de la conversation WhatsApp avec le client VIP.
+                  Texte exact mentionné par Vendeur IA lors de la conversation WhatsApp avec le client VIP.
                 </p>
               </div>
             </div>
@@ -275,7 +275,7 @@ export function GrowthTab({ merchant }: { merchant: any }) {
               </span>
             </div>
             <p className="text-xs text-white/50 font-medium leading-relaxed mt-0.5">
-              Quand un acheteur sélectionne des articles dans votre catalogue sans finaliser le paiement, l'IA lui envoie une relance WhatsApp bienveillante avec un récapitulatif pour sauver la vente.
+              Quand un acheteur sélectionne des articles dans votre catalogue sans finaliser le paiement, Vendeur IA lui envoie une relance WhatsApp bienveillante avec un récapitulatif pour sauver la vente.
             </p>
           </div>
         </div>

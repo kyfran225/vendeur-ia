@@ -29,7 +29,7 @@ export function CountrySelector({
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="flex h-12 items-center gap-2 rounded-xl border border-white/10 bg-black/40 px-3 text-white transition-all hover:border-vendeur-emerald/50"
+        className="flex h-11 md:h-9 items-center gap-2 rounded-xl border border-white/10 bg-black/40 px-3 text-white transition-all hover:border-vendeur-emerald/50"
       >
         <img src={selected.flag} alt={selected.code} className="w-5 h-auto rounded-sm" />
         <span className="text-[10px] sm:text-xs font-bold text-white/70">{selected.dialCode}</span>

@@ -1,47 +1,31 @@
-import React, { useMemo, useState, useEffect, useRef, memo, type ReactNode } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import React, { useState, useEffect, useRef, memo } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
-  Banknote,
   Bot,
   Check,
   ChevronLeft,
   ChevronRight,
-  CircleDollarSign,
-  ClipboardList,
-  Hand,
   LayoutDashboard,
-  Loader2,
-  LogOut,
-  MapPin,
+  Megaphone,
   MessageCircle,
-  Package,
-  Phone,
-  Plus,
-  Save,
-  Send,
-  Settings,
+  Rocket,
   ShieldCheck,
-  ShoppingBag,
   Sparkles,
   Store,
-  Truck,
-  Wand2,
-  WifiOff,
   Zap,
   MoreVertical,
   Paperclip,
   Smile,
   Mic,
   Camera,
-  AlertCircle,
-  Trash2,
-  X,
-  Pencil,
-  Rocket,
-  ChevronDown,
-  LogIn,
-  User,
-  Megaphone
+  Send,
+  ExternalLink,
+  ArrowRight,
+  Globe,
+  Play,
+  CheckCircle2,
+  MousePointer2,
+  Phone
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -49,7 +33,6 @@ import {
   COUNTRIES
 } from "./components/CountrySelector";
 import { AddressAutocomplete } from "./components/AddressAutocomplete";
-import { PaymentMethodSelector } from "./components/PaymentMethodSelector";
 import { AuthSheet } from "../auth/components/AuthSheet";
 import { WhatsAppIcon } from "@/components/ui/WhatsAppIcon";
 import { useAuthStore } from "@/stores/authStore";
@@ -58,92 +41,196 @@ import { apiClient } from "@/lib/apiClient";
 import axios from "axios";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { useOnboardingStore } from "@/stores/onboardingStore";
+import { Logo } from "@/components/ui/Logo";
+import { Link, useNavigate } from "react-router-dom";
+import { WhatsAppTypingIndicator } from "@/components/ui/WhatsAppTypingIndicator";
+import { MetaHead } from "@/components/seo/MetaHead";
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-// Constants from original CommerceApp.tsx
 const MAX_DEMO_REPLIES = 7;
 const API_URL = (import.meta as any).env.VITE_API_URL || "http://localhost:3001";
 
-// Helper components copied from original
+// --- COMPONENTS ---
+
+const FadeIn = ({ children, delay = 0, direction = "up" }: { children: React.ReactNode; delay?: number; direction?: "up" | "down" | "left" | "right" }) => {
+  const directions = {
+    up: { y: 20, x: 0 },
+    down: { y: -20, x: 0 },
+    left: { x: 20, y: 0 },
+    right: { x: -20, y: 0 },
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, ...directions[direction] }}
+      whileInView={{ opacity: 1, x: 0, y: 0 }}
+      viewport={{ once: true }}
+      transition={{ duration: 0.6, delay, ease: [0.21, 0.47, 0.32, 0.98] }}
+    >
+      {children}
+    </motion.div>
+  );
+};
+
 function WhatsAppBubble({ role, text, time }: { role: string; text: string; time: string }) {
   const isAi = role === "ai";
   return (
     <div className={isAi ? "flex justify-start mb-3" : "flex justify-end mb-3"}>
-      <div className={cn(
-        "p-2.5 px-3 rounded-xl shadow-sm relative text-[14px] leading-[1.4]",
-        isAi
-          ? "bg-[#202c33] text-white rounded-tl-none max-w-[90%] border border-white/5"
-          : "bg-[#005c4b] text-white rounded-tr-none max-w-[90%]"
-      )}>
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9, y: 10 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        className={cn(
+          "p-2.5 px-3 rounded-xl shadow-sm relative text-[14px] leading-[1.4] max-w-[85%]",
+          isAi
+            ? "bg-[#202c33] text-white rounded-tl-none border border-white/5"
+            : "bg-[#005c4b] text-white rounded-tr-none"
+        )}
+      >
         <p className="whitespace-pre-wrap">{text}</p>
-        <div className="flex items-center justify-end gap-1 mt-1 opacity-50">
-           <span className="text-[10px]">{time}</span>
+        <div className="flex items-center justify-end gap-1 mt-1">
+           <span className="text-[10px] opacity-50">{time}</span>
            {role !== "ai" && (
-             <div className="flex -space-x-1">
-               <Check size={12} className="text-[#53bdeb]" />
-               <Check size={12} className="text-[#53bdeb]" />
+             <div className="flex items-center text-[#53bdeb]">
+               <svg width="16" height="11" viewBox="0 0 16 11" fill="none" xmlns="http://www.w3.org/2000/svg" className="scale-[0.85] origin-right">
+                  <path d="M4.156 6.188L1.5 3.531.5 4.531l3.656 3.656 7.844-7.844-1-1-6.844 6.844z" fill="currentColor"/>
+                  <path d="M15.5.344l-1-1-6.844 6.844L6.5 5.031l-1 1 2.156 2.156 7.844-7.843z" fill="currentColor"/>
+               </svg>
              </div>
            )}
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 }
 
 const MemoizedWhatsAppBubble = memo(WhatsAppBubble);
 
-function PillarSection() {
-  const pillars = [
+function BentoFeatures() {
+  const features = [
     {
-      icon: <Bot className="text-emerald-400" />,
-      title: "Cerveau IA Vendeur",
-      desc: "L'IA analyse vos photos, gère vos stocks et répond à vos clients par texte ou notes vocales 24h/7 sur WhatsApp et Instagram."
+      title: "IA Vision™ Intelligente",
+      desc: "Prenez une photo, Vendeur IA identifie le produit, fixe un prix et génère une fiche de vente irrésistible en 3 secondes.",
+      icon: <Sparkles className="text-emerald-400" size={24} />,
+      size: "large",
+      color: "bg-emerald-500/10 border-emerald-500/20",
+      image: "/assets/landing/vision-demo.png" // Placeholder for visual
     },
     {
-      icon: <Megaphone className="text-sky-400" />,
-      title: "Hub Marketing",
-      desc: "Diffusez vos promos vers vos segments VIP. Tracking en temps réel et protection anti-spam intelligente pour votre compte WhatsApp."
+      title: "Paiements & Abonnements",
+      desc: "Activez votre Vendeur IA instantanément via Mobile Money, Wave ou Google Play pour une gestion sans friction.",
+      icon: <ShieldCheck className="text-sky-400" size={24} />,
+      size: "small",
+      color: "bg-sky-500/10 border-sky-500/20",
+      isPayment: true
     },
     {
-      icon: <ShieldCheck className="text-amber-400" />,
-      title: "Conversion & Paiement",
-      desc: "Validez vos commandes en un clic. L'IA sécurise vos encaissements Wave, Orange et MTN sans aucune erreur de numéro."
+      title: "Notes Vocales IA",
+      desc: "Vendeur IA peut communiquer par notes vocales ultra-réalistes pour créer un lien de confiance unique avec vos clients.",
+      icon: <Mic className="text-purple-400" size={24} />,
+      size: "small",
+      color: "bg-purple-500/10 border-purple-500/20"
+    },
+    {
+      title: "Marketing Prédictif",
+      desc: "Relancez les clients qui n'ont pas finalisé leur achat au moment parfait, sans spammer.",
+      icon: <Megaphone className="text-amber-400" size={24} />,
+      size: "medium",
+      color: "bg-amber-500/10 border-amber-500/20"
     }
   ];
 
   return (
-    <section className="py-24 bg-black/40 border-y border-white/5 text-left">
-      <div className="mx-auto max-w-7xl px-6 grid md:grid-cols-3 gap-12">
-        {pillars.map((p, i) => (
-          <div key={i} className="group p-10 rounded-[2.5rem] border border-white/5 bg-[#0c0f0d] hover:border-emerald-300/30 transition-all hover:shadow-2xl hover:shadow-emerald-500/5">
-            <div className="mb-8 h-16 w-16 rounded-2xl bg-white/5 flex items-center justify-center group-hover:scale-110 transition-transform shadow-lg">
-              {p.icon}
+    <section className="py-24 px-4 max-w-7xl mx-auto">
+      <FadeIn delay={0.1}>
+        <div className="text-center mb-16">
+          <h2 className="text-3xl md:text-5xl font-black text-white uppercase tracking-tighter mb-4">
+            Une Armée de Vente <br className="hidden sm:block" />
+            <span className="text-emerald-400">dans votre poche.</span>
+          </h2>
+          <p className="text-white/40 max-w-2xl mx-auto font-medium">
+            Oubliez les bots basiques. Vendeur IA est un écosystème complet conçu pour la conversion immédiate.
+          </p>
+        </div>
+      </FadeIn>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {features.map((f, i) => (
+          <motion.div
+            key={i}
+            whileHover={{ y: -5 }}
+            className={cn(
+              "relative overflow-hidden rounded-[2.5rem] border p-8 flex flex-col justify-between transition-all group",
+              f.color,
+              f.size === "large" ? "md:col-span-2 md:row-span-2" : "",
+              f.size === "medium" ? "md:col-span-2" : ""
+            )}
+          >
+            <div className="relative z-10">
+              <div className="mb-6 h-14 w-14 rounded-2xl bg-white/5 flex items-center justify-center border border-white/10 group-hover:scale-110 transition-transform shadow-xl">
+                {f.icon}
+              </div>
+              <h3 className="text-2xl font-black text-white mb-3 tracking-tight uppercase">{f.title}</h3>
+              <p className="text-white/50 leading-relaxed text-sm font-medium max-w-md">{f.desc}</p>
+
+              {f.isPayment && (
+                <div className="flex flex-wrap items-center gap-3 mt-6">
+                  {/* Wave */}
+                  <div className="h-8 w-8 rounded-lg bg-[#1fb3e5] overflow-hidden shadow-xl group-hover:scale-110 transition-transform flex items-center justify-center">
+                    <img
+                      src="https://www.wave.com/img/favicon.png"
+                      alt="Wave"
+                      className="h-full w-full object-contain p-1.5"
+                    />
+                  </div>
+                  {/* Orange */}
+                  <div className="h-8 w-8 rounded-lg bg-[#FF7900] overflow-hidden shadow-xl group-hover:scale-110 transition-transform flex items-center justify-center">
+                    <img
+                      src="https://upload.wikimedia.org/wikipedia/commons/c/c8/Orange_logo.svg"
+                      alt="Orange"
+                      className="h-full w-full object-contain p-1"
+                    />
+                  </div>
+                  {/* MTN */}
+                  <div className="h-8 px-2 rounded-lg bg-[#FFCC00] flex items-center justify-center shadow-xl group-hover:scale-110 transition-transform">
+                    <svg viewBox="0 0 512 256" className="h-5 w-auto" fill="black" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M256 40c-110.5 0-200 38.5-200 86s89.5 86 200 86 200-38.5 200-86-89.5-86-200-86zm0 162c-104.9 0-190-34-190-76s85.1-76 190-76 190 34 190 76-85.1 76-190 76z" />
+                      <path d="M125 85h25 l15 40 15-40 h25 v85 h-20 v-55 l-20 55 h-10 l-20-55 v55 h-20 V85z M225 85 h60 v20 h-20 v65 h-20 v-65 h-20 V85z M310 85 h20 l25 50 v-50 h20 v85 h-20 l-25-50 v50 h-20 V85z" />
+                    </svg>
+                  </div>
+                  {/* Google Play */}
+                  <div className="h-8 px-2 rounded-lg bg-black border border-white/10 flex items-center justify-center shadow-xl group-hover:scale-110 transition-transform overflow-hidden">
+                    <img
+                      src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png"
+                      alt="Google Play"
+                      className="h-12 w-auto object-contain max-w-none"
+                    />
+                  </div>
+                </div>
+              )}
             </div>
-            <h3 className="text-2xl font-black text-white mb-4 tracking-tight">{p.title}</h3>
-            <p className="text-white/50 leading-relaxed text-base">{p.desc}</p>
-          </div>
+
+            {/* Decorative background glow */}
+            <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-white/5 blur-3xl rounded-full group-hover:bg-white/10 transition-all" />
+          </motion.div>
         ))}
       </div>
     </section>
   );
 }
 
-import { useOnboardingStore } from "@/stores/onboardingStore";
-import { Logo } from "@/components/ui/Logo";
-import { Link, useNavigate } from "react-router-dom";
-
-import { WhatsAppTypingIndicator } from "@/components/ui/WhatsAppTypingIndicator";
-
-// THE MAIN LANDING HERO (1:1 UI REPLICA)
+// THE MAIN LANDING HERO
 function LandingHero({
   onAuth,
-  onFormUpdate
+  onFormUpdate,
+  onLaunchDemo
 }: {
   onAuth: () => void;
   onFormUpdate: (name: string) => void;
+  onLaunchDemo: () => void;
 }) {
   const navigate = useNavigate();
   const { tempData, setTempData, isSimulatorActive, setSimulatorActive } = useOnboardingStore();
@@ -161,11 +248,10 @@ function LandingHero({
     COUNTRIES.find(c => c.code === (tempData?.country || "CI")) || COUNTRIES[0]
   );
   const [localPhone, setLocalPhone] = useState(tempData?.whatsappNumber?.replace(selectedCountry.dialCode, "") || "");
-  const { user, accessToken } = useAuthStore();
+  const { user } = useAuthStore();
 
   const recorderRef = useRef<AudioRecorder | null>(null);
   const [isRecording, setIsRecording] = useState(false);
-
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -191,49 +277,36 @@ function LandingHero({
 
   const handleCreateVendeur = async () => {
     if (form.businessName && form.address && form.whatsappNumber) {
-      // 1. Save to local store
       setTempData({ ...form, city: form.city, country: selectedCountry.code, currency: selectedCountry.currency });
       setSimulatorActive(true);
-
-      // 2. We no longer persist to backend here.
-      // This is now exclusively handled by OnboardingWizard to avoid redundant calls.
-
       onFormUpdate(form.businessName);
       setStep("simulator");
-
       setIsReplying(true);
 
       try {
         const response = await axios.post(`${API_URL}/api/commerce/demo/process`, {
-          businessName: form.businessName,
+          ...form,
           city: form.city || selectedCountry.defaultCity,
           country: selectedCountry.code,
           currency: selectedCountry.currency,
-          address: form.address,
-          category: form.category,
-          description: form.description,
           message: "SYSTEM_INITIAL_GREETING",
           phone: form.whatsappNumber,
           history: []
         });
 
         const replyText = typeof response.data.reply === 'object' ? response.data.reply.text : response.data.reply;
-        setHistory([{
-          role: "ai",
-          text: replyText,
-          time: getTime()
-        }]);
+        setHistory([{ role: "ai", text: replyText, time: getTime() }]);
       } catch (error) {
         setHistory([{
           role: "ai",
-          text: `Bonjour ! ✨ Bienvenue chez ${form.businessName}. Nous sommes à votre écoute pour vos besoins en ${form.category}.`,
+          text: `Bonjour ! ✨ Bienvenue chez ${form.businessName}. Je suis votre assistant Vendeur IA prêt à vous servir.`,
           time: getTime()
         }]);
       } finally {
         setIsReplying(false);
       }
     } else {
-      toast.error("Veuillez remplir tous les champs obligatoires.");
+      toast.error("Veuillez remplir les champs obligatoires.");
     }
   };
 
@@ -251,20 +324,16 @@ function LandingHero({
       const audioBlob = await recorderRef.current?.stop();
       setIsRecording(false);
       if (!audioBlob) return;
-
       setIsReplying(true);
       try {
         const formData = new FormData();
         formData.append("audio", audioBlob, "demo.webm");
         const res = await axios.post(`${API_URL}/api/commerce/demo/transcribe`, formData);
-
         if (res.data.transcription) {
-          setMessage(res.data.transcription);
-          // Auto-send if transcription is good
-          setTimeout(() => handleSend(res.data.transcription), 500);
+          handleSend(res.data.transcription);
         }
       } catch (err) {
-        toast.error("Échec de la transcription vocale.");
+        toast.error("Échec de la transcription.");
       } finally {
         setIsReplying(false);
       }
@@ -273,7 +342,6 @@ function LandingHero({
         if (!recorderRef.current) recorderRef.current = new AudioRecorder();
         await recorderRef.current.start();
         setIsRecording(true);
-        toast.info("Enregistrement en cours...");
       } catch (err) {
         toast.error("Microphone non accessible.");
       }
@@ -285,309 +353,267 @@ function LandingHero({
     if (!textToSend.trim()) return;
 
     if (aiResponseCount >= MAX_DEMO_REPLIES) {
-      toast.error("Limite de démonstration atteinte. Activez votre machine pour continuer !");
+      toast.error("Limite atteinte ! Activez votre Vendeur IA réel.");
       return;
     }
 
-    const userTime = getTime();
-    const newMsg: ChatMessage = { role: "customer", text: textToSend, time: userTime };
-    setHistory(prev => [...prev, newMsg]);
-    const currentInput = textToSend;
+    setHistory(prev => [...prev, { role: "customer", text: textToSend, time: getTime() }]);
     setMessage("");
     setIsReplying(true);
 
     try {
       const response = await axios.post(`${API_URL}/api/commerce/demo/process`, {
-        businessName: form.businessName,
+        ...form,
         city: form.city || selectedCountry.defaultCity,
         country: selectedCountry.code,
         currency: selectedCountry.currency,
-        address: form.address,
-        category: form.category,
-        description: form.description,
-        message: currentInput,
+        message: textToSend,
         phone: form.whatsappNumber || `${selectedCountry.dialCode.replace('+', '')}01010101`,
         history: history.slice(-4)
       });
 
       const replyText = typeof response.data.reply === 'object' ? response.data.reply.text : response.data.reply;
-      setHistory(prev => [...prev, {
-        role: "ai",
-        text: replyText,
-        time: getTime()
-      }]);
+      setHistory(prev => [...prev, { role: "ai", text: replyText, time: getTime() }]);
       setAiResponseCount(prev => prev + 1);
     } catch (error) {
-      toast.error("Erreur de connexion avec l'IA.");
+      toast.error("Vendeur IA est momentanément indisponible.");
     } finally {
       setIsReplying(false);
     }
   };
 
   return (
-    <section className="w-full px-0 py-2 md:py-4 lg:py-6 flex flex-col lg:flex-row items-start justify-center gap-8 lg:gap-16 text-left max-w-6xl mx-auto">
-      <div className="animate-in fade-in slide-in-from-left-4 duration-700 w-full lg:max-w-lg lg:pt-12">
-        <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-emerald-300/20 bg-emerald-300/10 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-emerald-300">
-          <Zap size={12} className="text-emerald-300" />
-          <span>Assistant Commercial WhatsApp 24/7</span>
-        </div>
-        <h1 className="text-5xl md:text-6xl font-black leading-[1.05] text-white mb-6 tracking-tighter">
-          Votre WhatsApp <br/>
-          <span className="text-emerald-300 text-transparent bg-clip-text bg-gradient-to-r from-emerald-300 to-emerald-500">vend tout seul.</span>
-        </h1>
-        <p className="text-lg text-white/60 mb-8 max-w-xl leading-relaxed font-medium">
-          L'Employé Numérique du Commerce Social. Transformez votre WhatsApp en machine de vente. Propulsez votre croissance grâce à une performance IA disponible 24h/7.
-        </p>
+    <section className="w-full px-4 pt-4 md:pt-6 lg:pt-8 flex flex-col lg:flex-row items-center justify-between gap-8 lg:gap-12 max-w-7xl mx-auto lg:h-[calc(100vh-64px)]">
+      {/* Left Text Side */}
+      <div className="w-full lg:max-w-xl text-center lg:text-left space-y-6">
+        <FadeIn delay={0.2} direction="down">
+          <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/5 px-4 py-2 text-[11px] font-black uppercase tracking-widest text-emerald-400">
+            <Rocket size={14} />
+            <span>Le Futur du Commerce Social</span>
+          </div>
+        </FadeIn>
+
+        <FadeIn delay={0.3}>
+          <h1 className="text-5xl md:text-6xl lg:text-7xl font-black leading-[0.95] text-white tracking-tighter uppercase">
+            WhatsApp <br/>
+            <span className="text-emerald-400">Vend tout seul.</span>
+          </h1>
+        </FadeIn>
+
+        <FadeIn delay={0.4}>
+          <p className="text-base md:text-lg text-white/50 leading-relaxed font-medium max-w-lg mx-auto lg:mx-0">
+            Transformez votre WhatsApp en une machine de vente autonome. Propulsé par Vendeur IA qui comprend vos produits, gère vos clients et sécurise vos paiements 24h/7.
+          </p>
+        </FadeIn>
+
+        <FadeIn delay={0.5}>
+          <div className="flex flex-col sm:flex-row items-center gap-4 justify-center lg:justify-start">
+            <button
+              onClick={onLaunchDemo}
+              className="w-full sm:w-auto h-14 px-10 rounded-2xl bg-vendeur-emerald text-vendeur-coal font-black uppercase tracking-widest text-xs flex items-center justify-center gap-3 hover:scale-105 active:scale-95 transition-all shadow-[0_20px_50px_rgba(16,185,129,0.3)]"
+            >
+              Lancer Vendeur IA <Play size={16} fill="currentColor" />
+            </button>
+            <button
+              onClick={onAuth}
+              className="w-full sm:w-auto h-14 px-10 rounded-2xl border border-white/10 bg-white/5 text-white font-black uppercase tracking-widest text-xs flex items-center justify-center gap-3 hover:bg-white/10 transition-all"
+            >
+              Connexion Marchand <ArrowRight size={18} />
+            </button>
+          </div>
+        </FadeIn>
+
+        <FadeIn delay={0.6}>
+           <div className="flex items-center justify-center lg:justify-start gap-8 pt-4">
+              <div className="text-center lg:text-left">
+                <p className="text-2xl font-black text-white">98%</p>
+                <p className="text-[10px] uppercase font-black tracking-widest text-white/30">Taux de Satisfaction</p>
+              </div>
+              <div className="h-8 w-px bg-white/10" />
+              <div className="text-center lg:text-left">
+                <p className="text-2xl font-black text-white">3s</p>
+                <p className="text-[10px] uppercase font-black tracking-widest text-white/30">Temps de Réponse</p>
+              </div>
+              <div className="h-8 w-px bg-white/10" />
+              <div className="text-center lg:text-left">
+                <p className="text-2xl font-black text-white">24h/7</p>
+                <p className="text-[10px] uppercase font-black tracking-widest text-white/30">Disponibilité Vendeur IA</p>
+              </div>
+           </div>
+        </FadeIn>
       </div>
 
-      <div className="relative w-full lg:w-auto px-2 flex justify-center">
-        <div className="absolute -inset-4 bg-emerald-300/5 blur-[100px] rounded-full pointer-events-none" />
+      {/* Right Visual Side - Smartphone Mockup */}
+      <div id="demo-card" className="relative w-full lg:w-auto flex justify-center lg:justify-end perspective-1000 overflow-visible z-10">
+        {/* Decorative Glows */}
+        <div className="absolute -inset-10 bg-emerald-500/10 blur-[120px] rounded-full pointer-events-none animate-pulse" />
 
-        {step === "form" ? (
-          <div className="relative rounded-[2.5rem] border border-white/10 bg-[#0c0f0d] p-4 md:p-6 lg:p-7 animate-in fade-in zoom-in-95 duration-300 text-left w-full lg:min-w-[550px] max-w-xl">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-300/5 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none" />
-
-            <div className="mb-6 flex items-center gap-4 relative z-10">
-              <div className="grid h-10 w-10 place-items-center rounded-2xl bg-emerald-300 text-[#06130d] shadow-lg shadow-emerald-500/20">
-                <Store size={20} />
+        <FadeIn delay={0.4} direction="right">
+          <div className="relative group">
+            {/* Phone Frame Mockup */}
+            <div className="relative w-[320px] sm:w-[360px] md:w-[300px] lg:w-[310px] h-[640px] sm:h-[700px] md:h-[540px] lg:h-[560px] rounded-[2.8rem] border-[7px] border-[#1a1c1e] bg-black shadow-[0_40px_80px_rgba(0,0,0,0.8)] overflow-hidden ring-4 ring-white/5 transition-all duration-500">
+              {/* Camera Notch */}
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-6 bg-[#1a1c1e] rounded-b-2xl z-[5] flex items-center justify-center">
+                <div className="w-10 h-1 bg-white/10 rounded-full" />
               </div>
-              <div>
-                <h2 className="text-xl font-black text-white leading-tight">Prêt à vendre ?</h2>
-                <p className="text-[10px] text-white/50">Lancez votre machine de vente en 2 minutes.</p>
-              </div>
-            </div>
 
-            <div className="grid gap-4 relative z-10">
-              <label className="grid gap-1.5">
-                <span className="text-[10px] font-black uppercase tracking-widest text-white/40">Nom de votre commerce</span>
-                <input className="h-12 rounded-2xl border border-white/10 bg-black/40 px-4 text-white outline-none focus:border-emerald-300 transition-all placeholder:text-white/10 text-sm" value={form.businessName} onChange={(e) => setForm({ ...form, businessName: e.target.value })} placeholder="Aicha Mode, Koffi Restaurant..." />
-              </label>
-
-              <div className="flex flex-col sm:flex-row gap-4">
-                <label className="flex-1 min-w-0 grid gap-1.5">
-                  <span className="text-[10px] font-black uppercase tracking-widest text-white/40">Catégorie</span>
-                  <div className="relative">
-                    <select className="h-12 w-full rounded-2xl border border-white/10 bg-black/40 px-4 text-white outline-none focus:border-emerald-300 transition-all appearance-none cursor-pointer text-sm" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value as any })}>
-                      <option value="fashion">👗 Mode & Beauté</option>
-                      <option value="food">🍔 Restauration & Food</option>
-                      <option value="beauty">💄 Soins & Cosmétiques</option>
-                      <option value="electronics">📱 Électronique & High-Tech</option>
-                      <option value="artisan">🛠️ Artisanat & Fait Main</option>
-                      <option value="services">💼 Prestations de Services</option>
-                      <option value="digital">📚 Produits Digitaux & Formations</option>
-                      <option value="home">🏠 Maison & Décoration</option>
-                      <option value="grocery">🛒 Épicerie & Supérette</option>
-                      <option value="health">💊 Santé & Bien-être</option>
-                      <option value="auto">🚗 Auto-Moto & Pièces</option>
-                      <option value="other">📦 Autre Commerce</option>
-                    </select>
-                    <ChevronRight size={14} className="absolute right-4 top-1/2 -translate-y-1/2 rotate-90 text-white/30 pointer-events-none" />
+              {step === "form" ? (
+                <div className="h-full w-full bg-[#0c0f0d] p-5 pt-8 flex flex-col no-scrollbar overflow-hidden">
+                  <div className="mb-4 space-y-0.5">
+                    <h2 className="text-xl md:text-2xl font-black text-white uppercase tracking-tighter">Lancez Vendeur IA.</h2>
+                    <p className="text-[10px] md:text-[11px] text-white/40 font-medium">Configurez votre boutique en quelques secondes.</p>
                   </div>
-                </label>
-                <label className="flex-1 min-w-0 grid gap-1.5">
-                  <span className="text-[10px] font-black uppercase tracking-widest text-white/40">WhatsApp Business</span>
-                  <div className="flex gap-2 items-center w-full">
-                    <CountrySelector
-                      selected={selectedCountry}
-                      onSelect={(c) => {
-                        setSelectedCountry(c);
-                        setForm({ ...form, country: c.code });
-                      }}
-                    />
-                    <div className="flex-1 min-w-0">
-                      <input
-                        className="h-12 w-full rounded-2xl border border-white/10 bg-black/40 px-4 text-white outline-none focus:border-emerald-300 transition-all placeholder:text-white/10 text-sm"
-                        value={localPhone}
-                        onChange={(e) => setLocalPhone(e.target.value.replace(/\D/g, ""))}
-                        placeholder="07 00 00 00 00"
-                        type="tel"
-                      />
+
+                  <div className="flex-1 flex flex-col justify-between pb-1">
+                    <div className="space-y-3 md:space-y-2">
+                      <div className="space-y-1">
+                        <label className="text-[10px] md:text-[9px] font-black uppercase tracking-widest text-white/40 ml-1">Nom du commerce</label>
+                        <input
+                          id="business-name-input"
+                          className="w-full h-11 md:h-9 rounded-xl bg-black/40 border border-white/10 px-4 text-white outline-none focus:border-emerald-400 transition-all text-sm md:text-xs shadow-inner"
+                          value={form.businessName}
+                          onChange={(e) => setForm({ ...form, businessName: e.target.value })}
+                          placeholder="Ex: Ma Boutique Chic"
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3 md:gap-2">
+                        <div className="space-y-1">
+                          <label className="text-[10px] md:text-[9px] font-black uppercase tracking-widest text-white/40 ml-1">Catégorie</label>
+                          <select className="w-full h-11 md:h-9 rounded-xl bg-black/40 border border-white/10 px-3 text-white outline-none focus:border-emerald-400 text-xs md:text-[10px] appearance-none" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value as any })}>
+                            <option value="fashion">👗 Mode</option>
+                            <option value="food">🍔 Food</option>
+                            <option value="beauty">💄 Beauté</option>
+                            <option value="other">📦 Autre</option>
+                          </select>
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-[10px] md:text-[9px] font-black uppercase tracking-widest text-white/40 ml-1">Pays</label>
+                          <CountrySelector selected={selectedCountry} onSelect={(c) => { setSelectedCountry(c); setForm({ ...form, country: c.code }); }} />
+                        </div>
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="text-[10px] md:text-[9px] font-black uppercase tracking-widest text-white/40 ml-1">Numéro WhatsApp</label>
+                        <input className="w-full h-11 md:h-9 rounded-xl bg-black/40 border border-white/10 px-4 text-white font-mono text-sm md:text-xs outline-none focus:border-emerald-400" value={localPhone} onChange={(e) => setLocalPhone(e.target.value.replace(/\D/g, ""))} placeholder="0700000000" />
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="text-[10px] md:text-[9px] font-black uppercase tracking-widest text-white/40 ml-1">Adresse / Ville</label>
+                        <AddressAutocomplete value={form.address} onChange={(v) => setForm({ ...form, address: v })} onSelectSuggestion={(s) => {
+                          const city = s.context?.place?.name || s.place_formatted?.split(',')[1]?.trim();
+                          setForm(prev => ({ ...prev, city: city || "" }));
+                        }} />
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="text-[10px] md:text-[9px] font-black uppercase tracking-widest text-white/40 ml-1">Ce que vous vendez</label>
+                        <textarea className="w-full h-20 md:h-16 rounded-xl bg-black/40 border border-white/10 p-3 text-white text-xs md:text-[10px] resize-none outline-none focus:border-emerald-400" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Détails produits et livraison..." />
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={handleCreateVendeur}
+                      disabled={!form.businessName || !form.address}
+                      className="w-full h-12 md:h-10 rounded-xl bg-emerald-400 text-vendeur-coal font-black uppercase tracking-widest text-xs md:text-[11px] flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all shadow-xl shadow-emerald-500/20 disabled:opacity-30 mt-2"
+                    >
+                      Démarrer Vendeur IA <ChevronRight size={16} />
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="h-full w-full bg-[#0b141a] flex flex-col relative">
+                  {/* WhatsApp UI Inside Frame */}
+                  <div className="bg-[#202c33] px-4 pt-7 pb-2 flex items-center justify-between border-b border-white/5 shrink-0">
+                    <div className="flex items-center gap-3">
+                      <div className="h-9 w-9 rounded-full bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+                         <Bot size={20} />
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold text-white leading-tight">{form.businessName}</p>
+                        <p className="text-[9px] font-medium text-emerald-400">en ligne</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-4 text-[#aebac1]">
+                      <Phone size={16} />
+                      <MoreVertical size={16} />
                     </div>
                   </div>
-                </label>
-              </div>
 
-              <label className="grid gap-1.5">
-                <span className="text-[10px] font-black uppercase tracking-widest text-white/40">Adresse précise (La ville sera détectée)</span>
-                <AddressAutocomplete
-                  value={form.address}
-                  onChange={(value) => setForm({ ...form, address: value })}
-                  onSelectSuggestion={(suggestion) => {
-                    const city = suggestion.context?.place?.name || suggestion.context?.region?.name || suggestion.place_formatted?.split(',')[1]?.trim() || selectedCountry.defaultCity;
-                    setForm(prev => ({ ...prev, city }));
-                  }}
-                />
-              </label>
+                  <div
+                    ref={scrollRef}
+                    className="flex-1 overflow-y-auto p-4 space-y-2 no-scrollbar"
+                    style={{ backgroundImage: "url('https://static.whatsapp.net/rsrc.php/v3/y6/r/wa669ae5qee.png')", backgroundSize: "400px" }}
+                  >
+                    {history.map((msg, i) => (
+                      <MemoizedWhatsAppBubble key={i} role={msg.role} text={msg.text} time={msg.time} />
+                    ))}
+                    {isReplying && <WhatsAppTypingIndicator variant="bubble" />}
+                  </div>
 
-              <label className="grid gap-1.5">
-                <span className="text-[10px] font-black uppercase tracking-widest text-white/40">Ce que vous vendez / Instructions de livraison</span>
-                <textarea
-                  className="min-h-[100px] rounded-2xl border border-white/10 bg-black/40 p-4 text-white outline-none focus:border-emerald-300 transition-all resize-none placeholder:text-white/10 text-sm"
-                  value={form.description}
-                  onChange={(e) => setForm({ ...form, description: e.target.value })}
-                  placeholder="Ex: Robes, chaussures. Livraison partout sous 2h."
-                />
-              </label>
+                  <div className="bg-[#202c33] p-2 flex items-center gap-2 border-t border-white/5 shrink-0">
+                     <div className="flex-1 relative">
+                       <input
+                          value={testMessage}
+                          onChange={(e) => setMessage(e.target.value)}
+                          onKeyDown={(e) => e.key === "Enter" && handleSend()}
+                          disabled={aiResponseCount >= MAX_DEMO_REPLIES || isReplying}
+                          placeholder="Taper un message..."
+                          className="w-full bg-[#2a3942] text-white text-[11px] rounded-xl px-3 py-2 outline-none placeholder:text-[#8696a0]"
+                       />
+                     </div>
+                     <button
+                       onClick={() => testMessage ? handleSend() : handleMicClick()}
+                       className={cn(
+                         "w-9 h-9 rounded-full flex items-center justify-center text-white transition-all shadow-lg shrink-0",
+                         testMessage ? "bg-emerald-500" : isRecording ? "bg-red-500" : "bg-emerald-600"
+                       )}
+                     >
+                       {testMessage ? <Send size={15} /> : <Mic size={15} />}
+                     </button>
+                  </div>
 
-              <div className="flex items-center gap-2 px-1">
-                <div className="h-1 w-1 rounded-full bg-emerald-400 animate-pulse" />
-                <p className="text-[10px] font-medium text-white/40 italic">
-                  Ces données pourront être modifiées par la suite dans vos paramètres.
-                </p>
-              </div>
-
-              <button
-                onClick={handleCreateVendeur}
-                disabled={!form.businessName || !form.address}
-                className="mt-2 flex h-12 sm:h-14 items-center justify-center gap-3 rounded-2xl bg-emerald-300 px-6 text-sm font-black uppercase tracking-widest text-[#06130d] shadow-xl shadow-emerald-500/10 transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-30 cursor-pointer"
-              >
-                {user ? "Configurer ma Boutique" : "Tester la Démo IA"} <ChevronRight size={18} />
-              </button>
-
-              {user && (
-                <button
-                  onClick={() => window.location.href = "/dashboard"}
-                  className="mt-1 flex h-12 sm:h-14 items-center justify-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-6 text-sm font-black uppercase tracking-widest text-white transition-all hover:bg-white/10 cursor-pointer"
-                >
-                  <LayoutDashboard size={18} /> Mon Tableau de bord
-                </button>
+                  {/* Activation Sheet - even more compact */}
+                  <div className="p-2.5 bg-[#111b21] border-t border-white/10 shadow-[0_-10px_30px_rgba(0,0,0,0.5)] z-10 space-y-1.5 shrink-0">
+                     <div className="flex items-center justify-center gap-2">
+                       <Sparkles size={10} className="text-emerald-400" />
+                       <span className="text-[7px] font-black uppercase tracking-[0.3em] text-white/30">Real IA Engine Simulator</span>
+                     </div>
+                     <button
+                        onClick={handleActivate}
+                        className="w-full h-10 md:h-10 rounded-xl bg-emerald-400 text-vendeur-coal font-black uppercase tracking-widest text-[10px] md:text-[10px] flex items-center justify-center gap-2 hover:scale-105 active:scale-95 transition-all shadow-2xl"
+                      >
+                        Créer mon Vendeur IA <Rocket size={14} />
+                      </button>
+                      <button onClick={() => setStep("form")} className="w-full text-[8px] md:text-[8px] font-black uppercase tracking-widest text-white/30 hover:text-white transition-colors">
+                        Modifier les infos
+                      </button>
+                  </div>
+                </div>
               )}
             </div>
           </div>
-        ) : (
-          <div className="relative rounded-[3rem] border border-[#2a2f32] bg-[#0b141a] shadow-3xl overflow-hidden animate-in slide-in-from-bottom-4 fade-in duration-400 flex flex-col h-[750px] w-full max-w-[400px] mx-auto scale-[1.02] ring-8 ring-black/20">
-            {/* WhatsApp Header */}
-            <div className="bg-[#202c33] px-4 py-3.5 flex items-center justify-between border-b border-white/5 z-20">
-              <div className="flex items-center gap-3">
-                <div className="h-11 w-11 rounded-full bg-[#6a7175] flex items-center justify-center text-white/80 overflow-hidden border border-white/10 shadow-inner">
-                   <Bot size={26} className="text-emerald-400" />
-                </div>
-                <div>
-                  <p className="text-[15px] font-bold text-white leading-tight">{form.businessName}</p>
-                  {isReplying ? (
-                    <WhatsAppTypingIndicator variant="header" label="en train d'écrire" />
-                  ) : (
-                    <p className="text-[11px] font-medium text-emerald-400">en ligne</p>
-                  )}
-                </div>
-              </div>
-              <div className="flex items-center gap-5 text-[#aebac1]">
-                <Camera size={20} className="hover:text-white transition-colors cursor-pointer" />
-                <MoreVertical size={20} className="hover:text-white transition-colors cursor-pointer" />
-              </div>
-            </div>
-
-            {/* Chat Area */}
-            <div
-              ref={scrollRef}
-              className="flex-1 overflow-y-auto p-4 space-y-2 bg-[#0b141a] bg-repeat opacity-95 no-scrollbar scroll-smooth"
-              style={{ backgroundImage: "url('https://static.whatsapp.net/rsrc.php/v3/y6/r/wa669ae5qee.png')", backgroundSize: "400px" }}
-            >
-              <div className="flex justify-center mb-6">
-                <span className="bg-[#182229] text-[#8696a0] text-[11px] px-3 py-1.5 rounded-lg uppercase font-bold tracking-widest shadow-sm">Aujourd'hui</span>
-              </div>
-
-              {history.map((msg, i) => (
-                <MemoizedWhatsAppBubble key={i} role={msg.role} text={msg.text} time={msg.time} />
-              ))}
-
-              {isReplying && <WhatsAppTypingIndicator variant="bubble" />}
-
-              {aiResponseCount >= 4 && aiResponseCount < MAX_DEMO_REPLIES && (
-                <div className="flex justify-center my-4 animate-bounce">
-                   <div className="bg-amber-500/10 border border-amber-500/30 px-4 py-2 rounded-full text-[10px] font-black text-amber-500 uppercase tracking-widest shadow-lg">
-                     Attention : Plus que {MAX_DEMO_REPLIES - aiResponseCount} réponse{MAX_DEMO_REPLIES - aiResponseCount > 1 ? 's' : ''} gratuite{MAX_DEMO_REPLIES - aiResponseCount > 1 ? 's' : ''} ⏳
-                   </div>
-                </div>
-              )}
-
-              {aiResponseCount >= MAX_DEMO_REPLIES && (
-                <div className="flex justify-center my-6">
-                   <div className="bg-[#111b21] border-2 border-emerald-300 border-dashed p-6 rounded-[2rem] text-center max-w-[90%] shadow-2xl animate-in zoom-in-95">
-                      <Sparkles className="mx-auto mb-4 text-emerald-300" size={32} />
-                      <p className="text-lg font-black text-white uppercase tracking-tight">Potentiel Débloqué ! 🚀</p>
-                      <p className="text-xs text-white/60 mt-2 leading-relaxed">
-                        Vous avez vu un aperçu de la puissance de votre <b>Vendeur IA</b>.
-                        Ne laissez plus vos clients attendre. Activez votre machine réelle maintenant !
-                      </p>
-                   </div>
-                </div>
-              )}
-            </div>
-
-            {/* Input Area */}
-            <div className="bg-[#202c33] p-3 flex items-center gap-2 z-20">
-               <div className="flex items-center gap-3 text-[#aebac1] px-2">
-                 <Smile size={24} className="cursor-pointer hover:text-white transition-colors" />
-                 <Paperclip size={24} className="cursor-pointer hover:text-white transition-colors" />
-               </div>
-               <div className="flex-1 relative">
-                 <input
-                    value={testMessage}
-                    onChange={(e) => setMessage(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && handleSend()}
-                    disabled={aiResponseCount >= MAX_DEMO_REPLIES || isReplying}
-                    placeholder={aiResponseCount >= MAX_DEMO_REPLIES ? "Limite atteinte" : "Message"}
-                    className="w-full bg-[#2a3942] text-white text-[15px] rounded-xl px-4 py-3 outline-none placeholder:text-[#8696a0] shadow-inner disabled:opacity-50"
-                 />
-               </div>
-               <div
-                 className={cn(
-                   "w-12 h-12 rounded-full flex items-center justify-center text-white shadow-xl transition-all cursor-pointer",
-                   testMessage ? "bg-[#00a884] scale-110" : isRecording ? "bg-red-500 animate-pulse" : "bg-[#00a884]/80",
-                   (aiResponseCount >= MAX_DEMO_REPLIES || isReplying) && !isRecording && "opacity-30 cursor-not-allowed"
-                 )}
-                 onClick={() => testMessage ? handleSend() : handleMicClick()}
-               >
-                 {testMessage ? <Send size={20} /> : <Mic size={20} />}
-               </div>
-            </div>
-
-            {/* ACTIVATION OVERLAY */}
-            <div className="p-8 bg-[#111b21] border-t border-white/10 shadow-[0_-20px_50px_rgba(0,0,0,0.6)] z-30 text-left relative overflow-hidden group">
-               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/[0.03] to-transparent -translate-x-full group-hover:animate-[shimmer_2s_infinite] pointer-events-none" />
-
-               <button
-                  onClick={handleActivate}
-                  className="w-full flex h-16 items-center justify-between px-8 rounded-[2rem] bg-gradient-to-r from-[#00a884] to-[#00c9a0] text-sm font-black uppercase tracking-[0.15em] text-white transition-all hover:scale-[1.02] hover:shadow-[0_0_40px_rgba(0,168,132,0.4)] active:scale-95 shadow-2xl relative overflow-hidden group/btn cursor-pointer"
-                >
-                  <Sparkles className="animate-pulse shrink-0" size={18} />
-                  <span className="flex-1 text-center px-4">Créer mon Vendeur IA</span>
-                  <ChevronRight size={22} className="group-hover/btn:translate-x-1 transition-transform shrink-0" />
-                </button>
-
-                <div className="flex flex-col sm:flex-row items-center justify-between mt-8 gap-4 px-2">
-                  <div className="flex items-center gap-2 order-1 sm:order-2">
-                     <div className="w-1.5 h-1.5 rounded-full bg-emerald-500/50 animate-pulse" />
-                     <span className="text-[9px] font-bold text-white/20 uppercase tracking-[0.2em] italic">REAL AI ENGINE DEMO</span>
-                  </div>
-                  <div className="flex gap-4 order-2 sm:order-1">
-                    <button onClick={() => {
-                      setStep("form");
-                      setSimulatorActive(false);
-                    }} className="text-[10px] font-black text-white/30 uppercase tracking-[0.15em] hover:text-emerald-400 transition-colors flex items-center gap-1.5">
-                      <ChevronLeft size={14} /> Modifier
-                    </button>
-                    <button onClick={() => window.location.href = "/dashboard"} className="text-[10px] font-black text-emerald-400 uppercase tracking-[0.15em] hover:text-emerald-300 transition-colors flex items-center gap-1.5">
-                      Dashboard <ChevronRight size={14} />
-                    </button>
-                  </div>
-                </div>
-            </div>
-          </div>
-        )}
+        </FadeIn>
       </div>
     </section>
   );
 }
-
-import { MetaHead } from "@/components/seo/MetaHead";
 
 export function LandingPage() {
   const navigate = useNavigate();
   const [dynamicTitle, setDynamicTitle] = useState("Vendeur IA");
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const { user } = useAuthStore();
+
+  const handleLaunchDemo = () => {
+    const el = document.getElementById("demo-card");
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      setTimeout(() => {
+        document.getElementById("business-name-input")?.focus();
+      }, 500);
+    }
+  };
 
   useEffect(() => {
     if (user) {
@@ -600,90 +626,152 @@ export function LandingPage() {
   }, [user, navigate]);
 
   return (
-    <div className="min-h-[100dvh] bg-[#07100d] selection:bg-emerald-300/30 overflow-x-hidden text-left pt-14 md:pt-20 w-full">
+    <div className="min-h-[100dvh] bg-[#07100d] selection:bg-emerald-300/30 overflow-x-hidden pt-14 md:pt-16 w-full text-left">
       <MetaHead
-        title="Vendeur IA | Commercial Virtuel sur WhatsApp & Instagram"
+        title="Vendeur IA | Commercial Virtuel Haute-Performance sur WhatsApp"
         description="Vendeur IA : votre commercial virtuel sur WhatsApp & Instagram. Répondez, conseillez et vendez 24h/24, 7j/7."
-        keywords={[
-          'vendeur IA',
-          'vendeuria',
-          'vendeur IA whatsapp',
-          'commercial virtuel whatsapp',
-          'commercial virtuel instagram',
-          'vente automatique whatsapp',
-          'whatsapp business api',
-          'bot vendeur whatsapp',
-          'ia pour whatsapp',
-          'relance automatique whatsapp'
-        ]}
       />
-      <header className="fixed top-0 left-0 right-0 z-50 border-b border-white/5 bg-[#07100d]/80 backdrop-blur-md w-full h-14 md:h-20">
+
+      {/* Modern Header */}
+      <header className="fixed top-0 left-0 right-0 z-[100] border-b border-white/5 bg-[#07100d]/80 backdrop-blur-2xl w-full h-14 md:h-16">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 h-full gap-4">
-          <div className="flex items-center gap-3 md:gap-5 flex-1 min-w-0">
-            <div className="flex h-9 w-9 md:h-12 md:w-12 shrink-0 items-center justify-center overflow-hidden bg-white/5 rounded-xl md:rounded-2xl p-2 border border-white/10 shadow-xl text-vendeur-emerald">
-              <Logo size={28} />
+          <div className="flex items-center gap-4 flex-1 min-w-0">
+            <div className="flex h-9 w-9 md:h-10 md:w-10 shrink-0 items-center justify-center bg-white/5 rounded-xl md:rounded-2xl border border-white/10 shadow-xl text-vendeur-emerald transition-transform hover:rotate-6">
+              <Logo size={22} />
             </div>
             <div className="min-w-0">
-              <p className="truncate text-base md:text-xl font-black text-white uppercase leading-tight tracking-tight">{dynamicTitle}</p>
-              <p className="truncate text-[8px] md:text-[10px] uppercase tracking-[0.2em] text-emerald-300/60 font-black">AI Sales Machine</p>
+              <p className="truncate text-sm md:text-lg font-black text-white uppercase leading-tight tracking-tighter">{dynamicTitle}</p>
+              <div className="flex items-center gap-1.5">
+                 <div className="h-1 w-1 rounded-full bg-emerald-400 animate-pulse" />
+                 <p className="truncate text-[7px] md:text-[8px] uppercase tracking-[0.2em] text-white/40 font-black">AI Sales Machine</p>
+              </div>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 md:gap-4 shrink-0">
-            {user ? (
-              <Link
-                to="/dashboard"
-                className="h-9 md:h-11 px-3.5 md:px-6 rounded-xl md:rounded-2xl bg-vendeur-emerald text-vendeur-coal text-[10px] md:text-xs font-black uppercase tracking-widest flex items-center justify-center text-center gap-1.5 shadow-lg shadow-vendeur-emerald/20 transition-all hover:scale-105 active:scale-95"
-              >
-                <span className="hidden sm:inline">Tableau de Bord</span>
-                <span className="sm:hidden">Dashboard</span>
-              </Link>
-            ) : (
-              <button
-                onClick={() => setIsAuthOpen(true)}
-                className="h-9 md:h-11 px-3 md:px-5 rounded-xl md:rounded-2xl bg-vendeur-emerald/10 border border-vendeur-emerald/30 hover:bg-vendeur-emerald hover:text-vendeur-coal text-vendeur-emerald transition-all flex items-center gap-1.5 md:gap-2 shadow-lg shadow-vendeur-emerald/10 group cursor-pointer"
-                title="Connexion WhatsApp"
-              >
-                <WhatsAppIcon size={16} className="group-hover:scale-110 transition-transform shrink-0" />
-                <span className="text-[10px] md:text-xs font-black uppercase tracking-wider hidden sm:inline">
-                  Connexion WhatsApp
-                </span>
-                <span className="text-[10px] font-black uppercase tracking-wider sm:hidden">
-                  Connexion
-                </span>
-              </button>
-            )}
+          <div className="flex items-center gap-3 shrink-0">
+            <button
+              onClick={() => setIsAuthOpen(true)}
+              className="h-9 md:h-10 px-5 md:px-8 rounded-xl md:rounded-2xl bg-white/5 border border-white/10 hover:border-emerald-500/50 hover:bg-emerald-500/5 text-white text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all active:scale-95"
+            >
+              Connexion
+            </button>
           </div>
         </div>
       </header>
 
-      <main className="mx-auto max-w-7xl px-4 py-2">
+      <main>
+        {/* HERO SECTION */}
         <LandingHero
           onAuth={() => setIsAuthOpen(true)}
           onFormUpdate={(name) => setDynamicTitle(name)}
+          onLaunchDemo={handleLaunchDemo}
         />
-        <PillarSection />
-        <footer className="py-10 md:py-14 border-t border-white/5 flex flex-col items-center justify-center gap-4 text-center px-4">
-           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-6 text-xs text-white/50 font-medium">
-             <Link to="/privacy" className="hover:text-vendeur-emerald transition-colors py-1">
-               Politique de Confidentialité
-             </Link>
-             <span className="hidden sm:inline text-white/20">•</span>
-             <Link to="/terms" className="hover:text-vendeur-emerald transition-colors py-1">
-               Conditions de Service
-             </Link>
-             <span className="hidden sm:inline text-white/20">•</span>
-             <Link to="/data-deletion" className="hover:text-vendeur-emerald transition-colors py-1">
-               Suppression des Données Meta
-             </Link>
+
+        {/* LOGOS / TRUST BAR */}
+        <div className="py-20 flex flex-col items-center justify-center gap-8 opacity-40">
+           <p className="text-[10px] font-black uppercase tracking-[0.4em] text-white/50">Compatible avec les meilleurs canaux</p>
+           <div className="flex flex-wrap items-center justify-center gap-8 md:gap-16 px-6 grayscale">
+              <div className="flex items-center gap-3 text-white">
+                <WhatsAppIcon size={24} />
+                <span className="text-xl font-bold tracking-tighter">WhatsApp</span>
+              </div>
+              <div className="flex items-center gap-3 text-white">
+                <Globe size={24} />
+                <span className="text-xl font-bold tracking-tighter">Instagram</span>
+              </div>
+              <div className="flex items-center gap-3 text-white">
+                <Zap size={24} />
+                <span className="text-xl font-bold tracking-tighter">Meta Ads</span>
+              </div>
            </div>
-           <p className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] md:tracking-[0.4em] text-white/30 leading-relaxed max-w-md">
-             © 2026 Franck Corp. Tous droits réservés.
-           </p>
+        </div>
+
+        {/* BENTO FEATURES */}
+        <BentoFeatures />
+
+        {/* CTA FINAL SECTION */}
+        <section className="py-32 px-6">
+           <div className="max-w-4xl mx-auto rounded-[3rem] bg-gradient-to-br from-emerald-500/20 to-emerald-900/10 border border-emerald-500/20 p-10 md:p-20 text-center relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-full h-full bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 pointer-events-none" />
+
+              <FadeIn>
+                <h2 className="text-4xl md:text-6xl font-black text-white uppercase tracking-tighter mb-6">
+                  Prêt à <span className="text-emerald-400">multiplier</span> vos ventes ?
+                </h2>
+                <p className="text-white/60 text-lg mb-10 max-w-xl mx-auto font-medium">
+                  Rejoignez des centaines de commerçants qui ont déjà automatisé leur croissance avec Vendeur IA.
+                </p>
+                <button
+                  onClick={() => setIsAuthOpen(true)}
+                  className="h-16 px-12 rounded-2xl bg-vendeur-emerald text-vendeur-coal font-black uppercase tracking-widest text-sm hover:scale-110 active:scale-95 transition-all shadow-[0_20px_50px_rgba(16,185,129,0.3)]"
+                >
+                  Configurer mon Vendeur IA <Sparkles size={18} className="ml-2 inline" />
+                </button>
+              </FadeIn>
+           </div>
+        </section>
+
+        {/* FOOTER */}
+        <footer className="py-20 border-t border-white/5 bg-black/20">
+          <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
+            <div className="space-y-6">
+               <div className="flex items-center gap-3">
+                 <Logo size={32} />
+                 <span className="text-2xl font-black text-white tracking-tighter uppercase">Vendeur IA</span>
+               </div>
+               <p className="text-sm text-white/40 leading-relaxed font-medium">
+                 L'assistant commercial intelligent conçu spécifiquement pour le commerce social en Afrique.
+               </p>
+            </div>
+
+            <div className="space-y-4">
+              <p className="text-xs font-black uppercase tracking-widest text-white">Produit</p>
+              <ul className="space-y-2 text-sm text-white/40">
+                <li className="hover:text-emerald-400 transition-colors cursor-pointer">Vendeur IA Vision</li>
+                <li className="hover:text-emerald-400 transition-colors cursor-pointer">Marketing Hub</li>
+                <li className="hover:text-emerald-400 transition-colors cursor-pointer">API WhatsApp</li>
+                <li className="hover:text-emerald-400 transition-colors cursor-pointer">Simulateur</li>
+              </ul>
+            </div>
+
+            <div className="space-y-4">
+              <p className="text-xs font-black uppercase tracking-widest text-white">Légal</p>
+              <ul className="space-y-2 text-sm text-white/40">
+                <li><Link to="/privacy" className="hover:text-emerald-400 transition-colors">Confidentialité</Link></li>
+                <li><Link to="/terms" className="hover:text-emerald-400 transition-colors">Conditions</Link></li>
+                <li><Link to="/data-deletion" className="hover:text-emerald-400 transition-colors">Meta Data</Link></li>
+              </ul>
+            </div>
+
+            <div className="space-y-6">
+              <p className="text-xs font-black uppercase tracking-widest text-white">Newsletter</p>
+              <div className="flex gap-2">
+                 <input className="h-12 flex-1 bg-white/5 border border-white/10 rounded-xl px-4 text-xs text-white outline-none focus:border-emerald-400" placeholder="Votre email" />
+                 <button className="h-12 w-12 rounded-xl bg-vendeur-emerald text-vendeur-coal flex items-center justify-center shrink-0">
+                    <Send size={18} />
+                 </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="max-w-7xl mx-auto px-6 pt-20 flex flex-col md:flex-row items-center justify-between gap-6 border-t border-white/5 mt-10">
+            <p className="text-[10px] font-black uppercase tracking-widest text-white/20">
+              © 2026 Franck Corp. Built with ❤️ for Commerce.
+            </p>
+            <div className="flex gap-6 grayscale opacity-50">
+               <WhatsAppIcon size={18} />
+               <Globe size={18} />
+               <ShieldCheck size={18} />
+            </div>
+          </div>
         </footer>
       </main>
 
-      <AuthSheet isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} />
+      <AnimatePresence>
+        {isAuthOpen && (
+          <AuthSheet isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

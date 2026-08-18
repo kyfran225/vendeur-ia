@@ -1,36 +1,44 @@
-# Correction de la conversion des tarifs lors du changement de devise
+# Authentification WhatsApp Zéro Friction & Profil Marchand
 
-L'utilisateur a signalé que lors du changement de la devise du catalogue, les montants des tarifs dans les réglages (frais de livraison) n'ont pas été convertis, bien que le libellé de la devise ait changé.
+Ce plan vise à sécuriser l'accès tout en offrant une expérience utilisateur fluide ("One-Tap") et à enrichir les données du marchand dès son inscription.
 
-## Analyse du problème
+## User Review Required
+> [!IMPORTANT]
+> Nous allons utiliser le **Lien Magique (Magic Link)** envoyé par WhatsApp. Le marchand n'aura qu'à toucher le lien dans sa discussion avec le Bot pour être automatiquement connecté dans l'application.
 
-1.  **Conflit Frontend/Backend** : Dans `SettingsPage.tsx`, lors de la sauvegarde des réglages, le frontend envoie deux requêtes consécutives :
-    - `PATCH /api/commerce/merchant` : Met à jour la devise. Le serveur effectue alors une conversion automatique des produits et des frais de livraison en base de données.
-    - `PATCH /api/commerce/knowledge` : Envoie les données de connaissance, y compris les `deliveryFees` du state local. Ces valeurs sont encore les anciennes (non converties) et écrasent donc la conversion faite par le serveur juste avant.
-2.  **Conversions manquantes** : Le serveur ne convertit actuellement que les produits et les frais de livraison. Le chiffre d'affaires généré dans les campagnes marketing (`MarketingCampaignModel.revenueGenerated`) n'est pas converti, ce qui fausse les statistiques après un changement de devise.
+## Proposed Changes
 
-## Propositions de changements
+### [Auth & Security]
 
-### Frontend
+#### [MODIFY] [user.model.ts](file:///C:/Users/Franck/web-apps/vendeur-ia/apps/api/src/modules/auth/user.model.ts)
+- Ajouter `businessName`, `firstName` (optionnel), `lastName` (optionnel).
+- Ajouter `magicTokenHash` et `magicTokenExpiresAt` pour gérer la connexion par lien.
 
-#### [MODIFY] [SettingsPage.tsx](file:///C:/Users/Franck/web-apps/vendeur-ia/apps/web/src/features/settings/SettingsPage.tsx)
-- Modifier la validation du changement de devise pour convertir localement les `deliveryFees` dans le state React.
-- Cela garantit que lorsque la requête `PATCH /api/commerce/knowledge` est envoyée, elle contient les nouveaux tarifs convertis.
+#### [MODIFY] [auth.service.ts](file:///C:/Users/Franck/web-apps/vendeur-ia/apps/api/src/modules/auth/auth.service.ts)
+- **`requestWhatsAppAuth`** : Générer un token unique et envoyer un message WhatsApp via le service `whatsappService`.
+- **`verifyMagicLink`** : Valider le token et retourner les accès JWT.
+- **Enrichissement** : Si c'est un nouvel utilisateur, utiliser le `pushName` de WhatsApp pour remplir le `displayName` par défaut.
 
-### Backend
+#### [MODIFY] [auth.routes.ts](file:///C:/Users/Franck/web-apps/vendeur-ia/apps/api/src/modules/auth/auth.routes.ts)
+- Ajouter `GET /api/auth/magic-login?t=TOKEN` pour la redirection après clic.
 
-#### [MODIFY] [commerce.service.ts](file:///C:/Users/Franck/web-apps/vendeur-ia/apps/api/src/modules/commerce/commerce.service.ts)
-- Ajouter la conversion de `revenueGenerated` dans `MarketingCampaignModel` lors d'un changement de devise du marchand.
-- Vérifier s'il y a d'autres champs de montants à convertir.
+### [WhatsApp Integration]
 
-## Plan de vérification
+#### [MODIFY] [whatsapp.service.ts](file:///C:/Users/Franck/web-apps/vendeur-ia/apps/api/src/modules/whatsapp/whatsapp.service.ts)
+- Implémenter `sendAuthMagicLink(phoneNumber, loginUrl)` utilisant les identifiants système Meta (Cloud API) pour garantir la délivrabilité.
 
-### Tests Manuels
-1.  Aller dans Réglages > Boutique.
-2.  Noter un frais de livraison (ex: 1000 XOF).
-3.  Changer la devise en EUR.
-4.  Vérifier que le modal de confirmation affiche bien la conversion.
-5.  Confirmer et Sauvegarder.
-6.  Vérifier que le tarif de livraison dans le champ est maintenant ~1.52 EUR (et non plus 1000 EUR).
-7.  Vérifier que les produits dans le catalogue sont aussi convertis.
-8.  Vérifier les statistiques de campagne marketing si possible.
+### [Frontend UX]
+
+#### [MODIFY] [AuthSheet.tsx](file:///C:/Users/Franck/web-apps/vendeur-ia/apps/web/src/features/auth/components/AuthSheet.tsx)
+- Mettre à jour le flux : Saisie du numéro -> Affichage d'un message d'attente ("Vérifiez WhatsApp") -> Redirection automatique via socket ou manuelle via le lien.
+
+## Verification Plan
+
+### Automated Tests
+- Tester la génération et la validité du token JWT court.
+- Simuler la réception d'un message entrant WhatsApp pour valider la création du profil.
+
+### Manual Verification
+- Saisir son numéro sur mobile.
+- Vérifier la réception du lien sur WhatsApp.
+- Cliquer sur le lien et vérifier que l'on arrive sur le Dashboard déjà connecté.

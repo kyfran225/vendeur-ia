@@ -242,7 +242,7 @@ export function WebChatWidget({ merchant }: { merchant: any }) {
                     <div className="flex justify-start">
                        <div className="bg-white/5 border border-white/5 px-4 py-3 rounded-2xl flex items-center gap-3">
                           <Loader2 size={14} className="animate-spin text-vendeur-emerald" />
-                          <span className="text-[10px] font-black text-vendeur-emerald uppercase tracking-widest">L'IA réfléchit...</span>
+                          <span className="text-[10px] font-black text-vendeur-emerald uppercase tracking-widest">Vendeur IA réfléchit...</span>
                        </div>
                     </div>
                   )}

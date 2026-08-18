@@ -645,7 +645,7 @@ class WhatsAppService {
         {
           messaging_product: "whatsapp",
           recipient_type: "individual",
-          to,
+          to: to.replace(/\+/g, ""),
           type: "text",
           text: { body: text },
         },
@@ -663,6 +663,46 @@ class WhatsAppService {
         console.warn(`[Meta WhatsApp Warning] Le numéro ${to} n'est pas dans la liste des destinataires autorisés du mode Sandbox Meta. Ajoutez-le sur developers.facebook.com ou passez l'app Meta en Production.`);
       }
       console.error("[Meta WhatsApp] Error sending message:", errData || error.message);
+    }
+  }
+
+  async sendAuthMagicLink(to: string, loginUrl: string, otpCode: string) {
+    // Get Global System Settings for Meta
+    const settings = await SystemSettingsModel.findOne();
+    const config = settings?.metaConfig?.whatsappDefaults;
+
+    const phoneNumberId = config?.phoneNumberId || env.WHATSAPP_PHONE_ID;
+    const accessToken = config?.accessToken || env.WHATSAPP_ACCESS_TOKEN;
+
+    if (!phoneNumberId || !accessToken) {
+      console.warn("[WhatsApp Auth] WhatsApp System credentials not configured. SMS fallback might be needed or error generated.");
+      throw new Error("Le service d'authentification WhatsApp n'est pas configuré.");
+    }
+
+    const cleanTo = to.replace(/[\s\-\+\(\)]/g, "");
+    const text = `🚀 *Bienvenue sur Vendeur IA !*\n\nPour accéder à votre espace :\n\n🔗 Touchez ce lien : ${loginUrl}\n\n🔢 Ou saisissez ce code : *${otpCode}*\n\n_Valable pendant 15 minutes._`;
+
+    try {
+      await axios.post(
+        `https://graph.facebook.com/v20.0/${phoneNumberId}/messages`,
+        {
+          messaging_product: "whatsapp",
+          recipient_type: "individual",
+          to: cleanTo,
+          type: "text",
+          text: { body: text },
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      console.log(`[WhatsApp Auth] Magic Link sent to ${to}`);
+    } catch (error: any) {
+      console.error("[WhatsApp Auth] Failed to send Magic Link:", error.response?.data || error.message);
+      throw new Error("Échec de l'envoi du message WhatsApp. Vérifiez que votre numéro est correct.");
     }
   }
 

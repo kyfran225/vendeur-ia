@@ -30,7 +30,7 @@ export function MarketplaceGuideModal({ isOpen, onClose, onOpenPackPro }: Market
           <div className="h-20 w-20 bg-blue-500/10 border border-blue-500/20 rounded-[2rem] flex items-center justify-center mx-auto">
             <Globe className="text-blue-400" size={40} />
           </div>
-          <h2 className="text-3xl font-black text-white uppercase tracking-tighter leading-tight">Activer l'IA sur Marketplace</h2>
+          <h2 className="text-3xl font-black text-white uppercase tracking-tighter leading-tight">Activer Vendeur IA sur Marketplace</h2>
           <p className="text-white/40 text-sm">Pour automatiser vos ventes sur Marketplace en toute sécurité, Meta impose l'utilisation d'une **Page Facebook Business**.</p>
         </div>
 

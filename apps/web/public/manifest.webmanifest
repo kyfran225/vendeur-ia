@@ -1,11 +1,12 @@
 {
-  "name": "Vendeur IA OS",
-  "short_name": "VendeurIA",
-  "description": "The AI Sales Agent for Social Commerce",
+  "name": "Vendeur IA | Votre Commercial Virtuel",
+  "short_name": "Vendeur IA",
+  "description": "Automatisez vos ventes sur WhatsApp, Instagram et Facebook.",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
-  "background_color": "#0a0a0a",
-  "theme_color": "#0f5a4f",
+  "background_color": "#0b120f",
+  "theme_color": "#00a884",
   "icons": [
     {
       "src": "/favicon-32x32.png",

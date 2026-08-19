@@ -68,7 +68,7 @@ export function AdminPaymentsTab() {
       return res.data;
     },
     onSuccess: () => {
-      toast.success("Numéros de paiement Mobile Money mis à jour avec succès ! ✅");
+      toast.success("Numéros de paiement Mobile Money mis à jour avec succès !");
       queryClient.invalidateQueries({ queryKey: ["admin:payments:config"] });
     },
     onError: (err: any) => {
@@ -86,7 +86,7 @@ export function AdminPaymentsTab() {
       return res.data;
     },
     onSuccess: (data, vars) => {
-      toast.success(vars.action === "approve" ? "🎉 Paiement validé & Abonnement activé !" : "Paiement rejeté.");
+      toast.success(vars.action === "approve" ? "Paiement validé & Abonnement activé !" : "Paiement rejeté.");
       queryClient.invalidateQueries({ queryKey: ["admin:payments"] });
       queryClient.invalidateQueries({ queryKey: ["admin:stats"] });
     },

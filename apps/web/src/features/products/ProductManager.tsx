@@ -259,7 +259,7 @@ export function ProductManager() {
     onSuccess: (_data, variables: any) => {
       queryClient.invalidateQueries({ queryKey: ["products"] });
       queryClient.invalidateQueries({ queryKey: ["dashboard"] });
-      toast.success("Ajouté au catalogue avec succès ! ✨");
+      toast.success("Ajouté au catalogue avec succès !");
       setIsAddingManual(false);
       setLastAddedName(variables.name || "Produit");
       setShowMilestoneModal(true);
@@ -307,7 +307,7 @@ export function ProductManager() {
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["products"] });
-      toast.success("Mise à jour réussie ! ✨");
+      toast.success("Mise à jour réussie !");
       setEditingProduct(null);
     },
     onError: (error: any) => {
@@ -377,7 +377,7 @@ export function ProductManager() {
         }));
         setIsAddingManual(true);
       }
-      toast.success("Analyse IA terminée ! ✨");
+      toast.success("Analyse IA terminée !");
     },
     onError: () => {
       toast.error("Échec de l'analyse de l'image.");
@@ -617,7 +617,6 @@ export function ProductManager() {
                         onChange={(e) => setAutoAnalyzeWithIA(e.target.checked)}
                         className="w-4 h-4 rounded border-white/20 text-emerald-400 focus:ring-emerald-400 accent-emerald-400"
                       />
-                      <Sparkles size={14} className="text-sky-400 shrink-0" />
                       <span className="text-[10px] font-black uppercase tracking-wider">Pré-remplir automatiquement les infos avec Vendeur IA</span>
                     </label>
                   )}
@@ -896,7 +895,6 @@ export function ProductManager() {
                   </button>
 
                   <div className="absolute top-4 right-4 bg-sky-500/10 border border-sky-500/30 px-3 py-1 rounded-lg flex items-center gap-1.5 backdrop-blur-md">
-                    <Sparkles size={12} className="text-sky-400" />
                     <span className="text-[10px] font-black text-sky-400 uppercase tracking-widest">IA Active</span>
                   </div>
                 </div>
@@ -1044,12 +1042,12 @@ export function ProductManager() {
         const isDigital = businessCategory === "digital";
 
         const modalTitle = isFood
-          ? "Plat Ajouté au Menu ! 🍲"
+          ? "Plat Ajouté au Menu !"
           : isService
-          ? "Prestation Enregistrée ! 💼"
+          ? "Prestation Enregistrée !"
           : isDigital
-          ? "Contenu Digital Enregistré ! 📚"
-          : `${itemLabel} Ajouté ! ✨`;
+          ? "Contenu Digital Enregistré !"
+          : `${itemLabel} Ajouté !`;
 
         return (
           <StepMilestoneModal

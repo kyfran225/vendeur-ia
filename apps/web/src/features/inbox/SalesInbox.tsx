@@ -111,12 +111,12 @@ export function SalesInbox() {
       });
 
       socket.on("payment:detected", (data: any) => {
-        toast.success(`💰 Paiement détecté pour ${data.platform} (${data.amount} ${data.currency || merchantCurrency}) !`);
+        toast.success(`Paiement détecté pour ${data.platform} (${data.amount} ${data.currency || merchantCurrency}) !`);
         queryClient.invalidateQueries({ queryKey: ["conversations"] });
         if (data.conversationId === selectedChat) {
           queryClient.invalidateQueries({ queryKey: ["messages", selectedChat] });
           if (data.linkResult?.matched) {
-             toast.success("Commande validée automatiquement ! ✨");
+             toast.success("Commande validée automatiquement !");
           }
         }
       });
@@ -279,7 +279,6 @@ export function SalesInbox() {
                     <p className="font-bold text-sm truncate">{formatCustomerDisplayName(activeChatData?.customerId)}</p>
                     {activeChatData?.customerId?.loyaltyPoints > 0 && (
                       <div className="flex items-center gap-1 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-md">
-                        <Sparkles size={10} className="text-amber-500" />
                         <span className="text-[9px] font-black text-amber-500 uppercase">{activeChatData.customerId.loyaltyPoints} pts</span>
                       </div>
                     )}
@@ -315,7 +314,7 @@ export function SalesInbox() {
                   {generateFollowupMutation.isPending ? (
                     <Loader2 size={14} className="animate-spin" />
                   ) : (
-                    <Sparkles size={14} className="group-hover:rotate-12 transition-transform" />
+                    <MessageCircle size={14} className="group-hover:rotate-12 transition-transform" />
                   )}
                   <span className="hidden md:inline ml-2 text-[10px] font-black uppercase tracking-widest">Relancer IA</span>
                 </button>
@@ -391,7 +390,7 @@ export function SalesInbox() {
                 <div className="absolute bottom-full left-4 right-4 md:left-6 md:right-6 mb-4 bg-[#0c0f0d] border border-sky-500/30 rounded-2xl p-4 shadow-2xl animate-in slide-in-from-bottom-4 duration-300 z-40">
                   <div className="flex justify-between items-center mb-2">
                     <span className="text-[10px] font-black text-sky-400 uppercase tracking-widest flex items-center gap-2">
-                      <Sparkles size={12} /> Relance IA générée
+                      Relance IA générée
                     </span>
                     <button onClick={() => setFollowupData({ ...followupData, isOpen: false })} className="text-white/20 hover:text-white">
                       <X size={14} />
@@ -539,7 +538,7 @@ function ChatBubble({ role, text, time, type, mediaUrl }: any) {
       )}>
         {isPaymentValidated && (
           <div className="flex items-center gap-2 mb-2 px-2.5 py-1 bg-emerald-500 text-black rounded-lg text-[10px] font-black uppercase tracking-wider shadow-lg">
-            <CheckCheck size={14} /> Paiement Validé Automatiquement 💰
+            <CheckCheck size={14} /> Paiement Validé Automatiquement
           </div>
         )}
 
@@ -552,7 +551,7 @@ function ChatBubble({ role, text, time, type, mediaUrl }: any) {
         {isVoiceMessage && (
           <div className="flex items-center gap-1.5 mb-1.5 px-2 py-0.5 bg-sky-500/10 border border-sky-500/20 text-sky-400 rounded-md text-[9px] font-black uppercase tracking-widest w-fit">
             <span className="h-1.5 w-1.5 rounded-full bg-sky-400 animate-pulse" />
-            🎙️ Message Vocal • Transcrit par Vendeur IA
+            Message Vocal • Transcrit par Vendeur IA
           </div>
         )}
 

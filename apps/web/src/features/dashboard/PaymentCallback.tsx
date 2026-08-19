@@ -28,7 +28,7 @@ export function PaymentCallback() {
         if (res.data.status === "success") {
           setStatus("success");
           queryClient.invalidateQueries({ queryKey: ["dashboard"] });
-          toast.success("Paiement confirmé ! Votre accès est activé. 🚀");
+          toast.success("Paiement confirmé ! Votre accès est activé.");
 
           const plan = res.data.merchant?.subscription?.plan || res.data.data?.metadata?.offerSlug || "essential";
           const type = res.data.data?.metadata?.type;
@@ -82,7 +82,7 @@ export function PaymentCallback() {
               <div className="space-y-2">
                 <h1 className="text-3xl font-black text-white uppercase tracking-tighter">Paiement Validé !</h1>
                 <p className="text-vendeur-emerald text-sm uppercase font-black tracking-[0.2em] flex items-center justify-center gap-2">
-                  <Sparkles size={16} /> Activation IA en cours...
+                  Activation IA en cours...
                 </p>
               </div>
               <p className="text-white/40 text-xs">Vous allez être redirigé vers vos réglages dans quelques instants.</p>

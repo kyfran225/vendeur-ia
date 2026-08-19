@@ -34,16 +34,16 @@ export function OrderReceiptModal({ isOpen, onClose, order, merchant }: OrderRec
     const itemsList = order.items.map((i: any) => `• ${i.quantity}x ${i.name} - ${(i.price * i.quantity).toLocaleString()} ${currency}`).join("\n");
     const text = `*BON DE COMMANDE / FACTURE - ${merchant?.businessName || "Vendeur IA"}*\n` +
       `━━━━━━━━━━━━━━━━━━━━\n` +
-      `🆔 *Commande:* #${orderNumber}\n` +
-      `📅 *Date:* ${formattedDate}\n` +
-      `👤 *Client:* ${order.customerId?.phone || "Client"}\n` +
-      (order.shippingAddress ? `📍 *Livraison:* ${order.shippingAddress}\n` : "") +
+      `*Commande:* #${orderNumber}\n` +
+      `*Date:* ${formattedDate}\n` +
+      `*Client:* ${order.customerId?.phone || "Client"}\n` +
+      (order.shippingAddress ? `*Livraison:* ${order.shippingAddress}\n` : "") +
       `━━━━━━━━━━━━━━━━━━━━\n` +
-      `📦 *Articles :*\n${itemsList}\n` +
+      `*Articles :*\n${itemsList}\n` +
       `━━━━━━━━━━━━━━━━━━━━\n` +
-      `💰 *TOTAL : ${order.totalAmount.toLocaleString()} ${currency}*\n` +
-      `✅ *Statut :* ${order.status === "paid" ? "Payé" : order.status === "delivered" ? "Livré" : "En attente"}\n\n` +
-      `Merci pour votre confiance ! ✨`;
+      `*TOTAL : ${order.totalAmount.toLocaleString()} ${currency}*\n` +
+      `*Statut :* ${order.status === "paid" ? "Payé" : order.status === "delivered" ? "Livré" : "En attente"}\n\n` +
+      `Merci pour votre confiance !`;
 
     const phone = order.customerId?.phone?.replace(/[^0-9]/g, "");
     const url = phone ? `https://wa.me/${phone}?text=${encodeURIComponent(text)}` : `https://wa.me/?text=${encodeURIComponent(text)}`;
@@ -154,14 +154,14 @@ export function OrderReceiptModal({ isOpen, onClose, order, merchant }: OrderRec
             <div className="flex justify-between items-center text-xs font-semibold pt-1">
               <span className="text-neutral-500">Statut :</span>
               <span className="px-2.5 py-0.5 rounded-full bg-neutral-100 text-neutral-800 font-black uppercase text-[10px]">
-                {order.status === "paid" ? "Payé ✅" : order.status === "delivered" ? "Livré 🛵" : "En attente ⏳"}
+                {order.status === "paid" ? "Payé" : order.status === "delivered" ? "Livré" : "En attente"}
               </span>
             </div>
           </div>
 
           {/* Footer Note */}
           <div className="text-center pt-4 border-t border-dashed border-neutral-300 space-y-1">
-            <p className="text-[11px] font-bold text-neutral-800">Merci de votre fidélité ! ✨</p>
+            <p className="text-[11px] font-bold text-neutral-800">Merci de votre fidélité !</p>
             <p className="text-[9px] text-neutral-400">Généré via Vendeur IA OS</p>
           </div>
         </div>

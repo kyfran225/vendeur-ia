@@ -114,7 +114,7 @@ function BentoFeatures() {
     {
       title: "IA Vision™ Intelligente",
       desc: "Prenez une photo, Vendeur IA identifie le produit, fixe un prix et génère une fiche de vente irrésistible en 3 secondes.",
-      icon: <Sparkles className="text-emerald-400" size={24} />,
+      icon: <Bot className="text-emerald-400" size={24} />,
       size: "large",
       color: "bg-emerald-500/10 border-emerald-500/20",
       image: "/assets/landing/vision-demo.png" // Placeholder for visual
@@ -297,7 +297,7 @@ function LandingHero({
       } catch (error) {
         setHistory([{
           role: "ai",
-          text: `Bonjour ! ✨ Bienvenue chez ${form.businessName}. Je suis votre assistant Vendeur IA prêt à vous servir.`,
+          text: `Bonjour ! Bienvenue chez ${form.businessName}. Je suis votre assistant Vendeur IA prêt à vous servir.`,
           time: getTime()
         }]);
       } finally {
@@ -445,7 +445,7 @@ function LandingHero({
 
               <div className="flex flex-col sm:flex-row items-center sm:gap-3 bg-white/5 border border-white/10 px-2 py-3 sm:px-4 sm:py-2 rounded-2xl backdrop-blur-sm">
                 <div className="h-7 w-7 sm:h-8 sm:w-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-400 mb-2 sm:mb-0">
-                  <Sparkles size={16} className="sm:w-[18px] sm:h-[18px]" />
+                  <Bot size={16} className="sm:w-[18px] sm:h-[18px]" />
                 </div>
                 <div className="text-center sm:text-left">
                   <p className="text-lg sm:text-xl font-black text-white leading-none">24/7</p>
@@ -494,10 +494,10 @@ function LandingHero({
                         <div className="space-y-1">
                           <label className="text-[10px] md:text-[9px] font-black uppercase tracking-widest text-white/40 ml-1">Catégorie</label>
                           <select className="w-full h-11 md:h-9 rounded-xl bg-black/40 border border-white/10 px-3 text-white outline-none focus:border-emerald-400 text-xs md:text-[10px] appearance-none" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value as any })}>
-                            <option value="fashion">👗 Mode</option>
-                            <option value="food">🍔 Food</option>
-                            <option value="beauty">💄 Beauté</option>
-                            <option value="other">📦 Autre</option>
+                            <option value="fashion">Mode</option>
+                            <option value="food">Food</option>
+                            <option value="beauty">Beauté</option>
+                            <option value="other">Autre</option>
                           </select>
                         </div>
                         <div className="space-y-1">
@@ -589,7 +589,6 @@ function LandingHero({
                   {/* Activation Sheet - even more compact */}
                   <div className="p-2.5 bg-[#111b21] border-t border-white/10 shadow-[0_-10px_30px_rgba(0,0,0,0.5)] z-10 space-y-1.5 shrink-0">
                      <div className="flex items-center justify-center gap-2">
-                       <Sparkles size={10} className="text-emerald-400" />
                        <span className="text-[7px] font-black uppercase tracking-[0.3em] text-white/30">Real IA Engine Simulator</span>
                      </div>
                      <button
@@ -729,7 +728,7 @@ export function LandingPage() {
                   onClick={() => setIsAuthOpen(true)}
                   className="w-full sm:w-auto h-16 px-10 rounded-2xl bg-vendeur-emerald text-vendeur-coal font-black uppercase tracking-widest text-xs sm:text-sm hover:scale-105 active:scale-95 transition-all shadow-[0_20px_60px_rgba(16,185,129,0.4)] border-t border-white/30 flex items-center justify-center gap-3 mx-auto"
                 >
-                  Configurer mon Vendeur IA <Sparkles size={18} />
+                  Configurer mon Vendeur IA
                 </button>
               </FadeIn>
            </div>

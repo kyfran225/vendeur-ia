@@ -44,9 +44,6 @@ export function SetupCompletionModal({ isOpen, onClose, businessName }: SetupCom
               >
                 <Trophy size={48} />
               </motion.div>
-              <div className="absolute -top-2 -right-2 bg-amber-400 text-vendeur-coal p-1.5 rounded-full shadow-lg">
-                <Sparkles size={16} />
-              </div>
             </div>
 
             {/* Header Text */}
@@ -55,7 +52,7 @@ export function SetupCompletionModal({ isOpen, onClose, businessName }: SetupCom
                 Configuration 100% Terminée
               </span>
               <h2 className="text-2xl md:text-3xl font-black text-white uppercase tracking-tight">
-                Félicitations {businessName} ! 🎉
+                Félicitations {businessName} !
               </h2>
               <p className="text-xs md:text-sm text-white/70 leading-relaxed">
                 Votre boutique est désormais <strong className="text-vendeur-emerald">100% opérationnelle</strong>. Votre Vendeur IA autonome est prêt à répondre et convertir vos clients 24/7 sur WhatsApp !

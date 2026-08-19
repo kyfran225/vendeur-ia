@@ -49,7 +49,7 @@ const GoogleLoginButton = ({
         });
         setSession(res.data);
         const user = res.data.user;
-        toast.success(`Bienvenue ${user?.displayName || ''} ! ✨`);
+        toast.success(`Bienvenue ${user?.displayName || ''} !`);
         onSuccess(res.data);
 
         if (user?.onboardingCompleted) {
@@ -114,7 +114,7 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
 
       socket.on("auth:success", (sessionData) => {
         setSession(sessionData);
-        toast.success(`Authentification réussie ! ✨`);
+        toast.success(`Authentification réussie !`);
         onClose();
         if (sessionData.user?.onboardingCompleted) {
           navigate("/dashboard");
@@ -156,7 +156,7 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
       });
 
       setWhatsappStep("waiting");
-      toast.success("Lien de connexion envoyé sur votre WhatsApp ! 📲");
+      toast.success("Lien de connexion envoyé sur votre WhatsApp !");
     } catch (err: any) {
       toast.error(err.response?.data?.error || "Erreur lors de l'envoi du lien");
     } finally {
@@ -246,7 +246,6 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
         {/* Mobile Pull Handle */}
         <div className="w-10 h-1 rounded-full bg-white/20 mx-auto mb-3 sm:hidden" />
 
-        {/* Glow decoration */}
         <div className="absolute -top-24 -left-24 w-48 h-48 bg-vendeur-emerald/15 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute -bottom-24 -right-24 w-48 h-48 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
 
@@ -265,11 +264,15 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
             <Logo size={32} />
           </div>
           <h2 className="text-xl sm:text-2xl font-black text-white uppercase tracking-tight leading-snug">
-            {authMethod === "whatsapp" ? "Accès Vendeur IA" : mode === "login" ? "Connexion Email" : mode === "register" ? "Créer un compte" : "Mot de passe"}
+            {authMethod === "whatsapp"
+              ? (whatsappStep === "waiting" ? "Code de Vérification" : "Accès Vendeur IA")
+              : mode === "login" ? "Connexion Email" : mode === "register" ? "Créer un compte" : "Mot de passe"}
           </h2>
           <p className="text-xs text-white/50 mt-1 max-w-xs mx-auto leading-relaxed">
             {authMethod === "whatsapp"
-              ? "Numéro personnel ou professionnel pour gérer votre boutique et recevoir vos alertes."
+              ? (whatsappStep === "waiting"
+                  ? `Lien envoyé au ${selectedCountry.dialCode} ${localPhone}. Veuillez valider ou saisir le code.`
+                  : "Numéro personnel ou professionnel pour gérer votre boutique et recevoir vos alertes.")
               : "Espace d'accès sécurisé pour l'équipe."}
           </p>
         </div>
@@ -353,18 +356,6 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
             </form>
           ) : (
             <div className="space-y-6 text-center py-2 animate-in zoom-in-95 duration-300">
-              <div className="mx-auto w-16 h-16 bg-vendeur-emerald/10 rounded-full flex items-center justify-center text-vendeur-emerald animate-pulse">
-                <Sparkles size={32} />
-              </div>
-              <div className="space-y-1">
-                <h3 className="font-bold text-white uppercase tracking-wider text-sm">Vérifiez WhatsApp !</h3>
-                <p className="text-[11px] text-white/50 leading-relaxed px-4">
-                  Lien envoyé au <strong className="text-white">+{selectedCountry.dialCode} {localPhone}</strong>.
-                  <br />
-                  Touchez le lien ou saisissez le code ci-dessous.
-                </p>
-              </div>
-
               {/* OTP Input Field */}
               <div className="space-y-3 px-4">
                 <div className="relative">
@@ -386,7 +377,7 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
                 </div>
 
                 <p className="text-[10px] text-white/20 uppercase tracking-widest font-black">
-                  Connexion Automatique Active ✨
+                  Connexion Automatique Active
                 </p>
               </div>
 

@@ -88,7 +88,7 @@ export function SalesDashboard() {
       });
 
       socket.on("whatsapp:connected", () => {
-        toast.success("WhatsApp connecté avec succès ! 🚀");
+        toast.success("WhatsApp connecté avec succès !");
         queryClient.invalidateQueries({ queryKey: ["dashboard"] });
       });
     }
@@ -109,7 +109,7 @@ export function SalesDashboard() {
   const handleShareShop = () => {
      const url = getMerchantShopUrl(dashboard?.merchant);
      navigator.clipboard.writeText(url);
-     toast.success("Lien personnalisé de votre vitrine copié ! 🚀");
+     toast.success("Lien personnalisé de votre vitrine copié !");
   };
 
   return (
@@ -192,7 +192,7 @@ function HomePanel({ dashboard, onOpenTestIA }: { dashboard: any, onOpenTestIA: 
           onClick={() => {
             const url = getMerchantShopUrl(dashboard?.merchant);
             navigator.clipboard.writeText(url);
-            toast.success("Lien personnalisé de votre vitrine copié ! 🚀");
+            toast.success("Lien personnalisé de votre vitrine copié !");
           }}
           className="h-14 px-4 rounded-2xl bg-white/5 border border-white/10 text-white text-[10px] font-black uppercase tracking-wider hover:bg-white/10 transition-all flex items-center justify-center text-center gap-2"
         >
@@ -242,7 +242,7 @@ function HomePanel({ dashboard, onOpenTestIA }: { dashboard: any, onOpenTestIA: 
                     toast.loading("Génération de vos 3 statuts WhatsApp...");
                     await apiClient.post("/api/commerce/whatsapp-status/send-to-me");
                     toast.dismiss();
-                    toast.success("Pack de 3 Statuts WhatsApp envoyé sur votre WhatsApp ! 📲");
+                    toast.success("Pack de 3 Statuts WhatsApp envoyé sur votre WhatsApp !");
                   } catch (err: any) {
                     toast.dismiss();
                     toast.error(err.response?.data?.error || "Erreur lors de l'envoi des statuts");

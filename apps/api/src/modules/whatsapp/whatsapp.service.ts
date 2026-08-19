@@ -688,7 +688,7 @@ class WhatsAppService {
     }
 
     const cleanTo = to.replace(/[\s\-\+\(\)]/g, "");
-    const text = `🚀 *Bienvenue sur Vendeur IA !*\n\nPour accéder à votre espace :\n\n🔗 Touchez ce lien : ${loginUrl}\n\n🔢 Ou saisissez ce code : *${otpCode}*\n\n_Valable pendant 15 minutes._`;
+    const text = `*Bienvenue sur Vendeur IA*\n\nPour accéder à votre espace :\n\nLien direct : ${loginUrl}\n\nCode de vérification : *${otpCode}*\n\nCe code est valable pendant 15 minutes.`;
 
     try {
       await axios.post(

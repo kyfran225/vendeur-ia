@@ -54,14 +54,14 @@ export function CheckoutPage() {
   const [userCountry, setUserCountry] = useState<string>("CI");
 
   const countries = [
-    { code: "CI", name: "Côte d'Ivoire", flag: "🇨🇮", currency: "XOF" },
-    { code: "BF", name: "Burkina Faso", flag: "🇧🇫", currency: "XOF" },
-    { code: "SN", name: "Sénégal", flag: "🇸🇳", currency: "XOF" },
-    { code: "ML", name: "Mali", flag: "🇲🇱", currency: "XOF" },
-    { code: "BJ", name: "Bénin", flag: "🇧🇯", currency: "XOF" },
-    { code: "TG", name: "Togo", flag: "🇹🇬", currency: "XOF" },
-    { code: "GH", name: "Ghana", flag: "🇬🇭", currency: "GHS" },
-    { code: "GN", name: "Guinée", flag: "🇬🇳", currency: "GNF" },
+    { code: "CI", name: "Côte d'Ivoire", currency: "XOF" },
+    { code: "BF", name: "Burkina Faso", currency: "XOF" },
+    { code: "SN", name: "Sénégal", currency: "XOF" },
+    { code: "ML", name: "Mali", currency: "XOF" },
+    { code: "BJ", name: "Bénin", currency: "XOF" },
+    { code: "TG", name: "Togo", currency: "XOF" },
+    { code: "GH", name: "Ghana", currency: "GHS" },
+    { code: "GN", name: "Guinée", currency: "GNF" },
   ];
 
   useEffect(() => {
@@ -135,7 +135,7 @@ export function CheckoutPage() {
       try {
         const res = await apiClient.get(`/api/commerce/payments/intent/${activeIntent._id}`);
         if (res.data.status === "confirmed") {
-          toast.success("🎉 Paiement validé avec succès ! Votre Vendeur IA est actif.");
+          toast.success("Paiement validé avec succès ! Votre Vendeur IA est actif.");
           clearInterval(interval);
           setTimeout(() => {
             navigate("/dashboard");
@@ -226,7 +226,7 @@ export function CheckoutPage() {
       });
 
       if (res.data.intent?.status === "confirmed") {
-        toast.success("🎉 Paiement validé instantanément ! Redirection vers votre cockpit...");
+        toast.success("Paiement validé instantanément ! Redirection vers votre cockpit...");
         setTimeout(() => navigate("/dashboard"), 1000);
       } else {
         setProofSubmitted(true);
@@ -280,7 +280,6 @@ export function CheckoutPage() {
           <div className="lg:col-span-7 space-y-6">
             <div className="space-y-2">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-vendeur-emerald/10 border border-vendeur-emerald/20 text-vendeur-emerald text-[10px] font-black uppercase tracking-widest">
-                <Sparkles size={12} />
                 <span>Paiement 100% Local & Sécurisé</span>
               </div>
               <h1 className="text-2xl sm:text-4xl font-black uppercase tracking-tight italic">
@@ -307,7 +306,6 @@ export function CheckoutPage() {
                         : "bg-white/5 border-white/5 text-white/40 hover:border-white/20"
                     )}
                   >
-                    <span>{c.flag}</span>
                     <span>{c.name}</span>
                   </button>
                 ))}
@@ -607,7 +605,7 @@ export function CheckoutPage() {
                   disabled={loading}
                   className="w-full h-12 sm:h-14 bg-[#4285F4] text-white font-black uppercase tracking-widest text-xs rounded-2xl flex items-center justify-center gap-2 hover:bg-[#4285F4]/90 active:scale-98 transition-all disabled:opacity-50 cursor-pointer shadow-lg shadow-[#4285F4]/20"
                 >
-                  {loading ? <Loader2 className="animate-spin" size={18} /> : <Sparkles size={18} />}
+                  {loading ? <Loader2 className="animate-spin" size={18} /> : null}
                   <span>Confirmer l'achat via Google Play</span>
                 </button>
 

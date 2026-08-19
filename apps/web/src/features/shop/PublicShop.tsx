@@ -73,7 +73,7 @@ const SHOP_CONFIGS: Record<string, {
     ctaModalLabel: "Commander sur WhatsApp",
     infoLabel: "Infos taille / couleur",
     buildWhatsAppMessage: (name, p) =>
-      `Bonjour ${name} ! 👗✨\nJe suis intéressé(e) par cet article vu sur votre boutique :\n\n*${p.name}*\n💰 Prix : ${p.price.toLocaleString()} ${p.currency || "XOF"}\n\nEst-il disponible et en quelle taille / couleur ?`,
+      `Bonjour ${name} !\nJe suis intéressé(e) par cet article vu sur votre boutique :\n\n*${p.name}*\n💰 Prix : ${p.price.toLocaleString()} ${p.currency || "XOF"}\n\nEst-il disponible et en quelle taille / couleur ?`,
     showStock: true,
     productHint: () => null
   },
@@ -85,7 +85,7 @@ const SHOP_CONFIGS: Record<string, {
     ctaModalLabel: "Commander ce plat",
     infoLabel: "Voir la carte complète",
     buildWhatsAppMessage: (name, p) =>
-      `Bonjour ${name} ! 🍽️✨\nJe souhaite commander :\n\n*${p.name}*\n💰 Prix : ${p.price.toLocaleString()} ${p.currency || "XOF"}${p.preparationTime ? `\n⏱ Préparation : ${p.preparationTime}` : ""}\n\nEst-ce disponible ? Je souhaite : ⬜ Sur place  ⬜ À emporter  ⬜ Livraison`,
+      `Bonjour ${name} !\nJe souhaite commander :\n\n*${p.name}*\n💰 Prix : ${p.price.toLocaleString()} ${p.currency || "XOF"}${p.preparationTime ? `\n⏱ Préparation : ${p.preparationTime}` : ""}\n\nEst-ce disponible ? Je souhaite : ⬜ Sur place  ⬜ À emporter  ⬜ Livraison`,
     showStock: false,
     productHint: (p) => p.preparationTime ? `⏱ ${p.preparationTime}` : null
   },
@@ -97,7 +97,7 @@ const SHOP_CONFIGS: Record<string, {
     ctaModalLabel: "Réserver une séance",
     infoLabel: "En savoir plus",
     buildWhatsAppMessage: (name, p) =>
-      `Bonjour ${name} ! 📅✨\nJe souhaite réserver :\n\n*${p.name}*\n💰 Tarif : ${p.price.toLocaleString()} ${p.currency || "XOF"}${p.serviceDuration ? `\n⏳ Durée : ${p.serviceDuration}` : ""}${p.serviceDeliveryType ? `\n📍 Mode : ${p.serviceDeliveryType}` : ""}\n\nQuels sont vos prochains créneaux disponibles ?`,
+      `Bonjour ${name} !\nJe souhaite réserver :\n\n*${p.name}*\n💰 Tarif : ${p.price.toLocaleString()} ${p.currency || "XOF"}${p.serviceDuration ? `\n⏳ Durée : ${p.serviceDuration}` : ""}${p.serviceDeliveryType ? `\n📍 Mode : ${p.serviceDeliveryType}` : ""}\n\nQuels sont vos prochains créneaux disponibles ?`,
     showStock: false,
     productHint: (p) => p.serviceDuration ? `⏳ ${p.serviceDuration}${p.serviceDeliveryType ? ` · ${p.serviceDeliveryType}` : ""}` : null
   },
@@ -109,7 +109,7 @@ const SHOP_CONFIGS: Record<string, {
     ctaModalLabel: "Obtenir l'accès instantané",
     infoLabel: "En savoir plus",
     buildWhatsAppMessage: (name, p) =>
-      `Bonjour ${name} ! 📚✨\nJe souhaite accéder à :\n\n*${p.name}*\n💰 Prix : ${p.price.toLocaleString()} ${p.currency || "XOF"}${p.digitalFormat ? `\n📁 Format : ${p.digitalFormat}` : ""}\n\nComment procéder au paiement pour recevoir l'accès immédiatement ?`,
+      `Bonjour ${name} !\nJe souhaite accéder à :\n\n*${p.name}*\n💰 Prix : ${p.price.toLocaleString()} ${p.currency || "XOF"}${p.digitalFormat ? `\n📁 Format : ${p.digitalFormat}` : ""}\n\nComment procéder au paiement pour recevoir l'accès immédiatement ?`,
     showStock: false,
     productHint: (p) => p.digitalFormat ? `📁 ${p.digitalFormat}` : "⚡ Accès immédiat"
   },
@@ -121,7 +121,7 @@ const SHOP_CONFIGS: Record<string, {
     ctaModalLabel: "Commander sur WhatsApp",
     infoLabel: "Conseils d'utilisation",
     buildWhatsAppMessage: (name, p) =>
-      `Bonjour ${name} ! 💄✨\nJe suis intéressé(e) par :\n\n*${p.name}*\n💰 Prix : ${p.price.toLocaleString()} ${p.currency || "XOF"}\n\nPourriez-vous me donner plus d'infos sur ce produit et les conseils d'utilisation ?`,
+      `Bonjour ${name} !\nJe suis intéressé(e) par :\n\n*${p.name}*\n💰 Prix : ${p.price.toLocaleString()} ${p.currency || "XOF"}\n\nPourriez-vous me donner plus d'infos sur ce produit et les conseils d'utilisation ?`,
     showStock: true,
     productHint: () => null
   },
@@ -133,7 +133,7 @@ const SHOP_CONFIGS: Record<string, {
     ctaModalLabel: "Commander sur WhatsApp",
     infoLabel: "Fiche technique",
     buildWhatsAppMessage: (name, p) =>
-      `Bonjour ${name} ! 📱✨\nJe suis intéressé(e) par :\n\n*${p.name}*\n💰 Prix : ${p.price.toLocaleString()} ${p.currency || "XOF"}\n\nPourriez-vous m'indiquer la fiche technique complète et la disponibilité ?`,
+      `Bonjour ${name} !\nJe suis intéressé(e) par :\n\n*${p.name}*\n💰 Prix : ${p.price.toLocaleString()} ${p.currency || "XOF"}\n\nPourriez-vous m'indiquer la fiche technique complète et la disponibilité ?`,
     showStock: true,
     productHint: () => null
   },
@@ -145,7 +145,7 @@ const SHOP_CONFIGS: Record<string, {
     ctaModalLabel: "Commander sur WhatsApp",
     infoLabel: "Voir les dimensions",
     buildWhatsAppMessage: (name, p) =>
-      `Bonjour ${name} ! 🏠✨\nJe suis intéressé(e) par :\n\n*${p.name}*\n💰 Prix : ${p.price.toLocaleString()} ${p.currency || "XOF"}\n\nPourriez-vous me communiquer les dimensions exactes et les matériaux ?`,
+      `Bonjour ${name} !\nJe suis intéressé(e) par :\n\n*${p.name}*\n💰 Prix : ${p.price.toLocaleString()} ${p.currency || "XOF"}\n\nPourriez-vous me communiquer les dimensions exactes et les matériaux ?`,
     showStock: true,
     productHint: () => null
   },
@@ -157,7 +157,7 @@ const SHOP_CONFIGS: Record<string, {
     ctaModalLabel: "Commander sur WhatsApp",
     infoLabel: "Infos produit",
     buildWhatsAppMessage: (name, p) =>
-      `Bonjour ${name} ! 🛒✨\nJe souhaite commander :\n\n*${p.name}*\n💰 Prix : ${p.price.toLocaleString()} ${p.currency || "XOF"}\n\nQuelle est la disponibilité ? Proposez-vous des packs ou des lots ?`,
+      `Bonjour ${name} !\nJe souhaite commander :\n\n*${p.name}*\n💰 Prix : ${p.price.toLocaleString()} ${p.currency || "XOF"}\n\nQuelle est la disponibilité ? Proposez-vous des packs ou des lots ?`,
     showStock: true,
     productHint: () => null
   },
@@ -169,7 +169,7 @@ const SHOP_CONFIGS: Record<string, {
     ctaModalLabel: "Commander sur WhatsApp",
     infoLabel: "Conseils d'usage",
     buildWhatsAppMessage: (name, p) =>
-      `Bonjour ${name} ! 💊✨\nJe suis intéressé(e) par :\n\n*${p.name}*\n💰 Prix : ${p.price.toLocaleString()} ${p.currency || "XOF"}\n\nPourriez-vous me donner plus d'infos sur ce produit et les conseils d'utilisation ?`,
+      `Bonjour ${name} !\nJe suis intéressé(e) par :\n\n*${p.name}*\n💰 Prix : ${p.price.toLocaleString()} ${p.currency || "XOF"}\n\nPourriez-vous me donner plus d'infos sur ce produit et les conseils d'utilisation ?`,
     showStock: true,
     productHint: () => null
   },
@@ -181,7 +181,7 @@ const SHOP_CONFIGS: Record<string, {
     ctaModalLabel: "Vérifier la compatibilité",
     infoLabel: "Référence & compatibilité",
     buildWhatsAppMessage: (name, p) =>
-      `Bonjour ${name} ! 🚗✨\nJe cherche :\n\n*${p.name}*\n💰 Prix : ${p.price.toLocaleString()} ${p.currency || "XOF"}\n\nPourriez-vous confirmer la compatibilité avec mon véhicule ? Je vais préciser la marque/modèle/année.`,
+      `Bonjour ${name} !\nJe cherche :\n\n*${p.name}*\n💰 Prix : ${p.price.toLocaleString()} ${p.currency || "XOF"}\n\nPourriez-vous confirmer la compatibilité avec mon véhicule ? Je vais préciser la marque/modèle/année.`,
     showStock: true,
     productHint: () => null
   },
@@ -193,7 +193,7 @@ const SHOP_CONFIGS: Record<string, {
     ctaModalLabel: "Commander ou personnaliser",
     infoLabel: "Personnaliser",
     buildWhatsAppMessage: (name, p) =>
-      `Bonjour ${name} ! 🎨✨\nJe suis intéressé(e) par cette création :\n\n*${p.name}*\n💰 Prix : ${p.price.toLocaleString()} ${p.currency || "XOF"}\n\nEst-elle disponible ? Proposez-vous des commandes personnalisées ?`,
+      `Bonjour ${name} !\nJe suis intéressé(e) par cette création :\n\n*${p.name}*\n💰 Prix : ${p.price.toLocaleString()} ${p.currency || "XOF"}\n\nEst-elle disponible ? Proposez-vous des commandes personnalisées ?`,
     showStock: true,
     productHint: () => null
   },
@@ -205,7 +205,7 @@ const SHOP_CONFIGS: Record<string, {
     ctaModalLabel: "Commander sur WhatsApp",
     infoLabel: "Infos & disponibilité",
     buildWhatsAppMessage: (name, p) =>
-      `Bonjour ${name} ! ✨\nJe suis intéressé(e) par :\n\n*${p.name}*\n💰 Prix : ${p.price.toLocaleString()} ${p.currency || "XOF"}\n\nEst-il toujours disponible ?`,
+      `Bonjour ${name} !\nJe suis intéressé(e) par :\n\n*${p.name}*\n💰 Prix : ${p.price.toLocaleString()} ${p.currency || "XOF"}\n\nEst-il toujours disponible ?`,
     showStock: true,
     productHint: () => null
   }
@@ -293,7 +293,7 @@ export function PublicShop() {
   const stories = products.slice(0, 6).map((prod: any, idx: number) => ({
     id: prod._id,
     title: prod.name,
-    tag: idx === 0 ? "🔥 Tendance" : idx === 1 ? "✨ Coup de cœur" : "⭐ Sélection",
+    tag: idx === 0 ? "Tendance" : idx === 1 ? "Coup de cœur" : "Sélection",
     product: prod,
     highlightText: idx === 0 ? "Le plus demandé" : "Disponible immédiatement"
   }));
@@ -384,9 +384,7 @@ export function PublicShop() {
       {/* Top Flash Announcement Banner */}
       {merchant?.branding?.announcement?.enabled && merchant?.branding?.announcement?.text && (
         <div className="bg-gradient-to-r from-amber-500 via-rose-500 to-vendeur-emerald text-vendeur-coal px-4 py-2 text-center text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 shadow-md">
-          <Flame size={14} className="animate-bounce" />
           <span>{merchant.branding.announcement.text}</span>
-          <Flame size={14} className="animate-bounce" />
         </div>
       )}
 
@@ -475,7 +473,6 @@ export function PublicShop() {
           <section className="space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Flame size={16} className="text-rose-500 animate-pulse" />
                 <h3 className="text-xs font-black uppercase tracking-widest text-white/80">
                   Stories &amp; Nouveautés Flash
                 </h3>

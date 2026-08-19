@@ -527,7 +527,7 @@ function BoutiqueTab({ merchant, initialKnowledge, accessToken }: { merchant: an
     onSuccess: () => {
       setIsDirty(false);
       setCategoryChangeWarning(null);
-      toast.success("Réglages Boutique enregistrés ! ✨");
+      toast.success("Réglages Boutique enregistrés !");
       // Invalidate ALL queries that depend on merchant data so the whole UI reacts
       queryClient.invalidateQueries({ queryKey: ["dashboard"] });
       queryClient.invalidateQueries({ queryKey: ["knowledge"] });
@@ -637,7 +637,6 @@ function BoutiqueTab({ merchant, initialKnowledge, accessToken }: { merchant: an
             {/* Warning badge when currency has changed */}
             {localMerchant?.currency !== merchant?.currency && (
               <div className="flex items-start gap-2 px-4 py-3 rounded-xl bg-amber-500/10 border border-amber-500/20">
-                <span className="text-amber-400 text-base shrink-0 mt-0.5">💰</span>
                 <p className="text-xs text-amber-300 leading-relaxed font-medium">
                   Conversion automatique activée : après enregistrement, les prix de l'ensemble de votre catalogue et vos frais de livraison seront automatiquement convertis en <strong className="text-white font-black">{localMerchant?.currency}</strong>.
                 </p>
@@ -650,7 +649,6 @@ function BoutiqueTab({ merchant, initialKnowledge, accessToken }: { merchant: an
             <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/70 backdrop-blur-lg animate-in fade-in duration-200">
               <div className="w-full max-w-md bg-vendeur-coal border border-white/10 rounded-3xl p-8 space-y-6 shadow-2xl animate-in zoom-in-95 duration-300">
                 <div className="space-y-2">
-                  <div className="h-12 w-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-2xl mb-4">💱</div>
                   <h3 className="text-xl font-black uppercase tracking-tight text-white">Changer la Devise Principale ?</h3>
                   <p className="text-white/50 text-sm leading-relaxed">
                     Cette action va convertir automatiquement les prix de vos produits, vos frais de livraison, l'affichage de vos factures et les messages de vente du Vendeur IA WhatsApp.
@@ -729,18 +727,18 @@ function BoutiqueTab({ merchant, initialKnowledge, accessToken }: { merchant: an
                   }
                 }}
               >
-                <option value="fashion">👗 Mode &amp; Accessoires</option>
-                <option value="food">🍔 Restauration &amp; Food</option>
-                <option value="beauty">💄 Soins &amp; Cosmétiques</option>
-                <option value="electronics">📱 Électronique &amp; High-Tech</option>
-                <option value="artisan">🛠️ Artisanat &amp; Fait Main</option>
-                <option value="services">💼 Prestations de Services</option>
-                <option value="digital">📚 Produits Digitaux &amp; Formations</option>
-                <option value="home">🏠 Maison &amp; Décoration</option>
-                <option value="grocery">🛒 Épicerie &amp; Supérette</option>
-                <option value="health">💊 Santé &amp; Bien-être</option>
-                <option value="auto">🚗 Auto-Moto &amp; Pièces</option>
-                <option value="other">📦 Autre Commerce</option>
+                <option value="fashion">Mode &amp; Accessoires</option>
+                <option value="food">Restauration &amp; Food</option>
+                <option value="beauty">Soins &amp; Cosmétiques</option>
+                <option value="electronics">Électronique &amp; High-Tech</option>
+                <option value="artisan">Artisanat &amp; Fait Main</option>
+                <option value="services">Prestations de Services</option>
+                <option value="digital">Produits Digitaux &amp; Formations</option>
+                <option value="home">Maison &amp; Décoration</option>
+                <option value="grocery">Épicerie &amp; Supérette</option>
+                <option value="health">Santé &amp; Bien-être</option>
+                <option value="auto">Auto-Moto &amp; Pièces</option>
+                <option value="other">Autre Commerce</option>
               </select>
               <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 text-white/20 pointer-events-none" size={16} />
             </div>
@@ -748,7 +746,6 @@ function BoutiqueTab({ merchant, initialKnowledge, accessToken }: { merchant: an
             {/* Warning badge when category has been changed but not saved yet */}
             {localMerchant?.category !== merchant?.category && (
               <div className="flex items-start gap-2 px-4 py-3 rounded-xl bg-amber-500/10 border border-amber-500/20">
-                <span className="text-amber-400 text-base shrink-0 mt-0.5">⚠️</span>
                 <p className="text-xs text-amber-300 leading-relaxed font-medium">
                   Changement non enregistré. L'interface Admin, le Vendeur IA WhatsApp et la vitrine publique s'adapteront au nouveau type de commerce après sauvegarde.
                 </p>
@@ -761,7 +758,6 @@ function BoutiqueTab({ merchant, initialKnowledge, accessToken }: { merchant: an
             <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/70 backdrop-blur-lg animate-in fade-in duration-200">
               <div className="w-full max-w-md bg-vendeur-coal border border-white/10 rounded-3xl p-8 space-y-6 shadow-2xl animate-in zoom-in-95 duration-300">
                 <div className="space-y-2">
-                  <div className="h-12 w-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-2xl mb-4">⚠️</div>
                   <h3 className="text-xl font-black uppercase tracking-tight text-white">Changer de type de commerce ?</h3>
                   <p className="text-white/50 text-sm leading-relaxed">
                     Cette action va adapter <strong className="text-white">l'interface Admin</strong> (labels, champs, icônes),
@@ -839,7 +835,7 @@ function BoutiqueTab({ merchant, initialKnowledge, accessToken }: { merchant: an
                  const zoneName = neighborhood || district;
                  if (zoneName && !deliveryFees.find((f: any) => f.zone.toLowerCase().includes(zoneName.toLowerCase()))) {
                    setDeliveryFees([...deliveryFees, { zone: zoneName, price: 1000 }]);
-                   toast.info(`Zone "${zoneName}" ajoutée aux frais de livraison 🚚`);
+                   toast.info(`Zone "${zoneName}" ajoutée aux frais de livraison`);
                  }
                }}
                placeholder="Ex: Cocody, Abidjan"
@@ -1075,7 +1071,7 @@ function BoutiqueTab({ merchant, initialKnowledge, accessToken }: { merchant: an
                   loading: 'Activation des alertes...',
                   success: () => {
                     setIsSubscribed(true);
-                    return 'Alertes activées ! 🔔';
+                    return 'Alertes activées !';
                   },
                   error: 'Échec de l\'activation.'
                 });
@@ -1103,7 +1099,6 @@ function BoutiqueTab({ merchant, initialKnowledge, accessToken }: { merchant: an
             </>
           ) : (
             <>
-              <Sparkles size={18} className="text-amber-400" />
               Activer les Notifications
             </>
           )}
@@ -1155,7 +1150,7 @@ function SavoirTab({ initialKnowledge }: { initialKnowledge: any }) {
       await apiClient.patch("/api/commerce/knowledge", data);
     },
     onSuccess: () => {
-      toast.success("Savoir IA mis à jour ! 🧠");
+      toast.success("Savoir IA mis à jour !");
       queryClient.invalidateQueries({ queryKey: ["knowledge"] });
     }
   });
@@ -1254,7 +1249,7 @@ function PersonnaliteTab({ merchant }: { merchant: any }) {
       await apiClient.patch("/api/commerce/ai-settings", aiSettings);
     },
     onSuccess: () => {
-      toast.success("Style de Vendeur IA mis à jour ! ✨");
+      toast.success("Style de Vendeur IA mis à jour !");
       queryClient.invalidateQueries({ queryKey: ["dashboard"] });
     }
   });
@@ -1265,7 +1260,6 @@ function PersonnaliteTab({ merchant }: { merchant: any }) {
          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="space-y-1">
                <h2 className="text-xl md:text-2xl font-black text-white flex items-center gap-3">
-                 <Sparkles size={22} className="text-amber-400 shrink-0" />
                  <span className="whitespace-nowrap">Style de Communication</span>
                </h2>
                <p className="text-[10px] md:text-xs text-white/40">Définissez le caractère de votre Vendeur IA.</p>
@@ -1289,21 +1283,18 @@ function PersonnaliteTab({ merchant }: { merchant: any }) {
                     onClick={() => setAiSettings({...aiSettings, personality: "friendly"})}
                     label="Friendly"
                     desc="Chaleureux & Sympa"
-                    emoji="👋"
                  />
                  <PersonalityButton
                     active={aiSettings.personality === "professional"}
                     onClick={() => setAiSettings({...aiSettings, personality: "professional"})}
                     label="Professional"
                     desc="Sérieux & Direct"
-                    emoji="💼"
                  />
                  <PersonalityButton
                     active={aiSettings.personality === "premium"}
                     onClick={() => setAiSettings({...aiSettings, personality: "premium"})}
                     label="Premium"
                     desc="Élégant & Rare"
-                    emoji="💎"
                  />
               </div>
             </div>
@@ -1357,7 +1348,7 @@ function PersonnaliteTab({ merchant }: { merchant: any }) {
                 )}>
                    <div className="flex items-center justify-between">
                       <div className="h-12 w-12 rounded-2xl bg-emerald-400/10 flex items-center justify-center text-emerald-400">
-                         <Sparkles size={24} />
+                         <MessageSquare size={24} />
                       </div>
                       <ToggleButton
                          active={aiSettings.dailyStatusAssistant !== false}
@@ -1455,7 +1446,7 @@ function ConnexionsTab({ merchant, systemSettings, qrCode, isConnectingSocket, o
            <SocialCard
               icon={<TikTokIcon size={24} />}
               name="TikTok Shop"
-              status="En développement 🚀"
+              status="En développement"
               active={false}
               color="bg-black"
            />
@@ -1509,11 +1500,10 @@ function PersonalityButton({ active, onClick, label, desc, emoji }: any) {
       )}
     >
       <div className="relative z-10">
-        <span className="text-2xl mb-2 block">{emoji}</span>
+        {emoji && <span className="text-2xl mb-2 block">{emoji}</span>}
         <p className={cn("font-black text-sm uppercase tracking-widest", active ? "text-vendeur-emerald" : "text-white")}>{label}</p>
         <p className="text-[10px] text-white/40 font-medium mt-0.5">{desc}</p>
       </div>
-      {active && <div className="absolute -right-2 -bottom-2 opacity-10"><Sparkles size={80} className="text-vendeur-emerald" /></div>}
     </button>
   );
 }

@@ -778,6 +778,45 @@ class WhatsAppService {
   }
 
   async handleMetaIncomingMessage(from: string, text: string, phoneId: string, media?: { mediaId: string, mediaType: string }) {
+    // 0. Intercept Reverse WhatsApp Auth (Direct Click-to-WhatsApp Login)
+    try {
+      const { authService } = await import("../auth/auth.service.js");
+      const authResult = await authService.authenticateViaIncomingMessage(from, text);
+      if (authResult.success) {
+        console.log(`[Meta WhatsApp] Authenticated user ${from} via incoming message.`);
+        
+        // Send confirmation back to user (24h window is open now!)
+        const settings = await SystemSettingsModel.findOne();
+        const config = settings?.metaConfig?.whatsappDefaults;
+        const accessToken = config?.accessToken || env.WHATSAPP_ACCESS_TOKEN;
+        const activePhoneId = phoneId || config?.phoneNumberId || env.WHATSAPP_PHONE_ID;
+
+        if (accessToken && activePhoneId && authResult.replyMessage) {
+          await axios.post(
+            `https://graph.facebook.com/v20.0/${activePhoneId}/messages`,
+            {
+              messaging_product: "whatsapp",
+              recipient_type: "individual",
+              to: from.replace(/\+/g, ""),
+              type: "text",
+              text: { body: authResult.replyMessage },
+            },
+            {
+              headers: {
+                Authorization: `Bearer ${accessToken}`,
+                "Content-Type": "application/json",
+              },
+            }
+          ).catch(err => console.error("[Meta WhatsApp] Error sending auth confirmation reply:", err.message));
+        }
+
+        // Return immediately so we don't treat this as an e-commerce sale
+        return;
+      }
+    } catch (authErr) {
+      console.warn("[Meta WhatsApp] Auth check error during incoming message:", authErr);
+    }
+
     // 1. Find the merchant associated with this Phone ID (Dedicated number) or phone/whatsappNumber
     let merchant = await CommerceMerchantModel.findOne({
       $or: [

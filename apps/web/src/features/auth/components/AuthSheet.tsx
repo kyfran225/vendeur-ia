@@ -204,9 +204,6 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
       if (res.data?.authSessionId) {
         setAuthSessionId(res.data.authSessionId);
       }
-      if (res.data?.code) {
-        setOtpValue(res.data.code);
-      }
       setWhatsappStep("waiting");
       toast.success(res.data?.message || "Lien de connexion envoyé sur votre WhatsApp !");
     } catch (err: any) {
@@ -408,33 +405,54 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
               </div>
             </form>
           ) : (
-            <div className="space-y-6 text-center py-2 animate-in zoom-in-95 duration-300">
-              {/* OTP Input Field */}
-              <div className="space-y-3 px-4">
+            <div className="space-y-5 text-center py-2 animate-in zoom-in-95 duration-300">
+              {/* Primary Action: 1-Click WhatsApp Direct Open */}
+              <div className="bg-white/5 border border-white/10 rounded-2xl p-4 text-left space-y-3">
+                <div className="flex items-center gap-2 text-vendeur-emerald font-bold text-xs">
+                  <span className="w-2 h-2 rounded-full bg-vendeur-emerald animate-ping" />
+                  <span>Validation WhatsApp en 1 Clic</span>
+                </div>
+                
+                <p className="text-xs text-white/70 leading-relaxed">
+                  Cliquez sur le bouton ci-dessous pour ouvrir WhatsApp et envoyer le message de validation. Votre session s'ouvrira automatiquement !
+                </p>
+
+                <a
+                  href={`https://wa.me/22505111157?text=${encodeURIComponent(`CONNEXION ${authSessionId ? authSessionId.slice(0, 6).toUpperCase() : ""}`)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full h-12 bg-[#25D366] hover:bg-[#20bd5a] text-white font-black text-xs uppercase tracking-wider rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg shadow-[#25D366]/20 cursor-pointer"
+                >
+                  <WhatsAppIcon size={18} />
+                  <span>Envoyer "CONNEXION" sur WhatsApp</span>
+                  <ChevronRight size={16} />
+                </a>
+              </div>
+
+              {/* Alternative: OTP Input */}
+              <div className="space-y-2 px-2">
+                <p className="text-[11px] text-white/40 font-medium">
+                  Ou saisissez le code à 6 chiffres si vous l'avez reçu :
+                </p>
                 <div className="relative">
                   <input
                     type="text"
                     inputMode="numeric"
-                    autoFocus
                     maxLength={6}
                     placeholder="· · · · · ·"
-                    className="w-full h-16 bg-black/50 border border-white/10 focus:border-vendeur-emerald rounded-2xl text-center text-3xl font-mono tracking-[0.4em] text-vendeur-emerald outline-none transition-all placeholder:text-white/10"
+                    className="w-full h-14 bg-black/50 border border-white/10 focus:border-vendeur-emerald rounded-xl text-center text-2xl font-mono tracking-[0.3em] text-vendeur-emerald outline-none transition-all placeholder:text-white/10"
                     value={otpValue}
                     onChange={(e) => setOtpValue(e.target.value.replace(/\D/g, "").slice(0, 6))}
                   />
                   {isVerifyingOtp && (
-                    <div className="absolute inset-0 bg-black/40 backdrop-blur-[1px] rounded-2xl flex items-center justify-center">
-                      <Loader2 className="animate-spin text-vendeur-emerald" size={24} />
+                    <div className="absolute inset-0 bg-black/40 backdrop-blur-[1px] rounded-xl flex items-center justify-center">
+                      <Loader2 className="animate-spin text-vendeur-emerald" size={20} />
                     </div>
                   )}
                 </div>
-
-                <p className="text-[10px] text-white/20 uppercase tracking-widest font-black">
-                  Connexion Automatique Active
-                </p>
               </div>
 
-              <div className="pt-2 flex flex-col gap-3">
+              <div className="pt-1 flex flex-col gap-2">
                 <button
                   type="button"
                   onClick={() => {

@@ -291,6 +291,69 @@ export class AuthService {
     return { status: "pending" };
   }
 
+  async authenticateViaIncomingMessage(fromPhone: string, text: string): Promise<{ success: boolean; tokens?: any; replyMessage?: string }> {
+    const cleanPhone = fromPhone.replace(/[\s\-\+\(\)]/g, "");
+    const normalizedText = (text || "").trim().toUpperCase();
+
+    // Check if message is an auth intent (e.g. CONNEXION, CONNEXION 123456, CODE, LOGIN, or matches a session)
+    const isExplicitAuthCommand = /^(CONNEXION|AUTH|LOGIN|CONNECTER|ACCES|VERIFY)/i.test(normalizedText);
+    
+    // Check if there is a pending session for this phone or session code
+    let matchedSessionId: string | undefined;
+    const phoneSession = pendingAuthSessions.get(`phone:${cleanPhone}`);
+    if (phoneSession) {
+      matchedSessionId = phoneSession.authSessionId;
+    }
+
+    // Also check if text contains any active authSessionId or 6-digit code
+    for (const [key, session] of pendingAuthSessions.entries()) {
+      if (session.phoneNumber === cleanPhone || (normalizedText && normalizedText.includes(session.authSessionId.toUpperCase().slice(0, 6)))) {
+        matchedSessionId = session.authSessionId;
+        break;
+      }
+    }
+
+    if (!isExplicitAuthCommand && !phoneSession && !matchedSessionId) {
+      return { success: false };
+    }
+
+    console.log(`[WhatsApp Reverse Auth] Authenticating user ${cleanPhone} via incoming message: "${text}"`);
+
+    // Perform login / registration
+    const tokens = await this.loginOrRegisterWithWhatsApp(cleanPhone);
+
+    // Update pending sessions in memory
+    const sessionUpdate: PendingAuthSession = {
+      phoneNumber: cleanPhone,
+      authSessionId: matchedSessionId || "",
+      status: "authenticated",
+      tokens,
+      createdAt: Date.now()
+    };
+
+    if (matchedSessionId) {
+      pendingAuthSessions.set(matchedSessionId, sessionUpdate);
+    }
+    pendingAuthSessions.set(`phone:${cleanPhone}`, sessionUpdate);
+
+    // Notify connected browser tabs / PWAs in real time via Socket.io
+    const io = getSocketServer();
+    if (io) {
+      io.to(`auth:${cleanPhone}`).emit("auth:success", tokens);
+      if (matchedSessionId) {
+        io.to(`auth:${matchedSessionId}`).emit("auth:success", tokens);
+      }
+    }
+
+    const replyMessage = `✨ *Connexion Vendeur IA Réussie !*\n\nBienvenue sur votre espace commerçant.\n\n👉 Vous êtes maintenant connecté sur votre écran web / mobile.\nVous pouvez retourner sur votre navigateur pour continuer.`;
+
+    return {
+      success: true,
+      tokens,
+      replyMessage
+    };
+  }
+
   async requestWhatsAppOtp(whatsappNumber: string) {
     const cleanNumber = whatsappNumber.replace(/[\s\-\(\)\+]/g, "");
     if (!cleanNumber || cleanNumber.length < 8) {

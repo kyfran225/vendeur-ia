@@ -32,6 +32,7 @@ import {
   CountrySelector,
   COUNTRIES
 } from "./components/CountrySelector";
+import { CategorySelector } from "./components/CategorySelector";
 import { AddressAutocomplete } from "./components/AddressAutocomplete";
 import { AuthSheet } from "../auth/components/AuthSheet";
 import { WhatsAppIcon } from "@/components/ui/WhatsAppIcon";
@@ -492,20 +493,10 @@ function LandingHero({
 
                       <div className="space-y-1">
                         <label className="text-[10px] md:text-[9px] font-black uppercase tracking-widest text-white/40 ml-1">Catégorie</label>
-                        <select className="w-full h-11 md:h-9 rounded-xl bg-black/40 border border-white/10 px-3 text-white outline-none focus:border-emerald-400 text-xs md:text-[10px] appearance-none cursor-pointer" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value as any })}>
-                          <option value="fashion">Mode & Habillement</option>
-                          <option value="food">Restauration & Food</option>
-                          <option value="beauty">Soins & Cosmétiques</option>
-                          <option value="electronics">Électronique & High-Tech</option>
-                          <option value="artisan">Artisanat & Fait Main</option>
-                          <option value="services">Prestations de Services</option>
-                          <option value="digital">Produits Digitaux & E-books</option>
-                          <option value="home">Maison, Mobilier & Déco</option>
-                          <option value="grocery">Épicerie & Alimentation</option>
-                          <option value="health">Santé & Bien-être</option>
-                          <option value="auto">Auto-Moto & Pièces</option>
-                          <option value="other">Autre Commerce Général</option>
-                        </select>
+                        <CategorySelector
+                          value={form.category}
+                          onChange={(catId) => setForm({ ...form, category: catId as any })}
+                        />
                       </div>
 
                       <div className="space-y-1">

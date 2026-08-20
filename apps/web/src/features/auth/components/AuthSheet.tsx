@@ -121,16 +121,32 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
   useEffect(() => {
     if (whatsappStep === "waiting" && localPhone) {
       const fullPhoneNumber = `${selectedCountry.dialCode}${localPhone}`.replace(/\D/g, "");
+      const localCleanNumber = localPhone.replace(/\D/g, "");
       
-      // 1. WebSocket Realtime Channel
-      const socket = io(import.meta.env.VITE_API_URL || window.location.origin.replace("5173", "3001"));
-      socket.emit("join_auth", fullPhoneNumber);
+      // 1. WebSocket Realtime Channel with auto-rejoin
+      const socketUrl = import.meta.env.VITE_API_URL || window.location.origin.replace("5173", "3001");
+      const socket = io(socketUrl, {
+        reconnection: true,
+        reconnectionAttempts: 20,
+        reconnectionDelay: 1000
+      });
+
+      const joinRooms = () => {
+        socket.emit("join_auth", fullPhoneNumber);
+        socket.emit("join_auth", localCleanNumber);
+        if (authSessionId) {
+          socket.emit("join_auth", authSessionId);
+        }
+      };
+
+      socket.on("connect", joinRooms);
+      joinRooms();
 
       socket.on("auth:success", (sessionData) => {
         completeAuth(sessionData);
       });
 
-      // 2. Resilient HTTP Polling (Runs every 2s in background + on visibility/app focus)
+      // 2. Resilient HTTP Polling (Runs every 1.5s in background + on visibility/app focus)
       let isCancelled = false;
 
       const checkAuth = async () => {
@@ -155,6 +171,7 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
       const handleVisibilityOrFocus = () => {
         if (document.visibilityState === "visible" || !document.hidden) {
           checkAuth();
+          joinRooms();
         }
       };
 

@@ -270,18 +270,15 @@ export class AuthService {
     if (!session && phoneNumber) {
       const cleanNumber = phoneNumber.replace(/[\s\-\+\(\)]/g, "");
       session = pendingAuthSessions.get(`phone:${cleanNumber}`);
+      if (!session && cleanNumber.startsWith("225")) {
+        session = pendingAuthSessions.get(`phone:${cleanNumber.replace(/^225/, "")}`);
+      }
+      if (!session && !cleanNumber.startsWith("225")) {
+        session = pendingAuthSessions.get(`phone:225${cleanNumber}`);
+      }
     }
 
     if (session && session.status === "authenticated" && session.tokens) {
-      // Keep in memory for a short grace period (60s) so both PWA and browser tabs can sync cleanly
-      setTimeout(() => {
-        if (authSessionId) pendingAuthSessions.delete(authSessionId);
-        if (phoneNumber) {
-          const cleanNumber = phoneNumber.replace(/[\s\-\+\(\)]/g, "");
-          pendingAuthSessions.delete(`phone:${cleanNumber}`);
-        }
-      }, 60 * 1000);
-
       return {
         status: "authenticated",
         sessionData: session.tokens
@@ -300,14 +297,18 @@ export class AuthService {
     
     // Check if there is a pending session for this phone or session code
     let matchedSessionId: string | undefined;
-    const phoneSession = pendingAuthSessions.get(`phone:${cleanPhone}`);
+    const phoneSession = pendingAuthSessions.get(`phone:${cleanPhone}`) || 
+                         pendingAuthSessions.get(`phone:225${cleanPhone.replace(/^225/, "")}`) ||
+                         pendingAuthSessions.get(`phone:${cleanPhone.replace(/^225/, "")}`);
     if (phoneSession) {
       matchedSessionId = phoneSession.authSessionId;
     }
 
     // Also check if text contains any active authSessionId or 6-digit code
     for (const [key, session] of pendingAuthSessions.entries()) {
-      if (session.phoneNumber === cleanPhone || (normalizedText && normalizedText.includes(session.authSessionId.toUpperCase().slice(0, 6)))) {
+      const sessionClean = session.phoneNumber.replace(/^225/, "");
+      const phoneClean = cleanPhone.replace(/^225/, "");
+      if (sessionClean === phoneClean || (normalizedText && normalizedText.includes(session.authSessionId.toUpperCase().slice(0, 6)))) {
         matchedSessionId = session.authSessionId;
         break;
       }
@@ -322,7 +323,7 @@ export class AuthService {
     // Perform login / registration
     const tokens = await this.loginOrRegisterWithWhatsApp(cleanPhone);
 
-    // Update pending sessions in memory
+    // Update pending sessions in memory with all key variants
     const sessionUpdate: PendingAuthSession = {
       phoneNumber: cleanPhone,
       authSessionId: matchedSessionId || "",
@@ -335,11 +336,15 @@ export class AuthService {
       pendingAuthSessions.set(matchedSessionId, sessionUpdate);
     }
     pendingAuthSessions.set(`phone:${cleanPhone}`, sessionUpdate);
+    pendingAuthSessions.set(`phone:225${cleanPhone.replace(/^225/, "")}`, sessionUpdate);
+    pendingAuthSessions.set(`phone:${cleanPhone.replace(/^225/, "")}`, sessionUpdate);
 
-    // Notify connected browser tabs / PWAs in real time via Socket.io
+    // Notify connected browser tabs / PWAs in real time via Socket.io across all phone room formats
     const io = getSocketServer();
     if (io) {
       io.to(`auth:${cleanPhone}`).emit("auth:success", tokens);
+      io.to(`auth:225${cleanPhone.replace(/^225/, "")}`).emit("auth:success", tokens);
+      io.to(`auth:${cleanPhone.replace(/^225/, "")}`).emit("auth:success", tokens);
       if (matchedSessionId) {
         io.to(`auth:${matchedSessionId}`).emit("auth:success", tokens);
       }

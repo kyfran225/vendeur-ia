@@ -269,12 +269,24 @@ export class AuthService {
     }
     if (!session && phoneNumber) {
       const cleanNumber = phoneNumber.replace(/[\s\-\+\(\)]/g, "");
+      const last8 = cleanNumber.slice(-8);
       session = pendingAuthSessions.get(`phone:${cleanNumber}`);
       if (!session && cleanNumber.startsWith("225")) {
         session = pendingAuthSessions.get(`phone:${cleanNumber.replace(/^225/, "")}`);
       }
       if (!session && !cleanNumber.startsWith("225")) {
         session = pendingAuthSessions.get(`phone:225${cleanNumber}`);
+      }
+      if (!session) {
+        session = pendingAuthSessions.get(`phone:${last8}`);
+      }
+      if (!session) {
+        for (const [key, s] of pendingAuthSessions.entries()) {
+          if (s.phoneNumber.slice(-8) === last8 && s.status === "authenticated") {
+            session = s;
+            break;
+          }
+        }
       }
     }
 
@@ -297,18 +309,22 @@ export class AuthService {
     
     // Check if there is a pending session for this phone or session code
     let matchedSessionId: string | undefined;
+    const phoneClean = cleanPhone.replace(/^225/, "");
+    const last8Phone = cleanPhone.slice(-8);
+
     const phoneSession = pendingAuthSessions.get(`phone:${cleanPhone}`) || 
-                         pendingAuthSessions.get(`phone:225${cleanPhone.replace(/^225/, "")}`) ||
-                         pendingAuthSessions.get(`phone:${cleanPhone.replace(/^225/, "")}`);
+                         pendingAuthSessions.get(`phone:225${phoneClean}`) ||
+                         pendingAuthSessions.get(`phone:${phoneClean}`) ||
+                         pendingAuthSessions.get(`phone:${last8Phone}`);
     if (phoneSession) {
       matchedSessionId = phoneSession.authSessionId;
     }
 
-    // Also check if text contains any active authSessionId or 6-digit code
+    // Also check if text contains any active authSessionId or matching phone by last 8 digits
     for (const [key, session] of pendingAuthSessions.entries()) {
       const sessionClean = session.phoneNumber.replace(/^225/, "");
-      const phoneClean = cleanPhone.replace(/^225/, "");
-      if (sessionClean === phoneClean || (normalizedText && normalizedText.includes(session.authSessionId.toUpperCase().slice(0, 6)))) {
+      const sessionLast8 = session.phoneNumber.slice(-8);
+      if (sessionClean === phoneClean || sessionLast8 === last8Phone || (normalizedText && normalizedText.includes(session.authSessionId.toUpperCase().slice(0, 6)))) {
         matchedSessionId = session.authSessionId;
         break;
       }

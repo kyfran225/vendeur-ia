@@ -1,10 +1,6 @@
 name: CI / Deploy
 
 on:
-  push:
-    branches:
-      - main
-      - preview
   workflow_dispatch:
     inputs:
       environment:
@@ -124,7 +120,7 @@ jobs:
     steps:
       - name: Trigger Render deployment
         env:
-          RENDER_HOOK: ${{ (inputs.environment == 'production' || github.ref == 'refs/heads/main') && secrets.RENDER_DEPLOY_HOOK_URL || secrets.RENDER_PREVIEW_DEPLOY_HOOK_URL }}
+          RENDER_HOOK: ${{ inputs.environment == 'production' && secrets.RENDER_DEPLOY_HOOK_URL || secrets.RENDER_PREVIEW_DEPLOY_HOOK_URL }}
         run: |
           set -euo pipefail
           if [ -z "${RENDER_HOOK:-}" ]; then

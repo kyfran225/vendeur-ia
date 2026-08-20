@@ -2,18 +2,17 @@ export const DEFAULT_OFFERS = [
   {
     slug: "essential",
     name: "Vendeur IA Essentiel",
-    description: "Votre vendeur IA pour WhatsApp. Un vendeur IA qui répond à vos clients, présente vos produits et vous aide à vendre automatiquement.",
+    description: "La formule idéale pour automatiser vos ventes sur WhatsApp, ne plus rater de clients la nuit et valider vos paiements Mobile Money.",
     monthlyPrice: 5000,
     yearlyPrice: 50000, // 2 mois offerts (10x le prix mensuel au lieu de 12x)
     currency: "XOF",
     features: [
-      "Réponses automatiques",
-      "Catalogue produits",
-      "Compréhension des questions clients",
-      "Présentation des produits",
-      "Assistance commerciale",
-      "Disponibilité 24h/24",
-      "Utilisation avec WhatsApp"
+      "Agent Vendeur IA autonome 24h/24 & 7j/7",
+      "Catalogue produits complet & Gestion des stocks",
+      "PaymentShield OCR : Détection reçus Wave, Orange, MTN",
+      "Prise de commandes & Reçus automatiques",
+      "Studio Créatif : Affiches IA & Statuts WhatsApp",
+      "Messagerie commerciale avec Reprise en main humaine"
     ],
     isActive: true,
     sortOrder: 1,
@@ -25,16 +24,18 @@ export const DEFAULT_OFFERS = [
   {
     slug: "pro",
     name: "Vendeur IA Pro",
-    description: "Pour les vendeurs qui veulent une expérience plus avancée.",
+    description: "Pour les marques et entreprises à fort volume qui veulent un numéro officiel dédié Meta, du multi-canal et des outils marketing avancés.",
     monthlyPrice: 20000,
     yearlyPrice: 200000, // 2 mois offerts (10x le prix mensuel au lieu de 12x)
     currency: "XOF",
     features: [
-      "Tout Essentiel",
-      "Connexion professionnelle (Meta API)",
-      "Fonctionnalités avancées",
-      "Support prioritaire",
-      "Accompagnement"
+      "Tout ce qui est inclus dans Essentiel",
+      "Numéro d'Entreprise Pro Dédié (Meta Cloud API)",
+      "Multi-Canal : WhatsApp + Instagram & Messenger",
+      "Broadcast IA : Campagnes marketing & diffusion ciblée",
+      "PaymentShield Forensic : Détection anti-fraude avancée",
+      "Vocaux IA : Synthèse & Transcription vocale naturelle",
+      "Support VIP Prioritaire 7j/7"
     ],
     isActive: true,
     sortOrder: 2,

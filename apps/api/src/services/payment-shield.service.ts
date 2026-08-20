@@ -118,10 +118,11 @@ Extrais TOUTES les informations au format JSON STRICT suivant :
 Réponds UNIQUEMENT avec le JSON strict.`;
 
     // Attempt Gemini first
-    if (primaryProvider === 'gemini' && env.GEMINI_API_KEY) {
+    const geminiKey = settings?.aiConfig?.providers?.find((p: any) => p.name === 'gemini' && p.isActive)?.apiKey || env.GEMINI_API_KEY;
+    if (primaryProvider === 'gemini' && geminiKey) {
       try {
         const response = await axios.post(
-          `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_DEFAULT_VISION_MODEL}:generateContent?key=${env.GEMINI_API_KEY}`,
+          `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_DEFAULT_VISION_MODEL}:generateContent?key=${geminiKey}`,
           {
             contents: [{
               parts: [
@@ -147,34 +148,40 @@ Réponds UNIQUEMENT avec le JSON strict.`;
           }
         }
       } catch (err: any) {
-        logger.warn(`[Payment Shield] Gemini vision analysis error: ${err.message}`);
+        console.warn("[PaymentShield] Gemini Vision audit failed, falling back...", err.message);
       }
     }
 
-    // Fallback OpenAI if available
-    if (env.OPENAI_API_KEY) {
+    // Fallback: OpenAI GPT-4o Vision
+    const openaiKey = settings?.aiConfig?.providers?.find((p: any) => p.name === 'openai' && p.isActive)?.apiKey || env.OPENAI_API_KEY;
+    if (openaiKey) {
       try {
-        const base64Data = imageBuffer.toString("base64");
         const response = await axios.post(
           "https://api.openai.com/v1/chat/completions",
           {
-            model: "gpt-4o-mini",
-            messages: [{
-              role: "user",
-              content: [
-                { type: "text", text: systemPrompt },
-                {
-                  type: "image_url",
-                  image_url: { url: `data:${mimeType};base64,${base64Data}` }
-                }
-              ]
-            }],
-            temperature: 0.2,
-            max_tokens: 1000
+            model: "gpt-4o",
+            response_format: { type: "json_object" },
+            messages: [
+              {
+                role: "user",
+                content: [
+                  { type: "text", text: systemPrompt },
+                  {
+                    type: "image_url",
+                    image_url: {
+                      url: `data:${mimeType};base64,${imageBuffer.toString("base64")}`
+                    }
+                  }
+                ]
+              }
+            ]
           },
           {
-            headers: { Authorization: `Bearer ${env.OPENAI_API_KEY}` },
-            timeout: 25000
+            headers: {
+              Authorization: `Bearer ${openaiKey}`,
+              "Content-Type": "application/json"
+            },
+            timeout: 30000
           }
         );
 

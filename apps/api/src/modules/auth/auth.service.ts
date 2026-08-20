@@ -98,7 +98,7 @@ export class AuthService {
         authProvider: "whatsapp",
         displayName: isFounder ? founderDisplayName : (displayName?.trim() || `Commerçant WhatsApp (${cleanNumber.slice(-4)})`),
         roles: isFounder ? ["user", "admin", "creator"] : ["user"],
-        onboardingCompleted: isFounder ? true : false
+        onboardingCompleted: false
       });
     } else {
       if (isFounder) {
@@ -166,7 +166,7 @@ export class AuthService {
         magicTokenExpiresAt: expiresAt,
         otpCodeHash: codeHash,
         otpExpiresAt: expiresAt,
-        onboardingCompleted: isFounder ? true : false
+        onboardingCompleted: false
       });
     } else {
       user.magicTokenHash = magicHash;
@@ -273,12 +273,15 @@ export class AuthService {
     }
 
     if (session && session.status === "authenticated" && session.tokens) {
-      // Consume session once authenticated to ensure single-use security
-      if (authSessionId) pendingAuthSessions.delete(authSessionId);
-      if (phoneNumber) {
-        const cleanNumber = phoneNumber.replace(/[\s\-\+\(\)]/g, "");
-        pendingAuthSessions.delete(`phone:${cleanNumber}`);
-      }
+      // Keep in memory for a short grace period (60s) so both PWA and browser tabs can sync cleanly
+      setTimeout(() => {
+        if (authSessionId) pendingAuthSessions.delete(authSessionId);
+        if (phoneNumber) {
+          const cleanNumber = phoneNumber.replace(/[\s\-\+\(\)]/g, "");
+          pendingAuthSessions.delete(`phone:${cleanNumber}`);
+        }
+      }, 60 * 1000);
+
       return {
         status: "authenticated",
         sessionData: session.tokens

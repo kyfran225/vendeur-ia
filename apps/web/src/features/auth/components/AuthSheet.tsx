@@ -149,22 +149,27 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
         }
       };
 
-      const pollInterval = setInterval(checkAuth, 2000);
+      const pollInterval = setInterval(checkAuth, 1500);
 
-      // Trigger check immediately when returning to the app / focusing tab
-      const handleVisibilityChange = () => {
-        if (document.visibilityState === "visible") {
+      // Trigger check immediately when returning to the app / focusing tab / PWA resume
+      const handleVisibilityOrFocus = () => {
+        if (document.visibilityState === "visible" || !document.hidden) {
           checkAuth();
         }
       };
-      document.addEventListener("visibilitychange", handleVisibilityChange);
-      window.addEventListener("focus", handleVisibilityChange);
+
+      document.addEventListener("visibilitychange", handleVisibilityOrFocus);
+      window.addEventListener("focus", handleVisibilityOrFocus);
+      window.addEventListener("pageshow", handleVisibilityOrFocus);
+      window.addEventListener("resume", handleVisibilityOrFocus);
 
       return () => {
         isCancelled = true;
         clearInterval(pollInterval);
-        document.removeEventListener("visibilitychange", handleVisibilityChange);
-        window.removeEventListener("focus", handleVisibilityChange);
+        document.removeEventListener("visibilitychange", handleVisibilityOrFocus);
+        window.removeEventListener("focus", handleVisibilityOrFocus);
+        window.removeEventListener("pageshow", handleVisibilityOrFocus);
+        window.removeEventListener("resume", handleVisibilityOrFocus);
         socket.disconnect();
       };
     }

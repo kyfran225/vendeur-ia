@@ -11,12 +11,20 @@ export default defineConfig({
       registerType: "autoUpdate",
       includeAssets: ["favicon.ico", "apple-touch-icon.png", "masked-icon.svg"],
       manifest: {
+        id: "/",
         name: "Vendeur IA OS",
         short_name: "VendeurIA",
         description: "Votre machine de vente intelligente",
         theme_color: "#052e16", // Emeraude Foncé / Coal
         background_color: "#0a0a0a",
+        start_url: "/",
+        scope: "/",
         display: "standalone",
+        display_override: ["standalone", "window-controls-overlay", "minimal-ui"],
+        launch_handler: {
+          client_mode: ["focus-existing", "navigate-existing", "auto"]
+        },
+        categories: ["business", "productivity", "shopping"],
         icons: [
           {
             src: "android-chrome-192x192.png",

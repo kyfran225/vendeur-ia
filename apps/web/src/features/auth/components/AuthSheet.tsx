@@ -204,8 +204,11 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
       if (res.data?.authSessionId) {
         setAuthSessionId(res.data.authSessionId);
       }
+      if (res.data?.code) {
+        setOtpValue(res.data.code);
+      }
       setWhatsappStep("waiting");
-      toast.success("Lien de connexion envoyé sur votre WhatsApp !");
+      toast.success(res.data?.message || "Lien de connexion envoyé sur votre WhatsApp !");
     } catch (err: any) {
       toast.error(err.response?.data?.error || "Erreur lors de l'envoi du lien");
     } finally {
@@ -339,6 +342,7 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
                     selected={selectedCountry}
                     onSelect={(c) => setSelectedCountry(c)}
                     dropdownPosition="top"
+                    className="h-12 rounded-xl"
                   />
                   <div className="relative flex-1 min-w-0">
                     <input

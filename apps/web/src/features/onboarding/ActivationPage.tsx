@@ -210,7 +210,7 @@ export function ActivationPage() {
                 }
                 navigate(nextStepPath);
               }}
-              className="w-full min-h-[4rem] px-6 bg-vendeur-emerald text-vendeur-coal rounded-3xl font-black uppercase tracking-[0.15em] text-xs flex items-center justify-between gap-3 hover:scale-102 active:scale-95 transition-all shadow-xl shadow-vendeur-emerald/20 group"
+              className="w-full min-h-[3.5rem] sm:min-h-[4rem] px-6 bg-vendeur-emerald text-vendeur-coal rounded-2xl sm:rounded-3xl font-black uppercase tracking-[0.15em] text-xs flex items-center justify-between gap-3 hover:scale-[1.01] active:scale-95 transition-all shadow-xl shadow-vendeur-emerald/20 group cursor-pointer"
             >
               <div className="flex items-center gap-3 min-w-0">
                 <Zap size={18} fill="currentColor" className="animate-pulse shrink-0" />
@@ -234,9 +234,9 @@ export function ActivationPage() {
                 }
                 navigate("/dashboard");
               }}
-              className="w-full h-14 bg-white/5 border border-white/10 text-white/70 rounded-2xl font-black uppercase tracking-[0.15em] text-[10px] flex items-center justify-center gap-2 hover:bg-white/10 hover:text-white transition-all active:scale-95"
+              className="w-full h-12 sm:h-14 bg-white/5 border border-white/10 text-white/70 rounded-2xl font-black uppercase tracking-[0.15em] text-[10px] sm:text-xs flex items-center justify-center gap-2 hover:bg-white/10 hover:text-white transition-all active:scale-95 cursor-pointer"
             >
-              Ouvrir mon Dashboard
+              Accéder au tableau de bord
             </button>
           </div>
         </div>

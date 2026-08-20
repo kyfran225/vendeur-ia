@@ -137,7 +137,7 @@ export function AddressAutocomplete({
       <input
         type="text"
         className={cn(
-          "h-11 md:h-9 w-full rounded-xl border border-white/10 bg-black/40 pl-11 pr-10 text-white outline-none focus:border-vendeur-emerald transition-all placeholder:text-white/10 text-sm md:text-xs",
+          "h-10 sm:h-11 w-full rounded-xl border border-white/10 bg-black/40 pl-11 pr-10 text-white outline-none focus:border-vendeur-emerald transition-all placeholder:text-white/10 text-sm shadow-inner",
           className
         )}
         value={value}

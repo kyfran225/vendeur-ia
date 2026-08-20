@@ -8,19 +8,40 @@ function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-// Keeping the interface for compatibility but using the one from core if possible
 export type Country = CountryData;
 
 export const COUNTRIES = GLOBAL_COUNTRIES;
+
+export function parsePhoneNumber(phoneStr?: string, defaultCountryCode?: string): { country: Country; local: string } {
+  const defaultCountry = (defaultCountryCode ? COUNTRIES.find(c => c.code === defaultCountryCode) : null) || COUNTRIES[0];
+  if (!phoneStr) return { country: defaultCountry, local: "" };
+
+  const digits = phoneStr.replace(/\D/g, "");
+  if (!digits) return { country: defaultCountry, local: "" };
+
+  // Sort dial codes by length descending (e.g. +225, +221, +33, etc.)
+  const sorted = [...COUNTRIES].sort((a, b) => b.dialCode.replace(/\D/g, "").length - a.dialCode.replace(/\D/g, "").length);
+
+  for (const c of sorted) {
+    const rawDial = c.dialCode.replace(/\D/g, "");
+    if (digits.startsWith(rawDial) && digits.length > rawDial.length) {
+      return { country: c, local: digits.slice(rawDial.length) };
+    }
+  }
+
+  return { country: defaultCountry, local: digits };
+}
 
 export function CountrySelector({
   selected,
   onSelect,
   dropdownPosition = "bottom",
+  className,
 }: {
   selected: Country;
   onSelect: (country: Country) => void;
   dropdownPosition?: "top" | "bottom";
+  className?: string;
 }) {
   const [open, setOpen] = useState(false);
 
@@ -29,7 +50,10 @@ export function CountrySelector({
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="flex h-11 md:h-9 items-center gap-2 rounded-xl border border-white/10 bg-black/40 px-3 text-white transition-all hover:border-vendeur-emerald/50"
+        className={cn(
+          "flex h-11 sm:h-12 items-center gap-2 rounded-xl border border-white/10 bg-black/40 px-3 text-white transition-all hover:border-vendeur-emerald/50 cursor-pointer shadow-inner",
+          className
+        )}
       >
         <img src={selected.flag} alt={selected.code} className="w-5 h-auto rounded-sm" />
         <span className="text-[10px] sm:text-xs font-bold text-white/70">{selected.dialCode}</span>

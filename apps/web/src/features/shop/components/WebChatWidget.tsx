@@ -19,6 +19,7 @@ import { apiClient } from "@/lib/apiClient";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { io, Socket } from "socket.io-client";
+import { stripActionTags } from "@/lib/utils";
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -213,7 +214,7 @@ export function WebChatWidget({ merchant }: { merchant: any }) {
                            ? "bg-vendeur-emerald text-vendeur-coal rounded-tr-none"
                            : "bg-white/5 border border-white/10 text-white rounded-tl-none"
                        )}>
-                          {msg.text}
+                          {stripActionTags(msg.text)}
                        </div>
 
                        {/* Action CTA for AI responses */}

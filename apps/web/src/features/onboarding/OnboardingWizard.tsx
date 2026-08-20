@@ -20,7 +20,7 @@ import { apiClient } from "@/lib/apiClient";
 import { useRef } from "react";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
-import { CountrySelector, COUNTRIES, Country } from "./components/CountrySelector";
+import { CountrySelector, COUNTRIES, Country, parsePhoneNumber } from "./components/CountrySelector";
 import { AddressAutocomplete } from "./components/AddressAutocomplete";
 import { ConfirmationModal } from "@/components/ui/ConfirmationModal";
 import { VendeurIALoader } from "@/components/ui/VendeurIALoader";
@@ -192,20 +192,8 @@ function WelcomeStep({ onNext, onBack }: { onNext: () => void; onBack: () => voi
   const { user } = useAuthStore();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
-  // Helper to parse phone number into country and local digits
-  const parsePhone = (phoneStr?: string) => {
-    if (!phoneStr) return { country: COUNTRIES[0], local: "" };
-    const clean = phoneStr.trim();
-    const sorted = [...COUNTRIES].sort((a, b) => b.dialCode.length - a.dialCode.length);
-    const matched = sorted.find(c => clean.startsWith(c.dialCode));
-    if (matched) {
-      return { country: matched, local: clean.slice(matched.dialCode.length) };
-    }
-    return { country: COUNTRIES[0], local: clean.replace(/\D/g, "") };
-  };
-
   const initialNumber = tempData?.whatsappNumber || user?.whatsappNumber || "";
-  const initialParsed = parsePhone(initialNumber);
+  const initialParsed = parsePhoneNumber(initialNumber, tempData?.country);
 
   const [selectedCountry, setSelectedCountry] = useState<Country>(
     (tempData?.country ? COUNTRIES.find(c => c.code === tempData.country) : null) || initialParsed.country
@@ -226,7 +214,7 @@ function WelcomeStep({ onNext, onBack }: { onNext: () => void; onBack: () => voi
   useEffect(() => {
     const rawNumber = tempData?.whatsappNumber || user?.whatsappNumber;
     if (rawNumber && (!localPhone || !form.whatsappNumber)) {
-      const parsed = parsePhone(rawNumber);
+      const parsed = parsePhoneNumber(rawNumber, tempData?.country);
       setSelectedCountry(parsed.country);
       setLocalPhone(parsed.local);
       setForm(prev => ({
@@ -236,7 +224,7 @@ function WelcomeStep({ onNext, onBack }: { onNext: () => void; onBack: () => voi
         whatsappNumber: rawNumber
       }));
     }
-  }, [user?.whatsappNumber, tempData?.whatsappNumber]);
+  }, [user?.whatsappNumber, tempData?.whatsappNumber, tempData?.country]);
 
   useEffect(() => {
     if (selectedCountry) {
@@ -347,6 +335,7 @@ function WelcomeStep({ onNext, onBack }: { onNext: () => void; onBack: () => voi
                     <CountrySelector
                       selected={selectedCountry}
                       onSelect={(c) => setSelectedCountry(c)}
+                      className="h-12 sm:h-14 !rounded-2xl px-3.5 sm:px-4"
                     />
                     <div className="flex-1 min-w-0">
                       <input
@@ -394,14 +383,23 @@ function WelcomeStep({ onNext, onBack }: { onNext: () => void; onBack: () => voi
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">
-                  Ce que vous vendez / Modalités
-                </label>
+                <div className="flex items-center justify-between px-1">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-white/40">
+                    Votre offre (produits, services...)
+                  </label>
+                  <span className={cn(
+                    "text-[9px] font-bold tracking-wider",
+                    (form.description?.length || 0) >= 450 ? "text-amber-400 font-black" : "text-white/30"
+                  )}>
+                    {form.description?.length || 0}/500
+                  </span>
+                </div>
                 <textarea
-                  className="w-full min-h-[90px] rounded-2xl border border-white/10 bg-black/40 p-4 text-white text-sm outline-none focus:border-vendeur-emerald transition-all resize-none placeholder:text-white/20"
+                  maxLength={500}
+                  className="w-full min-h-[90px] rounded-2xl border border-white/10 bg-black/40 p-4 text-white text-sm outline-none focus:border-vendeur-emerald transition-all resize-none placeholder:text-white/20 shadow-inner"
                   value={form.description}
                   onChange={(e) => setForm({ ...form, description: e.target.value })}
-                  placeholder="Ex: Robes, chaussures et sacs de luxe. Livraison partout sous 24h."
+                  placeholder="Ex: Produits vendus, prestations de service, tarifs et modalités de livraison..."
                 />
               </div>
 
@@ -410,7 +408,7 @@ function WelcomeStep({ onNext, onBack }: { onNext: () => void; onBack: () => voi
                 className="w-full h-12 sm:h-14 rounded-2xl bg-vendeur-emerald text-vendeur-coal font-black uppercase tracking-widest text-xs sm:text-sm flex items-center justify-center gap-2 hover:scale-[1.01] active:scale-95 transition-all shadow-xl shadow-vendeur-emerald/20 cursor-pointer mt-2"
               >
                 <Sparkles size={18} />
-                <span>Continuer vers Vendeur IA Vision</span>
+                <span>Continuer vers IA Vision</span>
                 <ChevronRight size={18} />
               </button>
 
@@ -576,9 +574,9 @@ function VisionStep({ onNext, onBack }: { onNext: () => void; onBack: () => void
                   </div>
                   <button
                     onClick={onNext}
-                    className="h-12 px-6 rounded-xl bg-vendeur-emerald text-vendeur-coal font-black uppercase tracking-wider text-xs shrink-0 flex items-center justify-center gap-1.5 cursor-pointer hover:scale-105 active:scale-95 transition-all"
+                    className="h-12 px-6 rounded-2xl bg-vendeur-emerald text-vendeur-coal font-black uppercase tracking-wider text-xs shrink-0 flex items-center justify-center gap-2 cursor-pointer hover:scale-105 active:scale-95 transition-all shadow-lg shadow-vendeur-emerald/20"
                   >
-                    <span>Valider</span>
+                    <span>Valider mon produit</span>
                     <ChevronRight size={16} />
                   </button>
                 </div>
@@ -605,7 +603,7 @@ function VisionStep({ onNext, onBack }: { onNext: () => void; onBack: () => void
           className="text-white/40 text-xs font-bold hover:text-white transition-colors flex items-center gap-1.5 cursor-pointer"
         >
           <ChevronLeft size={14} />
-          <span>Retour aux informations boutique</span>
+          <span>Retour à l'étape précédente</span>
         </button>
 
         <ConfirmationModal

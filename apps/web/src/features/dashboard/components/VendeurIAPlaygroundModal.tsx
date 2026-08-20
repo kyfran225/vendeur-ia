@@ -19,6 +19,7 @@ import { apiClient } from "@/lib/apiClient";
 import { toast } from "sonner";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { stripActionTags } from "@/lib/utils";
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -250,7 +251,7 @@ export function VendeurIAPlaygroundModal({ isOpen, onClose, merchant }: VendeurI
                       : "bg-black/60 border border-white/10 text-white rounded-tl-none"
                   )}
                 >
-                  {msg.text}
+                  {stripActionTags(msg.text)}
                   <div
                     className={cn(
                       "text-[9px] mt-2 text-right font-mono",
@@ -308,7 +309,7 @@ export function VendeurIAPlaygroundModal({ isOpen, onClose, merchant }: VendeurI
                 onChange={(e) => setInputText(e.target.value)}
                 placeholder="Tapez un message de test comme un client..."
                 disabled={isLoading}
-                className="flex-1 h-12 px-4 rounded-2xl bg-black/60 border border-white/10 text-xs text-white placeholder:text-white/30 focus:border-vendeur-emerald outline-none transition-all"
+                className="flex-1 h-12 px-4 rounded-2xl bg-black/60 border border-white/10 text-sm text-white placeholder:text-white/30 focus:border-vendeur-emerald outline-none transition-all"
               />
               <button
                 type="submit"

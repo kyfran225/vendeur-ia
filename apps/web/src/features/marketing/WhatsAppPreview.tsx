@@ -2,6 +2,7 @@ import React from "react";
 import { CheckCheck, MessageCircle, Store, ShieldCheck } from "lucide-react";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { stripActionTags } from "@/lib/utils";
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -20,8 +21,8 @@ export function WhatsAppPreview({
   businessName = "Votre Boutique",
   sampleCustomerName = "Marc"
 }: WhatsAppPreviewProps) {
-  // Replace {{name}} with sample customer name
-  const formattedText = text ? text.replace(/{{name}}/g, sampleCustomerName) : "";
+  // Replace {{name}} with sample customer name and strip internal action tags
+  const formattedText = text ? stripActionTags(text.replace(/{{name}}/g, sampleCustomerName)) : "";
 
   const currentTime = new Date().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
 

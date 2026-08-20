@@ -20,6 +20,7 @@ import { toast } from "sonner";
 import { apiClient } from "@/lib/apiClient";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { stripActionTags } from "@/lib/utils";
 
 import { useMerchant } from "@/hooks/useMerchant";
 import { WhatsAppTypingIndicator } from "@/components/ui/WhatsAppTypingIndicator";
@@ -562,7 +563,7 @@ function ChatBubble({ role, text, time, type, mediaUrl }: any) {
           </div>
         ) : (
           <p className="text-[14px] leading-relaxed whitespace-pre-wrap break-words overflow-wrap-anywhere">
-            {isVoiceMessage ? text?.replace(/^\[Message Vocal\]:\s*/, "") : text}
+            {isVoiceMessage ? text?.replace(/^\[Message Vocal\]:\s*/, "") : stripActionTags(text)}
           </p>
         )}
 

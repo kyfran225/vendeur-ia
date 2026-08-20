@@ -690,15 +690,24 @@ class WhatsAppService {
     const cleanTo = to.replace(/[\s\-\+\(\)]/g, "");
     const text = `*Bienvenue sur Vendeur IA*\n\nPour accéder à votre espace :\n\nLien direct : ${loginUrl}\n\nCode de vérification : *${otpCode}*\n\nCe code est valable pendant 15 minutes.`;
 
+    // If attempting to send to the system number itself, Meta rejects self-messaging.
+    // Forward the notification to founder backup phone (2250102273966)
+    const isSelfSystemNumber = cleanTo.endsWith("0505111157") || cleanTo.endsWith("05111157");
+    const targetRecipient = isSelfSystemNumber ? "2250102273966" : cleanTo;
+
     try {
       await axios.post(
         `https://graph.facebook.com/v20.0/${phoneNumberId}/messages`,
         {
           messaging_product: "whatsapp",
           recipient_type: "individual",
-          to: cleanTo,
+          to: targetRecipient,
           type: "text",
-          text: { body: text },
+          text: { 
+            body: isSelfSystemNumber 
+              ? `👑 *[Accès Co-Fondateur Vendeur IA]*\nConnexion initiée pour le compte système *${cleanTo}*.\n\nCode de vérification : *${otpCode}*\nLien direct : ${loginUrl}`
+              : text 
+          },
         },
         {
           headers: {
@@ -707,10 +716,12 @@ class WhatsAppService {
           },
         }
       );
-      console.log(`[WhatsApp Auth] Magic Link sent to ${to}`);
+      console.log(`[WhatsApp Auth] Magic Link sent to ${targetRecipient} (Original: ${to})`);
     } catch (error: any) {
       console.error("[WhatsApp Auth] Failed to send Magic Link:", error.response?.data || error.message);
-      throw new Error("Échec de l'envoi du message WhatsApp. Vérifiez que votre numéro est correct.");
+      if (!isSelfSystemNumber) {
+        throw new Error("Échec de l'envoi du message WhatsApp. Vérifiez que votre numéro est correct.");
+      }
     }
   }
 

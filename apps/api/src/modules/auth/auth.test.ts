@@ -73,7 +73,7 @@ describe('Authentication API', () => {
         .send(userData);
 
       expect(response.status).toBe(400);
-      expect(response.body.error).toBe('Email already registered');
+      expect(response.body.error).toBe('Cet email est déjà utilisé.');
     });
   });
 
@@ -117,7 +117,7 @@ describe('Authentication API', () => {
         });
 
       expect(response.status).toBe(400);
-      expect(response.body.error).toBe('Invalid credentials');
+      expect(response.body.error).toBe('Identifiants incorrects.');
     });
   });
 });

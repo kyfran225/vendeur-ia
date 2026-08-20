@@ -4,10 +4,10 @@ const path = require('path');
 
 dotenv.config({ path: path.join(__dirname, '../.env') });
 
-const phoneNumberId = process.env.WHATSAPP_PHONE_ID;
+const phoneNumberId = process.env.WHATSAPP_PHONE_ID || "1283754474826620";
 const accessToken = process.env.WHATSAPP_ACCESS_TOKEN;
-const to = "2250102273966"; // Le numéro de la capture
-const text = "Test Vendeur IA: Voici votre code 123456";
+const to = "2250102273966"; 
+const text = "Test Vendeur IA: Authentification réussie !";
 
 async function test() {
   console.log('Using Phone ID:', phoneNumberId);
@@ -37,3 +37,4 @@ async function test() {
 }
 
 test();
+

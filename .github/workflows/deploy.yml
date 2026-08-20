@@ -1,10 +1,16 @@
 name: CI / Deploy
 
 on:
-  push:
-    branches:
-      - main
-      - preview
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Environnement à déployer"
+        required: true
+        default: "preview"
+        type: choice
+        options:
+          - preview
+          - production
 
 # ─────────────────────────────────────────────
 # Jobs
@@ -75,7 +81,7 @@ jobs:
       # Pull project settings + env vars from Vercel
       - name: Pull Vercel project settings
         run: |
-          if [ "$GITHUB_REF" = "refs/heads/main" ]; then
+          if [ "${{ inputs.environment }}" = "production" ] || [ "$GITHUB_REF" = "refs/heads/main" ]; then
             vercel pull --yes --environment=production --token "$VERCEL_TOKEN"
           else
             vercel pull --yes --environment=preview --token "$VERCEL_TOKEN"
@@ -84,7 +90,7 @@ jobs:
       # Build locally (Prebuilt mode) → produces .vercel/output/
       - name: Build (Prebuilt)
         run: |
-          if [ "$GITHUB_REF" = "refs/heads/main" ]; then
+          if [ "${{ inputs.environment }}" = "production" ] || [ "$GITHUB_REF" = "refs/heads/main" ]; then
             vercel build --prod --token "$VERCEL_TOKEN"
           else
             vercel build --token "$VERCEL_TOKEN"
@@ -93,7 +99,7 @@ jobs:
       # Upload the pre-built artifact — Vercel skips its own build step
       - name: Deploy to Vercel
         run: |
-          if [ "$GITHUB_REF" = "refs/heads/main" ]; then
+          if [ "${{ inputs.environment }}" = "production" ] || [ "$GITHUB_REF" = "refs/heads/main" ]; then
             vercel deploy --prebuilt --prod --token "$VERCEL_TOKEN"
           else
             vercel deploy --prebuilt --token "$VERCEL_TOKEN"
@@ -108,7 +114,7 @@ jobs:
     steps:
       - name: Trigger Render deployment
         env:
-          RENDER_HOOK: ${{ github.ref == 'refs/heads/main' && secrets.RENDER_DEPLOY_HOOK_URL || secrets.RENDER_PREVIEW_DEPLOY_HOOK_URL }}
+          RENDER_HOOK: ${{ (inputs.environment == 'production' || github.ref == 'refs/heads/main') && secrets.RENDER_DEPLOY_HOOK_URL || secrets.RENDER_PREVIEW_DEPLOY_HOOK_URL }}
         run: |
           set -euo pipefail
           if [ -z "${RENDER_HOOK:-}" ]; then

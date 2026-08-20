@@ -102,32 +102,73 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
   const [selectedCountry, setSelectedCountry] = useState<Country>(COUNTRIES[0]); // CI by default
   const [localPhone, setLocalPhone] = useState("");
   const [whatsappName, setWhatsappName] = useState("");
+  const [authSessionId, setAuthSessionId] = useState<string>("");
 
   const GOOGLE_CLIENT_ID = (import.meta as any).env.VITE_GOOGLE_CLIENT_ID;
+
+  // Complete login helper
+  const completeAuth = (sessionData: any) => {
+    setSession(sessionData);
+    toast.success(`Authentification réussie !`);
+    onClose();
+    if (sessionData.user?.onboardingCompleted) {
+      navigate("/dashboard");
+    } else {
+      navigate("/onboarding");
+    }
+  };
 
   useEffect(() => {
     if (whatsappStep === "waiting" && localPhone) {
       const fullPhoneNumber = `${selectedCountry.dialCode}${localPhone}`.replace(/\D/g, "");
+      
+      // 1. WebSocket Realtime Channel
       const socket = io(import.meta.env.VITE_API_URL || window.location.origin.replace("5173", "3001"));
-
       socket.emit("join_auth", fullPhoneNumber);
 
       socket.on("auth:success", (sessionData) => {
-        setSession(sessionData);
-        toast.success(`Authentification réussie !`);
-        onClose();
-        if (sessionData.user?.onboardingCompleted) {
-          navigate("/dashboard");
-        } else {
-          navigate("/onboarding");
-        }
+        completeAuth(sessionData);
       });
 
+      // 2. Resilient HTTP Polling (Runs every 2s in background + on visibility/app focus)
+      let isCancelled = false;
+
+      const checkAuth = async () => {
+        if (isCancelled) return;
+        try {
+          const res = await apiClient.post("/api/auth/poll-status", {
+            authSessionId: authSessionId || undefined,
+            phoneNumber: fullPhoneNumber
+          });
+          if (res.data && res.data.status === "authenticated" && res.data.sessionData) {
+            isCancelled = true;
+            completeAuth(res.data.sessionData);
+          }
+        } catch {
+          // Silent catch for background polling
+        }
+      };
+
+      const pollInterval = setInterval(checkAuth, 2000);
+
+      // Trigger check immediately when returning to the app / focusing tab
+      const handleVisibilityChange = () => {
+        if (document.visibilityState === "visible") {
+          checkAuth();
+        }
+      };
+      document.addEventListener("visibilitychange", handleVisibilityChange);
+      window.addEventListener("focus", handleVisibilityChange);
+
       return () => {
+        isCancelled = true;
+        clearInterval(pollInterval);
+        document.removeEventListener("visibilitychange", handleVisibilityChange);
+        window.removeEventListener("focus", handleVisibilityChange);
         socket.disconnect();
       };
     }
-  }, [whatsappStep, localPhone, selectedCountry, setSession, onClose, navigate]);
+  }, [whatsappStep, localPhone, selectedCountry, authSessionId, setSession, onClose, navigate]);
 
   // Email form
   const [form, setForm] = useState({
@@ -150,11 +191,14 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
 
     setLoading(true);
     try {
-      await apiClient.post("/api/auth/whatsapp-magic-link", {
+      const res = await apiClient.post("/api/auth/whatsapp-magic-link", {
         phoneNumber: fullPhoneNumber,
         clientUrl: window.location.origin
       });
 
+      if (res.data?.authSessionId) {
+        setAuthSessionId(res.data.authSessionId);
+      }
       setWhatsappStep("waiting");
       toast.success("Lien de connexion envoyé sur votre WhatsApp !");
     } catch (err: any) {

@@ -24,6 +24,26 @@ function isFounderNumber(phone: string): boolean {
   return FOUNDER_NUMBERS.some(fn => clean.endsWith(fn) || fn.endsWith(clean));
 }
 
+// In-memory store for pending and authenticated auth sessions (auto-cleaned after 15 min)
+interface PendingAuthSession {
+  phoneNumber: string;
+  authSessionId: string;
+  status: "pending" | "authenticated";
+  tokens?: any;
+  createdAt: number;
+}
+const pendingAuthSessions = new Map<string, PendingAuthSession>();
+
+// Cleanup stale sessions every 5 minutes
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, session] of pendingAuthSessions.entries()) {
+    if (now - session.createdAt > 15 * 60 * 1000) {
+      pendingAuthSessions.delete(key);
+    }
+  }
+}, 5 * 60 * 1000);
+
 export class AuthService {
   async generateTokens(user: any) {
     const userEmail = user.email || (user.whatsappNumber ? `${user.whatsappNumber.replace(/[^0-9]/g, '')}@whatsapp.vendeur-ia.com` : undefined);
@@ -95,7 +115,7 @@ export class AuthService {
     return this.generateTokens(user);
   }
 
-  async requestWhatsAppMagicLink(whatsappNumber: string, clientUrl: string) {
+  async requestWhatsAppMagicLink(whatsappNumber: string, clientUrl: string, existingSessionId?: string) {
     const cleanNumber = whatsappNumber.replace(/[\s\-\+\(\)]/g, "");
     if (!cleanNumber || cleanNumber.length < 8) {
       throw new Error("Numéro WhatsApp invalide. Veuillez inclure l'indicatif pays (ex: 225...)");
@@ -108,7 +128,24 @@ export class AuthService {
     const token = randomBytes(32).toString("hex");
     const magicHash = createHash("sha256").update(token).digest("hex");
 
-    // 2. Generate 6-digit OTP (for manual input)
+    // 2. Generate or reuse AuthSessionId for HTTP Polling
+    const authSessionId = existingSessionId || randomBytes(16).toString("hex");
+    pendingAuthSessions.set(authSessionId, {
+      phoneNumber: cleanNumber,
+      authSessionId,
+      status: "pending",
+      createdAt: Date.now()
+    });
+
+    // Also store by phone number to allow cross-matching
+    pendingAuthSessions.set(`phone:${cleanNumber}`, {
+      phoneNumber: cleanNumber,
+      authSessionId,
+      status: "pending",
+      createdAt: Date.now()
+    });
+
+    // 3. Generate 6-digit OTP (for manual input)
     const code = Math.floor(100000 + Math.random() * 900000).toString();
     const codeHash = await bcrypt.hash(code, 10);
 
@@ -145,8 +182,8 @@ export class AuthService {
       await user.save();
     }
 
-    // Build Login URL
-    const loginUrl = `${clientUrl}/auth/magic-login?t=${token}&p=${cleanNumber}`;
+    // Build Login URL (including authSessionId for link-click association)
+    const loginUrl = `${clientUrl}/auth/magic-login?t=${token}&p=${cleanNumber}&s=${authSessionId}`;
 
     // Send via WhatsApp Service
     try {
@@ -161,12 +198,13 @@ export class AuthService {
 
     return { 
       success: true, 
+      authSessionId,
       message: isFounder ? "Bienvenue Co-Fondateur ! Accès sécurisé prêt." : "Lien de connexion envoyé sur WhatsApp", 
       code: (isFounder || process.env.NODE_ENV !== "production") ? code : undefined 
     };
   }
 
-  async verifyMagicLink(phoneNumber: string, token: string) {
+  async verifyMagicLink(phoneNumber: string, token: string, authSessionId?: string) {
     const cleanNumber = phoneNumber.replace(/[\s\-\+\(\)]/g, "");
     const hash = createHash("sha256").update(token).digest("hex");
 
@@ -192,6 +230,25 @@ export class AuthService {
 
     const tokens = await this.generateTokens(user);
 
+    // Save tokens in memory for HTTP Polling (PWA / browser)
+    if (authSessionId) {
+      pendingAuthSessions.set(authSessionId, {
+        phoneNumber: cleanNumber,
+        authSessionId,
+        status: "authenticated",
+        tokens,
+        createdAt: Date.now()
+      });
+    }
+    // Also save by phone index
+    pendingAuthSessions.set(`phone:${cleanNumber}`, {
+      phoneNumber: cleanNumber,
+      authSessionId: authSessionId || "",
+      status: "authenticated",
+      tokens,
+      createdAt: Date.now()
+    });
+
     // Notify other devices on same phone number via Socket.io
     const io = getSocketServer();
     if (io) {
@@ -199,6 +256,36 @@ export class AuthService {
     }
 
     return tokens;
+  }
+
+  async checkAuthSessionStatus(authSessionId?: string, phoneNumber?: string) {
+    if (!authSessionId && !phoneNumber) {
+      return { status: "pending" };
+    }
+
+    let session: PendingAuthSession | undefined;
+    if (authSessionId) {
+      session = pendingAuthSessions.get(authSessionId);
+    }
+    if (!session && phoneNumber) {
+      const cleanNumber = phoneNumber.replace(/[\s\-\+\(\)]/g, "");
+      session = pendingAuthSessions.get(`phone:${cleanNumber}`);
+    }
+
+    if (session && session.status === "authenticated" && session.tokens) {
+      // Consume session once authenticated to ensure single-use security
+      if (authSessionId) pendingAuthSessions.delete(authSessionId);
+      if (phoneNumber) {
+        const cleanNumber = phoneNumber.replace(/[\s\-\+\(\)]/g, "");
+        pendingAuthSessions.delete(`phone:${cleanNumber}`);
+      }
+      return {
+        status: "authenticated",
+        sessionData: session.tokens
+      };
+    }
+
+    return { status: "pending" };
   }
 
   async requestWhatsAppOtp(whatsappNumber: string) {

@@ -17,6 +17,7 @@ export function MagicLoginPage() {
   useEffect(() => {
     const token = searchParams.get("t");
     const phoneNumber = searchParams.get("p");
+    const authSessionId = searchParams.get("s");
 
     if (!token || !phoneNumber) {
       toast.error("Lien de connexion invalide ou incomplet.");
@@ -28,7 +29,8 @@ export function MagicLoginPage() {
       try {
         const res = await apiClient.post("/api/auth/verify-magic-link", {
           token,
-          phoneNumber
+          phoneNumber,
+          authSessionId: authSessionId || undefined
         });
 
         setSession(res.data);

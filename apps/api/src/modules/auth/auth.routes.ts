@@ -80,11 +80,11 @@ router.post("/whatsapp-quick-access", async (req, res) => {
 // WhatsApp Request Magic Link (Zéro Friction)
 router.post("/whatsapp-magic-link", async (req, res) => {
   try {
-    const { phoneNumber, clientUrl } = req.body;
+    const { phoneNumber, clientUrl, authSessionId } = req.body;
     if (!phoneNumber) {
       return res.status(400).json({ error: "Le numéro WhatsApp est obligatoire." });
     }
-    const result = await authService.requestWhatsAppMagicLink(phoneNumber, clientUrl || "https://app.vendeur-ia.com");
+    const result = await authService.requestWhatsAppMagicLink(phoneNumber, clientUrl || "https://app.vendeur-ia.com", authSessionId);
     res.json(result);
   } catch (error: any) {
     res.status(400).json({ error: error.message });
@@ -94,14 +94,25 @@ router.post("/whatsapp-magic-link", async (req, res) => {
 // WhatsApp Verify Magic Link
 router.post("/verify-magic-link", async (req, res) => {
   try {
-    const { phoneNumber, token } = req.body;
+    const { phoneNumber, token, authSessionId } = req.body;
     if (!phoneNumber || !token) {
       return res.status(400).json({ error: "Le numéro et le token sont requis." });
     }
-    const tokens = await authService.verifyMagicLink(phoneNumber, token);
+    const tokens = await authService.verifyMagicLink(phoneNumber, token, authSessionId);
     res.json(tokens);
   } catch (error: any) {
     res.status(401).json({ error: error.message });
+  }
+});
+
+// Check status of auth session for polling / background resilient auth
+router.post("/poll-status", async (req, res) => {
+  try {
+    const { authSessionId, phoneNumber } = req.body;
+    const result = await authService.checkAuthSessionStatus(authSessionId, phoneNumber);
+    res.json(result);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
   }
 });
 

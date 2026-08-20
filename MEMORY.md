@@ -9,6 +9,9 @@ Le produit doit être utilisable par un commerçant sans formation technique en 
 - **AI**: Gemini 1.5 Pro/Flash (Localized tone, Vision, Voice).
 - **Frontend**: React (Vite), Tailwind (Mobile-First), Framer Motion.
 
+## 🔒 Git & Deployment Policy
+- **NO UNPROMPTED GIT PUSH:** Ne JAMAIS exécuter de `git push` sans la demande ou l'accord explicite préalable de l'utilisateur. Toutes les modifications restent en local jusqu'à validation.
+
 ## UX Commandments
 1. **The 30-Second Rule**: From sign-up to first product scan must take < 30s.
 2. **Local Context First**: Every prompt must enforce local city/country context and tone.

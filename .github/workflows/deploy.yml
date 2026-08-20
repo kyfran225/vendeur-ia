@@ -39,6 +39,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Build Core package
+        run: pnpm --filter @vendeur-ia/core build
+
       - name: Run API tests
         env:
           # Variables requises par le schema Zod — tout est mocké par vitest
@@ -74,6 +77,9 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: Build Core package
+        run: pnpm --filter @vendeur-ia/core build
 
       - name: Install Vercel CLI (latest)
         run: npm install -g vercel@latest

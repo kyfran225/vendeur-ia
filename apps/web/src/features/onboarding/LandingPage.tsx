@@ -490,25 +490,22 @@ function LandingHero({
                         />
                       </div>
 
-                      <div className="grid grid-cols-2 gap-3 md:gap-2">
-                        <div className="space-y-1">
-                          <label className="text-[10px] md:text-[9px] font-black uppercase tracking-widest text-white/40 ml-1">Catégorie</label>
-                          <select className="w-full h-11 md:h-9 rounded-xl bg-black/40 border border-white/10 px-3 text-white outline-none focus:border-emerald-400 text-xs md:text-[10px] appearance-none" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value as any })}>
-                            <option value="fashion">Mode</option>
-                            <option value="food">Food</option>
-                            <option value="beauty">Beauté</option>
-                            <option value="other">Autre</option>
-                          </select>
-                        </div>
-                        <div className="space-y-1">
-                          <label className="text-[10px] md:text-[9px] font-black uppercase tracking-widest text-white/40 ml-1">Pays</label>
-                          <CountrySelector selected={selectedCountry} onSelect={(c) => { setSelectedCountry(c); setForm({ ...form, country: c.code }); }} />
-                        </div>
+                      <div className="space-y-1">
+                        <label className="text-[10px] md:text-[9px] font-black uppercase tracking-widest text-white/40 ml-1">Catégorie</label>
+                        <select className="w-full h-11 md:h-9 rounded-xl bg-black/40 border border-white/10 px-3 text-white outline-none focus:border-emerald-400 text-xs md:text-[10px] appearance-none" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value as any })}>
+                          <option value="fashion">Mode</option>
+                          <option value="food">Food</option>
+                          <option value="beauty">Beauté</option>
+                          <option value="other">Autre</option>
+                        </select>
                       </div>
 
                       <div className="space-y-1">
                         <label className="text-[10px] md:text-[9px] font-black uppercase tracking-widest text-white/40 ml-1">Numéro WhatsApp</label>
-                        <input className="w-full h-11 md:h-9 rounded-xl bg-black/40 border border-white/10 px-4 text-white font-mono text-sm md:text-xs outline-none focus:border-emerald-400" value={localPhone} onChange={(e) => setLocalPhone(e.target.value.replace(/\D/g, ""))} placeholder="0700000000" />
+                        <div className="flex gap-2 items-center w-full min-w-0">
+                          <CountrySelector selected={selectedCountry} onSelect={(c) => { setSelectedCountry(c); setForm({ ...form, country: c.code }); }} />
+                          <input className="flex-1 min-w-0 w-full h-11 md:h-9 rounded-xl bg-black/40 border border-white/10 px-3 text-white font-mono text-sm md:text-xs outline-none focus:border-emerald-400" value={localPhone} onChange={(e) => setLocalPhone(e.target.value.replace(/\D/g, ""))} placeholder="0700000000" />
+                        </div>
                       </div>
 
                       <div className="space-y-1">

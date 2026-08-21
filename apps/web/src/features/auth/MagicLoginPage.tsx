@@ -78,7 +78,7 @@ export function MagicLoginPage() {
   if (status === "loading") {
     return (
       <div className="min-h-screen bg-vendeur-coal flex flex-col items-center justify-center p-4">
-        <VendeurIALoader label="Validation de votre lien magique..." />
+        <VendeurIALoader label="Connexion à votre boutique..." />
         <p className="text-[10px] text-white/30 uppercase tracking-widest mt-8 font-black">
           Connexion Sécurisée Vendeur IA
         </p>
@@ -138,7 +138,7 @@ export function MagicLoginPage() {
         <div className="space-y-3">
           <button
             onClick={handleOpenApp}
-            className="w-full h-13 bg-vendeur-emerald text-vendeur-coal font-black uppercase tracking-widest text-xs rounded-xl flex items-center justify-center gap-2 hover:scale-[1.01] active:scale-95 transition-all shadow-lg shadow-vendeur-emerald/25 cursor-pointer"
+            className="w-full h-12 sm:h-14 bg-vendeur-emerald text-vendeur-coal font-black uppercase tracking-wider text-xs rounded-xl flex items-center justify-center gap-2 hover:scale-[1.01] active:scale-95 transition-all shadow-lg shadow-vendeur-emerald/25 cursor-pointer"
           >
             <span>Accéder à mon espace</span>
             <ArrowRight size={18} />
@@ -146,9 +146,9 @@ export function MagicLoginPage() {
 
           <button
             onClick={() => navigate(destination)}
-            className="w-full h-11 bg-white/5 hover:bg-white/10 text-white/70 hover:text-white rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition-all"
+            className="w-full h-12 bg-white/5 hover:bg-white/10 text-white/80 hover:text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all border border-white/5 cursor-pointer"
           >
-            <Globe size={14} />
+            <Globe size={15} />
             <span>Continuer dans ce navigateur</span>
           </button>
         </div>

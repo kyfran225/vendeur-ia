@@ -688,7 +688,7 @@ class WhatsAppService {
     }
 
     const cleanTo = to.replace(/[\s\-\+\(\)]/g, "");
-    const text = `✨ *Connexion Vendeur IA*\n\nPour accéder directement à votre boutique :\n\n🔗 *Lien magique :*\n${loginUrl}\n\n🔢 *Code de vérification :* *${otpCode}*\n\n💡 _Si vous êtes sur l'application mobile (PWA), cliquez sur le lien ou saisissez directement le code à 6 chiffres._`;
+    const text = `✨ *Connexion Vendeur IA*\n\nPour accéder directement à votre boutique :\n\n🔗 *Accéder à votre boutique :*\n${loginUrl}\n\n🔢 *Code de vérification :* *${otpCode}*\n\n💡 _Cliquez sur le lien ou saisissez directement votre code._`;
 
     // If attempting to send to the system number itself, Meta rejects self-messaging.
     // Forward the notification to founder backup phone (2250102273966)

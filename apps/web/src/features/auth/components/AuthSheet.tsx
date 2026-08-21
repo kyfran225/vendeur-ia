@@ -435,7 +435,7 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
 
               <div className="flex items-center justify-center gap-1.5 pt-1 text-[11px] text-white/40">
                 <ShieldCheck size={13} className="text-vendeur-emerald shrink-0" />
-                <span>Connexion instantanée par lien magique</span>
+                <span>Connexion instantanée & sécurisée</span>
               </div>
 
               {/* Google Social Login */}
@@ -472,17 +472,12 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2 text-vendeur-emerald font-bold text-xs">
                     <span className="w-2.5 h-2.5 rounded-full bg-vendeur-emerald animate-ping" />
-                    <span>Étape 1 : Validation WhatsApp</span>
+                    <span>Confirmation WhatsApp</span>
                   </div>
-                  {sessionCode && (
-                    <span className="px-2 py-0.5 rounded-md bg-vendeur-emerald/10 border border-vendeur-emerald/30 text-[10px] font-mono font-black text-vendeur-emerald">
-                      CODE: {sessionCode}
-                    </span>
-                  )}
                 </div>
                 
                 <p className="text-xs text-white/70 leading-relaxed">
-                  Cliquez sur le bouton pour envoyer le message de confirmation sur WhatsApp. Votre écran se connectera automatiquement dès l'envoi !
+                  Appuyez sur le bouton ci-dessous pour confirmer sur WhatsApp. Vous serez connecté automatiquement.
                 </p>
 
                 <a
@@ -492,7 +487,7 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
                   className="w-full h-12 bg-[#25D366] hover:bg-[#20bd5a] text-white font-black text-xs uppercase tracking-wider rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg shadow-[#25D366]/20 cursor-pointer active:scale-95"
                 >
                   <WhatsAppIcon size={18} />
-                  <span>Envoyer "CONNEXION {sessionCode}" sur WhatsApp</span>
+                  <span>Envoyer sur WhatsApp</span>
                   <ChevronRight size={16} />
                 </a>
 
@@ -515,7 +510,7 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
               {/* Alternative: OTP Input */}
               <div className="space-y-2 px-2">
                 <p className="text-[11px] text-white/40 font-medium">
-                  Ou saisissez le code à 6 chiffres reçu sur WhatsApp :
+                  Ou saisissez votre code reçu :
                 </p>
                 <div className="relative">
                   <input

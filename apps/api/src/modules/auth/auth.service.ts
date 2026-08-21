@@ -536,7 +536,7 @@ export class AuthService {
     // Build Login URL for instant one-click link inside the WhatsApp message
     const loginUrl = `${clientUrl}/auth/magic-login?t=${magicToken}&p=${cleanPhone}&s=${matchedSessionId}`;
 
-    const replyMessage = `✨ *Connexion Vendeur IA Réussie !*\n\nBienvenue sur votre espace commerçant.\n\n🔗 *Accès Direct à votre Boutique :*\n${loginUrl}\n\n🔢 *Votre Code de Secours :* *${otpCode}*\n\n👉 _Si votre navigateur est déjà ouvert, vous êtes automatiquement connecté !_`;
+    const replyMessage = `✨ *Connexion Réussie !*\n\nBienvenue sur votre espace commerçant.\n\n🔗 *Accéder à votre boutique :*\n${loginUrl}\n\n🔢 *Code de vérification :* *${otpCode}*\n\n👉 _Si votre écran est déjà ouvert, vous êtes automatiquement connecté !_`;
 
     return {
       success: true,

@@ -17,10 +17,15 @@ on:
           - production
 
 # ─────────────────────────────────────────────
-# Jobs
+# Détermine l'environnement cible :
+#   main   → production
+#   preview / workflow_dispatch preview → preview
 # ─────────────────────────────────────────────
+env:
+  IS_PROD: ${{ github.ref == 'refs/heads/main' || inputs.environment == 'production' }}
+
 jobs:
-  # ── 0. Tests ──────────────────────────────────────────────────────────────────────
+  # ── 0. Tests ──────────────────────────────────────────────────────────────────
   test:
     name: Tests
     runs-on: ubuntu-latest
@@ -48,15 +53,14 @@ jobs:
 
       - name: Run API tests
         env:
-          # Variables requises par le schema Zod — tout est mocké par vitest
           NODE_ENV: test
           MONGODB_URI: mongodb://localhost:27017/test
           JWT_SECRET: ci-test-secret-not-used
         run: pnpm --filter @vendeur-ia/api test
 
-  # ── 1. Build & Deploy → Vercel (Prebuilt mode) ──────────────────────────────
+  # ── 1. Build & Deploy → Vercel ───────────────────────────────────────────────
   deploy-vercel:
-    name: Build & Deploy → Vercel
+    name: Build & Deploy → Vercel (${{ github.ref == 'refs/heads/main' && 'production' || 'preview' }})
     runs-on: ubuntu-latest
     needs: test
     env:
@@ -85,39 +89,36 @@ jobs:
       - name: Build Core package
         run: pnpm --filter @vendeur-ia/core build
 
-      - name: Install Vercel CLI (latest)
+      - name: Install Vercel CLI
         run: npm install -g vercel@latest
 
-      # Pull project settings + env vars from Vercel
       - name: Pull Vercel project settings
         run: |
-          if [ "${{ inputs.environment }}" = "production" ] || [ "$GITHUB_REF" = "refs/heads/main" ]; then
+          if [ "${{ env.IS_PROD }}" = "true" ]; then
             vercel pull --yes --environment=production --token "$VERCEL_TOKEN"
           else
             vercel pull --yes --environment=preview --token "$VERCEL_TOKEN"
           fi
 
-      # Build locally (Prebuilt mode) → produces .vercel/output/
       - name: Build (Prebuilt)
         run: |
-          if [ "${{ inputs.environment }}" = "production" ] || [ "$GITHUB_REF" = "refs/heads/main" ]; then
+          if [ "${{ env.IS_PROD }}" = "true" ]; then
             vercel build --prod --token "$VERCEL_TOKEN"
           else
             vercel build --token "$VERCEL_TOKEN"
           fi
 
-      # Upload the pre-built artifact — Vercel skips its own build step
       - name: Deploy to Vercel
         run: |
-          if [ "${{ inputs.environment }}" = "production" ] || [ "$GITHUB_REF" = "refs/heads/main" ]; then
+          if [ "${{ env.IS_PROD }}" = "true" ]; then
             vercel deploy --prebuilt --prod --token "$VERCEL_TOKEN"
           else
             vercel deploy --prebuilt --token "$VERCEL_TOKEN"
           fi
 
-  # ── 2. Deploy → Render (via webhook, en parallèle avec Vercel) ───────────────
+  # ── 2. Deploy → Render (en parallèle avec Vercel) ────────────────────────────
   deploy-render:
-    name: Deploy → Render
+    name: Deploy → Render (${{ github.ref == 'refs/heads/main' && 'production' || 'preview' }})
     runs-on: ubuntu-latest
     needs: test
 
@@ -125,15 +126,21 @@ jobs:
       - name: Trigger Render deployment
         run: |
           set -euo pipefail
-          RENDER_HOOK="${{ secrets.RENDER_DEPLOY_HOOK_URL }}"
+          if [ "${{ env.IS_PROD }}" = "true" ]; then
+            RENDER_HOOK="${{ secrets.RENDER_DEPLOY_HOOK_URL }}"
+            ENV_NAME="production"
+          else
+            RENDER_HOOK="${{ secrets.RENDER_PREVIEW_DEPLOY_HOOK_URL }}"
+            ENV_NAME="preview"
+          fi
           if [ -z "${RENDER_HOOK}" ]; then
-            echo "❌ RENDER_DEPLOY_HOOK_URL est vide — vérifiez les GitHub Secrets"
+            echo "❌ Render hook vide pour $ENV_NAME — vérifiez les GitHub Secrets"
             exit 1
           fi
-          echo "🚀 Déclenchement du déploiement Render..."
+          echo "🚀 Déclenchement du déploiement Render ($ENV_NAME)..."
           HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" -X POST "${RENDER_HOOK}")
           if [ "$HTTP_STATUS" -eq 200 ] || [ "$HTTP_STATUS" -eq 201 ] || [ "$HTTP_STATUS" -eq 202 ]; then
-            echo "✅ Render deployment triggered ($HTTP_STATUS)"
+            echo "✅ Render $ENV_NAME deployment triggered ($HTTP_STATUS)"
           elif [ "$HTTP_STATUS" -eq 409 ]; then
             echo "ℹ️ Render deploy already in progress ($HTTP_STATUS)"
           else

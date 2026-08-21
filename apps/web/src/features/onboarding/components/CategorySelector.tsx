@@ -61,7 +61,7 @@ export function CategorySelector({
         type="button"
         onClick={() => setOpen(!open)}
         className={cn(
-          "w-full h-12 md:h-10 rounded-xl bg-black/40 border border-white/10 px-3.5 text-white flex items-center justify-between text-sm md:text-xs font-semibold outline-none transition-all hover:border-emerald-400/50 focus:border-emerald-400 cursor-pointer shadow-inner",
+          "w-full h-12 md:h-10 rounded-xl bg-black/40 border border-white/25 px-3.5 text-white flex items-center justify-between text-sm md:text-xs font-semibold outline-none transition-all hover:border-emerald-400/50 focus:border-emerald-400 cursor-pointer shadow-inner",
           open && "border-emerald-400 ring-1 ring-emerald-400/20"
         )}
       >

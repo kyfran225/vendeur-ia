@@ -185,21 +185,27 @@ export class AuthService {
     // Build Login URL (including authSessionId for link-click association)
     const loginUrl = `${clientUrl}/auth/magic-login?t=${token}&p=${cleanNumber}&s=${authSessionId}`;
 
-    // Send via WhatsApp Service
+    // Attempt to send magic link via WhatsApp.
+    // This may fail for first-contact users (Meta blocks outbound messages without an active 24h window).
+    // That's intentional: the session is already registered in-memory above.
+    // The user authenticates via the "Send CONNEXION on WhatsApp" button on the waiting screen,
+    // which opens the 24h window and triggers authenticateViaIncomingMessage → socket/poll catches it.
+    let magicLinkSent = false;
     try {
       await whatsappService.sendAuthMagicLink(cleanNumber, loginUrl, code);
+      magicLinkSent = true;
     } catch (err: any) {
-      if (isFounder) {
-        console.warn(`[Founder Auth Notice] WhatsApp self-dispatch bypassed for founder number ${cleanNumber}. Code: ${code}`);
-      } else {
-        throw err;
-      }
+      // Warn but never throw — the session is registered, user can still authenticate via WhatsApp
+      console.warn(`[Auth] Magic link WhatsApp send failed for ${cleanNumber} (first-contact or Meta error): ${err?.message || err}`);
     }
 
     return { 
       success: true, 
       authSessionId,
-      message: isFounder ? "Bienvenue Co-Fondateur ! Accès sécurisé prêt." : "Lien de connexion envoyé sur WhatsApp", 
+      magicLinkSent,
+      message: magicLinkSent 
+        ? (isFounder ? "Bienvenue Co-Fondateur ! Accès sécurisé prêt." : "Lien de connexion envoyé sur WhatsApp")
+        : "Session initialisée. Envoyez CONNEXION sur WhatsApp pour vous connecter.",
       code: (isFounder || process.env.NODE_ENV !== "production") ? code : undefined 
     };
   }

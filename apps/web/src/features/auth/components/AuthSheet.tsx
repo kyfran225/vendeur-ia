@@ -106,91 +106,104 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
 
   const GOOGLE_CLIENT_ID = (import.meta as any).env.VITE_GOOGLE_CLIENT_ID;
 
-  // Complete login helper
-  const completeAuth = (sessionData: any) => {
+  // Stable complete login helper — useCallback ensures the socket effect doesn't get a stale closure
+  const completeAuth = React.useCallback((sessionData: any) => {
     setSession(sessionData);
-    toast.success(`Authentification réussie !`);
+    toast.success(`Connexion réussie ! 🎉`);
     onClose();
     if (sessionData.user?.onboardingCompleted) {
       navigate("/dashboard");
     } else {
       navigate("/onboarding");
     }
-  };
+  }, [setSession, onClose, navigate]);
+
+  // Use a ref so the socket effect can read the latest authSessionId without
+  // being in the dependency array (which would cause socket re-creation on every update)
+  const authSessionIdRef = React.useRef(authSessionId);
+  React.useEffect(() => { authSessionIdRef.current = authSessionId; }, [authSessionId]);
 
   useEffect(() => {
-    if (whatsappStep === "waiting" && localPhone) {
-      const fullPhoneNumber = `${selectedCountry.dialCode}${localPhone}`.replace(/\D/g, "");
-      const localCleanNumber = localPhone.replace(/\D/g, "");
-      
-      // 1. WebSocket Realtime Channel with auto-rejoin
-      const socketUrl = import.meta.env.VITE_API_URL || window.location.origin.replace("5173", "3001");
-      const socket = io(socketUrl, {
-        reconnection: true,
-        reconnectionAttempts: 20,
-        reconnectionDelay: 1000
-      });
+    if (whatsappStep !== "waiting" || !localPhone) return;
 
-      const joinRooms = () => {
-        socket.emit("join_auth", fullPhoneNumber);
-        socket.emit("join_auth", localCleanNumber);
-        if (authSessionId) {
-          socket.emit("join_auth", authSessionId);
+    const fullPhoneNumber = `${selectedCountry.dialCode}${localPhone}`.replace(/\D/g, "");
+    const localCleanNumber = localPhone.replace(/\D/g, "");
+    // Precompute both country-code variants for robust room matching on the server
+    const phoneWithout225 = fullPhoneNumber.startsWith("225") ? fullPhoneNumber.slice(3) : fullPhoneNumber;
+    const phoneWith225 = fullPhoneNumber.startsWith("225") ? fullPhoneNumber : `225${fullPhoneNumber}`;
+
+    // 1. WebSocket Realtime Channel with auto-rejoin
+    const socketUrl = import.meta.env.VITE_API_URL || window.location.origin.replace("5173", "3001");
+    const socket = io(socketUrl, {
+      reconnection: true,
+      reconnectionAttempts: 30,
+      reconnectionDelay: 1000
+    });
+
+    const joinRooms = () => {
+      socket.emit("join_auth", fullPhoneNumber);
+      socket.emit("join_auth", localCleanNumber);
+      socket.emit("join_auth", phoneWithout225);
+      socket.emit("join_auth", phoneWith225);
+      const sid = authSessionIdRef.current;
+      if (sid) socket.emit("join_auth", sid);
+    };
+
+    socket.on("connect", joinRooms);
+    joinRooms();
+
+    socket.on("auth:success", (sessionData) => {
+      completeAuth(sessionData);
+    });
+
+    // 2. Resilient HTTP Polling every 1.5s + instant check on tab/app focus
+    let isCancelled = false;
+
+    const checkAuth = async () => {
+      if (isCancelled) return;
+      try {
+        const res = await apiClient.post("/api/auth/poll-status", {
+          authSessionId: authSessionIdRef.current || undefined,
+          phoneNumber: fullPhoneNumber
+        });
+        if (res.data && res.data.status === "authenticated" && res.data.sessionData) {
+          isCancelled = true;
+          completeAuth(res.data.sessionData);
         }
-      };
+      } catch {
+        // Silent — background polling
+      }
+    };
 
-      socket.on("connect", joinRooms);
-      joinRooms();
+    // Immediate check when entering waiting state (catches cases where user is already authenticated)
+    checkAuth();
+    const pollInterval = setInterval(checkAuth, 1500);
 
-      socket.on("auth:success", (sessionData) => {
-        completeAuth(sessionData);
-      });
+    // Instant check when user returns to tab/app after sending message on WhatsApp
+    const handleVisibilityOrFocus = () => {
+      if (document.visibilityState === "visible" || !document.hidden) {
+        checkAuth();
+        joinRooms();
+      }
+    };
 
-      // 2. Resilient HTTP Polling (Runs every 1.5s in background + on visibility/app focus)
-      let isCancelled = false;
+    document.addEventListener("visibilitychange", handleVisibilityOrFocus);
+    window.addEventListener("focus", handleVisibilityOrFocus);
+    window.addEventListener("pageshow", handleVisibilityOrFocus);
+    window.addEventListener("resume", handleVisibilityOrFocus);
 
-      const checkAuth = async () => {
-        if (isCancelled) return;
-        try {
-          const res = await apiClient.post("/api/auth/poll-status", {
-            authSessionId: authSessionId || undefined,
-            phoneNumber: fullPhoneNumber
-          });
-          if (res.data && res.data.status === "authenticated" && res.data.sessionData) {
-            isCancelled = true;
-            completeAuth(res.data.sessionData);
-          }
-        } catch {
-          // Silent catch for background polling
-        }
-      };
-
-      const pollInterval = setInterval(checkAuth, 1500);
-
-      // Trigger check immediately when returning to the app / focusing tab / PWA resume
-      const handleVisibilityOrFocus = () => {
-        if (document.visibilityState === "visible" || !document.hidden) {
-          checkAuth();
-          joinRooms();
-        }
-      };
-
-      document.addEventListener("visibilitychange", handleVisibilityOrFocus);
-      window.addEventListener("focus", handleVisibilityOrFocus);
-      window.addEventListener("pageshow", handleVisibilityOrFocus);
-      window.addEventListener("resume", handleVisibilityOrFocus);
-
-      return () => {
-        isCancelled = true;
-        clearInterval(pollInterval);
-        document.removeEventListener("visibilitychange", handleVisibilityOrFocus);
-        window.removeEventListener("focus", handleVisibilityOrFocus);
-        window.removeEventListener("pageshow", handleVisibilityOrFocus);
-        window.removeEventListener("resume", handleVisibilityOrFocus);
-        socket.disconnect();
-      };
-    }
-  }, [whatsappStep, localPhone, selectedCountry, authSessionId, setSession, onClose, navigate]);
+    return () => {
+      isCancelled = true;
+      clearInterval(pollInterval);
+      document.removeEventListener("visibilitychange", handleVisibilityOrFocus);
+      window.removeEventListener("focus", handleVisibilityOrFocus);
+      window.removeEventListener("pageshow", handleVisibilityOrFocus);
+      window.removeEventListener("resume", handleVisibilityOrFocus);
+      socket.disconnect();
+    };
+    // authSessionId intentionally NOT in deps — read via ref to prevent socket re-creation race
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [whatsappStep, localPhone, selectedCountry, completeAuth]);
 
   // Email form
   const [form, setForm] = useState({
@@ -213,6 +226,10 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
 
     setLoading(true);
     try {
+      // Register the pending auth session server-side.
+      // For first-contact users the WhatsApp magic link may be blocked by Meta (no 24h window yet),
+      // but the session is registered in-memory: when they send "CONNEXION" on WhatsApp,
+      // authenticateViaIncomingMessage will fire and the socket/poll will catch it immediately.
       const res = await apiClient.post("/api/auth/whatsapp-magic-link", {
         phoneNumber: fullPhoneNumber,
         clientUrl: window.location.origin
@@ -221,10 +238,10 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
       if (res.data?.authSessionId) {
         setAuthSessionId(res.data.authSessionId);
       }
+      // Always show the waiting screen — "Send CONNEXION on WhatsApp" is the primary path
       setWhatsappStep("waiting");
-      toast.success(res.data?.message || "Lien de connexion envoyé sur votre WhatsApp !");
     } catch (err: any) {
-      toast.error(err.response?.data?.error || "Erreur lors de l'envoi du lien");
+      toast.error(err.response?.data?.error || "Erreur lors de l'initialisation. Veuillez réessayer.");
     } finally {
       setLoading(false);
     }
@@ -331,13 +348,13 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
           </div>
           <h2 className="text-xl sm:text-2xl font-black text-white uppercase tracking-tight leading-snug">
             {authMethod === "whatsapp"
-              ? (whatsappStep === "waiting" ? "Code de Vérification" : "Accès Vendeur IA")
+              ? (whatsappStep === "waiting" ? "Connexion WhatsApp" : "Accès Vendeur IA")
               : mode === "login" ? "Connexion Email" : mode === "register" ? "Créer un compte" : "Mot de passe"}
           </h2>
           <p className="text-xs text-white/50 mt-1 max-w-xs mx-auto leading-relaxed">
             {authMethod === "whatsapp"
               ? (whatsappStep === "waiting"
-                  ? `Lien envoyé au ${selectedCountry.dialCode} ${localPhone}. Veuillez valider ou saisir le code.`
+                  ? `Envoyez "CONNEXION" sur WhatsApp pour vous connecter instantanément.`
                   : "Numéro personnel ou professionnel pour gérer votre boutique et recevoir vos alertes.")
               : "Espace d'accès sécurisé pour l'équipe."}
           </p>

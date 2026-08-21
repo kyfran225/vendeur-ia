@@ -508,7 +508,7 @@ function LandingHero({
                         <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Nom du commerce</label>
                         <input
                           id="business-name-input"
-                          className="w-full h-10 sm:h-11 rounded-xl bg-black/40 border border-white/10 px-3.5 text-white outline-none focus:border-emerald-400 transition-all text-sm shadow-inner"
+                          className="w-full h-10 sm:h-11 rounded-xl bg-black/40 border border-white/25 px-3.5 text-white outline-none focus:border-emerald-400 transition-all text-sm shadow-inner"
                           value={form.businessName}
                           onChange={(e) => setForm({ ...form, businessName: e.target.value })}
                           placeholder="Ex: Ma Boutique Chic"
@@ -555,7 +555,7 @@ function LandingHero({
                         </div>
                         <textarea
                           maxLength={300}
-                          className="w-full h-16 sm:h-20 rounded-xl bg-black/40 border border-white/10 p-3 text-sm resize-none outline-none focus:border-emerald-400 placeholder:text-white/20 leading-relaxed shadow-inner"
+                          className="w-full h-16 sm:h-20 rounded-xl bg-black/40 border border-white/25 p-3 text-sm resize-none outline-none focus:border-emerald-400 placeholder:text-white/20 leading-relaxed shadow-inner"
                           value={form.description}
                           onChange={(e) => setForm({ ...form, description: e.target.value })}
                           placeholder="Ex: Articles, prestations de service, tarifs ou livraison..."
@@ -871,7 +871,7 @@ export function LandingPage() {
             <div className="space-y-6">
               <p className="text-xs font-black uppercase tracking-widest text-white">Newsletter</p>
               <div className="flex gap-2">
-                 <input className="h-12 flex-1 bg-white/5 border border-white/10 rounded-xl px-4 text-xs text-white outline-none focus:border-emerald-400" placeholder="Votre email" />
+                 <input className="h-12 flex-1 bg-white/5 border border-white/25 rounded-xl px-4 text-xs text-white outline-none focus:border-emerald-400" placeholder="Votre email" />
                  <button className="h-12 w-12 rounded-xl bg-vendeur-emerald text-vendeur-coal flex items-center justify-center shrink-0">
                     <Send size={18} />
                  </button>

@@ -175,47 +175,48 @@ router.get("/webhook", (req, res) => {
 router.post("/webhook", async (req, res) => {
   const body = req.body;
 
+  // Immediately acknowledge receipt to Meta to prevent timeout-induced retries
+  res.status(200).send("EVENT_RECEIVED");
+
   // Check if it's a WhatsApp message notification
   if (body.object === "whatsapp_business_account") {
     try {
-      for (const entry of body.entry) {
-        for (const change of entry.changes) {
+      for (const entry of body.entry || []) {
+        for (const change of entry.changes || []) {
           const value = change.value;
-          if (value.messages) {
+          if (value?.messages) {
             for (const msg of value.messages) {
               const from = msg.from; // Customer phone number
-              const phoneId = value.metadata.phone_number_id;
+              const phoneId = value.metadata?.phone_number_id;
 
               let text = msg.text?.body;
               let mediaId = null;
               let mediaType = null;
 
               if (msg.type === "image") {
-                mediaId = msg.image.id;
+                mediaId = msg.image?.id;
                 mediaType = "image";
-                text = msg.image.caption || "[Image]";
+                text = msg.image?.caption || "[Image]";
               } else if (msg.type === "audio") {
-                mediaId = msg.audio.id;
+                mediaId = msg.audio?.id;
                 mediaType = "audio";
                 text = "[Vocal]";
               }
 
               if ((text || mediaId) && from) {
-                console.log(`[Webhook] New ${msg.type || 'message'} from ${from} to PhoneID ${phoneId}`);
-                // Handle the incoming message
-                await whatsappService.handleMetaIncomingMessage(from, text || "", phoneId, { mediaId, mediaType: mediaType as any });
+                console.log(`[Webhook] New ${msg.type || 'message'} from ${from} to PhoneID ${phoneId} (MsgID: ${msg.id})`);
+                // Handle the incoming message asynchronously with deduplication
+                whatsappService.handleMetaIncomingMessage(from, text || "", phoneId, { mediaId, mediaType: mediaType as any }, msg.id).catch(err => {
+                  console.error("[Webhook] Error in async handleMetaIncomingMessage:", err);
+                });
               }
             }
           }
         }
       }
-      res.status(200).send("EVENT_RECEIVED");
     } catch (error) {
       console.error("[Webhook] Error processing event:", error);
-      res.status(500).end();
     }
-  } else {
-    res.status(404).end();
   }
 });
 

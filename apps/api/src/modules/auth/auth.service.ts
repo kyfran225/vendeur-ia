@@ -279,10 +279,14 @@ export class AuthService {
 
   async verifyMagicLink(phoneNumber: string, token: string, authSessionId?: string) {
     const cleanNumber = phoneNumber.replace(/[\s\-\+\(\)]/g, "");
+    const phoneVariants = generatePhoneVariants(cleanNumber);
     const hash = createHash("sha256").update(token).digest("hex");
 
     const user = await UserModel.findOne({
-      whatsappNumber: cleanNumber,
+      $or: [
+        { whatsappNumber: cleanNumber },
+        { whatsappNumber: { $in: phoneVariants } }
+      ],
       magicTokenHash: hash,
       magicTokenExpiresAt: { $gt: new Date() }
     });
@@ -302,7 +306,6 @@ export class AuthService {
     await user.save();
 
     const tokens = await this.generateTokens(user);
-    const phoneVariants = generatePhoneVariants(cleanNumber);
 
     // Save tokens in memory & MongoDB
     const sessionUpdate: PendingAuthSession = {
@@ -471,13 +474,55 @@ export class AuthService {
 
     console.log(`[WhatsApp Reverse Auth] Authenticating user ${cleanPhone} via incoming message: "${text}"`);
 
-    // Perform login or registration
-    const tokens = await this.loginOrRegisterWithWhatsApp(cleanPhone);
+    const isFounder = isFounderNumber(cleanPhone);
+    const founderDisplayName = "Franck (Co-Fondateur & Lead)";
+
+    let user = await UserModel.findOne({
+      $or: [
+        { whatsappNumber: cleanPhone },
+        { whatsappNumber: { $in: phoneVariants } }
+      ]
+    });
+
+    if (!user) {
+      const fallbackEmail = `${cleanPhone.replace(/[^0-9]/g, "")}@whatsapp.vendeur-ia.com`;
+      user = await UserModel.create({
+        whatsappNumber: cleanPhone,
+        email: fallbackEmail,
+        authProvider: "whatsapp",
+        displayName: isFounder ? founderDisplayName : `Commerçant WhatsApp (${cleanPhone.slice(-4)})`,
+        roles: isFounder ? ["user", "admin", "creator"] : ["user"],
+        onboardingCompleted: false
+      });
+    } else if (isFounder) {
+      user.roles = ["user", "admin", "creator"];
+      if (!user.displayName || user.displayName.startsWith("Commerçant")) {
+        user.displayName = founderDisplayName;
+      }
+    }
 
     const matchedSessionId = matchedSession?.authSessionId || dbSession?.authSessionId || `auth_${randomBytes(12).toString("hex")}`;
     const matchedSessionCode = matchedSession?.sessionCode || dbSession?.sessionCode || candidateCodes[0] || "";
-    const magicToken = dbSession?.magicToken || randomBytes(32).toString("hex");
-    const otpCode = dbSession?.otpCode || "777888";
+    
+    // Fresh Magic Token
+    const magicToken = randomBytes(32).toString("hex");
+    const magicHash = createHash("sha256").update(magicToken).digest("hex");
+
+    // Fresh 6-digit OTP Code (re-use from dbSession if valid 6-digit or generate new)
+    const otpCode = (dbSession?.otpCode && dbSession.otpCode.length === 6 && dbSession.otpCode !== "777888") 
+      ? dbSession.otpCode 
+      : Math.floor(100000 + Math.random() * 900000).toString();
+    const otpCodeHash = await bcrypt.hash(otpCode, 10);
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 min
+
+    // Save active token and OTP hashes on user
+    user.magicTokenHash = magicHash;
+    user.magicTokenExpiresAt = expiresAt;
+    user.otpCodeHash = otpCodeHash;
+    user.otpExpiresAt = expiresAt;
+    await user.save();
+
+    const tokens = await this.generateTokens(user);
     const clientUrl = dbSession?.clientUrl || env.CLIENT_URL || "http://localhost:5173";
 
     // Update in-memory session
@@ -510,8 +555,12 @@ export class AuthService {
           $set: {
             status: "authenticated",
             tokens,
+            magicToken,
+            magicTokenHash: magicHash,
+            otpCode,
             phoneNumber: cleanPhone,
-            phoneVariants
+            phoneVariants,
+            expiresAt
           }
         }
       );
@@ -592,10 +641,14 @@ export class AuthService {
 
   async verifyWhatsAppOtp(whatsappNumber: string, code: string) {
     const cleanNumber = whatsappNumber.replace(/[\s\-\(\)\+]/g, "");
+    const phoneVariants = generatePhoneVariants(cleanNumber);
     const isFounder = isFounderNumber(cleanNumber);
 
     const user = await UserModel.findOne({
-      whatsappNumber: cleanNumber,
+      $or: [
+        { whatsappNumber: cleanNumber },
+        { whatsappNumber: { $in: phoneVariants } }
+      ],
       otpExpiresAt: { $gt: new Date() }
     });
 

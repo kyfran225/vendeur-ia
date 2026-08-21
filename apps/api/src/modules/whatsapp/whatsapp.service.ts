@@ -777,8 +777,22 @@ class WhatsAppService {
     }
   }
 
-  async handleMetaIncomingMessage(from: string, text: string, phoneId: string, media?: { mediaId: string, mediaType: string }) {
-    // 0. Intercept Reverse WhatsApp Auth (Direct Click-to-WhatsApp Login)
+  async handleMetaIncomingMessage(from: string, text: string, phoneId: string, media?: { mediaId: string, mediaType: string }, messageId?: string) {
+    // 0. Deduplication to prevent processing retries or duplicate webhook events
+    const cleanPhone = from ? from.replace(/[\s\-\+\(\)]/g, "") : "";
+    const dedupKey = messageId || `${cleanPhone}:${phoneId || ""}:${text || ""}:${Math.floor(Date.now() / 4000)}`;
+    if (this.processedMessageIds.has(dedupKey)) {
+      console.log(`[Meta WhatsApp] Duplicate incoming message ignored: ${dedupKey}`);
+      return;
+    }
+    this.processedMessageIds.add(dedupKey);
+
+    if (this.processedMessageIds.size > 2000) {
+      const firstItems = Array.from(this.processedMessageIds).slice(0, 500);
+      firstItems.forEach(k => this.processedMessageIds.delete(k));
+    }
+
+    // 1. Intercept Reverse WhatsApp Auth (Direct Click-to-WhatsApp Login)
     try {
       const { authService } = await import("../auth/auth.service.js");
       const authResult = await authService.authenticateViaIncomingMessage(from, text);

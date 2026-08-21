@@ -80,7 +80,7 @@ class MetaDispatcherService {
               media = { mediaId: message.audio.id, mediaType: 'audio' };
             }
 
-            await (whatsappService as any).handleMetaIncomingMessage(from, text, phoneId, media);
+            await (whatsappService as any).handleMetaIncomingMessage(from, text, phoneId, media, message.id);
           }
         }
       }

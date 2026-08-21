@@ -132,7 +132,7 @@ jobs:
           fi
           echo "🚀 Déclenchement du déploiement Render..."
           HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" -X POST "${RENDER_HOOK}")
-          if [ "$HTTP_STATUS" -eq 200 ] || [ "$HTTP_STATUS" -eq 201 ]; then
+          if [ "$HTTP_STATUS" -eq 200 ] || [ "$HTTP_STATUS" -eq 201 ] || [ "$HTTP_STATUS" -eq 202 ]; then
             echo "✅ Render deployment triggered ($HTTP_STATUS)"
           elif [ "$HTTP_STATUS" -eq 409 ]; then
             echo "ℹ️ Render deploy already in progress ($HTTP_STATUS)"

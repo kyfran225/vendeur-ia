@@ -508,7 +508,7 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
                   ) : (
                     <Sparkles size={14} className="text-vendeur-emerald" />
                   )}
-                  <span>J'ai déjà envoyé le message → Vérifier</span>
+                  <span>J'ai envoyé le message → Accéder</span>
                 </button>
               </div>
 

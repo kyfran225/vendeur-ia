@@ -103,6 +103,9 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
   const [localPhone, setLocalPhone] = useState("");
   const [whatsappName, setWhatsappName] = useState("");
   const [authSessionId, setAuthSessionId] = useState<string>("");
+  const [sessionCode, setSessionCode] = useState<string>("");
+  const [systemWhatsAppNumber, setSystemWhatsAppNumber] = useState<string>("2250505111157");
+  const [isCheckingManual, setIsCheckingManual] = useState(false);
 
   const GOOGLE_CLIENT_ID = (import.meta as any).env.VITE_GOOGLE_CLIENT_ID;
 
@@ -118,17 +121,19 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
     }
   }, [setSession, onClose, navigate]);
 
-  // Use a ref so the socket effect can read the latest authSessionId without
-  // being in the dependency array (which would cause socket re-creation on every update)
+  // Use refs so the socket effect and event listeners read latest state without re-creating sockets
   const authSessionIdRef = React.useRef(authSessionId);
   React.useEffect(() => { authSessionIdRef.current = authSessionId; }, [authSessionId]);
+
+  const sessionCodeRef = React.useRef(sessionCode);
+  React.useEffect(() => { sessionCodeRef.current = sessionCode; }, [sessionCode]);
 
   useEffect(() => {
     if (whatsappStep !== "waiting" || !localPhone) return;
 
     const fullPhoneNumber = `${selectedCountry.dialCode}${localPhone}`.replace(/\D/g, "");
     const localCleanNumber = localPhone.replace(/\D/g, "");
-    // Precompute both country-code variants for robust room matching on the server
+    // Precompute country-code variants for robust room matching on the server
     const phoneWithout225 = fullPhoneNumber.startsWith("225") ? fullPhoneNumber.slice(3) : fullPhoneNumber;
     const phoneWith225 = fullPhoneNumber.startsWith("225") ? fullPhoneNumber : `225${fullPhoneNumber}`;
 
@@ -145,8 +150,8 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
       socket.emit("join_auth", localCleanNumber);
       socket.emit("join_auth", phoneWithout225);
       socket.emit("join_auth", phoneWith225);
-      const sid = authSessionIdRef.current;
-      if (sid) socket.emit("join_auth", sid);
+      if (authSessionIdRef.current) socket.emit("join_auth", authSessionIdRef.current);
+      if (sessionCodeRef.current) socket.emit("join_auth", sessionCodeRef.current);
     };
 
     socket.on("connect", joinRooms);
@@ -156,7 +161,7 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
       completeAuth(sessionData);
     });
 
-    // 2. Resilient HTTP Polling every 1.5s + instant check on tab/app focus
+    // 2. Resilient HTTP Polling every 1.2s + instant check on tab/app focus
     let isCancelled = false;
 
     const checkAuth = async () => {
@@ -164,6 +169,7 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
       try {
         const res = await apiClient.post("/api/auth/poll-status", {
           authSessionId: authSessionIdRef.current || undefined,
+          sessionCode: sessionCodeRef.current || undefined,
           phoneNumber: fullPhoneNumber
         });
         if (res.data && res.data.status === "authenticated" && res.data.sessionData) {
@@ -175,9 +181,9 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
       }
     };
 
-    // Immediate check when entering waiting state (catches cases where user is already authenticated)
+    // Immediate check when entering waiting state
     checkAuth();
-    const pollInterval = setInterval(checkAuth, 1500);
+    const pollInterval = setInterval(checkAuth, 1200);
 
     // Instant check when user returns to tab/app after sending message on WhatsApp
     const handleVisibilityOrFocus = () => {
@@ -201,8 +207,6 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
       window.removeEventListener("resume", handleVisibilityOrFocus);
       socket.disconnect();
     };
-    // authSessionId intentionally NOT in deps — read via ref to prevent socket re-creation race
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [whatsappStep, localPhone, selectedCountry, completeAuth]);
 
   // Email form
@@ -226,10 +230,6 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
 
     setLoading(true);
     try {
-      // Register the pending auth session server-side.
-      // For first-contact users the WhatsApp magic link may be blocked by Meta (no 24h window yet),
-      // but the session is registered in-memory: when they send "CONNEXION" on WhatsApp,
-      // authenticateViaIncomingMessage will fire and the socket/poll will catch it immediately.
       const res = await apiClient.post("/api/auth/whatsapp-magic-link", {
         phoneNumber: fullPhoneNumber,
         clientUrl: window.location.origin
@@ -238,12 +238,39 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
       if (res.data?.authSessionId) {
         setAuthSessionId(res.data.authSessionId);
       }
+      if (res.data?.sessionCode) {
+        setSessionCode(res.data.sessionCode);
+      }
+      if (res.data?.systemWhatsAppNumber) {
+        setSystemWhatsAppNumber(res.data.systemWhatsAppNumber);
+      }
       // Always show the waiting screen — "Send CONNEXION on WhatsApp" is the primary path
       setWhatsappStep("waiting");
     } catch (err: any) {
       toast.error(err.response?.data?.error || "Erreur lors de l'initialisation. Veuillez réessayer.");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleManualCheck = async () => {
+    const fullPhoneNumber = `${selectedCountry.dialCode}${localPhone}`.replace(/\D/g, "");
+    setIsCheckingManual(true);
+    try {
+      const res = await apiClient.post("/api/auth/poll-status", {
+        authSessionId: authSessionIdRef.current || undefined,
+        sessionCode: sessionCodeRef.current || undefined,
+        phoneNumber: fullPhoneNumber
+      });
+      if (res.data && res.data.status === "authenticated" && res.data.sessionData) {
+        completeAuth(res.data.sessionData);
+      } else {
+        toast.info("En attente de réception de votre message WhatsApp...");
+      }
+    } catch {
+      toast.error("Vérification en cours... Veuillez patienter.");
+    } finally {
+      setIsCheckingManual(false);
     }
   };
 
@@ -439,34 +466,56 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
               </div>
             </form>
           ) : (
-            <div className="space-y-5 text-center py-2 animate-in zoom-in-95 duration-300">
+            <div className="space-y-4 text-center py-2 animate-in zoom-in-95 duration-300">
               {/* Primary Action: 1-Click WhatsApp Direct Open */}
               <div className="bg-white/5 border border-white/10 rounded-2xl p-4 text-left space-y-3">
-                <div className="flex items-center gap-2 text-vendeur-emerald font-bold text-xs">
-                  <span className="w-2 h-2 rounded-full bg-vendeur-emerald animate-ping" />
-                  <span>Validation WhatsApp en 1 Clic</span>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-vendeur-emerald font-bold text-xs">
+                    <span className="w-2.5 h-2.5 rounded-full bg-vendeur-emerald animate-ping" />
+                    <span>Étape 1 : Validation WhatsApp</span>
+                  </div>
+                  {sessionCode && (
+                    <span className="px-2 py-0.5 rounded-md bg-vendeur-emerald/10 border border-vendeur-emerald/30 text-[10px] font-mono font-black text-vendeur-emerald">
+                      CODE: {sessionCode}
+                    </span>
+                  )}
                 </div>
                 
                 <p className="text-xs text-white/70 leading-relaxed">
-                  Cliquez sur le bouton ci-dessous pour ouvrir WhatsApp et envoyer le message de validation. Votre session s'ouvrira automatiquement !
+                  Cliquez sur le bouton pour envoyer le message de confirmation sur WhatsApp. Votre écran se connectera automatiquement dès l'envoi !
                 </p>
 
                 <a
-                  href={`https://wa.me/22505111157?text=${encodeURIComponent(`CONNEXION ${authSessionId ? authSessionId.slice(0, 6).toUpperCase() : ""}`)}`}
+                  href={`https://wa.me/${systemWhatsAppNumber || "2250505111157"}?text=${encodeURIComponent(`CONNEXION ${sessionCode || (authSessionId ? authSessionId.slice(0, 6).toUpperCase() : "")}`)}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="w-full h-12 bg-[#25D366] hover:bg-[#20bd5a] text-white font-black text-xs uppercase tracking-wider rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg shadow-[#25D366]/20 cursor-pointer"
+                  className="w-full h-12 bg-[#25D366] hover:bg-[#20bd5a] text-white font-black text-xs uppercase tracking-wider rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg shadow-[#25D366]/20 cursor-pointer active:scale-95"
                 >
                   <WhatsAppIcon size={18} />
-                  <span>Envoyer "CONNEXION" sur WhatsApp</span>
+                  <span>Envoyer "CONNEXION {sessionCode}" sur WhatsApp</span>
                   <ChevronRight size={16} />
                 </a>
+
+                {/* Instant Check Button on returning */}
+                <button
+                  type="button"
+                  onClick={handleManualCheck}
+                  disabled={isCheckingManual}
+                  className="w-full h-10 bg-white/5 hover:bg-white/10 text-white/80 hover:text-white rounded-xl text-[11px] font-bold flex items-center justify-center gap-2 transition-all border border-white/5 cursor-pointer"
+                >
+                  {isCheckingManual ? (
+                    <Loader2 className="animate-spin text-vendeur-emerald" size={14} />
+                  ) : (
+                    <Sparkles size={14} className="text-vendeur-emerald" />
+                  )}
+                  <span>J'ai déjà envoyé le message → Vérifier</span>
+                </button>
               </div>
 
               {/* Alternative: OTP Input */}
               <div className="space-y-2 px-2">
                 <p className="text-[11px] text-white/40 font-medium">
-                  Ou saisissez le code à 6 chiffres si vous l'avez reçu :
+                  Ou saisissez le code à 6 chiffres reçu sur WhatsApp :
                 </p>
                 <div className="relative">
                   <input

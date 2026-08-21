@@ -9,6 +9,9 @@ import { randomBytes, createHash } from "node:crypto";
 import { whatsappService } from "../whatsapp/whatsapp.service.js";
 import { getSocketServer } from "../../realtime/socketServer.js";
 
+import { AuthSessionModel } from "./auth-session.model.js";
+import { SystemSettingsModel } from "../commerce/admin.model.js";
+
 const ACCESS_TOKEN_EXPIRES_IN = "15m";
 const REFRESH_TOKEN_EXPIRES_IN = "7d";
 
@@ -24,10 +27,42 @@ function isFounderNumber(phone: string): boolean {
   return FOUNDER_NUMBERS.some(fn => clean.endsWith(fn) || fn.endsWith(clean));
 }
 
-// In-memory store for pending and authenticated auth sessions (auto-cleaned after 15 min)
+export function generatePhoneVariants(phone: string): string[] {
+  if (!phone) return [];
+  const digits = phone.replace(/\D/g, "");
+  const variants = new Set<string>();
+  if (!digits) return [];
+
+  variants.add(digits);
+
+  if (digits.startsWith("225")) {
+    const without225 = digits.slice(3);
+    variants.add(without225);
+    if (without225.startsWith("0")) {
+      variants.add(without225.slice(1));
+    }
+  } else {
+    variants.add(`225${digits}`);
+    if (digits.startsWith("0")) {
+      variants.add(`225${digits.slice(1)}`);
+    }
+  }
+
+  if (digits.length >= 8) {
+    variants.add(digits.slice(-8));
+  }
+  if (digits.length >= 10) {
+    variants.add(digits.slice(-10));
+  }
+
+  return Array.from(variants).filter(v => v.length >= 4);
+}
+
+// In-memory fast cache for pending and authenticated auth sessions (dual-layered with MongoDB AuthSessionModel)
 interface PendingAuthSession {
   phoneNumber: string;
   authSessionId: string;
+  sessionCode?: string;
   status: "pending" | "authenticated";
   tokens?: any;
   createdAt: number;
@@ -123,34 +158,58 @@ export class AuthService {
 
     const isFounder = isFounderNumber(cleanNumber);
     const founderDisplayName = "Franck (Co-Fondateur & Lead)";
+    const phoneVariants = generatePhoneVariants(cleanNumber);
 
     // 1. Generate Magic Token (for link)
     const token = randomBytes(32).toString("hex");
     const magicHash = createHash("sha256").update(token).digest("hex");
 
-    // 2. Generate or reuse AuthSessionId for HTTP Polling
-    const authSessionId = existingSessionId || randomBytes(16).toString("hex");
-    pendingAuthSessions.set(authSessionId, {
-      phoneNumber: cleanNumber,
-      authSessionId,
-      status: "pending",
-      createdAt: Date.now()
-    });
-
-    // Also store by phone number to allow cross-matching
-    pendingAuthSessions.set(`phone:${cleanNumber}`, {
-      phoneNumber: cleanNumber,
-      authSessionId,
-      status: "pending",
-      createdAt: Date.now()
-    });
+    // 2. Generate or reuse AuthSessionId and 4-digit readable sessionCode
+    const authSessionId = existingSessionId || `auth_${randomBytes(12).toString("hex")}`;
+    const sessionCode = Math.floor(1000 + Math.random() * 9000).toString(); // e.g. "7284"
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 min
 
     // 3. Generate 6-digit OTP (for manual input)
     const code = Math.floor(100000 + Math.random() * 900000).toString();
     const codeHash = await bcrypt.hash(code, 10);
 
-    const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 min
+    // 4. Save in Memory Map
+    const sessionRecord: PendingAuthSession = {
+      phoneNumber: cleanNumber,
+      authSessionId,
+      sessionCode,
+      status: "pending",
+      createdAt: Date.now()
+    };
+    pendingAuthSessions.set(authSessionId, sessionRecord);
+    pendingAuthSessions.set(`code:${sessionCode}`, sessionRecord);
+    for (const variant of phoneVariants) {
+      pendingAuthSessions.set(`phone:${variant}`, sessionRecord);
+    }
 
+    // 5. Persist in MongoDB AuthSessionModel for resilient multi-instance polling
+    try {
+      await AuthSessionModel.findOneAndUpdate(
+        { authSessionId },
+        {
+          authSessionId,
+          sessionCode,
+          phoneNumber: cleanNumber,
+          phoneVariants,
+          status: "pending",
+          magicToken: token,
+          magicTokenHash: magicHash,
+          otpCode: code,
+          clientUrl: clientUrl || "https://app.vendeur-ia.com",
+          expiresAt
+        },
+        { upsert: true, new: true }
+      );
+    } catch (dbErr) {
+      console.warn("[Auth] Failed to persist AuthSession in MongoDB, continuing with in-memory:", dbErr);
+    }
+
+    // 6. Create or update User in MongoDB
     let user = await UserModel.findOne({ whatsappNumber: cleanNumber });
     const userRoles = isFounder ? ["user", "admin", "creator"] : ["user"];
 
@@ -182,26 +241,32 @@ export class AuthService {
       await user.save();
     }
 
-    // Build Login URL (including authSessionId for link-click association)
-    const loginUrl = `${clientUrl}/auth/magic-login?t=${token}&p=${cleanNumber}&s=${authSessionId}`;
+    // 7. Get System WhatsApp Number
+    let systemWhatsAppNumber = "2250505111157";
+    try {
+      const settings = await SystemSettingsModel.findOne();
+      const num = settings?.supportWhatsApp || settings?.manualPaymentConfig?.waveNumber;
+      if (num) systemWhatsAppNumber = num.replace(/\D/g, "");
+    } catch {}
 
-    // Attempt to send magic link via WhatsApp.
-    // This may fail for first-contact users (Meta blocks outbound messages without an active 24h window).
-    // That's intentional: the session is already registered in-memory above.
-    // The user authenticates via the "Send CONNEXION on WhatsApp" button on the waiting screen,
-    // which opens the 24h window and triggers authenticateViaIncomingMessage → socket/poll catches it.
+    // 8. Build Login URL
+    const baseUrl = clientUrl || "https://app.vendeur-ia.com";
+    const loginUrl = `${baseUrl}/auth/magic-login?t=${token}&p=${cleanNumber}&s=${authSessionId}`;
+
+    // 9. Attempt to send magic link via WhatsApp (only succeeds if user already has an active 24h window)
     let magicLinkSent = false;
     try {
       await whatsappService.sendAuthMagicLink(cleanNumber, loginUrl, code);
       magicLinkSent = true;
     } catch (err: any) {
-      // Warn but never throw — the session is registered, user can still authenticate via WhatsApp
-      console.warn(`[Auth] Magic link WhatsApp send failed for ${cleanNumber} (first-contact or Meta error): ${err?.message || err}`);
+      console.warn(`[Auth] Magic link WhatsApp send not delivered yet for ${cleanNumber} (24h window closed, user will click button): ${err?.message || err}`);
     }
 
     return { 
       success: true, 
       authSessionId,
+      sessionCode,
+      systemWhatsAppNumber,
       magicLinkSent,
       message: magicLinkSent 
         ? (isFounder ? "Bienvenue Co-Fondateur ! Accès sécurisé prêt." : "Lien de connexion envoyé sur WhatsApp")
@@ -235,72 +300,112 @@ export class AuthService {
     await user.save();
 
     const tokens = await this.generateTokens(user);
+    const phoneVariants = generatePhoneVariants(cleanNumber);
 
-    // Save tokens in memory for HTTP Polling (PWA / browser)
-    if (authSessionId) {
-      pendingAuthSessions.set(authSessionId, {
-        phoneNumber: cleanNumber,
-        authSessionId,
-        status: "authenticated",
-        tokens,
-        createdAt: Date.now()
-      });
-    }
-    // Also save by phone index
-    pendingAuthSessions.set(`phone:${cleanNumber}`, {
+    // Save tokens in memory & MongoDB
+    const sessionUpdate: PendingAuthSession = {
       phoneNumber: cleanNumber,
       authSessionId: authSessionId || "",
       status: "authenticated",
       tokens,
       createdAt: Date.now()
-    });
+    };
+    if (authSessionId) pendingAuthSessions.set(authSessionId, sessionUpdate);
+    for (const variant of phoneVariants) {
+      pendingAuthSessions.set(`phone:${variant}`, sessionUpdate);
+    }
+
+    if (authSessionId) {
+      await AuthSessionModel.findOneAndUpdate(
+        { authSessionId },
+        { status: "authenticated", tokens }
+      ).catch(() => {});
+    }
 
     // Notify other devices on same phone number via Socket.io
     const io = getSocketServer();
     if (io) {
-      io.to(`auth:${cleanNumber}`).emit("auth:success", tokens);
+      for (const variant of phoneVariants) {
+        io.to(`auth:${variant}`).emit("auth:success", tokens);
+      }
+      if (authSessionId) {
+        io.to(`auth:${authSessionId}`).emit("auth:success", tokens);
+      }
     }
 
     return tokens;
   }
 
-  async checkAuthSessionStatus(authSessionId?: string, phoneNumber?: string) {
-    if (!authSessionId && !phoneNumber) {
+  async checkAuthSessionStatus(authSessionId?: string, phoneNumber?: string, sessionCode?: string) {
+    if (!authSessionId && !phoneNumber && !sessionCode) {
       return { status: "pending" };
     }
 
-    let session: PendingAuthSession | undefined;
+    // 1. Check in-memory cache by authSessionId
     if (authSessionId) {
-      session = pendingAuthSessions.get(authSessionId);
+      const memSession = pendingAuthSessions.get(authSessionId);
+      if (memSession && memSession.status === "authenticated" && memSession.tokens) {
+        return { status: "authenticated", sessionData: memSession.tokens };
+      }
     }
-    if (!session && phoneNumber) {
-      const cleanNumber = phoneNumber.replace(/[\s\-\+\(\)]/g, "");
-      const last8 = cleanNumber.slice(-8);
-      session = pendingAuthSessions.get(`phone:${cleanNumber}`);
-      if (!session && cleanNumber.startsWith("225")) {
-        session = pendingAuthSessions.get(`phone:${cleanNumber.replace(/^225/, "")}`);
+
+    // 2. Check in-memory cache by sessionCode
+    if (sessionCode) {
+      const memCodeSession = pendingAuthSessions.get(`code:${sessionCode}`);
+      if (memCodeSession && memCodeSession.status === "authenticated" && memCodeSession.tokens) {
+        return { status: "authenticated", sessionData: memCodeSession.tokens };
       }
-      if (!session && !cleanNumber.startsWith("225")) {
-        session = pendingAuthSessions.get(`phone:225${cleanNumber}`);
-      }
-      if (!session) {
-        session = pendingAuthSessions.get(`phone:${last8}`);
-      }
-      if (!session) {
-        for (const [key, s] of pendingAuthSessions.entries()) {
-          if (s.phoneNumber.slice(-8) === last8 && s.status === "authenticated") {
-            session = s;
-            break;
-          }
+    }
+
+    // 3. Check in-memory cache by phoneNumber variants
+    if (phoneNumber) {
+      const variants = generatePhoneVariants(phoneNumber);
+      for (const variant of variants) {
+        const memPhoneSession = pendingAuthSessions.get(`phone:${variant}`);
+        if (memPhoneSession && memPhoneSession.status === "authenticated" && memPhoneSession.tokens) {
+          return { status: "authenticated", sessionData: memPhoneSession.tokens };
         }
       }
     }
 
-    if (session && session.status === "authenticated" && session.tokens) {
-      return {
-        status: "authenticated",
-        sessionData: session.tokens
-      };
+    // 4. Check MongoDB AuthSessionModel (Durable cross-process / cloud fallback)
+    try {
+      const queryOr: any[] = [];
+      if (authSessionId) queryOr.push({ authSessionId });
+      if (sessionCode) queryOr.push({ sessionCode });
+      if (phoneNumber) {
+        const variants = generatePhoneVariants(phoneNumber);
+        queryOr.push({ phoneVariants: { $in: variants } });
+      }
+
+      if (queryOr.length > 0) {
+        const dbSession = await AuthSessionModel.findOne({
+          $or: queryOr,
+          status: "authenticated",
+          expiresAt: { $gt: new Date() }
+        });
+
+        if (dbSession && dbSession.tokens) {
+          // Warm the in-memory cache
+          const sessionUpdate: PendingAuthSession = {
+            phoneNumber: dbSession.phoneNumber,
+            authSessionId: dbSession.authSessionId,
+            sessionCode: dbSession.sessionCode,
+            status: "authenticated",
+            tokens: dbSession.tokens,
+            createdAt: Date.now()
+          };
+          pendingAuthSessions.set(dbSession.authSessionId, sessionUpdate);
+          if (dbSession.sessionCode) pendingAuthSessions.set(`code:${dbSession.sessionCode}`, sessionUpdate);
+          for (const variant of dbSession.phoneVariants) {
+            pendingAuthSessions.set(`phone:${variant}`, sessionUpdate);
+          }
+
+          return { status: "authenticated", sessionData: dbSession.tokens };
+        }
+      }
+    } catch (err) {
+      console.warn("[Auth] Error checking MongoDB AuthSession status:", err);
     }
 
     return { status: "pending" };
@@ -309,70 +414,127 @@ export class AuthService {
   async authenticateViaIncomingMessage(fromPhone: string, text: string): Promise<{ success: boolean; tokens?: any; replyMessage?: string }> {
     const cleanPhone = fromPhone.replace(/[\s\-\+\(\)]/g, "");
     const normalizedText = (text || "").trim().toUpperCase();
+    const phoneVariants = generatePhoneVariants(cleanPhone);
 
-    // Check if message is an auth intent (e.g. CONNEXION, CONNEXION 123456, CODE, LOGIN, or matches a session)
-    const isExplicitAuthCommand = /^(CONNEXION|AUTH|LOGIN|CONNECTER|ACCES|VERIFY)/i.test(normalizedText);
+    // Extract any potential 4 to 8 character session code from the message text
+    // E.g. "CONNEXION 7284", "7284", "CONNEXION A1B2C3", "AUTH 7284"
+    const codeMatch = normalizedText.match(/\b([A-Z0-9]{4,8})\b/g);
+    const candidateCodes = codeMatch ? codeMatch.filter(c => !/^(CONNEXION|AUTH|LOGIN|CONNECTER|ACCES|VERIFY)$/i.test(c)) : [];
+
+    const isExplicitAuthCommand = /^(CONNEXION|AUTH|LOGIN|CONNECTER|ACCES|VERIFY|OUI|SALUT|BONJOUR|HELLO)/i.test(normalizedText);
+
+    // 1. Try to find a matching session in Memory
+    let matchedSession: PendingAuthSession | undefined;
     
-    // Check if there is a pending session for this phone or session code
-    let matchedSessionId: string | undefined;
-    const phoneClean = cleanPhone.replace(/^225/, "");
-    const last8Phone = cleanPhone.slice(-8);
-
-    const phoneSession = pendingAuthSessions.get(`phone:${cleanPhone}`) || 
-                         pendingAuthSessions.get(`phone:225${phoneClean}`) ||
-                         pendingAuthSessions.get(`phone:${phoneClean}`) ||
-                         pendingAuthSessions.get(`phone:${last8Phone}`);
-    if (phoneSession) {
-      matchedSessionId = phoneSession.authSessionId;
-    }
-
-    // Also check if text contains any active authSessionId or matching phone by last 8 digits
-    for (const [key, session] of pendingAuthSessions.entries()) {
-      const sessionClean = session.phoneNumber.replace(/^225/, "");
-      const sessionLast8 = session.phoneNumber.slice(-8);
-      if (sessionClean === phoneClean || sessionLast8 === last8Phone || (normalizedText && normalizedText.includes(session.authSessionId.toUpperCase().slice(0, 6)))) {
-        matchedSessionId = session.authSessionId;
+    // Check candidate codes in memory
+    for (const code of candidateCodes) {
+      const s = pendingAuthSessions.get(`code:${code}`);
+      if (s) {
+        matchedSession = s;
         break;
       }
     }
 
-    if (!isExplicitAuthCommand && !phoneSession && !matchedSessionId) {
+    // Check phone variants in memory
+    if (!matchedSession) {
+      for (const variant of phoneVariants) {
+        const s = pendingAuthSessions.get(`phone:${variant}`);
+        if (s) {
+          matchedSession = s;
+          break;
+        }
+      }
+    }
+
+    // 2. Try to find matching session in MongoDB
+    let dbSession: any = null;
+    try {
+      const queryOr: any[] = [];
+      for (const code of candidateCodes) {
+        queryOr.push({ sessionCode: code });
+      }
+      queryOr.push({ phoneVariants: { $in: phoneVariants } });
+
+      dbSession = await AuthSessionModel.findOne({
+        $or: queryOr,
+        expiresAt: { $gt: new Date() }
+      }).sort({ createdAt: -1 });
+    } catch (err) {
+      console.warn("[Auth] Error finding AuthSession in MongoDB:", err);
+    }
+
+    if (!isExplicitAuthCommand && !matchedSession && !dbSession) {
       return { success: false };
     }
 
     console.log(`[WhatsApp Reverse Auth] Authenticating user ${cleanPhone} via incoming message: "${text}"`);
 
-    // Perform login / registration
+    // Perform login or registration
     const tokens = await this.loginOrRegisterWithWhatsApp(cleanPhone);
 
-    // Update pending sessions in memory with all key variants
+    const matchedSessionId = matchedSession?.authSessionId || dbSession?.authSessionId || `auth_${randomBytes(12).toString("hex")}`;
+    const matchedSessionCode = matchedSession?.sessionCode || dbSession?.sessionCode || candidateCodes[0] || "";
+    const magicToken = dbSession?.magicToken || randomBytes(32).toString("hex");
+    const otpCode = dbSession?.otpCode || "777888";
+    const clientUrl = dbSession?.clientUrl || "https://app.vendeur-ia.com";
+
+    // Update in-memory session
     const sessionUpdate: PendingAuthSession = {
       phoneNumber: cleanPhone,
-      authSessionId: matchedSessionId || "",
+      authSessionId: matchedSessionId,
+      sessionCode: matchedSessionCode,
       status: "authenticated",
       tokens,
       createdAt: Date.now()
     };
 
-    if (matchedSessionId) {
-      pendingAuthSessions.set(matchedSessionId, sessionUpdate);
+    pendingAuthSessions.set(matchedSessionId, sessionUpdate);
+    if (matchedSessionCode) pendingAuthSessions.set(`code:${matchedSessionCode}`, sessionUpdate);
+    for (const variant of phoneVariants) {
+      pendingAuthSessions.set(`phone:${variant}`, sessionUpdate);
     }
-    pendingAuthSessions.set(`phone:${cleanPhone}`, sessionUpdate);
-    pendingAuthSessions.set(`phone:225${cleanPhone.replace(/^225/, "")}`, sessionUpdate);
-    pendingAuthSessions.set(`phone:${cleanPhone.replace(/^225/, "")}`, sessionUpdate);
 
-    // Notify connected browser tabs / PWAs in real time via Socket.io across all phone room formats
+    // Update in MongoDB
+    try {
+      await AuthSessionModel.updateMany(
+        {
+          $or: [
+            { authSessionId: matchedSessionId },
+            ...(matchedSessionCode ? [{ sessionCode: matchedSessionCode }] : []),
+            { phoneVariants: { $in: phoneVariants } }
+          ]
+        },
+        {
+          $set: {
+            status: "authenticated",
+            tokens,
+            phoneNumber: cleanPhone,
+            phoneVariants
+          }
+        }
+      );
+    } catch (dbErr) {
+      console.warn("[Auth] Failed to update AuthSession in MongoDB:", dbErr);
+    }
+
+    // Notify connected browser tabs / PWAs in real time via Socket.io across all phone room formats and IDs
     const io = getSocketServer();
     if (io) {
-      io.to(`auth:${cleanPhone}`).emit("auth:success", tokens);
-      io.to(`auth:225${cleanPhone.replace(/^225/, "")}`).emit("auth:success", tokens);
-      io.to(`auth:${cleanPhone.replace(/^225/, "")}`).emit("auth:success", tokens);
+      for (const variant of phoneVariants) {
+        io.to(`auth:${variant}`).emit("auth:success", tokens);
+      }
       if (matchedSessionId) {
         io.to(`auth:${matchedSessionId}`).emit("auth:success", tokens);
       }
+      if (matchedSessionCode) {
+        io.to(`auth:${matchedSessionCode}`).emit("auth:success", tokens);
+      }
     }
 
-    const replyMessage = `✨ *Connexion Vendeur IA Réussie !*\n\nBienvenue sur votre espace commerçant.\n\n👉 Vous êtes maintenant connecté sur votre écran web / mobile.\nVous pouvez retourner sur votre navigateur pour continuer.`;
+    // Build Login URL for instant one-click link inside the WhatsApp message
+    const loginUrl = `${clientUrl}/auth/magic-login?t=${magicToken}&p=${cleanPhone}&s=${matchedSessionId}`;
+
+    const replyMessage = `✨ *Connexion Vendeur IA Réussie !*\n\nBienvenue sur votre espace commerçant.\n\n🔗 *Accès Direct à votre Boutique :*\n${loginUrl}\n\n🔢 *Votre Code de Secours :* *${otpCode}*\n\n👉 _Si votre navigateur est déjà ouvert, vous êtes automatiquement connecté !_`;
 
     return {
       success: true,

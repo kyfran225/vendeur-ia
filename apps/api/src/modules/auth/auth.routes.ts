@@ -105,11 +105,10 @@ router.post("/verify-magic-link", async (req, res) => {
   }
 });
 
-// Check status of auth session for polling / background resilient auth
 router.post("/poll-status", async (req, res) => {
   try {
-    const { authSessionId, phoneNumber } = req.body;
-    const result = await authService.checkAuthSessionStatus(authSessionId, phoneNumber);
+    const { authSessionId, phoneNumber, sessionCode } = req.body;
+    const result = await authService.checkAuthSessionStatus(authSessionId, phoneNumber, sessionCode);
     res.json(result);
   } catch (error: any) {
     res.status(500).json({ error: error.message });

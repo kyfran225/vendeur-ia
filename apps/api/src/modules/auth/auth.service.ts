@@ -200,7 +200,7 @@ export class AuthService {
           magicToken: token,
           magicTokenHash: magicHash,
           otpCode: code,
-          clientUrl: clientUrl || "https://app.vendeur-ia.com",
+          clientUrl: clientUrl || env.CLIENT_URL || "http://localhost:5173",
           expiresAt
         },
         { upsert: true, new: true }
@@ -252,7 +252,7 @@ export class AuthService {
     } catch {}
 
     // 8. Build Login URL
-    const baseUrl = clientUrl || "https://app.vendeur-ia.com";
+    const baseUrl = clientUrl || env.CLIENT_URL || "http://localhost:5173";
     const loginUrl = `${baseUrl}/auth/magic-login?t=${token}&p=${cleanNumber}&s=${authSessionId}`;
 
     // 9. Attempt to send magic link via WhatsApp (only succeeds if user already has an active 24h window)
@@ -478,7 +478,7 @@ export class AuthService {
     const matchedSessionCode = matchedSession?.sessionCode || dbSession?.sessionCode || candidateCodes[0] || "";
     const magicToken = dbSession?.magicToken || randomBytes(32).toString("hex");
     const otpCode = dbSession?.otpCode || "777888";
-    const clientUrl = dbSession?.clientUrl || "https://app.vendeur-ia.com";
+    const clientUrl = dbSession?.clientUrl || env.CLIENT_URL || "http://localhost:5173";
 
     // Update in-memory session
     const sessionUpdate: PendingAuthSession = {

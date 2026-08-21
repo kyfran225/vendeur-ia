@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { env } from "../../config/env.js";
 import { authService } from "./auth.service.js";
 import { authenticate } from "../../middleware/authenticate.js";
 import { validate } from "../../middleware/validate.js";
@@ -77,14 +78,14 @@ router.post("/whatsapp-quick-access", async (req, res) => {
   }
 });
 
-// WhatsApp Request Magic Link (Zéro Friction)
 router.post("/whatsapp-magic-link", async (req, res) => {
   try {
     const { phoneNumber, clientUrl, authSessionId } = req.body;
     if (!phoneNumber) {
       return res.status(400).json({ error: "Le numéro WhatsApp est obligatoire." });
     }
-    const result = await authService.requestWhatsAppMagicLink(phoneNumber, clientUrl || "https://app.vendeur-ia.com", authSessionId);
+    const origin = clientUrl || req.headers.origin || env.CLIENT_URL || "http://localhost:5173";
+    const result = await authService.requestWhatsAppMagicLink(phoneNumber, origin, authSessionId);
     res.json(result);
   } catch (error: any) {
     res.status(400).json({ error: error.message });

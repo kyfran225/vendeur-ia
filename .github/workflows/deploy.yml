@@ -115,4 +115,28 @@ jobs:
             vercel deploy --prebuilt --token "$VERCEL_TOKEN"
           fi
 
+  # ── 2. Deploy → Render (via webhook, en parallèle avec Vercel) ───────────────
+  deploy-render:
+    name: Deploy → Render
+    runs-on: ubuntu-latest
+    needs: test
 
+    steps:
+      - name: Trigger Render deployment
+        run: |
+          set -euo pipefail
+          RENDER_HOOK="${{ secrets.RENDER_DEPLOY_HOOK_URL }}"
+          if [ -z "${RENDER_HOOK}" ]; then
+            echo "❌ RENDER_DEPLOY_HOOK_URL est vide — vérifiez les GitHub Secrets"
+            exit 1
+          fi
+          echo "🚀 Déclenchement du déploiement Render..."
+          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" -X POST "${RENDER_HOOK}")
+          if [ "$HTTP_STATUS" -eq 200 ] || [ "$HTTP_STATUS" -eq 201 ]; then
+            echo "✅ Render deployment triggered ($HTTP_STATUS)"
+          elif [ "$HTTP_STATUS" -eq 409 ]; then
+            echo "ℹ️ Render deploy already in progress ($HTTP_STATUS)"
+          else
+            echo "❌ Render deploy hook returned HTTP $HTTP_STATUS"
+            exit 1
+          fi

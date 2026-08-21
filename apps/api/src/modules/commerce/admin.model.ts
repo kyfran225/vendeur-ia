@@ -1,7 +1,7 @@
 import mongoose, { Schema } from "mongoose";
 
 const SystemSettingsSchema = new Schema({
-  supportWhatsApp: { type: String, default: "+2250700000000" },
+  supportWhatsApp: { type: String, default: "+22505111157" },
   pricing: {
     ramContributionFee: { type: Number, default: 5000 },
     packProFee: { type: Number, default: 25000 },

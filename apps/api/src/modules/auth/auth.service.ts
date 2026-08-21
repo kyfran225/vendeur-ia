@@ -242,11 +242,13 @@ export class AuthService {
     }
 
     // 7. Get System WhatsApp Number
-    let systemWhatsAppNumber = "2250505111157";
+    let systemWhatsAppNumber = "22505111157";
     try {
       const settings = await SystemSettingsModel.findOne();
-      const num = settings?.supportWhatsApp || settings?.manualPaymentConfig?.waveNumber;
-      if (num) systemWhatsAppNumber = num.replace(/\D/g, "");
+      const num = settings?.supportWhatsApp;
+      if (num && !num.includes("00000000") && num.replace(/\D/g, "").length >= 8) {
+        systemWhatsAppNumber = num.replace(/\D/g, "");
+      }
     } catch {}
 
     // 8. Build Login URL

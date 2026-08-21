@@ -104,7 +104,7 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
   const [whatsappName, setWhatsappName] = useState("");
   const [authSessionId, setAuthSessionId] = useState<string>("");
   const [sessionCode, setSessionCode] = useState<string>("");
-  const [systemWhatsAppNumber, setSystemWhatsAppNumber] = useState<string>("2250505111157");
+  const [systemWhatsAppNumber, setSystemWhatsAppNumber] = useState<string>("22505111157");
   const [isCheckingManual, setIsCheckingManual] = useState(false);
 
   const GOOGLE_CLIENT_ID = (import.meta as any).env.VITE_GOOGLE_CLIENT_ID;
@@ -486,7 +486,7 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
                 </p>
 
                 <a
-                  href={`https://wa.me/${systemWhatsAppNumber || "2250505111157"}?text=${encodeURIComponent(`CONNEXION ${sessionCode || (authSessionId ? authSessionId.slice(0, 6).toUpperCase() : "")}`)}`}
+                  href={`https://wa.me/${(systemWhatsAppNumber && !systemWhatsAppNumber.includes("00000000")) ? systemWhatsAppNumber : "22505111157"}?text=${encodeURIComponent(`CONNEXION ${sessionCode || (authSessionId ? authSessionId.slice(0, 6).toUpperCase() : "")}`)}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="w-full h-12 bg-[#25D366] hover:bg-[#20bd5a] text-white font-black text-xs uppercase tracking-wider rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg shadow-[#25D366]/20 cursor-pointer active:scale-95"

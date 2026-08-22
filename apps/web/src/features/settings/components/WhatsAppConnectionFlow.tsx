@@ -149,7 +149,7 @@ export function WhatsAppConnectionFlow({
                 href={`https://wa.me/${cleanPhone}?text=Bonjour`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="h-12 px-5 rounded-2xl bg-vendeur-emerald text-vendeur-coal font-black uppercase tracking-wider text-xs flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg shadow-vendeur-emerald/20 cursor-pointer"
+                className="h-14 px-5 rounded-2xl bg-vendeur-emerald text-vendeur-coal font-black uppercase tracking-wider text-xs flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg shadow-vendeur-emerald/20 cursor-pointer"
               >
                 <MessageSquare size={16} />
                 <span>Tester sur WhatsApp</span>
@@ -158,7 +158,7 @@ export function WhatsAppConnectionFlow({
 
             <button
               onClick={() => navigate("/dashboard?test_ia=true")}
-              className="h-12 px-5 rounded-2xl bg-white/5 border border-white/10 text-white font-black uppercase tracking-wider text-xs hover:bg-white/10 hover:border-white/20 transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-[0.98]"
+              className="h-14 px-5 rounded-2xl bg-white/5 border border-white/10 text-white font-black uppercase tracking-wider text-xs hover:bg-white/10 hover:border-white/20 transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-[0.98]"
             >
               <Bot size={16} />
               <span>Simulateur IA</span>
@@ -192,13 +192,13 @@ export function WhatsAppConnectionFlow({
                   value={storeWhatsApp}
                   onChange={(e) => setStoreWhatsApp(e.target.value)}
                   placeholder="Ex: +2250700000000"
-                  className="w-full h-12 rounded-2xl bg-black/40 border border-white/15 px-4 pl-11 text-white font-mono text-sm outline-none focus:border-vendeur-emerald transition-all shadow-inner"
+                  className="w-full h-14 rounded-2xl bg-black/40 border border-white/15 px-4 pl-11 text-white font-mono text-sm outline-none focus:border-vendeur-emerald transition-all shadow-inner"
                 />
               </div>
               <button
                 onClick={handleUpdatePhone}
                 disabled={savingPhone}
-                className="h-12 px-6 rounded-2xl bg-vendeur-emerald text-vendeur-coal font-black uppercase tracking-wider text-xs flex items-center justify-center gap-2 hover:scale-[1.01] active:scale-[0.98] transition-all shadow-md disabled:opacity-50 cursor-pointer shrink-0"
+                className="h-14 px-6 rounded-2xl bg-vendeur-emerald text-vendeur-coal font-black uppercase tracking-wider text-xs flex items-center justify-center gap-2 hover:scale-[1.01] active:scale-[0.98] transition-all shadow-md disabled:opacity-50 cursor-pointer shrink-0"
               >
                 {savingPhone ? <Loader2 className="animate-spin" size={16} /> : <Check size={16} />}
                 <span>Enregistrer</span>
@@ -208,7 +208,7 @@ export function WhatsAppConnectionFlow({
                   setStoreWhatsApp(activeNumber);
                   setIsEditingPhone(false);
                 }}
-                className="h-12 px-4 rounded-2xl bg-white/5 border border-white/10 text-white/50 hover:text-white text-xs font-black uppercase tracking-wider transition-all cursor-pointer shrink-0"
+                className="h-14 px-4 rounded-2xl bg-white/5 border border-white/10 text-white/50 hover:text-white text-xs font-black uppercase tracking-wider transition-all cursor-pointer shrink-0"
               >
                 Annuler
               </button>

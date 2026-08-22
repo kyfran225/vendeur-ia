@@ -111,7 +111,7 @@ export function ActivationPage() {
               href={`https://wa.me/${cleanPhone}?text=Bonjour`}
               target="_blank"
               rel="noopener noreferrer"
-              className="w-full h-12 sm:h-14 px-6 bg-vendeur-emerald text-vendeur-coal rounded-2xl font-black uppercase tracking-wider text-xs flex items-center justify-center gap-2.5 hover:scale-[1.01] active:scale-95 transition-all shadow-xl shadow-vendeur-emerald/20 cursor-pointer"
+              className="w-full h-14 px-6 bg-vendeur-emerald text-vendeur-coal rounded-2xl font-black uppercase tracking-wider text-xs flex items-center justify-center gap-2.5 hover:scale-[1.01] active:scale-95 transition-all shadow-xl shadow-vendeur-emerald/20 cursor-pointer"
             >
               <MessageSquare size={16} />
               <span>Tester mon Vendeur IA sur WhatsApp</span>
@@ -121,7 +121,7 @@ export function ActivationPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <button
               onClick={() => navigate("/products")}
-              className="h-12 sm:h-14 px-4 bg-white/5 border border-white/10 hover:bg-white/10 text-white rounded-2xl font-black uppercase tracking-wider text-xs flex items-center justify-center gap-2 transition-all active:scale-95 cursor-pointer"
+              className="h-14 px-4 bg-white/5 border border-white/10 hover:bg-white/10 text-white rounded-2xl font-black uppercase tracking-wider text-xs flex items-center justify-center gap-2 transition-all active:scale-95 cursor-pointer"
             >
               <PackagePlus size={16} />
               <span>Ajouter des Produits</span>
@@ -129,7 +129,7 @@ export function ActivationPage() {
 
             <button
               onClick={() => navigate("/dashboard")}
-              className="h-12 sm:h-14 px-4 bg-white/5 border border-white/10 hover:bg-white/10 text-white rounded-2xl font-black uppercase tracking-wider text-xs flex items-center justify-center gap-2 transition-all active:scale-95 cursor-pointer"
+              className="h-14 px-4 bg-white/5 border border-white/10 hover:bg-white/10 text-white rounded-2xl font-black uppercase tracking-wider text-xs flex items-center justify-center gap-2 transition-all active:scale-95 cursor-pointer"
             >
               <LayoutDashboard size={16} />
               <span>Tableau de Bord</span>

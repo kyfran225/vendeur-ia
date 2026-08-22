@@ -78,7 +78,7 @@ const GoogleLoginButton = ({
       type="button"
       disabled={disabled || internalLoading}
       onClick={() => loginWithGoogle()}
-      className="w-full h-12 bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 text-white rounded-2xl flex items-center justify-center gap-3 transition-all active:scale-[0.98] disabled:opacity-50 font-bold text-sm cursor-pointer shadow-sm"
+      className="w-full h-14 bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 text-white rounded-2xl flex items-center justify-center gap-3 transition-all active:scale-[0.98] disabled:opacity-50 font-bold text-sm cursor-pointer shadow-sm"
     >
       {internalLoading ? <Loader2 className="animate-spin" size={18} /> : <GoogleIcon />}
       <span>Continuer avec Google</span>
@@ -405,14 +405,14 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
                     selected={selectedCountry}
                     onSelect={(c) => setSelectedCountry(c)}
                     dropdownPosition="top"
-                    className="h-13 sm:h-14 !rounded-2xl px-3.5 sm:px-4"
+                    className="h-14 !rounded-2xl px-3.5 sm:px-4"
                   />
                   <div className="relative flex-1 min-w-0">
                     <input
                       required
                       type="tel"
                       inputMode="tel"
-                      className="w-full h-13 sm:h-14 bg-black/50 border border-white/10 focus:border-vendeur-emerald rounded-2xl px-4 text-white font-mono text-sm placeholder:text-white/20 outline-none transition-all shadow-inner"
+                      className="w-full h-14 bg-black/50 border border-white/10 focus:border-vendeur-emerald rounded-2xl px-4 text-white font-mono text-sm placeholder:text-white/20 outline-none transition-all shadow-inner"
                       placeholder="07 00 00 00 00"
                       value={localPhone}
                       onChange={(e) => setLocalPhone(e.target.value.replace(/\D/g, ""))}
@@ -425,7 +425,7 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full h-13 sm:h-14 bg-vendeur-emerald text-vendeur-coal font-black uppercase tracking-widest text-xs sm:text-sm rounded-2xl flex items-center justify-center gap-2.5 hover:scale-[1.01] active:scale-[0.98] transition-all disabled:opacity-50 shadow-xl shadow-vendeur-emerald/25 cursor-pointer mt-2"
+                className="w-full h-14 bg-vendeur-emerald text-vendeur-coal font-black uppercase tracking-widest text-xs sm:text-sm rounded-2xl flex items-center justify-center gap-2.5 hover:scale-[1.01] active:scale-[0.98] transition-all disabled:opacity-50 shadow-xl shadow-vendeur-emerald/25 cursor-pointer mt-2"
               >
                 {loading ? (
                   <Loader2 className="animate-spin" size={18} />
@@ -494,13 +494,11 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
                   href={`https://wa.me/${(systemWhatsAppNumber && !systemWhatsAppNumber.includes("00000000")) ? systemWhatsAppNumber : "22505111157"}?text=${encodeURIComponent(`CONNEXION ${sessionCode || (authSessionId ? authSessionId.slice(0, 6).toUpperCase() : "")}`)}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="group relative w-full h-14 sm:h-15 bg-gradient-to-r from-[#25D366] via-[#22c35e] to-[#128C7E] hover:from-[#20bd5a] hover:to-[#0f7a6e] text-white font-black text-sm uppercase tracking-wider rounded-2xl flex items-center justify-center gap-3 transition-all shadow-[0_10px_25px_rgba(37,211,102,0.35)] hover:shadow-[0_15px_35px_rgba(37,211,102,0.5)] border border-emerald-400/30 cursor-pointer active:scale-[0.98]"
+                  className="w-full h-14 bg-vendeur-emerald hover:bg-emerald-400 text-vendeur-coal font-black text-xs sm:text-sm uppercase tracking-wider rounded-2xl flex items-center justify-center gap-2.5 transition-all shadow-xl shadow-vendeur-emerald/20 hover:scale-[1.01] active:scale-[0.98] cursor-pointer whitespace-nowrap px-4"
                 >
-                  <div className="flex items-center justify-center h-8 w-8 rounded-full bg-white/20 text-white shrink-0 group-hover:scale-110 transition-transform">
-                    <WhatsAppIcon size={20} />
-                  </div>
-                  <span className="tracking-wide">Ouvrir WhatsApp & Envoyer</span>
-                  <ChevronRight size={18} className="group-hover:translate-x-1 transition-transform" />
+                  <WhatsAppIcon size={20} className="shrink-0" />
+                  <span>Envoyer sur WhatsApp</span>
+                  <ChevronRight size={18} className="shrink-0" />
                 </a>
 
                 {/* Instant Check Button */}
@@ -508,14 +506,14 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
                   type="button"
                   onClick={handleManualCheck}
                   disabled={isCheckingManual}
-                  className="w-full h-12 sm:h-13 bg-white/5 hover:bg-white/10 text-white/80 hover:text-white rounded-2xl text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 transition-all border border-white/10 hover:border-vendeur-emerald/40 cursor-pointer active:scale-[0.98]"
+                  className="w-full h-14 bg-white/5 hover:bg-white/10 text-white/80 hover:text-white rounded-2xl text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 transition-all border border-white/10 hover:border-vendeur-emerald/40 cursor-pointer active:scale-[0.98] whitespace-nowrap px-4"
                 >
                   {isCheckingManual ? (
-                    <Loader2 className="animate-spin text-vendeur-emerald" size={16} />
+                    <Loader2 className="animate-spin text-vendeur-emerald shrink-0" size={16} />
                   ) : (
-                    <Sparkles size={16} className="text-vendeur-emerald" />
+                    <Sparkles size={16} className="text-vendeur-emerald shrink-0" />
                   )}
-                  <span>J'ai envoyé le message → Accéder</span>
+                  <span className="truncate">J'ai envoyé le message → Accéder</span>
                 </button>
               </div>
 
@@ -545,7 +543,7 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
                   <User className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/30" size={16} />
                   <input
                     required
-                    className="w-full h-12 bg-black/50 border border-white/10 focus:border-white rounded-2xl pl-10 pr-3 text-white text-sm outline-none transition-all shadow-inner"
+                    className="w-full h-14 bg-black/50 border border-white/10 focus:border-white rounded-2xl pl-10 pr-3 text-white text-sm outline-none transition-all shadow-inner"
                     placeholder="Jean Dupont"
                     value={form.displayName}
                     onChange={(e) => setForm({ ...form, displayName: e.target.value })}
@@ -561,7 +559,7 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
                 <input
                   required
                   type="email"
-                  className="w-full h-12 bg-black/50 border border-white/10 focus:border-white rounded-2xl pl-10 pr-3 text-white text-sm outline-none transition-all shadow-inner"
+                  className="w-full h-14 bg-black/50 border border-white/10 focus:border-white rounded-2xl pl-10 pr-3 text-white text-sm outline-none transition-all shadow-inner"
                   placeholder="admin@vendeur-ia.com"
                   value={form.email}
                   onChange={(e) => setForm({ ...form, email: e.target.value })}
@@ -588,7 +586,7 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
                   <input
                     required
                     type={showPassword ? "text" : "password"}
-                    className="w-full h-12 bg-black/50 border border-white/10 focus:border-white rounded-2xl pl-10 pr-10 text-white text-sm outline-none transition-all shadow-inner"
+                    className="w-full h-14 bg-black/50 border border-white/10 focus:border-white rounded-2xl pl-10 pr-10 text-white text-sm outline-none transition-all shadow-inner"
                     placeholder="••••••••"
                     value={form.password}
                     onChange={(e) => setForm({ ...form, password: e.target.value })}
@@ -609,7 +607,7 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
             <button
               type="submit"
               disabled={loading}
-              className="w-full h-12 sm:h-13 bg-white text-black font-black uppercase tracking-widest text-xs rounded-2xl flex items-center justify-center gap-2 hover:bg-white/90 active:scale-[0.98] transition-all disabled:opacity-50 mt-3 cursor-pointer shadow-lg"
+              className="w-full h-14 bg-white text-black font-black uppercase tracking-widest text-xs rounded-2xl flex items-center justify-center gap-2 hover:bg-white/90 active:scale-[0.98] transition-all disabled:opacity-50 mt-3 cursor-pointer shadow-lg"
             >
               {loading ? (
                 <Loader2 className="animate-spin" size={16} />

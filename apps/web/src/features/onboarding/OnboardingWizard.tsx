@@ -304,7 +304,7 @@ function WelcomeStep({ onNext, onBack }: { onNext: () => void; onBack: () => voi
                   Nom de votre Boutique / Marque
                 </label>
                 <input
-                  className="w-full h-12 sm:h-14 rounded-2xl border border-white/10 bg-black/40 px-4 text-white text-sm outline-none focus:border-vendeur-emerald transition-all placeholder:text-white/20"
+                  className="w-full h-14 rounded-2xl border border-white/10 bg-black/40 px-4 text-white text-sm outline-none focus:border-vendeur-emerald transition-all placeholder:text-white/20"
                   value={form.businessName}
                   onChange={(e) => setForm({ ...form, businessName: e.target.value })}
                   placeholder="Ex: Aicha Mode Abidjan"
@@ -318,7 +318,7 @@ function WelcomeStep({ onNext, onBack }: { onNext: () => void; onBack: () => voi
                   </label>
                   <div className="relative">
                     <select
-                      className="w-full h-12 sm:h-14 rounded-2xl border border-white/10 bg-black/40 px-4 text-white text-sm outline-none focus:border-vendeur-emerald transition-all appearance-none cursor-pointer"
+                      className="w-full h-14 rounded-2xl border border-white/10 bg-black/40 px-4 text-white text-sm outline-none focus:border-vendeur-emerald transition-all appearance-none cursor-pointer"
                       value={form.category}
                       onChange={(e) => setForm({ ...form, category: e.target.value })}
                     >
@@ -356,7 +356,7 @@ function WelcomeStep({ onNext, onBack }: { onNext: () => void; onBack: () => voi
                   </div>
 
                   {useAccountPhone && user?.whatsappNumber ? (
-                    <div className="flex items-center justify-between w-full h-12 sm:h-14 rounded-2xl border border-vendeur-emerald/30 bg-vendeur-emerald/5 px-4">
+                    <div className="flex items-center justify-between w-full h-14 rounded-2xl border border-vendeur-emerald/30 bg-vendeur-emerald/5 px-4">
                       <div className="flex items-center gap-2">
                         <div className="h-2 w-2 rounded-full bg-vendeur-emerald animate-pulse" />
                         <span className="font-mono text-sm font-bold text-white tracking-wider">
@@ -372,11 +372,11 @@ function WelcomeStep({ onNext, onBack }: { onNext: () => void; onBack: () => voi
                       <CountrySelector
                         selected={selectedCountry}
                         onSelect={(c) => setSelectedCountry(c)}
-                        className="h-12 sm:h-14 !rounded-2xl px-3.5 sm:px-4"
+                        className="h-14 !rounded-2xl px-3.5 sm:px-4"
                       />
                       <div className="flex-1 min-w-0">
                         <input
-                          className="w-full h-12 sm:h-14 rounded-2xl border border-white/10 bg-black/40 px-4 text-white font-mono text-sm outline-none focus:border-vendeur-emerald transition-all placeholder:text-white/20"
+                          className="w-full h-14 rounded-2xl border border-white/10 bg-black/40 px-4 text-white font-mono text-sm outline-none focus:border-vendeur-emerald transition-all placeholder:text-white/20"
                           value={localPhone}
                           onChange={(e) => setLocalPhone(e.target.value.replace(/\D/g, ""))}
                           placeholder="07 00 00 00 00"
@@ -443,7 +443,7 @@ function WelcomeStep({ onNext, onBack }: { onNext: () => void; onBack: () => voi
 
               <button
                 onClick={handleNext}
-                className="w-full h-12 sm:h-14 rounded-2xl bg-vendeur-emerald text-vendeur-coal font-black uppercase tracking-widest text-xs sm:text-sm flex items-center justify-center gap-2 hover:scale-[1.01] active:scale-95 transition-all shadow-xl shadow-vendeur-emerald/20 cursor-pointer mt-2"
+                className="w-full h-14 rounded-2xl bg-vendeur-emerald text-vendeur-coal font-black uppercase tracking-widest text-xs sm:text-sm flex items-center justify-center gap-2 hover:scale-[1.01] active:scale-95 transition-all shadow-xl shadow-vendeur-emerald/20 cursor-pointer mt-2"
               >
                 <Sparkles size={18} />
                 <span>Continuer vers IA Vision</span>
@@ -592,7 +592,7 @@ function VisionStep({ onNext, onBack }: { onNext: () => void; onBack: () => void
                 <div className="space-y-1">
                   <label className="text-[10px] font-black text-white/40 uppercase tracking-widest ml-1">Nom suggéré</label>
                   <input
-                    className="w-full bg-black/40 border border-white/10 focus:border-vendeur-emerald rounded-xl px-3.5 py-2.5 text-base font-bold text-white outline-none transition-all"
+                    className="w-full h-14 bg-black/40 border border-white/10 focus:border-vendeur-emerald rounded-2xl px-4 text-base font-bold text-white outline-none transition-all"
                     value={result.name}
                     onChange={(e) => handleUpdateResult({ name: e.target.value })}
                   />
@@ -603,7 +603,7 @@ function VisionStep({ onNext, onBack }: { onNext: () => void; onBack: () => void
                     <div className="flex items-center gap-2">
                       <input
                         type="number"
-                        className="w-full bg-black/40 border border-white/10 focus:border-vendeur-emerald rounded-xl px-3.5 py-2.5 text-lg font-black text-vendeur-emerald outline-none transition-all"
+                        className="w-full h-14 bg-black/40 border border-white/10 focus:border-vendeur-emerald rounded-2xl px-4 text-lg font-black text-vendeur-emerald outline-none transition-all"
                         value={result.price}
                         onChange={(e) => handleUpdateResult({ price: Number(e.target.value) })}
                       />
@@ -612,7 +612,7 @@ function VisionStep({ onNext, onBack }: { onNext: () => void; onBack: () => void
                   </div>
                   <button
                     onClick={onNext}
-                    className="h-12 px-6 rounded-2xl bg-vendeur-emerald text-vendeur-coal font-black uppercase tracking-wider text-xs shrink-0 flex items-center justify-center gap-2 cursor-pointer hover:scale-105 active:scale-95 transition-all shadow-lg shadow-vendeur-emerald/20"
+                    className="h-14 px-6 rounded-2xl bg-vendeur-emerald text-vendeur-coal font-black uppercase tracking-wider text-xs shrink-0 flex items-center justify-center gap-2 cursor-pointer hover:scale-105 active:scale-95 transition-all shadow-lg shadow-vendeur-emerald/20"
                   >
                     <span>Valider mon produit</span>
                     <ChevronRight size={16} />
@@ -629,7 +629,7 @@ function VisionStep({ onNext, onBack }: { onNext: () => void; onBack: () => void
         {!result && !analyzing && (
           <button
             onClick={onNext}
-            className="w-full h-12 sm:h-14 rounded-2xl bg-white/5 border border-white/10 text-white font-black uppercase tracking-wider text-xs hover:bg-white/10 transition-all active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
+            className="w-full h-14 rounded-2xl bg-white/5 border border-white/10 text-white font-black uppercase tracking-wider text-xs hover:bg-white/10 transition-all active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
           >
             <span>Passer cette étape</span>
             <ChevronRight size={16} />

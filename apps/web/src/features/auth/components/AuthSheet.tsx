@@ -150,8 +150,13 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
       socket.emit("join_auth", localCleanNumber);
       socket.emit("join_auth", phoneWithout225);
       socket.emit("join_auth", phoneWith225);
+      if (fullPhoneNumber.length >= 8) {
+        socket.emit("join_auth", fullPhoneNumber.slice(-8));
+      }
       if (authSessionIdRef.current) socket.emit("join_auth", authSessionIdRef.current);
       if (sessionCodeRef.current) socket.emit("join_auth", sessionCodeRef.current);
+      if (sessionCode) socket.emit("join_auth", sessionCode);
+      if (authSessionId) socket.emit("join_auth", authSessionId);
     };
 
     socket.on("connect", joinRooms);
@@ -168,8 +173,8 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
       if (isCancelled) return;
       try {
         const res = await apiClient.post("/api/auth/poll-status", {
-          authSessionId: authSessionIdRef.current || undefined,
-          sessionCode: sessionCodeRef.current || undefined,
+          authSessionId: authSessionIdRef.current || authSessionId || undefined,
+          sessionCode: sessionCodeRef.current || sessionCode || undefined,
           phoneNumber: fullPhoneNumber
         });
         if (res.data && res.data.status === "authenticated" && res.data.sessionData) {
@@ -207,7 +212,7 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
       window.removeEventListener("resume", handleVisibilityOrFocus);
       socket.disconnect();
     };
-  }, [whatsappStep, localPhone, selectedCountry, completeAuth]);
+  }, [whatsappStep, localPhone, selectedCountry, authSessionId, sessionCode, completeAuth]);
 
   // Email form
   const [form, setForm] = useState({
@@ -467,77 +472,59 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
             </form>
           ) : (
             <div className="space-y-4 text-center py-2 animate-in zoom-in-95 duration-300">
-              {/* Primary Action: 1-Click WhatsApp Direct Open */}
-              <div className="bg-white/5 border border-white/10 rounded-2xl p-4 text-left space-y-3">
+              {/* Primary Action Card: 1-Click WhatsApp Direct Open */}
+              <div className="bg-white/5 border border-white/10 rounded-2xl p-5 text-left space-y-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2 text-vendeur-emerald font-bold text-xs">
                     <span className="w-2.5 h-2.5 rounded-full bg-vendeur-emerald animate-ping" />
-                    <span>Confirmation WhatsApp</span>
+                    <span>Liaison en direct active</span>
                   </div>
+                  {sessionCode && (
+                    <span className="text-[10px] font-mono text-white/40 bg-white/5 px-2 py-0.5 rounded-md border border-white/10">
+                      Code : {sessionCode}
+                    </span>
+                  )}
                 </div>
                 
-                <p className="text-xs text-white/70 leading-relaxed">
-                  Appuyez sur le bouton ci-dessous pour confirmer sur WhatsApp. Vous serez connecté automatiquement.
+                <p className="text-xs text-white/80 leading-relaxed font-medium">
+                  Cliquez sur le bouton ci-dessous puis appuyez sur <strong className="text-white">Envoyer</strong> dans WhatsApp. Votre écran se connectera automatiquement !
                 </p>
 
                 <a
                   href={`https://wa.me/${(systemWhatsAppNumber && !systemWhatsAppNumber.includes("00000000")) ? systemWhatsAppNumber : "22505111157"}?text=${encodeURIComponent(`CONNEXION ${sessionCode || (authSessionId ? authSessionId.slice(0, 6).toUpperCase() : "")}`)}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="w-full h-12 bg-[#25D366] hover:bg-[#20bd5a] text-white font-black text-xs uppercase tracking-wider rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg shadow-[#25D366]/20 cursor-pointer active:scale-95"
+                  className="w-full h-14 bg-[#25D366] hover:bg-[#20bd5a] text-white font-black text-sm uppercase tracking-wider rounded-xl flex items-center justify-center gap-2.5 transition-all shadow-lg shadow-[#25D366]/25 cursor-pointer active:scale-95"
                 >
-                  <WhatsAppIcon size={18} />
-                  <span>Envoyer sur WhatsApp</span>
-                  <ChevronRight size={16} />
+                  <WhatsAppIcon size={20} />
+                  <span>Ouvrir WhatsApp & Envoyer</span>
+                  <ChevronRight size={18} />
                 </a>
 
-                {/* Instant Check Button on returning */}
+                {/* Instant Check Button */}
                 <button
                   type="button"
                   onClick={handleManualCheck}
                   disabled={isCheckingManual}
-                  className="w-full h-10 bg-white/5 hover:bg-white/10 text-white/80 hover:text-white rounded-xl text-[11px] font-bold flex items-center justify-center gap-2 transition-all border border-white/5 cursor-pointer"
+                  className="w-full h-12 bg-white/5 hover:bg-white/10 text-white/80 hover:text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all border border-white/10 cursor-pointer active:scale-98"
                 >
                   {isCheckingManual ? (
-                    <Loader2 className="animate-spin text-vendeur-emerald" size={14} />
+                    <Loader2 className="animate-spin text-vendeur-emerald" size={16} />
                   ) : (
-                    <Sparkles size={14} className="text-vendeur-emerald" />
+                    <Sparkles size={16} className="text-vendeur-emerald" />
                   )}
                   <span>J'ai envoyé le message → Accéder</span>
                 </button>
               </div>
 
-              {/* Alternative: OTP Input */}
-              <div className="space-y-2 px-2">
-                <p className="text-[11px] text-white/40 font-medium">
-                  Ou saisissez votre code reçu :
-                </p>
-                <div className="relative">
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    maxLength={6}
-                    placeholder="· · · · · ·"
-                    className="w-full h-14 bg-black/50 border border-white/10 focus:border-vendeur-emerald rounded-xl text-center text-2xl font-mono tracking-[0.3em] text-vendeur-emerald outline-none transition-all placeholder:text-white/10"
-                    value={otpValue}
-                    onChange={(e) => setOtpValue(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                  />
-                  {isVerifyingOtp && (
-                    <div className="absolute inset-0 bg-black/40 backdrop-blur-[1px] rounded-xl flex items-center justify-center">
-                      <Loader2 className="animate-spin text-vendeur-emerald" size={20} />
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              <div className="pt-1 flex flex-col gap-2">
+              <div className="pt-1 flex justify-center">
                 <button
                   type="button"
                   onClick={() => {
                     setWhatsappStep("input");
                     setOtpValue("");
                   }}
-                  className="text-[11px] text-white/30 font-medium hover:text-white hover:underline transition-all"
+                  className="text-xs text-white/40 font-semibold hover:text-white hover:underline transition-all cursor-pointer py-1"
                 >
                   ← Modifier mon numéro
                 </button>

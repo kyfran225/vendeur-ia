@@ -251,29 +251,12 @@ export class AuthService {
       }
     } catch {}
 
-    // 8. Build Login URL
-    const baseUrl = clientUrl || env.CLIENT_URL || "http://localhost:5173";
-    const loginUrl = `${baseUrl}/auth/magic-login?t=${token}&p=${cleanNumber}&s=${authSessionId}`;
-
-    // 9. Attempt to send magic link via WhatsApp (only succeeds if user already has an active 24h window)
-    let magicLinkSent = false;
-    try {
-      await whatsappService.sendAuthMagicLink(cleanNumber, loginUrl, code);
-      magicLinkSent = true;
-    } catch (err: any) {
-      console.warn(`[Auth] Magic link WhatsApp send not delivered yet for ${cleanNumber} (24h window closed, user will click button): ${err?.message || err}`);
-    }
-
     return { 
       success: true, 
       authSessionId,
       sessionCode,
       systemWhatsAppNumber,
-      magicLinkSent,
-      message: magicLinkSent 
-        ? (isFounder ? "Bienvenue Co-Fondateur ! Accès sécurisé prêt." : "Lien de connexion envoyé sur WhatsApp")
-        : "Session initialisée. Envoyez CONNEXION sur WhatsApp pour vous connecter.",
-      code: (isFounder || process.env.NODE_ENV !== "production") ? code : undefined 
+      message: "Session initialisée. Envoyez CONNEXION sur WhatsApp pour vous connecter."
     };
   }
 
@@ -422,11 +405,12 @@ export class AuthService {
     const phoneVariants = generatePhoneVariants(cleanPhone);
 
     // Extract any potential 4 to 8 character session code from the message text
-    // E.g. "CONNEXION 7284", "7284", "CONNEXION A1B2C3", "AUTH 7284"
+    // E.g. "CONNEXION 7284", "CONNEXION A1B2C3", "AUTH 7284"
     const codeMatch = normalizedText.match(/\b([A-Z0-9]{4,8})\b/g);
     const candidateCodes = codeMatch ? codeMatch.filter(c => !/^(CONNEXION|AUTH|LOGIN|CONNECTER|ACCES|VERIFY)$/i.test(c)) : [];
 
-    const isExplicitAuthCommand = /^(CONNEXION|AUTH|LOGIN|CONNECTER|ACCES|VERIFY|OUI|SALUT|BONJOUR|HELLO)/i.test(normalizedText);
+    // Strict command check: Only CONNEXION, AUTH or LOGIN (never match generic greetings like BONJOUR/SALUT/OUI)
+    const isExplicitAuthCommand = /^(CONNEXION|AUTH|LOGIN)\b/i.test(normalizedText);
 
     // 1. Try to find a matching session in Memory
     let matchedSession: PendingAuthSession | undefined;
@@ -440,8 +424,8 @@ export class AuthService {
       }
     }
 
-    // Check phone variants in memory
-    if (!matchedSession) {
+    // Check phone variants in memory only if explicit auth command was sent
+    if (!matchedSession && isExplicitAuthCommand) {
       for (const variant of phoneVariants) {
         const s = pendingAuthSessions.get(`phone:${variant}`);
         if (s) {
@@ -458,17 +442,23 @@ export class AuthService {
       for (const code of candidateCodes) {
         queryOr.push({ sessionCode: code });
       }
-      queryOr.push({ phoneVariants: { $in: phoneVariants } });
+      if (isExplicitAuthCommand) {
+        queryOr.push({ phoneVariants: { $in: phoneVariants } });
+      }
 
-      dbSession = await AuthSessionModel.findOne({
-        $or: queryOr,
-        expiresAt: { $gt: new Date() }
-      }).sort({ createdAt: -1 });
+      if (queryOr.length > 0) {
+        dbSession = await AuthSessionModel.findOne({
+          $or: queryOr,
+          status: "pending",
+          expiresAt: { $gt: new Date() }
+        }).sort({ createdAt: -1 });
+      }
     } catch (err) {
       console.warn("[Auth] Error finding AuthSession in MongoDB:", err);
     }
 
-    if (!isExplicitAuthCommand && !matchedSession && !dbSession) {
+    // If neither a valid memory session nor a database session was found, DO NOT intercept (pass to sales bot)
+    if (!matchedSession && !dbSession) {
       return { success: false };
     }
 
@@ -582,10 +572,7 @@ export class AuthService {
       }
     }
 
-    // Build Login URL for instant one-click link inside the WhatsApp message
-    const loginUrl = `${clientUrl}/auth/magic-login?t=${magicToken}&p=${cleanPhone}&s=${matchedSessionId}`;
-
-    const replyMessage = `✨ *Connexion Réussie !*\n\nBienvenue sur votre espace commerçant.\n\n🔗 *Accéder à votre boutique :*\n${loginUrl}\n\n🔢 *Code de vérification :* *${otpCode}*\n\n👉 _Si votre écran est déjà ouvert, vous êtes automatiquement connecté !_`;
+    const replyMessage = `✅ *Connexion réussie !*\n\nBienvenue sur *Vendeur IA*. Votre boutique est déverrouillée sur votre écran.\n\n👉 _Vous pouvez retourner sur votre navigateur dès maintenant pour commencer !_`;
 
     return {
       success: true,

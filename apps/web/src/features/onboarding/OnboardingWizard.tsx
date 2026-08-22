@@ -134,7 +134,7 @@ export function OnboardingWizard() {
         console.warn("[Onboarding] Final sync failed", err);
       }
       clearOnboarding();
-      navigate("/dashboard");
+      navigate("/offers?from=onboarding");
     }} onBack={handleBack} /> },
   ];
 
@@ -195,6 +195,10 @@ function WelcomeStep({ onNext, onBack }: { onNext: () => void; onBack: () => voi
   const initialNumber = tempData?.whatsappNumber || user?.whatsappNumber || "";
   const initialParsed = parsePhoneNumber(initialNumber, tempData?.country);
 
+  const [useAccountPhone, setUseAccountPhone] = useState<boolean>(
+    Boolean(user?.whatsappNumber && (!tempData?.whatsappNumber || tempData.whatsappNumber === user.whatsappNumber))
+  );
+
   const [selectedCountry, setSelectedCountry] = useState<Country>(
     (tempData?.country ? COUNTRIES.find(c => c.code === tempData.country) : null) || initialParsed.country
   );
@@ -221,13 +225,23 @@ function WelcomeStep({ onNext, onBack }: { onNext: () => void; onBack: () => voi
         ...prev,
         country: parsed.country.code,
         currency: parsed.country.currency,
-        whatsappNumber: rawNumber
+        whatsappNumber: rawNumber || ""
       }));
     }
   }, [user?.whatsappNumber, tempData?.whatsappNumber, tempData?.country]);
 
   useEffect(() => {
-    if (selectedCountry) {
+    if (useAccountPhone && user?.whatsappNumber) {
+      const parsed = parsePhoneNumber(user.whatsappNumber, tempData?.country);
+      setSelectedCountry(parsed.country);
+      setLocalPhone(parsed.local);
+      setForm(prev => ({
+        ...prev,
+        country: parsed.country.code,
+        currency: parsed.country.currency,
+        whatsappNumber: user.whatsappNumber || ""
+      }));
+    } else if (selectedCountry) {
       const newWhatsappNumber = `${selectedCountry.dialCode}${localPhone}`;
       setForm(prev => ({
         ...prev,
@@ -236,7 +250,7 @@ function WelcomeStep({ onNext, onBack }: { onNext: () => void; onBack: () => voi
         whatsappNumber: newWhatsappNumber
       }));
     }
-  }, [localPhone, selectedCountry]);
+  }, [useAccountPhone, localPhone, selectedCountry, user?.whatsappNumber]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -328,25 +342,51 @@ function WelcomeStep({ onNext, onBack }: { onNext: () => void; onBack: () => voi
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">
-                    WhatsApp Business
-                  </label>
-                  <div className="flex gap-2 items-center w-full">
-                    <CountrySelector
-                      selected={selectedCountry}
-                      onSelect={(c) => setSelectedCountry(c)}
-                      className="h-12 sm:h-14 !rounded-2xl px-3.5 sm:px-4"
-                    />
-                    <div className="flex-1 min-w-0">
-                      <input
-                        className="w-full h-12 sm:h-14 rounded-2xl border border-white/10 bg-black/40 px-4 text-white font-mono text-sm outline-none focus:border-vendeur-emerald transition-all placeholder:text-white/20"
-                        value={localPhone}
-                        onChange={(e) => setLocalPhone(e.target.value.replace(/\D/g, ""))}
-                        placeholder="07 00 00 00 00"
-                        type="tel"
-                      />
-                    </div>
+                  <div className="flex items-center justify-between ml-1">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-white/40">
+                      Numéro WhatsApp de vente
+                    </label>
+                    {user?.whatsappNumber && (
+                      <button
+                        type="button"
+                        onClick={() => setUseAccountPhone(!useAccountPhone)}
+                        className="text-[10px] font-bold text-vendeur-emerald hover:underline cursor-pointer"
+                      >
+                        {useAccountPhone ? "Changer" : "Mon compte"}
+                      </button>
+                    )}
                   </div>
+
+                  {useAccountPhone && user?.whatsappNumber ? (
+                    <div className="flex items-center justify-between w-full h-12 sm:h-14 rounded-2xl border border-vendeur-emerald/30 bg-vendeur-emerald/5 px-4">
+                      <div className="flex items-center gap-2">
+                        <div className="h-2 w-2 rounded-full bg-vendeur-emerald animate-pulse" />
+                        <span className="font-mono text-sm font-bold text-white tracking-wider">
+                          {user.whatsappNumber}
+                        </span>
+                      </div>
+                      <span className="text-[10px] font-black uppercase tracking-wider text-vendeur-emerald bg-vendeur-emerald/10 px-2 py-0.5 rounded-full border border-vendeur-emerald/20">
+                        Vérifié
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="flex gap-2 items-center w-full">
+                      <CountrySelector
+                        selected={selectedCountry}
+                        onSelect={(c) => setSelectedCountry(c)}
+                        className="h-12 sm:h-14 !rounded-2xl px-3.5 sm:px-4"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <input
+                          className="w-full h-12 sm:h-14 rounded-2xl border border-white/10 bg-black/40 px-4 text-white font-mono text-sm outline-none focus:border-vendeur-emerald transition-all placeholder:text-white/20"
+                          value={localPhone}
+                          onChange={(e) => setLocalPhone(e.target.value.replace(/\D/g, ""))}
+                          placeholder="07 00 00 00 00"
+                          type="tel"
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 

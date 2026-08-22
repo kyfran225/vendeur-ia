@@ -3,6 +3,7 @@ import { app } from '../../app.js';
 import { describe, it, expect, vi, beforeAll } from 'vitest';
 import jwt from 'jsonwebtoken';
 import { CommerceMerchantModel, CommerceProductModel, CommerceOrderModel, CommerceCustomerModel } from './commerce.model.js';
+import { WhatsAppConnectionModel } from './whatsapp-connection.model.js';
 
 // Mock Redis
 vi.mock('../../config/redis.js', () => ({
@@ -141,6 +142,54 @@ describe('Commerce Module API', () => {
 
       expect(listRes.status).toBe(200);
       expect(listRes.body.length).toBeGreaterThan(0);
+    });
+  });
+
+  describe('WhatsApp Cloud Direct (Auto-Provisioning & Setup Status)', () => {
+    it('should auto-provision WhatsApp Cloud Meta connection when merchant has phone', async () => {
+      const uniquePhone = `+225070000${Math.floor(1000 + Math.random() * 9000)}`;
+      const res = await request(app)
+        .post('/api/commerce/merchant')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({
+          businessName: "Direct Cloud Shop",
+          category: "beauty",
+          city: "Abidjan",
+          whatsappNumber: uniquePhone
+        });
+
+      expect([200, 201]).toContain(res.status);
+      expect(res.body.whatsappConfig?.provider).toBe('meta');
+      expect(res.body.whatsappConfig?.status).toBe('connected');
+
+      // Check WhatsAppConnectionModel is also created with CONNECTED & meta
+      const conn = await WhatsAppConnectionModel.findOne({ userId });
+      expect(conn).toBeDefined();
+      expect(conn?.status).toBe('CONNECTED');
+      expect(conn?.connectionType).toBe('meta');
+    });
+
+    it('should calculate setupStatus with isWhatsAppConnected true immediately upon entering phone', async () => {
+      await request(app)
+        .post('/api/commerce/merchant')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({
+          businessName: "Direct Cloud Shop 2",
+          category: "beauty",
+          city: "Abidjan",
+          whatsappNumber: "+2250700112233"
+        });
+
+      const dashRes = await request(app)
+        .get('/api/commerce/dashboard')
+        .set('Authorization', `Bearer ${accessToken}`);
+
+      expect(dashRes.status).toBe(200);
+      expect(dashRes.body.setupStatus).toBeDefined();
+      const waStep = dashRes.body.setupStatus.steps.find((s: any) => s.id === 'whatsapp');
+      expect(waStep).toBeDefined();
+      expect(waStep.completed).toBe(true);
+      expect(waStep.weight).toBe(35);
     });
   });
 });

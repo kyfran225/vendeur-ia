@@ -111,13 +111,16 @@ router.get("/verify-transaction/:reference", authenticate, async (req, res) => {
           { upsert: true, new: true }
         );
 
+        const hasMerchantPhone = !!(existingMerchant?.whatsappNumber || existingMerchant?.phone);
+
         await WhatsAppConnectionModel.findOneAndUpdate(
           { userId },
           {
-            $setOnInsert: {
-              userId,
-              status: 'NOT_CONNECTED',
-              connectionType: offerSlug === 'pro' || type === 'pack_pro' ? 'meta' : 'baileys'
+            $set: {
+              status: hasMerchantPhone ? 'CONNECTED' : 'NOT_CONNECTED',
+              connectionType: 'meta',
+              connectedAt: hasMerchantPhone ? new Date() : null,
+              disconnectedAt: null
             }
           },
           { upsert: true }
@@ -142,7 +145,6 @@ router.get("/verify-transaction/:reference", authenticate, async (req, res) => {
           { upsert: true, new: true }
         );
 
-        const currentMerchantForStatus = await CommerceMerchantModel.findOne({ ownerId: userId });
         await CommerceMerchantModel.findOneAndUpdate(
           { ownerId: userId },
           {
@@ -151,8 +153,8 @@ router.get("/verify-transaction/:reference", authenticate, async (req, res) => {
               "subscription.status": "active",
               "subscription.billingInterval": isYearly ? 'yearly' : 'monthly',
               "subscription.expiresAt": expiresAt,
-              "whatsappConfig.provider": offerSlug === 'pro' || type === 'pack_pro' ? 'meta' : 'baileys',
-              "whatsappConfig.status": currentMerchantForStatus?.whatsappConfig?.status || "disconnected"
+              "whatsappConfig.provider": "meta",
+              "whatsappConfig.status": hasMerchantPhone ? "connected" : "disconnected"
             }
           }
         );
@@ -850,21 +852,24 @@ router.post("/checkout/confirm", authenticate, async (req, res) => {
       { upsert: true, new: true }
     );
 
-    // 3. Upsert WhatsApp Connection (initial state, do not overwrite if already exists)
+    // 3. Upsert WhatsApp Connection
+    const merchant = await CommerceMerchantModel.findOne({ ownerId: userId });
+    const hasPhone = !!(merchant?.whatsappNumber || merchant?.phone);
+
     await WhatsAppConnectionModel.findOneAndUpdate(
       { userId },
       {
-        $setOnInsert: {
-          userId,
-          status: "NOT_CONNECTED",
-          connectionType: offerSlug === "pro" || type === "pack_pro" ? "meta" : "baileys"
+        $set: {
+          status: hasPhone ? "CONNECTED" : "NOT_CONNECTED",
+          connectionType: "meta",
+          connectedAt: hasPhone ? new Date() : null,
+          disconnectedAt: null
         }
       },
       { upsert: true }
     );
 
     // 4. Record transaction
-    const merchant = await CommerceMerchantModel.findOne({ ownerId: userId });
     const newTransaction = await TransactionModel.create({
       merchantId: merchant?._id,
       ownerId: userId,
@@ -878,8 +883,7 @@ router.post("/checkout/confirm", authenticate, async (req, res) => {
       metadata: data.metadata
     });
 
-    // 5. Legacy Merchant sync
-    const currentMerchantManual = await CommerceMerchantModel.findOne({ ownerId: userId });
+    // 5. Merchant sync
     await CommerceMerchantModel.findOneAndUpdate(
       { ownerId: userId },
       {
@@ -888,7 +892,8 @@ router.post("/checkout/confirm", authenticate, async (req, res) => {
           "subscription.status": "active",
           "subscription.billingInterval": isYearly ? 'yearly' : 'monthly',
           "subscription.expiresAt": expiresAt,
-          "whatsappConfig.status": currentMerchantManual?.whatsappConfig?.status || "disconnected"
+          "whatsappConfig.provider": "meta",
+          "whatsappConfig.status": hasPhone ? "connected" : "disconnected"
         }
       }
     );
@@ -1165,14 +1170,18 @@ router.post("/webhooks/paystack", express.raw({ type: 'application/json' }), asy
         { upsert: true, new: true }
       );
 
-      // 3. Update/Create WhatsApp Connection record (Initial state)
+      // 3. Update/Create WhatsApp Connection record
+      const currentMerchant = await CommerceMerchantModel.findOne({ ownerId: userId });
+      const hasPhone = !!(currentMerchant?.whatsappNumber || currentMerchant?.phone);
+
       await WhatsAppConnectionModel.findOneAndUpdate(
         { userId },
         {
-          $setOnInsert: {
-            userId,
-            status: 'NOT_CONNECTED',
-            connectionType: offerSlug === 'pro' || type === 'pack_pro' ? 'meta' : 'baileys'
+          $set: {
+            status: hasPhone ? 'CONNECTED' : 'NOT_CONNECTED',
+            connectionType: 'meta',
+            connectedAt: hasPhone ? new Date() : null,
+            disconnectedAt: null
           }
         },
         { upsert: true }
@@ -1180,7 +1189,7 @@ router.post("/webhooks/paystack", express.raw({ type: 'application/json' }), asy
 
       // 4. Record Transaction
       const newTransaction = await TransactionModel.create({
-        merchantId: (await CommerceMerchantModel.findOne({ ownerId: userId }))?._id,
+        merchantId: currentMerchant?._id,
         ownerId: userId,
         reference: data.reference,
         amount: data.amount / 100,
@@ -1192,8 +1201,7 @@ router.post("/webhooks/paystack", express.raw({ type: 'application/json' }), asy
         metadata: data.metadata
       });
 
-      // 5. Legacy Sync (Keep Merchant model in sync for now to avoid breaking other parts)
-      const currentMerchant = await CommerceMerchantModel.findOne({ ownerId: userId });
+      // 5. Merchant Sync
       await CommerceMerchantModel.findOneAndUpdate(
         { ownerId: userId },
         {
@@ -1202,7 +1210,8 @@ router.post("/webhooks/paystack", express.raw({ type: 'application/json' }), asy
             "subscription.status": "active",
             "subscription.billingInterval": isYearly ? 'yearly' : 'monthly',
             "subscription.expiresAt": expiresAt,
-            "whatsappConfig.status": currentMerchant?.whatsappConfig?.status || "disconnected"
+            "whatsappConfig.provider": "meta",
+            "whatsappConfig.status": hasPhone ? "connected" : "disconnected"
           }
         }
       );

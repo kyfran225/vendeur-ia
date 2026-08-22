@@ -150,7 +150,8 @@ export class CommerceService {
     const knowledge = await CommerceKnowledgeModel.findOne({ merchantId: merchant._id });
 
     const hasProducts = (products?.length || 0) > 0;
-    const isWhatsAppConnected = merchant.whatsappConfig?.status === 'connected' || whatsappConnection?.status === 'CONNECTED';
+    const hasWhatsAppNumber = !!(merchant.whatsappNumber && merchant.whatsappNumber.trim().length >= 8) || !!(merchant.phone && merchant.phone.trim().length >= 8);
+    const isWhatsAppConnected = hasWhatsAppNumber || merchant.whatsappConfig?.status === 'connected' || whatsappConnection?.status === 'CONNECTED';
 
     // Check if user has actually ADDED payment methods (not just the default empty ones)
     const hasPaymentMethods = (knowledge?.businessRules?.paymentMethods?.length || 0) > 0 &&
@@ -160,7 +161,7 @@ export class CommerceService {
 
     const setupSteps = [
       { id: 'identity', label: 'Identité du Commerce', completed: true, weight: 10 }, // New step
-      { id: 'whatsapp', label: 'Connecter WhatsApp', completed: isWhatsAppConnected, weight: 35 },
+      { id: 'whatsapp', label: 'Numéro WhatsApp de vente', completed: isWhatsAppConnected, weight: 35 },
       { id: 'products', label: 'Ajouter des produits', completed: hasProducts, weight: 25 },
       { id: 'payments', label: 'Modes de paiement', completed: hasPaymentMethods, weight: 15 },
       { id: 'delivery', label: 'Tarifs de livraison', completed: hasDeliveryFees, weight: 15 }
@@ -242,6 +243,8 @@ export class CommerceService {
 
   async createMerchant(ownerId: string, data: any) {
     const slug = await this.generateUniqueSlug(data.businessName || "boutique");
+    const whatsappNum = data.whatsappNumber || data.phone || "";
+    const hasPhone = !!(whatsappNum && whatsappNum.trim().length >= 6);
 
     // 1. Atomic Upsert for Merchant
     const merchant = await CommerceMerchantModel.findOneAndUpdate(
@@ -253,9 +256,13 @@ export class CommerceService {
           category: data.category,
           description: data.description,
           address: data.address,
-          whatsappNumber: data.whatsappNumber,
+          whatsappNumber: whatsappNum,
+          phone: data.phone || whatsappNum,
           city: data.city,
-          country: data.country
+          country: data.country,
+          "whatsappConfig.provider": "meta",
+          "whatsappConfig.status": hasPhone ? "connected" : "disconnected",
+          "whatsappConfig.phoneNumberId": whatsappNum
         },
         $setOnInsert: {
           referralCode: this.generateReferralCode(),
@@ -266,6 +273,21 @@ export class CommerceService {
     );
 
     if (!merchant) throw new Error("Failed to create or update merchant");
+
+    // Auto-provision WhatsApp Cloud Connection Record
+    await WhatsAppConnectionModel.findOneAndUpdate(
+      { userId: ownerId },
+      {
+        $set: {
+          phoneNumber: whatsappNum || undefined,
+          status: hasPhone ? 'CONNECTED' : 'NOT_CONNECTED',
+          connectionType: 'meta',
+          connectedAt: hasPhone ? new Date() : null,
+          disconnectedAt: null
+        }
+      },
+      { upsert: true }
+    );
 
     // 2. Atomic Initialization for Knowledge Base
     await CommerceKnowledgeModel.findOneAndUpdate(
@@ -346,6 +368,19 @@ export class CommerceService {
     const previousCurrency = existingMerchant.currency || "XOF";
     const targetCurrency = data.currency || existingMerchant.currency || "XOF";
 
+    // Auto-provision WhatsApp Cloud Meta provider on update
+    const resolvedPhone = data.whatsappNumber || data.phone || existingMerchant.whatsappNumber || existingMerchant.phone;
+    const hasPhone = !!(resolvedPhone && resolvedPhone.trim().length >= 6);
+
+    if (!data.whatsappConfig) {
+      data.whatsappConfig = existingMerchant.whatsappConfig ? { ...existingMerchant.whatsappConfig } : {};
+    }
+    data.whatsappConfig.provider = "meta";
+    if (hasPhone) {
+      data.whatsappConfig.status = "connected";
+      data.whatsappConfig.phoneNumberId = resolvedPhone;
+    }
+
     // Detect if currency changed
     const currencyChanged = data.currency && data.currency.toUpperCase() !== previousCurrency.toUpperCase();
 
@@ -355,6 +390,22 @@ export class CommerceService {
       { new: true }
     );
     if (!merchant) throw new Error("Merchant not found");
+
+    if (hasPhone) {
+      await WhatsAppConnectionModel.findOneAndUpdate(
+        { userId: ownerId },
+        {
+          $set: {
+            phoneNumber: resolvedPhone,
+            status: 'CONNECTED',
+            connectionType: 'meta',
+            connectedAt: new Date(),
+            disconnectedAt: null
+          }
+        },
+        { upsert: true }
+      );
+    }
 
     // If currency changed, convert all existing products and knowledge delivery fees
     if (currencyChanged) {

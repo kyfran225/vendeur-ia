@@ -23,7 +23,7 @@ const WhatsAppConnectionSchema = new Schema({
     enum: ['NOT_CONNECTED', 'CONNECTING', 'CONNECTED', 'DISCONNECTED', 'ERROR', 'RECONNECTING'],
     default: 'NOT_CONNECTED'
   },
-  connectionType: { type: String, enum: ['baileys', 'meta'], default: 'baileys' },
+  connectionType: { type: String, enum: ['baileys', 'meta'], default: 'meta' },
   connectedAt: { type: Date, default: null },
   disconnectedAt: { type: Date, default: null },
   lastSeenAt: { type: Date, default: null },

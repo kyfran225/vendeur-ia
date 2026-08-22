@@ -120,4 +120,41 @@ describe('Authentication API', () => {
       expect(response.body.error).toBe('Identifiants incorrects.');
     });
   });
+
+  describe('WhatsApp Server Message Authentication (Zero Regression)', () => {
+    it('should initialize auth session and authenticate via reverse incoming message', async () => {
+      const phoneNumber = "2250708091011";
+
+      // 1. Request WhatsApp Magic Link / Session initialization
+      const reqRes = await request(app)
+        .post('/api/auth/whatsapp-magic-link')
+        .send({ phoneNumber, clientUrl: "http://localhost:5173" });
+
+      expect(reqRes.status).toBe(200);
+      expect(reqRes.body.success).toBe(true);
+      expect(reqRes.body.authSessionId).toBeDefined();
+      expect(reqRes.body.sessionCode).toBeDefined();
+
+      const { authSessionId, sessionCode } = reqRes.body;
+
+      // 2. Simulate incoming reverse auth message from user: "CONNEXION <sessionCode>"
+      const { authService } = await import('./auth.service.js');
+      const authResult = await authService.authenticateViaIncomingMessage(phoneNumber, `CONNEXION ${sessionCode}`);
+
+      expect(authResult.success).toBe(true);
+      expect(authResult.tokens).toBeDefined();
+      expect(authResult.tokens.accessToken).toBeDefined();
+      expect(authResult.replyMessage).toMatch(/Connexion réussie/i);
+
+      // 3. Verify polling returns authenticated state
+      const pollRes = await request(app)
+        .post('/api/auth/poll-status')
+        .send({ authSessionId, sessionCode, phoneNumber });
+
+      expect(pollRes.status).toBe(200);
+      expect(pollRes.body.status).toBe('authenticated');
+      expect(pollRes.body.sessionData).toBeDefined();
+      expect(pollRes.body.sessionData.accessToken).toBe(authResult.tokens.accessToken);
+    });
+  });
 });

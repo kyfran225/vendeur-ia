@@ -5,7 +5,7 @@ import { apiClient } from "@/lib/apiClient";
 import { useMerchantCurrency } from "@/hooks/useMerchantCurrency";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { MetaHead } from "@/components/seo/MetaHead";
 import { SITE_CONFIG } from "@/lib/seoConfig";
 import { VendeurIALoader } from "@/components/ui/VendeurIALoader";
@@ -16,6 +16,8 @@ function cn(...inputs: ClassValue[]) {
 
 export function OffersPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const fromOnboarding = searchParams.get("from") === "onboarding";
   const currency = useMerchantCurrency();
   const [billingInterval, setBillingInterval] = useState<"monthly" | "yearly">("yearly");
 
@@ -160,6 +162,21 @@ export function OffersPage() {
           </button>
 
           <div className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/4 h-64 w-64 bg-vendeur-emerald/5 blur-[100px] rounded-full group-hover:bg-vendeur-emerald/10 transition-colors pointer-events-none" />
+        </div>
+
+        {/* Skip / Discover Dashboard First Link */}
+        <div className="pt-4 pb-8 flex flex-col items-center justify-center gap-2 text-center">
+          <button
+            type="button"
+            onClick={() => navigate("/dashboard")}
+            className="inline-flex items-center gap-2 text-xs sm:text-sm font-bold text-white/50 hover:text-vendeur-emerald transition-colors py-2 px-4 rounded-xl hover:bg-white/5 cursor-pointer"
+          >
+            <span>{fromOnboarding ? "Accéder à mon tableau de bord d'abord (Découvrir mon espace)" : "Accéder directement à mon tableau de bord"}</span>
+            <ArrowRight size={15} />
+          </button>
+          <p className="text-[10px] text-white/30 font-medium">
+            Vous pourrez activer ou modifier votre formule à tout moment depuis vos paramètres.
+          </p>
         </div>
       </div>
     </div>

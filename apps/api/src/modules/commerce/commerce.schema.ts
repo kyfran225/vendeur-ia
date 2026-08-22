@@ -67,6 +67,7 @@ export const UpdateMerchantSchema = z.object({
     city: z.string().optional(),
     address: z.string().optional(),
     phone: z.string().optional(),
+    whatsappNumber: z.string().optional(),
     country: z.string().optional(),
     currency: z.string().optional(),
     billingCurrency: z.string().optional(),

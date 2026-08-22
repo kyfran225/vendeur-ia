@@ -41,7 +41,7 @@ const MerchantSchema = new Schema({
     autoPostStatus: { type: Boolean, default: false }
   },
   whatsappConfig: {
-    provider: { type: String, enum: ['baileys', 'meta'], default: 'baileys' },
+    provider: { type: String, enum: ['baileys', 'meta'], default: 'meta' },
     meta: {
       phoneNumberId: String,
       accessToken: String,

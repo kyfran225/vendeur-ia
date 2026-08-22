@@ -18,6 +18,7 @@ import { whatsappMediaService } from "./whatsapp-media.service.js";
 import { aiProvider } from "../../services/ai-provider.js";
 import { smsService } from "../../services/sms.service.js";
 import { SystemSettingsModel } from "../commerce/admin.model.js";
+import { generatePhoneVariants } from "../auth/auth.service.js";
 
 class WhatsAppService {
   private activeSessions: Map<string, any> = new Map();
@@ -833,13 +834,15 @@ class WhatsAppService {
     }
 
     // 1. Find the merchant associated with this Phone ID (Dedicated number) or phone/whatsappNumber
+    const phoneVariants = phoneId ? generatePhoneVariants(phoneId) : [];
     let merchant = await CommerceMerchantModel.findOne({
       $or: [
         { "whatsappConfig.meta.phoneNumberId": phoneId },
+        { "whatsappConfig.phoneNumberId": phoneId },
         { whatsappNumber: phoneId },
         { phone: phoneId },
         { whatsappNumber: `+${phoneId}` },
-        { "whatsappConfig.provider": "meta" }
+        ...(phoneVariants.length > 0 ? [{ whatsappNumber: { $in: phoneVariants } }, { phone: { $in: phoneVariants } }] : [])
       ]
     });
     let latestConversation: any = null;

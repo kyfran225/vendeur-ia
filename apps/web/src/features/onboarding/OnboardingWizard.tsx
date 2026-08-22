@@ -125,11 +125,9 @@ export function OnboardingWizard() {
       try {
         if (tempData) {
           await apiClient.post("/api/commerce/merchant", {
-            ...tempData,
-            onboardingCompleted: true
+            ...tempData
           });
         }
-        useAuthStore.getState().updateUser({ onboardingCompleted: true });
       } catch (err) {
         console.warn("[Onboarding] Final sync failed", err);
       }

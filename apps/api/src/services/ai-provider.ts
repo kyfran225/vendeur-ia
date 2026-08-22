@@ -28,6 +28,45 @@ export interface AIResponse {
   };
 }
 
+/**
+ * Strips internal thinking processes, chain-of-thought tags, and leaked system instructions
+ * so that end customers never see internal reasoning or prompt rules.
+ */
+export function sanitizeAIText(rawText: string): string {
+  if (!rawText || typeof rawText !== "string") return "";
+
+  let cleaned = rawText;
+
+  // 1. Remove XML/HTML style thought and reasoning blocks
+  cleaned = cleaned.replace(/<think[\s\S]*?<\/think>/gi, "");
+  cleaned = cleaned.replace(/<thought[\s\S]*?<\/thought>/gi, "");
+  cleaned = cleaned.replace(/<reasoning[\s\S]*?<\/reasoning>/gi, "");
+  cleaned = cleaned.replace(/<internal[\s\S]*?<\/internal>/gi, "");
+  cleaned = cleaned.replace(/<reflection[\s\S]*?<\/reflection>/gi, "");
+  cleaned = cleaned.replace(/\[THINKING\][\s\S]*?\[\/THINKING\]/gi, "");
+  cleaned = cleaned.replace(/\[REASONING\][\s\S]*?\[\/REASONING\]/gi, "");
+
+  // 2. Remove multi-step thinking process blocks where draft follows
+  const draftMatch = cleaned.match(/(?:Draft Construction(?:\s*\(Mental\))?|Final (?:Response|Answer|Draft)|Réponse(?:\s*finale)?|Message(?:\s*final)?)\s*:\s*\*?\s*([\s\S]+)$/i);
+  if (draftMatch && draftMatch[1]) {
+    const preText = cleaned.substring(0, draftMatch.index || 0);
+    if (/think>|thinking process|analyze user input|check constraints/i.test(preText)) {
+      cleaned = draftMatch[1];
+    }
+  }
+
+  // 3. Strip prefix thinking process indicators
+  cleaned = cleaned.replace(/^(?:think>|thought>|thinking\s*:|reasoning\s*:|here'?s a thinking process\s*:|chain of thought\s*:)[\s\S]*?(?=(?:\r?\n){2,}[A-ZÀ-ÖØ-ß0-9"«'#*]|$)/i, "");
+
+  // 4. Strip stray `think>` or `thought>` prefixes
+  cleaned = cleaned.replace(/^(?:think>|thought>)\s*/i, "");
+
+  // 5. Strip any accidental leakage of system instructions header
+  cleaned = cleaned.replace(/^(?:SYSTEM INSTRUCTIONS|SYSTEM PROMPT|Consignes système)\s*:[\s\S]*?(?=(?:\r?\n){2,}|$)/gi, "");
+
+  return cleaned.trim();
+}
+
 export class AIProvider {
   private static readonly GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models";
   private redis: Redis | null;
@@ -250,7 +289,9 @@ export class AIProvider {
       }
     }
 
-    // 2. Save to Cache
+    // 2. Sanitize and Save to Cache
+    response.text = sanitizeAIText(response.text);
+
     if (this.redis) {
       await this.redis.set(cacheKey, JSON.stringify(response), 'EX', 3600);
     }
@@ -287,13 +328,13 @@ export class AIProvider {
       .filter((p: { text?: string; thought?: boolean }) => p.text && !p.thought)
       .map((p: { text: string }) => p.text);
 
-    if (answerParts.length) return answerParts.join("").trim();
+    if (answerParts.length) return sanitizeAIText(answerParts.join(""));
 
     const fallbackParts = parts
       .filter((p: { text?: string }) => p.text)
       .map((p: { text: string }) => p.text);
 
-    if (fallbackParts.length) return fallbackParts.join("").trim();
+    if (fallbackParts.length) return sanitizeAIText(fallbackParts.join(""));
 
     throw new Error("Réponse vide de Gemini");
   }

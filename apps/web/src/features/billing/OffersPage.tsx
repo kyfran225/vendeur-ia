@@ -9,6 +9,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { MetaHead } from "@/components/seo/MetaHead";
 import { SITE_CONFIG } from "@/lib/seoConfig";
 import { VendeurIALoader } from "@/components/ui/VendeurIALoader";
+import { useAuthStore } from "@/stores/authStore";
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -168,7 +169,15 @@ export function OffersPage() {
         <div className="pt-4 pb-8 flex flex-col items-center justify-center gap-2 text-center">
           <button
             type="button"
-            onClick={() => navigate("/dashboard")}
+            onClick={async () => {
+              try {
+                await apiClient.post("/api/commerce/merchant", { onboardingCompleted: true });
+                useAuthStore.getState().updateUser({ onboardingCompleted: true });
+              } catch (err) {
+                console.warn("[Offers] Failed to set onboardingCompleted:", err);
+              }
+              navigate("/dashboard");
+            }}
             className="inline-flex items-center gap-2 text-xs sm:text-sm font-bold text-white/50 hover:text-vendeur-emerald transition-colors py-2 px-4 rounded-xl hover:bg-white/5 cursor-pointer"
           >
             <span>{fromOnboarding ? "Accéder à mon tableau de bord d'abord (Découvrir mon espace)" : "Accéder directement à mon tableau de bord"}</span>

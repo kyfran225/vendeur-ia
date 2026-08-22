@@ -173,6 +173,17 @@ export class AuthService {
     const code = Math.floor(100000 + Math.random() * 900000).toString();
     const codeHash = await bcrypt.hash(code, 10);
 
+    // Invalidate any previous authenticated sessions for this phone to require fresh auth
+    try {
+      await AuthSessionModel.updateMany(
+        { phoneVariants: { $in: phoneVariants }, status: "authenticated" },
+        { $set: { status: "consumed" } }
+      );
+    } catch {}
+    for (const variant of phoneVariants) {
+      pendingAuthSessions.delete(`phone:${variant}`);
+    }
+
     // 4. Save in Memory Map
     const sessionRecord: PendingAuthSession = {
       phoneNumber: cleanNumber,
@@ -345,8 +356,8 @@ export class AuthService {
       }
     }
 
-    // 3. Check in-memory cache by phoneNumber variants
-    if (phoneNumber) {
+    // 3. Fallback: Only check in-memory by phoneNumber variants if neither sessionId nor sessionCode was provided
+    if (!authSessionId && !sessionCode && phoneNumber) {
       const variants = generatePhoneVariants(phoneNumber);
       for (const variant of variants) {
         const memPhoneSession = pendingAuthSessions.get(`phone:${variant}`);
@@ -361,7 +372,7 @@ export class AuthService {
       const queryOr: any[] = [];
       if (authSessionId) queryOr.push({ authSessionId });
       if (sessionCode) queryOr.push({ sessionCode });
-      if (phoneNumber) {
+      if (!authSessionId && !sessionCode && phoneNumber) {
         const variants = generatePhoneVariants(phoneNumber);
         queryOr.push({ phoneVariants: { $in: variants } });
       }
@@ -784,6 +795,19 @@ export class AuthService {
   }
 
   async logout(userId: string) {
+    try {
+      const user = await UserModel.findById(userId);
+      if (user?.whatsappNumber) {
+        const phoneVariants = generatePhoneVariants(user.whatsappNumber);
+        await AuthSessionModel.updateMany(
+          { phoneVariants: { $in: phoneVariants } },
+          { $set: { status: "consumed" } }
+        ).catch(() => {});
+        for (const v of phoneVariants) {
+          pendingAuthSessions.delete(`phone:${v}`);
+        }
+      }
+    } catch {}
     await UserModel.findByIdAndUpdate(userId, { $unset: { refreshTokenHash: 1 } });
   }
 

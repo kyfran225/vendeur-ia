@@ -25,11 +25,37 @@ export function parsePhoneNumber(phoneStr?: string, defaultCountryCode?: string)
   for (const c of sorted) {
     const rawDial = c.dialCode.replace(/\D/g, "");
     if (digits.startsWith(rawDial) && digits.length > rawDial.length) {
-      return { country: c, local: digits.slice(rawDial.length) };
+      let local = digits.slice(rawDial.length);
+      // Smart prefix restoration for Côte d'Ivoire (10-digit national plan)
+      if (c.code === "CI") {
+        if (local.length === 8) {
+          // If starts with 01, 05, 07 it has 8 digits; if starts with 02/03 it was missing 01
+          if (local.startsWith("02") || local.startsWith("03") || local.startsWith("22")) {
+            local = `01${local.slice(-8)}`;
+          } else if (local.startsWith("07") || local.startsWith("05") || local.startsWith("01")) {
+            // Keep as is or standard
+          }
+        } else if (local.length === 9) {
+          if (local.startsWith("1") || local.startsWith("5") || local.startsWith("7")) {
+            local = `0${local}`;
+          }
+        }
+      }
+      return { country: c, local };
     }
   }
 
-  return { country: defaultCountry, local: digits };
+  // If digits without dialCode (e.g. 0102273966 or 02273966)
+  let local = digits;
+  if (defaultCountry.code === "CI") {
+    if (local.length === 8 && (local.startsWith("02") || local.startsWith("03") || local.startsWith("22"))) {
+      local = `01${local.slice(-8)}`;
+    } else if (local.length === 9 && (local.startsWith("1") || local.startsWith("5") || local.startsWith("7"))) {
+      local = `0${local}`;
+    }
+  }
+
+  return { country: defaultCountry, local };
 }
 
 export function CountrySelector({

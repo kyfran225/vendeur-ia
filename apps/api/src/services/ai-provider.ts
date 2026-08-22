@@ -356,7 +356,7 @@ export class AIProvider {
 
   private async generateWithGemini(request: AIRequest, apiKey: string, model: string): Promise<AIResponse> {
     const modelId = this.getGeminiModelId(model);
-    const isNewModel = modelId.includes("1.5") || modelId.includes("2.0") || modelId.includes("exp");
+    const isNewModel = !modelId.includes("1.0") && !modelId.includes("gemini-pro");
 
     const contents = [];
     if (!isNewModel) {
@@ -432,15 +432,8 @@ export class AIProvider {
     }
     messages.push({ role: "user", content: request.userMessage });
 
-    const groqModel = (model && model.trim()) ? model : "qwen/qwen3.6-27b";
-
-    // qwen/qwen3.6-27b does not support json_object response_format — prefer gpt-oss models for jsonMode
-    let modelsToTry: string[];
-    if (request.jsonMode) {
-      modelsToTry = ["openai/gpt-oss-120b", "openai/gpt-oss-20b", groqModel].filter((m, i, arr) => arr.indexOf(m) === i && !!m);
-    } else {
-      modelsToTry = [groqModel, "qwen/qwen3.6-27b", "openai/gpt-oss-120b", "openai/gpt-oss-20b"].filter((m, i, arr) => arr.indexOf(m) === i && !!m);
-    }
+    const defaultGroqModel = (model && model.trim() && !model.includes("qwen3.6")) ? model : "llama-3.3-70b-versatile";
+    const modelsToTry = [defaultGroqModel, "llama-3.3-70b-versatile", "llama-3.1-8b-instant", "mixtral-8x7b-32768"].filter((m, i, arr) => arr.indexOf(m) === i && !!m);
 
     let lastError: any;
     for (const currentModel of modelsToTry) {

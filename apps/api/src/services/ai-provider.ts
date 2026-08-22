@@ -35,18 +35,18 @@ export interface AIResponse {
 export function sanitizeAIText(rawText: string): string {
   if (!rawText || typeof rawText !== "string") return "";
 
-  let cleaned = rawText;
+  let cleaned = rawText.trim();
 
-  // 1. Remove XML/HTML style thought and reasoning blocks
-  cleaned = cleaned.replace(/<think[\s\S]*?<\/think>/gi, "");
-  cleaned = cleaned.replace(/<thought[\s\S]*?<\/thought>/gi, "");
-  cleaned = cleaned.replace(/<reasoning[\s\S]*?<\/reasoning>/gi, "");
-  cleaned = cleaned.replace(/<internal[\s\S]*?<\/internal>/gi, "");
-  cleaned = cleaned.replace(/<reflection[\s\S]*?<\/reflection>/gi, "");
-  cleaned = cleaned.replace(/\[THINKING\][\s\S]*?\[\/THINKING\]/gi, "");
-  cleaned = cleaned.replace(/\[REASONING\][\s\S]*?\[\/REASONING\]/gi, "");
+  // 1. Remove XML/HTML style thought and reasoning blocks (both closed and unclosed/truncated)
+  cleaned = cleaned.replace(/<think[\s\S]*?(?:<\/think>|$)/gi, "");
+  cleaned = cleaned.replace(/<thought[\s\S]*?(?:<\/thought>|$)/gi, "");
+  cleaned = cleaned.replace(/<reasoning[\s\S]*?(?:<\/reasoning>|$)/gi, "");
+  cleaned = cleaned.replace(/<internal[\s\S]*?(?:<\/internal>|$)/gi, "");
+  cleaned = cleaned.replace(/<reflection[\s\S]*?(?:<\/reflection>|$)/gi, "");
+  cleaned = cleaned.replace(/\[THINKING\][\s\S]*?(?:\[\/THINKING\]|$)/gi, "");
+  cleaned = cleaned.replace(/\[REASONING\][\s\S]*?(?:\[\/REASONING\]|$)/gi, "");
 
-  // 2. Remove multi-step thinking process blocks where draft follows
+  // 2. Extract final draft if present in structured reasoning
   const draftMatch = cleaned.match(/(?:Draft Construction(?:\s*\(Mental\))?|Final (?:Response|Answer|Draft)|Réponse(?:\s*finale)?|Message(?:\s*final)?)\s*:\s*\*?\s*([\s\S]+)$/i);
   if (draftMatch && draftMatch[1]) {
     const preText = cleaned.substring(0, draftMatch.index || 0);
@@ -55,13 +55,22 @@ export function sanitizeAIText(rawText: string): string {
     }
   }
 
-  // 3. Strip prefix thinking process indicators
+  // 3. Strip prefix thinking process indicators and chain-of-thought blocks
   cleaned = cleaned.replace(/^(?:think>|thought>|thinking\s*:|reasoning\s*:|here'?s a thinking process\s*:|chain of thought\s*:)[\s\S]*?(?=(?:\r?\n){2,}[A-ZÀ-ÖØ-ß0-9"«'#*]|$)/i, "");
 
-  // 4. Strip stray `think>` or `thought>` prefixes
-  cleaned = cleaned.replace(/^(?:think>|thought>)\s*/i, "");
+  // 4. Strip raw CoT blocks starting with bullet points like "1. *Analyze User Input:*" or "Here's a thinking process"
+  if (/^(?:(?:Here's a thinking process|Analyze User Input|Check Constraints|Identify Key Constraints)[\s\S]*)/i.test(cleaned)) {
+    // If there is a clear customer response at the end separated by double newlines or quotes, try to extract it
+    const parts = cleaned.split(/(?:\r?\n){2,}/);
+    const candidateParts = parts.filter(p => !/(?:thinking process|analyze user input|identify key constraints|check constraints|rules to follow|my role:)/i.test(p));
+    cleaned = candidateParts.join("\n\n").trim();
+  }
 
-  // 5. Strip any accidental leakage of system instructions header
+  // 5. Strip stray prefixes & tags
+  cleaned = cleaned.replace(/^(?:think>|thought>|<\/?think>|<\/?thought>)\s*/gi, "");
+  cleaned = cleaned.replace(/<\/?think>|<\/?thought>/gi, "");
+
+  // 6. Strip any accidental leakage of system instructions header
   cleaned = cleaned.replace(/^(?:SYSTEM INSTRUCTIONS|SYSTEM PROMPT|Consignes système)\s*:[\s\S]*?(?=(?:\r?\n){2,}|$)/gi, "");
 
   return cleaned.trim();
@@ -328,15 +337,21 @@ export class AIProvider {
       .filter((p: { text?: string; thought?: boolean }) => p.text && !p.thought)
       .map((p: { text: string }) => p.text);
 
-    if (answerParts.length) return sanitizeAIText(answerParts.join(""));
+    if (answerParts.length) {
+      const sanitized = sanitizeAIText(answerParts.join(""));
+      if (sanitized) return sanitized;
+    }
 
     const fallbackParts = parts
       .filter((p: { text?: string }) => p.text)
       .map((p: { text: string }) => p.text);
 
-    if (fallbackParts.length) return sanitizeAIText(fallbackParts.join(""));
+    if (fallbackParts.length) {
+      const sanitized = sanitizeAIText(fallbackParts.join(""));
+      if (sanitized) return sanitized;
+    }
 
-    throw new Error("Réponse vide de Gemini");
+    throw new Error("Réponse Gemini vide ou non exploitable après filtrage des réflexions internes");
   }
 
   private async generateWithGemini(request: AIRequest, apiKey: string, model: string): Promise<AIResponse> {

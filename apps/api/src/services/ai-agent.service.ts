@@ -82,14 +82,18 @@ export class AIAgentService {
       systemPrompt,
       userMessage: context.message,
       history: context.history,
-      maxTokens: 400, // Kept concise and fast for conversational mobile messaging
-      thinkingLevel: "low", // Enable thinking for better sales reasoning
+      maxTokens: 600, // Sufficient budget for full conversational messages without truncation
       temperature: 0.7
     });
 
+    let sanitizedText = sanitizeAIText(response.text);
+    if (!sanitizedText) {
+      sanitizedText = `Bonjour ! Bienvenue chez ${context.merchant.businessName || "notre boutique"}. Comment puis-je vous aider aujourd'hui ? 😊`;
+    }
+
     return {
       ...response,
-      text: sanitizeAIText(response.text)
+      text: sanitizedText
     };
   }
 

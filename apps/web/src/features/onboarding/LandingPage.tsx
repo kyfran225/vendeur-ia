@@ -317,8 +317,15 @@ function LandingHero({
           history: []
         });
 
-        const replyText = typeof response.data.reply === 'object' ? response.data.reply.text : response.data.reply;
-        setHistory([{ role: "ai", text: replyText, time: getTime() }]);
+        const rawReply = typeof response.data.reply === 'object' ? response.data.reply.text : response.data.reply;
+        const cleanedReply = (rawReply || "")
+          .replace(/<think[\s\S]*?(?:<\/think>|$)/gi, "")
+          .replace(/<thought[\s\S]*?(?:<\/thought>|$)/gi, "")
+          .replace(/\[THINKING\][\s\S]*?(?:\[\/THINKING\]|$)/gi, "")
+          .replace(/^(?:think>|thought>|here'?s a thinking process|analyze user input)[\s\S]*?(?=(?:\r?\n){2,}|$)/gi, "")
+          .trim() || `Bonjour ! Bienvenue chez ${form.businessName}. Comment puis-je vous aider ?`;
+
+        setHistory([{ role: "ai", text: cleanedReply, time: getTime() }]);
       } catch (error) {
         setHistory([{
           role: "ai",
@@ -395,8 +402,15 @@ function LandingHero({
         history: history.slice(-4)
       });
 
-      const replyText = typeof response.data.reply === 'object' ? response.data.reply.text : response.data.reply;
-      setHistory(prev => [...prev, { role: "ai", text: replyText, time: getTime() }]);
+      const rawReply = typeof response.data.reply === 'object' ? response.data.reply.text : response.data.reply;
+      const cleanedReply = (rawReply || "")
+        .replace(/<think[\s\S]*?(?:<\/think>|$)/gi, "")
+        .replace(/<thought[\s\S]*?(?:<\/thought>|$)/gi, "")
+        .replace(/\[THINKING\][\s\S]*?(?:\[\/THINKING\]|$)/gi, "")
+        .replace(/^(?:think>|thought>|here'?s a thinking process|analyze user input)[\s\S]*?(?=(?:\r?\n){2,}|$)/gi, "")
+        .trim() || `Bonjour ! Bienvenue chez ${form.businessName}. Comment puis-je vous aider ?`;
+
+      setHistory(prev => [...prev, { role: "ai", text: cleanedReply, time: getTime() }]);
       setAiResponseCount(prev => prev + 1);
     } catch (error) {
       toast.error("Vendeur IA est momentanément indisponible.");

@@ -165,6 +165,31 @@ Here's a thinking process:
     expect(cleaned).not.toContain("<think>");
   });
 
+  it('should completely strip unclosed and truncated <think> blocks without leaking', async () => {
+    const { sanitizeAIText } = await import('../services/ai-provider.js');
+
+    const truncatedThought = `<think>
+Here's a thinking process:
+
+1.  *Analyze User Input:*
+   - User says: "Bonjour !"
+   - Context: New client from Abidjan, CI. Phone: +2250102273966.
+   - Business: "Bok's", located in Abidjan, CI. Activity: Services (Informatique).
+   - Catalog: Consultation Express (1h): 25000 XOF, Audit Marketing Digital: 75000 XOF.
+   - Rules: Professional, persuasive, warm, West African style, short messages.
+
+2.  *Identify Key Constraints & Requirements:*
+   - Greet warmly, acknowledge location (Abidjan).
+   - Keep it short (2-4 sentences).`;
+
+    const cleaned = sanitizeAIText(truncatedThought);
+    expect(cleaned).toBe("");
+    expect(cleaned).not.toContain("<think>");
+    expect(cleaned).not.toContain("thinking process");
+    expect(cleaned).not.toContain("Analyze User Input");
+    expect(cleaned).not.toContain("Consultation Express");
+  });
+
   it('should preserve regular responses without modifying them', async () => {
     const { sanitizeAIText } = await import('../services/ai-provider.js');
 

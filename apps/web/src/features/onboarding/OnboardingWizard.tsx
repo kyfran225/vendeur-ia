@@ -20,7 +20,8 @@ import { apiClient } from "@/lib/apiClient";
 import { useRef } from "react";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
-import { CountrySelector, COUNTRIES, Country, parsePhoneNumber } from "./components/CountrySelector";
+import { CountrySelector, COUNTRIES, Country, parsePhoneNumber, formatDisplayPhone } from "./components/CountrySelector";
+import { CategorySelector } from "./components/CategorySelector";
 import { AddressAutocomplete } from "./components/AddressAutocomplete";
 import { ConfirmationModal } from "@/components/ui/ConfirmationModal";
 import { VendeurIALoader } from "@/components/ui/VendeurIALoader";
@@ -40,15 +41,10 @@ export function OnboardingWizard() {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const creationStarted = useRef(false);
 
-  // Restore data from backend on mount if not present locally
+  // Restore data from backend on mount and merge with local landing page tempData
   useEffect(() => {
     const restoreData = async () => {
       if (user && accessToken && !creationStarted.current) {
-        // Strict guard: If tempData belongs to a different phone number, clear it immediately
-        if (tempData?.whatsappNumber && user.whatsappNumber && tempData.whatsappNumber !== user.whatsappNumber) {
-          clearOnboarding();
-        }
-
         try {
           creationStarted.current = true;
           const res = await apiClient.get("/api/commerce/dashboard");
@@ -57,27 +53,34 @@ export function OnboardingWizard() {
             const knowledge = res.data.knowledge;
 
             const restoredData = {
-              businessName: m.businessName,
-              category: m.category,
-              description: m.description,
-              country: m.country,
-              currency: m.currency,
-              address: m.address,
-              whatsappNumber: m.whatsappNumber || user.whatsappNumber,
-              city: m.city,
-              paymentMethods: knowledge?.businessRules?.paymentMethods?.map((pm: any) => pm.provider) || [],
+              businessName: m.businessName || tempData?.businessName || "",
+              category: m.category || tempData?.category || "fashion",
+              description: m.description || tempData?.description || "",
+              country: m.country || tempData?.country || "CI",
+              currency: m.currency || tempData?.currency || "XOF",
+              address: m.address || tempData?.address || "",
+              whatsappNumber: m.whatsappNumber || user.whatsappNumber || tempData?.whatsappNumber || "",
+              city: m.city || tempData?.city || "",
+              paymentMethods: knowledge?.businessRules?.paymentMethods?.map((pm: any) => pm.provider) || tempData?.paymentMethods || [],
               firstProduct: res.data.products?.[0] ? {
                 name: res.data.products[0].name,
                 price: res.data.products[0].price,
                 description: res.data.products[0].description,
                 category: res.data.products[0].category,
                 tags: res.data.products[0].aiMetadata?.tags
-              } : undefined,
-              productImage: res.data.products?.[0]?.images?.[0]
+              } : tempData?.firstProduct,
+              productImage: res.data.products?.[0]?.images?.[0] || tempData?.productImage
             };
 
             setTempData(restoredData);
             setIsMerchantCreated(true);
+          } else if (tempData) {
+            // New user registering from landing page: preserve landing form data and sync phone if needed
+            const finalPhone = tempData.whatsappNumber || user.whatsappNumber || "";
+            setTempData({
+              ...tempData,
+              whatsappNumber: finalPhone
+            });
           }
         } catch (err) {
           console.error("[Onboarding] Failed to restore data", err);
@@ -87,7 +90,7 @@ export function OnboardingWizard() {
       setIsRestoring(false);
     };
     restoreData();
-  }, [user, accessToken, clearOnboarding, setTempData]); // Removed tempData from dependencies
+  }, [user, accessToken, setTempData]);
 
   // Create or Update merchant record (Auto-save)
   useEffect(() => {
@@ -316,27 +319,11 @@ function WelcomeStep({ onNext, onBack }: { onNext: () => void; onBack: () => voi
                   <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">
                     Catégorie
                   </label>
-                  <div className="relative">
-                    <select
-                      className="w-full h-14 rounded-2xl border border-white/10 bg-black/40 px-4 text-white text-sm outline-none focus:border-vendeur-emerald transition-all appearance-none cursor-pointer"
-                      value={form.category}
-                      onChange={(e) => setForm({ ...form, category: e.target.value })}
-                    >
-                      <option value="fashion">👗 Mode & Beauté</option>
-                      <option value="food">🍔 Restauration & Food</option>
-                      <option value="beauty">💄 Soins & Cosmétiques</option>
-                      <option value="electronics">📱 Électronique & High-Tech</option>
-                      <option value="artisan">🛠️ Artisanat & Fait Main</option>
-                      <option value="services">💼 Prestations de Services</option>
-                      <option value="digital">📚 Produits Digitaux</option>
-                      <option value="home">🏠 Maison & Décoration</option>
-                      <option value="grocery">🛒 Épicerie & Supérette</option>
-                      <option value="health">💊 Santé & Bien-être</option>
-                      <option value="auto">🚗 Auto-Moto & Pièces</option>
-                      <option value="other">📦 Autre Commerce</option>
-                    </select>
-                    <ChevronRight size={16} className="absolute right-4 top-1/2 -translate-y-1/2 rotate-90 text-white/30 pointer-events-none" />
-                  </div>
+                  <CategorySelector
+                    value={form.category}
+                    onChange={(catId) => setForm({ ...form, category: catId as any })}
+                    buttonClassName="h-14 !rounded-2xl border-white/10 bg-black/40 hover:border-vendeur-emerald/50 focus:border-vendeur-emerald text-sm"
+                  />
                 </div>
 
                 <div className="space-y-1.5">
@@ -357,10 +344,10 @@ function WelcomeStep({ onNext, onBack }: { onNext: () => void; onBack: () => voi
 
                   {useAccountPhone && user?.whatsappNumber ? (
                     <div className="flex items-center justify-between w-full h-14 rounded-2xl border border-vendeur-emerald/30 bg-vendeur-emerald/5 px-4">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2.5">
                         <div className="h-2 w-2 rounded-full bg-vendeur-emerald animate-pulse" />
                         <span className="font-mono text-sm font-bold text-white tracking-wider">
-                          {user.whatsappNumber}
+                          {formatDisplayPhone(user.whatsappNumber, selectedCountry.code)}
                         </span>
                       </div>
                       <span className="text-[10px] font-black uppercase tracking-wider text-vendeur-emerald bg-vendeur-emerald/10 px-2 py-0.5 rounded-full border border-vendeur-emerald/20">
@@ -371,7 +358,10 @@ function WelcomeStep({ onNext, onBack }: { onNext: () => void; onBack: () => voi
                     <div className="flex gap-2 items-center w-full">
                       <CountrySelector
                         selected={selectedCountry}
-                        onSelect={(c) => setSelectedCountry(c)}
+                        onSelect={(c) => {
+                          setSelectedCountry(c);
+                          setForm(prev => ({ ...prev, country: c.code, currency: c.currency }));
+                        }}
                         className="h-14 !rounded-2xl px-3.5 sm:px-4"
                       />
                       <div className="flex-1 min-w-0">
@@ -379,7 +369,7 @@ function WelcomeStep({ onNext, onBack }: { onNext: () => void; onBack: () => voi
                           className="w-full h-14 rounded-2xl border border-white/10 bg-black/40 px-4 text-white font-mono text-sm outline-none focus:border-vendeur-emerald transition-all placeholder:text-white/20"
                           value={localPhone}
                           onChange={(e) => setLocalPhone(e.target.value.replace(/\D/g, ""))}
-                          placeholder="07 00 00 00 00"
+                          placeholder="01 02 27 39 66"
                           type="tel"
                         />
                       </div>
@@ -595,6 +585,14 @@ function VisionStep({ onNext, onBack }: { onNext: () => void; onBack: () => void
                     className="w-full h-14 bg-black/40 border border-white/10 focus:border-vendeur-emerald rounded-2xl px-4 text-base font-bold text-white outline-none transition-all"
                     value={result.name}
                     onChange={(e) => handleUpdateResult({ name: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black text-white/40 uppercase tracking-widest ml-1">Catégorie</label>
+                  <CategorySelector
+                    value={result.category || tempData?.category || "fashion"}
+                    onChange={(catId) => handleUpdateResult({ category: catId })}
+                    buttonClassName="h-14 !rounded-2xl border-white/10 bg-black/40 hover:border-vendeur-emerald/50 focus:border-vendeur-emerald text-sm"
                   />
                 </div>
                 <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-end gap-3 pt-1">

@@ -2,8 +2,9 @@ import React, { useState, useEffect } from "react";
 import { X, Mail, Lock, User, ChevronRight, Loader2, ShieldCheck, Sparkles, Phone, ArrowLeft, Eye, EyeOff } from "lucide-react";
 import { Logo } from "@/components/ui/Logo";
 import { WhatsAppIcon } from "@/components/ui/WhatsAppIcon";
-import { CountrySelector, COUNTRIES, Country } from "@/features/onboarding/components/CountrySelector";
+import { CountrySelector, COUNTRIES, Country, parsePhoneNumber } from "@/features/onboarding/components/CountrySelector";
 import { useAuthStore } from "@/stores/authStore";
+import { useOnboardingStore } from "@/stores/onboardingStore";
 import { useGoogleLogin } from "@react-oauth/google";
 import { toast } from "sonner";
 import { apiClient } from "@/lib/apiClient";
@@ -96,16 +97,27 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
   const [googleLoading, setGoogleLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const { setSession } = useAuthStore();
+  const { tempData } = useOnboardingStore();
   const navigate = useNavigate();
 
-  // WhatsApp form
-  const [selectedCountry, setSelectedCountry] = useState<Country>(COUNTRIES[0]); // CI by default
-  const [localPhone, setLocalPhone] = useState("");
+  // WhatsApp form pre-filled from landing page if available
+  const initialParsed = parsePhoneNumber(tempData?.whatsappNumber || "", tempData?.country || "CI");
+  const [selectedCountry, setSelectedCountry] = useState<Country>(initialParsed.country);
+  const [localPhone, setLocalPhone] = useState(initialParsed.local);
   const [whatsappName, setWhatsappName] = useState("");
   const [authSessionId, setAuthSessionId] = useState<string>("");
   const [sessionCode, setSessionCode] = useState<string>("");
   const [systemWhatsAppNumber, setSystemWhatsAppNumber] = useState<string>("22505111157");
   const [isCheckingManual, setIsCheckingManual] = useState(false);
+
+  // Sync phone if opened with existing tempData
+  useEffect(() => {
+    if (isOpen && tempData?.whatsappNumber) {
+      const p = parsePhoneNumber(tempData.whatsappNumber, tempData?.country || "CI");
+      setSelectedCountry(p.country);
+      setLocalPhone(p.local);
+    }
+  }, [isOpen, tempData?.whatsappNumber, tempData?.country]);
 
   const GOOGLE_CLIENT_ID = (import.meta as any).env.VITE_GOOGLE_CLIENT_ID;
 

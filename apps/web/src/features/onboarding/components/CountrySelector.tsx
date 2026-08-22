@@ -12,6 +12,48 @@ export type Country = CountryData;
 
 export const COUNTRIES = GLOBAL_COUNTRIES;
 
+export function normalizeCILocal(local: string): string {
+  const digits = local.replace(/\D/g, "");
+  if (!digits) return "";
+
+  // 10-digit standard
+  if (digits.length === 10) {
+    return digits;
+  }
+
+  // 8-digit legacy restoration
+  if (digits.length === 8) {
+    // Moov prefixes: 01, 02, 03, 40-43, 50-53, 70-73
+    if (/^(01|02|03|40|41|42|43|50|51|52|53|70|71|72|73)/.test(digits)) {
+      return `01${digits}`;
+    }
+    // MTN prefixes: 04, 05, 06, 44-46, 54-56, 74-76, 84-86
+    if (/^(04|05|06|44|45|46|54|55|56|74|75|76|84|85|86)/.test(digits)) {
+      return `05${digits}`;
+    }
+    // Orange prefixes: 07, 08, 09, 47-49, 57-59, 77-79, 87-89
+    if (/^(07|08|09|47|48|49|57|58|59|77|78|79|87|88|89)/.test(digits)) {
+      return `07${digits}`;
+    }
+    // Landlines
+    if (/^(20|21|22|23|24)/.test(digits)) {
+      return `21${digits}`;
+    }
+    if (/^(25|26|27)/.test(digits)) {
+      return `25${digits}`;
+    }
+    // Default fallback for any 8-digit CI number
+    return `01${digits}`;
+  }
+
+  // 9-digit (missing leading 0)
+  if (digits.length === 9) {
+    return `0${digits}`;
+  }
+
+  return digits;
+}
+
 export function parsePhoneNumber(phoneStr?: string, defaultCountryCode?: string): { country: Country; local: string } {
   const defaultCountry = (defaultCountryCode ? COUNTRIES.find(c => c.code === defaultCountryCode) : null) || COUNTRIES[0];
   if (!phoneStr) return { country: defaultCountry, local: "" };
@@ -28,18 +70,7 @@ export function parsePhoneNumber(phoneStr?: string, defaultCountryCode?: string)
       let local = digits.slice(rawDial.length);
       // Smart prefix restoration for Côte d'Ivoire (10-digit national plan)
       if (c.code === "CI") {
-        if (local.length === 8) {
-          // If starts with 01, 05, 07 it has 8 digits; if starts with 02/03 it was missing 01
-          if (local.startsWith("02") || local.startsWith("03") || local.startsWith("22")) {
-            local = `01${local.slice(-8)}`;
-          } else if (local.startsWith("07") || local.startsWith("05") || local.startsWith("01")) {
-            // Keep as is or standard
-          }
-        } else if (local.length === 9) {
-          if (local.startsWith("1") || local.startsWith("5") || local.startsWith("7")) {
-            local = `0${local}`;
-          }
-        }
+        local = normalizeCILocal(local);
       }
       return { country: c, local };
     }
@@ -48,14 +79,21 @@ export function parsePhoneNumber(phoneStr?: string, defaultCountryCode?: string)
   // If digits without dialCode (e.g. 0102273966 or 02273966)
   let local = digits;
   if (defaultCountry.code === "CI") {
-    if (local.length === 8 && (local.startsWith("02") || local.startsWith("03") || local.startsWith("22"))) {
-      local = `01${local.slice(-8)}`;
-    } else if (local.length === 9 && (local.startsWith("1") || local.startsWith("5") || local.startsWith("7"))) {
-      local = `0${local}`;
-    }
+    local = normalizeCILocal(local);
   }
 
   return { country: defaultCountry, local };
+}
+
+export function formatDisplayPhone(phoneStr?: string, defaultCountryCode?: string): string {
+  if (!phoneStr) return "";
+  const { country, local } = parsePhoneNumber(phoneStr, defaultCountryCode);
+  if (!local) return country.dialCode;
+  
+  if (country.code === "CI" && local.length === 10) {
+    return `${country.dialCode} ${local.slice(0, 2)} ${local.slice(2, 4)} ${local.slice(4, 6)} ${local.slice(6, 8)} ${local.slice(8, 10)}`;
+  }
+  return `${country.dialCode} ${local}`;
 }
 
 export function CountrySelector({

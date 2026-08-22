@@ -32,11 +32,15 @@ export const CATEGORIES: CategoryOption[] = [
 export function CategorySelector({
   value,
   onChange,
-  className
+  className,
+  buttonClassName,
+  dropdownPosition = "bottom"
 }: {
   value: string;
   onChange: (id: string) => void;
   className?: string;
+  buttonClassName?: string;
+  dropdownPosition?: "top" | "bottom";
 }) {
   const [open, setOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -62,6 +66,7 @@ export function CategorySelector({
         onClick={() => setOpen(!open)}
         className={cn(
           "w-full h-12 md:h-10 rounded-xl bg-black/40 border border-white/25 px-3.5 text-white flex items-center justify-between text-sm md:text-xs font-semibold outline-none transition-all hover:border-emerald-400/50 focus:border-emerald-400 cursor-pointer shadow-inner",
+          buttonClassName,
           open && "border-emerald-400 ring-1 ring-emerald-400/20"
         )}
       >
@@ -76,7 +81,10 @@ export function CategorySelector({
       </button>
 
       {open && (
-        <div className="absolute left-0 top-full mt-2 z-[120] w-full max-h-72 overflow-y-auto rounded-2xl border border-white/15 bg-[#0e1411] shadow-2xl animate-in fade-in zoom-in-95 duration-150 p-2 space-y-1 custom-scrollbar backdrop-blur-xl">
+        <div className={cn(
+          "absolute left-0 z-[120] w-full max-h-72 overflow-y-auto rounded-2xl border border-white/15 bg-[#0e1411] shadow-2xl animate-in fade-in zoom-in-95 duration-150 p-2 space-y-1 custom-scrollbar backdrop-blur-xl",
+          dropdownPosition === "top" ? "bottom-full mb-2" : "top-full mt-2"
+        )}>
           {CATEGORIES.map((cat) => {
             const isSelected = cat.id === selectedCategory.id;
             return (

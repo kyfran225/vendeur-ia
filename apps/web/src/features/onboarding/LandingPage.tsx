@@ -260,13 +260,29 @@ function LandingHero({
 
   useEffect(() => {
     if (selectedCountry) {
-      setForm(prev => ({
-        ...prev,
-        country: selectedCountry.code,
-        whatsappNumber: localPhone ? `${selectedCountry.dialCode}${localPhone}` : ""
-      }));
+      const fullPhone = localPhone ? `${selectedCountry.dialCode}${localPhone}` : "";
+      setForm(prev => {
+        const next = {
+          ...prev,
+          country: selectedCountry.code,
+          currency: selectedCountry.currency,
+          whatsappNumber: fullPhone
+        };
+        setTempData(next);
+        return next;
+      });
     }
-  }, [localPhone, selectedCountry]);
+  }, [localPhone, selectedCountry, setTempData]);
+
+  // Sync form edits to tempData
+  useEffect(() => {
+    setTempData({
+      ...form,
+      country: selectedCountry?.code || form.country,
+      currency: selectedCountry?.currency || "XOF",
+      whatsappNumber: localPhone && selectedCountry ? `${selectedCountry.dialCode}${localPhone}` : form.whatsappNumber
+    });
+  }, [form.businessName, form.category, form.description, form.address, form.city, setTempData, selectedCountry, localPhone]);
 
   const [testMessage, setMessage] = useState("");
   const [isReplying, setIsReplying] = useState(false);

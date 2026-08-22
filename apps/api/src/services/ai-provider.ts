@@ -1,4 +1,5 @@
 import axios from "axios";
+import mongoose from "mongoose";
 import { env } from "../config/env.js";
 import { GEMINI_DEFAULT_TEXT_MODEL, resolveGeminiModel } from "../config/gemini.js";
 import { Redis } from "ioredis";
@@ -103,6 +104,7 @@ export class AIProvider {
 
   private async getDynamicConfig() {
     try {
+      if (mongoose.connection?.readyState !== 1) return null;
       const settings = await SystemSettingsModel.findOne();
       return settings?.aiConfig;
     } catch (error) {
@@ -432,8 +434,8 @@ export class AIProvider {
     }
     messages.push({ role: "user", content: request.userMessage });
 
-    const defaultGroqModel = (model && model.trim() && !model.includes("qwen3.6")) ? model : "llama-3.3-70b-versatile";
-    const modelsToTry = [defaultGroqModel, "llama-3.3-70b-versatile", "llama-3.1-8b-instant", "mixtral-8x7b-32768"].filter((m, i, arr) => arr.indexOf(m) === i && !!m);
+    const defaultGroqModel = model && model.trim() ? model : "qwen/qwen3.6-27b";
+    const modelsToTry = [defaultGroqModel, "qwen/qwen3.6-27b", "openai/gpt-oss-120b", "openai/gpt-oss-20b", "allam-2-7b"].filter((m, i, arr) => arr.indexOf(m) === i && !!m);
 
     let lastError: any;
     for (const currentModel of modelsToTry) {

@@ -261,28 +261,28 @@ function LandingHero({
   useEffect(() => {
     if (selectedCountry) {
       const fullPhone = localPhone ? `${selectedCountry.dialCode}${localPhone}` : "";
-      setForm(prev => {
-        const next = {
-          ...prev,
-          country: selectedCountry.code,
-          currency: selectedCountry.currency,
-          whatsappNumber: fullPhone
-        };
-        setTempData(next);
-        return next;
-      });
+      setForm(prev => ({
+        ...prev,
+        country: selectedCountry.code,
+        currency: selectedCountry.currency,
+        whatsappNumber: fullPhone
+      }));
     }
-  }, [localPhone, selectedCountry, setTempData]);
+  }, [localPhone, selectedCountry]);
 
-  // Sync form edits to tempData
+  // Sync form edits to tempData safely with debounce
   useEffect(() => {
-    setTempData({
-      ...form,
-      country: selectedCountry?.code || form.country,
-      currency: selectedCountry?.currency || "XOF",
-      whatsappNumber: localPhone && selectedCountry ? `${selectedCountry.dialCode}${localPhone}` : form.whatsappNumber
-    });
-  }, [form.businessName, form.category, form.description, form.address, form.city, setTempData, selectedCountry, localPhone]);
+    const timer = setTimeout(() => {
+      const fullPhone = localPhone && selectedCountry ? `${selectedCountry.dialCode}${localPhone}` : form.whatsappNumber;
+      setTempData({
+        ...form,
+        country: selectedCountry?.code || form.country,
+        currency: selectedCountry?.currency || "XOF",
+        whatsappNumber: fullPhone
+      });
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [form.businessName, form.category, form.description, form.address, form.city, form.whatsappNumber, setTempData, selectedCountry, localPhone]);
 
   const [testMessage, setMessage] = useState("");
   const [isReplying, setIsReplying] = useState(false);

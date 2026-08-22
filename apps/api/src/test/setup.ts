@@ -5,9 +5,13 @@ import { afterAll, beforeAll, beforeEach } from 'vitest';
 let mongo: MongoMemoryServer;
 
 beforeAll(async () => {
-  mongo = await MongoMemoryServer.create();
+  if (!mongo) {
+    mongo = await MongoMemoryServer.create();
+  }
   const uri = mongo.getUri();
-  await mongoose.connect(uri);
+  if (mongoose.connection.readyState === 0) {
+    await mongoose.connect(uri);
+  }
 });
 
 beforeEach(async () => {
@@ -20,8 +24,10 @@ beforeEach(async () => {
 });
 
 afterAll(async () => {
+  if (mongoose.connection.readyState !== 0) {
+    await mongoose.disconnect();
+  }
   if (mongo) {
     await mongo.stop();
   }
-  await mongoose.disconnect();
 });

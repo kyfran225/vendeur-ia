@@ -117,7 +117,7 @@ describe('WhatsAppService Multi-Tenant Config', () => {
       // Spy on handleIncomingMessage (private-ish or internal call)
       const spy = vi.spyOn(whatsappService, 'handleIncomingMessage').mockResolvedValue(undefined as any);
 
-      await whatsappService.handleMetaIncomingMessage(from, 'Hello', phoneId);
+      await whatsappService.handleMetaIncomingMessage(from, 'Hello', phoneId, undefined, 'wamid-test-1');
 
       expect(CommerceMerchantModel.findOne).toHaveBeenCalledWith(expect.objectContaining({
         $or: expect.arrayContaining([
@@ -152,7 +152,7 @@ describe('WhatsAppService Multi-Tenant Config', () => {
 
       const spy = vi.spyOn(whatsappService, 'handleIncomingMessage').mockResolvedValue(undefined as any);
 
-      await whatsappService.handleMetaIncomingMessage(from, 'Hello', sharedPhoneId);
+      await whatsappService.handleMetaIncomingMessage(from, 'Hello', sharedPhoneId, undefined, 'wamid-test-2');
 
       expect(CommerceMerchantModel.findById).toHaveBeenCalledWith('merchant-456');
       expect(spy).toHaveBeenCalledWith('user-456', expect.anything());

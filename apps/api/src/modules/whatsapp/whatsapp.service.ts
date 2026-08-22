@@ -780,15 +780,13 @@ class WhatsAppService {
   async handleMetaIncomingMessage(from: string, text: string, phoneId: string, media?: { mediaId: string, mediaType: string }, messageId?: string) {
     // 0. Deduplication to prevent processing retries or duplicate webhook events
     const cleanPhone = from ? from.replace(/[\s\-\+\(\)]/g, "") : "";
-    const primaryKey = messageId ? `wamid:${messageId}` : `${cleanPhone}:${text || ""}`;
-    const windowKey = `${cleanPhone}:${phoneId || ""}:${text || ""}:${Math.floor(Date.now() / 8000)}`;
+    const dedupKey = messageId ? `wamid:${messageId}` : `${cleanPhone}:${phoneId || ""}:${text || ""}:${Math.floor(Date.now() / 3000)}`;
 
-    if (this.processedMessageIds.has(primaryKey) || this.processedMessageIds.has(windowKey)) {
-      console.log(`[Meta WhatsApp] Duplicate incoming message ignored: ${primaryKey}`);
+    if (this.processedMessageIds.has(dedupKey)) {
+      console.log(`[Meta WhatsApp] Duplicate incoming message ignored: ${dedupKey}`);
       return;
     }
-    this.processedMessageIds.add(primaryKey);
-    this.processedMessageIds.add(windowKey);
+    this.processedMessageIds.add(dedupKey);
 
     if (this.processedMessageIds.size > 2000) {
       const firstItems = Array.from(this.processedMessageIds).slice(0, 500);

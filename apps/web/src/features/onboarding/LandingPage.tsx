@@ -334,18 +334,13 @@ function LandingHero({
         });
 
         const rawReply = typeof response.data.reply === 'object' ? response.data.reply.text : response.data.reply;
-        const cleanedReply = (rawReply || "")
-          .replace(/<think[\s\S]*?(?:<\/think>|$)/gi, "")
-          .replace(/<thought[\s\S]*?(?:<\/thought>|$)/gi, "")
-          .replace(/\[THINKING\][\s\S]*?(?:\[\/THINKING\]|$)/gi, "")
-          .replace(/^(?:think>|thought>|here'?s a thinking process|analyze user input)[\s\S]*?(?=(?:\r?\n){2,}|$)/gi, "")
-          .trim() || `Bonjour ! Bienvenue chez ${form.businessName}. Comment puis-je vous aider ?`;
+        const cleanedReply = (rawReply || "").trim() || `Bonjour ! Bienvenue chez ${form.businessName}. Que puis-je vous faire découvrir aujourd'hui ? 😊`;
 
         setHistory([{ role: "ai", text: cleanedReply, time: getTime() }]);
       } catch (error) {
         setHistory([{
           role: "ai",
-          text: `Bonjour ! Bienvenue chez ${form.businessName}. Je suis votre assistant Vendeur IA prêt à vous servir.`,
+          text: `Bonjour ! Bienvenue chez ${form.businessName}. Je suis votre conseiller Vendeur IA prêt à vous servir.`,
           time: getTime()
         }]);
       } finally {
@@ -403,6 +398,7 @@ function LandingHero({
       return;
     }
 
+    const currentHistory = [...history];
     setHistory(prev => [...prev, { role: "customer", text: textToSend, time: getTime() }]);
     setMessage("");
     setIsReplying(true);
@@ -415,16 +411,11 @@ function LandingHero({
         currency: selectedCountry.currency,
         message: textToSend,
         phone: form.whatsappNumber || `${selectedCountry.dialCode.replace('+', '')}01010101`,
-        history: history.slice(-4)
+        history: currentHistory
       });
 
       const rawReply = typeof response.data.reply === 'object' ? response.data.reply.text : response.data.reply;
-      const cleanedReply = (rawReply || "")
-        .replace(/<think[\s\S]*?(?:<\/think>|$)/gi, "")
-        .replace(/<thought[\s\S]*?(?:<\/thought>|$)/gi, "")
-        .replace(/\[THINKING\][\s\S]*?(?:\[\/THINKING\]|$)/gi, "")
-        .replace(/^(?:think>|thought>|here'?s a thinking process|analyze user input)[\s\S]*?(?=(?:\r?\n){2,}|$)/gi, "")
-        .trim() || `Bonjour ! Bienvenue chez ${form.businessName}. Comment puis-je vous aider ?`;
+      const cleanedReply = (rawReply || "").trim() || "C'est bien noté ! Souhaitez-vous qu'on valide votre commande ?";
 
       setHistory(prev => [...prev, { role: "ai", text: cleanedReply, time: getTime() }]);
       setAiResponseCount(prev => prev + 1);

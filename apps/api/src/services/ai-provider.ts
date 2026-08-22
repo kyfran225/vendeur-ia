@@ -38,16 +38,26 @@ export function sanitizeAIText(rawText: string): string {
 
   let cleaned = rawText.trim();
 
-  // 1. Remove XML/HTML style thought and reasoning blocks (both closed and unclosed/truncated)
-  cleaned = cleaned.replace(/<think[\s\S]*?(?:<\/think>|$)/gi, "");
-  cleaned = cleaned.replace(/<thought[\s\S]*?(?:<\/thought>|$)/gi, "");
-  cleaned = cleaned.replace(/<reasoning[\s\S]*?(?:<\/reasoning>|$)/gi, "");
-  cleaned = cleaned.replace(/<internal[\s\S]*?(?:<\/internal>|$)/gi, "");
-  cleaned = cleaned.replace(/<reflection[\s\S]*?(?:<\/reflection>|$)/gi, "");
-  cleaned = cleaned.replace(/\[THINKING\][\s\S]*?(?:\[\/THINKING\]|$)/gi, "");
-  cleaned = cleaned.replace(/\[REASONING\][\s\S]*?(?:\[\/REASONING\]|$)/gi, "");
+  // 1. Remove XML/HTML style thought and reasoning blocks (both closed)
+  cleaned = cleaned.replace(/<think[\s\S]*?<\/think>/gi, "");
+  cleaned = cleaned.replace(/<thought[\s\S]*?<\/thought>/gi, "");
+  cleaned = cleaned.replace(/<reasoning[\s\S]*?<\/reasoning>/gi, "");
+  cleaned = cleaned.replace(/<internal[\s\S]*?<\/internal>/gi, "");
+  cleaned = cleaned.replace(/<reflection[\s\S]*?<\/reflection>/gi, "");
+  cleaned = cleaned.replace(/\[THINKING\][\s\S]*?\[\/THINKING\]/gi, "");
+  cleaned = cleaned.replace(/\[REASONING\][\s\S]*?\[\/REASONING\]/gi, "");
 
-  // 2. Extract final draft if present in structured reasoning
+  // 2. If an unclosed <think> or <thought> tag exists, extract the final response
+  if (/^<think[\s\S]*$/i.test(cleaned)) {
+    const draftMatch = cleaned.match(/(?:Draft Construction|Final (?:Response|Answer|Draft)|Réponse(?:\s*finale)?|Message(?:\s*final)?|Output)[\s\S]*?:\s*\*?\s*([\s\S]+)$/i);
+    if (draftMatch && draftMatch[1]) {
+      cleaned = draftMatch[1];
+    } else {
+      cleaned = cleaned.replace(/^<think>/i, "");
+    }
+  }
+
+  // 3. Extract final draft if present in structured reasoning
   const draftMatch = cleaned.match(/(?:Draft Construction(?:\s*\(Mental\))?|Final (?:Response|Answer|Draft)|Réponse(?:\s*finale)?|Message(?:\s*final)?)\s*:\s*\*?\s*([\s\S]+)$/i);
   if (draftMatch && draftMatch[1]) {
     const preText = cleaned.substring(0, draftMatch.index || 0);
@@ -56,16 +66,8 @@ export function sanitizeAIText(rawText: string): string {
     }
   }
 
-  // 3. Strip prefix thinking process indicators and chain-of-thought blocks
+  // 4. Strip prefix thinking process indicators and chain-of-thought blocks
   cleaned = cleaned.replace(/^(?:think>|thought>|thinking\s*:|reasoning\s*:|here'?s a thinking process\s*:|chain of thought\s*:)[\s\S]*?(?=(?:\r?\n){2,}[A-ZÀ-ÖØ-ß0-9"«'#*]|$)/i, "");
-
-  // 4. Strip raw CoT blocks starting with bullet points like "1. *Analyze User Input:*" or "Here's a thinking process"
-  if (/^(?:(?:Here's a thinking process|Analyze User Input|Check Constraints|Identify Key Constraints)[\s\S]*)/i.test(cleaned)) {
-    // If there is a clear customer response at the end separated by double newlines or quotes, try to extract it
-    const parts = cleaned.split(/(?:\r?\n){2,}/);
-    const candidateParts = parts.filter(p => !/(?:thinking process|analyze user input|identify key constraints|check constraints|rules to follow|my role:)/i.test(p));
-    cleaned = candidateParts.join("\n\n").trim();
-  }
 
   // 5. Strip stray prefixes & tags
   cleaned = cleaned.replace(/^(?:think>|thought>|<\/?think>|<\/?thought>)\s*/gi, "");
@@ -75,6 +77,90 @@ export function sanitizeAIText(rawText: string): string {
   cleaned = cleaned.replace(/^(?:SYSTEM INSTRUCTIONS|SYSTEM PROMPT|Consignes système)\s*:[\s\S]*?(?=(?:\r?\n){2,}|$)/gi, "");
 
   return cleaned.trim();
+}
+
+export function normalizeHistoryForGemini(
+  history: { role: "customer" | "ai"; text: string }[] | undefined,
+  userMessage: string
+): Array<{ role: "user" | "model"; parts: Array<{ text: string }> }> {
+  const contents: Array<{ role: "user" | "model"; parts: Array<{ text: string }> }> = [];
+  const rawTurns: Array<{ role: "user" | "model"; text: string }> = [];
+
+  if (history && history.length > 0) {
+    for (const msg of history) {
+      if (!msg.text || !msg.text.trim()) continue;
+      rawTurns.push({
+        role: msg.role === "customer" ? "user" : "model",
+        text: msg.text.trim()
+      });
+    }
+  }
+
+  // Gemini strictly requires turn sequence to start with user
+  if (rawTurns.length > 0 && rawTurns[0].role === "model") {
+    rawTurns.unshift({
+      role: "user",
+      text: "Bonjour"
+    });
+  }
+
+  // Append user message
+  if (userMessage && userMessage.trim()) {
+    rawTurns.push({
+      role: "user",
+      text: userMessage.trim()
+    });
+  }
+
+  // Merge consecutive turns with the same role
+  for (const turn of rawTurns) {
+    if (contents.length > 0 && contents[contents.length - 1].role === turn.role) {
+      contents[contents.length - 1].parts[0].text += `\n${turn.text}`;
+    } else {
+      contents.push({
+        role: turn.role,
+        parts: [{ text: turn.text }]
+      });
+    }
+  }
+
+  if (contents.length === 0) {
+    contents.push({
+      role: "user",
+      parts: [{ text: userMessage?.trim() || "Bonjour" }]
+    });
+  }
+
+  return contents;
+}
+
+export function normalizeMessagesForOpenAI(
+  systemPrompt: string,
+  history: { role: "customer" | "ai"; text: string }[] | undefined,
+  userMessage: string
+): Array<{ role: "system" | "user" | "assistant"; content: string }> {
+  const messages: Array<{ role: "system" | "user" | "assistant"; content: string }> = [
+    { role: "system", content: systemPrompt }
+  ];
+
+  if (history && history.length > 0) {
+    for (const msg of history) {
+      if (!msg.text || !msg.text.trim()) continue;
+      messages.push({
+        role: msg.role === "customer" ? "user" : "assistant",
+        content: msg.text.trim()
+      });
+    }
+  }
+
+  if (userMessage && userMessage.trim()) {
+    messages.push({
+      role: "user",
+      content: userMessage.trim()
+    });
+  }
+
+  return messages;
 }
 
 export class AIProvider {
@@ -134,10 +220,10 @@ export class AIProvider {
     const provider = config?.providers?.find((p: any) => p.name === providerName);
     if (provider?.models?.[type]) return provider.models[type];
 
-    // Defaults
+    // Ultra-reliable Defaults
     switch (providerName) {
       case 'gemini': return GEMINI_DEFAULT_TEXT_MODEL;
-      case 'groq': return 'qwen/qwen3.6-27b';
+      case 'groq': return 'openai/gpt-oss-120b';
       case 'openai': return type === 'audio' ? 'whisper-1' : 'gpt-4o-mini';
       case 'openrouter': return 'meta-llama/llama-3.3-70b-instruct';
       case 'elevenlabs': return 'eleven_multilingual_v2';
@@ -157,6 +243,7 @@ export class AIProvider {
 
   private async logProviderError(provider: string, message: string) {
     try {
+      if (mongoose.connection?.readyState !== 1) return;
       const settings = await SystemSettingsModel.findOneAndUpdate(
         {},
         {
@@ -176,7 +263,7 @@ export class AIProvider {
         this.notifyAdminsOfError(provider, message);
       }
     } catch (err) {
-      console.error("[AI Provider] Failed to log error:", err);
+      // Ignore database logging errors in offline/test mode
     }
   }
 
@@ -360,21 +447,14 @@ export class AIProvider {
     const modelId = this.getGeminiModelId(model);
     const isNewModel = !modelId.includes("1.0") && !modelId.includes("gemini-pro");
 
-    const contents = [];
-    if (!isNewModel) {
-      contents.push({ role: "user", parts: [{ text: `SYSTEM INSTRUCTIONS: ${request.systemPrompt}` }] });
-      contents.push({ role: "model", parts: [{ text: "Compris. Je suis prêt à agir selon ces instructions." }] });
-    }
+    const contents = normalizeHistoryForGemini(request.history, request.userMessage);
 
-    if (request.history) {
-      for (const msg of request.history) {
-        contents.push({
-          role: msg.role === "customer" ? "user" : "model",
-          parts: [{ text: msg.text }]
-        });
-      }
+    if (!isNewModel && request.systemPrompt) {
+      contents.unshift(
+        { role: "user", parts: [{ text: `SYSTEM INSTRUCTIONS: ${request.systemPrompt}` }] },
+        { role: "model", parts: [{ text: "Compris. Je suis prêt à agir selon ces instructions." }] }
+      );
     }
-    contents.push({ role: "user", parts: [{ text: request.userMessage }] });
 
     const generationConfig: Record<string, unknown> = {
       maxOutputTokens: request.maxTokens || 2500,
@@ -394,7 +474,7 @@ export class AIProvider {
       generationConfig,
     };
 
-    if (isNewModel) {
+    if (isNewModel && request.systemPrompt) {
       payload.systemInstruction = { parts: [{ text: request.systemPrompt }] };
     }
 
@@ -426,16 +506,10 @@ export class AIProvider {
       systemPrompt += "\nYou must respond with a valid JSON object only.";
     }
 
-    const messages = [{ role: "system", content: systemPrompt }];
-    if (request.history) {
-      for (const msg of request.history) {
-        messages.push({ role: msg.role === "customer" ? "user" : "assistant", content: msg.text });
-      }
-    }
-    messages.push({ role: "user", content: request.userMessage });
+    const messages = normalizeMessagesForOpenAI(systemPrompt, request.history, request.userMessage);
 
-    const defaultGroqModel = model && model.trim() ? model : "qwen/qwen3.6-27b";
-    const modelsToTry = [defaultGroqModel, "qwen/qwen3.6-27b", "openai/gpt-oss-120b", "openai/gpt-oss-20b", "allam-2-7b"].filter((m, i, arr) => arr.indexOf(m) === i && !!m);
+    const defaultGroqModel = model && model.trim() ? model : "openai/gpt-oss-120b";
+    const modelsToTry = [defaultGroqModel, "openai/gpt-oss-120b", "openai/gpt-oss-20b", "allam-2-7b", "qwen/qwen3.6-27b"].filter((m, i, arr) => arr.indexOf(m) === i && !!m);
 
     let lastError: any;
     for (const currentModel of modelsToTry) {
@@ -456,8 +530,15 @@ export class AIProvider {
         });
 
         const usage = response.data.usage || {};
+        const rawContent = response.data.choices?.[0]?.message?.content || "";
+        const sanitized = sanitizeAIText(rawContent);
+
+        if (!sanitized) {
+          throw new Error(`Empty response after sanitization from Groq model ${currentModel}`);
+        }
+
         return {
-          text: response.data.choices[0].message.content.trim(),
+          text: sanitized,
           provider: 'groq',
           usage: {
             promptTokens: usage.prompt_tokens || 0,
@@ -471,11 +552,7 @@ export class AIProvider {
         const isRateLimit = msg?.toLowerCase().includes("rate limit") || msg?.includes("429");
 
         if (isRateLimit) {
-          // Extract retry-after from message e.g. "Please try again in 4.305s"
-          const retryMatch = msg?.match(/try again in ([\d.]+)s/);
-          const retryAfterMs = retryMatch ? Math.ceil(parseFloat(retryMatch[1]) * 1000) + 500 : 3000;
-          console.warn(`[Groq] Model ${currentModel} rate limited. Waiting ${retryAfterMs}ms before next model...`);
-          await new Promise(r => setTimeout(r, retryAfterMs));
+          console.warn(`[Groq] Model ${currentModel} rate limited. Switching immediately to next available model...`);
         } else {
           console.warn(`[Groq] Model ${currentModel} failed: ${msg?.substring(0, 100)}`);
         }
@@ -488,15 +565,8 @@ export class AIProvider {
     throw new Error("Groq failed");
   }
 
-
   private async generateWithOpenAI(request: AIRequest, apiKey: string, model: string): Promise<AIResponse> {
-    const messages = [{ role: "system", content: request.systemPrompt }];
-    if (request.history) {
-      for (const msg of request.history) {
-        messages.push({ role: msg.role === "customer" ? "user" : "assistant", content: msg.text });
-      }
-    }
-    messages.push({ role: "user", content: request.userMessage });
+    const messages = normalizeMessagesForOpenAI(request.systemPrompt, request.history, request.userMessage);
 
     try {
       const payload: any = {
@@ -515,8 +585,9 @@ export class AIProvider {
       });
 
       const usage = response.data.usage || {};
+      const rawContent = response.data.choices?.[0]?.message?.content || "";
       return {
-        text: response.data.choices[0].message.content.trim(),
+        text: sanitizeAIText(rawContent),
         provider: 'openai',
         usage: {
           promptTokens: usage.prompt_tokens || 0,
@@ -533,13 +604,7 @@ export class AIProvider {
   }
 
   private async generateWithOpenRouter(request: AIRequest, apiKey: string, model: string): Promise<AIResponse> {
-    const messages = [{ role: "system", content: request.systemPrompt }];
-    if (request.history) {
-      for (const msg of request.history) {
-        messages.push({ role: msg.role === "customer" ? "user" : "assistant", content: msg.text });
-      }
-    }
-    messages.push({ role: "user", content: request.userMessage });
+    const messages = normalizeMessagesForOpenAI(request.systemPrompt, request.history, request.userMessage);
 
     try {
       const payload: any = {
@@ -563,7 +628,7 @@ export class AIProvider {
       });
 
       const message = response.data?.choices?.[0]?.message;
-      const text = message?.content?.trim() || "";
+      const text = sanitizeAIText(message?.content || "");
 
       if (!text) {
         throw new Error("Empty response received from OpenRouter");

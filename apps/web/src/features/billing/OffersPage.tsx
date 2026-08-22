@@ -50,7 +50,7 @@ export function OffersPage() {
   }
 
   return (
-    <div className="min-h-[100dvh] bg-black text-white p-3.5 sm:p-6 md:p-12 animate-in fade-in duration-700">
+    <div className="min-h-[100dvh] bg-black text-white p-4 sm:p-6 md:p-12 animate-in fade-in duration-700">
       <MetaHead
         title="Offres & Tarifs | Vendeur IA WhatsApp Commercial"
         description="Découvrez nos formules Vendeur IA pour automatiser vos ventes sur WhatsApp Business. Tarifs transparents, sans engagement avec période d'essai."
@@ -66,22 +66,22 @@ export function OffersPage() {
               navigate("/settings?tab=billing");
             }
           }}
-          className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-white/50 hover:text-white transition-all cursor-pointer"
+          className="flex items-center gap-2 text-xs sm:text-sm font-black uppercase tracking-wider text-white/50 hover:text-white transition-all cursor-pointer"
         >
           <ArrowLeft size={16} /> Retour
         </button>
 
         <div className="text-center space-y-3 sm:space-y-4 max-w-2xl mx-auto">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-vendeur-emerald/10 border border-vendeur-emerald/20 text-vendeur-emerald text-[9px] sm:text-[10px] font-black uppercase tracking-widest">
-            <Sparkles size={12} />
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-vendeur-emerald/10 border border-vendeur-emerald/20 text-vendeur-emerald text-xs sm:text-sm font-black uppercase tracking-wider">
+            <Sparkles size={14} />
             <span>Tarifs Transparents & Sans Surprise</span>
           </div>
 
-          <h1 className="text-2xl sm:text-5xl md:text-6xl font-black uppercase tracking-tight italic text-white leading-tight">
+          <h1 className="text-3xl sm:text-5xl md:text-6xl font-black uppercase tracking-tight italic text-white leading-tight">
             Choisissez votre <span className="text-vendeur-emerald">Vendeur IA</span>
           </h1>
 
-          <p className="text-white/60 font-medium text-xs sm:text-sm max-w-xl mx-auto leading-relaxed px-2">
+          <p className="text-white/70 font-medium text-sm sm:text-base max-w-xl mx-auto leading-relaxed px-2">
             Activez votre commercial IA autonome 24h/24. Changez ou ajustez votre forfait à tout moment depuis vos paramètres.
           </p>
 
@@ -92,10 +92,10 @@ export function OffersPage() {
                 type="button"
                 onClick={() => setBillingInterval("monthly")}
                 className={cn(
-                  "px-3.5 sm:px-6 py-2 sm:py-2.5 rounded-xl text-[11px] sm:text-xs font-black uppercase tracking-wider transition-all cursor-pointer",
+                  "px-4 sm:px-6 py-2.5 rounded-xl text-xs sm:text-sm font-black uppercase tracking-wider transition-all cursor-pointer",
                   billingInterval === "monthly"
                     ? "bg-white text-vendeur-coal shadow-lg"
-                    : "text-white/40 hover:text-white"
+                    : "text-white/50 hover:text-white"
                 )}
               >
                 Mensuel
@@ -105,15 +105,15 @@ export function OffersPage() {
                 type="button"
                 onClick={() => setBillingInterval("yearly")}
                 className={cn(
-                  "px-3.5 sm:px-6 py-2 sm:py-2.5 rounded-xl text-[11px] sm:text-xs font-black uppercase tracking-wider flex items-center gap-1.5 sm:gap-2 transition-all cursor-pointer",
+                  "px-4 sm:px-6 py-2.5 rounded-xl text-xs sm:text-sm font-black uppercase tracking-wider flex items-center gap-2 transition-all cursor-pointer",
                   billingInterval === "yearly"
                     ? "bg-vendeur-emerald text-vendeur-coal shadow-lg shadow-vendeur-emerald/20"
-                    : "text-white/40 hover:text-white"
+                    : "text-white/50 hover:text-white"
                 )}
               >
                 <span>Annuel</span>
                 <span className={cn(
-                  "text-[8px] sm:text-[9px] px-1.5 sm:px-2 py-0.5 rounded-full font-black uppercase tracking-tight",
+                  "text-[10px] sm:text-xs px-2 py-0.5 rounded-full font-black uppercase tracking-tight",
                   billingInterval === "yearly"
                     ? "bg-vendeur-coal text-vendeur-emerald"
                     : "bg-vendeur-emerald/20 text-vendeur-emerald"
@@ -126,7 +126,7 @@ export function OffersPage() {
         </div>
 
         {/* Pricing Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-8 items-stretch">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-8 items-stretch">
           {offers?.map((offer: any) => (
             <OfferCard
               key={offer._id || offer.slug || offer.id}
@@ -139,24 +139,24 @@ export function OffersPage() {
         </div>
 
         {/* Setup Service Option */}
-        <div className="bg-vendeur-coal border border-white/10 p-4.5 sm:p-8 md:p-12 rounded-[1.75rem] sm:rounded-3xl md:rounded-[2.5rem] flex flex-col md:flex-row items-start md:items-center justify-between gap-5 sm:gap-8 relative overflow-hidden group hover:border-vendeur-emerald/30 transition-all shadow-2xl">
+        <div className="bg-vendeur-coal border border-white/10 p-5 sm:p-8 md:p-12 rounded-2xl sm:rounded-3xl md:rounded-[2.5rem] flex flex-col md:flex-row items-start md:items-center justify-between gap-5 sm:gap-8 relative overflow-hidden group hover:border-vendeur-emerald/30 transition-all shadow-2xl">
           <div className="space-y-2.5 sm:space-y-4 relative z-10 text-left">
-            <h3 className="text-lg sm:text-2xl font-black uppercase tracking-tight text-white leading-tight">
+            <h3 className="text-xl sm:text-2xl font-black uppercase tracking-tight text-white leading-tight">
               Besoin que nous configurions tout pour vous ?
             </h3>
-            <p className="text-white/60 font-medium text-xs sm:text-sm">
+            <p className="text-white/70 font-medium text-sm sm:text-base">
               Installation Pro Expert avec notre équipe dédiée (clé en main).
             </p>
             <div className="flex flex-wrap gap-2 pt-0.5">
-              <span className="text-[10px] sm:text-[11px] font-bold px-2.5 py-1 rounded-full bg-vendeur-emerald/10 text-vendeur-emerald border border-vendeur-emerald/20">✓ WhatsApp</span>
-              <span className="text-[10px] sm:text-[11px] font-bold px-2.5 py-1 rounded-full bg-vendeur-emerald/10 text-vendeur-emerald border border-vendeur-emerald/20">✓ Import Catalogue</span>
-              <span className="text-[10px] sm:text-[11px] font-bold px-2.5 py-1 rounded-full bg-vendeur-emerald/10 text-vendeur-emerald border border-vendeur-emerald/20">✓ Personnalisation IA</span>
+              <span className="text-xs sm:text-sm font-bold px-3 py-1 rounded-full bg-vendeur-emerald/10 text-vendeur-emerald border border-vendeur-emerald/20">✓ WhatsApp</span>
+              <span className="text-xs sm:text-sm font-bold px-3 py-1 rounded-full bg-vendeur-emerald/10 text-vendeur-emerald border border-vendeur-emerald/20">✓ Import Catalogue</span>
+              <span className="text-xs sm:text-sm font-bold px-3 py-1 rounded-full bg-vendeur-emerald/10 text-vendeur-emerald border border-vendeur-emerald/20">✓ Personnalisation IA</span>
             </div>
           </div>
 
           <button
              onClick={() => navigate(`/checkout?offer=pro&setup=EXPERT&interval=${billingInterval}`)}
-             className="w-full md:w-auto h-12 sm:h-14 px-6 sm:px-8 bg-white hover:bg-vendeur-emerald text-vendeur-coal rounded-xl sm:rounded-2xl font-black uppercase tracking-wider text-xs flex items-center justify-center gap-2.5 transition-all active:scale-95 shadow-xl shrink-0 cursor-pointer"
+             className="w-full md:w-auto h-12 sm:h-14 px-6 sm:px-8 bg-white hover:bg-vendeur-emerald text-vendeur-coal rounded-xl sm:rounded-2xl font-black uppercase tracking-wider text-xs sm:text-sm flex items-center justify-center gap-2.5 transition-all active:scale-95 shadow-xl shrink-0 cursor-pointer"
           >
             <span>En savoir plus</span>
             <ArrowRight size={16} />
@@ -178,12 +178,12 @@ export function OffersPage() {
               }
               navigate("/dashboard");
             }}
-            className="inline-flex items-center gap-2 text-xs sm:text-sm font-bold text-white/50 hover:text-vendeur-emerald transition-colors py-2 px-3 sm:px-4 rounded-xl hover:bg-white/5 cursor-pointer"
+            className="inline-flex items-center gap-2 text-sm sm:text-base font-bold text-white/60 hover:text-vendeur-emerald transition-colors py-2 px-3 sm:px-4 rounded-xl hover:bg-white/5 cursor-pointer"
           >
             <span>{fromOnboarding ? "Accéder à mon tableau de bord d'abord" : "Accéder directement à mon tableau de bord"}</span>
-            <ArrowRight size={15} />
+            <ArrowRight size={16} />
           </button>
-          <p className="text-[10px] text-white/30 font-medium">
+          <p className="text-xs text-white/40 font-medium">
             Vous pourrez activer ou modifier votre formule à tout moment depuis vos paramètres.
           </p>
         </div>
@@ -216,69 +216,69 @@ function OfferCard({
 
   return (
     <div className={cn(
-      "relative bg-vendeur-coal border rounded-[1.75rem] sm:rounded-3xl p-4.5 sm:p-7 md:p-9 flex flex-col justify-between group transition-all duration-300",
+      "relative bg-vendeur-coal border rounded-2xl sm:rounded-3xl p-5 sm:p-7 md:p-9 flex flex-col justify-between group transition-all duration-300",
       isPro ? "border-vendeur-emerald/50 shadow-[0_15px_40px_rgba(16,185,129,0.1)]" : "border-white/10 hover:border-white/20"
     )}>
       {isPro && (
-        <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-vendeur-emerald text-vendeur-coal text-[9px] sm:text-[10px] font-black uppercase px-3.5 py-1 rounded-full tracking-wider shadow-xl">
+        <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-vendeur-emerald text-vendeur-coal text-[11px] sm:text-xs font-black uppercase px-4 py-1 rounded-full tracking-wider shadow-xl">
           ⭐ Recommandé
         </div>
       )}
 
-      <div className="space-y-4 sm:space-y-7">
-        <div className="flex items-center gap-3 sm:gap-4">
+      <div className="space-y-4 sm:space-y-6">
+        <div className="flex items-center gap-3.5 sm:gap-4">
           <div className={cn(
-            "h-10 w-10 sm:h-12 sm:w-14 rounded-xl sm:rounded-2xl flex items-center justify-center shrink-0 shadow-lg transition-transform group-hover:scale-105",
+            "h-12 w-12 sm:h-14 sm:w-14 rounded-2xl flex items-center justify-center shrink-0 shadow-lg transition-transform group-hover:scale-105",
             isPro ? "bg-vendeur-emerald text-vendeur-coal" : "bg-white/5 text-white/40 border border-white/5"
           )}>
-            {isPro ? <Rocket size={20} className="sm:w-6 sm:h-6" /> : <Zap size={20} className="sm:w-6 sm:h-6" />}
+            {isPro ? <Rocket size={24} className="sm:w-7 sm:h-7" /> : <Zap size={24} className="sm:w-7 sm:h-7" />}
           </div>
           <div className="min-w-0 flex-1">
-            <h3 className="text-lg sm:text-2xl font-black uppercase tracking-tight text-white truncate">{offer.name}</h3>
-            <p className="text-[9px] sm:text-[10px] font-black uppercase text-white/40 tracking-wider truncate mt-0.5">{offer.slug === 'pro' ? 'Expérience complète & illimitée' : 'Lancement rapide'}</p>
+            <h3 className="text-xl sm:text-2xl font-black uppercase tracking-tight text-white truncate">{offer.name}</h3>
+            <p className="text-xs sm:text-sm font-bold uppercase text-white/50 tracking-wider truncate mt-0.5">{offer.slug === 'pro' ? 'Expérience complète & illimitée' : 'Lancement rapide'}</p>
           </div>
         </div>
 
-        <div className="space-y-2.5 sm:space-y-3">
+        <div className="space-y-3 sm:space-y-3.5">
           {offer.features?.map((feature: string, i: number) => (
-            <div key={i} className="flex items-start gap-2.5 sm:gap-3">
+            <div key={i} className="flex items-start gap-3">
               <div className={cn(
-                "h-4 w-4 rounded-full flex items-center justify-center shrink-0 mt-0.5",
-                isPro ? "bg-vendeur-emerald/20 text-vendeur-emerald" : "bg-white/10 text-white/40"
+                "h-5 w-5 rounded-full flex items-center justify-center shrink-0 mt-0.5",
+                isPro ? "bg-vendeur-emerald/15 text-vendeur-emerald border border-vendeur-emerald/25" : "bg-white/5 text-white/50 border border-white/10"
               )}>
-                <Check size={10} strokeWidth={3.5} />
+                <Check size={12} strokeWidth={2.5} />
               </div>
-              <span className="text-xs sm:text-sm font-semibold text-white/90 leading-snug">{feature}</span>
+              <span className="text-[15px] sm:text-base font-medium text-white/90 leading-snug">{feature}</span>
             </div>
           ))}
         </div>
       </div>
 
-      <div className="pt-5 sm:pt-8 mt-5 sm:mt-6 border-t border-white/5 space-y-3 sm:space-y-4">
+      <div className="pt-5 sm:pt-8 mt-5 sm:mt-6 border-t border-white/5 space-y-3.5 sm:space-y-4">
         {/* Pricing Area */}
         <div className="space-y-1">
           <div className="flex items-baseline gap-2">
             <span className="text-3xl sm:text-5xl font-black italic tracking-tight text-white font-mono">
               {monthlyEquivalent.toLocaleString()}
             </span>
-            <span className="text-[10px] sm:text-xs font-black uppercase text-white/40 tracking-wider">
+            <span className="text-xs sm:text-sm font-black uppercase text-white/50 tracking-wider">
               {curr} / MOIS
             </span>
           </div>
 
           {isYearly ? (
-            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 pt-0.5">
-              <span className="text-[10px] sm:text-[11px] font-bold text-white/50">
+            <div className="flex flex-wrap items-center gap-2 pt-0.5">
+              <span className="text-xs sm:text-sm font-bold text-white/60">
                 Facturé annuellement {yearlyPrice.toLocaleString()} {curr}
               </span>
               {savingsAmount > 0 && (
-                <span className="inline-flex items-center gap-1 text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-vendeur-emerald bg-vendeur-emerald/10 px-2 py-0.5 rounded-full border border-vendeur-emerald/20">
-                  <Tag size={10} /> -{savingsAmount.toLocaleString()} {curr} d'économie
+                <span className="inline-flex items-center gap-1 text-[10px] sm:text-xs font-black uppercase tracking-wider text-vendeur-emerald bg-vendeur-emerald/10 px-2 py-0.5 rounded-full border border-vendeur-emerald/20">
+                  <Tag size={11} /> -{savingsAmount.toLocaleString()} {curr} d'économie
                 </span>
               )}
             </div>
           ) : (
-            <p className="text-[10px] sm:text-[11px] font-medium text-white/40">
+            <p className="text-xs sm:text-sm font-medium text-white/50">
               Facturation mensuelle sans engagement
             </p>
           )}
@@ -287,7 +287,7 @@ function OfferCard({
         <button
           onClick={onSelect}
           className={cn(
-            "w-full h-12 sm:h-14 rounded-xl sm:rounded-2xl font-black uppercase tracking-wider text-xs flex items-center justify-center gap-2 transition-all active:scale-95 shadow-xl cursor-pointer",
+            "w-full h-12 sm:h-14 rounded-xl sm:rounded-2xl font-black uppercase tracking-wider text-xs sm:text-sm flex items-center justify-center gap-2 transition-all active:scale-95 shadow-xl cursor-pointer",
             isPro
               ? "bg-vendeur-emerald text-vendeur-coal hover:scale-[1.02] shadow-vendeur-emerald/25"
               : "bg-white text-vendeur-coal hover:bg-vendeur-emerald hover:text-vendeur-coal"

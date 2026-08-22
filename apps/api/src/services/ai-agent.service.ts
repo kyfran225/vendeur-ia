@@ -11,7 +11,7 @@ export interface SalesContext {
       deliveryFees?: { zone: string; price: number }[];
       openingHours?: string;
       returnPolicy?: string;
-      paymentMethods?: string[];
+      paymentMethods?: any[];
       dynamicInsights?: any[];
     };
     faq?: { question: string; answer: string }[];
@@ -82,13 +82,17 @@ export class AIAgentService {
       systemPrompt,
       userMessage: context.message,
       history: context.history,
-      maxTokens: 600, // Sufficient budget for full conversational messages without truncation
+      maxTokens: 2000, // Generous budget guaranteeing zero truncated sentences or cut-off messages
       temperature: 0.7
     });
 
     let sanitizedText = sanitizeAIText(response.text);
     if (!sanitizedText) {
-      sanitizedText = `Bonjour ! Bienvenue chez ${context.merchant.businessName || "notre boutique"}. Comment puis-je vous aider aujourd'hui ? 😊`;
+      if (context.history && context.history.length > 0) {
+        sanitizedText = `C'est bien noté ! Souhaitez-vous que nous validions votre commande ou avez-vous une précision sur votre article et l'adresse de livraison ? 😊`;
+      } else {
+        sanitizedText = `Bonjour ! Bienvenue chez ${context.merchant.businessName || "notre boutique"}. Que puis-je vous proposer aujourd'hui ? 😊`;
+      }
     }
 
     return {
@@ -262,11 +266,24 @@ export class AIAgentService {
       ? `\n💡 INSIGHTS MÉTIER APPRIS PRÉCÉDEMMENT :\n${knowledge.businessRules.dynamicInsights.slice(-3).map((i: any) => `- ${i.insight}`).join("\n")}\n`
       : "";
 
+    const hasHistory = Boolean(context.history && context.history.length > 0);
+    const conversationStateInstruction = hasHistory
+      ? `🚨 ÉTAT DU DIALOGUE (DISCUSSION DÉJÀ ENGAGÉE) :
+- LA DISCUSSION EST DÉJÀ EN COURS.
+- INTERDICTION ABSOLUE de re-saluer ("Bonjour", "Bienvenue chez...", "Salut !").
+- INTERDICTION ABSOLUE de demander "Comment puis-je vous aider ?", "En quoi puis-je vous être utile ?" ou d'agir comme au début.
+- Réponds DIRECTEMENT, AVEC PRÉCISION et DYNAMISME au message actuel du client. Enchaîne immédiatement sur son besoin, la confirmation de l'article, la taille, le quartier de livraison ou le mode de règlement.`
+      : `🌟 ÉTAT DU DIALOGUE (PREMIER MESSAGE D'OUVERTURE) :
+- Salue chaleureusement avec le nom de "${merchant.businessName}".
+- Présente brièvement les offres phares et propose d'orienter le client avec enthousiasme.`;
+
     return `Tu es l'Expert Principal de Vente de "${merchant.businessName}" situé à ${merchant.city}, ${merchant.country}.
 Ton but : Transformer chaque conversation en VENTE RÉELLE ou RÉSERVATION CONFIRMÉE.
 
 TON COMMERCE : Domaines d'activité : "${merchant.category}".
 DESCRIPTION : ${merchant.description || "Pas de description supplémentaire"}.
+
+${conversationStateInstruction}
 
 ${loyaltyStr}
 Si c'est un client VIP ou fidèle, commence par un accueil personnalisé reconnaissant sa loyauté.
@@ -303,7 +320,7 @@ INTERDICTIONS STRICTES DE VOCABULAIRE & INCARNATION HUMAINE (RÈGLE D'OR ABSOLUE
 - ENCHAÎNEMENT FLUIDE : Dès que le client donne un horaire, une date ou un choix (ex: "17", "17h", "lundi", "celui à 15000"), confirme immédiatement le créneau ou l'article sans JAMAIS repartir dans une énumération d'offres ni dire "nous avons".
 
 STRATÉGIE DE VENTE & PSYCHOLOGIE COMMERCIALE (CLOSING) :
-1. Salue brièvement et chaleureusement avec le ton de la boutique.
+1. Si premier message : Salue brièvement et chaleureusement. Si conversation en cours : enchaîne directement sans re-saluer.
 2. Réponds directement au besoin (prix clair avec devise, disponibilité, caractéristiques).
 3. NÉGOCIATION & TRAITEMENT DES OBJECTIONS :
    - Si le client négocie le prix ("C'est trop cher", "Dernier prix ?", "Tu me laisses à combien ?") :

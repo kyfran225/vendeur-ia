@@ -71,8 +71,8 @@ export function OffersModal({ isOpen, onClose }: OffersModalProps) {
                 <Server size={20} />
               </div>
               <div>
-                <h3 className="text-xl font-black text-white uppercase tracking-tighter leading-none">{essential?.name || "Formule Essentiel"}</h3>
-                <p className="text-white/40 text-[8px] font-black uppercase tracking-[0.15em] mt-1">Lancement rapide & efficace</p>
+                <h3 className="text-xl sm:text-2xl font-black text-white uppercase tracking-tighter leading-none">{essential?.name || "Formule Essentiel"}</h3>
+                <p className="text-white/50 text-xs font-black uppercase tracking-wider mt-1">Lancement rapide & efficace</p>
               </div>
             </div>
 
@@ -92,14 +92,14 @@ export function OffersModal({ isOpen, onClose }: OffersModalProps) {
 
           <div className="pt-10">
             <div className="flex items-baseline gap-2 mb-8 h-12">
-              <span className="text-4xl font-black text-vendeur-emerald">{essential?.monthlyPrice?.toLocaleString() || "5 000"}</span>
-              <span className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em]">{essential?.currency || currency} / MOIS</span>
+              <span className="text-4xl sm:text-5xl font-black text-vendeur-emerald font-mono">{essential?.monthlyPrice?.toLocaleString() || "5 000"}</span>
+              <span className="text-xs font-black text-white/40 uppercase tracking-wider">{essential?.currency || currency} / MOIS</span>
             </div>
 
             <button
               onClick={() => handleSelect("essential")}
               disabled={!!isRedirecting}
-              className="w-full h-16 bg-white text-vendeur-coal rounded-2xl font-black uppercase tracking-[0.2em] text-[10px] flex items-center justify-center gap-3 hover:bg-vendeur-emerald transition-all active:scale-95 disabled:opacity-50 shadow-xl shadow-white/5"
+              className="w-full h-14 sm:h-16 bg-white text-vendeur-coal rounded-2xl font-black uppercase tracking-wider text-xs sm:text-sm flex items-center justify-center gap-3 hover:bg-vendeur-emerald transition-all active:scale-95 disabled:opacity-50 shadow-xl shadow-white/5 cursor-pointer"
             >
               {isRedirecting === "essential" ? <Loader2 className="animate-spin" size={18} /> : <Zap size={18} />}
               Choisir cette offre
@@ -110,19 +110,19 @@ export function OffersModal({ isOpen, onClose }: OffersModalProps) {
         {/* Option 2: Pro + Expert Setup */}
         <div className="flex-1 p-8 md:p-12 bg-vendeur-emerald/5 flex flex-col justify-between min-h-[450px] md:min-h-[600px] relative">
           <div className="absolute top-6 left-8 md:left-12 z-10">
-             <span className="bg-vendeur-emerald text-vendeur-coal text-[8px] font-black uppercase px-4 py-2 rounded-full tracking-[0.2em] shadow-lg shadow-vendeur-emerald/20 border border-vendeur-emerald/20">
-               Recommandé
+             <span className="bg-vendeur-emerald text-vendeur-coal text-xs font-black uppercase px-4 py-1.5 rounded-full tracking-wider shadow-lg shadow-vendeur-emerald/20 border border-vendeur-emerald/20">
+               ⭐ Recommandé
              </span>
           </div>
 
           <div className="space-y-8 pt-8 md:pt-6">
             <div className="flex items-center gap-4">
-              <div className="h-10 w-10 bg-vendeur-emerald rounded-xl flex items-center justify-center text-vendeur-coal shadow-lg shadow-vendeur-emerald/20 shrink-0">
-                <Rocket size={20} />
+              <div className="h-12 w-12 bg-vendeur-emerald rounded-2xl flex items-center justify-center text-vendeur-coal shadow-lg shadow-vendeur-emerald/20 shrink-0">
+                <Rocket size={24} />
               </div>
               <div>
-                <h3 className="text-xl font-black text-white uppercase tracking-tighter leading-none">Pack Pro Expert</h3>
-                <p className="text-vendeur-emerald font-black text-[8px] uppercase tracking-[0.15em] mt-1">Accompagnement VIP Clé en main</p>
+                <h3 className="text-xl sm:text-2xl font-black text-white uppercase tracking-tighter leading-none">Pack Pro Expert</h3>
+                <p className="text-vendeur-emerald font-black text-xs uppercase tracking-wider mt-1">Accompagnement VIP Clé en main</p>
               </div>
             </div>
 
@@ -137,16 +137,16 @@ export function OffersModal({ isOpen, onClose }: OffersModalProps) {
 
           <div className="pt-10">
              <div className="flex items-baseline gap-2 mb-8 h-12">
-              <span className="text-4xl font-black text-white">
+              <span className="text-4xl sm:text-5xl font-black text-white font-mono">
                 {pro ? (pro.monthlyPrice + (pro.setupOptions?.find((o: any) => o.type === 'EXPERT')?.price || 0)).toLocaleString() : "25 000"}
               </span>
-              <span className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em]">{pro?.currency || currency} (UNIQUE)</span>
+              <span className="text-xs font-black text-white/40 uppercase tracking-wider">{pro?.currency || currency} (UNIQUE)</span>
             </div>
 
             <button
               onClick={() => handleSelect("pro", "EXPERT")}
               disabled={!!isRedirecting}
-              className="w-full h-16 bg-vendeur-emerald text-vendeur-coal rounded-2xl font-black uppercase tracking-[0.2em] text-[10px] flex items-center justify-center gap-3 hover:scale-[1.02] transition-all active:scale-95 shadow-2xl shadow-vendeur-emerald/20 disabled:opacity-50"
+              className="w-full h-14 sm:h-16 bg-vendeur-emerald text-vendeur-coal rounded-2xl font-black uppercase tracking-wider text-xs sm:text-sm flex items-center justify-center gap-3 hover:scale-[1.02] transition-all active:scale-95 shadow-2xl shadow-vendeur-emerald/20 disabled:opacity-50 cursor-pointer"
             >
               {isRedirecting === "pro" ? <Loader2 className="animate-spin" size={18} /> : <Sparkles size={18} />}
               Activer mon Pack Pro
@@ -160,11 +160,11 @@ export function OffersModal({ isOpen, onClose }: OffersModalProps) {
 
 function OfferFeature({ text, highlight = false }: { text: string; highlight?: boolean }) {
   return (
-    <div className="flex items-center gap-3">
-      <div className={cn("h-5 w-5 rounded-full flex items-center justify-center shrink-0", highlight ? "bg-vendeur-emerald" : "bg-white/10")}>
-        <Check size={12} className={highlight ? "text-vendeur-coal" : "text-white/40"} />
+    <div className="flex items-start gap-3">
+      <div className={cn("h-5 w-5 rounded-full flex items-center justify-center shrink-0 mt-0.5", highlight ? "bg-vendeur-emerald text-vendeur-coal" : "bg-white/10 text-white/50")}>
+        <Check size={12} strokeWidth={2.5} />
       </div>
-      <span className={cn("text-xs font-medium", highlight ? "text-white" : "text-white/60")}>{text}</span>
+      <span className={cn("text-[15px] sm:text-base font-medium leading-snug", highlight ? "text-white" : "text-white/80")}>{text}</span>
     </div>
   );
 }

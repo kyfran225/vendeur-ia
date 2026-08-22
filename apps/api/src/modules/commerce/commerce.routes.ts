@@ -1695,6 +1695,20 @@ router.post("/demo/process", async (req, res) => {
 
     Personnalisation maximale : ignore les mocks si ils contredisent la description de l'utilisateur.`;
 
+    const isInitialGreeting = message === "SYSTEM_INITIAL_GREETING";
+    const processedHistory = Array.isArray(history)
+      ? history
+          .filter((h: any) => h && typeof h.text === "string" && h.text.trim())
+          .map((h: any) => ({
+            role: (h.role === "customer" ? "customer" : "ai") as "customer" | "ai",
+            text: h.text.trim()
+          }))
+      : [];
+
+    const userMessage = isInitialGreeting
+      ? `Bonjour ! Accueille-moi chaleureusement chez ${businessName || "notre boutique"}, mentionne nos spécialités en ${category || "commerce"} (${description || "nos créations phares"}) et propose de me conseiller.`
+      : (message || "Bonjour !");
+
     const reply = await aiAgentService.generateResponse({
       merchant: {
         businessName,
@@ -1716,11 +1730,8 @@ router.post("/demo/process", async (req, res) => {
         },
         customInstructions: customInstructions
       },
-      history: history.map((h: any) => ({
-        role: h.role === "customer" ? "customer" : "ai",
-        text: h.text
-      })),
-      message: message === "SYSTEM_INITIAL_GREETING" ? "Bonjour !" : message,
+      history: isInitialGreeting ? [] : processedHistory,
+      message: userMessage,
       customerPhone: phone
     });
 

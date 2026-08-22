@@ -583,7 +583,7 @@ export class AuthService {
       }
     }
 
-    const replyMessage = `✅ *Connexion réussie !*\n\nBienvenue sur *Vendeur IA*. Votre boutique est déverrouillée sur votre écran.\n\n👉 _Vous pouvez retourner sur votre navigateur dès maintenant pour commencer !_`;
+    const replyMessage = `✅ *Connexion réussie !*\n\nBienvenue sur *Vendeur IA*. Votre boutique est déverrouillée sur votre écran.\n\n👉 _Vous pouvez retourner sur votre application Vendeur IA dès maintenant !_`;
 
     return {
       success: true,

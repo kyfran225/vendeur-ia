@@ -47,13 +47,15 @@ export function sanitizeAIText(rawText: string): string {
   cleaned = cleaned.replace(/\[THINKING\][\s\S]*?\[\/THINKING\]/gi, "");
   cleaned = cleaned.replace(/\[REASONING\][\s\S]*?\[\/REASONING\]/gi, "");
 
-  // 2. If an unclosed <think> or <thought> tag exists, extract the final response
-  if (/^<think[\s\S]*$/i.test(cleaned)) {
-    const draftMatch = cleaned.match(/(?:Draft Construction|Final (?:Response|Answer|Draft)|Réponse(?:\s*finale)?|Message(?:\s*final)?|Output)[\s\S]*?:\s*\*?\s*([\s\S]+)$/i);
+  // 2. If an unclosed <think> or <thought> tag exists, extract the final response or strip it entirely
+  if (/<(?:think|thought|reasoning|internal|reflection)|\[(?:THINKING|REASONING)\]/i.test(cleaned)) {
+    const draftMatch = cleaned.match(/(?:Draft Construction(?:\s*\(Mental\))?|Final (?:Response|Answer|Draft)|Réponse(?:\s*finale)?|Message(?:\s*final)?|Output)\s*:\s*\*?\s*([\s\S]+)$/i);
     if (draftMatch && draftMatch[1]) {
       cleaned = draftMatch[1];
     } else {
-      cleaned = cleaned.replace(/^<think>/i, "");
+      // Strip unclosed thought blocks completely
+      cleaned = cleaned.replace(/<(?:think|thought|reasoning|internal|reflection)[\s\S]*$/gi, "");
+      cleaned = cleaned.replace(/\[(?:THINKING|REASONING)\][\s\S]*$/gi, "");
     }
   }
 

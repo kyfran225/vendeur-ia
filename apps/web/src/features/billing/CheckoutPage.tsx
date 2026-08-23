@@ -26,6 +26,7 @@ import {
   Wallet
 } from "lucide-react";
 import { CountrySelector, COUNTRIES, Country, parsePhoneNumber, formatDisplayPhone } from "@/features/onboarding/components/CountrySelector";
+import { convertCurrencyAmount, CURRENCIES_DATA } from "@vendeur-ia/core";
 import { toast } from "sonner";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
@@ -39,7 +40,7 @@ export function CheckoutPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const { user } = useAuthStore();
-  const currency = useMerchantCurrency();
+  const merchantCurrency = useMerchantCurrency();
 
   const offerSlug = searchParams.get("offer") || "essential";
   const setupOption = searchParams.get("setup") || null;
@@ -55,16 +56,6 @@ export function CheckoutPage() {
   const [transactionIdInput, setTransactionIdInput] = useState("");
   const [userCountry, setUserCountry] = useState<string>("CI");
 
-  const initialSenderParsed = parsePhoneNumber(user?.whatsappNumber || "", userCountry);
-  const [senderCountry, setSenderCountry] = useState<Country>(
-    COUNTRIES.find(c => c.code === userCountry) || initialSenderParsed.country
-  );
-  const [senderLocalPhone, setSenderLocalPhone] = useState(initialSenderParsed.local);
-  const [loading, setLoading] = useState(false);
-  const [submittingProof, setSubmittingProof] = useState(false);
-  const [proofSubmitted, setProofSubmitted] = useState(false);
-  const [copiedField, setCopiedField] = useState<string | null>(null);
-
   const countries = [
     { code: "CI", name: "Côte d'Ivoire", currency: "XOF" },
     { code: "BF", name: "Burkina Faso", currency: "XOF" },
@@ -75,6 +66,18 @@ export function CheckoutPage() {
     { code: "GH", name: "Ghana", currency: "GHS" },
     { code: "GN", name: "Guinée", currency: "GNF" },
   ];
+
+  const targetCurrency = countries.find(c => c.code === userCountry)?.currency || "XOF";
+
+  const initialSenderParsed = parsePhoneNumber(user?.whatsappNumber || "", userCountry);
+  const [senderCountry, setSenderCountry] = useState<Country>(
+    COUNTRIES.find(c => c.code === userCountry) || initialSenderParsed.country
+  );
+  const [senderLocalPhone, setSenderLocalPhone] = useState(initialSenderParsed.local);
+  const [loading, setLoading] = useState(false);
+  const [submittingProof, setSubmittingProof] = useState(false);
+  const [proofSubmitted, setProofSubmitted] = useState(false);
+  const [copiedField, setCopiedField] = useState<string | null>(null);
 
   useEffect(() => {
     // Auto-detect from phone prefix if not manually changed yet
@@ -100,16 +103,16 @@ export function CheckoutPage() {
     }
   }, [user?.whatsappNumber, userCountry]);
 
-  // 1. Fetch Offers
+  // 1. Fetch Offers converted for the active target currency
   const { data: offers, isLoading } = useQuery({
-    queryKey: ["offers", currency],
+    queryKey: ["offers", targetCurrency],
     queryFn: async () => {
-      const res = await apiClient.get(`/api/commerce/offers?currency=${currency}`);
+      const res = await apiClient.get(`/api/commerce/offers?currency=${targetCurrency}`);
       return res.data;
     }
   });
 
-  // 2. Fetch Payment Config
+  // 2. Fetch Payment Config for the chosen country
   const { data: paymentConfig, isLoading: isConfigLoading } = useQuery({
     queryKey: ["paymentConfig", userCountry],
     queryFn: async () => {
@@ -117,6 +120,27 @@ export function CheckoutPage() {
       return res.data;
     }
   });
+
+  // When payment config loads or userCountry changes, ensure selectedMethod is valid for that country
+  useEffect(() => {
+    if (!paymentConfig?.methods) return;
+    if (selectedMethod === "card" || selectedMethod === "google_play") return;
+
+    const isAvailable = paymentConfig.methods.some((m: any) => m.id === selectedMethod);
+    if (!isAvailable) {
+      if (paymentConfig.methods.length > 0) {
+        setSelectedMethod(paymentConfig.methods[0].id);
+      } else {
+        setSelectedMethod("");
+      }
+    }
+  }, [paymentConfig, userCountry, selectedMethod]);
+
+  const isMethodValid = Boolean(
+    selectedMethod &&
+    (selectedMethod === "card" || selectedMethod === "google_play" || paymentConfig?.methods?.some((m: any) => m.id === selectedMethod))
+  );
+  const isStep1Ready = Boolean(userCountry && isMethodValid);
 
   const fullSenderPhone = senderLocalPhone ? `${senderCountry.dialCode}${senderLocalPhone}` : (user?.whatsappNumber || "");
 
@@ -192,13 +216,19 @@ export function CheckoutPage() {
   }
 
   const isYearly = billingInterval === "yearly";
-  const monthlyPrice = offer?.monthlyPrice || 5000;
-  const yearlyPrice = offer?.yearlyPrice || Math.round(monthlyPrice * 10);
+  const offerCurr = offer?.currency || "XOF";
+  const rawMonthly = offer?.monthlyPrice || 5000;
+  const monthlyPrice = offerCurr === targetCurrency ? rawMonthly : convertCurrencyAmount(rawMonthly, offerCurr, targetCurrency);
+  const rawYearly = offer?.yearlyPrice || Math.round(rawMonthly * 10);
+  const yearlyPrice = offerCurr === targetCurrency ? rawYearly : convertCurrencyAmount(rawYearly, offerCurr, targetCurrency);
   const planPrice = isYearly ? yearlyPrice : monthlyPrice;
 
-  const setupFee = setupOption ? (offer?.setupOptions?.find((o: any) => o.type === setupOption)?.price || 0) : 0;
+  const rawSetupFee = setupOption ? (offer?.setupOptions?.find((o: any) => o.type === setupOption)?.price || (setupOption === 'EXPERT' ? 25000 : 0)) : 0;
+  const setupFee = offerCurr === targetCurrency ? rawSetupFee : convertCurrencyAmount(rawSetupFee, offerCurr, targetCurrency);
+
   const totalToday = planPrice + setupFee;
   const savings = isYearly ? (monthlyPrice * 12 - yearlyPrice) : 0;
+  const activeCurrencySymbol = CURRENCIES_DATA[targetCurrency]?.symbol || paymentConfig?.currencySymbol || targetCurrency;
 
   const copyToClipboard = (text: string, fieldKey: string) => {
     navigator.clipboard.writeText(text);
@@ -339,32 +369,34 @@ export function CheckoutPage() {
           )}
         </div>
 
-        {/* Compact Plan Summary Banner (Always visible & reassuring) */}
-        <div className="bg-[#0e1713] border border-white/10 rounded-2xl sm:rounded-3xl p-3.5 sm:p-5 flex items-center justify-between gap-4 shadow-xl">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-xl sm:rounded-2xl bg-vendeur-emerald/10 text-vendeur-emerald border border-vendeur-emerald/20 flex items-center justify-center shrink-0">
-              <Sparkles size={20} />
-            </div>
-            <div className="min-w-0">
-              <div className="flex items-center gap-2">
-                <h2 className="text-sm sm:text-base font-black uppercase text-white truncate">{offer.name}</h2>
-                <span className="text-[9px] font-black uppercase tracking-wider text-vendeur-emerald bg-vendeur-emerald/10 px-2 py-0.5 rounded-full border border-vendeur-emerald/20">
-                  {isYearly ? "Annuel (-17%)" : "Mensuel"}
-                </span>
+        {/* Compact Plan Summary Banner (Mobile-Optimized & Reassuring) */}
+        <div className="bg-[#0e1713] border border-white/10 rounded-2xl sm:rounded-3xl p-4 sm:p-5 shadow-xl">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 sm:gap-4">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-xl sm:rounded-2xl bg-vendeur-emerald/10 text-vendeur-emerald border border-vendeur-emerald/20 flex items-center justify-center shrink-0">
+                <Sparkles size={20} />
               </div>
-              <p className="text-[11px] text-white/50 truncate mt-0.5">Activation instantanée & assistance 7j/7</p>
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h2 className="text-sm sm:text-base font-black uppercase text-white tracking-tight">{offer.name}</h2>
+                  <span className="text-[9px] font-black uppercase tracking-wider text-vendeur-emerald bg-vendeur-emerald/10 px-2 py-0.5 rounded-full border border-vendeur-emerald/20 whitespace-nowrap">
+                    {isYearly ? "Annuel (-17%)" : "Mensuel"}
+                  </span>
+                </div>
+                <p className="text-[11px] text-white/50 mt-0.5">Activation instantanée & assistance 7j/7</p>
+              </div>
             </div>
-          </div>
 
-          <div className="text-right shrink-0">
-            <div className="text-lg sm:text-2xl font-black italic text-vendeur-emerald font-mono leading-none">
-              {totalToday.toLocaleString()} <span className="text-xs uppercase text-vendeur-emerald/70 font-sans">{paymentConfig?.currencySymbol || offer.currency || currency}</span>
+            <div className="flex sm:flex-col items-baseline sm:items-end justify-between sm:justify-center border-t border-white/5 sm:border-t-0 pt-2 sm:pt-0 shrink-0">
+              <div className="text-lg sm:text-2xl font-black italic text-vendeur-emerald font-mono leading-none">
+                {totalToday.toLocaleString()} <span className="text-xs uppercase text-vendeur-emerald/70 font-sans">{activeCurrencySymbol}</span>
+              </div>
+              {isYearly && savings > 0 && (
+                <span className="text-[9px] font-bold text-white/40 block mt-0.5 sm:mt-1">
+                  Économie de {savings.toLocaleString()} {activeCurrencySymbol}
+                </span>
+              )}
             </div>
-            {isYearly && savings > 0 && (
-              <span className="text-[9px] font-bold text-white/40 block mt-1">
-                Économie de {savings.toLocaleString()} {offer.currency || currency}
-              </span>
-            )}
           </div>
         </div>
 
@@ -400,7 +432,11 @@ export function CheckoutPage() {
                     <button
                       key={c.code}
                       type="button"
-                      onClick={() => setUserCountry(c.code)}
+                      onClick={() => {
+                        setUserCountry(c.code);
+                        const found = COUNTRIES.find(country => country.code === c.code);
+                        if (found) setSenderCountry(found);
+                      }}
                       className={cn(
                         "px-3 py-2 rounded-xl border text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer",
                         userCountry === c.code
@@ -486,25 +522,25 @@ export function CheckoutPage() {
                 </div>
               </div>
 
-              {/* Bottom Step 1 Action */}
+              {/* Bottom Step 1 Action - Always visible, disabled when incomplete */}
               <div className="pt-3">
                 {selectedMethod === "card" ? (
                   <button
                     type="button"
                     onClick={handleCardPaystack}
-                    disabled={loading}
-                    className="w-full h-13 sm:h-14 bg-white text-black hover:bg-white/90 font-black uppercase tracking-wider text-xs sm:text-sm rounded-2xl flex items-center justify-center gap-2.5 transition-all active:scale-98 shadow-xl cursor-pointer"
+                    disabled={!isStep1Ready || loading}
+                    className="w-full h-14 bg-white text-black hover:bg-white/90 font-black uppercase tracking-wider text-xs sm:text-sm rounded-2xl flex items-center justify-center gap-2.5 transition-all active:scale-98 shadow-xl cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white"
                   >
                     {loading ? <Loader2 className="animate-spin" size={18} /> : <Lock size={16} />}
-                    <span>Payer {totalToday.toLocaleString()} {offer.currency || currency} par Carte</span>
+                    <span>Payer par Carte ({totalToday.toLocaleString()} {activeCurrencySymbol})</span>
                     <ChevronRight size={18} />
                   </button>
                 ) : selectedMethod === "google_play" ? (
                   <button
                     type="button"
                     onClick={handleGooglePlayPay}
-                    disabled={loading}
-                    className="w-full h-13 sm:h-14 bg-[#4285F4] hover:bg-[#3367D6] text-white font-black uppercase tracking-wider text-xs sm:text-sm rounded-2xl flex items-center justify-center gap-2.5 transition-all active:scale-98 shadow-xl cursor-pointer"
+                    disabled={!isStep1Ready || loading}
+                    className="w-full h-14 bg-[#4285F4] hover:bg-[#3367D6] text-white font-black uppercase tracking-wider text-xs sm:text-sm rounded-2xl flex items-center justify-center gap-2.5 transition-all active:scale-98 shadow-xl cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[#4285F4]"
                   >
                     {loading ? <Loader2 className="animate-spin" size={18} /> : <QrCode size={18} />}
                     <span>Payer via Google Play</span>
@@ -513,10 +549,11 @@ export function CheckoutPage() {
                 ) : (
                   <button
                     type="button"
-                    onClick={() => setCurrentStep(2)}
-                    className="w-full h-13 sm:h-14 bg-vendeur-emerald hover:bg-emerald-400 text-vendeur-coal font-black uppercase tracking-wider text-xs sm:text-sm rounded-2xl flex items-center justify-center gap-2.5 transition-all active:scale-98 shadow-xl shadow-vendeur-emerald/20 cursor-pointer"
+                    onClick={() => isStep1Ready && setCurrentStep(2)}
+                    disabled={!isStep1Ready}
+                    className="w-full h-14 bg-vendeur-emerald hover:bg-emerald-400 text-vendeur-coal font-black uppercase tracking-wider text-xs sm:text-sm rounded-2xl flex items-center justify-center gap-2 transition-all active:scale-98 shadow-xl shadow-vendeur-emerald/20 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-vendeur-emerald disabled:shadow-none"
                   >
-                    <span>Continuer vers les coordonnées de paiement</span>
+                    <span>Continuer le paiement</span>
                     <ChevronRight size={18} />
                   </button>
                 )}
@@ -582,11 +619,11 @@ export function CheckoutPage() {
                     Montant Exact à Envoyer
                   </div>
                   <div className="text-lg sm:text-2xl font-mono font-black text-vendeur-emerald pt-0.5">
-                    {paymentConfig?.localAmount ? paymentConfig.localAmount.toLocaleString() : totalToday.toLocaleString()} {paymentConfig?.currencySymbol || offer.currency || currency}
+                    {totalToday.toLocaleString()} {activeCurrencySymbol}
                   </div>
                   <button
                     type="button"
-                    onClick={() => copyToClipboard((paymentConfig?.localAmount || totalToday).toString(), "amount")}
+                    onClick={() => copyToClipboard(totalToday.toString(), "amount")}
                     className="absolute right-3.5 top-1/2 -translate-y-1/2 px-3 py-2 rounded-xl bg-white/10 hover:bg-vendeur-emerald hover:text-black text-white text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer shadow"
                   >
                     {copiedField === "amount" ? <Check size={14} /> : <Copy size={14} />}
@@ -608,7 +645,7 @@ export function CheckoutPage() {
                 <button
                   type="button"
                   onClick={() => setCurrentStep(1)}
-                  className="order-2 sm:order-1 sm:w-1/3 h-13 sm:h-14 bg-white/5 hover:bg-white/10 text-white font-black uppercase tracking-wider text-xs rounded-2xl transition-all cursor-pointer"
+                  className="order-2 sm:order-1 sm:w-1/3 h-14 bg-white/5 hover:bg-white/10 text-white font-black uppercase tracking-wider text-xs rounded-2xl transition-all cursor-pointer flex items-center justify-center"
                 >
                   ← Changer de mode
                 </button>
@@ -616,9 +653,9 @@ export function CheckoutPage() {
                 <button
                   type="button"
                   onClick={() => setCurrentStep(3)}
-                  className="order-1 sm:order-2 sm:w-2/3 h-13 sm:h-14 bg-vendeur-emerald hover:bg-emerald-400 text-vendeur-coal font-black uppercase tracking-wider text-xs sm:text-sm rounded-2xl flex items-center justify-center gap-2.5 transition-all active:scale-98 shadow-xl shadow-vendeur-emerald/20 cursor-pointer"
+                  className="order-1 sm:order-2 sm:w-2/3 h-14 bg-vendeur-emerald hover:bg-emerald-400 text-vendeur-coal font-black uppercase tracking-wider text-xs sm:text-sm rounded-2xl flex items-center justify-center gap-2 transition-all active:scale-98 shadow-xl shadow-vendeur-emerald/20 cursor-pointer"
                 >
-                  <span>J'ai effectué le transfert → Confirmer</span>
+                  <span>J'ai envoyé le montant → Continuer</span>
                   <ChevronRight size={18} />
                 </button>
               </div>
@@ -691,7 +728,7 @@ export function CheckoutPage() {
                     <button
                       type="button"
                       onClick={() => setCurrentStep(2)}
-                      className="order-2 sm:order-1 sm:w-1/3 h-13 sm:h-14 bg-white/5 hover:bg-white/10 text-white font-black uppercase tracking-wider text-xs rounded-2xl transition-all cursor-pointer"
+                      className="order-2 sm:order-1 sm:w-1/3 h-14 bg-white/5 hover:bg-white/10 text-white font-black uppercase tracking-wider text-xs rounded-2xl transition-all cursor-pointer flex items-center justify-center"
                     >
                       ← Revoir les infos
                     </button>
@@ -699,14 +736,14 @@ export function CheckoutPage() {
                     <button
                       type="submit"
                       disabled={submittingProof}
-                      className="order-1 sm:order-2 sm:w-2/3 h-13 sm:h-14 bg-vendeur-emerald hover:bg-emerald-400 text-vendeur-coal font-black uppercase tracking-wider text-xs sm:text-sm rounded-2xl flex items-center justify-center gap-2.5 transition-all active:scale-98 shadow-xl shadow-vendeur-emerald/25 cursor-pointer disabled:opacity-50"
+                      className="order-1 sm:order-2 sm:w-2/3 h-14 bg-vendeur-emerald hover:bg-emerald-400 text-vendeur-coal font-black uppercase tracking-wider text-xs sm:text-sm rounded-2xl flex items-center justify-center gap-2 transition-all active:scale-98 shadow-xl shadow-vendeur-emerald/25 cursor-pointer disabled:opacity-50"
                     >
                       {submittingProof ? (
                         <Loader2 className="animate-spin" size={18} />
                       ) : (
                         <>
                           <CheckCircle2 size={18} />
-                          <span>Confirmer & Activer mon Vendeur IA</span>
+                          <span>Confirmer mon paiement</span>
                         </>
                       )}
                     </button>

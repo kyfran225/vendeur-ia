@@ -82,18 +82,12 @@ export function SalesDashboard() {
 
   useEffect(() => {
     if (socket) {
-      socket.on("whatsapp:qr", (data: { qrCodeData: string }) => {
-        toast.info("Nouveau QR Code WhatsApp généré !");
-        queryClient.setQueryData(["whatsapp:qr"], data.qrCodeData);
-      });
-
       socket.on("whatsapp:connected", () => {
         toast.success("WhatsApp connecté avec succès !");
         queryClient.invalidateQueries({ queryKey: ["dashboard"] });
       });
     }
     return () => {
-      socket?.off("whatsapp:qr");
       socket?.off("whatsapp:connected");
     };
   }, [socket, queryClient]);

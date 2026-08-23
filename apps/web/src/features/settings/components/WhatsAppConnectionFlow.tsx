@@ -19,17 +19,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { StepMilestoneModal } from "@/components/ui/StepMilestoneModal";
 
-export function WhatsAppConnectionFlow({
-  qrCode,
-  isConnectingSocket,
-  onInitBaileys,
-  onCancelScan
-}: {
-  qrCode?: string | null;
-  isConnectingSocket?: boolean;
-  onInitBaileys?: (force?: boolean) => void;
-  onCancelScan?: () => void;
-}) {
+export function WhatsAppConnectionFlow() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 

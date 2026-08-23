@@ -36,7 +36,7 @@ export const useAuthStore = create<AuthState>()(
       setHasHydrated: (val) => set({ _hasHydrated: val }),
       setSession: (session) => {
         const currentUser = (useAuthStore.getState() as any)?.user;
-        if (!currentUser || currentUser.id !== session.user.id || currentUser.whatsappNumber !== session.user.whatsappNumber) {
+        if (currentUser && (currentUser.id !== session.user.id || currentUser.whatsappNumber !== session.user.whatsappNumber)) {
           useOnboardingStore.getState().clearOnboarding();
         }
         set({

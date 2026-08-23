@@ -256,14 +256,17 @@ export class PaymentService {
     const reference = this.generateReference();
     const expiresAt = new Date(Date.now() + 48 * 3600 * 1000); // 48h validity
 
+    const finalCurrency = paymentConfig.targetCurrency || currency;
+    const finalAmount = paymentConfig.localAmount || amount;
+
     const intent = await PaymentIntentModel.create({
       userId,
       merchantId: merchant?._id,
       offerSlug,
       planName,
       billingInterval,
-      amount,
-      currency,
+      amount: finalAmount,
+      currency: finalCurrency,
       reference,
       provider: paymentMethod === "google_play" ? "google_play" : ((provider as any) || "manual_mobile_money"),
       paymentMethod,
@@ -274,10 +277,10 @@ export class PaymentService {
       status: "initiated",
       confidenceScore: 0,
       expiresAt,
-      metadata: { country, localAmount: paymentConfig.localAmount, localCurrency: paymentConfig.targetCurrency }
+      metadata: { country, localAmount: finalAmount, localCurrency: finalCurrency, baseAmountXOF: amount }
     });
 
-    logger.info(`[PaymentService] Intent créé: ${reference} (${amount} ${currency}) pour user ${userId} [Method: ${paymentMethod}]`);
+    logger.info(`[PaymentService] Intent créé: ${reference} (${finalAmount} ${finalCurrency}) pour user ${userId} [Method: ${paymentMethod}]`);
     return intent;
   }
 

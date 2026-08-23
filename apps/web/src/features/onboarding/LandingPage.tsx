@@ -315,8 +315,17 @@ function LandingHero({
   const getTime = () => new Date().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
 
   const handleCreateVendeur = async () => {
-    if (form.businessName && form.address && form.whatsappNumber) {
-      setTempData({ ...form, city: form.city, country: selectedCountry.code, currency: selectedCountry.currency });
+    const fullPhone = localPhone && selectedCountry ? `${selectedCountry.dialCode}${localPhone}` : form.whatsappNumber;
+    if (form.businessName && form.address && fullPhone) {
+      const updatedForm = {
+        ...form,
+        whatsappNumber: fullPhone,
+        city: form.city,
+        country: selectedCountry.code,
+        currency: selectedCountry.currency
+      };
+      setForm(updatedForm);
+      setTempData(updatedForm);
       setSimulatorActive(true);
       onFormUpdate(form.businessName);
       setStep("simulator");
@@ -324,12 +333,12 @@ function LandingHero({
 
       try {
         const response = await axios.post(`${API_URL}/api/commerce/demo/process`, {
-          ...form,
+          ...updatedForm,
           city: form.city || selectedCountry.defaultCity,
           country: selectedCountry.code,
           currency: selectedCountry.currency,
           message: "SYSTEM_INITIAL_GREETING",
-          phone: form.whatsappNumber,
+          phone: fullPhone,
           history: []
         });
 
@@ -352,6 +361,14 @@ function LandingHero({
   };
 
   const handleActivate = () => {
+    const fullPhone = localPhone && selectedCountry ? `${selectedCountry.dialCode}${localPhone}` : form.whatsappNumber;
+    setTempData({
+      ...form,
+      country: selectedCountry?.code || form.country,
+      currency: selectedCountry?.currency || "XOF",
+      whatsappNumber: fullPhone,
+      city: form.city
+    });
     setSimulatorActive(true);
     if (!user) {
       onAuth();

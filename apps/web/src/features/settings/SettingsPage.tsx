@@ -208,34 +208,6 @@ export function SettingsPage() {
     enabled: !!accessToken
   });
 
-  const qrCodeData = queryClient.getQueryData<string>(["whatsapp:qr"]);
-  const [localQrCode, setLocalQrCode] = useState<string | null>(qrCodeData || null);
-  const [isConnectingSocket, setIsConnectingSocket] = useState(false);
-  const socket = useSocket();
-
-  useEffect(() => {
-    if (!socket) return;
-    socket.on("whatsapp:qr", (data: { qrCodeData: string }) => {
-      setLocalQrCode(data.qrCodeData);
-      setIsConnectingSocket(false);
-      queryClient.setQueryData(["whatsapp:qr"], data.qrCodeData);
-    });
-    socket.on("whatsapp:connecting", () => {
-      setIsConnectingSocket(true);
-    });
-    socket.on("whatsapp:connected", () => {
-      setLocalQrCode(null);
-      setIsConnectingSocket(false);
-      queryClient.setQueryData(["whatsapp:qr"], null);
-      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
-    });
-    return () => {
-      socket.off("whatsapp:qr");
-      socket.off("whatsapp:connecting");
-      socket.off("whatsapp:connected");
-    };
-  }, [socket, queryClient]);
-
   if (isDashboardLoading || isKnowledgeLoading) {
     return (
       <div className="flex h-[70vh] items-center justify-center">
@@ -422,13 +394,6 @@ export function SettingsPage() {
           <ConnexionsTab
             merchant={merchant}
             systemSettings={systemSettings}
-            qrCode={localQrCode}
-            isConnectingSocket={isConnectingSocket}
-            onCancelScan={() => {
-              setLocalQrCode(null);
-              setIsConnectingSocket(false);
-              queryClient.setQueryData(["whatsapp:qr"], null);
-            }}
           />
         )}
         {activeTab === "growth" && <GrowthTab merchant={merchant} />}
@@ -1390,30 +1355,16 @@ function PersonnaliteTab({ merchant }: { merchant: any }) {
 }
 
 // --- ONGLET 4 : CONNEXIONS ---
-function ConnexionsTab({ merchant, systemSettings, qrCode, isConnectingSocket, onCancelScan }: { merchant: any; systemSettings: any; qrCode: string | null; isConnectingSocket?: boolean; onCancelScan: () => void }) {
+function ConnexionsTab({ merchant, systemSettings }: { merchant: any; systemSettings: any }) {
   const queryClient = useQueryClient();
   const [isFacebookModalOpen, setIsFacebookModalOpen] = useState(false);
   const [isMarketplaceGuideOpen, setIsMarketplaceGuideOpen] = useState(false);
   const [isPackProOpen, setIsPackProOpen] = useState(false);
 
-  const connectMutation = useMutation({
-    mutationFn: async (force?: boolean) => {
-      await apiClient.post("/api/whatsapp/connect", { force: !!force });
-    },
-    onSuccess: () => {
-      toast.info("Initialisation de WhatsApp...");
-    }
-  });
-
   return (
     <div className="space-y-6 md:space-y-10 animate-in slide-in-from-bottom-2 duration-500">
       <section id="whatsapp" className="bg-vendeur-coal border border-white/10 p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl md:rounded-[2.5rem] shadow-2xl scroll-mt-28">
-         <WhatsAppConnectionFlow
-           qrCode={qrCode}
-           isConnectingSocket={isConnectingSocket}
-           onInitBaileys={(force) => connectMutation.mutate(force)}
-           onCancelScan={onCancelScan}
-         />
+         <WhatsAppConnectionFlow />
       </section>
 
       <section className="space-y-6">

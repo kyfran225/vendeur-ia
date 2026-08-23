@@ -709,24 +709,28 @@ const CURRENCY_CONVERSION_RATES: Record<string, { rate: number; symbol: string; 
 // GET ALL OFFERS (Converts prices dynamically based on merchant billing currency)
 router.get("/offers", async (req, res) => {
   try {
-    let currency = (req.query.currency as string) || "XOF";
+    let currency = (req.query.currency as string) || "";
 
-    // If user is authenticated, use their actual merchant billing currency
-    const authHeader = req.headers.authorization;
-    if (authHeader && authHeader.startsWith("Bearer ")) {
-      try {
-        const token = authHeader.split(" ")[1];
-        const decoded: any = jwt.verify(token, env.JWT_SECRET);
-        if (decoded?.id) {
-          const merchant = await CommerceMerchantModel.findOne({ ownerId: decoded.id });
-          if (merchant) {
-            currency = merchant.billingCurrency || merchant.currency || "XOF";
+    // If no explicit query param, check authenticated merchant's billing currency
+    if (!currency) {
+      const authHeader = req.headers.authorization;
+      if (authHeader && authHeader.startsWith("Bearer ")) {
+        try {
+          const token = authHeader.split(" ")[1];
+          const decoded: any = jwt.verify(token, env.JWT_SECRET);
+          if (decoded?.id) {
+            const merchant = await CommerceMerchantModel.findOne({ ownerId: decoded.id });
+            if (merchant) {
+              currency = merchant.billingCurrency || merchant.currency || "XOF";
+            }
           }
+        } catch (e) {
+          // Fallback to XOF
         }
-      } catch (e) {
-        // Fallback to query param or XOF if token is invalid
       }
     }
+
+    currency = (currency || "XOF").toUpperCase();
 
     let offers = await OfferModel.find({ isActive: true }).sort({ sortOrder: 1 });
 

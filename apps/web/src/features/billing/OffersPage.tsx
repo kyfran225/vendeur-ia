@@ -72,11 +72,6 @@ export function OffersPage() {
         </button>
 
         <div className="text-center space-y-3 sm:space-y-4 max-w-2xl mx-auto">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-vendeur-emerald/10 border border-vendeur-emerald/20 text-vendeur-emerald text-xs sm:text-sm font-black uppercase tracking-wider">
-            <Sparkles size={14} />
-            <span>Tarifs Transparents & Sans Surprise</span>
-          </div>
-
           <h1 className="text-3xl sm:text-5xl md:text-6xl font-black uppercase tracking-tight italic text-white leading-tight">
             Choisissez votre <span className="text-vendeur-emerald">Vendeur IA</span>
           </h1>

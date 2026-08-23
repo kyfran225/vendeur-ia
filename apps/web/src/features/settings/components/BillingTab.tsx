@@ -478,9 +478,9 @@ export function BillingTab({ merchant }: { merchant: any }) {
         {/* 3.1 Pack Pro Expert Clé en Main */}
         <div className="bg-gradient-to-r from-vendeur-coal via-vendeur-coal to-black border border-white/10 hover:border-vendeur-emerald/30 p-6 sm:p-8 rounded-2xl sm:rounded-3xl flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative overflow-hidden transition-all shadow-2xl">
           <div className="space-y-3 relative z-10 text-left max-w-xl">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-vendeur-emerald/10 text-vendeur-emerald border border-vendeur-emerald/20 text-xs font-black uppercase tracking-wider">
-              <Sparkles size={14} />
-              <span>Pack Pro Expert • Accompagnement VIP</span>
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/25 text-[11px] sm:text-xs font-black uppercase tracking-wider whitespace-nowrap shadow-sm">
+              <Sparkles size={13} className="shrink-0 text-emerald-400" />
+              <span>Pack Pro Expert · VIP</span>
             </div>
             <h4 className="text-xl sm:text-2xl font-black uppercase tracking-tight text-white leading-tight">
               Besoin d'une installation clé en main par notre équipe ?

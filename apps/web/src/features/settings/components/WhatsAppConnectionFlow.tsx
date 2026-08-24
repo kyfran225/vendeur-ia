@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import {
   ShieldCheck,
-  Bot,
   Loader2,
   Check,
   Sparkles,
@@ -13,6 +12,7 @@ import {
   Zap,
   ExternalLink
 } from "lucide-react";
+import { AssistantIcon } from "@/components/ui/AssistantIcon";
 import { toast } from "sonner";
 import { apiClient } from "@/lib/apiClient";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -206,7 +206,7 @@ export function WhatsAppConnectionFlow() {
               onClick={() => navigate("/dashboard?test_ia=true")}
               className="h-12 px-4 rounded-xl bg-white/5 border border-white/10 text-white font-bold uppercase tracking-wider text-xs hover:bg-white/10 hover:border-white/20 transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-[0.98]"
             >
-              <Bot size={15} />
+              <AssistantIcon size={16} color="#10B981" />
               <span>Simulateur IA</span>
             </button>
           </div>

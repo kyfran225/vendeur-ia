@@ -219,8 +219,8 @@ function HomePanel({ dashboard, onOpenTestIA }: { dashboard: any, onOpenTestIA: 
           <div className="relative z-10 space-y-6">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-5">
               <div className="flex items-center gap-3.5 md:gap-5">
-                <div className="h-12 w-12 sm:h-14 sm:w-14 rounded-2xl overflow-hidden flex items-center justify-center p-1 bg-[#01524b]/50 border border-vendeur-emerald/30 shadow-xl shadow-vendeur-emerald/20 group-hover:rotate-3 transition-transform shrink-0">
-                  <AssistantIcon size="100%" withBackground={true} className="rounded-xl shadow-md" />
+                <div className="h-10 w-10 sm:h-12 sm:w-12 flex items-center justify-center group-hover:rotate-3 transition-transform shrink-0">
+                  <AssistantIcon size="100%" color="#10B981" withBackground={false} className="drop-shadow-[0_0_8px_rgba(16,185,129,0.3)]" />
                 </div>
                 <div className="min-w-0">
                   <h2 className="text-base sm:text-xl md:text-3xl font-black text-white uppercase tracking-tight leading-tight truncate">

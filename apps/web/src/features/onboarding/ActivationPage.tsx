@@ -3,7 +3,6 @@ import { motion } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
 import { apiClient } from "@/lib/apiClient";
 import {
-  Bot,
   ShieldCheck,
   Sparkles,
   MessageSquare,
@@ -13,6 +12,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "@/stores/authStore";
 import { VendeurIALoader } from "@/components/ui/VendeurIALoader";
+import { AssistantIcon } from "@/components/ui/AssistantIcon";
 
 export function ActivationPage() {
   const navigate = useNavigate();
@@ -62,9 +62,9 @@ export function ActivationPage() {
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ type: "spring", duration: 0.8 }}
-            className="h-20 w-20 sm:h-24 sm:w-24 bg-vendeur-emerald rounded-[2rem] flex items-center justify-center text-vendeur-coal mx-auto shadow-2xl shadow-vendeur-emerald/30 relative z-10"
+            className="h-20 w-20 sm:h-24 sm:w-24 bg-vendeur-emerald rounded-[2rem] flex items-center justify-center text-vendeur-coal mx-auto shadow-2xl shadow-vendeur-emerald/30 relative z-10 p-3"
           >
-            <Bot size={44} />
+            <AssistantIcon size={52} color="#0B131B" />
           </motion.div>
           <div className="absolute -inset-2 bg-vendeur-emerald/20 rounded-[2.5rem] blur-xl animate-pulse" />
         </div>

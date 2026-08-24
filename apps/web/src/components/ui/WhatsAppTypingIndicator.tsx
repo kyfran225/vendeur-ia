@@ -79,7 +79,7 @@ export function WhatsAppTypingIndicator({
     return (
       <div className={cn("flex gap-3 mr-auto max-w-[85%] animate-in fade-in slide-in-from-bottom-2 duration-300", className)}>
         <div className="h-8 w-8 rounded-xl flex items-center justify-center shrink-0">
-          <AssistantIcon size="100%" bubbleFillColor="#10B981" withBackground={false} />
+          <AssistantIcon size="100%" color="#10B981" withBackground={false} />
         </div>
         <div className="p-3.5 sm:p-4 rounded-2xl bg-[#1f2c34]/90 border border-white/10 text-white/70 text-xs flex items-center gap-3 rounded-tl-none shadow-lg">
           <div className="flex items-center gap-1.5 shrink-0 pt-2 pb-1 px-1">

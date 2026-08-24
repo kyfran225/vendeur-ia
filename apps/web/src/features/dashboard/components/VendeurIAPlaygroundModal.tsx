@@ -160,7 +160,7 @@ export function VendeurIAPlaygroundModal({ isOpen, onClose, merchant }: VendeurI
           <div className="p-4 sm:p-5 md:p-6 bg-vendeur-bg border-b border-white/10 flex items-center justify-between shrink-0 gap-3">
             <div className="flex items-center gap-3 min-w-0 flex-1">
               <div className="h-10 w-10 sm:h-12 sm:w-12 shrink-0 flex items-center justify-center">
-                <AssistantIcon size="100%" bubbleFillColor="#10B981" withBackground={false} className="drop-shadow-[0_0_8px_rgba(16,185,129,0.3)]" />
+                <AssistantIcon size="100%" color="#10B981" withBackground={false} className="drop-shadow-[0_0_8px_rgba(16,185,129,0.3)]" />
               </div>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2 flex-wrap">
@@ -242,7 +242,7 @@ export function VendeurIAPlaygroundModal({ isOpen, onClose, merchant }: VendeurI
                       : "bg-transparent p-0"
                   )}
                 >
-                  {msg.role === "customer" ? <User size={16} /> : <AssistantIcon size="100%" bubbleFillColor="#10B981" withBackground={false} />}
+                  {msg.role === "customer" ? <User size={16} /> : <AssistantIcon size="100%" color="#10B981" withBackground={false} />}
                 </div>
 
                 <div

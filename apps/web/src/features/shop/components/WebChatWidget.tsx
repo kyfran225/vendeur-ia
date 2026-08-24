@@ -3,7 +3,6 @@ import {
   MessageCircle,
   X,
   Send,
-  Bot,
   User,
   Loader2,
   Sparkles,
@@ -14,6 +13,7 @@ import {
   Zap,
   Globe
 } from "lucide-react";
+import { AssistantIcon } from "@/components/ui/AssistantIcon";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/apiClient";
 import { clsx, type ClassValue } from "clsx";
@@ -168,10 +168,10 @@ export function WebChatWidget({ merchant }: { merchant: any }) {
            <header className="p-3 md:p-5 bg-vendeur-bg/80 backdrop-blur-xl border-b border-white/5 flex items-center justify-between">
               <div className="flex items-center gap-3">
                  <div className="h-10 w-10 rounded-xl bg-vendeur-emerald/10 border border-vendeur-emerald/20 flex items-center justify-center text-vendeur-emerald">
-                    <Bot size={22} />
+                    <AssistantIcon size={22} color="#10B981" />
                  </div>
                  <div>
-                    <h3 className="text-sm font-black uppercase tracking-tight text-white">Assistant ${merchant.businessName}</h3>
+                    <h3 className="text-sm font-black uppercase tracking-tight text-white">Assistant {merchant.businessName}</h3>
                     <div className="flex items-center gap-1.5">
                        <div className="h-1.5 w-1.5 rounded-full bg-vendeur-emerald animate-pulse" />
                        <p className="text-[9px] font-black uppercase text-vendeur-emerald tracking-widest">IA en ligne</p>

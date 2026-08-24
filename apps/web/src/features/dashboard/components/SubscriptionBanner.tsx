@@ -1,5 +1,6 @@
 import React from "react";
-import { AlertTriangle, ArrowRight, Zap, Sparkles, PauseCircle, PlayCircle, Bot } from "lucide-react";
+import { AlertTriangle, ArrowRight, Zap, Sparkles, PauseCircle, PlayCircle } from "lucide-react";
+import { AssistantIcon } from "@/components/ui/AssistantIcon";
 import { Link } from "react-router-dom";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
@@ -33,8 +34,8 @@ export function SubscriptionBanner({ status, expiresAt, autoReply = true, onOpen
       <div className="relative overflow-hidden p-5 md:p-6 rounded-[2rem] border border-amber-500/30 bg-amber-500/10 text-amber-100 animate-in fade-in slide-in-from-top-4 duration-500 mb-6 shadow-xl">
         <div className="flex flex-col md:flex-row items-start md:items-center gap-4 justify-between">
           <div className="flex items-center gap-3.5">
-            <div className="h-11 w-11 md:h-12 md:w-12 rounded-2xl bg-amber-500 text-vendeur-coal flex items-center justify-center shrink-0 shadow-lg shadow-amber-500/20 font-black">
-              <Bot size={24} />
+            <div className="h-11 w-11 md:h-12 md:w-12 rounded-2xl bg-amber-500 text-vendeur-coal flex items-center justify-center shrink-0 shadow-lg shadow-amber-500/20 font-black p-2">
+              <AssistantIcon size={26} color="#0B131B" />
             </div>
             <div>
               <div className="flex items-center gap-2">

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { AssistantIcon } from "@/components/ui/AssistantIcon";
 import {
-  Bot,
   Check,
   ChevronLeft,
   ChevronRight,
@@ -118,7 +118,7 @@ function BentoFeatures() {
     {
       title: "IA Vision™ Intelligente",
       desc: "Prenez une photo, Vendeur IA identifie le produit, fixe un prix et génère une fiche de vente irrésistible en 3 secondes.",
-      icon: <Bot className="text-emerald-400" size={24} />,
+      icon: <AssistantIcon className="text-emerald-400" size={24} color="#34d399" />,
       size: "large",
       color: "bg-emerald-500/10 border-emerald-500/20",
       image: "/assets/landing/vision-demo.png" // Placeholder for visual
@@ -508,7 +508,7 @@ function LandingHero({
 
               <div className="flex flex-col sm:flex-row items-center sm:gap-3 bg-white/5 border border-white/10 px-2 py-3 sm:px-4 sm:py-2 rounded-2xl backdrop-blur-sm">
                 <div className="h-7 w-7 sm:h-8 sm:w-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-400 mb-2 sm:mb-0">
-                  <Bot size={16} className="sm:w-[18px] sm:h-[18px]" />
+                  <AssistantIcon size={18} color="#34d399" />
                 </div>
                 <div className="text-center sm:text-left">
                   <p className="text-lg sm:text-xl font-black text-white leading-none">24/7</p>
@@ -615,8 +615,8 @@ function LandingHero({
                   {/* WhatsApp UI Inside Frame */}
                   <div className="bg-[#202c33] px-3.5 pt-8 pb-3 flex items-center justify-between border-b border-white/5 shrink-0">
                     <div className="flex items-center gap-2.5 min-w-0">
-                      <div className="h-9 w-9 rounded-full bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0">
-                         <Bot size={20} />
+                      <div className="h-9 w-9 rounded-full bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0 p-1">
+                         <AssistantIcon size={20} color="#34d399" />
                       </div>
                       <div className="min-w-0">
                         <p className="text-xs font-bold text-white leading-tight truncate">{form.businessName}</p>

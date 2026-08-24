@@ -160,7 +160,7 @@ export function SmartAssistantCard({ dashboard, onOpenTestIA }: SmartAssistantCa
             <div className="flex flex-wrap items-center justify-between gap-3 min-w-0">
               <div className="flex items-center gap-3 sm:gap-3.5 min-w-0">
                 <div className="h-10 w-10 sm:h-12 sm:w-12 shrink-0 transition-transform duration-300 group-hover:scale-105 flex items-center justify-center">
-                  <AssistantIcon size="100%" bubbleFillColor="#10B981" withBackground={false} className="drop-shadow-[0_0_8px_rgba(16,185,129,0.3)]" />
+                  <AssistantIcon size="100%" color="#10B981" withBackground={false} className="drop-shadow-[0_0_8px_rgba(16,185,129,0.3)]" />
                 </div>
                 <div className="min-w-0">
                   <h3 className="text-base sm:text-lg md:text-xl font-black text-white uppercase tracking-tight truncate">

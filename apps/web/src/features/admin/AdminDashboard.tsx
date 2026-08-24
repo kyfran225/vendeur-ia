@@ -17,7 +17,6 @@ import {
   CheckCircle2,
   XCircle,
   ExternalLink,
-  Bot,
   ShoppingBag,
   Activity,
   Zap,
@@ -35,6 +34,7 @@ import {
 import { VendeurIALoader } from "@/components/ui/VendeurIALoader";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuthStore } from "@/stores/authStore";
+import { AssistantIcon } from "@/components/ui/AssistantIcon";
 import { apiClient } from "@/lib/apiClient";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
@@ -164,7 +164,7 @@ export function AdminDashboard() {
     { id: "merchants", label: "Merchants", icon: <Users size={18}/> },
     { id: "tickets", label: "Tickets", icon: <MessageSquare size={18}/>, badge: unreadTicketsCount },
     { id: "billing", label: "Finance", icon: <Banknote size={18}/> },
-    { id: "ai", label: "AI Brain", icon: <Bot size={18}/> },
+    { id: "ai", label: "AI Brain", icon: <AssistantIcon size={18} color="currentColor"/> },
     { id: "settings", label: "System", icon: <Settings size={18}/> },
   ];
 
@@ -392,7 +392,7 @@ function OverviewPanel({ stats, failedJobs, statsLoading }: { stats: any; failed
         <StatCard label="Abonnements" value={`${(stats?.totalRevenue || 0).toLocaleString()} XOF`} icon={<Banknote className="text-vendeur-emerald" />} />
         <StatCard label="GMV (Ventes)" value={`${(stats?.totalGMV || 0).toLocaleString()} XOF`} icon={<ShoppingBag className="text-vendeur-emerald" />} />
         <StatCard label="Messages IA" value={stats?.totalConversations || 0} icon={<MessageSquare className="text-vendeur-emerald" />} />
-        <StatCard label="Coûts IA" value={`$${(stats?.totalAiCost || 0).toFixed(2)}`} icon={<Bot className="text-vendeur-emerald" />} />
+        <StatCard label="Coûts IA" value={`$${(stats?.totalAiCost || 0).toFixed(2)}`} icon={<AssistantIcon size={20} color="#10B981" />} />
       </div>
 
       {/* --- QUEUE MONITORING SECTION --- */}
@@ -758,7 +758,7 @@ function SettingsPanel({ settings, onUpdate, isUpdating }: { settings: any, onUp
       </section>
 
       <div className="bg-vendeur-emerald/5 border border-vendeur-emerald/20 p-6 rounded-[2rem] flex items-center gap-4">
-        <Bot className="text-vendeur-emerald shrink-0" size={24} />
+        <AssistantIcon size={24} color="#10B981" className="shrink-0" />
         <p className="text-[10px] text-vendeur-emerald/60 font-bold leading-relaxed uppercase tracking-wider">
             Attention : Toute modification ici impacte immédiatement l'ensemble des commerçants et la rentabilité de la plateforme.
         </p>

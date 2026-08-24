@@ -110,6 +110,7 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
   const [systemWhatsAppNumber, setSystemWhatsAppNumber] = useState<string>("22505111157");
   const [isCheckingManual, setIsCheckingManual] = useState(false);
   const [mismatchError, setMismatchError] = useState<string | null>(null);
+  const [showMobileQr, setShowMobileQr] = useState(false);
 
   // Sync phone if opened with existing tempData
   useEffect(() => {
@@ -573,22 +574,72 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
                     </a>
                   </div>
 
-                  {/* MOBILE VIEW: 1-Click WhatsApp Direct Open */}
+                  {/* MOBILE VIEW: 1-Click WhatsApp Direct Open + Optional QR Code Toggle */}
                   <div className="sm:hidden space-y-3">
-                    <p className="text-xs text-white/80 leading-relaxed font-medium">
-                      Appuyez sur le bouton vert ci-dessous puis sur <strong className="text-emerald-400">Envoyer</strong> dans WhatsApp :
-                    </p>
+                    {!showMobileQr ? (
+                      <>
+                        <p className="text-xs text-white/80 leading-relaxed font-medium">
+                          Appuyez sur le bouton vert ci-dessous puis sur <strong className="text-emerald-400">Envoyer</strong> dans WhatsApp :
+                        </p>
 
-                    <a
-                      href={`https://wa.me/${(systemWhatsAppNumber && !systemWhatsAppNumber.includes("00000000")) ? systemWhatsAppNumber : "22505111157"}?text=${encodeURIComponent(`CONNEXION ${sessionCode || (authSessionId ? authSessionId.slice(0, 6).toUpperCase() : "")}`)}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="w-full h-14 bg-vendeur-emerald hover:bg-emerald-400 text-vendeur-coal font-black text-xs sm:text-sm uppercase tracking-wider rounded-2xl flex items-center justify-center gap-2.5 transition-all shadow-xl shadow-vendeur-emerald/20 hover:scale-[1.01] active:scale-[0.98] cursor-pointer whitespace-nowrap px-4"
-                    >
-                      <WhatsAppIcon size={20} className="shrink-0" />
-                      <span>Envoyer sur WhatsApp</span>
-                      <ChevronRight size={18} className="shrink-0" />
-                    </a>
+                        <a
+                          href={`https://wa.me/${(systemWhatsAppNumber && !systemWhatsAppNumber.includes("00000000")) ? systemWhatsAppNumber : "22505111157"}?text=${encodeURIComponent(`CONNEXION ${sessionCode || (authSessionId ? authSessionId.slice(0, 6).toUpperCase() : "")}`)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="w-full h-14 bg-vendeur-emerald hover:bg-emerald-400 text-vendeur-coal font-black text-xs sm:text-sm uppercase tracking-wider rounded-2xl flex items-center justify-center gap-2.5 transition-all shadow-xl shadow-vendeur-emerald/20 hover:scale-[1.01] active:scale-[0.98] cursor-pointer whitespace-nowrap px-4"
+                        >
+                          <WhatsAppIcon size={20} className="shrink-0" />
+                          <span>Envoyer sur WhatsApp</span>
+                          <ChevronRight size={18} className="shrink-0" />
+                        </a>
+
+                        {/* Toggle to show QR code for 2nd phone */}
+                        <div className="pt-1 text-center">
+                          <button
+                            type="button"
+                            onClick={() => setShowMobileQr(true)}
+                            className="text-[11px] text-vendeur-emerald hover:underline font-bold flex items-center justify-center gap-1.5 mx-auto cursor-pointer py-1"
+                          >
+                            <QrCode size={14} className="shrink-0" />
+                            <span>WhatsApp sur un autre téléphone ? Afficher le QR Code</span>
+                          </button>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="flex flex-col items-center justify-center p-3 bg-black/40 border border-white/5 rounded-2xl space-y-2.5 text-center animate-in fade-in duration-200">
+                        <div className="relative p-2 bg-white rounded-2xl shadow-xl shadow-vendeur-emerald/10 inline-block">
+                          <img
+                            src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(`https://wa.me/${(systemWhatsAppNumber && !systemWhatsAppNumber.includes("00000000")) ? systemWhatsAppNumber : "22505111157"}?text=${encodeURIComponent(`CONNEXION ${sessionCode || (authSessionId ? authSessionId.slice(0, 6).toUpperCase() : "")}`)}`)}&bgcolor=ffffff&color=0b120f&margin=4`}
+                            alt="QR Code Connexion WhatsApp"
+                            className="w-32 h-32 rounded-xl object-contain block"
+                            loading="lazy"
+                          />
+                          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                            <div className="w-7 h-7 rounded-full bg-[#0c1410] border-2 border-white flex items-center justify-center shadow-md">
+                              <WhatsAppIcon size={14} />
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="space-y-0.5">
+                          <p className="text-xs font-bold text-white flex items-center justify-center gap-1.5">
+                            <Smartphone size={13} className="text-vendeur-emerald" />
+                            <span>Scannez avec votre 2ème téléphone</span>
+                          </p>
+                          <p className="text-[10px] text-white/50 max-w-xs">
+                            Pointez l'appareil photo de votre autre smartphone vers ce QR Code.
+                          </p>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => setShowMobileQr(false)}
+                          className="text-[11px] text-white/60 hover:text-white underline font-medium cursor-pointer pt-1"
+                        >
+                          ← Revenir au bouton 1-Clic
+                        </button>
+                      </div>
+                    )}
                   </div>
 
                   {/* Instant Check Button */}
@@ -615,6 +666,7 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
                     setWhatsappStep("input");
                     setOtpValue("");
                     setMismatchError(null);
+                    setShowMobileQr(false);
                   }}
                   className="text-xs text-white/40 font-semibold hover:text-white hover:underline transition-all cursor-pointer py-1"
                 >

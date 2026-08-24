@@ -1,0 +1,103 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1254 1254" width="100%" height="100%">
+  <!-- 1. Background: Squircle Vert Foncé -->
+  <rect x="20" y="20" width="1214" height="1214" rx="275" ry="275" fill="#01524b" />
+
+  <!-- 2. Bulle de dialogue extérieure : Contour BLANC plein/épais avec la pointe en bas à gauche -->
+  <path
+    d="M 622,250
+       C 830,250 990,410 990,622
+       C 990,834 830,994 622,994
+       C 545,994 472,971 412,932
+       L 336,1028
+       L 354,888
+       C 292,824 254,728 254,622
+       C 254,410 414,250 622,250 Z"
+    fill="none"
+    stroke="#ffffff"
+    stroke-width="58"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+
+  <!-- Remplissage blanc de la pointe de la bulle -->
+  <path
+    d="M 436,948
+       L 336,1028
+       L 354,888
+       C 375,910 404,932 436,948 Z"
+    fill="#ffffff"
+  />
+
+  <!-- 3. Tête / Casque du Robot (Blanc) -->
+  <path
+    d="M 425,700
+       C 425,525 505,480 622,480
+       C 739,480 819,525 819,700
+       C 819,815 735,845 622,845
+       C 509,845 425,815 425,700 Z"
+    fill="none"
+    stroke="#ffffff"
+    stroke-width="48"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+
+  <!-- 4. Antenne : Tige blanche + Boule blanche -->
+  <line x1="622" y1="480" x2="622" y2="395" stroke="#ffffff" stroke-width="40" stroke-linecap="round" />
+  <circle cx="622" cy="362" r="32" fill="#ffffff" />
+
+  <!-- 5. Écouteur gauche (Blanc) -->
+  <path
+    d="M 412,595
+       C 355,595 332,640 332,670
+       C 332,700 355,745 412,745"
+    fill="#ffffff"
+  />
+
+  <!-- 6. Écouteur droit (Blanc) -->
+  <path
+    d="M 832,595
+       C 889,595 912,640 912,670
+       C 912,700 889,745 832,745"
+    fill="#ffffff"
+  />
+
+  <!-- 7. Microphone : Tige courbée blanche + embout blanc -->
+  <path
+    d="M 838,695
+       C 855,770 805,830 732,834"
+    fill="none"
+    stroke="#ffffff"
+    stroke-width="36"
+    stroke-linecap="round"
+  />
+  <ellipse cx="729" cy="834" rx="34" ry="28" fill="#ffffff" transform="rotate(-15 729 834)" />
+
+  <!-- 8. Yeux souriants (Blancs) -->
+  <path
+    d="M 494,680
+       C 506,648 550,648 562,680"
+    fill="none"
+    stroke="#ffffff"
+    stroke-width="28"
+    stroke-linecap="round"
+  />
+  <path
+    d="M 681,680
+       C 693,648 737,648 749,680"
+    fill="none"
+    stroke="#ffffff"
+    stroke-width="28"
+    stroke-linecap="round"
+  />
+
+  <!-- 9. Sourire (Blanc) -->
+  <path
+    d="M 578,760
+       C 595,788 648,788 665,760"
+    fill="none"
+    stroke="#ffffff"
+    stroke-width="26"
+    stroke-linecap="round"
+  />
+</svg>

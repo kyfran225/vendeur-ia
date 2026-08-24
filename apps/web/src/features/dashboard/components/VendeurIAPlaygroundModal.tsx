@@ -20,6 +20,8 @@ import { toast } from "sonner";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { stripActionTags } from "@/lib/utils";
+import { WhatsAppTypingIndicator } from "@/components/ui/WhatsAppTypingIndicator";
+import { AssistantIcon } from "@/components/ui/AssistantIcon";
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -157,8 +159,8 @@ export function VendeurIAPlaygroundModal({ isOpen, onClose, merchant }: VendeurI
           {/* Top Header */}
           <div className="p-4 sm:p-5 md:p-6 bg-vendeur-bg border-b border-white/10 flex items-center justify-between shrink-0 gap-3">
             <div className="flex items-center gap-3 min-w-0 flex-1">
-              <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-xl sm:rounded-2xl bg-vendeur-emerald flex items-center justify-center text-vendeur-coal shadow-lg shadow-vendeur-emerald/20 shrink-0">
-                <Bot size={22} className="sm:w-6 sm:h-6" />
+              <div className="h-10 w-10 sm:h-12 sm:w-12 shrink-0 flex items-center justify-center">
+                <AssistantIcon size="100%" bubbleFillColor="#10B981" withBackground={false} className="drop-shadow-[0_0_8px_rgba(16,185,129,0.3)]" />
               </div>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2 flex-wrap">
@@ -234,13 +236,13 @@ export function VendeurIAPlaygroundModal({ isOpen, onClose, merchant }: VendeurI
               >
                 <div
                   className={cn(
-                    "h-8 w-8 rounded-xl flex items-center justify-center shrink-0 text-xs font-black shadow-md",
+                    "h-8 w-8 rounded-xl flex items-center justify-center shrink-0 text-xs font-black",
                     msg.role === "customer"
-                      ? "bg-white/10 text-white"
-                      : "bg-vendeur-emerald text-vendeur-coal"
+                      ? "bg-white/10 text-white shadow-md"
+                      : "bg-transparent p-0"
                   )}
                 >
-                  {msg.role === "customer" ? <User size={16} /> : <Bot size={16} />}
+                  {msg.role === "customer" ? <User size={16} /> : <AssistantIcon size="100%" bubbleFillColor="#10B981" withBackground={false} />}
                 </div>
 
                 <div
@@ -265,17 +267,7 @@ export function VendeurIAPlaygroundModal({ isOpen, onClose, merchant }: VendeurI
             ))}
 
             {isLoading && (
-              <div className="flex gap-3 mr-auto max-w-[85%]">
-                <div className="h-8 w-8 rounded-xl bg-vendeur-emerald flex items-center justify-center text-vendeur-coal shrink-0">
-                  <Bot size={16} />
-                </div>
-                <div className="p-4 rounded-2xl bg-black/60 border border-white/10 text-white/50 text-xs flex items-center gap-2 rounded-tl-none">
-                  <span className="h-2 w-2 rounded-full bg-vendeur-emerald animate-bounce" />
-                  <span className="h-2 w-2 rounded-full bg-vendeur-emerald animate-bounce [animation-delay:0.2s]" />
-                  <span className="h-2 w-2 rounded-full bg-vendeur-emerald animate-bounce [animation-delay:0.4s]" />
-                  <span className="italic ml-2 text-[11px]">Le Vendeur IA compose sa réponse...</span>
-                </div>
-              </div>
+              <WhatsAppTypingIndicator variant="playground" />
             )}
             <div ref={messagesEndRef} />
           </div>

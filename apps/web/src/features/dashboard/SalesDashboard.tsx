@@ -10,7 +10,8 @@ import {
   Zap,
   Share2,
   ExternalLink,
-  Play
+  Play,
+  PauseCircle
 } from "lucide-react";
 
 import { useSocket } from "@/hooks/useSocket";
@@ -21,10 +22,11 @@ import { toast } from "sonner";
 import { apiClient } from "@/lib/apiClient";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
-import { SetupGuide } from "./components/SetupGuide";
-import { SubscriptionBanner } from "./components/SubscriptionBanner";
+import { SmartAssistantCard } from "./components/SmartAssistantCard";
 import { VendeurIAPlaygroundModal } from "./components/VendeurIAPlaygroundModal";
 import { SetupCompletionModal } from "./components/SetupCompletionModal";
+import { PauseConfirmationModal } from "@/components/modals/PauseConfirmationModal";
+import { AssistantIcon } from "@/components/ui/AssistantIcon";
 import { getMerchantShopUrl, getMerchantShopPath } from "@/lib/slugify";
 
 import { VendeurIALoader } from "@/components/ui/VendeurIALoader";
@@ -108,31 +110,31 @@ export function SalesDashboard() {
 
   return (
     <main className="max-w-6xl mx-auto p-4 md:p-10 space-y-8 pb-24 md:pb-8 animate-in fade-in duration-700">
-      <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-2">
-        <div className="space-y-1">
-          <h1 className="text-3xl md:text-5xl font-black tracking-tighter uppercase text-white flex items-center gap-4">
-            <LayoutDashboard className="text-vendeur-emerald" size={36} />
-            Tableau de Bord
+      <header className="flex flex-col md:flex-row md:items-end justify-between gap-5 mb-2">
+        <div className="space-y-1.5">
+          <h1 className="text-2xl sm:text-3xl md:text-5xl font-black tracking-tighter uppercase text-white flex items-center gap-3 sm:gap-4">
+            <LayoutDashboard className="text-vendeur-emerald shrink-0" size={32} />
+            <span>Tableau de Bord</span>
           </h1>
-          <p className="text-white/40 text-sm md:text-lg">Gérez votre croissance et suivez vos performances.</p>
+          <p className="text-white/50 text-xs sm:text-sm md:text-base font-medium">Gérez votre croissance et suivez vos performances en direct.</p>
         </div>
 
         <div className="hidden md:flex gap-3">
           <button
             onClick={handleShareShop}
-            className="h-12 px-6 rounded-2xl bg-white/5 border border-white/10 text-white text-[10px] font-black uppercase tracking-widest hover:bg-white/10 transition-all flex items-center justify-center text-center gap-2"
+            className="h-12 px-6 rounded-2xl bg-white/5 border border-white/10 text-white text-xs font-black uppercase tracking-wider hover:bg-white/10 transition-all flex items-center justify-center text-center gap-2 cursor-pointer active:scale-95"
           >
             <Share2 size={16} />
-            Partager ma vitrine
+            <span>Partager ma vitrine</span>
           </button>
 
           <Link
             to={getMerchantShopPath(dashboard?.merchant)}
             target="_blank"
-            className="h-12 px-6 rounded-2xl bg-vendeur-emerald text-vendeur-coal text-[10px] font-black uppercase tracking-widest hover:scale-105 active:scale-95 transition-all flex items-center justify-center text-center gap-2 shadow-lg shadow-vendeur-emerald/20"
+            className="h-12 px-6 rounded-2xl bg-vendeur-emerald text-vendeur-coal text-xs font-black uppercase tracking-wider hover:scale-105 active:scale-95 transition-all flex items-center justify-center text-center gap-2 shadow-lg shadow-vendeur-emerald/20 cursor-pointer"
           >
             <ExternalLink size={16} />
-            Voir ma boutique
+            <span>Voir ma boutique</span>
           </Link>
         </div>
       </header>
@@ -158,31 +160,29 @@ export function SalesDashboard() {
 }
 
 function HomePanel({ dashboard, onOpenTestIA }: { dashboard: any, onOpenTestIA: () => void }) {
+  const [isPauseModalOpen, setIsPauseModalOpen] = useState(false);
   const tips = dashboard?.aiGrowthAdvice?.tips || [];
   const status = dashboard?.merchant?.whatsappConfig?.status || 'disconnected';
-  const setupStatus = dashboard?.setupStatus;
-  const subscription = dashboard?.merchant?.subscription;
+  const isFullyOperational = dashboard?.setupStatus?.isFullyOperational;
+  const isPaidActive = dashboard?.merchant?.subscription?.status === "active";
+  const isPaused = isPaidActive && dashboard?.merchant?.aiSettings?.autoReply === false;
+  const isExpired = dashboard?.merchant?.subscription?.status === "past_due";
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-700">
-      {/* SUBSCRIPTION STATUS BANNER */}
-      <SubscriptionBanner
-        status={subscription?.status}
-        expiresAt={subscription?.expiresAt}
-        autoReply={dashboard?.merchant?.aiSettings?.autoReply}
-        onOpenTestIA={onOpenTestIA}
-      />
-
-      {/* INTELLIGENT SETUP GUIDE */}
-      {setupStatus && !setupStatus.isFullyOperational && (
-        <SetupGuide
-          setupStatus={setupStatus}
-          businessName={dashboard?.merchant?.businessName || "Votre boutique"}
+      {/* 
+        ASSISTANT GUIDAGE EN COURS DE CONFIGURATION OU EN CAS DE PAUSE/EXPIRATION
+        Si la boutique est en cours de configuration ou nécessite une action vitale (pause, expiration),
+        l'Assistant SmartAssistantCard prend la priorité absolue.
+      */}
+      {(!isFullyOperational || isPaused || isExpired) && (
+        <SmartAssistantCard
           dashboard={dashboard}
+          onOpenTestIA={onOpenTestIA}
         />
       )}
 
-      {/* MOBILE-ONLY QUICK ACTION BUTTONS (placed below Setup Guide on mobile) */}
+      {/* MOBILE-ONLY QUICK ACTION BUTTONS (Generous height, non-squished) */}
       <div className="grid grid-cols-2 md:hidden gap-3">
         <button
           onClick={() => {
@@ -190,107 +190,128 @@ function HomePanel({ dashboard, onOpenTestIA }: { dashboard: any, onOpenTestIA: 
             navigator.clipboard.writeText(url);
             toast.success("Lien personnalisé de votre vitrine copié !");
           }}
-          className="h-14 px-4 rounded-2xl bg-white/5 border border-white/10 text-white text-[10px] font-black uppercase tracking-wider hover:bg-white/10 transition-all flex items-center justify-center text-center gap-2"
+          className="min-h-[52px] h-13 px-4 rounded-2xl bg-white/5 border border-white/10 text-white text-xs font-black uppercase tracking-wider hover:bg-white/10 transition-all flex items-center justify-center text-center gap-2 active:scale-95 cursor-pointer shadow-sm shrink-0"
         >
-          <Share2 size={16} className="shrink-0" />
-          <span>Partager ma vitrine</span>
+          <Share2 size={16} className="shrink-0 text-white/70" />
+          <span className="truncate">Partager vitrine</span>
         </button>
 
         <Link
           to={getMerchantShopPath(dashboard?.merchant)}
           target="_blank"
-          className="h-14 px-4 rounded-2xl bg-vendeur-emerald text-vendeur-coal text-[10px] font-black uppercase tracking-wider hover:scale-105 active:scale-95 transition-all flex items-center justify-center text-center gap-2 shadow-lg shadow-vendeur-emerald/20"
+          className="min-h-[52px] h-13 px-4 rounded-2xl bg-vendeur-emerald text-vendeur-coal text-xs font-black uppercase tracking-wider hover:scale-105 active:scale-95 transition-all flex items-center justify-center text-center gap-2 shadow-lg shadow-vendeur-emerald/20 cursor-pointer shrink-0"
         >
           <ExternalLink size={16} className="shrink-0" />
-          <span>Voir ma boutique</span>
+          <span className="truncate">Voir boutique</span>
         </Link>
       </div>
 
-      {/* AI GROWTH ADVISOR SECTION */}
-      <section className="relative overflow-hidden bg-vendeur-emerald/10 border border-vendeur-emerald/20 p-6 md:p-10 rounded-[2.5rem] md:rounded-[3.5rem] group shadow-2xl">
-        <div className="absolute top-0 right-0 p-8 md:p-12 opacity-10 group-hover:scale-110 transition-transform duration-700 pointer-events-none">
-           <Sparkles size={160} className="text-vendeur-emerald" />
-        </div>
+      {/* 
+        CONSEILLER DE CROISSANCE IA
+        Affiché lorsque la boutique est 100% opérationnelle pour propulser les ventes du quotidien
+      */}
+      {isFullyOperational && !isPaused && !isExpired && (
+        <section className="relative overflow-hidden bg-vendeur-emerald/10 border border-vendeur-emerald/20 p-5 sm:p-7 md:p-10 rounded-3xl sm:rounded-[2.5rem] md:rounded-[3.5rem] group shadow-2xl space-y-6">
+          <div className="absolute top-0 right-0 p-8 md:p-12 opacity-10 group-hover:scale-110 transition-transform duration-700 pointer-events-none">
+             <Sparkles size={160} className="text-vendeur-emerald" />
+          </div>
 
-        <div className="relative z-10 space-y-8">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-            <div className="flex items-center gap-3 md:gap-5">
-              <div className="h-9 w-9 md:h-14 md:w-14 rounded-xl md:rounded-2xl bg-vendeur-emerald flex items-center justify-center text-vendeur-coal shadow-2xl shadow-vendeur-emerald/30 group-hover:rotate-6 transition-transform shrink-0">
-                <Bot className="w-6 h-6 md:w-8 md:h-8" />
-              </div>
-              <div className="min-w-0">
-                <h2 className="text-base xs:text-lg md:text-3xl font-black text-white uppercase tracking-tighter leading-none truncate">
-                  Conseiller de Croissance IA
-                </h2>
-                <div className="flex items-center gap-2 mt-1 md:mt-2">
-                  <div className={cn("h-2 w-2 md:h-2.5 md:w-2.5 rounded-full animate-pulse", status === 'connected' ? "bg-vendeur-emerald" : "bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]")} />
-                  <p className="text-[10px] md:text-xs font-black uppercase text-vendeur-emerald/80 tracking-widest truncate">
-                    {status === 'connected' ? "IA en ligne & active" : "IA en attente de connexion"}
-                  </p>
+          <div className="relative z-10 space-y-6">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-5">
+              <div className="flex items-center gap-3.5 md:gap-5">
+                <div className="h-12 w-12 sm:h-14 sm:w-14 rounded-2xl overflow-hidden flex items-center justify-center p-1 bg-[#01524b]/50 border border-vendeur-emerald/30 shadow-xl shadow-vendeur-emerald/20 group-hover:rotate-3 transition-transform shrink-0">
+                  <AssistantIcon size="100%" withBackground={true} className="rounded-xl shadow-md" />
+                </div>
+                <div className="min-w-0">
+                  <h2 className="text-base sm:text-xl md:text-3xl font-black text-white uppercase tracking-tight leading-tight truncate">
+                    Conseiller de Croissance IA
+                  </h2>
+                  <div className="flex items-center gap-2 mt-1">
+                    <div className={cn("h-2 w-2 md:h-2.5 md:w-2.5 rounded-full animate-pulse", status === 'connected' ? "bg-vendeur-emerald" : "bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]")} />
+                    <p className="text-xs sm:text-xs font-bold uppercase text-vendeur-emerald tracking-wider truncate">
+                      {status === 'connected' ? "IA en ligne & active 24h/24" : "IA en attente de connexion"}
+                    </p>
+                  </div>
                 </div>
               </div>
+
+              <div className="flex flex-wrap sm:flex-nowrap items-center gap-2.5 w-full md:w-auto">
+                <button
+                  type="button"
+                  onClick={() => setIsPauseModalOpen(true)}
+                  className="flex items-center justify-center gap-2 min-h-[48px] h-12 px-4 py-3 rounded-2xl bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/30 text-sky-300 text-xs font-black uppercase tracking-wider transition-all w-full sm:w-auto cursor-pointer active:scale-95 shrink-0"
+                  title="Mettre le Vendeur IA en pause pour répondre manuellement"
+                >
+                  <PauseCircle size={15} />
+                  <span>Mettre en pause</span>
+                </button>
+
+                <button
+                  onClick={onOpenTestIA}
+                  className="flex items-center justify-center gap-2 min-h-[48px] h-12 px-4 py-3 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 text-white text-xs font-black uppercase tracking-wider transition-all w-full sm:w-auto cursor-pointer active:scale-95 shrink-0"
+                >
+                  <Play size={14} fill="currentColor" />
+                  <span>Tester</span>
+                </button>
+
+                <button
+                  onClick={async () => {
+                    try {
+                      toast.loading("Génération de vos 3 statuts WhatsApp...");
+                      await apiClient.post("/api/commerce/whatsapp-status/send-to-me");
+                      toast.dismiss();
+                      toast.success("Pack de 3 Statuts WhatsApp envoyé sur votre WhatsApp !");
+                    } catch (err: any) {
+                      toast.dismiss();
+                      toast.error(err.response?.data?.error || "Erreur lors de l'envoi des statuts");
+                    }
+                  }}
+                  className="flex items-center justify-center gap-2.5 min-h-[48px] h-12 px-5 py-3 rounded-2xl bg-vendeur-emerald text-vendeur-coal hover:bg-emerald-400 text-xs font-black uppercase tracking-wider transition-all w-full sm:w-auto shadow-lg shadow-vendeur-emerald/20 cursor-pointer active:scale-95 shrink-0"
+                >
+                  <Sparkles size={16} />
+                  <span>Recevoir mes Statuts du Jour</span>
+                </button>
+              </div>
             </div>
 
-            <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto mt-2 md:mt-0">
-              <button
-                onClick={async () => {
-                  try {
-                    toast.loading("Génération de vos 3 statuts WhatsApp...");
-                    await apiClient.post("/api/commerce/whatsapp-status/send-to-me");
-                    toast.dismiss();
-                    toast.success("Pack de 3 Statuts WhatsApp envoyé sur votre WhatsApp !");
-                  } catch (err: any) {
-                    toast.dismiss();
-                    toast.error(err.response?.data?.error || "Erreur lors de l'envoi des statuts");
-                  }
-                }}
-                className="flex items-center justify-center gap-2.5 px-5 py-3 rounded-xl bg-white/10 hover:bg-white/15 border border-white/15 text-white text-[11px] md:text-xs font-black uppercase tracking-widest transition-all w-full sm:w-auto shadow-md"
-              >
-                <Sparkles size={16} className="text-vendeur-emerald" />
-                Recevoir mes Statuts du Jour
-              </button>
-
-              <button
-                onClick={onOpenTestIA}
-                className="flex items-center justify-center gap-2.5 px-6 py-3 rounded-xl bg-vendeur-emerald text-vendeur-coal text-[11px] md:text-xs font-black uppercase tracking-widest hover:scale-105 transition-all shadow-lg shadow-vendeur-emerald/20 w-full sm:w-auto"
-              >
-                <Play size={16} className="fill-current" />
-                Tester mon Vendeur IA
-              </button>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5 sm:gap-4">
+              {tips.map((tip: any, i: number) => (
+                <Link
+                  key={i}
+                  to={tip.action || "#"}
+                  className="bg-black/40 backdrop-blur-md border border-white/5 p-4 sm:p-5 rounded-2xl text-xs sm:text-sm font-medium leading-relaxed hover:border-vendeur-emerald/40 hover:bg-black/60 transition-all active:scale-[0.98] text-white/90"
+                >
+                  {tip.text || tip}
+                </Link>
+              ))}
+              {tips.length === 0 && (
+                 <div className="col-span-3 text-white/40 text-xs sm:text-sm italic">Analyse de votre business en cours...</div>
+              )}
             </div>
           </div>
+        </section>
+      )}
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {tips.map((tip: any, i: number) => (
-              <Link
-                key={i}
-                to={tip.action || "#"}
-                className="bg-black/40 backdrop-blur-md border border-white/5 p-4 rounded-2xl text-xs font-medium leading-relaxed hover:border-vendeur-emerald/40 hover:bg-black/60 transition-all active:scale-[0.98]"
-              >
-                {tip.text || tip}
-              </Link>
-            ))}
-            {tips.length === 0 && (
-               <div className="col-span-3 text-white/40 text-xs italic">Analyse de votre business en cours...</div>
-            )}
-          </div>
-        </div>
-      </section>
+      {/* Modal de Confirmation de Mise en Pause */}
+      <PauseConfirmationModal
+        isOpen={isPauseModalOpen}
+        onClose={() => setIsPauseModalOpen(false)}
+      />
 
-      <div id="tour-dashboard-stats" className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+      <div id="tour-dashboard-stats" className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4 md:gap-6">
         <MetricCard
-          icon={<Banknote className="text-vendeur-emerald" />}
+          icon={<Banknote className="text-vendeur-emerald" size={22} />}
           label="Revenu Jour"
           value={formatAmount(dashboard?.metrics?.revenueToday || 0)}
           suffix={dashboard?.merchant?.currency || "XOF"}
         />
-        <MetricCard icon={<MessageCircle className="text-blue-400" />} label="Conversations" value={String(dashboard?.metrics?.conversationsToday || 0)} />
-        <MetricCard icon={<Zap className="text-amber-400" />} label="Commandes" value={String(dashboard?.metrics?.ordersToday || 0)} />
-        <MetricCard icon={<TrendingUp className="text-rose-400" />} label="Conversion" value={`${dashboard?.metrics?.conversionRate || 0}%`} />
+        <MetricCard icon={<MessageCircle className="text-blue-400" size={22} />} label="Conversations" value={String(dashboard?.metrics?.conversationsToday || 0)} />
+        <MetricCard icon={<Zap className="text-amber-400" size={22} />} label="Commandes" value={String(dashboard?.metrics?.ordersToday || 0)} />
+        <MetricCard icon={<TrendingUp className="text-rose-400" size={22} />} label="Conversion" value={`${dashboard?.metrics?.conversionRate || 0}%`} />
       </div>
 
-      <section className="bg-vendeur-coal border border-white/5 rounded-[2.5rem] p-8 shadow-2xl">
-        <h2 className="text-xl font-black mb-6 uppercase tracking-tight">Pipeline de Vente</h2>
+      <section className="bg-vendeur-coal border border-white/5 rounded-3xl sm:rounded-[2.5rem] p-6 sm:p-8 shadow-2xl">
+        <h2 className="text-lg sm:text-xl font-black mb-6 uppercase tracking-tight text-white">Pipeline de Vente</h2>
         <div className="space-y-4">
           <PipelineStep label="Discussion WhatsApp" value={dashboard?.metrics?.conversationsToday || 0} max={Math.max(20, dashboard?.metrics?.conversationsToday || 0)} color="bg-blue-400" />
           <PipelineStep label="Paiement Confirmé" value={dashboard?.metrics?.ordersToday || 0} max={Math.max(20, dashboard?.metrics?.conversationsToday || 0)} color="bg-amber-400" />
@@ -300,25 +321,25 @@ function HomePanel({ dashboard, onOpenTestIA }: { dashboard: any, onOpenTestIA: 
 
       {/* DYNAMIC AI INSIGHTS SECTION */}
       {dashboard?.merchant?.knowledge?.businessRules?.dynamicInsights?.length > 0 && (
-        <section className="bg-vendeur-coal border border-white/5 rounded-[2.5rem] p-8 shadow-2xl">
+        <section className="bg-vendeur-coal border border-white/5 rounded-3xl sm:rounded-[2.5rem] p-6 sm:p-8 shadow-2xl">
           <div className="flex items-center gap-3 mb-6">
             <Sparkles className="text-amber-400" size={20} />
-            <h2 className="text-xl font-black uppercase tracking-tight">Conseils Rentables de votre Vendeur IA</h2>
+            <h2 className="text-lg sm:text-xl font-black uppercase tracking-tight text-white">Conseils Rentables de votre Vendeur IA</h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {dashboard.merchant.knowledge.businessRules.dynamicInsights.slice(-4).reverse().map((insight: any, i: number) => (
               <div key={i} className="bg-vendeur-bg border border-white/5 p-5 rounded-2xl flex items-start gap-4 hover:border-vendeur-emerald/30 transition-all">
                 <div className={cn(
-                  "h-8 w-8 rounded-lg flex items-center justify-center shrink-0",
+                  "h-9 w-9 rounded-xl flex items-center justify-center shrink-0",
                   insight.type === 'product' ? "bg-blue-500/10 text-blue-400" :
                   insight.type === 'customer' ? "bg-purple-500/10 text-purple-400" : "bg-emerald-500/10 text-emerald-400"
                 )}>
-                  {insight.type === 'product' ? <Package size={16} /> :
-                   insight.type === 'customer' ? <Bot size={16} /> : <TrendingUp size={16} />}
+                  {insight.type === 'product' ? <Package size={18} /> :
+                   insight.type === 'customer' ? <AssistantIcon size={20} withBackground={false} /> : <TrendingUp size={18} />}
                 </div>
                 <div>
-                  <p className="text-sm font-medium leading-relaxed">{insight.insight}</p>
-                  <p className="text-[10px] text-white/20 uppercase font-black mt-2">Appris le {new Date(insight.createdAt).toLocaleDateString()}</p>
+                  <p className="text-xs sm:text-sm font-medium leading-relaxed text-white/90">{insight.insight}</p>
+                  <p className="text-[10px] text-white/30 uppercase font-black mt-2">Appris le {new Date(insight.createdAt).toLocaleDateString()}</p>
                 </div>
               </div>
             ))}
@@ -331,13 +352,13 @@ function HomePanel({ dashboard, onOpenTestIA }: { dashboard: any, onOpenTestIA: 
 
 function MetricCard({ icon, label, value, suffix }: { icon: React.ReactNode; label: string; value: string; suffix?: string }) {
   return (
-    <div className="bg-vendeur-coal/50 backdrop-blur-sm border border-white/10 p-4 xs:p-5 md:p-6 rounded-[2rem] space-y-3 md:space-y-4 shadow-xl hover:border-white/20 transition-all group">
-      <div className="h-9 w-9 md:h-12 md:w-12 bg-white/5 rounded-xl md:rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">{icon}</div>
+    <div className="bg-vendeur-coal/50 backdrop-blur-sm border border-white/10 p-4 xs:p-5 md:p-6 rounded-2xl sm:rounded-[2rem] space-y-3 sm:space-y-4 shadow-xl hover:border-white/20 transition-all group">
+      <div className="h-10 w-10 sm:h-12 sm:w-12 bg-white/5 rounded-xl sm:rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">{icon}</div>
       <div>
-        <p className="text-[8px] md:text-[10px] font-black uppercase tracking-widest text-white/30 truncate">{label}</p>
-        <div className="flex items-baseline gap-1 mt-0.5 md:mt-1">
-          <p className="text-lg md:text-2xl font-black text-white">{value}</p>
-          {suffix && <span className="text-[9px] md:text-xs font-black text-white/20 uppercase">{suffix}</span>}
+        <p className="text-[10px] sm:text-xs font-black uppercase tracking-wider text-white/40 truncate">{label}</p>
+        <div className="flex items-baseline gap-1 mt-0.5 sm:mt-1">
+          <p className="text-xl sm:text-2xl md:text-3xl font-black text-white">{value}</p>
+          {suffix && <span className="text-[10px] sm:text-xs font-black text-white/30 uppercase">{suffix}</span>}
         </div>
       </div>
     </div>
@@ -347,12 +368,12 @@ function MetricCard({ icon, label, value, suffix }: { icon: React.ReactNode; lab
 function PipelineStep({ label, value, max, color }: { label: string; value: number; max: number; color: string }) {
   const percentage = Math.min(100, (value / max) * 100);
   return (
-    <div className="flex items-center gap-4">
-      <div className="w-48 text-sm font-bold text-white/60">{label}</div>
-      <div className="flex-1 h-3 bg-white/5 rounded-full overflow-hidden">
+    <div className="flex items-center gap-3 sm:gap-4">
+      <div className="w-36 sm:w-48 text-xs sm:text-sm font-bold text-white/70 truncate">{label}</div>
+      <div className="flex-1 h-3.5 bg-white/5 rounded-full overflow-hidden">
         <div className={cn("h-full transition-all duration-1000", color)} style={{ width: `${percentage}%` }} />
       </div>
-      <div className="w-12 text-right font-black">{value}</div>
+      <div className="w-12 text-right font-black text-xs sm:text-sm text-white">{value}</div>
     </div>
   );
 }

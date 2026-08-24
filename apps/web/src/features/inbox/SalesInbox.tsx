@@ -2,7 +2,8 @@ import React, { useState, useEffect, useRef } from "react";
 import {
   MessageCircle, Search, MoreVertical, CheckCheck, ShieldCheck,
   Send, User, Bot, Loader2, Sparkles, X, Instagram, Facebook,
-  ShoppingCart, Plus, Minus, Package, ChevronLeft, Globe, CreditCard
+  ShoppingCart, Plus, Minus, Package, ChevronLeft, Globe, CreditCard,
+  PauseCircle, PlayCircle
 } from "lucide-react";
 
 // Add TikTok Icon (Lucide doesn't have it natively sometimes, using a custom or placeholder)
@@ -28,6 +29,7 @@ import { VendeurIALoader } from "@/components/ui/VendeurIALoader";
 import { OrderCreationModal } from "@/features/orders/OrderCreationModal";
 import { FastPayModal } from "./FastPayModal";
 import { VoiceRecorder } from "./components/VoiceRecorder";
+import { PauseConfirmationModal } from "@/components/modals/PauseConfirmationModal";
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -61,6 +63,7 @@ export function SalesInbox() {
   const [followupData, setFollowupData] = useState<{ text: string; isOpen: boolean }>({ text: "", isOpen: false });
   const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
   const [isFastPayModalOpen, setIsFastPayModalOpen] = useState(false);
+  const [isPauseModalOpen, setIsPauseModalOpen] = useState(false);
   const [onlineSessions, setOnlineSessions] = useState<Set<string>>(new Set());
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -176,6 +179,22 @@ export function SalesInbox() {
     updateStatusMutation.mutate({ id: selectedChat, status: newStatus });
   };
 
+  const resumeGlobalSalesMutation = useMutation({
+    mutationFn: async () => {
+      await apiClient.patch("/api/commerce/ai-settings", {
+        autoReply: true
+      });
+    },
+    onSuccess: () => {
+      toast.success("Vendeur IA réactivé ! Les réponses automatiques 24h/24 sont relancées. 🚀");
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+      queryClient.invalidateQueries({ queryKey: ["conversations"] });
+    },
+    onError: () => {
+      toast.error("Impossible de réactiver le Vendeur IA.");
+    }
+  });
+
   const generateFollowupMutation = useMutation({
     mutationFn: async (id: string) => {
       const res = await apiClient.post(`/api/commerce/conversations/${id}/generate-followup`, {});
@@ -220,8 +239,32 @@ export function SalesInbox() {
         <div className="p-6 space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-black">Messages</h2>
-            <div className="px-3 py-1 bg-vendeur-emerald/10 border border-vendeur-emerald/20 rounded-full">
-              <span className="text-[10px] font-black text-vendeur-emerald uppercase tracking-widest">Live</span>
+            <div className="flex items-center gap-2">
+              {merchant?.aiSettings?.autoReply !== false ? (
+                <button
+                  type="button"
+                  onClick={() => setIsPauseModalOpen(true)}
+                  className="flex items-center gap-1 px-2.5 py-1 bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/30 rounded-full text-[10px] font-black text-sky-300 uppercase tracking-wider transition-all cursor-pointer"
+                  title="Mettre en pause le Vendeur IA"
+                >
+                  <PauseCircle size={12} />
+                  <span>Pause</span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => resumeGlobalSalesMutation.mutate()}
+                  disabled={resumeGlobalSalesMutation.isPending}
+                  className="flex items-center gap-1 px-2.5 py-1 bg-vendeur-emerald/15 hover:bg-vendeur-emerald/25 border border-vendeur-emerald/30 rounded-full text-[10px] font-black text-vendeur-emerald uppercase tracking-wider transition-all cursor-pointer shadow-sm"
+                  title="Reprendre les ventes automatiques 24h/24"
+                >
+                  <PlayCircle size={12} />
+                  <span>{resumeGlobalSalesMutation.isPending ? "Reprise..." : "Reprendre"}</span>
+                </button>
+              )}
+              <div className="px-2.5 py-1 bg-vendeur-emerald/10 border border-vendeur-emerald/20 rounded-full">
+                <span className="text-[10px] font-black text-vendeur-emerald uppercase tracking-widest">Live</span>
+              </div>
             </div>
           </div>
           <div className="relative">
@@ -264,39 +307,40 @@ export function SalesInbox() {
       )}>
         {selectedChat ? (
           <div className="flex-1 flex flex-col h-full max-w-6xl mx-auto w-full border-x border-white/5 bg-[#0b141a] relative min-w-0 overflow-x-hidden">
-            <header className="p-4 md:p-4 border-b border-white/5 flex items-center justify-between bg-[#202c33] sticky top-0 z-30">
-              <div className="flex items-center gap-3">
+            <header className="px-3 py-2.5 md:p-4 border-b border-white/5 flex items-center justify-between bg-[#202c33] sticky top-0 z-30 gap-2">
+              <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
                 <button
                   onClick={() => setShowMobileChat(false)}
-                  className="md:hidden p-2 -ml-2 text-white/40 hover:text-white"
+                  className="md:hidden p-1 -ml-1 text-white/50 hover:text-white shrink-0"
+                  aria-label="Retour aux conversations"
                 >
-                  <ChevronLeft size={24} />
+                  <ChevronLeft size={22} />
                 </button>
-                <div className="h-10 w-10 rounded-full bg-vendeur-emerald/10 flex items-center justify-center border border-vendeur-emerald/20 shrink-0">
-                  <User className="text-vendeur-emerald" size={20} />
+                <div className="h-9 w-9 sm:h-10 sm:w-10 rounded-full bg-vendeur-emerald/10 flex items-center justify-center border border-vendeur-emerald/20 shrink-0">
+                  <User className="text-vendeur-emerald" size={18} />
                 </div>
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2">
-                    <p className="font-bold text-sm truncate">{formatCustomerDisplayName(activeChatData?.customerId)}</p>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <p className="font-bold text-xs sm:text-sm text-white truncate">{formatCustomerDisplayName(activeChatData?.customerId)}</p>
                     {activeChatData?.customerId?.loyaltyPoints > 0 && (
-                      <div className="flex items-center gap-1 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-md">
-                        <span className="text-[9px] font-black text-amber-500 uppercase">{activeChatData.customerId.loyaltyPoints} pts</span>
+                      <div className="flex items-center gap-1 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 rounded shrink-0">
+                        <span className="text-[8px] sm:text-[9px] font-black text-amber-500 uppercase">{activeChatData.customerId.loyaltyPoints} pts</span>
                       </div>
                     )}
                     {activeChatData?.customerId?.loyaltyPoints >= vipThreshold && (
-                      <span className="text-[9px] font-black bg-vendeur-emerald text-vendeur-coal px-1.5 rounded uppercase tracking-tighter">VIP</span>
+                      <span className="text-[8px] sm:text-[9px] font-black bg-vendeur-emerald text-vendeur-coal px-1.5 rounded uppercase tracking-tighter shrink-0">VIP</span>
                     )}
                   </div>
                   {typingChats[selectedChat] ? (
-                    <WhatsAppTypingIndicator variant="header" label="Vendeur IA est en train d'écrire" />
+                    <WhatsAppTypingIndicator variant="header" label="Vendeur IA écrit..." />
                   ) : (
-                    <p className="text-[10px] font-black uppercase tracking-widest flex items-center gap-1 text-vendeur-emerald">
-                      {activeChatData?.platform === 'instagram' && <Instagram size={14} />}
-                      {activeChatData?.platform === 'facebook' && <Facebook size={14} className="text-blue-500" />}
-                      {activeChatData?.platform === 'tiktok' && <TikTokIcon size={14} />}
-                      {activeChatData?.platform === 'web' && <Globe size={14} className="text-sky-400" />}
-                      {(!activeChatData?.platform || activeChatData?.platform === 'whatsapp') && <MessageCircle size={14} />}
-                      <span className="ml-1">
+                    <p className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest flex items-center gap-1 text-vendeur-emerald truncate">
+                      {activeChatData?.platform === 'instagram' && <Instagram size={12} className="shrink-0" />}
+                      {activeChatData?.platform === 'facebook' && <Facebook size={12} className="text-blue-500 shrink-0" />}
+                      {activeChatData?.platform === 'tiktok' && <TikTokIcon size={12} className="shrink-0" />}
+                      {activeChatData?.platform === 'web' && <Globe size={12} className="text-sky-400 shrink-0" />}
+                      {(!activeChatData?.platform || activeChatData?.platform === 'whatsapp') && <MessageCircle size={12} className="shrink-0" />}
+                      <span className="truncate">
                         {activeChatData?.platform === 'web'
                           ? (onlineSessions.has(activeChatData?.customerId?.platformId) ? "En ligne" : "Hors ligne")
                           : "En ligne"}
@@ -305,61 +349,103 @@ export function SalesInbox() {
                   )}
                 </div>
               </div>
-              <div className="flex items-center gap-2 md:gap-4">
+
+              {/* Action Buttons (Clean & Proportional on Mobile) */}
+              <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
                 <button
                   onClick={() => selectedChat && generateFollowupMutation.mutate(selectedChat)}
                   disabled={generateFollowupMutation.isPending}
-                  className="flex items-center justify-center h-10 w-10 md:h-auto md:w-auto md:px-4 md:py-1.5 bg-sky-500/10 border border-sky-500/30 text-sky-400 rounded-full hover:bg-sky-500/20 transition-all group"
+                  className="flex items-center justify-center h-8 w-8 sm:h-9 sm:w-auto sm:px-3 sm:py-1.5 bg-sky-500/10 border border-sky-500/30 text-sky-400 rounded-full hover:bg-sky-500/20 transition-all active:scale-95 group cursor-pointer"
                   title="Relancer IA"
                 >
                   {generateFollowupMutation.isPending ? (
-                    <Loader2 size={14} className="animate-spin" />
+                    <Loader2 size={13} className="animate-spin" />
                   ) : (
-                    <MessageCircle size={14} className="group-hover:rotate-12 transition-transform" />
+                    <MessageCircle size={13} className="group-hover:rotate-12 transition-transform" />
                   )}
-                  <span className="hidden md:inline ml-2 text-[10px] font-black uppercase tracking-widest">Relancer IA</span>
+                  <span className="hidden sm:inline ml-1.5 text-[10px] font-black uppercase tracking-widest">Relance</span>
                 </button>
+
                 <button
                   onClick={() => setIsFastPayModalOpen(true)}
-                  className="flex items-center justify-center h-10 w-10 md:h-auto md:w-auto md:px-4 md:py-1.5 bg-amber-500/10 border border-amber-500/30 text-amber-400 rounded-full hover:bg-amber-500/20 transition-all group"
+                  className="flex items-center justify-center h-8 w-8 sm:h-9 sm:w-auto sm:px-3 sm:py-1.5 bg-amber-500/10 border border-amber-500/30 text-amber-400 rounded-full hover:bg-amber-500/20 transition-all active:scale-95 group cursor-pointer"
                   title="Fast Pay Mobile Money (Wave / OM / MoMo)"
                 >
-                  <CreditCard size={14} className="group-hover:scale-110 transition-transform" />
-                  <span className="hidden md:inline ml-2 text-[10px] font-black uppercase tracking-widest">Encaisser</span>
+                  <CreditCard size={13} className="group-hover:scale-110 transition-transform" />
+                  <span className="hidden sm:inline ml-1.5 text-[10px] font-black uppercase tracking-widest">Encaisser</span>
                 </button>
+
                 <button
                   onClick={() => setIsOrderModalOpen(true)}
-                  className="flex items-center justify-center h-10 w-10 md:h-auto md:w-auto md:px-4 md:py-1.5 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 rounded-full hover:bg-emerald-500/20 transition-all group"
-                  title="Valider Commande"
+                  className="flex items-center justify-center h-8 w-8 sm:h-9 sm:w-auto sm:px-3 sm:py-1.5 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 rounded-full hover:bg-emerald-500/20 transition-all active:scale-95 group cursor-pointer"
+                  title="Créer une Commande"
                 >
-                  <ShoppingCart size={14} className="group-hover:scale-110 transition-transform" />
-                  <span className="hidden md:inline ml-2 text-[10px] font-black uppercase tracking-widest">Vendre</span>
+                  <ShoppingCart size={13} className="group-hover:scale-110 transition-transform" />
+                  <span className="hidden sm:inline ml-1.5 text-[10px] font-black uppercase tracking-widest">Vendre</span>
                 </button>
+
                 <button
                   onClick={toggleTakeover}
                   disabled={updateStatusMutation.isPending}
                   className={cn(
-                    "flex items-center justify-center h-10 w-10 md:h-auto md:w-auto md:px-4 md:py-1.5 rounded-full border transition-all hover:scale-105 active:scale-95",
+                    "flex items-center justify-center h-8 w-8 sm:h-9 sm:w-auto sm:px-3 sm:py-1.5 rounded-full border transition-all active:scale-95 cursor-pointer",
                     activeChatData?.status === "needs_human"
-                      ? "bg-rose-500/10 border-rose-500/30 text-rose-400"
-                      : "bg-vendeur-emerald/10 border-vendeur-emerald/30 text-vendeur-emerald"
+                      ? "bg-rose-500/15 border-rose-500/40 text-rose-300"
+                      : "bg-vendeur-emerald/15 border-vendeur-emerald/40 text-vendeur-emerald"
                   )}
-                  title={activeChatData?.status === "needs_human" ? "Main Humaine" : "IA Active"}
+                  title={activeChatData?.status === "needs_human" ? "Contrôle Manuel (IA coupée)" : "IA Active (Réponses auto)"}
                 >
                   {activeChatData?.status === "needs_human" ? (
                     <>
-                      <User size={14} />
-                      <span className="hidden md:inline ml-2 text-[10px] font-black uppercase tracking-widest">Main</span>
+                      <User size={13} />
+                      <span className="hidden sm:inline ml-1.5 text-[10px] font-black uppercase tracking-widest">Manuel</span>
                     </>
                   ) : (
                     <>
-                      <ShieldCheck size={14} />
-                      <span className="hidden md:inline ml-2 text-[10px] font-black uppercase tracking-widest">IA</span>
+                      <ShieldCheck size={13} />
+                      <span className="hidden sm:inline ml-1.5 text-[10px] font-black uppercase tracking-widest">IA 24/7</span>
                     </>
                   )}
                 </button>
               </div>
             </header>
+
+            {/* GLOBAL PAUSE NOTIFICATION BANNER */}
+            {merchant?.aiSettings?.autoReply === false && (
+              <div className="bg-sky-500/10 border-b border-sky-500/20 px-3 sm:px-4 py-2 flex items-center justify-between text-xs text-sky-200 animate-in fade-in duration-300">
+                <div className="flex items-center gap-2 min-w-0">
+                  <PauseCircle size={14} className="text-sky-400 shrink-0" />
+                  <span className="text-[10px] sm:text-xs font-medium truncate">
+                    Vendeur IA en pause générale (WhatsApp Manuel).
+                  </span>
+                </div>
+                <button
+                  onClick={() => resumeGlobalSalesMutation.mutate()}
+                  disabled={resumeGlobalSalesMutation.isPending}
+                  className="text-[9px] sm:text-[10px] font-black uppercase text-vendeur-coal bg-sky-400 hover:bg-sky-300 px-2.5 py-1 rounded-lg transition-all active:scale-95 shrink-0 ml-2 cursor-pointer shadow-sm"
+                >
+                  {resumeGlobalSalesMutation.isPending ? "..." : "Reprendre 24h/24"}
+                </button>
+              </div>
+            )}
+
+            {/* PER-CHAT MANUAL HANDOVER NOTIFICATION */}
+            {activeChatData?.status === "needs_human" && merchant?.aiSettings?.autoReply !== false && (
+              <div className="bg-rose-500/10 border-b border-rose-500/20 px-3 sm:px-4 py-1.5 flex items-center justify-between text-xs text-rose-200 animate-in fade-in duration-300">
+                <div className="flex items-center gap-2 min-w-0">
+                  <User size={13} className="text-rose-400 shrink-0" />
+                  <span className="text-[10px] sm:text-xs font-medium truncate">
+                    Main manuelle prise sur ce client (IA en veille).
+                  </span>
+                </div>
+                <button
+                  onClick={toggleTakeover}
+                  className="text-[9px] sm:text-[10px] font-black uppercase text-vendeur-coal bg-rose-400 hover:bg-rose-300 px-2 py-0.5 rounded-lg transition-all active:scale-95 shrink-0 ml-2 cursor-pointer"
+                >
+                  Rendre la main à l'IA
+                </button>
+              </div>
+            )}
 
             <div
               ref={scrollRef}
@@ -480,6 +566,12 @@ export function SalesInbox() {
           customerName={activeChatData?.customerId?.name || "Client"}
         />
       )}
+
+      {/* Modal de Confirmation de Mise en Pause */}
+      <PauseConfirmationModal
+        isOpen={isPauseModalOpen}
+        onClose={() => setIsPauseModalOpen(false)}
+      />
     </div>
   );
 }

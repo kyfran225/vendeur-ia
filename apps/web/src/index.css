@@ -155,3 +155,64 @@
   animation: brandRingSpin 1.6s cubic-bezier(0.55, 0.15, 0.45, 0.85) infinite;
   will-change: transform;
 }
+
+/* Dynamic Typing Wave (WhatsApp & Vendeur IA Native High-Visibility Ondulation) */
+@keyframes typingWave {
+  0%, 60%, 100% {
+    transform: translateY(0) scale(0.85);
+    opacity: 0.4;
+  }
+  30% {
+    transform: translateY(-9px) scale(1.35);
+    opacity: 1;
+    box-shadow: 0 0 12px rgba(16, 185, 129, 0.95), 0 0 4px rgba(52, 211, 153, 1);
+  }
+}
+
+.animate-typing-dot-1 {
+  animation: typingWave 1.25s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+  animation-delay: 0s;
+  will-change: transform, opacity, box-shadow;
+}
+
+.animate-typing-dot-2 {
+  animation: typingWave 1.25s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+  animation-delay: 0.2s;
+  will-change: transform, opacity, box-shadow;
+}
+
+.animate-typing-dot-3 {
+  animation: typingWave 1.25s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+  animation-delay: 0.4s;
+  will-change: transform, opacity, box-shadow;
+}
+
+@keyframes typingWaveCompact {
+  0%, 60%, 100% {
+    transform: translateY(0) scale(0.8);
+    opacity: 0.4;
+  }
+  30% {
+    transform: translateY(-5px) scale(1.25);
+    opacity: 1;
+    box-shadow: 0 0 8px rgba(16, 185, 129, 0.95);
+  }
+}
+
+.animate-typing-compact-1 {
+  animation: typingWaveCompact 1.1s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+  animation-delay: 0s;
+  will-change: transform, opacity, box-shadow;
+}
+
+.animate-typing-compact-2 {
+  animation: typingWaveCompact 1.1s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+  animation-delay: 0.18s;
+  will-change: transform, opacity, box-shadow;
+}
+
+.animate-typing-compact-3 {
+  animation: typingWaveCompact 1.1s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+  animation-delay: 0.36s;
+  will-change: transform, opacity, box-shadow;
+}

@@ -31,6 +31,8 @@ import {
   Compass
 } from "lucide-react";
 import { Logo } from "@/components/ui/Logo";
+import { AssistantIcon } from "@/components/ui/AssistantIcon";
+import { WhatsAppTypingIndicator } from "@/components/ui/WhatsAppTypingIndicator";
 import { useCopilotStore, SuggestedAction } from "@/stores/copilotStore";
 import { FounderContactModal } from "./FounderContactModal";
 import { StoreAuditModal } from "./StoreAuditModal";
@@ -624,12 +626,12 @@ export function CopilotWidget() {
                     >
                       {/* Avatar */}
                       <div className={cn(
-                        "w-8 h-8 rounded-xl flex items-center justify-center shrink-0 mt-0.5 shadow-sm text-xs font-bold p-1",
+                        "w-8 h-8 rounded-xl flex items-center justify-center shrink-0 mt-0.5 shadow-sm text-xs font-bold overflow-hidden p-0.5",
                         isAssistant
-                          ? "bg-vendeur-emerald/20 border border-vendeur-emerald/40 text-vendeur-emerald"
+                          ? "bg-[#01524b]/40 border border-vendeur-emerald/40 text-vendeur-emerald"
                           : "bg-white/10 border border-white/20 text-white"
                       )}>
-                        {isAssistant ? <Logo size={16} leftBranchColor="#ffffff" rightBranchColor="#10b981" /> : "M"}
+                        {isAssistant ? <AssistantIcon size={24} withBackground={true} className="rounded-lg" /> : "M"}
                       </div>
 
                       {/* Bubble with Comfortable, Highly Readable Typography */}
@@ -697,19 +699,7 @@ export function CopilotWidget() {
 
                 {/* Loading Indicator */}
                 {isLoading && (
-                  <div className="flex items-center gap-3 mr-auto max-w-[85%] min-w-0">
-                    <div className="w-8 h-8 rounded-xl bg-vendeur-emerald/20 border border-vendeur-emerald/40 flex items-center justify-center p-1 text-vendeur-emerald shrink-0">
-                      <Logo size={16} leftBranchColor="#ffffff" rightBranchColor="#10b981" className="animate-spin" />
-                    </div>
-                    <div className="bg-vendeur-slate/90 border border-white/10 rounded-2xl px-4 py-3 text-sm text-white/80 flex items-center gap-2.5 min-w-0">
-                      <div className="flex gap-1.5 shrink-0">
-                        <div className="w-2 h-2 rounded-full bg-vendeur-emerald animate-bounce" style={{ animationDelay: "0ms" }} />
-                        <div className="w-2 h-2 rounded-full bg-vendeur-emerald animate-bounce" style={{ animationDelay: "150ms" }} />
-                        <div className="w-2 h-2 rounded-full bg-vendeur-emerald animate-bounce" style={{ animationDelay: "300ms" }} />
-                      </div>
-                      <span className="text-xs sm:text-[13px] text-white/60 truncate">Le Copilote analyse votre boutique...</span>
-                    </div>
-                  </div>
+                  <WhatsAppTypingIndicator variant="copilot" />
                 )}
 
                 <div ref={messagesEndRef} />

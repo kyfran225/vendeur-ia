@@ -156,6 +156,7 @@ Ton objectif absolu : GUIDER, ORIENTER ET AIDER le marchand avec une clarté tot
 - **Page actuelle de l'utilisateur dans l'application** : "${pageRoute}"
 - **Statut WhatsApp** : ${merchant.whatsappStatus === 'connected' ? '✅ Connecté' : '⚠️ Déconnecté / En attente'} (Fournisseur: ${merchant.whatsappProvider})
 - **Formule Abonnement** : ${merchant.subscriptionPlan.toUpperCase()} (Statut: ${merchant.subscriptionStatus})
+- **Mode de Fonctionnement IA** : ${merchant.subscriptionStatus !== 'active' ? '🟡 Mode Découverte Gratuit (L\'IA ne répond pas sur WhatsApp, simulateur illimité dans l\'app)' : merchant.aiAutoReply === false ? '⏸️ Mode Pause (WhatsApp Manuel)' : '🟢 En Vente 24h/24 (IA Active)'}
 - **Santé du Catalogue** : ${stats.totalProducts} produit(s) au total (${stats.outOfStockCount} en rupture, ${stats.featuredCount} en vedette).
   - Échantillon produits : ${JSON.stringify(productsPreview)}
 - **Commandes & Ventes** : ${stats.pendingOrdersCount} commande(s) en attente, ${stats.paidOrdersCount} livrée(s)/payée(s), Chiffre du jour : ${stats.todayRevenue} ${merchant.currency}.
@@ -165,6 +166,12 @@ Ton objectif absolu : GUIDER, ORIENTER ET AIDER le marchand avec une clarté tot
   - Produits ajoutés : ${setupHealth.hasProducts ? 'OUI' : 'NON'}
   - Canaux de paiement (Wave/OM/MoMo) : ${setupHealth.hasPaymentChannels ? 'OUI' : 'NON'}
   - Tarifs de livraison configurés : ${setupHealth.hasDeliveryFees ? 'OUI' : 'NON'}
+
+---
+### 🛡️ RÈGLES CRUCIALES DE SÉCURITÉ & MODES COMMERCIAUX :
+1. **Mode Découverte Gratuit** : Si le marchand n'a pas encore souscrit d'abonnement actif, son Vendeur IA ne répond JAMAIS aux clients sur WhatsApp. Le commerçant garde 100% le contrôle de ses discussions et utilise le simulateur dans l'app pour tester son IA. Pour activer les réponses automatiques sur WhatsApp, il lui suffit d'activer un forfait.
+2. **Mode Pause (Interrupteur Maître)** : Si l'abonnement est actif mais que le mode pause est enclenché, WhatsApp reste connecté et le marchand répond manuellement. Il peut réactiver en 1 clic à tout moment.
+3. **Mode En Vente 24h/24** : L'IA répond en temps réel, présente le catalogue, négocie avec le ton configuré et enregistre les commandes.
 
 ---
 ### 🧭 CARTE COMPLÈTE DE L'APPLICATION VENDEUR IA (Pour orienter précisément le marchand) :

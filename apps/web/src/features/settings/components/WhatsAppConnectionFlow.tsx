@@ -18,6 +18,12 @@ import { apiClient } from "@/lib/apiClient";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { StepMilestoneModal } from "@/components/ui/StepMilestoneModal";
+import { clsx, type ClassValue } from "clsx";
+import { twMerge } from "tailwind-merge";
+
+function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs));
+}
 
 export function WhatsAppConnectionFlow() {
   const navigate = useNavigate();
@@ -108,49 +114,99 @@ export function WhatsAppConnectionFlow() {
   const isUsingCustomMeta = !!merchant?.whatsappConfig?.meta?.phoneNumberId;
   const cleanPhone = activeNumber.replace(/\D/g, "");
 
+  const isPaidActive = merchant?.subscription?.status === "active";
+  const isPaused = isPaidActive && merchant?.aiSettings?.autoReply === false;
+  const isDiscoveryMode = !isPaidActive;
+
   return (
     <div className="space-y-6 w-full min-w-0">
-      {/* 1. Statut WhatsApp Cloud Actif */}
+      {/* 1. Statut WhatsApp Cloud & Mode Réel */}
       <div className="bg-[#0c0f0d] border border-white/10 rounded-[2rem] sm:rounded-[2.5rem] p-5 sm:p-8 space-y-6 text-left shadow-2xl">
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-5 border-b border-white/5 pb-6">
           <div className="flex items-center gap-4">
-            <div className="h-12 w-12 sm:h-14 sm:w-14 rounded-2xl bg-vendeur-emerald/10 border border-vendeur-emerald/20 flex items-center justify-center text-vendeur-emerald shrink-0">
+            <div className={cn(
+              "h-12 w-12 sm:h-14 sm:w-14 rounded-2xl flex items-center justify-center font-black shrink-0 border",
+              isPaidActive && !isPaused
+                ? "bg-vendeur-emerald/10 border-vendeur-emerald/20 text-vendeur-emerald"
+                : isPaused
+                  ? "bg-sky-500/10 border-sky-500/20 text-sky-400"
+                  : "bg-amber-500/10 border-amber-500/20 text-amber-400"
+            )}>
               <ShieldCheck size={26} />
             </div>
             <div>
               <div className="flex flex-wrap items-center gap-2">
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-vendeur-emerald/15 border border-vendeur-emerald/30 text-vendeur-emerald text-[9px] font-black uppercase tracking-widest">
-                  <span className="h-1.5 w-1.5 rounded-full bg-vendeur-emerald animate-pulse" />
-                  Connecté 24h/24
+                <span className={cn(
+                  "inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full border text-[9px] font-black uppercase tracking-widest",
+                  isPaidActive && !isPaused
+                    ? "bg-vendeur-emerald/15 border-vendeur-emerald/30 text-vendeur-emerald"
+                    : isPaused
+                      ? "bg-sky-500/15 border-sky-500/30 text-sky-300"
+                      : "bg-amber-500/15 border-amber-500/30 text-amber-300"
+                )}>
+                  <span className={cn(
+                    "h-1.5 w-1.5 rounded-full",
+                    isPaidActive && !isPaused ? "bg-vendeur-emerald animate-pulse" :
+                    isPaused ? "bg-sky-400" : "bg-amber-400 animate-pulse"
+                  )} />
+                  {isPaidActive && !isPaused
+                    ? "En Vente 24h/24"
+                    : isPaused
+                      ? "Mode Pause (Manuel)"
+                      : "Mode Découverte (Manuel)"}
                 </span>
                 <h3 className="text-lg sm:text-xl font-black text-white uppercase tracking-tight">
                   WhatsApp Cloud Direct
                 </h3>
               </div>
               <p className="text-xs text-white/50 font-medium mt-1">
-                Ligne de vente active : <strong className="text-vendeur-emerald font-bold font-mono">{activeNumber || "En attente"}</strong>
+                Ligne associée : <strong className={cn(
+                  "font-bold font-mono",
+                  isPaidActive && !isPaused ? "text-vendeur-emerald" : isPaused ? "text-sky-300" : "text-amber-300"
+                )}>{activeNumber || "En attente"}</strong>
+                {isDiscoveryMode && (
+                  <span className="block text-[11px] text-amber-200/80 font-normal mt-0.5">
+                    L'IA ne répond pas encore aux clients sur WhatsApp. Vous gardez 100% le contrôle tant que votre forfait n'est pas activé.
+                  </span>
+                )}
+                {isPaused && (
+                  <span className="block text-[11px] text-sky-200/80 font-normal mt-0.5">
+                    Mode pause activé : vous répondez manuellement à vos clients.
+                  </span>
+                )}
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2.5 w-full sm:w-auto">
+          <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
+            {isDiscoveryMode && (
+              <button
+                type="button"
+                onClick={() => navigate("/offers")}
+                className="h-12 px-4 rounded-xl bg-vendeur-emerald text-vendeur-coal font-black uppercase tracking-wider text-xs hover:bg-emerald-400 transition-all flex items-center justify-center gap-1.5 cursor-pointer active:scale-95 shadow-md shadow-vendeur-emerald/20"
+              >
+                <Zap size={15} fill="currentColor" />
+                <span>Activer les Ventes 24h/24</span>
+              </button>
+            )}
+
             {cleanPhone && (
               <a
                 href={`https://wa.me/${cleanPhone}?text=Bonjour`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="h-14 px-5 rounded-2xl bg-vendeur-emerald text-vendeur-coal font-black uppercase tracking-wider text-xs flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg shadow-vendeur-emerald/20 cursor-pointer"
+                className="h-12 px-4 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white font-bold uppercase tracking-wider text-xs flex items-center justify-center gap-2 active:scale-[0.98] transition-all cursor-pointer"
               >
-                <MessageSquare size={16} />
-                <span>Tester sur WhatsApp</span>
+                <MessageSquare size={15} />
+                <span>Tester WhatsApp</span>
               </a>
             )}
 
             <button
               onClick={() => navigate("/dashboard?test_ia=true")}
-              className="h-14 px-5 rounded-2xl bg-white/5 border border-white/10 text-white font-black uppercase tracking-wider text-xs hover:bg-white/10 hover:border-white/20 transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-[0.98]"
+              className="h-12 px-4 rounded-xl bg-white/5 border border-white/10 text-white font-bold uppercase tracking-wider text-xs hover:bg-white/10 hover:border-white/20 transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-[0.98]"
             >
-              <Bot size={16} />
+              <Bot size={15} />
               <span>Simulateur IA</span>
             </button>
           </div>

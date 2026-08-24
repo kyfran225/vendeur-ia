@@ -20,6 +20,7 @@ import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { io, Socket } from "socket.io-client";
 import { stripActionTags } from "@/lib/utils";
+import { WhatsAppTypingIndicator } from "@/components/ui/WhatsAppTypingIndicator";
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -240,12 +241,7 @@ export function WebChatWidget({ merchant }: { merchant: any }) {
                     </div>
                   ))}
                   {chatMutation.isPending && (
-                    <div className="flex justify-start">
-                       <div className="bg-white/5 border border-white/5 px-4 py-3 rounded-2xl flex items-center gap-3">
-                          <Loader2 size={14} className="animate-spin text-vendeur-emerald" />
-                          <span className="text-[10px] font-black text-vendeur-emerald uppercase tracking-widest">Vendeur IA réfléchit...</span>
-                       </div>
-                    </div>
+                    <WhatsAppTypingIndicator variant="storefront" />
                   )}
                </div>
 

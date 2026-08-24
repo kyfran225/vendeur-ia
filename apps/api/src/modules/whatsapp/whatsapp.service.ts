@@ -18,7 +18,7 @@ import { whatsappMediaService } from "./whatsapp-media.service.js";
 import { aiProvider } from "../../services/ai-provider.js";
 import { smsService } from "../../services/sms.service.js";
 import { SystemSettingsModel } from "../commerce/admin.model.js";
-import { generatePhoneVariants } from "../auth/auth.service.js";
+import { generatePhoneVariants, isFounderNumber } from "../auth/auth.service.js";
 
 class WhatsAppService {
   private activeSessions: Map<string, any> = new Map();
@@ -418,6 +418,31 @@ class WhatsAppService {
     let text = msg.message?.conversation || msg.message?.extendedTextMessage?.text;
     const imageMsg = msg.message?.imageMessage;
 
+    // Reverse WhatsApp Auth Interception (Baileys)
+    if (text) {
+      try {
+        const { authService } = await import("../auth/auth.service.js");
+        const cleanFrom = from.replace(/@.*$/, "").replace(/\D/g, "");
+        const authResult = await authService.authenticateViaIncomingMessage(cleanFrom, text);
+        if (authResult.success || (authResult as any).mismatch) {
+          if (authResult.success) {
+            console.log(`[Baileys WhatsApp] Authenticated user ${cleanFrom} via incoming message.`);
+          } else {
+            console.warn(`[Baileys WhatsApp] Auth mismatch for user ${cleanFrom} via incoming message.`);
+          }
+          if (authResult.replyMessage) {
+            const sock = this.activeSessions.get(userId);
+            if (sock) {
+              await sock.sendMessage(from, { text: authResult.replyMessage }).catch(e => console.error("[Baileys WhatsApp] Auth reply failed:", e));
+            }
+          }
+          return;
+        }
+      } catch (authErr) {
+        console.warn("[Baileys WhatsApp] Auth check error during incoming message:", authErr);
+      }
+    }
+
     // WhatsApp Service: handleIncomingMessage
     const merchant = await CommerceMerchantModel.findOne({ ownerId: userId });
     if (!merchant) return;
@@ -597,9 +622,24 @@ class WhatsAppService {
       message: customerMsg
     });
 
-    // --- DELEGATE TO QUEUE ---
+    // --- 1. CHECK HUMAN TAKEOVER ---
     if (conversation.status === "needs_human") {
       console.log(`[WhatsApp] Skipping AI for conversation ${conversation._id} (Status: needs_human)`);
+      return;
+    }
+
+    // --- 2. CHECK SUBSCRIPTION (MODE DÉCOUVERTE) ---
+    // If merchant has no active subscription (unpaid), AI is locked on WhatsApp so merchant maintains 100% manual control
+    const isFounder = isFounderNumber(merchant.whatsappNumber || merchant.phone || "") || (merchant.ownerId && isFounderNumber(merchant.ownerId));
+    const isSubscriptionActive = merchant.subscription?.status === "active" || isFounder;
+    if (!isSubscriptionActive) {
+      console.log(`[WhatsApp] Mode Découverte: AI locked on WhatsApp for unpaid merchant "${merchant.businessName}". Conversations remain 100% manual.`);
+      return;
+    }
+
+    // --- 3. CHECK PAUSE MODE ---
+    if (merchant.aiSettings?.autoReply === false) {
+      console.log(`[WhatsApp] Mode Pause: AI autoReply is disabled for merchant "${merchant.businessName}". Manual handling.`);
       return;
     }
 
@@ -798,10 +838,14 @@ class WhatsAppService {
     try {
       const { authService } = await import("../auth/auth.service.js");
       const authResult = await authService.authenticateViaIncomingMessage(from, text);
-      if (authResult.success) {
-        console.log(`[Meta WhatsApp] Authenticated user ${from} via incoming message.`);
+      if (authResult.success || (authResult as any).mismatch) {
+        if (authResult.success) {
+          console.log(`[Meta WhatsApp] Authenticated user ${from} via incoming message.`);
+        } else {
+          console.warn(`[Meta WhatsApp] Auth mismatch for user ${from} via incoming message.`);
+        }
         
-        // Send confirmation back to user (24h window is open now!)
+        // Send confirmation or mismatch reply back to user (24h window is open now!)
         const settings = await SystemSettingsModel.findOne();
         const config = settings?.metaConfig?.whatsappDefaults;
         const accessToken = config?.accessToken || env.WHATSAPP_ACCESS_TOKEN;

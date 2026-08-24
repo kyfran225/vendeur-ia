@@ -1107,11 +1107,11 @@ router.post("/verify-payment", authenticate, async (req, res) => {
 });
 
 // Paystack Webhook (Public) - Needs raw body
-router.post("/webhooks/paystack", express.raw({ type: 'application/json' }), async (req, res) => {
+router.post("/webhooks/paystack", async (req, res) => {
   const signature = req.headers['x-paystack-signature'] as string;
-  const body = req.body instanceof Buffer ? req.body.toString() : JSON.stringify(req.body);
+  const rawBody = (req as any).rawBody ? (req as any).rawBody.toString('utf8') : (req.body instanceof Buffer ? req.body.toString('utf8') : JSON.stringify(req.body));
 
-  if (!paystackService.verifyWebhookSignature(body, signature)) {
+  if (!paystackService.verifyWebhookSignature(rawBody, signature)) {
     console.error(`[Paystack Webhook] Invalid signature received.`);
     return res.status(401).send('Invalid signature');
   }

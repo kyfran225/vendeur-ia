@@ -510,7 +510,7 @@ export function ProductManager() {
   }
 
   return (
-    <div className="p-6 space-y-8 relative min-h-full">
+    <div className="max-w-7xl mx-auto p-4 md:p-10 space-y-6 md:space-y-8 relative min-h-full pb-24 md:pb-12 animate-in fade-in duration-500">
       {isScannerOpen && (
         <ProductScanner
           onClose={() => setIsScannerOpen(false)}

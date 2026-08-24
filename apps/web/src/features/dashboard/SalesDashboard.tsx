@@ -169,6 +169,8 @@ function HomePanel({ dashboard, onOpenTestIA }: { dashboard: any, onOpenTestIA: 
       <SubscriptionBanner
         status={subscription?.status}
         expiresAt={subscription?.expiresAt}
+        autoReply={dashboard?.merchant?.aiSettings?.autoReply}
+        onOpenTestIA={onOpenTestIA}
       />
 
       {/* INTELLIGENT SETUP GUIDE */}

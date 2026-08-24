@@ -266,21 +266,21 @@ export function BillingTab({ merchant }: { merchant: any }) {
             <div className="space-y-3.5 max-w-xl">
               <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-black uppercase tracking-wider">
                 <span className="h-2 w-2 rounded-full bg-amber-400 animate-pulse" />
-                Vendeur IA en veille
+                Mode Découverte Actif (Gratuit)
               </div>
 
               <h2 className="text-2xl sm:text-3xl md:text-4xl font-black uppercase tracking-tight text-white leading-tight">
-                Activez votre <span className="text-vendeur-emerald">Machine de Vente</span>
+                Activez votre <span className="text-vendeur-emerald">Vendeur IA 24h/24</span>
               </h2>
 
               <p className="text-white/70 text-sm sm:text-base leading-relaxed font-medium">
-                Votre boutique et votre catalogue sont prêts. Choisissez un forfait ci-dessous pour débloquer votre commercial IA 24/7 sur WhatsApp et encaisser vos commandes en automatique.
+                Votre boutique et vos articles sont configurés. Activez votre forfait pour lancer les réponses automatiques sur WhatsApp et encaisser vos commandes 24h/24.
               </p>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1">
                 <div className="flex items-center gap-2 text-xs sm:text-sm font-bold text-white/90">
                   <CheckCircle2 size={16} className="text-vendeur-emerald shrink-0" />
-                  <span>Réponses 24/7</span>
+                  <span>Réponses 24h/24</span>
                 </div>
                 <div className="flex items-center gap-2 text-xs sm:text-sm font-bold text-white/90">
                   <CheckCircle2 size={16} className="text-vendeur-emerald shrink-0" />
@@ -299,11 +299,11 @@ export function BillingTab({ merchant }: { merchant: any }) {
                 className="h-12 sm:h-14 min-h-[48px] px-6 sm:px-8 bg-vendeur-emerald text-vendeur-coal font-black uppercase tracking-wider text-xs sm:text-sm rounded-2xl flex items-center justify-center gap-2.5 hover:scale-105 active:scale-95 transition-all shadow-xl shadow-vendeur-emerald/20 cursor-pointer"
               >
                 <Zap size={18} />
-                <span>Choisir mon Forfait</span>
+                <span>Activer mon Forfait</span>
                 <ArrowRight size={16} />
               </a>
               <p className="text-xs text-center text-white/50 font-bold uppercase tracking-wider">
-                Paiement sécurisé Mobile Money / Carte
+                Mobile Money (Wave, OM, MTN, Moov) &amp; Carte
               </p>
             </div>
           </div>

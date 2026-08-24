@@ -121,7 +121,7 @@ describe('Authentication API', () => {
     });
   });
 
-  describe('WhatsApp Server Message Authentication (Zero Regression)', () => {
+  describe('WhatsApp Server Message Authentication (Zero Regression & Strict Concordance)', () => {
     it('should initialize auth session and authenticate via reverse incoming message', async () => {
       const phoneNumber = "2250708091011";
 
@@ -155,6 +155,37 @@ describe('Authentication API', () => {
       expect(pollRes.body.status).toBe('authenticated');
       expect(pollRes.body.sessionData).toBeDefined();
       expect(pollRes.body.sessionData.accessToken).toBe(authResult.tokens.accessToken);
+    });
+
+    it('should strictly refuse authentication when incoming WhatsApp phone differs from requested phone', async () => {
+      const requestedPhone = "2250701020304";
+      const differentSenderPhone = "2250505060708";
+
+      // 1. Request WhatsApp Magic Link for requestedPhone
+      const reqRes = await request(app)
+        .post('/api/auth/whatsapp-magic-link')
+        .send({ phoneNumber: requestedPhone, clientUrl: "http://localhost:5173" });
+
+      expect(reqRes.status).toBe(200);
+      const { authSessionId, sessionCode } = reqRes.body;
+
+      // 2. Simulate incoming reverse auth message sent from a DIFFERENT phone number
+      const { authService } = await import('./auth.service.js');
+      const authResult = await authService.authenticateViaIncomingMessage(differentSenderPhone, `CONNEXION ${sessionCode}`);
+
+      // Strict refusal
+      expect(authResult.success).toBe(false);
+      expect((authResult as any).mismatch).toBe(true);
+      expect(authResult.replyMessage).toMatch(/Échec de connexion/i);
+
+      // 3. Verify polling returns mismatch status
+      const pollRes = await request(app)
+        .post('/api/auth/poll-status')
+        .send({ authSessionId, sessionCode, phoneNumber: requestedPhone });
+
+      expect(pollRes.status).toBe(200);
+      expect(pollRes.body.status).toBe('mismatch');
+      expect(pollRes.body.message).toBeDefined();
     });
   });
 });

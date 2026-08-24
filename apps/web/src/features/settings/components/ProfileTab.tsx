@@ -708,10 +708,10 @@ export function ProfileTab({ merchant }: { merchant?: any }) {
       {/* Logout Confirmation Modal */}
       <ConfirmationModal
         isOpen={showLogoutModal}
-        title="Se déconnecter ?"
-        message="Êtes-vous sûr de vouloir fermer votre session ? Vous pourrez vous reconnecter à tout moment."
-        confirmLabel="Déconnexion"
-        cancelLabel="Annuler"
+        title="Se déconnecter de l'application ?"
+        message="Vous fermez uniquement votre session sur cet appareil. Si votre Vendeur IA est actif, il continue de vendre et de prendre les commandes de vos clients 24h/24 sur WhatsApp."
+        confirmLabel="Se déconnecter"
+        cancelLabel="Rester connecté"
         type="logout"
         onConfirm={() => {
           setShowLogoutModal(false);

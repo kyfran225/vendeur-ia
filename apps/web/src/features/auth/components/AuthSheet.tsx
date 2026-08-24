@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { X, Mail, Lock, User, ChevronRight, Loader2, ShieldCheck, Sparkles, Phone, ArrowLeft, Eye, EyeOff } from "lucide-react";
+import { X, Mail, Lock, User, ChevronRight, Loader2, ShieldCheck, Sparkles, Phone, ArrowLeft, Eye, EyeOff, QrCode, AlertTriangle, Smartphone, Laptop } from "lucide-react";
 import { Logo } from "@/components/ui/Logo";
 import { WhatsAppIcon } from "@/components/ui/WhatsAppIcon";
 import { CountrySelector, COUNTRIES, Country, parsePhoneNumber } from "@/features/onboarding/components/CountrySelector";
@@ -109,6 +109,7 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
   const [sessionCode, setSessionCode] = useState<string>("");
   const [systemWhatsAppNumber, setSystemWhatsAppNumber] = useState<string>("22505111157");
   const [isCheckingManual, setIsCheckingManual] = useState(false);
+  const [mismatchError, setMismatchError] = useState<string | null>(null);
 
   // Sync phone if opened with existing tempData
   useEffect(() => {
@@ -178,6 +179,12 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
       completeAuth(sessionData);
     });
 
+    socket.on("auth:mismatch", (data: any) => {
+      const msg = data.error || data.message || "Numéro expéditeur WhatsApp différent du numéro saisi.";
+      setMismatchError(msg);
+      toast.error("Numéro WhatsApp différent !");
+    });
+
     // 2. Resilient HTTP Polling every 1.2s + instant check on tab/app focus
     let isCancelled = false;
 
@@ -192,6 +199,8 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
         if (res.data && res.data.status === "authenticated" && res.data.sessionData) {
           isCancelled = true;
           completeAuth(res.data.sessionData);
+        } else if (res.data && res.data.status === "mismatch") {
+          setMismatchError(res.data.message || "Le message a été envoyé depuis un autre numéro WhatsApp.");
         }
       } catch {
         // Silent — background polling
@@ -244,8 +253,8 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
     }
 
     const fullPhoneNumber = `${selectedCountry.dialCode}${cleanNumber}`;
-
     setLoading(true);
+    setMismatchError(null);
     try {
       const res = await apiClient.post("/api/auth/whatsapp-magic-link", {
         phoneNumber: fullPhoneNumber,
@@ -281,6 +290,9 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
       });
       if (res.data && res.data.status === "authenticated" && res.data.sessionData) {
         completeAuth(res.data.sessionData);
+      } else if (res.data && res.data.status === "mismatch") {
+        setMismatchError(res.data.message || "Le message a été envoyé depuis un autre numéro WhatsApp.");
+        toast.error("Numéro WhatsApp différent !");
       } else {
         toast.info("En attente de réception de votre message WhatsApp...");
       }
@@ -356,46 +368,38 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
         navigate("/onboarding");
       }
     } catch (err: any) {
-      toast.error(err.response?.data?.error || "Une erreur est survenue");
+      toast.error(err.response?.data?.error || "Une erreur est survenue.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-200">
-      {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={onClose} />
-
-      {/* Sheet Container: Ultra Compact & Non-scrolling */}
-      <div className="relative w-full max-w-md bg-[#0b120f] border-t sm:border border-white/10 rounded-t-[2rem] sm:rounded-[2.5rem] p-5 sm:p-7 shadow-2xl animate-in slide-in-from-bottom-8 sm:zoom-in-95 duration-300 text-left overflow-visible">
-        
-        {/* Mobile Pull Handle */}
-        <div className="w-10 h-1 rounded-full bg-white/20 mx-auto mb-3 sm:hidden" />
-
-        <div className="absolute -top-24 -left-24 w-48 h-48 bg-vendeur-emerald/15 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute -bottom-24 -right-24 w-48 h-48 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
+      <div className="relative w-full max-w-md bg-[#0e1612] border border-white/10 rounded-[2.5rem] p-6 sm:p-8 shadow-2xl overflow-hidden">
+        {/* Glow Background FX */}
+        <div className="absolute -top-24 -right-24 w-48 h-48 bg-vendeur-emerald/15 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
 
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute right-4 sm:right-5 top-4 sm:top-5 p-2 rounded-full text-white/40 hover:text-white hover:bg-white/5 transition-all cursor-pointer z-10"
-          title="Fermer"
+          className="absolute top-5 right-5 w-8 h-8 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 flex items-center justify-center text-white/50 hover:text-white transition-colors cursor-pointer"
         >
-          <X size={18} />
+          <X size={16} />
         </button>
 
         {/* Header */}
-        <div className="text-center mb-5">
-          <div className="inline-flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center rounded-2xl bg-vendeur-emerald/10 border border-vendeur-emerald/25 mb-2.5 p-2.5 text-vendeur-emerald shadow-lg shadow-vendeur-emerald/10">
-            <Logo size={32} />
+        <div className="text-center space-y-2 mb-6">
+          <div className="inline-flex p-3 rounded-2xl bg-vendeur-emerald/10 border border-vendeur-emerald/20 text-vendeur-emerald mb-1">
+            <Logo size={28} />
           </div>
-          <h2 className="text-xl sm:text-2xl font-black text-white uppercase tracking-tight leading-snug">
+          <h2 className="text-2xl font-black text-white tracking-tight uppercase">
             {authMethod === "whatsapp"
-              ? (whatsappStep === "waiting" ? "Connexion WhatsApp" : "Accès Vendeur IA")
-              : mode === "login" ? "Connexion Email" : mode === "register" ? "Créer un compte" : "Mot de passe"}
+              ? (whatsappStep === "waiting" ? "Validation WhatsApp" : "Accès Commerçant")
+              : (mode === "login" ? "Connexion Équipe" : mode === "register" ? "Nouveau Compte" : "Mot de passe")}
           </h2>
-          <p className="text-xs text-white/50 mt-1 max-w-xs mx-auto leading-relaxed">
+          <p className="text-xs text-white/60 max-w-xs mx-auto">
             {authMethod === "whatsapp"
               ? (whatsappStep === "waiting"
                   ? `Envoyez "CONNEXION" sur WhatsApp pour vous connecter instantanément.`
@@ -484,50 +488,125 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
             </form>
           ) : (
             <div className="space-y-4 text-center py-1 animate-in zoom-in-95 duration-300">
-              {/* Primary Action Card: 1-Click WhatsApp Direct Open */}
-              <div className="bg-[#0c1410] border border-white/10 rounded-[2rem] p-5 sm:p-6 text-left space-y-4 shadow-xl">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 text-vendeur-emerald font-bold text-xs">
-                    <span className="w-2.5 h-2.5 rounded-full bg-vendeur-emerald animate-ping" />
-                    <span>Liaison en direct active</span>
+              {/* If Mismatch Detected: Clear & Helpful Explanatory Alert */}
+              {mismatchError ? (
+                <div className="bg-red-500/10 border border-red-500/30 rounded-[2rem] p-5 sm:p-6 text-left space-y-3 shadow-xl animate-in zoom-in-95 duration-200">
+                  <div className="flex items-center gap-2.5 text-red-400 font-bold text-xs">
+                    <AlertTriangle size={18} className="shrink-0 text-red-400 animate-pulse" />
+                    <span className="uppercase tracking-wider">Discordance de Numéro WhatsApp</span>
                   </div>
-                  {sessionCode && (
-                    <span className="text-[10px] font-mono text-white/60 bg-white/5 px-2.5 py-1 rounded-lg border border-white/10">
-                      Code : <strong className="text-white">{sessionCode}</strong>
-                    </span>
-                  )}
+                  <p className="text-xs text-white/90 leading-relaxed font-medium">
+                    {mismatchError}
+                  </p>
+                  <div className="bg-black/40 rounded-xl p-3 text-[11px] text-white/70 space-y-1 border border-white/5 font-mono">
+                    <div>Numéro attendu : <span className="text-emerald-400 font-bold">+{selectedCountry.dialCode} {localPhone}</span></div>
+                  </div>
+                  <div className="pt-2 space-y-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setWhatsappStep("input");
+                        setMismatchError(null);
+                      }}
+                      className="w-full h-12 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-2"
+                    >
+                      <span>← Corriger mon numéro</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setMismatchError(null)}
+                      className="w-full h-9 text-[11px] text-white/40 hover:text-white/80 transition-colors font-medium cursor-pointer"
+                    >
+                      Réessayer avec le même code
+                    </button>
+                  </div>
                 </div>
-                
-                <p className="text-xs text-white/80 leading-relaxed font-medium">
-                  Cliquez sur le bouton ci-dessous puis appuyez sur <strong className="text-emerald-400">Envoyer</strong> dans WhatsApp. Votre écran se connectera automatiquement !
-                </p>
+              ) : (
+                /* Normal Waiting Flow: Desktop QR Code & Mobile 1-Click WhatsApp */
+                <div className="bg-[#0c1410] border border-white/10 rounded-[2rem] p-5 sm:p-6 text-left space-y-4 shadow-xl">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-vendeur-emerald font-bold text-xs">
+                      <span className="w-2.5 h-2.5 rounded-full bg-vendeur-emerald animate-ping" />
+                      <span>Liaison en direct active</span>
+                    </div>
+                    {sessionCode && (
+                      <span className="text-[10px] font-mono text-white/60 bg-white/5 px-2.5 py-1 rounded-lg border border-white/10">
+                        Code : <strong className="text-white">{sessionCode}</strong>
+                      </span>
+                    )}
+                  </div>
 
-                <a
-                  href={`https://wa.me/${(systemWhatsAppNumber && !systemWhatsAppNumber.includes("00000000")) ? systemWhatsAppNumber : "22505111157"}?text=${encodeURIComponent(`CONNEXION ${sessionCode || (authSessionId ? authSessionId.slice(0, 6).toUpperCase() : "")}`)}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-full h-14 bg-vendeur-emerald hover:bg-emerald-400 text-vendeur-coal font-black text-xs sm:text-sm uppercase tracking-wider rounded-2xl flex items-center justify-center gap-2.5 transition-all shadow-xl shadow-vendeur-emerald/20 hover:scale-[1.01] active:scale-[0.98] cursor-pointer whitespace-nowrap px-4"
-                >
-                  <WhatsAppIcon size={20} className="shrink-0" />
-                  <span>Envoyer sur WhatsApp</span>
-                  <ChevronRight size={18} className="shrink-0" />
-                </a>
+                  {/* DESKTOP VIEW: Dedicated WhatsApp QR Code */}
+                  <div className="hidden sm:flex flex-col items-center justify-center p-4 bg-black/40 border border-white/5 rounded-2xl space-y-3 text-center">
+                    <div className="relative p-2.5 bg-white rounded-2xl shadow-xl shadow-vendeur-emerald/10 inline-block">
+                      <img
+                        src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(`https://wa.me/${(systemWhatsAppNumber && !systemWhatsAppNumber.includes("00000000")) ? systemWhatsAppNumber : "22505111157"}?text=${encodeURIComponent(`CONNEXION ${sessionCode || (authSessionId ? authSessionId.slice(0, 6).toUpperCase() : "")}`)}`)}&bgcolor=ffffff&color=0b120f&margin=4`}
+                        alt="QR Code Connexion WhatsApp"
+                        className="w-36 h-36 rounded-xl object-contain block"
+                        loading="lazy"
+                      />
+                      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                        <div className="w-8 h-8 rounded-full bg-[#0c1410] border-2 border-white flex items-center justify-center shadow-md">
+                          <WhatsAppIcon size={16} />
+                        </div>
+                      </div>
+                    </div>
 
-                {/* Instant Check Button */}
-                <button
-                  type="button"
-                  onClick={handleManualCheck}
-                  disabled={isCheckingManual}
-                  className="w-full h-14 bg-white/5 hover:bg-white/10 text-white/80 hover:text-white rounded-2xl text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 transition-all border border-white/10 hover:border-vendeur-emerald/40 cursor-pointer active:scale-[0.98] whitespace-nowrap px-4"
-                >
-                  {isCheckingManual ? (
-                    <Loader2 className="animate-spin text-vendeur-emerald shrink-0" size={16} />
-                  ) : (
-                    <Sparkles size={16} className="text-vendeur-emerald shrink-0" />
-                  )}
-                  <span className="truncate">J'ai envoyé le message → Accéder</span>
-                </button>
-              </div>
+                    <div className="space-y-1">
+                      <p className="text-xs font-bold text-white flex items-center justify-center gap-1.5">
+                        <Smartphone size={14} className="text-vendeur-emerald" />
+                        <span>Scannez avec votre téléphone</span>
+                      </p>
+                      <p className="text-[11px] text-white/50 max-w-xs">
+                        Ouvrez l'appareil photo de votre smartphone pour valider la connexion instantanément sur cet écran.
+                      </p>
+                    </div>
+
+                    <a
+                      href={`https://wa.me/${(systemWhatsAppNumber && !systemWhatsAppNumber.includes("00000000")) ? systemWhatsAppNumber : "22505111157"}?text=${encodeURIComponent(`CONNEXION ${sessionCode || (authSessionId ? authSessionId.slice(0, 6).toUpperCase() : "")}`)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[11px] text-vendeur-emerald hover:underline font-bold flex items-center gap-1 mt-1 cursor-pointer"
+                    >
+                      <Laptop size={13} />
+                      <span>Ou ouvrir WhatsApp Web sur cet ordinateur →</span>
+                    </a>
+                  </div>
+
+                  {/* MOBILE VIEW: 1-Click WhatsApp Direct Open */}
+                  <div className="sm:hidden space-y-3">
+                    <p className="text-xs text-white/80 leading-relaxed font-medium">
+                      Appuyez sur le bouton vert ci-dessous puis sur <strong className="text-emerald-400">Envoyer</strong> dans WhatsApp :
+                    </p>
+
+                    <a
+                      href={`https://wa.me/${(systemWhatsAppNumber && !systemWhatsAppNumber.includes("00000000")) ? systemWhatsAppNumber : "22505111157"}?text=${encodeURIComponent(`CONNEXION ${sessionCode || (authSessionId ? authSessionId.slice(0, 6).toUpperCase() : "")}`)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-full h-14 bg-vendeur-emerald hover:bg-emerald-400 text-vendeur-coal font-black text-xs sm:text-sm uppercase tracking-wider rounded-2xl flex items-center justify-center gap-2.5 transition-all shadow-xl shadow-vendeur-emerald/20 hover:scale-[1.01] active:scale-[0.98] cursor-pointer whitespace-nowrap px-4"
+                    >
+                      <WhatsAppIcon size={20} className="shrink-0" />
+                      <span>Envoyer sur WhatsApp</span>
+                      <ChevronRight size={18} className="shrink-0" />
+                    </a>
+                  </div>
+
+                  {/* Instant Check Button */}
+                  <button
+                    type="button"
+                    onClick={handleManualCheck}
+                    disabled={isCheckingManual}
+                    className="w-full h-14 bg-white/5 hover:bg-white/10 text-white/80 hover:text-white rounded-2xl text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 transition-all border border-white/10 hover:border-vendeur-emerald/40 cursor-pointer active:scale-[0.98] whitespace-nowrap px-4"
+                  >
+                    {isCheckingManual ? (
+                      <Loader2 className="animate-spin text-vendeur-emerald shrink-0" size={16} />
+                    ) : (
+                      <Sparkles size={16} className="text-vendeur-emerald shrink-0" />
+                    )}
+                    <span className="truncate">J'ai envoyé le message → Accéder</span>
+                  </button>
+                </div>
+              )}
 
               <div className="pt-1 flex justify-center">
                 <button
@@ -535,6 +614,7 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
                   onClick={() => {
                     setWhatsappStep("input");
                     setOtpValue("");
+                    setMismatchError(null);
                   }}
                   className="text-xs text-white/40 font-semibold hover:text-white hover:underline transition-all cursor-pointer py-1"
                 >

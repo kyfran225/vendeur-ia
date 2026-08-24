@@ -31,7 +31,8 @@ import {
   Check,
   Palette,
   Menu,
-  X
+  X,
+  PauseCircle
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useSearchParams, Link } from "react-router-dom";
@@ -404,10 +405,10 @@ export function SettingsPage() {
 
       <ConfirmationModal
         isOpen={showLogoutModal}
-        title="Se déconnecter ?"
-        message="Êtes-vous sûr de vouloir fermer votre session ? Vous pourrez vous reconnecter à tout moment."
-        confirmLabel="Déconnexion"
-        cancelLabel="Annuler"
+        title="Se déconnecter de l'application ?"
+        message="Vous fermez uniquement votre session sur cet appareil. Si votre Vendeur IA est actif, il continue de vendre et de prendre les commandes de vos clients 24h/24 sur WhatsApp."
+        confirmLabel="Se déconnecter"
+        cancelLabel="Rester connecté"
         type="logout"
         onConfirm={() => {
           setShowLogoutModal(false);
@@ -1238,7 +1239,49 @@ function PersonnaliteTab({ merchant }: { merchant: any }) {
             </button>
          </div>
 
-         <div className="grid gap-10">
+          <div className="grid gap-8">
+            {/* Master Switch: Vendeur IA Actif 24h/24 vs Mode Pause */}
+            <div className={cn(
+              "p-6 sm:p-8 rounded-[2rem] border transition-all space-y-4",
+              aiSettings.autoReply !== false
+                ? "bg-emerald-500/10 border-emerald-500/30 shadow-xl shadow-emerald-500/5"
+                : "bg-amber-500/10 border-amber-500/30 shadow-xl shadow-amber-500/5"
+            )}>
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3.5">
+                  <div className={cn(
+                    "h-12 w-12 rounded-2xl flex items-center justify-center font-black shrink-0",
+                    aiSettings.autoReply !== false
+                      ? "bg-vendeur-emerald text-vendeur-coal shadow-lg shadow-vendeur-emerald/20"
+                      : "bg-amber-500 text-vendeur-coal shadow-lg shadow-amber-500/20"
+                  )}>
+                    {aiSettings.autoReply !== false ? <Zap size={24} /> : <PauseCircle size={24} />}
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className={cn(
+                        "w-2 h-2 rounded-full",
+                        aiSettings.autoReply !== false ? "bg-vendeur-emerald animate-pulse" : "bg-amber-400"
+                      )} />
+                      <h3 className="font-black text-white text-sm sm:text-base uppercase tracking-tight">
+                        {aiSettings.autoReply !== false ? "Vendeur IA Actif (En Vente 24h/24)" : "Mode Pause (WhatsApp Manuel)"}
+                      </h3>
+                    </div>
+                    <p className="text-xs text-white/60 mt-0.5 max-w-xl leading-relaxed">
+                      {aiSettings.autoReply !== false
+                        ? "L'IA prend le relais automatiquement pour répondre aux clients, présenter vos articles et enregistrer vos commandes."
+                        : "L'IA ne répond plus automatiquement. Votre WhatsApp reste connecté et vous échangez manuellement avec vos clients."}
+                    </p>
+                  </div>
+                </div>
+                <ToggleButton
+                  active={aiSettings.autoReply !== false}
+                  onToggle={() => setAiSettings({ ...aiSettings, autoReply: aiSettings.autoReply === false ? true : false })}
+                  color="bg-vendeur-emerald"
+                />
+              </div>
+            </div>
+
             {/* Personnalité */}
             <div className="space-y-4">
               <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-vendeur-emerald ml-1">Tempérament Dominant</h3>

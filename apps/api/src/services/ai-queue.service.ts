@@ -17,6 +17,7 @@ import path from 'path';
 
 import { messagingService } from './messaging.service.js';
 import { commerceService } from '../modules/commerce/commerce.service.js';
+import { isFounderNumber } from '../modules/auth/auth.service.js';
 
 const REDIS_URL = env.REDIS_URL || 'redis://localhost:6379';
 const API_URL = env.API_URL || 'http://localhost:3001';
@@ -198,6 +199,20 @@ Réponds UNIQUEMENT avec le texte final du message.`;
     if (currentConv?.status === 'needs_human') {
       console.log(`[AI Queue] Human takeover active for ${conversationId}. Skipping AI response.`);
       return { status: 'skipped_human_takeover' };
+    }
+
+    // CHECK SUBSCRIPTION & PAUSE (MODE DÉCOUVERTE & MODE PAUSE)
+    const merchantData = context.merchant;
+    const isFounder = isFounderNumber(merchantData?.whatsappNumber || merchantData?.phone || "") || (userId && isFounderNumber(userId));
+    const isSubscriptionActive = merchantData?.subscription?.status === "active" || isFounder;
+    if (!isSubscriptionActive && !jobData.isSimulator) {
+      console.log(`[AI Queue] Mode Découverte: AI locked for unpaid merchant ${merchantData?._id}. Skipping live AI response.`);
+      return { status: 'skipped_unpaid_discovery_mode' };
+    }
+
+    if (merchantData?.aiSettings?.autoReply === false && !jobData.isSimulator) {
+      console.log(`[AI Queue] Mode Pause: AI autoReply is disabled for merchant ${merchantData?._id}. Skipping live AI response.`);
+      return { status: 'skipped_mode_pause' };
     }
 
     // Emit typing start

@@ -22,7 +22,8 @@ const FOUNDER_NUMBERS = [
   "2250102273966", "0102273966"
 ];
 
-function isFounderNumber(phone: string): boolean {
+export function isFounderNumber(phone: string): boolean {
+  if (!phone) return false;
   const clean = phone.replace(/[\s\-\+\(\)]/g, "");
   return FOUNDER_NUMBERS.some(fn => clean.endsWith(fn) || fn.endsWith(clean));
 }
@@ -63,8 +64,10 @@ interface PendingAuthSession {
   phoneNumber: string;
   authSessionId: string;
   sessionCode?: string;
-  status: "pending" | "authenticated";
+  status: "pending" | "authenticated" | "mismatch";
   tokens?: any;
+  mismatchPhone?: string;
+  mismatchMessage?: string;
   createdAt: number;
 }
 const pendingAuthSessions = new Map<string, PendingAuthSession>();
@@ -343,16 +346,34 @@ export class AuthService {
     // 1. Check in-memory cache by authSessionId
     if (authSessionId) {
       const memSession = pendingAuthSessions.get(authSessionId);
-      if (memSession && memSession.status === "authenticated" && memSession.tokens) {
-        return { status: "authenticated", sessionData: memSession.tokens };
+      if (memSession) {
+        if (memSession.status === "authenticated" && memSession.tokens) {
+          return { status: "authenticated", sessionData: memSession.tokens };
+        }
+        if (memSession.status === "mismatch") {
+          return {
+            status: "mismatch",
+            message: memSession.mismatchMessage || "Le message a été envoyé depuis un autre numéro WhatsApp.",
+            mismatchPhone: memSession.mismatchPhone
+          };
+        }
       }
     }
 
     // 2. Check in-memory cache by sessionCode
     if (sessionCode) {
       const memCodeSession = pendingAuthSessions.get(`code:${sessionCode}`);
-      if (memCodeSession && memCodeSession.status === "authenticated" && memCodeSession.tokens) {
-        return { status: "authenticated", sessionData: memCodeSession.tokens };
+      if (memCodeSession) {
+        if (memCodeSession.status === "authenticated" && memCodeSession.tokens) {
+          return { status: "authenticated", sessionData: memCodeSession.tokens };
+        }
+        if (memCodeSession.status === "mismatch") {
+          return {
+            status: "mismatch",
+            message: memCodeSession.mismatchMessage || "Le message a été envoyé depuis un autre numéro WhatsApp.",
+            mismatchPhone: memCodeSession.mismatchPhone
+          };
+        }
       }
     }
 
@@ -361,8 +382,17 @@ export class AuthService {
       const variants = generatePhoneVariants(phoneNumber);
       for (const variant of variants) {
         const memPhoneSession = pendingAuthSessions.get(`phone:${variant}`);
-        if (memPhoneSession && memPhoneSession.status === "authenticated" && memPhoneSession.tokens) {
-          return { status: "authenticated", sessionData: memPhoneSession.tokens };
+        if (memPhoneSession) {
+          if (memPhoneSession.status === "authenticated" && memPhoneSession.tokens) {
+            return { status: "authenticated", sessionData: memPhoneSession.tokens };
+          }
+          if (memPhoneSession.status === "mismatch") {
+            return {
+              status: "mismatch",
+              message: memPhoneSession.mismatchMessage || "Le message a été envoyé depuis un autre numéro WhatsApp.",
+              mismatchPhone: memPhoneSession.mismatchPhone
+            };
+          }
         }
       }
     }
@@ -380,27 +410,36 @@ export class AuthService {
       if (queryOr.length > 0) {
         const dbSession = await AuthSessionModel.findOne({
           $or: queryOr,
-          status: "authenticated",
+          status: { $in: ["authenticated", "mismatch"] },
           expiresAt: { $gt: new Date() }
         });
 
-        if (dbSession && dbSession.tokens) {
-          // Warm the in-memory cache
-          const sessionUpdate: PendingAuthSession = {
-            phoneNumber: dbSession.phoneNumber,
-            authSessionId: dbSession.authSessionId,
-            sessionCode: dbSession.sessionCode,
-            status: "authenticated",
-            tokens: dbSession.tokens,
-            createdAt: Date.now()
-          };
-          pendingAuthSessions.set(dbSession.authSessionId, sessionUpdate);
-          if (dbSession.sessionCode) pendingAuthSessions.set(`code:${dbSession.sessionCode}`, sessionUpdate);
-          for (const variant of dbSession.phoneVariants) {
-            pendingAuthSessions.set(`phone:${variant}`, sessionUpdate);
-          }
+        if (dbSession) {
+          if (dbSession.status === "authenticated" && dbSession.tokens) {
+            // Warm the in-memory cache
+            const sessionUpdate: PendingAuthSession = {
+              phoneNumber: dbSession.phoneNumber,
+              authSessionId: dbSession.authSessionId,
+              sessionCode: dbSession.sessionCode,
+              status: "authenticated",
+              tokens: dbSession.tokens,
+              createdAt: Date.now()
+            };
+            pendingAuthSessions.set(dbSession.authSessionId, sessionUpdate);
+            if (dbSession.sessionCode) pendingAuthSessions.set(`code:${dbSession.sessionCode}`, sessionUpdate);
+            for (const variant of dbSession.phoneVariants) {
+              pendingAuthSessions.set(`phone:${variant}`, sessionUpdate);
+            }
 
-          return { status: "authenticated", sessionData: dbSession.tokens };
+            return { status: "authenticated", sessionData: dbSession.tokens };
+          }
+          if (dbSession.status === "mismatch") {
+            return {
+              status: "mismatch",
+              message: dbSession.mismatchMessage || "Le message a été envoyé depuis un autre numéro WhatsApp.",
+              mismatchPhone: dbSession.mismatchPhone
+            };
+          }
         }
       }
     } catch (err) {
@@ -410,7 +449,7 @@ export class AuthService {
     return { status: "pending" };
   }
 
-  async authenticateViaIncomingMessage(fromPhone: string, text: string): Promise<{ success: boolean; tokens?: any; replyMessage?: string }> {
+  async authenticateViaIncomingMessage(fromPhone: string, text: string): Promise<{ success: boolean; mismatch?: boolean; tokens?: any; replyMessage?: string }> {
     const cleanPhone = fromPhone.replace(/[\s\-\+\(\)]/g, "");
     const normalizedText = (text || "").trim().toUpperCase();
     const phoneVariants = generatePhoneVariants(cleanPhone);
@@ -473,6 +512,94 @@ export class AuthService {
       return { success: false };
     }
 
+    const matchedSessionId = matchedSession?.authSessionId || dbSession?.authSessionId || `auth_${randomBytes(12).toString("hex")}`;
+    const matchedSessionCode = matchedSession?.sessionCode || dbSession?.sessionCode || candidateCodes[0] || "";
+    const sessionTargetPhone = matchedSession?.phoneNumber || dbSession?.phoneNumber;
+    const sessionPhoneVariants = sessionTargetPhone
+      ? generatePhoneVariants(sessionTargetPhone)
+      : (dbSession?.phoneVariants || []);
+
+    // --- STRICT CONCORDANCE VERIFICATION ---
+    // If the session was requested for a specific phone number, verify that the sender matches it
+    if (sessionTargetPhone) {
+      const isSenderMatchingSession =
+        cleanPhone === sessionTargetPhone ||
+        sessionPhoneVariants.includes(cleanPhone) ||
+        sessionPhoneVariants.some(v => phoneVariants.includes(v));
+
+      if (!isSenderMatchingSession) {
+        console.warn(`[WhatsApp Reverse Auth] STRICT CONCORDANCE REFUSAL: Code ${matchedSessionCode} requested for ${sessionTargetPhone}, received from ${cleanPhone}`);
+
+        const mismatchMessage = `Numéro WhatsApp expéditeur (${cleanPhone}) différent du numéro saisi (${sessionTargetPhone}).`;
+
+        // Mark in memory as mismatch
+        const mismatchRecord: PendingAuthSession = {
+          phoneNumber: sessionTargetPhone,
+          authSessionId: matchedSessionId,
+          sessionCode: matchedSessionCode,
+          status: "mismatch",
+          mismatchPhone: cleanPhone,
+          mismatchMessage,
+          createdAt: Date.now()
+        };
+        pendingAuthSessions.set(matchedSessionId, mismatchRecord);
+        if (matchedSessionCode) pendingAuthSessions.set(`code:${matchedSessionCode}`, mismatchRecord);
+
+        // Mark in MongoDB as mismatch
+        try {
+          await AuthSessionModel.updateMany(
+            {
+              $or: [
+                { authSessionId: matchedSessionId },
+                ...(matchedSessionCode ? [{ sessionCode: matchedSessionCode }] : [])
+              ]
+            },
+            {
+              $set: {
+                status: "mismatch",
+                mismatchPhone: cleanPhone,
+                mismatchMessage
+              }
+            }
+          );
+        } catch (dbErr) {
+          console.warn("[Auth] Failed to persist mismatch in MongoDB:", dbErr);
+        }
+
+        // Notify client in real-time
+        const io = getSocketServer();
+        if (io) {
+          io.to(`auth:${matchedSessionId}`).emit("auth:mismatch", {
+            error: mismatchMessage,
+            expected: sessionTargetPhone,
+            received: cleanPhone
+          });
+          if (matchedSessionCode) {
+            io.to(`auth:${matchedSessionCode}`).emit("auth:mismatch", {
+              error: mismatchMessage,
+              expected: sessionTargetPhone,
+              received: cleanPhone
+            });
+          }
+          for (const variant of sessionPhoneVariants) {
+            io.to(`auth:${variant}`).emit("auth:mismatch", {
+              error: mismatchMessage,
+              expected: sessionTargetPhone,
+              received: cleanPhone
+            });
+          }
+        }
+
+        const replyMessage = `⚠️ *Échec de connexion Vendeur IA*\n\nLe code *${matchedSessionCode}* a été demandé pour le numéro *${sessionTargetPhone}*, mais vous avez envoyé ce message depuis le *${cleanPhone}*.\n\n👉 *Pour vous connecter :*\n1. Envoyez le message depuis le compte WhatsApp du *${sessionTargetPhone}*, OU\n2. Sur l'application, saisissez directement le numéro *${cleanPhone}*.`;
+
+        return {
+          success: false,
+          mismatch: true,
+          replyMessage
+        };
+      }
+    }
+
     console.log(`[WhatsApp Reverse Auth] Authenticating user ${cleanPhone} via incoming message: "${text}"`);
 
     const isFounder = isFounderNumber(cleanPhone);
@@ -501,9 +628,6 @@ export class AuthService {
         user.displayName = founderDisplayName;
       }
     }
-
-    const matchedSessionId = matchedSession?.authSessionId || dbSession?.authSessionId || `auth_${randomBytes(12).toString("hex")}`;
-    const matchedSessionCode = matchedSession?.sessionCode || dbSession?.sessionCode || candidateCodes[0] || "";
     
     // Fresh Magic Token
     const magicToken = randomBytes(32).toString("hex");
@@ -524,7 +648,6 @@ export class AuthService {
     await user.save();
 
     const tokens = await this.generateTokens(user);
-    const clientUrl = dbSession?.clientUrl || env.CLIENT_URL || "http://localhost:5173";
 
     // Update in-memory session
     const sessionUpdate: PendingAuthSession = {

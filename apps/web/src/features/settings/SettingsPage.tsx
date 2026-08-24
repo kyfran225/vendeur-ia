@@ -25,6 +25,8 @@ import {
   Camera,
   LogOut,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   Link2,
   ExternalLink,
   Copy,
@@ -96,6 +98,14 @@ export function SettingsPage() {
       const { scrollLeft, scrollWidth, clientWidth } = tabsRef.current;
       setShowLeftScroll(scrollLeft > 10);
       setShowRightScroll(scrollLeft < scrollWidth - clientWidth - 10);
+    }
+  };
+
+  const scrollTabs = (direction: "left" | "right") => {
+    if (tabsRef.current) {
+      const scrollAmount = direction === "left" ? -240 : 240;
+      tabsRef.current.scrollBy({ left: scrollAmount, behavior: "smooth" });
+      setTimeout(handleScroll, 350);
     }
   };
 
@@ -233,7 +243,7 @@ export function SettingsPage() {
   ];
 
   return (
-    <div className="p-4 md:p-10 max-w-6xl mx-auto space-y-6 md:space-y-8 animate-in fade-in duration-700 pb-24 relative">
+    <div className="p-3.5 sm:p-6 md:p-10 max-w-6xl mx-auto space-y-6 md:space-y-8 animate-in fade-in duration-700 pb-24 relative w-full max-w-full overflow-x-hidden box-border">
       <header id="tour-settings-branding" className="space-y-1.5">
         <h1 className="text-2xl md:text-5xl font-black tracking-tighter uppercase text-white flex items-center gap-3 md:gap-4">
           <Settings className="text-vendeur-emerald shrink-0" size={32} />
@@ -243,7 +253,7 @@ export function SettingsPage() {
       </header>
 
       {/* Sticky Navigation Tabs Bar (Responsive: Drawer on Mobile, Tabs on Desktop) */}
-      <div className="sticky top-0 z-40 bg-vendeur-bg/95 backdrop-blur-2xl border-b border-white/10 -mx-4 md:-mx-10 px-4 md:px-10 py-2 md:py-2.5 shadow-lg">
+      <div className="sticky top-0 z-40 bg-vendeur-bg/95 backdrop-blur-2xl border-b border-white/10 -mx-3.5 sm:-mx-6 md:-mx-10 px-3.5 sm:px-6 md:px-10 py-2 md:py-2.5 shadow-lg">
         <div className="relative max-w-full w-full">
 
           {/* Mobile Tab Trigger */}
@@ -268,19 +278,48 @@ export function SettingsPage() {
           </button>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:block relative w-full">
+          <div className="hidden md:block relative w-full group/tabs">
+            {/* Left Scroll Button */}
+            {showLeftScroll && (
+              <button
+                type="button"
+                onClick={() => scrollTabs("left")}
+                className="absolute -left-3 top-1/2 -translate-y-1/2 z-30 h-7 w-7 rounded-full bg-vendeur-coal/95 border border-white/20 text-white hover:text-vendeur-emerald hover:border-vendeur-emerald flex items-center justify-center shadow-xl transition-all cursor-pointer hover:scale-105 active:scale-95"
+                title="Défiler vers la gauche"
+              >
+                <ChevronLeft size={15} />
+              </button>
+            )}
+
+            {/* Right Scroll Button */}
+            {showRightScroll && (
+              <button
+                type="button"
+                onClick={() => scrollTabs("right")}
+                className="absolute -right-3 top-1/2 -translate-y-1/2 z-30 h-7 w-7 rounded-full bg-vendeur-coal/95 border border-white/20 text-white hover:text-vendeur-emerald hover:border-vendeur-emerald flex items-center justify-center shadow-xl transition-all cursor-pointer hover:scale-105 active:scale-95"
+                title="Défiler vers la droite"
+              >
+                <ChevronRight size={15} />
+              </button>
+            )}
+
             <div className={cn(
-              "absolute left-0 top-0 bottom-0 w-6 z-10 bg-gradient-to-r from-vendeur-bg to-transparent pointer-events-none transition-opacity duration-300",
+              "absolute left-0 top-0 bottom-0 w-8 z-10 bg-gradient-to-r from-vendeur-bg to-transparent pointer-events-none transition-opacity duration-300",
               showLeftScroll ? "opacity-100" : "opacity-0"
             )} />
             <div className={cn(
-              "absolute right-0 top-0 bottom-0 w-6 z-10 bg-gradient-to-l from-vendeur-bg to-transparent pointer-events-none transition-opacity duration-300",
+              "absolute right-0 top-0 bottom-0 w-8 z-10 bg-gradient-to-l from-vendeur-bg to-transparent pointer-events-none transition-opacity duration-300",
               showRightScroll ? "opacity-100" : "opacity-0"
             )} />
 
             <div
               ref={tabsRef}
-              className="flex items-center gap-1.5 md:gap-2 overflow-x-auto no-scrollbar py-0.5 w-full"
+              onWheel={(e) => {
+                if (tabsRef.current && e.deltaY !== 0) {
+                  tabsRef.current.scrollLeft += e.deltaY;
+                }
+              }}
+              className="flex items-center gap-1.5 md:gap-2 overflow-x-auto tabs-scrollbar py-1 pb-2 w-full"
             >
               {SETTINGS_TABS.map((t) => {
                 const Icon = t.icon;
@@ -504,38 +543,40 @@ function BoutiqueTab({ merchant, initialKnowledge, accessToken }: { merchant: an
   });
 
   return (
-    <div className="space-y-8 animate-in slide-in-from-bottom-2 duration-500">
-      <section id="identity" className="bg-vendeur-coal/50 backdrop-blur-md border border-white/10 p-5 sm:p-7 md:p-10 rounded-2xl sm:rounded-3xl md:rounded-[2.5rem] space-y-6 sm:space-y-8 shadow-2xl scroll-mt-28">
+    <div className="space-y-6 sm:space-y-8 animate-in slide-in-from-bottom-2 duration-500 w-full max-w-full overflow-hidden box-border">
+      <section id="identity" className="bg-vendeur-coal/50 backdrop-blur-md border border-white/10 p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl md:rounded-[2.5rem] space-y-6 sm:space-y-8 shadow-2xl scroll-mt-28 w-full max-w-full overflow-hidden box-border">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div className="space-y-1">
-            <h2 className="text-xl md:text-2xl font-black text-white flex items-center gap-3">
+          <div className="space-y-1 min-w-0 flex-1">
+            <h2 className="text-lg sm:text-xl md:text-2xl font-black text-white flex items-center gap-2.5 sm:gap-3 flex-wrap min-w-0">
               <Store size={22} className="text-vendeur-emerald shrink-0" />
-              <span className="whitespace-nowrap">Profil de la Boutique</span>
+              <span>Profil de la Boutique</span>
             </h2>
             <p className="text-[10px] md:text-xs text-white/40 font-medium">Vendeur IA utilise ces infos pour présenter votre business.</p>
           </div>
         </div>
 
-        <div className="grid gap-6 md:grid-cols-2">
+        <div className="grid gap-5 md:gap-6 md:grid-cols-2 w-full max-w-full">
           <InputGroup label="Nom du commerce" value={localMerchant?.businessName} onChange={v => { setLocalMerchant({...localMerchant, businessName: v, slug: slugify(v)}); setIsDirty(true); }} placeholder="Ex: Ma Boutique Chic" />
           <InputGroup label="WhatsApp Business" value={localMerchant?.whatsappNumber} onChange={v => { setLocalMerchant({...localMerchant, whatsappNumber: v}); setIsDirty(true); }} placeholder="Ex: 07 00 00 00 00" />
 
           {/* Custom Slug / Storefront URL Display */}
-          <div className="md:col-span-2 p-4 md:p-5 rounded-2xl bg-white/[0.03] border border-white/5 space-y-3">
+          <div className="md:col-span-2 p-3.5 sm:p-4 md:p-5 rounded-2xl bg-white/[0.03] border border-white/5 space-y-3 w-full max-w-full overflow-hidden box-border">
             <div className="flex items-center gap-2">
-              <Globe size={16} className="text-vendeur-emerald" />
+              <Globe size={16} className="text-vendeur-emerald shrink-0" />
               <span className="text-[11px] font-black uppercase tracking-wider text-white">Lien de votre boutique</span>
             </div>
 
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
-              <div className="flex-1 min-w-0 h-12 bg-black/40 border border-white/10 rounded-xl px-3.5 flex items-center gap-1.5 text-xs text-white/80 font-mono overflow-hidden">
-                <span className="text-white/40 select-none truncate shrink-0">{window.location.origin}/shop/</span>
-                <span className="font-bold text-vendeur-emerald truncate">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full max-w-full">
+              <div className="flex-1 min-w-0 h-11 sm:h-12 bg-black/40 border border-white/10 rounded-xl px-3 flex items-center gap-1 text-xs text-white/80 font-mono overflow-hidden">
+                <span className="text-white/40 select-none truncate shrink-0 text-[10px] sm:text-xs">
+                  {typeof window !== "undefined" ? window.location.host : ""}/shop/
+                </span>
+                <span className="font-bold text-vendeur-emerald truncate flex-1 min-w-0 text-[11px] sm:text-xs">
                   {slugify(localMerchant?.slug || localMerchant?.businessName || "boutique")}
                 </span>
               </div>
 
-              <div className="grid grid-cols-2 sm:flex items-center gap-2 shrink-0">
+              <div className="grid grid-cols-2 sm:flex items-center gap-2 shrink-0 w-full sm:w-auto">
                 <button
                   type="button"
                   onClick={() => {
@@ -544,18 +585,18 @@ function BoutiqueTab({ merchant, initialKnowledge, accessToken }: { merchant: an
                     navigator.clipboard.writeText(url);
                     toast.success("Lien copié !");
                   }}
-                  className="h-12 px-4 rounded-xl bg-white/5 hover:bg-white/10 active:scale-95 border border-white/10 text-white text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer"
+                  className="h-11 sm:h-12 px-3 sm:px-4 rounded-xl bg-white/5 hover:bg-white/10 active:scale-95 border border-white/10 text-white text-xs font-black uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all cursor-pointer"
                 >
-                  <Copy size={14} className="text-white/60" />
+                  <Copy size={14} className="text-white/60 shrink-0" />
                   <span>Copier</span>
                 </button>
 
                 <Link
                   to={`/shop/${slugify(localMerchant?.slug || localMerchant?.businessName || "boutique")}`}
                   target="_blank"
-                  className="h-12 px-4 rounded-xl bg-vendeur-emerald hover:bg-emerald-400 active:scale-95 text-vendeur-coal text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-vendeur-emerald/20 transition-all font-bold"
+                  className="h-11 sm:h-12 px-3 sm:px-4 rounded-xl bg-vendeur-emerald hover:bg-emerald-400 active:scale-95 text-vendeur-coal text-xs font-black uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-lg shadow-vendeur-emerald/20 transition-all font-bold"
                 >
-                  <ExternalLink size={14} />
+                  <ExternalLink size={14} className="shrink-0" />
                   <span>Visiter</span>
                 </Link>
               </div>
@@ -812,64 +853,65 @@ function BoutiqueTab({ merchant, initialKnowledge, accessToken }: { merchant: an
       </section>
 
       {/* Grille de Livraison */}
-      <section id="delivery" className="bg-vendeur-coal border border-white/10 p-5 sm:p-7 md:p-8 rounded-2xl sm:rounded-3xl md:rounded-[2.5rem] space-y-6 sm:space-y-8 shadow-2xl scroll-mt-28">
-        <div className="flex items-center gap-3 md:gap-4 px-2">
-          <div className="h-12 w-12 md:h-14 md:w-14 bg-sky-500/10 rounded-2xl flex items-center justify-center text-sky-400 border border-sky-500/20 shrink-0">
-            <Truck size={24} className="md:w-7 md:h-7" />
+      <section id="delivery" className="bg-vendeur-coal border border-white/10 p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl md:rounded-[2.5rem] space-y-6 sm:space-y-8 shadow-2xl scroll-mt-28 w-full max-w-full overflow-hidden box-border">
+        <div className="flex items-center gap-3 md:gap-4 px-1">
+          <div className="h-11 w-11 sm:h-12 sm:w-12 md:h-14 md:w-14 bg-sky-500/10 rounded-2xl flex items-center justify-center text-sky-400 border border-sky-500/20 shrink-0">
+            <Truck size={22} className="md:w-7 md:h-7" />
           </div>
-          <div>
-            <h2 className="text-xl md:text-2xl font-black uppercase text-white leading-tight whitespace-nowrap">Frais de Livraison</h2>
-            <p className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.15em] md:tracking-[0.2em] text-white/30">Ces tarifs seront communiqués aux clients.</p>
+          <div className="min-w-0 flex-1">
+            <h2 className="text-lg sm:text-xl md:text-2xl font-black uppercase text-white leading-tight">Frais de Livraison</h2>
+            <p className="text-[9px] md:text-[10px] font-black uppercase tracking-wider text-white/30">Ces tarifs seront communiqués aux clients.</p>
           </div>
         </div>
 
-        <div className="space-y-4">
-           <div className="flex flex-row gap-2 px-2 text-[10px] font-black uppercase tracking-[0.2em] text-white/20">
+        <div className="space-y-3 sm:space-y-4 w-full max-w-full">
+           <div className="flex flex-row gap-2 px-1 text-[9px] sm:text-[10px] font-black uppercase tracking-[0.15em] text-white/30">
               <span className="flex-1">Zone / Commune</span>
-              <span className="w-24 md:w-40 text-right pr-2">Tarif ({localMerchant?.currency || "XOF"})</span>
+              <span className="w-24 sm:w-36 md:w-40 text-right pr-2">Tarif ({localMerchant?.currency || "XOF"})</span>
+              <span className="w-9 sm:w-11" />
            </div>
 
            {deliveryFees.map((fee: any, idx: number) => (
-              <div key={idx} className="relative group animate-in slide-in-from-left-2 duration-200 py-1">
-                 <div className="flex flex-row gap-2 items-center">
-                    <ZoneAutocomplete
-                        value={fee.zone}
-                        city={localMerchant?.city}
-                        countryCode={localMerchant?.country}
-                        onChange={(val) => {
-                          setDeliveryFees((prev: any[]) => prev.map((f: any, i: number) => i === idx ? { ...f, zone: val } : f));
-                          setIsDirty(true);
-                        }}
-                        placeholder="Ex: Riviera 3"
-                        className="flex-1 h-14 text-sm font-bold"
-                    />
-                    <div className="relative w-24 md:w-40 shrink-0">
-                      <input
-                          type="number"
-                          className="w-full h-14 bg-black/40 border border-white/10 rounded-2xl px-3 text-sm text-vendeur-emerald font-black outline-none focus:border-sky-500 transition-all font-mono"
-                          placeholder="1500"
-                          value={fee.price}
-                          onChange={(e) => {
-                            const val = parseInt(e.target.value) || 0;
-                            setDeliveryFees((prev: any[]) => prev.map((f: any, i: number) => i === idx ? { ...f, price: val } : f));
-                            setIsDirty(true);
-                          }}
-                      />
-                      <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[8px] font-black text-white/10 pointer-events-none uppercase">
-                        {localMerchant?.currency || "XOF"}
-                      </span>
-                    </div>
-                 </div>
-
-                 <button
-                    onClick={() => {
-                      setDeliveryFees((prev: any[]) => prev.filter((_: any, i: number) => i !== idx));
+              <div key={idx} className="flex items-center gap-2 w-full max-w-full animate-in slide-in-from-left-2 duration-200">
+                <ZoneAutocomplete
+                    value={fee.zone}
+                    city={localMerchant?.city}
+                    countryCode={localMerchant?.country}
+                    onChange={(val) => {
+                      setDeliveryFees((prev: any[]) => prev.map((f: any, i: number) => i === idx ? { ...f, zone: val } : f));
                       setIsDirty(true);
                     }}
-                    className="absolute -right-2 -top-1 h-7 w-7 bg-rose-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all shadow-lg hover:scale-110 active:scale-95 z-10"
-                 >
-                    <Trash2 size={12} />
-                 </button>
+                    placeholder="Ex: Riviera 3"
+                    className="flex-1 min-w-0 h-12 sm:h-14 text-xs sm:text-sm font-bold"
+                />
+                <div className="relative w-24 sm:w-36 md:w-40 shrink-0">
+                  <input
+                      type="number"
+                      className="w-full h-12 sm:h-14 bg-black/40 border border-white/10 rounded-xl sm:rounded-2xl px-2.5 sm:px-3 text-xs sm:text-sm text-vendeur-emerald font-black outline-none focus:border-sky-500 transition-all font-mono"
+                      placeholder="1500"
+                      value={fee.price}
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value) || 0;
+                        setDeliveryFees((prev: any[]) => prev.map((f: any, i: number) => i === idx ? { ...f, price: val } : f));
+                        setIsDirty(true);
+                      }}
+                  />
+                  <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[8px] font-black text-white/20 pointer-events-none uppercase hidden sm:inline">
+                    {localMerchant?.currency || "XOF"}
+                  </span>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDeliveryFees((prev: any[]) => prev.filter((_: any, i: number) => i !== idx));
+                    setIsDirty(true);
+                  }}
+                  className="h-12 w-9 sm:h-14 sm:w-11 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 rounded-xl sm:rounded-2xl flex items-center justify-center transition-all active:scale-95 shrink-0 cursor-pointer"
+                  title="Supprimer cette zone"
+                >
+                  <Trash2 size={14} />
+                </button>
               </div>
            ))}
 

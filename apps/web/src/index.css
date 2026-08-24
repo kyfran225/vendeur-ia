@@ -216,3 +216,28 @@
   animation-delay: 0.36s;
   will-change: transform, opacity, box-shadow;
 }
+
+/* Sleek Emerald Horizontal Tabs Scrollbar for Desktop */
+.tabs-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(16, 185, 129, 0.45) rgba(255, 255, 255, 0.03);
+}
+
+.tabs-scrollbar::-webkit-scrollbar {
+  height: 5px;
+}
+
+.tabs-scrollbar::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 9999px;
+  margin: 0 4px;
+}
+
+.tabs-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(16, 185, 129, 0.45);
+  border-radius: 9999px;
+}
+
+.tabs-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #10b981;
+}

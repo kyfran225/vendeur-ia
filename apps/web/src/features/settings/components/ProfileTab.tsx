@@ -277,29 +277,29 @@ export function ProfileTab({ merchant }: { merchant?: any }) {
   };
 
   return (
-    <div className="space-y-6 sm:space-y-8 animate-in slide-in-from-bottom-2 duration-500 max-w-4xl pb-16">
+    <div className="space-y-6 sm:space-y-8 animate-in slide-in-from-bottom-2 duration-500 max-w-4xl pb-16 w-full max-w-full overflow-hidden box-border">
       {/* 1. Profile Hero & Photo Upload — Mobile First */}
-      <section className="bg-vendeur-coal/70 backdrop-blur-2xl border border-white/10 p-5 sm:p-7 md:p-10 rounded-3xl sm:rounded-[2.5rem] shadow-2xl relative overflow-hidden">
+      <section className="bg-vendeur-coal/70 backdrop-blur-2xl border border-white/10 p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl md:rounded-[2.5rem] shadow-2xl relative overflow-hidden w-full max-w-full box-border">
         {/* Subtle glow background */}
         <div className="absolute top-0 right-0 w-80 h-80 bg-vendeur-emerald/5 rounded-full blur-3xl pointer-events-none" />
 
-        <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 sm:gap-8 relative z-10">
+        <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5 sm:gap-7 md:gap-8 relative z-10 w-full max-w-full">
           {/* Avatar / Dropzone */}
-          <div className="flex flex-col items-center gap-3 shrink-0">
+          <div className="flex flex-col items-center gap-2.5 sm:gap-3 shrink-0">
             <div
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}
               onDrop={handleDrop}
               onClick={() => fileInputRef.current?.click()}
               className={cn(
-                "relative group h-28 w-28 sm:h-32 sm:w-32 md:h-36 md:w-36 rounded-3xl sm:rounded-[2.2rem] p-1 transition-all cursor-pointer select-none shrink-0",
+                "relative group h-24 w-24 sm:h-28 sm:w-28 md:h-36 md:w-36 rounded-2xl sm:rounded-3xl md:rounded-[2.2rem] p-1 transition-all cursor-pointer select-none shrink-0",
                 "bg-gradient-to-tr from-vendeur-emerald/30 via-white/10 to-vendeur-emerald/20",
                 "hover:scale-105 active:scale-95 shadow-2xl",
                 isDragging ? "ring-4 ring-vendeur-emerald scale-105" : ""
               )}
               title="Cliquer ou glisser-déposer une photo"
             >
-              <div className="h-full w-full rounded-[1.4rem] sm:rounded-[2rem] bg-vendeur-coal overflow-hidden relative flex items-center justify-center border border-white/10">
+              <div className="h-full w-full rounded-[1.2rem] sm:rounded-[1.6rem] md:rounded-[2rem] bg-vendeur-coal overflow-hidden relative flex items-center justify-center border border-white/10">
                 {avatarUrl ? (
                   <img
                     src={avatarUrl}
@@ -307,7 +307,7 @@ export function ProfileTab({ merchant }: { merchant?: any }) {
                     className="h-full w-full object-cover group-hover:opacity-80 transition-opacity"
                   />
                 ) : (
-                  <div className="h-full w-full flex flex-col items-center justify-center bg-gradient-to-br from-white/10 to-white/5 text-white font-black text-2xl tracking-wider">
+                  <div className="h-full w-full flex flex-col items-center justify-center bg-gradient-to-br from-white/10 to-white/5 text-white font-black text-xl sm:text-2xl tracking-wider">
                     {getInitials(displayName || user?.displayName)}
                   </div>
                 )}
@@ -336,9 +336,9 @@ export function ProfileTab({ merchant }: { merchant?: any }) {
                 }}
                 disabled={isUploadingPhoto}
                 aria-label="Sélectionner une photo"
-                className="absolute -right-1 -bottom-1 h-9 w-9 sm:h-11 sm:w-11 bg-vendeur-emerald text-vendeur-coal rounded-xl sm:rounded-2xl flex items-center justify-center shadow-xl hover:scale-110 active:scale-95 transition-all border-2 border-vendeur-coal cursor-pointer z-10 shrink-0"
+                className="absolute -right-1 -bottom-1 h-8 w-8 sm:h-10 sm:w-10 md:h-11 md:w-11 bg-vendeur-emerald text-vendeur-coal rounded-lg sm:rounded-xl md:rounded-2xl flex items-center justify-center shadow-xl hover:scale-110 active:scale-95 transition-all border-2 border-vendeur-coal cursor-pointer z-10 shrink-0"
               >
-                <Camera size={18} className="shrink-0" />
+                <Camera size={16} className="shrink-0" />
               </button>
             </div>
 
@@ -352,7 +352,7 @@ export function ProfileTab({ merchant }: { merchant?: any }) {
             />
 
             {/* Photo Action Links */}
-            <div className="flex items-center gap-2.5 sm:gap-3 text-xs font-bold mt-0.5">
+            <div className="flex items-center gap-2 sm:gap-3 text-xs font-bold mt-0.5">
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
@@ -391,13 +391,13 @@ export function ProfileTab({ merchant }: { merchant?: any }) {
 
             {/* Custom URL Popover */}
             {showCustomUrlInput && (
-              <div className="w-full mt-2 p-3 bg-black/50 border border-white/10 rounded-2xl space-y-2 animate-in fade-in zoom-in-95 duration-200">
+              <div className="w-full mt-2 p-3 bg-black/50 border border-white/10 rounded-2xl space-y-2 animate-in fade-in zoom-in-95 duration-200 box-border">
                 <input
                   type="url"
                   placeholder="https://exemple.com/photo.jpg"
                   value={customUrl}
                   onChange={(e) => setCustomUrl(e.target.value)}
-                  className="w-full h-10 rounded-xl bg-white/5 border border-white/10 px-3 text-xs text-white placeholder-white/30 focus:border-vendeur-emerald outline-none"
+                  className="w-full h-10 rounded-xl bg-white/5 border border-white/10 px-3 text-xs text-white placeholder-white/30 focus:border-vendeur-emerald outline-none box-border"
                 />
                 <div className="flex gap-2 justify-end">
                   <button
@@ -421,26 +421,26 @@ export function ProfileTab({ merchant }: { merchant?: any }) {
           </div>
 
           {/* User Information & Quick Metadata */}
-          <div className="flex-1 text-center sm:text-left space-y-3 w-full">
-            <div className="space-y-1">
-              <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2.5">
-                <h2 className="text-xl sm:text-2xl md:text-3xl font-black text-white tracking-tight leading-tight">
+          <div className="flex-1 min-w-0 text-center sm:text-left space-y-3 w-full max-w-full">
+            <div className="space-y-1 min-w-0">
+              <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
+                <h2 className="text-lg sm:text-2xl md:text-3xl font-black text-white tracking-tight leading-tight break-words max-w-full">
                   {displayName || "Utilisateur Vendeur IA"}
                 </h2>
-                <span className="px-3 py-1 rounded-full bg-vendeur-emerald/10 border border-vendeur-emerald/30 text-vendeur-emerald text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5 shrink-0">
-                  <ShieldCheck size={13} className="shrink-0" />
+                <span className="px-2.5 py-0.5 rounded-full bg-vendeur-emerald/10 border border-vendeur-emerald/30 text-vendeur-emerald text-[9px] sm:text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5 shrink-0">
+                  <ShieldCheck size={12} className="shrink-0" />
                   <span>{user?.roles?.includes("admin") ? "Administrateur" : "Marchand Vérifié"}</span>
                 </span>
               </div>
-              <p className="text-xs sm:text-sm font-medium text-white/50">{user?.email}</p>
+              <p className="text-xs sm:text-sm font-medium text-white/50 break-all max-w-full">{user?.email}</p>
             </div>
 
             {/* Quick Metadata Badges */}
-            <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 sm:gap-3 pt-1">
-              <div className="px-3.5 py-1.5 rounded-xl bg-white/5 border border-white/10 flex items-center gap-2">
+            <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 pt-1 max-w-full">
+              <div className="px-3 py-1.5 rounded-xl bg-white/5 border border-white/10 flex items-center gap-1.5 max-w-full min-w-0">
                 <Store size={14} className="text-vendeur-emerald shrink-0" />
-                <span className="text-[10px] font-black uppercase tracking-widest text-white/40">Boutique :</span>
-                <span className="text-xs font-bold text-white truncate max-w-[140px] sm:max-w-none">
+                <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-white/40 shrink-0">Boutique :</span>
+                <span className="text-xs font-bold text-white truncate max-w-[130px] sm:max-w-[200px]">
                   {merchant?.businessName || "Non configurée"}
                 </span>
               </div>
@@ -449,15 +449,15 @@ export function ProfileTab({ merchant }: { merchant?: any }) {
                 <button
                   type="button"
                   onClick={handleCopyId}
-                  className="px-3.5 py-1.5 rounded-xl bg-white/5 border border-white/10 hover:border-white/20 text-white/60 hover:text-white flex items-center gap-1.5 transition-all cursor-pointer active:scale-95 group shrink-0"
+                  className="px-3 py-1.5 rounded-xl bg-white/5 border border-white/10 hover:border-white/20 text-white/60 hover:text-white flex items-center gap-1.5 transition-all cursor-pointer active:scale-95 group shrink-0"
                   title="Copier l'identifiant utilisateur"
                 >
-                  <span className="text-[10px] font-black uppercase tracking-widest text-white/40">ID :</span>
+                  <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-white/40">ID :</span>
                   <span className="text-xs font-mono text-white/80">{user.id.slice(0, 8)}...</span>
                   {copiedId ? (
-                    <Check size={14} className="text-vendeur-emerald shrink-0" />
+                    <Check size={13} className="text-vendeur-emerald shrink-0" />
                   ) : (
-                    <Copy size={14} className="group-hover:scale-110 transition-transform text-white/40 shrink-0" />
+                    <Copy size={13} className="group-hover:scale-110 transition-transform text-white/40 shrink-0" />
                   )}
                 </button>
               )}
@@ -467,7 +467,7 @@ export function ProfileTab({ merchant }: { merchant?: any }) {
       </section>
 
       {/* 2. Personal Information Edit Form */}
-      <section className="bg-vendeur-coal/60 backdrop-blur-2xl border border-white/10 p-5 sm:p-7 md:p-10 rounded-3xl sm:rounded-[2.5rem] shadow-2xl space-y-6">
+      <section className="bg-vendeur-coal/60 backdrop-blur-2xl border border-white/10 p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl md:rounded-[2.5rem] shadow-2xl space-y-6 w-full max-w-full overflow-hidden box-border">
         <div className="flex items-center gap-3">
           <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-xl sm:rounded-2xl bg-vendeur-emerald/10 border border-vendeur-emerald/20 flex items-center justify-center text-vendeur-emerald shrink-0">
             <UserIcon size={20} className="shrink-0" />
@@ -482,14 +482,14 @@ export function ProfileTab({ merchant }: { merchant?: any }) {
           </div>
         </div>
 
-        <form onSubmit={handleSaveProfile} className="space-y-5 sm:space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+        <form onSubmit={handleSaveProfile} className="space-y-4 sm:space-y-6 w-full max-w-full">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 w-full max-w-full">
             {/* Display Name Input */}
-            <div className="space-y-1.5">
+            <div className="space-y-1.5 min-w-0">
               <label className="text-[10px] sm:text-[11px] font-black uppercase tracking-widest text-white/50 ml-1">
                 Nom d'affichage (Public)
               </label>
-              <div className="relative">
+              <div className="relative w-full max-w-full">
                 <UserIcon className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30 shrink-0" size={18} />
                 <input
                   type="text"
@@ -497,31 +497,31 @@ export function ProfileTab({ merchant }: { merchant?: any }) {
                   value={displayName}
                   onChange={(e) => setDisplayName(e.target.value)}
                   placeholder="Ex: Franck Kouassi"
-                  className="w-full h-12 sm:h-14 rounded-xl sm:rounded-2xl bg-black/40 border border-white/10 pl-11 sm:pl-12 pr-4 text-white focus:border-vendeur-emerald outline-none transition-all shadow-inner font-medium text-xs sm:text-sm"
+                  className="w-full max-w-full h-12 sm:h-14 rounded-xl sm:rounded-2xl bg-black/40 border border-white/10 pl-11 sm:pl-12 pr-4 text-white focus:border-vendeur-emerald outline-none transition-all shadow-inner font-medium text-xs sm:text-sm box-border"
                 />
               </div>
             </div>
 
             {/* Email (Readonly) */}
-            <div className="space-y-1.5">
+            <div className="space-y-1.5 min-w-0">
               <label className="text-[10px] sm:text-[11px] font-black uppercase tracking-widest text-white/50 ml-1">
                 Adresse Email (Liée au compte)
               </label>
-              <div className="relative">
+              <div className="relative w-full max-w-full">
                 <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30 shrink-0" size={18} />
                 <input
                   type="email"
                   disabled
                   value={user?.email || ""}
-                  className="w-full h-12 sm:h-14 rounded-xl sm:rounded-2xl bg-black/20 border border-white/5 pl-11 sm:pl-12 pr-4 text-white/40 outline-none cursor-not-allowed font-medium text-xs sm:text-sm"
+                  className="w-full max-w-full h-12 sm:h-14 rounded-xl sm:rounded-2xl bg-black/20 border border-white/5 pl-11 sm:pl-12 pr-4 text-white/40 outline-none cursor-not-allowed font-medium text-xs sm:text-sm box-border truncate"
                 />
               </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 w-full max-w-full">
             {/* FirstName */}
-            <div className="space-y-1.5">
+            <div className="space-y-1.5 min-w-0">
               <label className="text-[10px] sm:text-[11px] font-black uppercase tracking-widest text-white/50 ml-1">
                 Prénom
               </label>
@@ -530,11 +530,11 @@ export function ProfileTab({ merchant }: { merchant?: any }) {
                 value={firstName}
                 onChange={(e) => setFirstName(e.target.value)}
                 placeholder="Votre prénom"
-                className="w-full h-12 sm:h-14 rounded-xl sm:rounded-2xl bg-black/40 border border-white/10 px-5 text-white focus:border-vendeur-emerald outline-none transition-all shadow-inner font-medium text-xs sm:text-sm"
+                className="w-full max-w-full h-12 sm:h-14 rounded-xl sm:rounded-2xl bg-black/40 border border-white/10 px-4 sm:px-5 text-white focus:border-vendeur-emerald outline-none transition-all shadow-inner font-medium text-xs sm:text-sm box-border"
               />
             </div>
             {/* LastName */}
-            <div className="space-y-1.5">
+            <div className="space-y-1.5 min-w-0">
               <label className="text-[10px] sm:text-[11px] font-black uppercase tracking-widest text-white/50 ml-1">
                 Nom
               </label>
@@ -543,24 +543,24 @@ export function ProfileTab({ merchant }: { merchant?: any }) {
                 value={lastName}
                 onChange={(e) => setLastName(e.target.value)}
                 placeholder="Votre nom"
-                className="w-full h-12 sm:h-14 rounded-xl sm:rounded-2xl bg-black/40 border border-white/10 px-5 text-white focus:border-vendeur-emerald outline-none transition-all shadow-inner font-medium text-xs sm:text-sm"
+                className="w-full max-w-full h-12 sm:h-14 rounded-xl sm:rounded-2xl bg-black/40 border border-white/10 px-4 sm:px-5 text-white focus:border-vendeur-emerald outline-none transition-all shadow-inner font-medium text-xs sm:text-sm box-border"
               />
             </div>
           </div>
 
           {/* Business Name */}
-          <div className="space-y-1.5">
+          <div className="space-y-1.5 min-w-0 w-full max-w-full">
             <label className="text-[10px] sm:text-[11px] font-black uppercase tracking-widest text-white/50 ml-1">
               Nom de la Boutique (Marchand)
             </label>
-            <div className="relative">
+            <div className="relative w-full max-w-full">
               <Store className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30 shrink-0" size={18} />
               <input
                 type="text"
                 value={businessName}
                 onChange={(e) => setBusinessName(e.target.value)}
                 placeholder="Ex: Ma Boutique"
-                className="w-full h-12 sm:h-14 rounded-xl sm:rounded-2xl bg-black/40 border border-white/10 pl-11 sm:pl-12 pr-4 text-white focus:border-vendeur-emerald outline-none transition-all shadow-inner font-medium text-xs sm:text-sm"
+                className="w-full max-w-full h-12 sm:h-14 rounded-xl sm:rounded-2xl bg-black/40 border border-white/10 pl-11 sm:pl-12 pr-4 text-white focus:border-vendeur-emerald outline-none transition-all shadow-inner font-medium text-xs sm:text-sm box-border"
               />
             </div>
           </div>
@@ -586,7 +586,7 @@ export function ProfileTab({ merchant }: { merchant?: any }) {
       </section>
 
       {/* 3. Security & Password Change */}
-      <section className="bg-vendeur-coal/60 backdrop-blur-2xl border border-white/10 p-5 sm:p-7 md:p-10 rounded-3xl sm:rounded-[2.5rem] shadow-2xl space-y-6">
+      <section className="bg-vendeur-coal/60 backdrop-blur-2xl border border-white/10 p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl md:rounded-[2.5rem] shadow-2xl space-y-6 w-full max-w-full overflow-hidden box-border">
         <div className="flex items-center gap-3">
           <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-xl sm:rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 shrink-0">
             <KeyRound size={20} className="shrink-0" />
@@ -601,21 +601,21 @@ export function ProfileTab({ merchant }: { merchant?: any }) {
           </div>
         </div>
 
-        <form onSubmit={handleChangePassword} className="space-y-5 sm:space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
+        <form onSubmit={handleChangePassword} className="space-y-4 sm:space-y-6 w-full max-w-full">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 w-full max-w-full">
             {/* Current Password */}
-            <div className="space-y-1.5">
+            <div className="space-y-1.5 min-w-0">
               <label className="text-[10px] sm:text-[11px] font-black uppercase tracking-widest text-white/50 ml-1">
                 Mot de passe actuel
               </label>
-              <div className="relative">
+              <div className="relative w-full max-w-full">
                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30 shrink-0" size={17} />
                 <input
                   type={showCurrentPassword ? "text" : "password"}
                   value={currentPassword}
                   onChange={(e) => setCurrentPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full h-12 sm:h-14 rounded-xl sm:rounded-2xl bg-black/40 border border-white/10 pl-11 sm:pl-12 pr-11 text-white focus:border-vendeur-emerald outline-none transition-all shadow-inner text-xs sm:text-sm"
+                  className="w-full max-w-full h-12 sm:h-14 rounded-xl sm:rounded-2xl bg-black/40 border border-white/10 pl-11 sm:pl-12 pr-11 text-white focus:border-vendeur-emerald outline-none transition-all shadow-inner text-xs sm:text-sm box-border"
                 />
                 <button
                   type="button"
@@ -628,18 +628,18 @@ export function ProfileTab({ merchant }: { merchant?: any }) {
             </div>
 
             {/* New Password */}
-            <div className="space-y-1.5">
+            <div className="space-y-1.5 min-w-0">
               <label className="text-[10px] sm:text-[11px] font-black uppercase tracking-widest text-white/50 ml-1">
                 Nouveau mot de passe
               </label>
-              <div className="relative">
+              <div className="relative w-full max-w-full">
                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30 shrink-0" size={17} />
                 <input
                   type={showNewPassword ? "text" : "password"}
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   placeholder="Min. 8 caractères"
-                  className="w-full h-12 sm:h-14 rounded-xl sm:rounded-2xl bg-black/40 border border-white/10 pl-11 sm:pl-12 pr-11 text-white focus:border-vendeur-emerald outline-none transition-all shadow-inner text-xs sm:text-sm"
+                  className="w-full max-w-full h-12 sm:h-14 rounded-xl sm:rounded-2xl bg-black/40 border border-white/10 pl-11 sm:pl-12 pr-11 text-white focus:border-vendeur-emerald outline-none transition-all shadow-inner text-xs sm:text-sm box-border"
                 />
                 <button
                   type="button"
@@ -652,18 +652,18 @@ export function ProfileTab({ merchant }: { merchant?: any }) {
             </div>
 
             {/* Confirm Password */}
-            <div className="space-y-1.5">
+            <div className="space-y-1.5 min-w-0">
               <label className="text-[10px] sm:text-[11px] font-black uppercase tracking-widest text-white/50 ml-1">
                 Confirmer le mot de passe
               </label>
-              <div className="relative">
+              <div className="relative w-full max-w-full">
                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30 shrink-0" size={17} />
                 <input
                   type={showNewPassword ? "text" : "password"}
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   placeholder="Répétez le mot de passe"
-                  className="w-full h-12 sm:h-14 rounded-xl sm:rounded-2xl bg-black/40 border border-white/10 pl-11 sm:pl-12 pr-4 text-white focus:border-vendeur-emerald outline-none transition-all shadow-inner text-xs sm:text-sm"
+                  className="w-full max-w-full h-12 sm:h-14 rounded-xl sm:rounded-2xl bg-black/40 border border-white/10 pl-11 sm:pl-12 pr-4 text-white focus:border-vendeur-emerald outline-none transition-all shadow-inner text-xs sm:text-sm box-border"
                 />
               </div>
             </div>
@@ -689,8 +689,8 @@ export function ProfileTab({ merchant }: { merchant?: any }) {
       </section>
 
       {/* 4. Session & Disconnect */}
-      <section className="bg-red-500/5 border border-red-500/20 p-5 sm:p-7 md:p-8 rounded-3xl sm:rounded-[2.5rem] flex flex-col sm:flex-row items-center justify-between gap-4">
-        <div className="space-y-1 text-center sm:text-left">
+      <section className="bg-red-500/5 border border-red-500/20 p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl md:rounded-[2.5rem] flex flex-col sm:flex-row items-center justify-between gap-4 w-full max-w-full box-border">
+        <div className="space-y-1 text-center sm:text-left min-w-0 flex-1">
           <h3 className="text-base font-black text-white uppercase tracking-tight">Déconnexion de session</h3>
           <p className="text-xs text-white/40">Fermer votre session active sur cet appareil en toute sécurité.</p>
         </div>

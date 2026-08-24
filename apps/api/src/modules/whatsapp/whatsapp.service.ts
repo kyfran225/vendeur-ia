@@ -433,7 +433,7 @@ class WhatsAppService {
           if (authResult.replyMessage) {
             const sock = this.activeSessions.get(userId);
             if (sock) {
-              await sock.sendMessage(from, { text: authResult.replyMessage }).catch(e => console.error("[Baileys WhatsApp] Auth reply failed:", e));
+              await sock.sendMessage(from, { text: authResult.replyMessage }).catch((e: any) => console.error("[Baileys WhatsApp] Auth reply failed:", e));
             }
           }
           return;

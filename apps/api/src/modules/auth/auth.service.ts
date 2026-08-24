@@ -525,7 +525,7 @@ export class AuthService {
       const isSenderMatchingSession =
         cleanPhone === sessionTargetPhone ||
         sessionPhoneVariants.includes(cleanPhone) ||
-        sessionPhoneVariants.some(v => phoneVariants.includes(v));
+        sessionPhoneVariants.some((v: string) => phoneVariants.includes(v));
 
       if (!isSenderMatchingSession) {
         console.warn(`[WhatsApp Reverse Auth] STRICT CONCORDANCE REFUSAL: Code ${matchedSessionCode} requested for ${sessionTargetPhone}, received from ${cleanPhone}`);

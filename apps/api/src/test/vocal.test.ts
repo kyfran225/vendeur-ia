@@ -62,6 +62,7 @@ describe('AI Vocal-First Experience Audit Tests', () => {
     vi.spyOn(CommerceMerchantModel, 'findById').mockResolvedValue({
       _id: merchantId,
       ownerId: userId,
+      subscription: { status: 'active' },
       aiSettings: { voiceMode: true }
     } as any);
 
@@ -82,7 +83,8 @@ describe('AI Vocal-First Experience Audit Tests', () => {
             businessName: "Vocal Test",
             category: "mode",
             city: "Abidjan",
-            country: "CI"
+            country: "CI",
+            subscription: { status: 'active' }
         },
         products: [],
         knowledge: {},
@@ -111,6 +113,7 @@ describe('AI Vocal-First Experience Audit Tests', () => {
   it('should fallback to text if TTS fails', async () => {
     vi.spyOn(CommerceMerchantModel, 'findById').mockResolvedValue({
       _id: merchantId,
+      subscription: { status: 'active' },
       aiSettings: { voiceMode: true }
     } as any);
 
@@ -129,7 +132,8 @@ describe('AI Vocal-First Experience Audit Tests', () => {
             _id: merchantId,
             category: "mode",
             city: "Abidjan",
-            country: "CI"
+            country: "CI",
+            subscription: { status: 'active' }
         },
         products: [],
         knowledge: {},

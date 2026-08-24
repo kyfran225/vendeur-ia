@@ -1116,7 +1116,7 @@ router.post("/webhooks/paystack", async (req, res) => {
     return res.status(401).send('Invalid signature');
   }
 
-  const event = JSON.parse(body);
+  const event = typeof req.body === 'object' && !(req.body instanceof Buffer) ? req.body : JSON.parse(rawBody);
   console.log(`[Paystack Webhook] Event received: "${event.event}" for reference: ${event?.data?.reference}`);
 
   // IDEMPOTENCY CHECK: Check if this event was already processed

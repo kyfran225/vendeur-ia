@@ -241,13 +241,15 @@ export class PaymentService {
     } else {
       // Fallbacks
       if (offerSlug === "pro" || offerSlug === "premium") {
-        planName = "Pro";
-        amount = billingInterval === "yearly" ? 150000 : 15000;
+        planName = "Vendeur IA Pro";
+        amount = billingInterval === "yearly" ? 200000 : 20000;
       } else if (offerSlug === "business") {
-        planName = "Business";
+        planName = "Vendeur IA Business";
         amount = billingInterval === "yearly" ? 350000 : 35000;
       } else if (offerSlug === "pack_pro") {
-        planName = "Pack Pro Assistance Déploiement";
+        planName = "Pack Pro Expert (Clé en Main)";
+        // 20k (Pro) + 25k (Expert Setup) = 45k
+        amount = 45000;
         amount = 25000;
       }
     }

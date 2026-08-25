@@ -113,8 +113,12 @@ export function OffersModal({ isOpen, onClose }: OffersModalProps) {
 
           <div className="pt-6 md:pt-10 space-y-4">
             <div className="flex items-baseline gap-2 h-10 sm:h-12">
-              <span className="text-3xl sm:text-5xl font-black text-vendeur-emerald font-mono">{essential?.monthlyPrice?.toLocaleString() || "5 000"}</span>
-              <span className="text-[11px] sm:text-xs font-black text-white/40 uppercase tracking-wider">{essential?.currency || currency} / MOIS</span>
+              <span className="text-3xl sm:text-5xl font-black text-vendeur-emerald font-mono">
+                {essential?.monthlyPrice?.toLocaleString() || "5 000"}
+              </span>
+              <span className="text-[11px] sm:text-xs font-black text-white/40 uppercase tracking-wider">
+                {essential?.currency || currency} / MOIS
+              </span>
             </div>
 
             <button
@@ -161,10 +165,10 @@ export function OffersModal({ isOpen, onClose }: OffersModalProps) {
             </div>
 
             <div className="space-y-3.5">
+              <OfferFeature text="Forfait Vendeur IA Pro Inclus" highlight />
               <OfferFeature text="Configuration Meta Cloud WhatsApp" highlight />
               <OfferFeature text="Import Catalogue & Inventaire" highlight />
               <OfferFeature text="Personnalisation IA Avancée" highlight />
-              <OfferFeature text="Formation IA & Vente" highlight />
               <OfferFeature text="Support VIP 24h/7 WhatsApp" highlight />
             </div>
           </div>
@@ -172,9 +176,9 @@ export function OffersModal({ isOpen, onClose }: OffersModalProps) {
           <div className="pt-6 md:pt-10 space-y-4">
              <div className="flex items-baseline gap-2 h-10 sm:h-12">
               <span className="text-3xl sm:text-5xl font-black text-white font-mono">
-                {pro ? (pro.monthlyPrice + (pro.setupOptions?.find((o: any) => o.type === 'EXPERT')?.price || 0)).toLocaleString() : "25 000"}
+                {pro ? (pro.monthlyPrice + (pro.setupOptions?.find((o: any) => o.type === 'EXPERT')?.price || 25000)).toLocaleString() : "45 000"}
               </span>
-              <span className="text-[11px] sm:text-xs font-black text-white/40 uppercase tracking-wider">{pro?.currency || currency} (UNIQUE)</span>
+              <span className="text-[11px] sm:text-xs font-black text-white/40 uppercase tracking-wider">{pro?.currency || currency} (INITIAL)</span>
             </div>
 
             <button

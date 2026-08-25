@@ -223,7 +223,7 @@ export function SmartAssistantCard({ dashboard, onOpenTestIA, onOpenShare }: Sma
               <p className="text-sm sm:text-base md:text-[16px] text-white/95 leading-relaxed italic break-words font-medium">
                 "{isUnderVerification ? (
                   <>
-                    Votre règlement de <span className="text-emerald-400 font-bold not-italic">{latestPaymentIntent?.amount?.toLocaleString() || "5 000"} {latestPaymentIntent?.currency || "XOF"}</span> (Réf : <span className="font-mono font-bold text-white not-italic">{latestPaymentIntent?.reference || "TRX"}</span>) est en cours de validation par notre équipe. Votre Vendeur IA 24h/24 sera activé dès confirmation !
+                    Votre règlement de <span className="text-emerald-400 font-bold not-italic">{latestPaymentIntent?.amount?.toLocaleString() || "..."} {latestPaymentIntent?.currency || "XOF"}</span> (Réf : <span className="font-mono font-bold text-white not-italic">{latestPaymentIntent?.reference || "TRX"}</span>) est en cours de validation. Votre Vendeur IA 24h/24 sera activé dès confirmation !
                   </>
                 ) : isExpired ? (
                   <>
@@ -253,7 +253,7 @@ export function SmartAssistantCard({ dashboard, onOpenTestIA, onOpenShare }: Sma
                   )
                 ) : isFullyOperational ? (
                   <>
-                    Tout est parfait pour <span className="text-vendeur-emerald font-bold not-italic">{businessName}</span> ! 🎯 Votre catalogue ({productsCount} article{productsCount > 1 ? 's' : ''}) et votre vitrine sont actifs 24h/24. Je réponds à vos clients, présente vos produits et enregistre vos commandes sur WhatsApp.
+                    Tout est parfait pour <span className="text-vendeur-emerald font-bold not-italic">{businessName}</span> ! 🎯 Votre boutique est entièrement configurée. Je réponds à vos clients, présente vos produits et enregistre vos commandes sur WhatsApp 24h/24.
                   </>
                 ) : (
                   nextStep?.id === "whatsapp" ? (
@@ -349,28 +349,28 @@ export function SmartAssistantCard({ dashboard, onOpenTestIA, onOpenShare }: Sma
                       </button>
                     )}
 
-                    {/* Secondary Action: Vitrine Share (when products added) or Simulator in Discovery Mode or Upgrade */}
-                    {hasProducts && onOpenShare && (
-                      <button
-                        type="button"
-                        onClick={onOpenShare}
-                        className="min-h-[52px] sm:min-h-[56px] px-5 py-3.5 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 text-white font-black uppercase text-xs tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95 shrink-0"
-                        title="Partager ma vitrine en ligne"
-                      >
-                        <Share2 size={16} className="text-vendeur-emerald" />
-                        <span>Partager vitrine</span>
-                      </button>
+                    {isDiscoveryMode && !nextStep && (
+                      <div className="flex flex-col sm:flex-row gap-2 w-full">
+                        <Link
+                          to={getMerchantShopPath(merchant)}
+                          target="_blank"
+                          className="flex-1 min-h-[52px] sm:min-h-[56px] px-5 py-3.5 rounded-2xl bg-white/10 hover:bg-white/15 text-white font-black uppercase text-xs tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95"
+                        >
+                          <ExternalLink size={16} />
+                          <span>Voir ma Vitrine</span>
+                        </Link>
+
+                        <Link
+                          to="/offers"
+                          className="flex-1 min-h-[52px] sm:min-h-[56px] px-5 py-3.5 rounded-2xl bg-vendeur-emerald text-vendeur-coal font-black uppercase text-xs sm:text-sm tracking-wider hover:bg-emerald-400 active:scale-95 transition-all shadow-lg shadow-vendeur-emerald/20 cursor-pointer"
+                        >
+                          <Sparkles size={16} fill="currentColor" />
+                          <span>Activer les Ventes 24h/24</span>
+                        </Link>
+                      </div>
                     )}
 
-                    {isDiscoveryMode ? (
-                      <Link
-                        to="/offers"
-                        className="min-h-[52px] sm:min-h-[56px] px-5 py-3.5 rounded-2xl bg-white/10 hover:bg-white/15 text-white font-black uppercase text-xs tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95 shrink-0"
-                      >
-                        <Sparkles size={16} className="text-amber-300" />
-                        <span>Activer le Forfait 24h/24</span>
-                      </Link>
-                    ) : nextStep && (
+                    {!isDiscoveryMode && nextStep && (
                       <button
                         type="button"
                         onClick={onOpenTestIA}
@@ -454,30 +454,124 @@ export function SmartAssistantCard({ dashboard, onOpenTestIA, onOpenShare }: Sma
           )}
         </div>
 
-        {/* Subtle Concierge / Delegation Nudge (if not 100% or on Starter) */}
-        {!hasPackPro && !isFullyOperational && (
-          <div className="pt-2 border-t border-white/5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-white/[0.02] p-4 sm:p-5 rounded-2xl border border-white/5">
-            <div className="flex items-center gap-3.5">
-              <div className="h-9 w-9 rounded-xl bg-vendeur-emerald/15 text-vendeur-emerald flex items-center justify-center shrink-0 shadow-inner">
-                <Rocket size={18} />
-              </div>
-              <div>
-                <p className="text-xs sm:text-sm font-bold text-white leading-tight">
-                  Envie de déléguer la mise en place ?
+        {/*
+          BLOC PREMIUM PACK PRO AVEC CAROUSEL D'AVANTAGES
+          Affiché pour inciter à passer à l'offre Pro/Expert
+        */}
+        {/*
+          BLOC VITRINE & CROISSANCE
+          Affiché quand la boutique a des articles pour encourager le partage
+        */}
+        {hasProducts && (
+          <div className="pt-6 border-t border-white/5 space-y-4">
+            <div className="bg-gradient-to-r from-blue-500/10 via-blue-500/5 to-transparent border border-blue-500/20 p-4 sm:p-6 rounded-3xl flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 relative overflow-hidden group/showcase shadow-xl">
+              <div className="space-y-2 relative z-10 flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                   <div className="h-8 w-8 rounded-xl bg-blue-500/20 text-blue-400 flex items-center justify-center shrink-0 shadow-inner">
+                    <Package size={16} />
+                  </div>
+                  <h4 className="text-sm sm:text-base font-black uppercase tracking-tight text-white">
+                    Votre Vitrine est en ligne ! 🚀
+                  </h4>
+                </div>
+                <p className="text-xs sm:text-sm text-white/70 font-medium leading-relaxed max-w-lg">
+                  Attirez vos premiers clients en diffusant votre lien ou vérifiez le rendu de vos articles côté acheteur.
                 </p>
-                <p className="text-xs text-white/50 font-medium mt-0.5">
-                  Nos experts configurent votre WhatsApp Meta officiel, vos paiements et votre catalogue clé en main.
-                </p>
               </div>
+
+              <div className="flex flex-col sm:flex-row items-stretch lg:items-center gap-3 w-full lg:w-auto shrink-0 relative z-10">
+                <Link
+                  to={getMerchantShopPath(merchant)}
+                  target="_blank"
+                  className="h-12 sm:h-14 px-6 rounded-2xl bg-blue-500 hover:bg-blue-400 text-white font-black uppercase tracking-wider text-xs sm:text-sm flex items-center justify-center gap-2.5 transition-all shadow-lg shadow-blue-500/20 active:scale-95 cursor-pointer"
+                >
+                  <ExternalLink size={18} />
+                  <span>Aperçu de ma Vitrine</span>
+                </Link>
+
+                {onOpenShare && (
+                  <button
+                    type="button"
+                    onClick={onOpenShare}
+                    className="h-12 sm:h-14 px-6 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 text-white font-black uppercase tracking-wider text-xs sm:text-sm flex items-center justify-center gap-2.5 transition-all active:scale-95 cursor-pointer"
+                  >
+                    <Share2 size={18} className="text-vendeur-emerald" />
+                    <span>Propulser ma Boutique</span>
+                  </button>
+                )}
+              </div>
+
+              {/* Decorative background glow */}
+              <div className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/4 h-32 w-32 bg-blue-500/20 blur-[60px] rounded-full pointer-events-none" />
             </div>
-            <button
-              type="button"
-              onClick={() => setIsPackProModalOpen(true)}
-              className="text-xs font-black uppercase tracking-wider text-vendeur-coal bg-vendeur-emerald hover:bg-emerald-400 px-4 py-2.5 rounded-xl transition-all shrink-0 cursor-pointer flex items-center gap-2 shadow-md shadow-vendeur-emerald/20 hover:scale-105 active:scale-95"
-            >
-              <span>Pack Pro Clé en main</span>
-              <ArrowRight size={14} />
-            </button>
+          </div>
+        )}
+
+        {!hasPackPro && !isFullyOperational && (
+          <div className="pt-6 border-t border-white/5 space-y-4">
+            <div className="bg-gradient-to-r from-vendeur-emerald/10 via-vendeur-emerald/5 to-transparent border border-vendeur-emerald/20 p-4 sm:p-6 rounded-3xl flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 relative overflow-hidden group/nudge">
+              <div className="space-y-4 relative z-10 flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                   <div className="h-8 w-8 rounded-xl bg-vendeur-emerald/20 text-vendeur-emerald flex items-center justify-center shrink-0 shadow-inner">
+                    <Rocket size={16} />
+                  </div>
+                  <h4 className="text-sm sm:text-base font-black uppercase tracking-tight text-white">
+                    Passez à la vitesse supérieure avec le <span className="text-vendeur-emerald">Pack Pro Expert</span>
+                  </h4>
+                </div>
+
+                {/* HORIZONTAL ADVANTAGES CAROUSEL */}
+                <div className="relative w-full overflow-hidden h-10 sm:h-12">
+                  <motion.div
+                    className="flex items-center gap-4 whitespace-nowrap absolute left-0"
+                    animate={{
+                      x: [0, -1200]
+                    }}
+                    transition={{
+                      duration: 30,
+                      repeat: Infinity,
+                      ease: "linear"
+                    }}
+                  >
+                    {[
+                      { icon: <Sparkles size={14} />, text: "Numéro Meta Cloud Officiel (Fiabilité 100%)" },
+                      { icon: <WhatsAppIcon size={14} />, text: "IA Multicanale : Instagram, Messenger & WhatsApp" },
+                      { icon: <Rocket size={14} />, text: "Broadcast IA : Envoyez vos promos en 1 clic" },
+                      { icon: <ShieldCheck size={14} />, text: "PaymentShield Forensic : Protection anti-fraude" },
+                      { icon: <AssistantIcon size={14} withBackground={false} />, text: "Support VIP Prioritaire 24h/7" },
+                      // Duplicate for seamless loop
+                      { icon: <Sparkles size={14} />, text: "Numéro Meta Cloud Officiel (Fiabilité 100%)" },
+                      { icon: <WhatsAppIcon size={14} />, text: "IA Multicanale : Instagram, Messenger & WhatsApp" },
+                      { icon: <Rocket size={14} />, text: "Broadcast IA : Envoyez vos promos en 1 clic" },
+                      { icon: <ShieldCheck size={14} />, text: "PaymentShield Forensic : Protection anti-fraude" },
+                      { icon: <AssistantIcon size={14} withBackground={false} />, text: "Support VIP Prioritaire 24h/7" },
+                    ].map((benefit, i) => (
+                      <div key={i} className="flex items-center gap-2.5 px-4 py-2 rounded-full bg-white/5 border border-white/10 text-white/80 text-[11px] sm:text-xs font-bold shadow-sm">
+                        <span className="text-vendeur-emerald">{benefit.icon}</span>
+                        <span>{benefit.text}</span>
+                      </div>
+                    ))}
+                  </motion.div>
+                  {/* Subtle Fade gradients on sides */}
+                  <div className="absolute inset-y-0 left-0 w-12 bg-gradient-to-r from-[#0c1410] to-transparent z-10" />
+                  <div className="absolute inset-y-0 right-0 w-12 bg-gradient-to-l from-[#0c1410] to-transparent z-10" />
+                </div>
+              </div>
+
+              <div className="w-full lg:w-auto shrink-0 relative z-10">
+                <button
+                  type="button"
+                  onClick={() => setIsPackProModalOpen(true)}
+                  className="w-full lg:w-auto h-12 sm:h-14 px-6 sm:px-8 rounded-2xl bg-vendeur-emerald text-vendeur-coal font-black uppercase tracking-wider text-xs sm:text-sm flex items-center justify-center gap-2.5 transition-all shadow-xl shadow-vendeur-emerald/20 hover:scale-[1.03] active:scale-95 cursor-pointer"
+                >
+                  <Rocket size={18} />
+                  <span>Activer Pack Pro</span>
+                </button>
+              </div>
+
+              {/* Decorative background glow */}
+              <div className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/4 h-32 w-32 bg-vendeur-emerald/20 blur-[60px] rounded-full pointer-events-none group-hover/nudge:bg-vendeur-emerald/30 transition-colors" />
+            </div>
           </div>
         )}
       </motion.section>

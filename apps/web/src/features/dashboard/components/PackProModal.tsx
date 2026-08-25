@@ -6,6 +6,7 @@ import { useAuthStore } from "@/stores/authStore";
 import { useQueryClient } from "@tanstack/react-query";
 import { useBillingCurrency } from "@/hooks/useBillingCurrency";
 import { convertCurrencyAmount } from "@vendeur-ia/core";
+import { useNavigate } from "react-router-dom";
 
 interface PackProModalProps {
   isOpen: boolean;
@@ -17,23 +18,13 @@ export function PackProModal({ isOpen, onClose }: PackProModalProps) {
   const { user } = useAuthStore();
   const queryClient = useQueryClient();
   const currency = useBillingCurrency();
+  const navigate = useNavigate();
 
   if (!isOpen) return null;
 
   const handleBuy = async () => {
-    setLoading(true);
-    try {
-      const res = await apiClient.post("/api/commerce/buy-pack-pro", { email: user?.email });
-      if (res.data.authorization_url) {
-        window.location.href = res.data.authorization_url;
-      } else {
-        toast.error("Impossible de générer le lien de paiement.");
-      }
-    } catch (err) {
-      toast.error("Erreur lors de l'initialisation du paiement.");
-    } finally {
-      setLoading(false);
-    }
+    onClose();
+    navigate("/checkout?offer=pro&setup=EXPERT");
   };
 
   return (
@@ -54,10 +45,10 @@ export function PackProModal({ isOpen, onClose }: PackProModalProps) {
 
         <div className="grid gap-4">
           {[
-            "Création de votre Page Facebook Business",
+            "Abonnement Vendeur IA Pro Inclus",
             "Configuration de l'API WhatsApp Cloud officielle",
-            "Importation de votre catalogue (jusqu'à 20 produits)",
-            "Formation de 30min à l'usage de Vendeur IA",
+            "Importation de votre catalogue produits",
+            "Paramétrage IA sur-mesure",
             "Support prioritaire 24h/7 sur WhatsApp"
           ].map((text, i) => (
             <div key={i} className="flex items-center gap-4 p-4 bg-white/5 rounded-2xl border border-white/5">
@@ -71,19 +62,18 @@ export function PackProModal({ isOpen, onClose }: PackProModalProps) {
 
         <div className="pt-4 space-y-6">
           <div className="flex items-center justify-between">
-            <p className="text-xs font-black uppercase tracking-[0.2em] text-white/40">Investissement unique</p>
+            <p className="text-xs font-black uppercase tracking-[0.2em] text-white/40">Premier paiement (Installation + Pro)</p>
             <p className="text-3xl font-black text-vendeur-emerald">
-              {convertCurrencyAmount(25000, "XOF", currency).toLocaleString()} {currency}
+              45 000 {currency}
             </p>
           </div>
 
           <button
             onClick={handleBuy}
-            disabled={loading}
-            className="w-full h-18 bg-vendeur-emerald text-vendeur-coal font-black uppercase tracking-widest text-sm rounded-[2rem] flex items-center justify-center gap-3 hover:scale-[1.02] active:scale-95 transition-all shadow-xl shadow-vendeur-emerald/20 disabled:opacity-50"
+            className="w-full h-18 bg-vendeur-emerald text-vendeur-coal font-black uppercase tracking-widest text-sm rounded-[2rem] flex items-center justify-center gap-3 hover:scale-[1.02] active:scale-95 transition-all shadow-xl shadow-vendeur-emerald/20"
           >
-            {loading ? <Loader2 className="animate-spin" size={24} /> : <ShieldCheck size={24} />}
-            Payer et Activer mon Pack Pro
+            <Rocket size={24} />
+            Activer mon Pack Pro
           </button>
         </div>
       </div>

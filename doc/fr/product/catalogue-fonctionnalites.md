@@ -10,7 +10,7 @@ Vendeur IA regorge de fonctionnalités conçues pour automatiser l'ensemble du c
 ## 2. 🧠 Agent de Vente IA (Le Vendeur Fantôme)
 - **Disponibilité 24h/24** : Répond instantanément aux clients à toute heure.
 - **Support Multilingue** : Maîtrise les tons Français, Nouchi (Côte d'Ivoire) et Wolof (Sénégal).
-- **Multi-Canal** : Synchronise les messages WhatsApp, Instagram Marketplace et TikTok.
+- **Multi-Canal (Pro)** : Synchronise les messages WhatsApp, Instagram Marketplace et Messenger.
 - **Reprise Humaine** : Bascule instantanée pour que le marchand reprenne le contrôle manuel.
 
 ## 3. 📸 IA Vision & Catalogue
@@ -21,7 +21,7 @@ Vendeur IA regorge de fonctionnalités conçues pour automatiser l'ensemble du c
 
 ## 4. 💰 Money Board & Paiements
 - **Pipeline de Vente** : Suivi en temps réel de la Découverte à la Livraison.
-- **Payment Shield** : Vérification automatisée des captures d'écran Mobile Money (Wave, Orange, MTN).
+- **Payment Shield** : Vérification automatisée des captures d'écran Mobile Money (Wave, Orange, MTN, Moov).
 - **Reçus Numériques** : Génération et envoi instantanés de reçus via WhatsApp.
 - **AI Growth Stats** : Analyses montrant combien de temps et d'argent l'IA a fait gagner au marchand.
 

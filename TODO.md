@@ -48,6 +48,9 @@ Ce document trace la route vers une version production "Over-Delivered".
 - [x] **Détection de Preuve de Paiement**
     - [x] Backend: IA prompt pour détecter les captures d'écran de transferts (Wave/Orange/MTN).
     - [x] Realtime: Alerte "Paiement à confirmer" et auto-validation dans l'Inbox.
+- [x] **Harmonisation des Offres**
+    - [x] Backend: Offres Essentiel (5k) et Pro (20k).
+    - [x] Pack Pro Expert: 45k initial (Installation + Pro).
 
 ## 🌟 PHASE 5 : Le "110%" (Bonus Excellence)
 - [x] **Smart Caption TikTok/Insta**

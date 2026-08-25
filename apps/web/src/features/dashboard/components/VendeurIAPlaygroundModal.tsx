@@ -57,20 +57,25 @@ export function VendeurIAPlaygroundModal({ isOpen, onClose, merchant }: VendeurI
   const sessionId = useRef(`simulator_${merchant?._id}_${Date.now()}`).current;
   const whatsappNumber = merchant?.whatsappNumber || merchant?.phone || "";
   const waTestLink = `https://wa.me/${whatsappNumber.replace(/[^0-9]/g, '')}?text=${encodeURIComponent("Bonjour Vendeur IA ! Je teste ton fonctionnement.")}`;
+  const isPaidActive = merchant?.subscription?.status === "active";
 
   // Initial greeting from AI
   useEffect(() => {
     if (isOpen && messages.length === 0) {
+      const welcomeText = isPaidActive
+        ? `Bonjour ! 👋 Je suis l'assistant Vendeur IA de **${merchant?.businessName || merchant?.storeName || "votre boutique"}**. Je suis actif et prêt à répondre à vos clients sur WhatsApp !`
+        : `Bonjour ! 👋 Je suis prêt dans ce **Banc d'Essai** ! Posez-moi des questions pour voir comment je répondrais à vos clients. *Note : Je ne répondrai sur votre vrai WhatsApp qu'une fois votre forfait activé.*`;
+
       setMessages([
         {
           id: "welcome",
           role: "ai",
-          text: `Bonjour ! 👋 Je suis l'assistant Vendeur IA de **${merchant?.businessName || merchant?.storeName || "votre boutique"}**. Je suis actif et prêt à répondre à vos clients ! Posez-moi une question pour m'essayer.`,
+          text: welcomeText,
           timestamp: new Date()
         }
       ]);
     }
-  }, [isOpen, merchant]);
+  }, [isOpen, merchant, isPaidActive]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -167,9 +172,14 @@ export function VendeurIAPlaygroundModal({ isOpen, onClose, merchant }: VendeurI
                   <h3 className="text-sm sm:text-base md:text-xl font-black text-white uppercase tracking-tight truncate">
                     Banc d'Essai IA
                   </h3>
-                  <span className="inline-flex items-center gap-1 bg-vendeur-emerald/10 border border-vendeur-emerald/30 text-vendeur-emerald text-[8px] sm:text-[9px] font-black uppercase px-2 py-0.5 rounded-full shrink-0">
-                    <span className="h-1.5 w-1.5 rounded-full bg-vendeur-emerald animate-pulse" />
-                    En Ligne
+                  <span className={cn(
+                    "inline-flex items-center gap-1 border text-[8px] sm:text-[9px] font-black uppercase px-2 py-0.5 rounded-full shrink-0",
+                    isPaidActive
+                      ? "bg-vendeur-emerald/10 border-vendeur-emerald/30 text-vendeur-emerald"
+                      : "bg-amber-500/10 border-amber-500/30 text-amber-400"
+                  )}>
+                    <span className={cn("h-1.5 w-1.5 rounded-full", isPaidActive ? "bg-vendeur-emerald animate-pulse" : "bg-amber-400")} />
+                    {isPaidActive ? "IA en Ligne" : "Mode Simulateur"}
                   </span>
                 </div>
                 <p className="text-[10px] sm:text-xs text-white/50 font-medium truncate">
@@ -196,10 +206,20 @@ export function VendeurIAPlaygroundModal({ isOpen, onClose, merchant }: VendeurI
           </div>
 
           {/* Dual Action Strip (Real WA vs Simulator) */}
-          <div className="bg-vendeur-emerald/10 border-b border-vendeur-emerald/20 p-2.5 px-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 text-xs shrink-0">
-            <div className="flex items-center gap-2 text-vendeur-emerald font-bold text-[11px] sm:text-xs">
-              <Zap size={14} className="animate-pulse shrink-0" />
-              <span className="truncate">WhatsApp connecté ! Testez en réel :</span>
+          <div className={cn(
+            "border-b p-2.5 px-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 text-xs shrink-0",
+            isPaidActive ? "bg-vendeur-emerald/10 border-vendeur-emerald/20" : "bg-amber-500/10 border-amber-500/20"
+          )}>
+            <div className={cn(
+              "flex items-center gap-2 font-bold text-[11px] sm:text-xs",
+              isPaidActive ? "text-vendeur-emerald" : "text-amber-400"
+            )}>
+              <Zap size={14} className={cn(isPaidActive && "animate-pulse", "shrink-0")} />
+              <span className="truncate">
+                {isPaidActive
+                  ? "WhatsApp connecté & IA active !"
+                  : "IA en attente de forfait (Muette sur WhatsApp)"}
+              </span>
             </div>
             
             <div className="flex items-center gap-2 w-full sm:w-auto">

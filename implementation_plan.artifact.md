@@ -1,26 +1,54 @@
-# Fix WhatsApp Authentication Error and Add Mock Mode
+# Harmonisation des Offres et Tarifs (Vendeur IA)
 
-The logs show a `Meta Authentication Error (code 190)` when sending a Magic Link via WhatsApp. This indicates that the `WHATSAPP_ACCESS_TOKEN` has expired or is invalid.
+Ce plan vise à rendre cohérents les tarifs et les descriptions des offres dans toute l'application (Frontend, Backend et Documentation), en suivant les spécifications validées :
+1. **Essentiel** : 5 000 XOF / mois.
+2. **Pro** : 20 000 XOF / mois.
+3. **Pack Pro Expert** : 45 000 XOF initial (20k Pro + 25k Installation).
 
 ## Proposed Changes
 
-### 1. Documentation & Diagnosis
-- Confirm that Error 190 means the Meta Access Token is expired.
-- Instruct the user to update the token in `apps/api/.env` or via the Admin Dashboard (`PATCH /api/admin/settings`).
+### ⚙️ Backend (`apps/api`)
 
-### 2. [WhatsApp Service](file:///C:/Users/Franck/web-apps/vendeur-ia/apps/api/src/modules/whatsapp/whatsapp.service.ts)
-- Implement `AI_MOCK_MODE` support in `sendAuthMagicLink`, `sendMetaMessage`, and `sendMetaAudio`.
-- This allows developers to work on the onboarding flow without needing a valid Meta WhatsApp Business API token.
-- When `AI_MOCK_MODE` is enabled, the magic link and OTP code will be logged to the console instead of calling the Meta API.
+#### [MODIFY] [offers.constants.ts](file:///C:/Users/Franck/web-apps/vendeur-ia/apps/api/src/modules/commerce/offers.constants.ts)
+- Vérifier et affiner les `features` pour correspondre exactement au focus demandé (IA autonome 24h/7, PaymentShield, etc.).
+
+#### [MODIFY] [payment.service.ts](file:///C:/Users/Franck/web-apps/vendeur-ia/apps/api/src/services/payment.service.ts)
+- Harmoniser les fallbacks de prix pour `essential` (5k), `pro` (20k) et `pack_pro` (45k si cumulé).
+
+---
+
+### 💻 Frontend (`apps/web`)
+
+#### [MODIFY] [OffersModal.tsx](file:///C:/Users/Franck/web-apps/vendeur-ia/apps/web/src/features/settings/components/OffersModal.tsx)
+- Supprimer les valeurs hardcodées.
+- Utiliser les données de l'API `/api/commerce/offers`.
+- Afficher clairement les 3 options ou adapter la colonne Pro pour inclure l'option Expert (45 000 XOF).
+- Corriger le label "UNIQUE" qui est trompeur pour un premier paiement d'abonnement.
+
+#### [MODIFY] [PackProModal.tsx](file:///C:/Users/Franck/web-apps/vendeur-ia/apps/web/src/features/dashboard/components/PackProModal.tsx)
+- Mettre à jour le prix affiché à 45 000 XOF.
+- Rediriger vers `/checkout?offer=pro&setup=EXPERT` au lieu de l'ancienne route `/api/commerce/buy-pack-pro` pour une expérience unifiée.
+
+---
+
+### 📄 Documentation
+
+#### [MODIFY] [TODO.md](file:///C:/Users/Franck/web-apps/vendeur-ia/TODO.md)
+- Mettre à jour les références de prix dans la roadmap.
+
+#### [MODIFY] [ROADMAP_END_TO_END_PAYMENT_AND_PAYWALL.md](file:///C:/Users/Franck/web-apps/vendeur-ia/ROADMAP_END_TO_END_PAYMENT_AND_PAYWALL.md)
+- Aligner les exemples de prix.
+
+#### [MODIFY] [catalogue-fonctionnalites.md](file:///C:/Users/Franck/web-apps/vendeur-ia/doc/fr/product/catalogue-fonctionnalites.md)
+- Mettre à jour les descriptions si nécessaire pour refléter le focus "IA autonome" et "PaymentShield".
 
 ## Verification Plan
 
 ### Automated Tests
-- Run existing WhatsApp tests to ensure no regressions.
-- `pnpm -C apps/api test src/modules/whatsapp/whatsapp.test.ts`
+- Vérifier que l'API `/api/commerce/offers` retourne bien les bons prix (5k et 20k).
 
 ### Manual Verification
-- Set `AI_MOCK_MODE=true` in `apps/api/.env`.
-- Trigger a login request.
-- Verify that the console logs the Magic Link and OTP code.
-- Verify that the API response still contains the OTP code in development mode.
+1. Ouvrir le dashboard et vérifier le popup de bienvenue (OffersModal).
+2. Vérifier que les prix correspondent aux spécifications (5k, 20k, 45k).
+3. Cliquer sur "Activer mon Pack Pro" et vérifier que la page de Checkout affiche bien un total de 45 000 XOF.
+4. Parcourir les réglages de facturation pour confirmer la cohérence.

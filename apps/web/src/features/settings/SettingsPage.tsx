@@ -259,10 +259,10 @@ export function SettingsPage() {
           {/* Mobile Tab Trigger */}
           <button
             onClick={() => setIsMobileMenuOpen(true)}
-            className="md:hidden w-full flex items-center justify-between px-4 py-2.5 bg-white/5 rounded-2xl border border-white/10 text-white/80 active:scale-[0.98] transition-all"
+            className="md:hidden w-full h-13 min-h-[52px] flex items-center justify-between px-4 py-2.5 bg-white/5 rounded-2xl border border-white/10 text-white/80 active:scale-[0.98] transition-all shrink-0 cursor-pointer"
           >
             <div className="flex items-center gap-3">
-              <div className="h-9 w-9 rounded-xl bg-vendeur-emerald/10 flex items-center justify-center text-vendeur-emerald border border-vendeur-emerald/20">
+              <div className="h-9 w-9 rounded-xl bg-vendeur-emerald/10 flex items-center justify-center text-vendeur-emerald border border-vendeur-emerald/20 shrink-0">
                 {React.createElement(SETTINGS_TABS.find(t => t.id === activeTab)?.icon || Settings, { size: 18 })}
               </div>
               <div className="flex flex-col items-start">
@@ -272,7 +272,7 @@ export function SettingsPage() {
                 </span>
               </div>
             </div>
-            <div className="flex items-center gap-2 px-3 py-2 bg-white/5 rounded-xl border border-white/5 text-white/40">
+            <div className="flex items-center gap-2 px-3 py-2 bg-white/5 rounded-xl border border-white/5 text-white/40 shrink-0">
               <Menu size={18} />
             </div>
           </button>
@@ -284,10 +284,10 @@ export function SettingsPage() {
               <button
                 type="button"
                 onClick={() => scrollTabs("left")}
-                className="absolute -left-3 top-1/2 -translate-y-1/2 z-30 h-7 w-7 rounded-full bg-vendeur-coal/95 border border-white/20 text-white hover:text-vendeur-emerald hover:border-vendeur-emerald flex items-center justify-center shadow-xl transition-all cursor-pointer hover:scale-105 active:scale-95"
+                className="absolute -left-3 top-1/2 -translate-y-1/2 z-30 h-8 w-8 min-h-[32px] rounded-full bg-vendeur-coal/95 border border-white/20 text-white hover:text-vendeur-emerald hover:border-vendeur-emerald flex items-center justify-center shadow-xl transition-all cursor-pointer hover:scale-105 active:scale-95 shrink-0"
                 title="Défiler vers la gauche"
               >
-                <ChevronLeft size={15} />
+                <ChevronLeft size={16} />
               </button>
             )}
 
@@ -296,10 +296,10 @@ export function SettingsPage() {
               <button
                 type="button"
                 onClick={() => scrollTabs("right")}
-                className="absolute -right-3 top-1/2 -translate-y-1/2 z-30 h-7 w-7 rounded-full bg-vendeur-coal/95 border border-white/20 text-white hover:text-vendeur-emerald hover:border-vendeur-emerald flex items-center justify-center shadow-xl transition-all cursor-pointer hover:scale-105 active:scale-95"
+                className="absolute -right-3 top-1/2 -translate-y-1/2 z-30 h-8 w-8 min-h-[32px] rounded-full bg-vendeur-coal/95 border border-white/20 text-white hover:text-vendeur-emerald hover:border-vendeur-emerald flex items-center justify-center shadow-xl transition-all cursor-pointer hover:scale-105 active:scale-95 shrink-0"
                 title="Défiler vers la droite"
               >
-                <ChevronRight size={15} />
+                <ChevronRight size={16} />
               </button>
             )}
 
@@ -331,13 +331,13 @@ export function SettingsPage() {
                     data-active={isActive}
                     onClick={() => setActiveTab(t.id)}
                     className={cn(
-                      "flex items-center gap-2 px-3.5 md:px-4 h-9 md:h-10 rounded-xl text-[11px] font-black uppercase tracking-tight transition-all shrink-0 whitespace-nowrap active:scale-95",
+                      "flex items-center gap-2 px-4 h-10 md:h-11 min-h-[40px] md:min-h-[44px] rounded-xl text-xs font-black uppercase tracking-tight transition-all shrink-0 whitespace-nowrap active:scale-95 cursor-pointer",
                       isActive
                         ? "bg-vendeur-emerald text-vendeur-coal shadow-md shadow-vendeur-emerald/20 font-black"
-                        : "bg-white/[0.03] text-white/50 hover:text-white hover:bg-white/[0.08] border border-white/5 font-bold"
+                        : "bg-white/[0.03] text-white/60 hover:text-white hover:bg-white/[0.08] border border-white/5 font-bold"
                     )}
                   >
-                    <Icon size={15} className="shrink-0" />
+                    <Icon size={16} className="shrink-0" />
                     <span>{t.label}</span>
                   </button>
                 );

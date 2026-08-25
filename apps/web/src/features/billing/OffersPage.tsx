@@ -87,7 +87,7 @@ export function OffersPage() {
                 type="button"
                 onClick={() => setBillingInterval("monthly")}
                 className={cn(
-                  "px-4 sm:px-6 py-2.5 rounded-xl text-xs sm:text-sm font-black uppercase tracking-wider transition-all cursor-pointer",
+                  "h-11 sm:h-12 min-h-[44px] sm:min-h-[48px] px-5 sm:px-7 rounded-xl text-xs sm:text-sm font-black uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center shrink-0",
                   billingInterval === "monthly"
                     ? "bg-white text-vendeur-coal shadow-lg"
                     : "text-white/50 hover:text-white"
@@ -100,7 +100,7 @@ export function OffersPage() {
                 type="button"
                 onClick={() => setBillingInterval("yearly")}
                 className={cn(
-                  "px-4 sm:px-6 py-2.5 rounded-xl text-xs sm:text-sm font-black uppercase tracking-wider flex items-center gap-2 transition-all cursor-pointer",
+                  "h-11 sm:h-12 min-h-[44px] sm:min-h-[48px] px-5 sm:px-7 rounded-xl text-xs sm:text-sm font-black uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer shrink-0",
                   billingInterval === "yearly"
                     ? "bg-vendeur-emerald text-vendeur-coal shadow-lg shadow-vendeur-emerald/20"
                     : "text-white/50 hover:text-white"
@@ -282,7 +282,7 @@ function OfferCard({
         <button
           onClick={onSelect}
           className={cn(
-            "w-full h-12 sm:h-14 rounded-xl sm:rounded-2xl font-black uppercase tracking-wider text-xs sm:text-sm flex items-center justify-center gap-2 transition-all active:scale-95 shadow-xl cursor-pointer",
+            "w-full h-13 sm:h-14 min-h-[52px] sm:min-h-[56px] rounded-xl sm:rounded-2xl font-black uppercase tracking-wider text-xs sm:text-sm flex items-center justify-center gap-2 transition-all active:scale-95 shadow-xl cursor-pointer shrink-0",
             isPro
               ? "bg-vendeur-emerald text-vendeur-coal hover:scale-[1.02] shadow-vendeur-emerald/25"
               : "bg-white text-vendeur-coal hover:bg-vendeur-emerald hover:text-vendeur-coal"

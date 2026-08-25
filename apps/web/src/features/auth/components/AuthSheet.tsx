@@ -72,9 +72,9 @@ const GoogleLoginButton = ({
       type="button"
       disabled={disabled || internalLoading}
       onClick={() => loginWithGoogle()}
-      className="w-full h-14 bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 text-white rounded-2xl flex items-center justify-center gap-3 transition-all active:scale-[0.98] disabled:opacity-50 font-bold text-sm cursor-pointer shadow-sm"
+      className="w-full h-14 min-h-[56px] bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 text-white rounded-2xl flex items-center justify-center gap-3 transition-all active:scale-[0.98] disabled:opacity-50 font-bold text-sm cursor-pointer shadow-sm shrink-0"
     >
-      {internalLoading ? <Loader2 className="animate-spin" size={18} /> : <GoogleIcon />}
+      {internalLoading ? <Loader2 className="animate-spin shrink-0" size={18} /> : <GoogleIcon />}
       <span>Continuer avec Google</span>
     </button>
   );
@@ -429,15 +429,15 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full h-14 bg-vendeur-emerald text-vendeur-coal font-black uppercase tracking-widest text-xs sm:text-sm rounded-2xl flex items-center justify-center gap-2.5 hover:scale-[1.01] active:scale-[0.98] transition-all disabled:opacity-50 shadow-xl shadow-vendeur-emerald/25 cursor-pointer mt-2"
+                className="w-full h-14 min-h-[56px] bg-vendeur-emerald text-vendeur-coal font-black uppercase tracking-widest text-xs sm:text-sm rounded-2xl flex items-center justify-center gap-2.5 hover:scale-[1.01] active:scale-[0.98] transition-all disabled:opacity-50 shadow-xl shadow-vendeur-emerald/25 cursor-pointer mt-2 shrink-0"
               >
                 {loading ? (
-                  <Loader2 className="animate-spin" size={18} />
+                  <Loader2 className="animate-spin shrink-0" size={18} />
                 ) : (
                   <>
-                    <WhatsAppIcon size={20} />
+                    <WhatsAppIcon size={20} className="shrink-0" />
                     <span>Accéder à ma Boutique</span>
-                    <ChevronRight size={18} />
+                    <ChevronRight size={18} className="shrink-0" />
                   </>
                 )}
               </button>

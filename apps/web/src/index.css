@@ -11,6 +11,18 @@
     width: 100%;
   }
 
+  /* Universal Button Resilience & Anti-Squash System */
+  button,
+  [role="button"],
+  input[type="button"],
+  input[type="submit"],
+  input[type="reset"],
+  a[role="button"] {
+    flex-shrink: 0 !important;
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+  }
+
   /* Custom Emerald Scrollbar */
   ::-webkit-scrollbar {
     width: 8px;
@@ -50,6 +62,46 @@
   .no-scrollbar {
     -ms-overflow-style: none;
     scrollbar-width: none;
+  }
+}
+
+@layer utilities {
+  /* Anti-Squash Height Locks: Guarantee that any button with a defined height never collapses below its target */
+  button.h-8, [role="button"].h-8, a.h-8 { min-height: 2rem !important; }
+  button.h-9, [role="button"].h-9, a.h-9 { min-height: 2.25rem !important; }
+  button.h-10, [role="button"].h-10, a.h-10 { min-height: 2.5rem !important; }
+  button.h-11, [role="button"].h-11, a.h-11 { min-height: 2.75rem !important; }
+  button.h-12, [role="button"].h-12, a.h-12 { min-height: 3rem !important; }
+  button.h-13, [role="button"].h-13, a.h-13 { min-height: 3.25rem !important; }
+  button.h-14, [role="button"].h-14, a.h-14 { min-height: 3.5rem !important; }
+  button.h-16, [role="button"].h-16, a.h-16 { min-height: 4rem !important; }
+
+  @media (min-width: 640px) {
+    button.sm\:h-9, [role="button"].sm\:h-9 { min-height: 2.25rem !important; }
+    button.sm\:h-10, [role="button"].sm\:h-10 { min-height: 2.5rem !important; }
+    button.sm\:h-11, [role="button"].sm\:h-11 { min-height: 2.75rem !important; }
+    button.sm\:h-12, [role="button"].sm\:h-12 { min-height: 3rem !important; }
+    button.sm\:h-13, [role="button"].sm\:h-13 { min-height: 3.25rem !important; }
+    button.sm\:h-14, [role="button"].sm\:h-14 { min-height: 3.5rem !important; }
+    button.sm\:h-16, [role="button"].sm\:h-16 { min-height: 4rem !important; }
+  }
+
+  @media (min-width: 768px) {
+    button.md\:h-9, [role="button"].md\:h-9 { min-height: 2.25rem !important; }
+    button.md\:h-10, [role="button"].md\:h-10 { min-height: 2.5rem !important; }
+    button.md\:h-11, [role="button"].md\:h-11 { min-height: 2.75rem !important; }
+    button.md\:h-12, [role="button"].md\:h-12 { min-height: 3rem !important; }
+    button.md\:h-13, [role="button"].md\:h-13 { min-height: 3.25rem !important; }
+    button.md\:h-14, [role="button"].md\:h-14 { min-height: 3.5rem !important; }
+    button.md\:h-16, [role="button"].md\:h-16 { min-height: 4rem !important; }
+  }
+
+  @media (min-width: 1024px) {
+    button.lg\:h-10, [role="button"].lg\:h-10 { min-height: 2.5rem !important; }
+    button.lg\:h-11, [role="button"].lg\:h-11 { min-height: 2.75rem !important; }
+    button.lg\:h-12, [role="button"].lg\:h-12 { min-height: 3rem !important; }
+    button.lg\:h-14, [role="button"].lg\:h-14 { min-height: 3.5rem !important; }
+    button.lg\:h-16, [role="button"].lg\:h-16 { min-height: 4rem !important; }
   }
 }
 

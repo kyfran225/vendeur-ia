@@ -137,7 +137,7 @@ export function MagicLoginPage() {
         <div className="space-y-3">
           <button
             onClick={handleOpenApp}
-            className="w-full h-12 sm:h-14 bg-vendeur-emerald text-vendeur-coal font-black uppercase tracking-wider text-xs rounded-xl flex items-center justify-center gap-2 hover:scale-[1.01] active:scale-95 transition-all shadow-lg shadow-vendeur-emerald/25 cursor-pointer"
+            className="w-full h-13 sm:h-14 min-h-[52px] sm:min-h-[56px] bg-vendeur-emerald text-vendeur-coal font-black uppercase tracking-wider text-xs rounded-xl flex items-center justify-center gap-2 hover:scale-[1.01] active:scale-95 transition-all shadow-lg shadow-vendeur-emerald/25 cursor-pointer shrink-0"
           >
             <span>Accéder à mon espace</span>
             <ArrowRight size={18} />
@@ -145,7 +145,7 @@ export function MagicLoginPage() {
 
           <button
             onClick={() => navigate(destination)}
-            className="w-full h-12 bg-white/5 hover:bg-white/10 text-white/80 hover:text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all border border-white/5 cursor-pointer"
+            className="w-full h-12 min-h-[48px] bg-white/5 hover:bg-white/10 text-white/80 hover:text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all border border-white/5 cursor-pointer shrink-0"
           >
             <Globe size={15} />
             <span>Continuer dans ce navigateur</span>

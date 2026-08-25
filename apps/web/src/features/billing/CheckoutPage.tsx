@@ -626,32 +626,32 @@ export function CheckoutPage() {
                     type="button"
                     onClick={handleCardPaystack}
                     disabled={!isStep1Ready || loading}
-                    className="w-full h-14 bg-white text-black hover:bg-white/90 font-black uppercase tracking-wider text-xs sm:text-sm rounded-2xl flex items-center justify-center gap-2.5 transition-all active:scale-98 shadow-xl cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white"
+                    className="w-full h-14 min-h-[56px] bg-white text-black hover:bg-white/90 font-black uppercase tracking-wider text-xs sm:text-sm rounded-2xl flex items-center justify-center gap-2.5 transition-all active:scale-98 shadow-xl cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white shrink-0"
                   >
-                    {loading ? <Loader2 className="animate-spin" size={18} /> : <Lock size={16} />}
+                    {loading ? <Loader2 className="animate-spin shrink-0" size={18} /> : <Lock size={16} className="shrink-0" />}
                     <span>Payer par Carte ({totalToday.toLocaleString()} {activeCurrencySymbol})</span>
-                    <ChevronRight size={18} />
+                    <ChevronRight size={18} className="shrink-0" />
                   </button>
                 ) : selectedMethod === "google_play" ? (
                   <button
                     type="button"
                     onClick={handleGooglePlayPay}
                     disabled={!isStep1Ready || loading}
-                    className="w-full h-14 bg-[#4285F4] hover:bg-[#3367D6] text-white font-black uppercase tracking-wider text-xs sm:text-sm rounded-2xl flex items-center justify-center gap-2.5 transition-all active:scale-98 shadow-xl cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[#4285F4]"
+                    className="w-full h-14 min-h-[56px] bg-[#4285F4] hover:bg-[#3367D6] text-white font-black uppercase tracking-wider text-xs sm:text-sm rounded-2xl flex items-center justify-center gap-2.5 transition-all active:scale-98 shadow-xl cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[#4285F4] shrink-0"
                   >
-                    {loading ? <Loader2 className="animate-spin" size={18} /> : <QrCode size={18} />}
+                    {loading ? <Loader2 className="animate-spin shrink-0" size={18} /> : <QrCode size={18} className="shrink-0" />}
                     <span>Payer via Google Play</span>
-                    <ChevronRight size={18} />
+                    <ChevronRight size={18} className="shrink-0" />
                   </button>
                 ) : (
                   <button
                     type="button"
                     onClick={() => isStep1Ready && setCurrentStep(2)}
                     disabled={!isStep1Ready}
-                    className="w-full h-14 bg-vendeur-emerald hover:bg-emerald-400 text-vendeur-coal font-black uppercase tracking-wider text-xs sm:text-sm rounded-2xl flex items-center justify-center gap-2 transition-all active:scale-98 shadow-xl shadow-vendeur-emerald/20 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-vendeur-emerald disabled:shadow-none"
+                    className="w-full h-14 min-h-[56px] bg-vendeur-emerald hover:bg-emerald-400 text-vendeur-coal font-black uppercase tracking-wider text-xs sm:text-sm rounded-2xl flex items-center justify-center gap-2 transition-all active:scale-98 shadow-xl shadow-vendeur-emerald/20 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-vendeur-emerald disabled:shadow-none shrink-0"
                   >
                     <span>Continuer le paiement</span>
-                    <ChevronRight size={18} />
+                    <ChevronRight size={18} className="shrink-0" />
                   </button>
                 )}
               </div>
@@ -742,7 +742,7 @@ export function CheckoutPage() {
                 <button
                   type="button"
                   onClick={() => setCurrentStep(1)}
-                  className="order-2 sm:order-1 sm:w-1/3 h-14 bg-white/5 hover:bg-white/10 text-white font-black uppercase tracking-wider text-xs rounded-2xl transition-all cursor-pointer flex items-center justify-center"
+                  className="order-2 sm:order-1 sm:w-1/3 h-14 min-h-[56px] bg-white/5 hover:bg-white/10 text-white font-black uppercase tracking-wider text-xs rounded-2xl transition-all cursor-pointer flex items-center justify-center shrink-0"
                 >
                   ← Changer de mode
                 </button>
@@ -750,10 +750,10 @@ export function CheckoutPage() {
                 <button
                   type="button"
                   onClick={() => setCurrentStep(3)}
-                  className="order-1 sm:order-2 sm:w-2/3 h-14 bg-vendeur-emerald hover:bg-emerald-400 text-vendeur-coal font-black uppercase tracking-wider text-xs sm:text-sm rounded-2xl flex items-center justify-center gap-2 transition-all active:scale-98 shadow-xl shadow-vendeur-emerald/20 cursor-pointer"
+                  className="order-1 sm:order-2 sm:w-2/3 h-14 min-h-[56px] bg-vendeur-emerald hover:bg-emerald-400 text-vendeur-coal font-black uppercase tracking-wider text-xs sm:text-sm rounded-2xl flex items-center justify-center gap-2 transition-all active:scale-98 shadow-xl shadow-vendeur-emerald/20 cursor-pointer shrink-0"
                 >
                   <span>J'ai envoyé le montant → Continuer</span>
-                  <ChevronRight size={18} />
+                  <ChevronRight size={18} className="shrink-0" />
                 </button>
               </div>
             </motion.div>
@@ -973,7 +973,7 @@ export function CheckoutPage() {
                     <button
                       type="button"
                       onClick={() => setCurrentStep(2)}
-                      className="order-2 sm:order-1 sm:w-1/3 h-14 bg-white/5 hover:bg-white/10 text-white font-black uppercase tracking-wider text-xs rounded-2xl transition-all cursor-pointer flex items-center justify-center"
+                      className="order-2 sm:order-1 sm:w-1/3 h-14 min-h-[56px] bg-white/5 hover:bg-white/10 text-white font-black uppercase tracking-wider text-xs rounded-2xl transition-all cursor-pointer flex items-center justify-center shrink-0"
                     >
                       ← Revoir les infos
                     </button>
@@ -981,13 +981,13 @@ export function CheckoutPage() {
                     <button
                       type="submit"
                       disabled={submittingProof}
-                      className="order-1 sm:order-2 sm:w-2/3 h-14 bg-vendeur-emerald hover:bg-emerald-400 text-vendeur-coal font-black uppercase tracking-wider text-xs sm:text-sm rounded-2xl flex items-center justify-center gap-2 transition-all active:scale-98 shadow-xl shadow-vendeur-emerald/25 cursor-pointer disabled:opacity-50"
+                      className="order-1 sm:order-2 sm:w-2/3 h-14 min-h-[56px] bg-vendeur-emerald hover:bg-emerald-400 text-vendeur-coal font-black uppercase tracking-wider text-xs sm:text-sm rounded-2xl flex items-center justify-center gap-2 transition-all active:scale-98 shadow-xl shadow-vendeur-emerald/25 cursor-pointer disabled:opacity-50 shrink-0"
                     >
                       {submittingProof ? (
-                        <Loader2 className="animate-spin" size={18} />
+                        <Loader2 className="animate-spin shrink-0" size={18} />
                       ) : (
                         <>
-                          <CheckCircle2 size={18} />
+                          <CheckCircle2 size={18} className="shrink-0" />
                           <span>Confirmer mon paiement</span>
                         </>
                       )}
@@ -1083,10 +1083,10 @@ export function CheckoutPage() {
                     <button
                       type="button"
                       onClick={() => navigate("/dashboard")}
-                      className="flex-1 h-14 bg-vendeur-emerald hover:bg-emerald-400 text-vendeur-coal font-black uppercase tracking-wider text-xs sm:text-sm rounded-2xl flex items-center justify-center gap-2.5 transition-all shadow-xl shadow-vendeur-emerald/20 active:scale-98 cursor-pointer"
+                      className="flex-1 h-14 min-h-[56px] bg-vendeur-emerald hover:bg-emerald-400 text-vendeur-coal font-black uppercase tracking-wider text-xs sm:text-sm rounded-2xl flex items-center justify-center gap-2.5 transition-all shadow-xl shadow-vendeur-emerald/20 active:scale-98 cursor-pointer shrink-0"
                     >
                       <span>Aller à mon tableau de bord</span>
-                      <ChevronRight size={18} />
+                      <ChevronRight size={18} className="shrink-0" />
                     </button>
 
                     <a
@@ -1095,9 +1095,9 @@ export function CheckoutPage() {
                       )}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="h-14 px-6 bg-white/10 hover:bg-[#25D366]/20 hover:border-[#25D366]/50 border border-white/10 text-white hover:text-[#25D366] font-black uppercase tracking-wider text-xs sm:text-sm rounded-2xl flex items-center justify-center gap-2.5 transition-all active:scale-98 cursor-pointer shrink-0"
+                      className="h-14 min-h-[56px] px-6 bg-white/10 hover:bg-[#25D366]/20 hover:border-[#25D366]/50 border border-white/10 text-white hover:text-[#25D366] font-black uppercase tracking-wider text-xs sm:text-sm rounded-2xl flex items-center justify-center gap-2.5 transition-all active:scale-98 cursor-pointer shrink-0"
                     >
-                      <WhatsAppIcon size={18} variant="brand" />
+                      <WhatsAppIcon size={18} variant="brand" className="shrink-0" />
                       <span>Assistance WhatsApp</span>
                     </a>
                   </div>

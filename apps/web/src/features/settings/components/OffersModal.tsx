@@ -34,6 +34,24 @@ export function OffersModal({ isOpen, onClose }: OffersModalProps) {
     enabled: isOpen
   });
 
+  const { data: dashboard } = useQuery({
+    queryKey: ["dashboard"],
+    queryFn: async () => {
+      const res = await apiClient.get("/api/commerce/dashboard");
+      return res.data;
+    },
+    enabled: isOpen
+  });
+
+  const latestPaymentIntent = dashboard?.latestPaymentIntent;
+  const isUnderVerification = Boolean(
+    latestPaymentIntent &&
+    (latestPaymentIntent.status === "under_verification" ||
+     latestPaymentIntent.status === "pending" ||
+     latestPaymentIntent.status === "payment_detected" ||
+     latestPaymentIntent.status === "awaiting_payment")
+  );
+
   if (!isOpen) return null;
 
   if (isLoading) {
@@ -97,12 +115,25 @@ export function OffersModal({ isOpen, onClose }: OffersModalProps) {
             </div>
 
             <button
-              onClick={() => handleSelect("essential")}
-              disabled={!!isRedirecting}
-              className="w-full h-14 sm:h-16 bg-white text-vendeur-coal rounded-2xl font-black uppercase tracking-wider text-xs sm:text-sm flex items-center justify-center gap-3 hover:bg-vendeur-emerald transition-all active:scale-95 disabled:opacity-50 shadow-xl shadow-white/5 cursor-pointer"
+              onClick={() => !isUnderVerification && handleSelect("essential")}
+              disabled={!!isRedirecting || isUnderVerification}
+              className={cn(
+                "w-full h-14 sm:h-16 rounded-2xl font-black uppercase tracking-wider text-xs sm:text-sm flex items-center justify-center gap-3 transition-all shadow-xl",
+                isUnderVerification
+                  ? "bg-white/5 text-white/40 border border-white/10 cursor-not-allowed shadow-none"
+                  : "bg-white text-vendeur-coal hover:bg-vendeur-emerald active:scale-95 cursor-pointer shadow-white/5"
+              )}
             >
-              {isRedirecting === "essential" ? <Loader2 className="animate-spin" size={18} /> : <Zap size={18} />}
-              Choisir cette offre
+              {isRedirecting === "essential" ? (
+                <Loader2 className="animate-spin" size={18} />
+              ) : isUnderVerification ? (
+                <span>Paiement en attente ⏳</span>
+              ) : (
+                <>
+                  <Zap size={18} />
+                  <span>Choisir cette offre</span>
+                </>
+              )}
             </button>
           </div>
         </div>
@@ -144,15 +175,38 @@ export function OffersModal({ isOpen, onClose }: OffersModalProps) {
             </div>
 
             <button
-              onClick={() => handleSelect("pro", "EXPERT")}
-              disabled={!!isRedirecting}
-              className="w-full h-14 sm:h-16 bg-vendeur-emerald text-vendeur-coal rounded-2xl font-black uppercase tracking-wider text-xs sm:text-sm flex items-center justify-center gap-3 hover:scale-[1.02] transition-all active:scale-95 shadow-2xl shadow-vendeur-emerald/20 disabled:opacity-50 cursor-pointer"
+              onClick={() => !isUnderVerification && handleSelect("pro", "EXPERT")}
+              disabled={!!isRedirecting || isUnderVerification}
+              className={cn(
+                "w-full h-14 sm:h-16 rounded-2xl font-black uppercase tracking-wider text-xs sm:text-sm flex items-center justify-center gap-3 transition-all shadow-2xl",
+                isUnderVerification
+                  ? "bg-white/5 text-white/40 border border-white/10 cursor-not-allowed shadow-none"
+                  : "bg-vendeur-emerald text-vendeur-coal hover:scale-[1.02] active:scale-95 shadow-vendeur-emerald/20 cursor-pointer"
+              )}
             >
-              {isRedirecting === "pro" ? <Loader2 className="animate-spin" size={18} /> : <Sparkles size={18} />}
-              Activer mon Pack Pro
+              {isRedirecting === "pro" ? (
+                <Loader2 className="animate-spin" size={18} />
+              ) : isUnderVerification ? (
+                <span>Paiement en attente ⏳</span>
+              ) : (
+                <>
+                  <Sparkles size={18} />
+                  <span>Activer mon Pack Pro</span>
+                </>
+              )}
             </button>
           </div>
         </div>
+      </div>
+
+      <div className="relative w-full max-w-4xl text-center mt-3">
+        <button
+          onClick={onClose}
+          className="text-white/50 hover:text-white text-xs font-bold uppercase tracking-wider py-2 px-4 rounded-xl hover:bg-white/5 transition-all cursor-pointer inline-flex items-center gap-2"
+        >
+          <span>Continuer gratuitement & explorer mon espace</span>
+          <span>→</span>
+        </button>
       </div>
     </div>
   );

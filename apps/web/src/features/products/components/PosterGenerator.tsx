@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { slugify } from "@/lib/slugify";
+import { formatDisplayPhone } from "@/features/onboarding/components/CountrySelector";
 
 interface PosterGeneratorProps {
   productData: {
@@ -253,7 +254,7 @@ export function PosterGenerator({
       ctx.font = "900 34px sans-serif";
       ctx.textAlign = "center";
       ctx.fillText(
-        whatsappNumber ? `📲 COMMANDER : ${whatsappNumber}` : "📲 COMMANDER SUR WHATSAPP",
+        whatsappNumber ? `📲 COMMANDER : ${formatDisplayPhone(whatsappNumber)}` : "📲 COMMANDER SUR WHATSAPP",
         70 + ctaWidth / 2,
         footerY + 28
       );

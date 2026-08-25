@@ -48,8 +48,7 @@ export function MagicLoginPage() {
         });
 
         setSession(res.data);
-        const user = res.data.user;
-        const target = user?.onboardingCompleted ? "/dashboard" : "/onboarding";
+        const target = "/dashboard";
         setDestination(target);
         setStatus("success");
         toast.success("Authentification réussie ! ✨");

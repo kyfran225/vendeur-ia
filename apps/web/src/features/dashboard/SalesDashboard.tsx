@@ -25,9 +25,11 @@ import { twMerge } from "tailwind-merge";
 import { SmartAssistantCard } from "./components/SmartAssistantCard";
 import { VendeurIAPlaygroundModal } from "./components/VendeurIAPlaygroundModal";
 import { SetupCompletionModal } from "./components/SetupCompletionModal";
+import { OffersModal } from "@/features/settings/components/OffersModal";
 import { PauseConfirmationModal } from "@/components/modals/PauseConfirmationModal";
 import { AssistantIcon } from "@/components/ui/AssistantIcon";
 import { getMerchantShopUrl, getMerchantShopPath } from "@/lib/slugify";
+import { formatDisplayPhone } from "@/features/onboarding/components/CountrySelector";
 
 import { VendeurIALoader } from "@/components/ui/VendeurIALoader";
 
@@ -48,6 +50,7 @@ export function SalesDashboard() {
   const [searchParams, setSearchParams] = useSearchParams();
   const isTestIAOpen = searchParams.get("test_ia") === "true";
   const [isCompletionModalOpen, setIsCompletionModalOpen] = useState(false);
+  const [isOffersModalOpen, setIsOffersModalOpen] = useState(false);
 
   const setIsTestIAOpen = (open: boolean) => {
     if (open) {
@@ -67,6 +70,27 @@ export function SalesDashboard() {
     },
     enabled: !!accessToken
   });
+
+  // Check if first-time user to display the welcome Offers modal
+  useEffect(() => {
+    if (!dashboard?.merchant?._id) return;
+    const isPaidActive = dashboard.merchant.subscription?.status === "active";
+    const latestPaymentIntent = dashboard?.latestPaymentIntent;
+    const isUnderVerification = Boolean(
+      latestPaymentIntent &&
+      (latestPaymentIntent.status === "under_verification" ||
+       latestPaymentIntent.status === "pending" ||
+       latestPaymentIntent.status === "payment_detected" ||
+       latestPaymentIntent.status === "awaiting_payment")
+    );
+    const storageKey = `vendeur_welcome_offers_seen_${dashboard.merchant._id}`;
+    const alreadySeen = localStorage.getItem(storageKey);
+
+    if (!isPaidActive && !isUnderVerification && !alreadySeen) {
+      setIsOffersModalOpen(true);
+      localStorage.setItem(storageKey, "true");
+    }
+  }, [dashboard?.merchant?._id, dashboard?.merchant?.subscription?.status, dashboard?.latestPaymentIntent]);
 
   // Check if all setup steps are completed to auto-trigger celebration modal once
   useEffect(() => {
@@ -88,9 +112,18 @@ export function SalesDashboard() {
         toast.success("WhatsApp connecté avec succès !");
         queryClient.invalidateQueries({ queryKey: ["dashboard"] });
       });
+      socket.on("payment:confirmed", (data: any) => {
+        toast.success(`🎉 Paiement validé ! Votre forfait ${data?.planName || "Vendeur IA"} est désormais actif.`);
+        queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+      });
+      socket.on("payment:update", () => {
+        queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+      });
     }
     return () => {
       socket?.off("whatsapp:connected");
+      socket?.off("payment:confirmed");
+      socket?.off("payment:update");
     };
   }, [socket, queryClient]);
 
@@ -103,10 +136,14 @@ export function SalesDashboard() {
   }
 
   const handleShareShop = () => {
-     const url = getMerchantShopUrl(dashboard?.merchant);
-     navigator.clipboard.writeText(url);
-     toast.success("Lien personnalisé de votre vitrine copié !");
+    const url = getMerchantShopUrl(dashboard?.merchant);
+    navigator.clipboard.writeText(url);
+    toast.success("Lien personnalisé de votre vitrine copié !");
   };
+
+  const activeWhatsApp = dashboard?.merchant?.whatsappNumber || dashboard?.merchant?.phone || dashboard?.whatsappConnection?.phoneNumber || "";
+  const isWhatsAppConnected = dashboard?.whatsappConnection?.status === "CONNECTED" || dashboard?.merchant?.whatsappConfig?.status === "connected" || Boolean(dashboard?.merchant?.whatsappNumber);
+  const isPaidActive = dashboard?.merchant?.subscription?.status === "active";
 
   return (
     <main className="max-w-6xl mx-auto p-4 md:p-10 space-y-8 pb-24 md:pb-8 animate-in fade-in duration-700">
@@ -117,9 +154,35 @@ export function SalesDashboard() {
             <span>Tableau de Bord</span>
           </h1>
           <p className="text-white/50 text-xs sm:text-sm md:text-base font-medium">Gérez votre croissance et suivez vos performances en direct.</p>
+          {activeWhatsApp && (
+            <div className="pt-2">
+              <Link
+                to="/settings?tab=connexions"
+                className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-vendeur-emerald/30 text-white/90 transition-all group shadow-sm"
+                title="Gérer la ligne WhatsApp"
+              >
+                <span className={cn("h-2 w-2 rounded-full", isWhatsAppConnected ? "bg-vendeur-emerald animate-pulse" : "bg-amber-400")} />
+                <MessageCircle size={14} className="text-vendeur-emerald shrink-0" />
+                <span className="text-[11px] text-white/50 font-medium">Ligne WhatsApp :</span>
+                <span className="text-xs font-mono font-bold text-white group-hover:text-vendeur-emerald transition-colors">
+                  {formatDisplayPhone(activeWhatsApp, dashboard?.merchant?.country || "CI")}
+                </span>
+              </Link>
+            </div>
+          )}
         </div>
 
-        <div className="hidden md:flex gap-3">
+        <div className="hidden md:flex items-center gap-3">
+          {!isPaidActive && (
+            <button
+              onClick={() => setIsOffersModalOpen(true)}
+              className="h-12 px-5 rounded-2xl bg-vendeur-emerald/10 border border-vendeur-emerald/30 text-vendeur-emerald text-xs font-black uppercase tracking-wider hover:bg-vendeur-emerald hover:text-vendeur-coal transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95 shadow-sm"
+            >
+              <Zap size={16} />
+              <span>Passer en Pro</span>
+            </button>
+          )}
+
           <button
             onClick={handleShareShop}
             className="h-12 px-6 rounded-2xl bg-white/5 border border-white/10 text-white text-xs font-black uppercase tracking-wider hover:bg-white/10 transition-all flex items-center justify-center text-center gap-2 cursor-pointer active:scale-95"
@@ -142,6 +205,7 @@ export function SalesDashboard() {
       <HomePanel 
         dashboard={dashboard} 
         onOpenTestIA={() => setIsTestIAOpen(true)}
+        onOpenOffers={() => setIsOffersModalOpen(true)}
       />
 
       <VendeurIAPlaygroundModal
@@ -155,11 +219,16 @@ export function SalesDashboard() {
         onClose={() => setIsCompletionModalOpen(false)}
         businessName={dashboard?.merchant?.businessName || "Votre boutique"}
       />
+
+      <OffersModal
+        isOpen={isOffersModalOpen}
+        onClose={() => setIsOffersModalOpen(false)}
+      />
     </main>
   );
 }
 
-function HomePanel({ dashboard, onOpenTestIA }: { dashboard: any, onOpenTestIA: () => void }) {
+function HomePanel({ dashboard, onOpenTestIA, onOpenOffers }: { dashboard: any, onOpenTestIA: () => void, onOpenOffers: () => void }) {
   const [isPauseModalOpen, setIsPauseModalOpen] = useState(false);
   const tips = dashboard?.aiGrowthAdvice?.tips || [];
   const status = dashboard?.merchant?.whatsappConfig?.status || 'disconnected';
@@ -183,26 +252,36 @@ function HomePanel({ dashboard, onOpenTestIA }: { dashboard: any, onOpenTestIA: 
       )}
 
       {/* MOBILE-ONLY QUICK ACTION BUTTONS (Generous height, non-squished) */}
-      <div className="grid grid-cols-2 md:hidden gap-3">
+      <div className={cn("grid gap-3 md:hidden", !isPaidActive ? "grid-cols-3" : "grid-cols-2")}>
+        {!isPaidActive && (
+          <button
+            onClick={onOpenOffers}
+            className="min-h-[52px] h-13 px-2 rounded-2xl bg-vendeur-emerald/15 border border-vendeur-emerald/30 text-vendeur-emerald text-[11px] font-black uppercase tracking-wider hover:bg-vendeur-emerald hover:text-vendeur-coal transition-all flex items-center justify-center text-center gap-1.5 active:scale-95 cursor-pointer shadow-sm shrink-0"
+          >
+            <Zap size={14} className="shrink-0" />
+            <span className="truncate">Pack Pro</span>
+          </button>
+        )}
+
         <button
           onClick={() => {
             const url = getMerchantShopUrl(dashboard?.merchant);
             navigator.clipboard.writeText(url);
             toast.success("Lien personnalisé de votre vitrine copié !");
           }}
-          className="min-h-[52px] h-13 px-4 rounded-2xl bg-white/5 border border-white/10 text-white text-xs font-black uppercase tracking-wider hover:bg-white/10 transition-all flex items-center justify-center text-center gap-2 active:scale-95 cursor-pointer shadow-sm shrink-0"
+          className="min-h-[52px] h-13 px-3 rounded-2xl bg-white/5 border border-white/10 text-white text-[11px] font-black uppercase tracking-wider hover:bg-white/10 transition-all flex items-center justify-center text-center gap-1.5 active:scale-95 cursor-pointer shadow-sm shrink-0"
         >
-          <Share2 size={16} className="shrink-0 text-white/70" />
-          <span className="truncate">Partager vitrine</span>
+          <Share2 size={14} className="shrink-0 text-white/70" />
+          <span className="truncate">Partager</span>
         </button>
 
         <Link
           to={getMerchantShopPath(dashboard?.merchant)}
           target="_blank"
-          className="min-h-[52px] h-13 px-4 rounded-2xl bg-vendeur-emerald text-vendeur-coal text-xs font-black uppercase tracking-wider hover:scale-105 active:scale-95 transition-all flex items-center justify-center text-center gap-2 shadow-lg shadow-vendeur-emerald/20 cursor-pointer shrink-0"
+          className="min-h-[52px] h-13 px-3 rounded-2xl bg-vendeur-emerald text-vendeur-coal text-[11px] font-black uppercase tracking-wider hover:scale-105 active:scale-95 transition-all flex items-center justify-center text-center gap-1.5 shadow-lg shadow-vendeur-emerald/20 cursor-pointer shrink-0"
         >
-          <ExternalLink size={16} className="shrink-0" />
-          <span className="truncate">Voir boutique</span>
+          <ExternalLink size={14} className="shrink-0" />
+          <span className="truncate">Vitrine</span>
         </Link>
       </div>
 

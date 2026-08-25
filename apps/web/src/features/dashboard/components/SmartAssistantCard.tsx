@@ -13,13 +13,15 @@ import {
   AlertTriangle,
   Rocket,
   ShieldCheck,
-  RefreshCw
+  RefreshCw,
+  Clock
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { PackProModal } from "./PackProModal";
 import { AssistantIcon } from "@/components/ui/AssistantIcon";
+import { WhatsAppIcon } from "@/components/ui/WhatsAppIcon";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/apiClient";
 import { toast } from "sonner";
@@ -46,6 +48,15 @@ export function SmartAssistantCard({ dashboard, onOpenTestIA }: SmartAssistantCa
 
   // Subscription calculations
   const isPaidActive = subscription?.status === "active";
+  const latestPaymentIntent = dashboard?.latestPaymentIntent;
+  const isUnderVerification = !isPaidActive && Boolean(
+    latestPaymentIntent &&
+    (latestPaymentIntent.status === "under_verification" ||
+     latestPaymentIntent.status === "pending" ||
+     latestPaymentIntent.status === "payment_detected" ||
+     latestPaymentIntent.status === "awaiting_payment")
+  );
+
   const now = new Date();
   const expirationDate = subscription?.expiresAt ? new Date(subscription.expiresAt) : null;
   const diffTime = expirationDate ? expirationDate.getTime() - now.getTime() : 0;
@@ -53,7 +64,7 @@ export function SmartAssistantCard({ dashboard, onOpenTestIA }: SmartAssistantCa
 
   const isExpired = subscription?.status === "past_due" || (isPaidActive && expirationDate !== null && diffDays <= 0);
   const isExpiringSoon = isPaidActive && expirationDate !== null && diffDays > 0 && diffDays <= 5;
-  const isDiscoveryMode = !isPaidActive && !isExpired;
+  const isDiscoveryMode = !isPaidActive && !isExpired && !isUnderVerification;
   const isPaused = isPaidActive && !isExpired && aiSettings?.autoReply === false;
   const isFully247Active = isPaidActive && !isExpired && aiSettings?.autoReply !== false;
 
@@ -91,6 +102,17 @@ export function SmartAssistantCard({ dashboard, onOpenTestIA }: SmartAssistantCa
 
   // Determine card appearance & color theme based on real state
   const getThemeConfig = () => {
+    if (isUnderVerification) {
+      return {
+        cardBg: "bg-emerald-950/40 border-emerald-500/30 shadow-emerald-500/5",
+        badgeBg: "bg-emerald-500/15 border-emerald-500/30 text-emerald-300",
+        badgeText: "Vérification en cours ⏳",
+        iconBorder: "border-emerald-500/30",
+        accentText: "text-emerald-400",
+        accentGlow: "shadow-emerald-500/10",
+        progressColor: "bg-emerald-400"
+      };
+    }
     if (isExpired) {
       return {
         cardBg: "bg-red-500/10 border-red-500/30",
@@ -180,6 +202,7 @@ export function SmartAssistantCard({ dashboard, onOpenTestIA }: SmartAssistantCa
                 <span className={cn(
                   "w-2.5 h-2.5 rounded-full",
                   isPaidActive && !isPaused ? "bg-vendeur-emerald animate-pulse" :
+                  isUnderVerification ? "bg-emerald-400 animate-pulse" :
                   isPaused ? "bg-sky-400" :
                   isExpired ? "bg-red-400 animate-pulse" : "bg-amber-400 animate-pulse"
                 )} />
@@ -190,7 +213,11 @@ export function SmartAssistantCard({ dashboard, onOpenTestIA }: SmartAssistantCa
             {/* Contextual Message Box */}
             <div className="bg-black/40 border border-white/5 rounded-2xl sm:rounded-3xl p-4 sm:p-6 relative space-y-4 w-full min-w-0">
               <p className="text-sm sm:text-base md:text-[16px] text-white/95 leading-relaxed italic break-words font-medium">
-                "{isExpired ? (
+                "{isUnderVerification ? (
+                  <>
+                    Votre règlement de <span className="text-emerald-400 font-bold not-italic">{latestPaymentIntent?.amount?.toLocaleString() || "5 000"} {latestPaymentIntent?.currency || "XOF"}</span> (Réf : <span className="font-mono font-bold text-white not-italic">{latestPaymentIntent?.reference || "TRX"}</span>) est en cours de validation par notre équipe. Votre Vendeur IA 24h/24 sera activé dès confirmation !
+                  </>
+                ) : isExpired ? (
                   <>
                     Votre forfait Vendeur IA est arrivé à terme. Votre boutique <span className="text-white font-bold not-italic">{businessName}</span> est en pause sur WhatsApp. Rechargez votre abonnement pour relancer instantanément les réponses et ventes 24h/24 !
                   </>
@@ -245,7 +272,30 @@ export function SmartAssistantCard({ dashboard, onOpenTestIA }: SmartAssistantCa
 
               {/* SINGLE UNIFIED PRIMARY ACTION BAR (Generous Heights, No Flattening) */}
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-1">
-                {isExpired ? (
+                {isUnderVerification ? (
+                  <>
+                    <Link
+                      to="/settings?tab=billing"
+                      className="flex-1 flex items-center justify-center gap-2.5 min-h-[52px] sm:min-h-[56px] px-6 py-3.5 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-vendeur-coal font-black uppercase text-xs sm:text-sm tracking-wider transition-all shadow-lg shadow-emerald-500/20 active:scale-95 cursor-pointer shrink-0 truncate"
+                    >
+                      <Clock size={17} className="shrink-0" />
+                      <span className="truncate">Suivre mon activation {latestPaymentIntent?.reference ? `(Réf : #${latestPaymentIntent.reference.slice(-6)})` : ""}</span>
+                      <ArrowRight size={17} className="shrink-0" />
+                    </Link>
+
+                    <a
+                      href={`https://wa.me/2250505111157?text=${encodeURIComponent(
+                        `Bonjour Support Vendeur IA,\nJe souhaite suivre l'activation de mon forfait suite à mon paiement.\nRéférence : ${latestPaymentIntent?.reference || ""}\nMontant : ${latestPaymentIntent?.amount || ""} ${latestPaymentIntent?.currency || "XOF"}`
+                      )}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="min-h-[52px] sm:min-h-[56px] px-5 py-3.5 rounded-2xl bg-white/10 hover:bg-[#25D366]/20 hover:border-[#25D366]/50 border border-white/10 text-white hover:text-[#25D366] font-black uppercase text-xs tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95 shrink-0"
+                    >
+                      <WhatsAppIcon size={16} variant="brand" />
+                      <span>Assistance WhatsApp</span>
+                    </a>
+                  </>
+                ) : isExpired ? (
                   <Link
                     to="/settings?tab=billing"
                     className="flex-1 flex items-center justify-center gap-2.5 min-h-[52px] sm:min-h-[56px] px-6 py-3.5 rounded-2xl bg-red-500 hover:bg-red-400 text-white font-black uppercase text-xs sm:text-sm tracking-wider transition-all shadow-lg shadow-red-500/20 active:scale-95 cursor-pointer shrink-0"

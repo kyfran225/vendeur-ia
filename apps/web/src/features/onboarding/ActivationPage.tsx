@@ -13,6 +13,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "@/stores/authStore";
 import { VendeurIALoader } from "@/components/ui/VendeurIALoader";
 import { AssistantIcon } from "@/components/ui/AssistantIcon";
+import { formatDisplayPhone } from "@/features/onboarding/components/CountrySelector";
 
 export function ActivationPage() {
   const navigate = useNavigate();
@@ -94,7 +95,7 @@ export function ActivationPage() {
               </div>
               <div>
                 <p className="text-[10px] font-black uppercase tracking-widest text-white/40">Ligne WhatsApp Active</p>
-                <p className="text-sm sm:text-base font-bold font-mono text-white tracking-wider">{activePhone}</p>
+                <p className="text-sm sm:text-base font-bold font-mono text-white tracking-wider">{formatDisplayPhone(activePhone, merchant?.country || "CI")}</p>
               </div>
             </div>
             <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-wider text-vendeur-emerald bg-vendeur-emerald/10 px-2.5 py-1 rounded-full border border-vendeur-emerald/20">

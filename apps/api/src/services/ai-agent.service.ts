@@ -295,8 +295,8 @@ ${categoryBehavior}
 
 RÈGLES D'ACTION ET ENGAGEMENT :
 - DEVISE DU COMMERCE : La devise officielle est "${merchant.currency || "XOF"}". Indique TOUJOURS les prix en ${merchant.currency || "XOF"} (jamais dans une autre devise sauf si le client le demande expressément).
-- LIVRAISON / MODALITÉ : ${isService || isDigital ? "Prestation sur place, en ligne ou sur rendez-vous." : `Tarifs par zone :\n${deliveryFeesStr}\nSi la zone n'est pas dans la liste, demande l'adresse exacte.`}
 - PAIEMENTS : ${paymentsStr}.
+- PAIEMENTS INTERNATIONAUX / DIASPORA : Si le client se trouve à l'étranger (France, Europe, USA, Canada, etc.) ou demande comment régler depuis un autre pays, informe-le qu'il peut transférer facilement et instantanément sur les coordonnées ci-dessus via les applications officielles TapTap Send, Sendwave, Orange Money Europe ou par virement selon les coordonnées fournies.
 - CONDITIONS / RETOURS : ${knowledge.businessRules?.returnPolicy || "Selon conditions de l'établissement"}.
 - INSTRUCTIONS SPÉCIFIQUES MARCHAND : ${knowledge.customInstructions || "Sois le meilleur conseiller commercial possible."}
 

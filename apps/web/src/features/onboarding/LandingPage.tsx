@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useRef, memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { AssistantIcon } from "@/components/ui/AssistantIcon";
+import { AnimatedAssistantBot } from "@/components/ui/AnimatedAssistantBot";
+import { WhatsAppIcon } from "@/components/ui/WhatsAppIcon";
+import { InstagramIcon, MetaIcon, TikTokIcon } from "@/components/ui/SocialIcons";
 import {
   Check,
   ChevronLeft,
@@ -36,7 +39,6 @@ import {
 import { CategorySelector } from "./components/CategorySelector";
 import { AddressAutocomplete } from "./components/AddressAutocomplete";
 import { AuthSheet } from "../auth/components/AuthSheet";
-import { WhatsAppIcon } from "@/components/ui/WhatsAppIcon";
 import { useAuthStore } from "@/stores/authStore";
 import { AudioRecorder } from "@/lib/audioUtils";
 import { apiClient } from "@/lib/apiClient";
@@ -114,35 +116,24 @@ function WhatsAppBubble({ role, text, time }: { role: string; text: string; time
 const MemoizedWhatsAppBubble = memo(WhatsAppBubble);
 
 function BentoFeatures() {
-  const features = [
-    {
-      title: "IA Vision™ Intelligente",
-      desc: "Prenez une photo, Vendeur IA identifie le produit, fixe un prix et génère une fiche de vente irrésistible en 3 secondes.",
-      icon: <AssistantIcon className="text-emerald-400" size={24} color="#34d399" />,
-      size: "large",
-      color: "bg-emerald-500/10 border-emerald-500/20",
-      image: "/assets/landing/vision-demo.png" // Placeholder for visual
-    },
+  const secondaryFeatures = [
     {
       title: "Paiements & Abonnements",
       desc: "Activez votre Vendeur IA instantanément via Mobile Money, Wave ou Google Play pour une gestion sans friction.",
       icon: <ShieldCheck className="text-sky-400" size={24} />,
-      size: "small",
       color: "bg-sky-500/10 border-sky-500/20",
       isPayment: true
     },
     {
       title: "Notes Vocales IA",
-      desc: "Vendeur IA peut communiquer par notes vocales ultra-réalistes pour créer un lien de confiance unique avec vos clients.",
+      desc: "Vendeur IA communique par notes vocales ultra-réalistes pour créer un lien de confiance immédiat avec vos acheteurs.",
       icon: <Mic className="text-purple-400" size={24} />,
-      size: "small",
       color: "bg-purple-500/10 border-purple-500/20"
     },
     {
       title: "Marketing Prédictif",
-      desc: "Relances automatiques des clients qui n'ont pas finalisé leur achat au moment parfait, sans spammer.",
+      desc: "Relances intelligentes et automatiques des prospects indécis au moment optimal pour maximiser vos encaissements.",
       icon: <Megaphone className="text-amber-400" size={24} />,
-      size: "medium",
       color: "bg-amber-500/10 border-amber-500/20"
     }
   ];
@@ -151,34 +142,125 @@ function BentoFeatures() {
     <section className="py-24 px-4 max-w-7xl mx-auto">
       <FadeIn delay={0.1}>
         <div className="text-center mb-16">
+          <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/5 px-4 py-1.5 text-[11px] font-black uppercase tracking-widest text-emerald-400 mb-4">
+            <Sparkles size={14} />
+            <span>Moteur d'Intelligence Commerciale</span>
+          </div>
           <h2 className="text-3xl md:text-5xl font-black text-white uppercase tracking-tighter mb-4">
             Une Armée de Vente <br className="hidden sm:block" />
             <span className="text-emerald-400">dans votre poche.</span>
           </h2>
           <p className="text-white/40 max-w-2xl mx-auto font-medium">
-            Oubliez les bots basiques. Vendeur IA est un écosystème complet conçu pour la conversion immédiate.
+            Oubliez les bots basiques. Vendeur IA est un cerveau commercial autonome conçu pour convertir vos prospects en clients payants.
           </p>
         </div>
       </FadeIn>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {features.map((f, i) => (
+        {/* STAR CARD: Flagship Showcase spanning full width across all 3 columns */}
+        <motion.div
+          whileHover={{ y: -3 }}
+          className="relative overflow-hidden rounded-[2rem] sm:rounded-[2.5rem] border bg-gradient-to-br from-[#07130e] via-[#091511] to-[#040907] border-emerald-500/25 p-6 sm:p-8 md:p-10 flex flex-col justify-between transition-all group md:col-span-3 shadow-xl transform-gpu"
+        >
+          {/* Lightweight Ambient Background Glow */}
+          <div className="absolute -top-10 -right-10 w-48 h-48 bg-emerald-500/10 blur-2xl rounded-full pointer-events-none" />
+
+          <div className="relative z-10 space-y-6">
+            {/* Top clean badge */}
+            <div className="flex items-center">
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 text-[11px] font-black uppercase tracking-wider">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                <span>Commercial Virtuel Intelligent</span>
+              </div>
+            </div>
+
+            <div>
+              <h3 className="text-2xl sm:text-3xl md:text-4xl font-black text-white tracking-tight uppercase mb-3 leading-tight">
+                Vendez 24h/7 avec <span className="text-emerald-400">Vendeur IA.</span>
+              </h3>
+              <p className="text-white/60 leading-relaxed text-sm md:text-base font-medium max-w-2xl">
+                Votre assistant commercial ne dort jamais : il comprend vos produits, conseille vos clients, négocie les ventes et sécurise vos encaissements instantanément.
+              </p>
+            </div>
+
+            {/* Content Showcase: Bot Icon & 4 Commercial Pillars in a 4-column balanced row */}
+            <div className="py-2 flex flex-col lg:flex-row items-center gap-6 lg:gap-8 my-2">
+              {/* Bot Icon Showcase Container */}
+              <div className="relative flex items-center justify-center shrink-0">
+                <div className="relative h-20 w-20 sm:h-24 sm:w-24 rounded-2xl bg-[#0b1611] border border-emerald-500/20 p-3.5 flex items-center justify-center shadow-md">
+                  <AnimatedAssistantBot size={52} glow={false} />
+                </div>
+              </div>
+
+              {/* 4 Commercial Pillars Grid - 4 columns on lg, 2 on sm, 1 on xs */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 w-full flex-1 min-w-0">
+                <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 hover:border-emerald-500/40 hover:bg-emerald-500/10 transition-all flex items-start gap-3">
+                  <div className="h-8 w-8 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 shrink-0">
+                    <Zap size={16} />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs font-black uppercase tracking-wider text-white">Réponse en 3s</p>
+                    <p className="text-[11px] text-white/50 leading-snug mt-0.5">Zéro prospect perdu par attente</p>
+                  </div>
+                </div>
+
+                <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 hover:border-emerald-500/40 hover:bg-emerald-500/10 transition-all flex items-start gap-3">
+                  <div className="h-8 w-8 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 shrink-0">
+                    <Camera size={16} />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs font-black uppercase tracking-wider text-white">IA Vision™</p>
+                    <p className="text-[11px] text-white/50 leading-snug mt-0.5">Scan photo & fiche produit</p>
+                  </div>
+                </div>
+
+                <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 hover:border-emerald-500/40 hover:bg-emerald-500/10 transition-all flex items-start gap-3">
+                  <div className="h-8 w-8 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 shrink-0">
+                    <Mic size={16} />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs font-black uppercase tracking-wider text-white">Voix WhatsApp</p>
+                    <p className="text-[11px] text-white/50 leading-snug mt-0.5">Notes vocales réalistes</p>
+                  </div>
+                </div>
+
+                <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 hover:border-emerald-500/40 hover:bg-emerald-500/10 transition-all flex items-start gap-3">
+                  <div className="h-8 w-8 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 shrink-0">
+                    <ShieldCheck size={16} />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs font-black uppercase tracking-wider text-white">Closing 24/7</p>
+                    <p className="text-[11px] text-white/50 leading-snug mt-0.5">Négociation & encaissement</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="relative z-10 pt-5 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-white/40 text-center sm:text-left">
+            <span className="font-medium">Compatible avec votre numéro WhatsApp existant</span>
+            <span className="text-emerald-400 font-bold flex items-center gap-1">
+              Configuration en 2 min <ArrowRight size={14} />
+            </span>
+          </div>
+        </motion.div>
+
+        {/* 3 Secondary Cards: 1 column each in the 3-column grid (Paiements, Notes Vocales, Marketing Prédictif) */}
+        {secondaryFeatures.map((f, i) => (
           <motion.div
             key={i}
-            whileHover={{ y: -5 }}
+            whileHover={{ y: -4 }}
             className={cn(
-              "relative overflow-hidden rounded-[2.5rem] border p-8 flex flex-col justify-between transition-all group",
-              f.color,
-              f.size === "large" ? "md:col-span-2 md:row-span-2" : "",
-              f.size === "medium" ? "md:col-span-2" : ""
+              "relative overflow-hidden rounded-[2rem] sm:rounded-[2.5rem] border p-7 sm:p-8 flex flex-col justify-between transition-all group col-span-1 shadow-lg",
+              f.color
             )}
           >
             <div className="relative z-10">
-              <div className="mb-6 h-14 w-14 rounded-2xl bg-white/5 flex items-center justify-center border border-white/10 group-hover:scale-110 transition-transform shadow-xl">
+              <div className="mb-6 h-12 w-12 rounded-2xl bg-white/5 flex items-center justify-center border border-white/10 group-hover:scale-105 transition-transform shadow-md">
                 {f.icon}
               </div>
-              <h3 className="text-2xl font-black text-white mb-3 tracking-tight uppercase">{f.title}</h3>
-              <p className="text-white/50 leading-relaxed text-sm font-medium max-w-md">{f.desc}</p>
+              <h3 className="text-xl font-black text-white mb-2 tracking-tight uppercase">{f.title}</h3>
+              <p className="text-white/50 leading-relaxed text-xs sm:text-sm font-medium">{f.desc}</p>
 
               {f.isPayment && (
                 <div className="flex flex-wrap items-center gap-2.5 mt-5">
@@ -373,7 +455,7 @@ function LandingHero({
     if (!user) {
       onAuth();
     } else {
-      navigate("/onboarding");
+      navigate("/dashboard");
     }
   };
 
@@ -506,9 +588,9 @@ function LandingHero({
                 </div>
               </div>
 
-              <div className="flex flex-col sm:flex-row items-center sm:gap-3 bg-white/5 border border-white/10 px-2 py-3 sm:px-4 sm:py-2 rounded-2xl backdrop-blur-sm">
+              <div className="flex flex-col sm:flex-row items-center sm:gap-3 bg-white/5 border border-white/10 px-2 py-3 sm:px-4 sm:py-2 rounded-2xl backdrop-blur-sm group hover:border-emerald-500/30 transition-all">
                 <div className="h-7 w-7 sm:h-8 sm:w-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-400 mb-2 sm:mb-0">
-                  <AssistantIcon size={18} color="#34d399" />
+                  <AnimatedAssistantBot size={20} glow={false} />
                 </div>
                 <div className="text-center sm:text-left">
                   <p className="text-lg sm:text-xl font-black text-white leading-none">24/7</p>
@@ -521,11 +603,32 @@ function LandingHero({
 
       {/* Right Visual Side - Smartphone Mockup */}
       <div id="demo-card" className="relative w-full lg:w-auto flex justify-center perspective-1000 overflow-visible z-10">
-        {/* Decorative Glows */}
-        <div className="absolute -inset-10 bg-emerald-500/10 blur-[120px] rounded-full pointer-events-none animate-pulse" />
+        {/* Subtle Decorative Background Shadow */}
+        <div className="absolute -inset-4 bg-emerald-500/5 blur-2xl rounded-full pointer-events-none" />
 
         <FadeIn delay={0.4} direction="right" className="w-full flex justify-center">
           <div className="relative group w-full max-w-[360px] sm:max-w-[420px] md:w-[320px] lg:w-[340px]">
+            {/* Floating Companion Badge Anchored Higher Near Phone Corner */}
+            <div
+              className="hidden lg:flex absolute -left-28 xl:-left-36 -top-8 z-20 items-center gap-3 p-3 pr-4 rounded-2xl bg-[#0d1612]/95 border border-white/10 shadow-lg select-none"
+            >
+              <div className="relative flex items-center justify-center shrink-0">
+                <div className="relative h-11 w-11 rounded-xl bg-[#101e17] border border-emerald-500/20 flex items-center justify-center p-1.5 shadow-sm">
+                  <AnimatedAssistantBot size={26} glow={false} />
+                </div>
+                <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
+                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500" />
+                </span>
+              </div>
+              <div className="text-left whitespace-nowrap">
+                <div className="flex items-center gap-1.5">
+                  <p className="text-[11px] font-black text-white uppercase tracking-tight">Vendeur IA Actif</p>
+                  <span className="text-[9px] px-1.5 py-0.2 rounded bg-emerald-500/15 text-emerald-400 font-bold">24/7</span>
+                </div>
+                <p className="text-[10px] text-white/50 font-medium">Conseille & encaisse en direct</p>
+              </div>
+            </div>
+
             {/* Phone Frame Mockup */}
             <div className="relative w-full h-[640px] sm:h-[700px] md:h-[620px] lg:h-[640px] rounded-[2.8rem] border-[7px] border-[#1a1c1e] bg-black shadow-[0_40px_80px_rgba(0,0,0,0.8)] overflow-hidden ring-4 ring-white/5 transition-all duration-500">
               {/* Camera Notch */}
@@ -615,14 +718,19 @@ function LandingHero({
                   {/* WhatsApp UI Inside Frame */}
                   <div className="bg-[#202c33] px-3.5 pt-8 pb-3 flex items-center justify-between border-b border-white/5 shrink-0">
                     <div className="flex items-center gap-2.5 min-w-0">
-                      <div className="h-9 w-9 rounded-full bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0 p-1">
-                         <AssistantIcon size={20} color="#34d399" />
+                      <div className="h-9 w-9 rounded-full bg-gradient-to-b from-emerald-500/20 to-emerald-950/80 border border-emerald-500/40 flex items-center justify-center text-emerald-400 shrink-0 p-1 shadow-inner relative">
+                        <AnimatedAssistantBot size={22} variant={isReplying ? "thinking" : "idle"} glow={isReplying} />
+                        <span className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-[#202c33] flex items-center justify-center">
+                          <span className={cn("h-1.5 w-1.5 rounded-full", isReplying ? "bg-amber-400 animate-ping" : "bg-emerald-400 animate-pulse")} />
+                        </span>
                       </div>
                       <div className="min-w-0">
                         <p className="text-xs font-bold text-white leading-tight truncate">{form.businessName}</p>
                         <div className="flex items-center gap-1.5 mt-0.5">
-                          <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                          <span className="text-[10px] font-medium text-emerald-400 leading-none">en ligne</span>
+                          <span className={cn("h-1.5 w-1.5 rounded-full", isReplying ? "bg-amber-400 animate-ping" : "bg-emerald-400 animate-pulse")} />
+                          <span className="text-[10px] font-medium text-emerald-400 leading-none">
+                            {isReplying ? "en train d'écrire..." : "en ligne"}
+                          </span>
                         </div>
                       </div>
                     </div>
@@ -647,13 +755,26 @@ function LandingHero({
                     style={{ backgroundImage: "url('https://static.whatsapp.net/rsrc.php/v3/y6/r/wa669ae5qee.png')", backgroundSize: "400px" }}
                   >
                     {history.length === 0 && !isReplying && (
-                      <div className="flex flex-col items-center justify-center py-6 text-center my-auto">
-                        <div className="bg-[#182229]/90 border border-white/10 rounded-xl p-3 max-w-[260px] shadow-md">
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="flex flex-col items-center justify-center py-6 text-center my-auto px-2"
+                      >
+                        <div className="relative mb-3 flex items-center justify-center">
+                          <div className="relative h-14 w-14 rounded-2xl bg-[#14221a] border border-emerald-500/20 flex items-center justify-center p-2 shadow-md">
+                            <AnimatedAssistantBot size={36} glow={false} />
+                          </div>
+                        </div>
+                        <div className="bg-[#182229]/95 border border-white/10 rounded-2xl p-3.5 max-w-[280px] shadow-lg text-center space-y-1.5">
+                          <p className="text-xs font-black uppercase tracking-tight flex items-center justify-center gap-1.5 text-emerald-400">
+                            <Sparkles size={13} />
+                            <span>Assistant Prêt</span>
+                          </p>
                           <p className="text-[11px] text-[#8696a0] leading-snug">
-                            🔒 Les messages de cette démonstration sont générés par le moteur Vendeur IA en temps réel.
+                            Bonjour ! Je suis votre conseiller <strong className="text-white font-bold">{form.businessName || "Vendeur IA"}</strong>. Posez-moi une question sur vos produits ou demandez un conseil !
                           </p>
                         </div>
-                      </div>
+                      </motion.div>
                     )}
                     {history.map((msg, i) => (
                       <MemoizedWhatsAppBubble key={i} role={msg.role} text={msg.text} time={msg.time} />
@@ -665,10 +786,12 @@ function LandingHero({
                       <motion.div
                         initial={{ opacity: 0, scale: 0.95, y: 8 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
-                        className="my-3 p-3.5 rounded-2xl bg-gradient-to-b from-[#182229] to-[#111b21] border border-emerald-500/30 text-white shadow-2xl space-y-2 text-center"
+                        className="my-3 p-4 rounded-2xl bg-gradient-to-b from-[#182229] to-[#111b21] border border-emerald-500/25 text-white shadow-xl space-y-2.5 text-center"
                       >
-                        <div className="w-9 h-9 mx-auto rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
-                          <Sparkles size={18} className="animate-pulse" />
+                        <div className="relative w-11 h-11 mx-auto flex items-center justify-center">
+                          <div className="relative w-11 h-11 rounded-xl bg-[#101b20] border border-emerald-500/25 flex items-center justify-center p-1.5 shadow-sm">
+                            <AnimatedAssistantBot size={28} glow={false} />
+                          </div>
                         </div>
                         <div>
                           <p className="text-xs font-black uppercase tracking-wider text-emerald-400">Démonstration terminée ({MAX_DEMO_REPLIES}/{MAX_DEMO_REPLIES})</p>
@@ -769,11 +892,7 @@ export function LandingPage() {
 
   useEffect(() => {
     if (user) {
-      if (!!user.onboardingCompleted) {
-        navigate("/dashboard");
-      } else {
-        navigate("/onboarding");
-      }
+      navigate("/dashboard");
     }
   }, [user, navigate]);
 
@@ -827,24 +946,37 @@ export function LandingPage() {
               <div className="h-px flex-1 bg-gradient-to-r from-transparent via-white/10 to-transparent" />
            </div>
 
-           <div className="flex items-center justify-center gap-6 md:gap-20 px-4 opacity-40 hover:opacity-100 transition-opacity duration-500 grayscale hover:grayscale-0">
-              <div className="flex flex-col md:flex-row items-center gap-2 md:gap-3 text-white group cursor-default">
-                <div className="p-1.5 md:p-2 rounded-lg md:rounded-xl bg-white/5 border border-white/10 group-hover:border-emerald-500/50 group-hover:bg-emerald-500/10 transition-all">
-                  <WhatsAppIcon size={20} className="md:w-6 md:h-6" />
+           <div className="flex flex-wrap items-center justify-center gap-6 md:gap-16 px-4 opacity-50 hover:opacity-100 transition-opacity duration-300">
+              {/* WhatsApp */}
+              <div className="flex items-center gap-2 md:gap-3 text-white group cursor-default">
+                <div className="p-2 md:p-2.5 rounded-xl bg-white/5 border border-white/10 group-hover:border-emerald-500/50 group-hover:bg-emerald-500/10 group-hover:text-[#25D366] transition-all">
+                  <WhatsAppIcon size={22} className="w-5 h-5 md:w-6 md:h-6" />
                 </div>
-                <span className="text-[10px] md:text-xl font-black tracking-tighter uppercase">WhatsApp</span>
+                <span className="text-xs md:text-lg font-black tracking-tighter uppercase">WhatsApp</span>
               </div>
-              <div className="flex flex-col md:flex-row items-center gap-2 md:gap-3 text-white group cursor-default">
-                <div className="p-1.5 md:p-2 rounded-lg md:rounded-xl bg-white/5 border border-white/10 group-hover:border-pink-500/50 group-hover:bg-pink-500/10 transition-all">
-                  <Globe size={20} className="md:w-6 md:h-6" />
+
+              {/* Instagram */}
+              <div className="flex items-center gap-2 md:gap-3 text-white group cursor-default">
+                <div className="p-2 md:p-2.5 rounded-xl bg-white/5 border border-white/10 group-hover:border-pink-500/50 group-hover:bg-pink-500/10 group-hover:text-[#E4405F] transition-all">
+                  <InstagramIcon size={20} className="w-5 h-5 md:w-6 md:h-6" />
                 </div>
-                <span className="text-[10px] md:text-xl font-black tracking-tighter uppercase">Instagram</span>
+                <span className="text-xs md:text-lg font-black tracking-tighter uppercase">Instagram</span>
               </div>
-              <div className="flex flex-col md:flex-row items-center gap-2 md:gap-3 text-white group cursor-default">
-                <div className="p-1.5 md:p-2 rounded-lg md:rounded-xl bg-white/5 border border-white/10 group-hover:border-blue-500/50 group-hover:bg-blue-500/10 transition-all">
-                  <Zap size={20} className="md:w-6 md:h-6" />
+
+              {/* Meta Ads */}
+              <div className="flex items-center gap-2 md:gap-3 text-white group cursor-default">
+                <div className="p-2 md:p-2.5 rounded-xl bg-white/5 border border-white/10 group-hover:border-blue-500/50 group-hover:bg-blue-500/10 group-hover:text-[#0081FB] transition-all">
+                  <MetaIcon size={22} className="w-5 h-5 md:w-6 md:h-6" />
                 </div>
-                <span className="text-[10px] md:text-xl font-black tracking-tighter uppercase">Meta Ads</span>
+                <span className="text-xs md:text-lg font-black tracking-tighter uppercase">Meta Ads</span>
+              </div>
+
+              {/* TikTok */}
+              <div className="flex items-center gap-2 md:gap-3 text-white group cursor-default">
+                <div className="p-2 md:p-2.5 rounded-xl bg-white/5 border border-white/10 group-hover:border-cyan-500/50 group-hover:bg-cyan-500/10 group-hover:text-[#00F2FE] transition-all">
+                  <TikTokIcon size={20} className="w-5 h-5 md:w-6 md:h-6" />
+                </div>
+                <span className="text-xs md:text-lg font-black tracking-tighter uppercase">TikTok</span>
               </div>
            </div>
         </div>
@@ -854,10 +986,16 @@ export function LandingPage() {
 
         {/* CTA FINAL SECTION */}
         <section className="py-24 md:py-32 px-4 md:px-6">
-           <div className="max-w-4xl mx-auto rounded-[2.5rem] md:rounded-[3rem] bg-gradient-to-br from-emerald-500/20 via-emerald-900/10 to-transparent border border-emerald-500/20 p-8 md:p-20 text-center relative overflow-hidden">
-              <div className="absolute top-0 left-0 w-full h-full opacity-20 pointer-events-none bg-[radial-gradient(#ffffff10_1px,transparent_1px)] [background-size:16px_16px]" />
+           <div className="max-w-4xl mx-auto rounded-[2rem] md:rounded-[2.5rem] bg-gradient-to-br from-[#0c1813] via-[#07110d] to-[#040806] border border-emerald-500/15 p-8 md:p-16 text-center relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none bg-[radial-gradient(#ffffff10_1px,transparent_1px)] [background-size:16px_16px]" />
 
               <FadeIn>
+                <div className="inline-flex items-center justify-center mb-6">
+                  <div className="h-16 w-16 md:h-18 md:w-18 rounded-2xl bg-[#0d1a13] border border-emerald-500/20 p-3 flex items-center justify-center shadow-md">
+                    <AnimatedAssistantBot size={40} glow={false} />
+                  </div>
+                </div>
+
                 <h2 className="text-4xl md:text-6xl font-black text-white uppercase tracking-tighter mb-6 leading-[0.95]">
                   Prêt à <span className="text-emerald-400">multiplier</span> vos ventes ?
                 </h2>
@@ -865,7 +1003,7 @@ export function LandingPage() {
                   Rejoignez des centaines de commerçants qui ont déjà automatisé leur croissance avec Vendeur IA.
                 </p>
                 <button
-                  onClick={() => setIsAuthOpen(true)}
+                  onClick={handleLaunchDemo}
                   className="w-full sm:w-auto h-16 px-10 rounded-2xl bg-vendeur-emerald text-vendeur-coal font-black uppercase tracking-widest text-xs sm:text-sm hover:scale-105 active:scale-95 transition-all shadow-[0_20px_60px_rgba(16,185,129,0.4)] border-t border-white/30 flex items-center justify-center gap-3 mx-auto"
                 >
                   Configurer mon Vendeur IA

@@ -1,3 +1,4 @@
+import fs from "node:fs/promises";
 import crypto from "crypto";
 import { PaymentIntentModel, IPaymentIntent } from "../modules/commerce/payment-intent.model.js";
 import { SystemSettingsModel } from "../modules/commerce/admin.model.js";
@@ -11,6 +12,8 @@ import { messagingService } from "./messaging.service.js";
 import { pushService } from "./push.service.js";
 import { logger } from "./logger.service.js";
 import { emitToUser } from "../realtime/socketServer.js";
+import { paymentShieldService, ForensicExtractionResult } from "./payment-shield.service.js";
+import { storageService } from "./storage.service.js";
 
 export class PaymentService {
   public static readonly RATES: Record<string, { rate: number; round: number; symbol: string }> = {
@@ -285,6 +288,127 @@ export class PaymentService {
   }
 
   /**
+   * Scans a receipt screenshot with Forensic Multimodal AI and Anti-Fraud shield
+   */
+  async scanReceiptProof(intentId: string, userId: string, file: Express.Multer.File) {
+    const intent = await PaymentIntentModel.findOne({ _id: intentId, userId });
+    if (!intent) {
+      throw new Error("Intention de paiement introuvable.");
+    }
+
+    if (intent.status === "confirmed") {
+      return {
+        success: true,
+        alreadyConfirmed: true,
+        message: "Paiement déjà confirmé !"
+      };
+    }
+
+    // 1. Read file buffer & compute SHA-256 hash for anti-replay check
+    const imageBuffer = await fs.readFile(file.path);
+    const imageHash = paymentShieldService.computeImageHash(imageBuffer);
+
+    // 2. Upload file to permanent storage
+    const uploadResult = await storageService.uploadFile(file, "payment-proofs");
+
+    // Clean temp multer file
+    await fs.unlink(file.path).catch(() => {});
+
+    // 3. Anti-Replay Defense: Verify if image was previously used in another confirmed intent
+    const duplicateHash = await PaymentIntentModel.findOne({
+      _id: { $ne: intent._id },
+      proofImageHash: imageHash,
+      status: "confirmed"
+    });
+
+    // 4. Run Deep Forensic AI Vision Audit
+    const extraction: ForensicExtractionResult = await paymentShieldService.runForensicVisionAudit(imageBuffer, file.mimetype);
+
+    // 5. Build Fraud & Forensic assessment
+    const flags: string[] = [];
+    let isFraudulent = false;
+
+    if (duplicateHash) {
+      flags.push("IMAGE_DÉJÀ_UTILISÉE_SUR_UN_AUTRE_COMPTE");
+      isFraudulent = true;
+    }
+
+    if (extraction.forensics?.isPhotoshopTampered) {
+      flags.push("RETOUCHE_GRAPHIQUE_DÉTECTÉE");
+      isFraudulent = true;
+    }
+
+    if (extraction.forensics?.isAiGenerated) {
+      flags.push("FAUX_REÇU_GÉNÉRÉ_PAR_IA");
+      isFraudulent = true;
+    }
+
+    if (extraction.forensics?.fontMismatchDetected) {
+      flags.push("TYPOGRAPHIE_INCOHÉRENTE");
+    }
+
+    if (extraction.forensics?.compressionArtifactsDetected) {
+      flags.push("ARTEFACTS_DE_COMPRESSION_SUSPECTS");
+    }
+
+    const amountMatches = Boolean(
+      extraction.amount &&
+      (extraction.amount === intent.amount || Math.abs(extraction.amount - intent.amount) <= 50)
+    );
+
+    // Dynamic AI confidence rating
+    let confidenceScore = extraction.isPaymentProof ? (extraction.forensics?.confidenceRating || 75) : 10;
+    if (isFraudulent) {
+      confidenceScore = 0;
+    } else if (amountMatches && extraction.transactionId) {
+      confidenceScore = Math.min(100, confidenceScore + 15);
+    }
+
+    // Persist scan and forensic metadata on intent
+    intent.proofImageUrl = uploadResult.url;
+    intent.proofImageHash = imageHash;
+    intent.forensics = {
+      isAiGenerated: extraction.forensics?.isAiGenerated || false,
+      isPhotoshopTampered: extraction.forensics?.isPhotoshopTampered || false,
+      fontMismatchDetected: extraction.forensics?.fontMismatchDetected || false,
+      compressionArtifactsDetected: extraction.forensics?.compressionArtifactsDetected || false,
+      uiInconsistencies: extraction.forensics?.uiInconsistencies || [],
+      confidenceRating: confidenceScore,
+      analysisSummary: extraction.forensics?.analysisSummary || "Audit visuel IA complété."
+    };
+
+    if (extraction.transactionId && (!intent.transactionId || intent.transactionId.length < 4)) {
+      intent.transactionId = extraction.transactionId;
+    }
+    if (extraction.senderPhone && (!intent.senderPhoneNumber || intent.senderPhoneNumber.length < 6)) {
+      intent.senderPhoneNumber = extraction.senderPhone;
+    }
+    if (extraction.senderName && !intent.senderName) {
+      intent.senderName = extraction.senderName;
+    }
+    await intent.save();
+
+    logger.info(`[Payment Shield] Reçu scanné pour intent ${intent.reference}: Platform=${extraction.platform}, TID=${extraction.transactionId || 'N/A'}, Confiance=${confidenceScore}%, Flags=${flags.join(', ') || 'None'}`);
+
+    return {
+      success: true,
+      proofImageUrl: uploadResult.url,
+      isPaymentProof: extraction.isPaymentProof,
+      platform: extraction.platform,
+      amount: extraction.amount,
+      currency: extraction.currency,
+      transactionId: extraction.transactionId,
+      senderPhone: extraction.senderPhone,
+      senderName: extraction.senderName,
+      confidenceScore,
+      amountMatches,
+      forensics: intent.forensics,
+      flags,
+      analysisSummary: extraction.forensics?.analysisSummary || ""
+    };
+  }
+
+  /**
    * Submits payment proof / transaction ID from merchant customer
    */
   async submitPaymentProof(intentId: string, userId: string, data: {
@@ -320,9 +444,15 @@ export class PaymentService {
       }
     }
 
-    // 2. Compute Confidence Score
+    // 2. Compute Confidence Score incorporating Forensics
     let confidence = 40; // Base score for submitting proof
     const notes: string[] = [];
+
+    // Check if forensic flags were raised on image
+    const hasForensicFraud = Boolean(
+      intent.forensics?.isPhotoshopTampered ||
+      intent.forensics?.isAiGenerated
+    );
 
     if (cleanTransactionId && cleanTransactionId.length >= 6) {
       confidence += 30;
@@ -331,22 +461,25 @@ export class PaymentService {
       notes.push("Identifiant de transaction manquant ou court");
     }
 
-    if (isTidUnique) {
+    if (isTidUnique && !hasForensicFraud) {
       confidence += 15;
       notes.push("Identifiant transaction unique vérifié");
+      if (cleanSenderPhone && cleanSenderPhone.length >= 8) {
+        confidence += 15;
+        notes.push("Numéro expéditeur renseigné");
+      }
+      if (data.proofImageUrl || intent.proofImageUrl) {
+        confidence += 10;
+        notes.push("Capture d'écran de reçu fournie");
+      }
+      if (intent.forensics?.confidenceRating && intent.forensics.confidenceRating >= 85) {
+        confidence += 10;
+        notes.push("Validation visuelle IA haute fidélité");
+      }
     } else {
       confidence = 0;
-      notes.push("ATTENTION: Identifiant déjà utilisé sur un autre compte !");
-    }
-
-    if (cleanSenderPhone && cleanSenderPhone.length >= 8) {
-      confidence += 15;
-      notes.push("Numéro expéditeur renseigné");
-    }
-
-    if (data.proofImageUrl) {
-      confidence += 10;
-      notes.push("Capture d'écran de reçu fournie");
+      if (!isTidUnique) notes.push("ATTENTION: Identifiant déjà utilisé sur un autre compte !");
+      if (hasForensicFraud) notes.push("ATTENTION: Retouche ou faux reçu IA détecté par le bouclier anti-fraude !");
     }
 
     // Cap confidence
@@ -370,14 +503,18 @@ export class PaymentService {
       notes
     };
 
-    if (confidence >= threshold && isTidUnique) {
+    if (confidence >= threshold && isTidUnique && !hasForensicFraud) {
       // Auto-approve if criteria met
       await this.activateSubscriptionForIntent(intent, "system_auto_verify");
     } else {
       intent.status = "under_verification";
       await intent.save();
 
-      // Alert Admin via Realtime and Push
+      // Alert Admins via Web Push and Realtime Sockets
+      this.notifyAdminsNewPayment(intent, data.senderName || intent.senderName).catch(err => {
+        logger.warn(`[PaymentService] Erreur alerte admins: ${err.message}`);
+      });
+
       emitToUser("admin", "payment:pending_review", {
         intentId: intent._id,
         reference: intent.reference,
@@ -385,6 +522,13 @@ export class PaymentService {
         senderName: intent.senderName,
         phone: intent.senderPhoneNumber,
         confidenceScore: intent.confidenceScore
+      });
+
+      emitToUser(userId, "payment:update", {
+        intentId: intent._id,
+        reference: intent.reference,
+        status: intent.status,
+        amount: intent.amount
       });
 
       logger.info(`[Payment Engine] Intent ${intent.reference} soumis à vérification (Score: ${confidence}%)`);
@@ -399,11 +543,51 @@ export class PaymentService {
   }
 
   /**
-   * Admin approves or rejects a PaymentIntent
+   * Broadcast real-time alerts and web push to all administrators
+   */
+  async notifyAdminsNewPayment(intent: IPaymentIntent, merchantName?: string) {
+    try {
+      const admins = await UserModel.find({
+        $or: [{ roles: "admin" }, { email: "franck@vendeur-ia.com" }]
+      });
+
+      const bodyText = `${intent.amount.toLocaleString("fr-FR")} ${intent.currency} - ${intent.planName} (${intent.paymentMethod?.toUpperCase() || "MOBILE MONEY"}) pour ${merchantName || intent.senderName || "un commerçant"}`;
+
+      for (const admin of admins) {
+        await pushService.sendNotification(admin._id.toString(), {
+          title: "⏳ Nouveau Virement à Vérifier",
+          body: bodyText,
+          icon: "/apple-touch-icon.png",
+          data: {
+            url: "/admin",
+            intentId: intent._id.toString(),
+            reference: intent.reference
+          }
+        });
+
+        emitToUser(admin._id.toString(), "admin:payment_incoming", {
+          intentId: intent._id.toString(),
+          reference: intent.reference,
+          amount: intent.amount,
+          currency: intent.currency,
+          planName: intent.planName,
+          senderPhone: intent.senderPhoneNumber,
+          merchantName: merchantName || intent.senderName
+        });
+      }
+    } catch (err: any) {
+      logger.warn(`[PaymentService] Erreur notification push admins: ${err.message}`);
+    }
+  }
+
+  /**
+   * Admin approves, rejects or requests rescan for a PaymentIntent
    */
   async processAdminDecision(intentId: string, adminId: string, decision: {
-    action: "approve" | "reject";
+    action: "approve" | "reject" | "request_rescan";
     adminNotes?: string;
+    rejectionCode?: string;
+    rejectionReason?: string;
   }) {
     const intent = await PaymentIntentModel.findById(intentId);
     if (!intent) {
@@ -420,19 +604,53 @@ export class PaymentService {
       await this.activateSubscriptionForIntent(intent, adminId);
       logger.info(`[PaymentService] Intent ${intent.reference} approuvé manuellement par admin ${adminId}`);
       return { message: "Paiement validé et abonnement activé !", intent };
+    } else if (decision.action === "request_rescan") {
+      intent.status = "under_verification";
+      intent.adminNotes = decision.adminNotes || "Veuillez fournir une capture d'écran plus nette du reçu.";
+      intent.verifiedBy = adminId;
+      await intent.save();
+
+      // Notify merchant via WebSocket
+      emitToUser(intent.userId, "payment:rescan_requested", {
+        reference: intent.reference,
+        instructions: intent.adminNotes
+      });
+
+      // Send Push notification to merchant
+      pushService.sendNotification(intent.userId, {
+        title: "📸 Capture de reçu demandée",
+        body: intent.adminNotes,
+        icon: "/apple-touch-icon.png",
+        data: { url: "/checkout" }
+      }).catch(() => {});
+
+      logger.info(`[PaymentService] Intent ${intent.reference}: Nouvelle capture demandée par admin ${adminId}`);
+      return { message: "Demande de nouvelle capture envoyée au commerçant.", intent };
     } else {
       intent.status = "rejected";
+      intent.rejectionCode = decision.rejectionCode || "manual_rejection";
+      intent.rejectionReason = decision.rejectionReason || decision.adminNotes || "Paiement non identifié.";
       intent.verifiedBy = adminId;
       intent.verifiedAt = new Date();
       await intent.save();
 
-      // Notify user realtime
+      const reasonMsg = intent.rejectionReason || "Le virement n'a pas pu être validé.";
+
+      // Notify merchant via WebSocket
       emitToUser(intent.userId, "payment:rejected", {
         reference: intent.reference,
-        reason: decision.adminNotes || "Paiement non reconnu."
+        reason: reasonMsg
       });
 
-      logger.warn(`[PaymentService] Intent ${intent.reference} rejeté par admin ${adminId}`);
+      // Send Push notification to merchant
+      pushService.sendNotification(intent.userId, {
+        title: "❌ Paiement non validé",
+        body: reasonMsg,
+        icon: "/apple-touch-icon.png",
+        data: { url: "/settings?tab=billing" }
+      }).catch(() => {});
+
+      logger.warn(`[PaymentService] Intent ${intent.reference} rejeté par admin ${adminId}: ${reasonMsg}`);
       return { message: "Paiement rejeté.", intent };
     }
   }
@@ -510,14 +728,15 @@ export class PaymentService {
 
     // 6. Log in TransactionModel for reporting
     await TransactionModel.create({
+      merchantId: intent.merchantId || existingMerchant?._id,
       ownerId: userId,
       reference: intent.reference,
       amount: intent.amount,
       currency: intent.currency,
       status: "success",
       type: "subscription",
-      channel: intent.paymentMethod,
-      customerEmail: (await UserModel.findById(userId))?.email || "",
+      paymentMethod: intent.paymentMethod,
+      paidAt: new Date(),
       metadata: {
         intentId: intent._id,
         offerSlug: intent.offerSlug,

@@ -3,6 +3,7 @@ import { z } from "zod";
 export * from "./data/countries.js";
 export * from "./data/cities.js";
 export * from "./data/currencies.js";
+export * from "./phone.js";
 
 // --- Enums & Constants ---
 

@@ -2,99 +2,23 @@ import { useState } from "react";
 import { ChevronDown, Check } from "lucide-react";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
-import { COUNTRIES as GLOBAL_COUNTRIES, CountryData } from "@vendeur-ia/core";
+import {
+  COUNTRIES as GLOBAL_COUNTRIES,
+  CountryData,
+  normalizeCILocal,
+  parsePhoneNumber,
+  formatDisplayPhone,
+  generatePhoneVariants
+} from "@vendeur-ia/core";
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
 export type Country = CountryData;
-
 export const COUNTRIES = GLOBAL_COUNTRIES;
 
-export function normalizeCILocal(local: string): string {
-  const digits = local.replace(/\D/g, "");
-  if (!digits) return "";
-
-  // 10-digit standard
-  if (digits.length === 10) {
-    return digits;
-  }
-
-  // 8-digit legacy restoration
-  if (digits.length === 8) {
-    // Moov prefixes: 01, 02, 03, 40-43, 50-53, 70-73
-    if (/^(01|02|03|40|41|42|43|50|51|52|53|70|71|72|73)/.test(digits)) {
-      return `01${digits}`;
-    }
-    // MTN prefixes: 04, 05, 06, 44-46, 54-56, 74-76, 84-86
-    if (/^(04|05|06|44|45|46|54|55|56|74|75|76|84|85|86)/.test(digits)) {
-      return `05${digits}`;
-    }
-    // Orange prefixes: 07, 08, 09, 47-49, 57-59, 77-79, 87-89
-    if (/^(07|08|09|47|48|49|57|58|59|77|78|79|87|88|89)/.test(digits)) {
-      return `07${digits}`;
-    }
-    // Landlines
-    if (/^(20|21|22|23|24)/.test(digits)) {
-      return `21${digits}`;
-    }
-    if (/^(25|26|27)/.test(digits)) {
-      return `25${digits}`;
-    }
-    // Default fallback for any 8-digit CI number
-    return `01${digits}`;
-  }
-
-  // 9-digit (missing leading 0)
-  if (digits.length === 9) {
-    return `0${digits}`;
-  }
-
-  return digits;
-}
-
-export function parsePhoneNumber(phoneStr?: string, defaultCountryCode?: string): { country: Country; local: string } {
-  const defaultCountry = (defaultCountryCode ? COUNTRIES.find(c => c.code === defaultCountryCode) : null) || COUNTRIES[0];
-  if (!phoneStr) return { country: defaultCountry, local: "" };
-
-  const digits = phoneStr.replace(/\D/g, "");
-  if (!digits) return { country: defaultCountry, local: "" };
-
-  // Sort dial codes by length descending (e.g. +225, +221, +33, etc.)
-  const sorted = [...COUNTRIES].sort((a, b) => b.dialCode.replace(/\D/g, "").length - a.dialCode.replace(/\D/g, "").length);
-
-  for (const c of sorted) {
-    const rawDial = c.dialCode.replace(/\D/g, "");
-    if (digits.startsWith(rawDial) && digits.length > rawDial.length) {
-      let local = digits.slice(rawDial.length);
-      // Smart prefix restoration for Côte d'Ivoire (10-digit national plan)
-      if (c.code === "CI") {
-        local = normalizeCILocal(local);
-      }
-      return { country: c, local };
-    }
-  }
-
-  // If digits without dialCode (e.g. 0102273966 or 02273966)
-  let local = digits;
-  if (defaultCountry.code === "CI") {
-    local = normalizeCILocal(local);
-  }
-
-  return { country: defaultCountry, local };
-}
-
-export function formatDisplayPhone(phoneStr?: string, defaultCountryCode?: string): string {
-  if (!phoneStr) return "";
-  const { country, local } = parsePhoneNumber(phoneStr, defaultCountryCode);
-  if (!local) return country.dialCode;
-  
-  if (country.code === "CI" && local.length === 10) {
-    return `${country.dialCode} ${local.slice(0, 2)} ${local.slice(2, 4)} ${local.slice(4, 6)} ${local.slice(6, 8)} ${local.slice(8, 10)}`;
-  }
-  return `${country.dialCode} ${local}`;
-}
+export { normalizeCILocal, parsePhoneNumber, formatDisplayPhone, generatePhoneVariants };
 
 export function CountrySelector({
   selected,

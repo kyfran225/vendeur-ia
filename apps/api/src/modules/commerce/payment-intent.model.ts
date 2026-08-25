@@ -17,6 +17,16 @@ export interface IPaymentIntent extends Document {
   recipientName?: string;
   transactionId?: string;
   proofImageUrl?: string;
+  proofImageHash?: string;
+  forensics?: {
+    isAiGenerated?: boolean;
+    isPhotoshopTampered?: boolean;
+    fontMismatchDetected?: boolean;
+    compressionArtifactsDetected?: boolean;
+    uiInconsistencies?: string[];
+    confidenceRating?: number;
+    analysisSummary?: string;
+  };
   status: "initiated" | "awaiting_payment" | "payment_detected" | "under_verification" | "confirmed" | "failed" | "rejected" | "expired";
   confidenceScore: number; // 0 to 100
   verificationSignals: {
@@ -29,6 +39,8 @@ export interface IPaymentIntent extends Document {
   verifiedBy?: string;
   verifiedAt?: Date;
   adminNotes?: string;
+  rejectionReason?: string;
+  rejectionCode?: string;
   subscriptionId?: mongoose.Types.ObjectId;
   expiresAt: Date;
   metadata?: Record<string, any>;
@@ -62,6 +74,16 @@ const PaymentIntentSchema = new Schema<IPaymentIntent>(
     recipientName: { type: String, default: "" },
     transactionId: { type: String, default: "", index: true },
     proofImageUrl: { type: String, default: "" },
+    proofImageHash: { type: String, default: "", index: true },
+    forensics: {
+      isAiGenerated: { type: Boolean, default: false },
+      isPhotoshopTampered: { type: Boolean, default: false },
+      fontMismatchDetected: { type: Boolean, default: false },
+      compressionArtifactsDetected: { type: Boolean, default: false },
+      uiInconsistencies: [{ type: String }],
+      confidenceRating: { type: Number, default: 0 },
+      analysisSummary: { type: String, default: "" }
+    },
     status: {
       type: String,
       enum: [
@@ -88,6 +110,8 @@ const PaymentIntentSchema = new Schema<IPaymentIntent>(
     verifiedBy: { type: String, default: null },
     verifiedAt: { type: Date, default: null },
     adminNotes: { type: String, default: "" },
+    rejectionReason: { type: String, default: "" },
+    rejectionCode: { type: String, default: "" },
     subscriptionId: { type: Schema.Types.ObjectId, ref: "Subscription", default: null },
     expiresAt: { type: Date, required: true, index: true },
     metadata: { type: Schema.Types.Mixed, default: {} }

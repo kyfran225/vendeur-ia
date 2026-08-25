@@ -119,7 +119,7 @@ export function CartDrawer({
       `📍 *Livraison* : ${deliveryInfo.label}`,
       customAddress ? `🏠 *Détails adresse* : ${customAddress}` : "",
       `⏱ *Délai estimé* : ${deliveryInfo.eta}`,
-      `💳 *Mode de paiement* : ${paymentMethod === "cash_on_delivery" ? "Espèces à la livraison" : "Mobile Money (Wave / OM / MoMo)"}`,
+      `💳 *Mode de paiement* : ${paymentMethod === "cash_on_delivery" ? "Espèces à la livraison" : "Mobile Money / Transfert direct (Wave, OM, MoMo, Sendwave, TapTap Send)"}`,
       `━━━━━━━━━━━━━━━━━━━━`,
       `📦 *ARTICLES COMMANDÉS* :`
     ].filter(Boolean);
@@ -358,8 +358,8 @@ export function CartDrawer({
                     >
                       <CreditCard size={16} className={paymentMethod === "mobile_money" ? "text-vendeur-emerald" : ""} />
                       <div>
-                        <p className="text-[10px] font-black uppercase">Mobile Money</p>
-                        <p className="text-[8px] text-white/40 font-bold">Wave / Orange / MTN</p>
+                        <p className="text-[10px] font-black uppercase">Mobile Money / Envois</p>
+                        <p className="text-[8px] text-white/40 font-bold">Wave, OM, MoMo / Diaspora</p>
                       </div>
                     </button>
                   </div>

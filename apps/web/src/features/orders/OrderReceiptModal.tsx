@@ -2,6 +2,7 @@ import React, { useRef } from "react";
 import { createPortal } from "react-dom";
 import { X, Printer, Download, Share2, ShoppingBag, MapPin, Calendar, CheckCircle2, User, Phone } from "lucide-react";
 import { toast } from "sonner";
+import { formatDisplayPhone } from "@/features/onboarding/components/CountrySelector";
 
 interface OrderReceiptModalProps {
   isOpen: boolean;
@@ -36,7 +37,7 @@ export function OrderReceiptModal({ isOpen, onClose, order, merchant }: OrderRec
       `━━━━━━━━━━━━━━━━━━━━\n` +
       `*Commande:* #${orderNumber}\n` +
       `*Date:* ${formattedDate}\n` +
-      `*Client:* ${order.customerId?.phone || "Client"}\n` +
+      `*Client:* ${formatDisplayPhone(order.customerId?.phone) || "Client"}\n` +
       (order.shippingAddress ? `*Livraison:* ${order.shippingAddress}\n` : "") +
       `━━━━━━━━━━━━━━━━━━━━\n` +
       `*Articles :*\n${itemsList}\n` +
@@ -86,7 +87,7 @@ export function OrderReceiptModal({ isOpen, onClose, order, merchant }: OrderRec
             <h2 className="text-xl font-black uppercase tracking-tight text-neutral-900">{merchant?.businessName || "Vendeur IA"}</h2>
             <p className="text-xs text-neutral-500 font-medium">{merchant?.city || "Boutique Officielle"}, {merchant?.country || "CI"}</p>
             {merchant?.whatsappNumber && (
-              <p className="text-[11px] font-bold text-neutral-600">Contact: {merchant.whatsappNumber}</p>
+              <p className="text-[11px] font-bold text-neutral-600">Contact: {formatDisplayPhone(merchant.whatsappNumber, merchant?.country || "CI")}</p>
             )}
           </div>
 
@@ -101,7 +102,7 @@ export function OrderReceiptModal({ isOpen, onClose, order, merchant }: OrderRec
             </div>
             <div className="flex justify-between">
               <span className="text-neutral-500">Client :</span>
-              <span className="font-bold text-neutral-900">{order.customerId?.phone || "Client Direct"}</span>
+              <span className="font-bold text-neutral-900">{formatDisplayPhone(order.customerId?.phone) || "Client Direct"}</span>
             </div>
             {order.shippingAddress && (
               <div className="flex justify-between">

@@ -526,19 +526,21 @@ router.get("/payments", authenticate, isAdmin, async (req, res) => {
   }
 });
 
-// POST /api/commerce/admin/payments/:id/decision - Approve or Reject a payment intent
+// POST /api/commerce/admin/payments/:id/decision - Approve, Reject or Request Rescan for a payment intent
 router.post("/payments/:id/decision", authenticate, isAdmin, async (req, res) => {
   try {
     const adminId = (req as any).user.id || (req as any).user.email;
-    const { action, adminNotes } = req.body;
+    const { action, adminNotes, rejectionCode, rejectionReason } = req.body;
 
-    if (!action || !["approve", "reject"].includes(action)) {
-      return res.status(400).json({ error: "L'action doit être 'approve' ou 'reject'." });
+    if (!action || !["approve", "reject", "request_rescan"].includes(action)) {
+      return res.status(400).json({ error: "L'action doit être 'approve', 'reject' ou 'request_rescan'." });
     }
 
     const result = await paymentService.processAdminDecision(req.params.id, adminId, {
       action,
-      adminNotes
+      adminNotes,
+      rejectionCode,
+      rejectionReason
     });
 
     res.json(result);

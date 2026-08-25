@@ -17,46 +17,18 @@ const REFRESH_TOKEN_EXPIRES_IN = "7d";
 
 const googleClient = new OAuth2Client(env.GOOGLE_CLIENT_ID);
 
+import { generatePhoneVariants, formatDisplayPhone, parsePhoneNumber, normalizeCILocal } from "@vendeur-ia/core";
+export { generatePhoneVariants, formatDisplayPhone, parsePhoneNumber, normalizeCILocal };
+
 const FOUNDER_NUMBERS = [
   "2250505111157", "0505111157", "22505111157", "05111157",
-  "2250102273966", "0102273966"
+  "2250102273966", "0102273966", "22502273966", "02273966"
 ];
 
 export function isFounderNumber(phone: string): boolean {
   if (!phone) return false;
   const clean = phone.replace(/[\s\-\+\(\)]/g, "");
   return FOUNDER_NUMBERS.some(fn => clean.endsWith(fn) || fn.endsWith(clean));
-}
-
-export function generatePhoneVariants(phone: string): string[] {
-  if (!phone) return [];
-  const digits = phone.replace(/\D/g, "");
-  const variants = new Set<string>();
-  if (!digits) return [];
-
-  variants.add(digits);
-
-  if (digits.startsWith("225")) {
-    const without225 = digits.slice(3);
-    variants.add(without225);
-    if (without225.startsWith("0")) {
-      variants.add(without225.slice(1));
-    }
-  } else {
-    variants.add(`225${digits}`);
-    if (digits.startsWith("0")) {
-      variants.add(`225${digits.slice(1)}`);
-    }
-  }
-
-  if (digits.length >= 8) {
-    variants.add(digits.slice(-8));
-  }
-  if (digits.length >= 10) {
-    variants.add(digits.slice(-10));
-  }
-
-  return Array.from(variants).filter(v => v.length >= 4);
 }
 
 // In-memory fast cache for pending and authenticated auth sessions (dual-layered with MongoDB AuthSessionModel)
@@ -528,9 +500,9 @@ export class AuthService {
         sessionPhoneVariants.some((v: string) => phoneVariants.includes(v));
 
       if (!isSenderMatchingSession) {
-        console.warn(`[WhatsApp Reverse Auth] STRICT CONCORDANCE REFUSAL: Code ${matchedSessionCode} requested for ${sessionTargetPhone}, received from ${cleanPhone}`);
-
-        const mismatchMessage = `Numéro WhatsApp expéditeur (${cleanPhone}) différent du numéro saisi (${sessionTargetPhone}).`;
+        const displayTarget = formatDisplayPhone(sessionTargetPhone);
+        const displayReceived = formatDisplayPhone(cleanPhone);
+        const mismatchMessage = `Numéro WhatsApp expéditeur (${displayReceived}) différent du numéro saisi (${displayTarget}).`;
 
         // Mark in memory as mismatch
         const mismatchRecord: PendingAuthSession = {
@@ -571,26 +543,26 @@ export class AuthService {
         if (io) {
           io.to(`auth:${matchedSessionId}`).emit("auth:mismatch", {
             error: mismatchMessage,
-            expected: sessionTargetPhone,
-            received: cleanPhone
+            expected: displayTarget,
+            received: displayReceived
           });
           if (matchedSessionCode) {
             io.to(`auth:${matchedSessionCode}`).emit("auth:mismatch", {
               error: mismatchMessage,
-              expected: sessionTargetPhone,
-              received: cleanPhone
+              expected: displayTarget,
+              received: displayReceived
             });
           }
           for (const variant of sessionPhoneVariants) {
             io.to(`auth:${variant}`).emit("auth:mismatch", {
               error: mismatchMessage,
-              expected: sessionTargetPhone,
-              received: cleanPhone
+              expected: displayTarget,
+              received: displayReceived
             });
           }
         }
 
-        const replyMessage = `⚠️ *Échec de connexion Vendeur IA*\n\nLe code *${matchedSessionCode}* a été demandé pour le numéro *${sessionTargetPhone}*, mais vous avez envoyé ce message depuis le *${cleanPhone}*.\n\n👉 *Pour vous connecter :*\n1. Envoyez le message depuis le compte WhatsApp du *${sessionTargetPhone}*, OU\n2. Sur l'application, saisissez directement le numéro *${cleanPhone}*.`;
+        const replyMessage = `⚠️ *Échec de connexion Vendeur IA*\n\nLe code *${matchedSessionCode}* a été demandé pour le numéro *${displayTarget}*, mais vous avez envoyé ce message depuis le *${displayReceived}*.\n\n👉 *Pour vous connecter :*\n1. Envoyez le message depuis le compte WhatsApp du *${displayTarget}*, OU\n2. Sur l'application, saisissez directement le numéro *${displayReceived}*.`;
 
         return {
           success: false,

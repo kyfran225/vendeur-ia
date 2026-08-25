@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { X, Mail, Lock, User, ChevronRight, Loader2, ShieldCheck, Sparkles, Phone, ArrowLeft, Eye, EyeOff, QrCode, AlertTriangle, Smartphone, Laptop } from "lucide-react";
 import { Logo } from "@/components/ui/Logo";
 import { WhatsAppIcon } from "@/components/ui/WhatsAppIcon";
-import { CountrySelector, COUNTRIES, Country, parsePhoneNumber } from "@/features/onboarding/components/CountrySelector";
+import { CountrySelector, COUNTRIES, Country, parsePhoneNumber, formatDisplayPhone } from "@/features/onboarding/components/CountrySelector";
 import { useAuthStore } from "@/stores/authStore";
 import { useOnboardingStore } from "@/stores/onboardingStore";
 import { useGoogleLogin } from "@react-oauth/google";
@@ -50,14 +50,7 @@ const GoogleLoginButton = ({
         });
         setSession(res.data);
         const user = res.data.user;
-        toast.success(`Bienvenue ${user?.displayName || ''} !`);
         onSuccess(res.data);
-
-        if (user?.onboardingCompleted) {
-          navigate("/dashboard");
-        } else {
-          navigate("/onboarding");
-        }
       } catch (err: any) {
         console.error("Google Auth Error:", err);
         toast.error(err.response?.data?.error || "Erreur d'authentification Google");
@@ -124,16 +117,25 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
   const GOOGLE_CLIENT_ID = (import.meta as any).env.VITE_GOOGLE_CLIENT_ID;
 
   // Stable complete login helper — useCallback ensures the socket effect doesn't get a stale closure
-  const completeAuth = React.useCallback((sessionData: any) => {
+  const completeAuth = React.useCallback(async (sessionData: any) => {
     setSession(sessionData);
     toast.success(`Connexion réussie ! 🎉`);
     onClose();
-    if (sessionData.user?.onboardingCompleted) {
-      navigate("/dashboard");
-    } else {
-      navigate("/onboarding");
+
+    // Auto-initialize merchant from landing demo form if available
+    if (tempData?.businessName) {
+      try {
+        await apiClient.post("/api/commerce/merchant", {
+          ...tempData,
+          city: tempData.city || ""
+        });
+      } catch (e) {
+        console.warn("[Auth] Auto-merchant init:", e);
+      }
     }
-  }, [setSession, onClose, navigate]);
+
+    navigate("/dashboard");
+  }, [setSession, onClose, navigate, tempData]);
 
   // Use refs so the socket effect and event listeners read latest state without re-creating sockets
   const authSessionIdRef = React.useRef(authSessionId);
@@ -253,7 +255,8 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
       return;
     }
 
-    const fullPhoneNumber = `${selectedCountry.dialCode}${cleanNumber}`;
+    const parsed = parsePhoneNumber(`${selectedCountry.dialCode}${cleanNumber}`, selectedCountry.code);
+    const fullPhoneNumber = parsed.e164 || `${selectedCountry.dialCode}${cleanNumber}`;
     setLoading(true);
     setMismatchError(null);
     try {
@@ -316,14 +319,7 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
         code: otpValue
       });
 
-      setSession(res.data);
-      toast.success("Connexion réussie !");
-      onClose();
-      if (res.data.user?.onboardingCompleted) {
-        navigate("/dashboard");
-      } else {
-        navigate("/onboarding");
-      }
+      await completeAuth(res.data);
     } catch (err: any) {
       toast.error(err.response?.data?.error || "Code incorrect ou expiré.");
     } finally {
@@ -358,16 +354,7 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
       const endpoint = mode === "login" ? "/api/auth/login" : "/api/auth/register";
       const res = await apiClient.post(endpoint, cleanForm);
 
-      setSession(res.data);
-      const user = res.data.user;
-      toast.success(mode === "login" ? `Bienvenue ${user?.displayName || ''} !` : "Compte créé avec succès !");
-      onClose();
-
-      if (user?.onboardingCompleted) {
-        navigate("/dashboard");
-      } else {
-        navigate("/onboarding");
-      }
+      await completeAuth(res.data);
     } catch (err: any) {
       toast.error(err.response?.data?.error || "Une erreur est survenue.");
     } finally {
@@ -500,7 +487,7 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
                     {mismatchError}
                   </p>
                   <div className="bg-black/40 rounded-xl p-3 text-[11px] text-white/70 space-y-1 border border-white/5 font-mono">
-                    <div>Numéro attendu : <span className="text-emerald-400 font-bold">+{selectedCountry.dialCode} {localPhone}</span></div>
+                    <div>Numéro attendu : <span className="text-emerald-400 font-bold">{formatDisplayPhone(`${selectedCountry.dialCode}${localPhone}`, selectedCountry.code)}</span></div>
                   </div>
                   <div className="pt-2 space-y-2">
                     <button
@@ -524,22 +511,22 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
                 </div>
               ) : (
                 /* Normal Waiting Flow: Desktop QR Code & Mobile 1-Click WhatsApp */
-                <div className="bg-[#0c1410] border border-white/10 rounded-[2rem] p-5 sm:p-6 text-left space-y-4 shadow-xl">
-                  <div className="flex items-center justify-between">
+                <div className="bg-[#0c1410]/90 border border-emerald-500/20 rounded-3xl p-4 sm:p-6 text-left space-y-4 shadow-2xl">
+                  <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2 text-vendeur-emerald font-bold text-xs">
-                      <span className="w-2.5 h-2.5 rounded-full bg-vendeur-emerald animate-ping" />
+                      <span className="w-2 h-2 rounded-full bg-vendeur-emerald animate-ping" />
                       <span>Liaison en direct active</span>
                     </div>
                     {sessionCode && (
-                      <span className="text-[10px] font-mono text-white/60 bg-white/5 px-2.5 py-1 rounded-lg border border-white/10">
-                        Code : <strong className="text-white">{sessionCode}</strong>
+                      <span className="text-[10px] font-mono text-white/70 bg-white/5 px-2.5 py-1 rounded-xl border border-white/10">
+                        Code : <strong className="text-emerald-400">{sessionCode}</strong>
                       </span>
                     )}
                   </div>
 
                   {/* DESKTOP VIEW: Dedicated WhatsApp QR Code */}
-                  <div className="hidden sm:flex flex-col items-center justify-center p-4 bg-black/40 border border-white/5 rounded-2xl space-y-3 text-center">
-                    <div className="relative p-2.5 bg-white rounded-2xl shadow-xl shadow-vendeur-emerald/10 inline-block">
+                  <div className="hidden sm:flex flex-col items-center justify-center py-3 space-y-3 text-center">
+                    <div className="relative p-2.5 bg-white rounded-2xl shadow-xl shadow-vendeur-emerald/15 inline-block">
                       <img
                         src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(`https://wa.me/${(systemWhatsAppNumber && !systemWhatsAppNumber.includes("00000000")) ? systemWhatsAppNumber : "22505111157"}?text=${encodeURIComponent(`CONNEXION ${sessionCode || (authSessionId ? authSessionId.slice(0, 6).toUpperCase() : "")}`)}`)}&bgcolor=ffffff&color=0b120f&margin=4`}
                         alt="QR Code Connexion WhatsApp"
@@ -577,7 +564,7 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
                   {/* MOBILE VIEW: 1-Click WhatsApp Direct Open + Optional QR Code Toggle */}
                   <div className="sm:hidden space-y-3">
                     {!showMobileQr ? (
-                      <>
+                      <div className="space-y-3">
                         <p className="text-xs text-white/80 leading-relaxed font-medium">
                           Appuyez sur le bouton vert ci-dessous puis sur <strong className="text-emerald-400">Envoyer</strong> dans WhatsApp :
                         </p>
@@ -586,11 +573,11 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
                           href={`https://wa.me/${(systemWhatsAppNumber && !systemWhatsAppNumber.includes("00000000")) ? systemWhatsAppNumber : "22505111157"}?text=${encodeURIComponent(`CONNEXION ${sessionCode || (authSessionId ? authSessionId.slice(0, 6).toUpperCase() : "")}`)}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="w-full h-14 bg-vendeur-emerald hover:bg-emerald-400 text-vendeur-coal font-black text-xs sm:text-sm uppercase tracking-wider rounded-2xl flex items-center justify-center gap-2.5 transition-all shadow-xl shadow-vendeur-emerald/20 hover:scale-[1.01] active:scale-[0.98] cursor-pointer whitespace-nowrap px-4"
+                          className="w-full h-13 bg-vendeur-emerald hover:bg-emerald-400 text-vendeur-coal font-black text-xs uppercase tracking-wider rounded-2xl flex items-center justify-center gap-2 transition-all shadow-xl shadow-vendeur-emerald/20 active:scale-[0.98] cursor-pointer whitespace-nowrap px-4"
                         >
-                          <WhatsAppIcon size={20} className="shrink-0" />
+                          <WhatsAppIcon size={18} className="shrink-0" />
                           <span>Envoyer sur WhatsApp</span>
-                          <ChevronRight size={18} className="shrink-0" />
+                          <ChevronRight size={16} className="shrink-0" />
                         </a>
 
                         {/* Toggle to show QR code for 2nd phone */}
@@ -600,14 +587,14 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
                             onClick={() => setShowMobileQr(true)}
                             className="text-[11px] text-vendeur-emerald hover:underline font-bold flex items-center justify-center gap-1.5 mx-auto cursor-pointer py-1"
                           >
-                            <QrCode size={14} className="shrink-0" />
-                            <span>WhatsApp sur un autre téléphone ? Afficher le QR Code</span>
+                            <QrCode size={13} className="shrink-0" />
+                            <span>Afficher le QR Code pour un 2ème téléphone</span>
                           </button>
                         </div>
-                      </>
+                      </div>
                     ) : (
-                      <div className="flex flex-col items-center justify-center p-3 bg-black/40 border border-white/5 rounded-2xl space-y-2.5 text-center animate-in fade-in duration-200">
-                        <div className="relative p-2 bg-white rounded-2xl shadow-xl shadow-vendeur-emerald/10 inline-block">
+                      <div className="flex flex-col items-center justify-center py-2 space-y-3 text-center animate-in fade-in duration-200">
+                        <div className="relative p-2 bg-white rounded-2xl shadow-xl shadow-vendeur-emerald/15 inline-block">
                           <img
                             src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(`https://wa.me/${(systemWhatsAppNumber && !systemWhatsAppNumber.includes("00000000")) ? systemWhatsAppNumber : "22505111157"}?text=${encodeURIComponent(`CONNEXION ${sessionCode || (authSessionId ? authSessionId.slice(0, 6).toUpperCase() : "")}`)}`)}&bgcolor=ffffff&color=0b120f&margin=4`}
                             alt="QR Code Connexion WhatsApp"
@@ -634,7 +621,7 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
                         <button
                           type="button"
                           onClick={() => setShowMobileQr(false)}
-                          className="text-[11px] text-white/60 hover:text-white underline font-medium cursor-pointer pt-1"
+                          className="text-[11px] text-emerald-400 hover:text-emerald-300 underline font-bold cursor-pointer pt-0.5"
                         >
                           ← Revenir au bouton 1-Clic
                         </button>
@@ -647,12 +634,12 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
                     type="button"
                     onClick={handleManualCheck}
                     disabled={isCheckingManual}
-                    className="w-full h-14 bg-white/5 hover:bg-white/10 text-white/80 hover:text-white rounded-2xl text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 transition-all border border-white/10 hover:border-vendeur-emerald/40 cursor-pointer active:scale-[0.98] whitespace-nowrap px-4"
+                    className="w-full h-13 bg-white/5 hover:bg-white/10 text-white font-black rounded-2xl text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all border border-white/10 hover:border-vendeur-emerald/40 cursor-pointer active:scale-[0.98] whitespace-nowrap px-4"
                   >
                     {isCheckingManual ? (
-                      <Loader2 className="animate-spin text-vendeur-emerald shrink-0" size={16} />
+                      <Loader2 className="animate-spin text-vendeur-emerald shrink-0" size={15} />
                     ) : (
-                      <Sparkles size={16} className="text-vendeur-emerald shrink-0" />
+                      <Sparkles size={15} className="text-vendeur-emerald shrink-0" />
                     )}
                     <span className="truncate">J'ai envoyé le message → Accéder</span>
                   </button>

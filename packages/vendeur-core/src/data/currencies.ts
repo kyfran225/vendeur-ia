@@ -3,7 +3,7 @@ export interface CurrencyRate {
   name: string;
   symbol: string;
   rateAgainstXOF: number; // 1 XOF = X units of this currency
-  roundDecimals: number; // 0 for XOF/GNF/XAF, 2 for EUR/USD/GHS
+  roundDecimals: number; // 0 for XOF/GNF/XAF, 2 for EUR/USD/GHS/GBP/CAD
   minUnit: number; // minimum step (e.g., 50 for XOF, 0.5 for GHS, 0.01 for USD)
 }
 
@@ -21,6 +21,8 @@ export const CURRENCIES_DATA: Record<string, CurrencyRate> = {
   MRU: { code: "MRU", name: "Ouguiya Mauritanien", symbol: "UM", rateAgainstXOF: 0.065, roundDecimals: 1, minUnit: 1 },
   EUR: { code: "EUR", name: "Euro", symbol: "€", rateAgainstXOF: 0.00152, roundDecimals: 2, minUnit: 0.1 },
   USD: { code: "USD", name: "Dollar US", symbol: "$", rateAgainstXOF: 0.00165, roundDecimals: 2, minUnit: 0.1 },
+  GBP: { code: "GBP", name: "Livre Sterling", symbol: "£", rateAgainstXOF: 0.00128, roundDecimals: 2, minUnit: 0.1 },
+  CAD: { code: "CAD", name: "Dollar Canadien", symbol: "CA$", rateAgainstXOF: 0.00227, roundDecimals: 2, minUnit: 0.1 },
   ZAR: { code: "ZAR", name: "Rand Sud-Africain", symbol: "R", rateAgainstXOF: 0.03, roundDecimals: 2, minUnit: 0.5 }
 };
 

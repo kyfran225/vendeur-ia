@@ -6,7 +6,6 @@ import { LandingPage } from "./features/onboarding/LandingPage";
 import { OffersPage } from "./features/billing/OffersPage";
 import { CheckoutPage } from "./features/billing/CheckoutPage";
 import { ActivationPage } from "./features/onboarding/ActivationPage";
-import { OnboardingWizard } from "./features/onboarding/OnboardingWizard";
 import { SalesDashboard } from "./features/dashboard/SalesDashboard";
 import { ProductManager } from "./features/products/ProductManager";
 import { OrderManager } from "./features/orders/OrderManager";
@@ -57,13 +56,7 @@ function App() {
         <Route path="/" element={<LandingPage />} />
         <Route path="/auth/magic-login" element={<MagicLoginPage />} />
 
-        <Route path="/onboarding" element={
-          user ? (
-            !!user.onboardingCompleted ? <Navigate to="/dashboard" /> : <OnboardingWizard />
-          ) : (
-            <Navigate to="/" />
-          )
-        } />
+        <Route path="/onboarding" element={<Navigate to={user ? "/dashboard" : "/"} replace />} />
 
         <Route path="/offers" element={<OffersPage />} />
         <Route path="/checkout" element={<CheckoutPage />} />
@@ -71,11 +64,7 @@ function App() {
         <Route path="/payment/callback" element={<PaymentCallback />} />
 
         <Route element={
-          user ? (
-            !!user.onboardingCompleted ? <AppLayout /> : <Navigate to="/onboarding" />
-          ) : (
-            <Navigate to="/" />
-          )
+          user ? <AppLayout /> : <Navigate to="/" replace />
         }>
           <Route path="/dashboard" element={<SalesDashboard />} />
           <Route path="/admin" element={<AdminDashboard />} />

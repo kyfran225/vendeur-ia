@@ -16,7 +16,9 @@ import {
   ChevronDown,
   Sparkles,
   Tag,
-  Rocket
+  Rocket,
+  Copy,
+  Check
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/apiClient";
@@ -24,6 +26,7 @@ import { toast } from "sonner";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { useNavigate } from "react-router-dom";
+import { WhatsAppIcon } from "@/components/ui/WhatsAppIcon";
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -34,6 +37,14 @@ export function BillingTab({ merchant }: { merchant: any }) {
   const navigate = useNavigate();
   const [isCancelConfirmOpen, setIsCancelConfirmOpen] = useState(false);
   const [billingInterval, setBillingInterval] = useState<"monthly" | "yearly">("yearly");
+  const [copiedField, setCopiedField] = useState<string | null>(null);
+
+  const copyToClipboard = (text: string, fieldKey: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedField(fieldKey);
+    toast.success("Copié dans le presse-papier !");
+    setTimeout(() => setCopiedField(null), 2000);
+  };
 
   // New Models Query
   const { data: dashboard } = useQuery({
@@ -56,7 +67,16 @@ export function BillingTab({ merchant }: { merchant: any }) {
   });
 
   const subscription = dashboard?.subscription;
+  const latestPaymentIntent = dashboard?.latestPaymentIntent;
   const billingHistory = dashboard?.recentTransactions || [];
+
+  const isUnderVerification = Boolean(
+    latestPaymentIntent &&
+    (latestPaymentIntent.status === "under_verification" ||
+     latestPaymentIntent.status === "pending" ||
+     latestPaymentIntent.status === "payment_detected" ||
+     latestPaymentIntent.status === "awaiting_payment")
+  );
 
   const cancelSubscriptionMutation = useMutation({
     mutationFn: async () => {
@@ -95,6 +115,85 @@ export function BillingTab({ merchant }: { merchant: any }) {
 
   return (
     <div id="billing" className="space-y-6 sm:space-y-8 animate-in slide-in-from-bottom-2 duration-500 pb-16">
+      {/* 0. Carte Dédiée : Paiement / Virement en cours d'approbation */}
+      {isUnderVerification && latestPaymentIntent && (
+        <section className="bg-gradient-to-br from-emerald-950/40 via-[#0c1611] to-black border border-emerald-500/40 p-5 sm:p-7 md:p-8 rounded-2xl sm:rounded-3xl md:rounded-[2.5rem] relative overflow-hidden shadow-2xl space-y-5 animate-in fade-in zoom-in-95 duration-300">
+          <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-5">
+            <div className="space-y-3 flex-1">
+              <div className="flex flex-wrap items-center gap-2.5">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
+                  Vérification du paiement en cours
+                </span>
+                <span className="text-xs text-white/50 font-bold">
+                  (Délai estimé : 10 à 30 min)
+                </span>
+              </div>
+
+              <h2 className="text-xl sm:text-2xl font-black uppercase tracking-tight text-white">
+                Règlement reçu & en cours de validation
+              </h2>
+              <p className="text-sm text-white/70 font-medium max-w-xl leading-relaxed">
+                Votre notification de paiement a bien été transmise. Nos équipes confirment la transaction pour activer instantanément votre Vendeur IA 24h/24.
+              </p>
+
+              {/* Grid Summary */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
+                <div className="p-3.5 rounded-2xl bg-black/40 border border-white/5 space-y-0.5 relative">
+                  <div className="text-[10px] font-black uppercase tracking-widest text-white/40">
+                    Référence
+                  </div>
+                  <div className="text-sm font-mono font-black text-white truncate pr-8">
+                    {latestPaymentIntent.reference}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => copyToClipboard(latestPaymentIntent.reference, "ref_tab")}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1.5 rounded-lg bg-white/10 hover:bg-emerald-500 hover:text-black text-white text-xs transition-all cursor-pointer"
+                    title="Copier la référence"
+                  >
+                    {copiedField === "ref_tab" ? <Check size={13} /> : <Copy size={13} />}
+                  </button>
+                </div>
+
+                <div className="p-3.5 rounded-2xl bg-black/40 border border-white/5 space-y-0.5">
+                  <div className="text-[10px] font-black uppercase tracking-widest text-white/40">
+                    Montant Déclaré
+                  </div>
+                  <div className="text-sm font-mono font-black text-emerald-400">
+                    {latestPaymentIntent.amount?.toLocaleString()} {latestPaymentIntent.currency || "XOF"}
+                  </div>
+                </div>
+
+                <div className="p-3.5 rounded-2xl bg-black/40 border border-white/5 space-y-0.5">
+                  <div className="text-[10px] font-black uppercase tracking-widest text-white/40">
+                    Moyen / Émetteur
+                  </div>
+                  <div className="text-sm font-bold text-white/90 truncate capitalize">
+                    {latestPaymentIntent.paymentMethod || "Mobile Money"} {latestPaymentIntent.senderPhoneNumber ? `(${latestPaymentIntent.senderPhoneNumber})` : ""}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="w-full md:w-auto flex flex-col gap-2 shrink-0 pt-2 md:pt-0">
+              <a
+                href={`https://wa.me/2250505111157?text=${encodeURIComponent(
+                  `Bonjour Support Vendeur IA,\nJe souhaite une assistance pour mon paiement en cours.\nRéférence : ${latestPaymentIntent.reference}\nMontant : ${latestPaymentIntent.amount} ${latestPaymentIntent.currency || "XOF"}`
+                )}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="h-12 px-5 bg-white/10 hover:bg-[#25D366]/20 hover:border-[#25D366]/50 border border-white/10 text-white hover:text-[#25D366] font-black uppercase tracking-wider text-xs rounded-xl flex items-center justify-center gap-2 transition-all cursor-pointer"
+              >
+                <WhatsAppIcon size={16} variant="brand" />
+                <span>Assistance WhatsApp</span>
+              </a>
+            </div>
+          </div>
+          <div className="absolute -top-12 -right-12 h-64 w-64 bg-emerald-500/10 blur-[100px] rounded-full pointer-events-none" />
+        </section>
+      )}
+
       {/* 1. Plan Actuel (si actif) */}
       {isPlanActive && (
         <section className="bg-vendeur-coal border border-white/10 p-5 sm:p-8 md:p-10 rounded-2xl sm:rounded-3xl md:rounded-[2.5rem] relative overflow-hidden shadow-2xl space-y-6">
@@ -448,18 +547,23 @@ export function BillingTab({ merchant }: { merchant: any }) {
                   </div>
 
                   <button
-                    onClick={() => navigate(`/checkout?offer=${offerItem.slug}&interval=${billingInterval}`)}
+                    onClick={() => !isUnderVerification && navigate(`/checkout?offer=${offerItem.slug}&interval=${billingInterval}`)}
+                    disabled={isUnderVerification}
                     className={cn(
-                      "w-full h-12 sm:h-14 min-h-[48px] rounded-xl sm:rounded-2xl font-black uppercase tracking-wider text-xs sm:text-sm flex items-center justify-center gap-2 transition-all active:scale-95 shadow-xl cursor-pointer",
-                      isCurrentActiveAndInterval
-                        ? "bg-white/10 hover:bg-white/15 text-white border border-white/10"
+                      "w-full h-12 sm:h-14 min-h-[48px] rounded-xl sm:rounded-2xl font-black uppercase tracking-wider text-xs sm:text-sm flex items-center justify-center gap-2 transition-all shadow-xl",
+                      isUnderVerification
+                        ? "bg-white/5 border border-white/10 text-white/40 cursor-not-allowed shadow-none"
+                        : isCurrentActiveAndInterval
+                        ? "bg-white/10 hover:bg-white/15 text-white border border-white/10 active:scale-95 cursor-pointer"
                         : isPro
-                        ? "bg-vendeur-emerald text-vendeur-coal hover:scale-[1.02] shadow-vendeur-emerald/20 font-black"
-                        : "bg-white text-vendeur-coal hover:bg-vendeur-emerald hover:text-vendeur-coal font-bold"
+                        ? "bg-vendeur-emerald text-vendeur-coal hover:scale-[1.02] shadow-vendeur-emerald/20 font-black active:scale-95 cursor-pointer"
+                        : "bg-white text-vendeur-coal hover:bg-vendeur-emerald hover:text-vendeur-coal font-bold active:scale-95 cursor-pointer"
                     )}
                   >
                     <span>
-                      {isCurrentActiveAndInterval
+                      {isUnderVerification
+                        ? "Paiement en attente de validation ⏳"
+                        : isCurrentActiveAndInterval
                         ? "Renouveler ce forfait"
                         : isYearly
                         ? `Passer à l'Annuel (${isPro ? 'Pro' : 'Essentiel'})`
@@ -467,7 +571,7 @@ export function BillingTab({ merchant }: { merchant: any }) {
                         ? 'Activer Forfait Pro'
                         : 'Commencer avec ce Forfait'}
                     </span>
-                    <ArrowRight size={16} />
+                    {!isUnderVerification && <ArrowRight size={16} />}
                   </button>
                 </div>
               </div>
@@ -497,11 +601,17 @@ export function BillingTab({ merchant }: { merchant: any }) {
 
           <div className="w-full md:w-auto flex flex-col gap-2 shrink-0 pt-2 md:pt-0 relative z-10">
             <button
-              onClick={() => navigate(`/checkout?offer=pro&setup=EXPERT&interval=${billingInterval}`)}
-              className="w-full md:w-auto h-12 sm:h-14 px-6 sm:px-8 bg-white hover:bg-vendeur-emerald text-vendeur-coal rounded-2xl font-black uppercase tracking-wider text-xs sm:text-sm flex items-center justify-center gap-2.5 transition-all active:scale-95 shadow-xl cursor-pointer hover:scale-105"
+              onClick={() => !isUnderVerification && navigate(`/checkout?offer=pro&setup=EXPERT&interval=${billingInterval}`)}
+              disabled={isUnderVerification}
+              className={cn(
+                "w-full md:w-auto h-12 sm:h-14 px-6 sm:px-8 rounded-2xl font-black uppercase tracking-wider text-xs sm:text-sm flex items-center justify-center gap-2.5 transition-all shadow-xl",
+                isUnderVerification
+                  ? "bg-white/5 border border-white/10 text-white/40 cursor-not-allowed shadow-none"
+                  : "bg-white hover:bg-vendeur-emerald text-vendeur-coal active:scale-95 cursor-pointer hover:scale-105"
+              )}
             >
-              <span>Commander le Pack Pro</span>
-              <ArrowRight size={16} />
+              <span>{isUnderVerification ? "Paiement en attente de validation ⏳" : "Commander le Pack Pro"}</span>
+              {!isUnderVerification && <ArrowRight size={16} />}
             </button>
             <p className="text-xs text-center text-white/50 font-bold uppercase tracking-wider">
               Installation + Forfait Pro

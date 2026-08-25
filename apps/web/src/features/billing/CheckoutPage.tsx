@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
@@ -23,7 +23,13 @@ import {
   QrCode,
   ChevronRight,
   ExternalLink,
-  Wallet
+  Wallet,
+  UploadCloud,
+  Camera,
+  Image as ImageIcon,
+  FileCheck2,
+  Trash2,
+  Scan
 } from "lucide-react";
 import { CountrySelector, COUNTRIES, Country, parsePhoneNumber, formatDisplayPhone } from "@/features/onboarding/components/CountrySelector";
 import { convertCurrencyAmount, CURRENCIES_DATA } from "@vendeur-ia/core";
@@ -31,6 +37,7 @@ import { toast } from "sonner";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { VendeurIALoader } from "@/components/ui/VendeurIALoader";
+import { WhatsAppIcon } from "@/components/ui/WhatsAppIcon";
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -78,6 +85,26 @@ export function CheckoutPage() {
   const [submittingProof, setSubmittingProof] = useState(false);
   const [proofSubmitted, setProofSubmitted] = useState(false);
   const [copiedField, setCopiedField] = useState<string | null>(null);
+
+  // Vision AI Receipt & Anti-Fraud Scanner states
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [receiptFile, setReceiptFile] = useState<File | null>(null);
+  const [receiptPreview, setReceiptPreview] = useState<string | null>(null);
+  const [uploadedReceiptUrl, setUploadedReceiptUrl] = useState<string>("");
+  const [isScanningReceipt, setIsScanningReceipt] = useState(false);
+  const [scanResult, setScanResult] = useState<{
+    isPaymentProof?: boolean;
+    platform?: string;
+    amount?: number;
+    currency?: string;
+    transactionId?: string;
+    senderPhone?: string;
+    senderName?: string;
+    confidenceScore?: number;
+    amountMatches?: boolean;
+    analysisSummary?: string;
+    flags?: string[];
+  } | null>(null);
 
   useEffect(() => {
     // Auto-detect from phone prefix if not manually changed yet
@@ -259,6 +286,75 @@ export function CheckoutPage() {
     }
   };
 
+  const handleReceiptUploadAndScan = async (file: File) => {
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      toast.error("Veuillez sélectionner une image (JPG, PNG, WebP).");
+      return;
+    }
+
+    if (!activeIntent?._id) {
+      toast.error("Session de paiement en cours d'initialisation, veuillez patienter.");
+      return;
+    }
+
+    setReceiptFile(file);
+    const localUrl = URL.createObjectURL(file);
+    setReceiptPreview(localUrl);
+    setIsScanningReceipt(true);
+    setScanResult(null);
+
+    try {
+      const formData = new FormData();
+      formData.append("receipt", file);
+
+      const res = await apiClient.post(`/api/commerce/payments/intent/${activeIntent._id}/scan-proof`, formData, {
+        headers: { "Content-Type": "multipart/form-data" }
+      });
+
+      const data = res.data;
+      if (data.proofImageUrl) {
+        setUploadedReceiptUrl(data.proofImageUrl);
+      }
+      setScanResult(data);
+
+      // Auto-populate transaction details from AI OCR
+      if (data.transactionId) {
+        setTransactionIdInput(data.transactionId);
+      }
+      if (data.senderPhone) {
+        const parsed = parsePhoneNumber(data.senderPhone, userCountry);
+        setSenderCountry(parsed.country);
+        setSenderLocalPhone(parsed.local);
+      }
+
+      if (data.isPaymentProof) {
+        if (data.forensics?.isPhotoshopTampered || data.forensics?.isAiGenerated) {
+          toast.warning("L'image présente des incohérences visuelles. Le paiement sera vérifié manuellement.");
+        } else {
+          toast.success(`Reçu ${data.platform || "Paiement"} analysé avec succès ! 🎉`);
+        }
+      } else {
+        toast.warning("L'image ne semble pas être un reçu de paiement officiel. Vous pouvez compléter les champs manuellement.");
+      }
+    } catch (err: any) {
+      console.error("Scan error:", err);
+      toast.error(err.response?.data?.error || "Erreur lors de l'analyse du reçu. Vous pouvez renseigner vos informations manuellement.");
+    } finally {
+      setIsScanningReceipt(false);
+    }
+  };
+
+  const handleRemoveReceipt = () => {
+    setReceiptFile(null);
+    setReceiptPreview(null);
+    setUploadedReceiptUrl("");
+    setScanResult(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
   const handleSubmitProof = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!activeIntent?._id) {
@@ -266,8 +362,8 @@ export function CheckoutPage() {
       return;
     }
 
-    if (!transactionIdInput && !senderLocalPhone) {
-      toast.error("Veuillez renseigner votre ID de transaction ou numéro de téléphone.");
+    if (!transactionIdInput && !senderLocalPhone && !uploadedReceiptUrl) {
+      toast.error("Veuillez déposer votre reçu ou renseigner votre ID de transaction / numéro.");
       return;
     }
 
@@ -275,7 +371,8 @@ export function CheckoutPage() {
     try {
       const res = await apiClient.post(`/api/commerce/payments/intent/${activeIntent._id}/submit-proof`, {
         transactionId: transactionIdInput.trim(),
-        senderPhoneNumber: fullSenderPhone.trim()
+        senderPhoneNumber: fullSenderPhone.trim(),
+        proofImageUrl: uploadedReceiptUrl || undefined
       });
 
       if (res.data.intent?.status === "confirmed") {
@@ -683,44 +780,192 @@ export function CheckoutPage() {
 
               {!proofSubmitted ? (
                 <form onSubmit={handleSubmitProof} className="space-y-4">
+                  {/* 1. Zone d'Upload Reçu Photo avec IA Vision & Scanner Anti-Fraude */}
                   <div className="bg-[#0b120f] border border-white/10 rounded-2xl sm:rounded-3xl p-4.5 sm:p-6 space-y-4 shadow-xl">
-                    <div className="space-y-1.5">
-                      <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">
-                        Numéro ayant effectué le transfert
-                      </label>
-                      <div className="flex gap-2 items-center w-full">
-                        <CountrySelector
-                          selected={senderCountry}
-                          onSelect={(c) => {
-                            setSenderCountry(c);
-                            setUserCountry(c.code);
-                          }}
-                          dropdownPosition="top"
-                          className="h-12 sm:h-14 !rounded-2xl px-3.5 sm:px-4"
-                        />
-                        <div className="flex-1 min-w-0">
-                          <input
-                            type="tel"
-                            className="w-full h-12 sm:h-14 bg-black/50 border border-white/10 focus:border-vendeur-emerald rounded-2xl px-4 text-white font-mono text-sm placeholder:text-white/20 outline-none transition-all"
-                            placeholder="01 02 27 39 66"
-                            value={senderLocalPhone}
-                            onChange={(e) => setSenderLocalPhone(e.target.value.replace(/\D/g, ""))}
-                          />
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="h-7 w-7 rounded-xl bg-vendeur-emerald/15 text-vendeur-emerald border border-vendeur-emerald/30 flex items-center justify-center">
+                          <Camera size={15} />
                         </div>
+                        <span className="text-xs sm:text-sm font-black uppercase tracking-wider text-white">
+                          Capture d'écran du reçu (Recommandé)
+                        </span>
                       </div>
+                      <span className="text-[10px] sm:text-xs font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-vendeur-emerald/10 text-vendeur-emerald border border-vendeur-emerald/20">
+                        Scan IA Vision ✨
+                      </span>
                     </div>
 
-                    <div className="space-y-1.5">
-                      <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">
-                        ID de Transaction / Réf SMS reçu (Optionnel si numéro correct)
-                      </label>
-                      <input
-                        type="text"
-                        className="w-full h-12 sm:h-14 bg-black/50 border border-white/10 focus:border-vendeur-emerald rounded-2xl px-4 text-white font-mono text-sm placeholder:text-white/20 outline-none transition-all"
-                        placeholder="Ex: PP260817.1234.A56789"
-                        value={transactionIdInput}
-                        onChange={(e) => setTransactionIdInput(e.target.value)}
-                      />
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) handleReceiptUploadAndScan(file);
+                      }}
+                    />
+
+                    {!receiptPreview ? (
+                      <div
+                        onClick={() => fileInputRef.current?.click()}
+                        onDragOver={(e) => e.preventDefault()}
+                        onDrop={(e) => {
+                          e.preventDefault();
+                          const file = e.dataTransfer.files?.[0];
+                          if (file) handleReceiptUploadAndScan(file);
+                        }}
+                        className="border-2 border-dashed border-white/15 hover:border-vendeur-emerald/50 bg-black/40 hover:bg-vendeur-emerald/[0.02] p-5 sm:p-6 rounded-2xl flex flex-col items-center justify-center text-center gap-2.5 cursor-pointer transition-all group"
+                      >
+                        <div className="h-12 w-12 rounded-2xl bg-white/5 group-hover:bg-vendeur-emerald/20 text-white/50 group-hover:text-vendeur-emerald flex items-center justify-center transition-colors">
+                          <UploadCloud size={24} />
+                        </div>
+                        <div>
+                          <p className="text-xs sm:text-sm font-bold text-white">
+                            Déposez la capture du reçu Wave / Orange / MTN / Moov
+                          </p>
+                          <p className="text-[11px] text-white/40 mt-0.5">
+                            Cliquez ou glissez une image (JPG, PNG) • Remplissage automatique par IA
+                          </p>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="p-3 sm:p-4 rounded-2xl bg-black/50 border border-white/10 space-y-3">
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div className="relative h-14 w-14 rounded-xl overflow-hidden border border-white/10 shrink-0 bg-black">
+                              <img src={receiptPreview} alt="Reçu de paiement" className="h-full w-full object-cover" />
+                              {isScanningReceipt && (
+                                <div className="absolute inset-0 bg-black/70 backdrop-blur-xs flex items-center justify-center">
+                                  <Loader2 className="animate-spin text-vendeur-emerald" size={18} />
+                                </div>
+                              )}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs sm:text-sm font-black text-white truncate">
+                                  {receiptFile?.name || "Capture de reçu"}
+                                </span>
+                              </div>
+                              <p className="text-[11px] text-white/50">
+                                {isScanningReceipt ? "IA Vision : Analyse médico-légale en cours..." : "Reçu chargé"}
+                              </p>
+                            </div>
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={handleRemoveReceipt}
+                            disabled={isScanningReceipt}
+                            className="p-2 rounded-xl bg-white/5 hover:bg-red-500/20 text-white/40 hover:text-red-400 border border-white/5 transition-all cursor-pointer"
+                            title="Supprimer la photo"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+
+                        {/* Scanner Radar Feedback */}
+                        {isScanningReceipt && (
+                          <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center gap-2.5 animate-pulse">
+                            <Scan size={16} className="text-vendeur-emerald animate-spin" />
+                            <span className="text-xs font-bold text-emerald-300">
+                              Audit médico-légal et extraction de la référence en cours...
+                            </span>
+                          </div>
+                        )}
+
+                        {/* Scan Success / Result Feedback */}
+                        {!isScanningReceipt && scanResult && (
+                          <div className="space-y-2">
+                            {scanResult.isPaymentProof ? (
+                              <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/25 space-y-1.5">
+                                <div className="flex items-center gap-2 text-emerald-400 text-xs font-black uppercase tracking-wider">
+                                  <CheckCircle2 size={14} />
+                                  <span>Reçu {scanResult.platform || "Paiement"} Détecté</span>
+                                </div>
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-[11px]">
+                                  {scanResult.amount ? (
+                                    <div className="text-white/80">
+                                      <span className="text-white/40">Montant : </span>
+                                      <span className="font-mono font-bold text-emerald-300">{scanResult.amount.toLocaleString()} {scanResult.currency || "XOF"}</span>
+                                    </div>
+                                  ) : null}
+                                  {scanResult.transactionId ? (
+                                    <div className="text-white/80 truncate">
+                                      <span className="text-white/40">Réf : </span>
+                                      <span className="font-mono font-bold text-white">{scanResult.transactionId}</span>
+                                    </div>
+                                  ) : null}
+                                  {scanResult.senderPhone ? (
+                                    <div className="text-white/80 truncate">
+                                      <span className="text-white/40">Expéditeur : </span>
+                                      <span className="font-mono font-bold text-white">{scanResult.senderPhone}</span>
+                                    </div>
+                                  ) : null}
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/25 flex items-start gap-2.5 text-xs text-amber-300">
+                                <AlertCircle size={16} className="shrink-0 mt-0.5" />
+                                <span>L'image ne ressemble pas à un reçu officiel standard. Vous pouvez vérifier ou corriger les champs ci-dessous.</span>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    <div className="border-t border-white/5 pt-3 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-white/40">
+                          Informations de transaction
+                        </span>
+                        {scanResult?.transactionId && (
+                          <span className="text-[10px] text-vendeur-emerald font-black uppercase flex items-center gap-1">
+                            <Sparkles size={11} /> Pré-rempli par IA
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">
+                          Numéro ayant effectué le transfert
+                        </label>
+                        <div className="flex gap-2 items-center w-full">
+                          <CountrySelector
+                            selected={senderCountry}
+                            onSelect={(c) => {
+                              setSenderCountry(c);
+                              setUserCountry(c.code);
+                            }}
+                            dropdownPosition="top"
+                            className="h-12 sm:h-14 !rounded-2xl px-3.5 sm:px-4"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <input
+                              type="tel"
+                              className="w-full h-12 sm:h-14 bg-black/50 border border-white/10 focus:border-vendeur-emerald rounded-2xl px-4 text-white font-mono text-sm placeholder:text-white/20 outline-none transition-all"
+                              placeholder="01 02 27 39 66"
+                              value={senderLocalPhone}
+                              onChange={(e) => setSenderLocalPhone(e.target.value.replace(/\D/g, ""))}
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">
+                          ID de Transaction / Réf SMS reçu (Optionnel si reçu fourni)
+                        </label>
+                        <input
+                          type="text"
+                          className="w-full h-12 sm:h-14 bg-black/50 border border-white/10 focus:border-vendeur-emerald rounded-2xl px-4 text-white font-mono text-sm placeholder:text-white/20 outline-none transition-all"
+                          placeholder="Ex: PP260817.1234.A56789"
+                          value={transactionIdInput}
+                          onChange={(e) => setTransactionIdInput(e.target.value)}
+                        />
+                      </div>
                     </div>
                   </div>
 
@@ -750,17 +995,117 @@ export function CheckoutPage() {
                   </div>
                 </form>
               ) : (
-                <div className="p-6 sm:p-8 rounded-3xl bg-[#0b1410] border border-emerald-500/30 text-center space-y-4 shadow-2xl animate-in zoom-in-95">
-                  <div className="w-14 h-14 mx-auto rounded-2xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
-                    <Loader2 className="animate-spin" size={28} />
+                <div className="space-y-6 animate-in zoom-in-95 duration-300">
+                  {/* Status Banner */}
+                  <div className="p-5 sm:p-7 rounded-3xl bg-emerald-500/10 border border-emerald-500/30 text-center space-y-3 shadow-2xl">
+                    <div className="w-14 h-14 mx-auto rounded-2xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 shadow-inner">
+                      <CheckCircle2 size={32} className="animate-bounce" />
+                    </div>
+                    <div className="space-y-1 max-w-md mx-auto">
+                      <h3 className="text-lg sm:text-2xl font-black uppercase tracking-tight text-white">
+                        Votre transfert a bien été enregistré !
+                      </h3>
+                      <p className="text-xs sm:text-sm text-emerald-300/80 leading-relaxed font-medium">
+                        Notre équipe et nos algorithmes vérifient actuellement votre transaction. Votre Vendeur IA 24h/24 sera activé automatiquement dès validation.
+                      </p>
+                    </div>
                   </div>
-                  <div className="space-y-1.5 max-w-md mx-auto">
-                    <h3 className="text-lg sm:text-xl font-black uppercase tracking-tight text-white">
-                      Vérification automatique en cours...
-                    </h3>
-                    <p className="text-xs sm:text-sm text-white/60 leading-relaxed">
-                      Votre notification de transfert a bien été reçue. Dès validation par le réseau, votre espace Vendeur IA sera activé et vous serez redirigé automatiquement.
-                    </p>
+
+                  {/* Complete Receipt Card */}
+                  <div className="bg-[#0c1410] border border-white/10 rounded-3xl p-5 sm:p-7 space-y-4 shadow-xl">
+                    <div className="flex items-center justify-between border-b border-white/5 pb-3">
+                      <span className="text-xs font-black uppercase tracking-wider text-white/50">Reçu de transaction</span>
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-500/15 text-amber-300 border border-amber-500/30">
+                        <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+                        Vérification en cours (10 - 30 min)
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-4 pt-1">
+                      {/* Reference */}
+                      <div className="p-4 rounded-2xl bg-black/40 border border-white/5 space-y-1 relative">
+                        <div className="text-[10px] font-black uppercase tracking-widest text-white/40">
+                          Référence Unique
+                        </div>
+                        <div className="text-sm sm:text-base font-mono font-black text-white tracking-wider">
+                          {activeIntent?.reference || "EN COURS"}
+                        </div>
+                        {activeIntent?.reference && (
+                          <button
+                            type="button"
+                            onClick={() => copyToClipboard(activeIntent.reference, "ref_proof")}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-xl bg-white/10 hover:bg-vendeur-emerald hover:text-black text-white text-xs transition-all cursor-pointer"
+                            title="Copier la référence"
+                          >
+                            {copiedField === "ref_proof" ? <Check size={14} /> : <Copy size={14} />}
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Montant */}
+                      <div className="p-4 rounded-2xl bg-black/40 border border-white/5 space-y-1">
+                        <div className="text-[10px] font-black uppercase tracking-widest text-white/40">
+                          Montant Déclaré
+                        </div>
+                        <div className="text-sm sm:text-base font-mono font-black text-vendeur-emerald">
+                          {totalToday.toLocaleString()} {activeCurrencySymbol}
+                        </div>
+                      </div>
+
+                      {/* Numéro émetteur */}
+                      <div className="p-4 rounded-2xl bg-black/40 border border-white/5 space-y-1">
+                        <div className="text-[10px] font-black uppercase tracking-widest text-white/40">
+                          Numéro Émetteur
+                        </div>
+                        <div className="text-sm sm:text-base font-mono font-bold text-white/90">
+                          {fullSenderPhone || "Non renseigné"}
+                        </div>
+                      </div>
+
+                      {/* Moyen de Paiement */}
+                      <div className="p-4 rounded-2xl bg-black/40 border border-white/5 space-y-1">
+                        <div className="text-[10px] font-black uppercase tracking-widest text-white/40">
+                          Moyen Utilisé
+                        </div>
+                        <div className="text-sm sm:text-base font-bold text-white capitalize flex items-center gap-2">
+                          <div
+                            className="w-2.5 h-2.5 rounded-full"
+                            style={{ backgroundColor: currentMethodConfig?.color || "#10B981" }}
+                          />
+                          <span>{currentMethodConfig?.name || selectedMethod}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Actions Claires & Non Bloquantes */}
+                  <div className="flex flex-col sm:flex-row gap-3 pt-2">
+                    <button
+                      type="button"
+                      onClick={() => navigate("/dashboard")}
+                      className="flex-1 h-14 bg-vendeur-emerald hover:bg-emerald-400 text-vendeur-coal font-black uppercase tracking-wider text-xs sm:text-sm rounded-2xl flex items-center justify-center gap-2.5 transition-all shadow-xl shadow-vendeur-emerald/20 active:scale-98 cursor-pointer"
+                    >
+                      <span>Aller à mon tableau de bord</span>
+                      <ChevronRight size={18} />
+                    </button>
+
+                    <a
+                      href={`https://wa.me/2250505111157?text=${encodeURIComponent(
+                        `Bonjour Support Vendeur IA,\nJe viens d'effectuer mon transfert de ${totalToday.toLocaleString()} ${activeCurrencySymbol} pour l'offre ${offer?.name}.\nRéférence : ${activeIntent?.reference || ""}\nNuméro émetteur : ${fullSenderPhone}`
+                      )}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="h-14 px-6 bg-white/10 hover:bg-[#25D366]/20 hover:border-[#25D366]/50 border border-white/10 text-white hover:text-[#25D366] font-black uppercase tracking-wider text-xs sm:text-sm rounded-2xl flex items-center justify-center gap-2.5 transition-all active:scale-98 cursor-pointer shrink-0"
+                    >
+                      <WhatsAppIcon size={18} variant="brand" />
+                      <span>Assistance WhatsApp</span>
+                    </a>
+                  </div>
+
+                  {/* Discreet Background Polling Indicator */}
+                  <div className="p-3.5 rounded-2xl bg-black/30 border border-white/5 text-center flex items-center justify-center gap-2 text-xs text-white/40 font-medium">
+                    <Loader2 size={14} className="animate-spin text-vendeur-emerald shrink-0" />
+                    <span>Synchronisation active en direct : Vous serez notifié et redirigé automatiquement dès approbation.</span>
                   </div>
                 </div>
               )}

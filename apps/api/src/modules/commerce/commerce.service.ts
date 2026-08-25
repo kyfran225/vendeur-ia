@@ -30,6 +30,7 @@ import crypto from "crypto";
 
 import { SystemSettingsModel } from "./admin.model.js";
 import { TransactionModel } from "./transaction.model.js";
+import { PaymentIntentModel } from "./payment-intent.model.js";
 
 export function slugify(text: string): string {
   if (!text) return "";
@@ -104,6 +105,10 @@ export class CommerceService {
 
     // New Models Data
     const subscription = await SubscriptionModel.findOne({ userId: ownerId }).populate('offerId');
+    const latestPaymentIntent = await PaymentIntentModel.findOne({
+      userId: ownerId,
+      status: { $in: ['under_verification', 'pending', 'payment_detected', 'awaiting_payment'] }
+    }).sort({ createdAt: -1 });
     const whatsappConnection = await WhatsAppConnectionModel.findOne({ userId: ownerId });
     const rawOffers = await OfferModel.find({ isActive: true }).sort({ sortOrder: 1 });
     const offers = rawOffers.map(o => {
@@ -216,6 +221,18 @@ export class CommerceService {
     return {
       merchant,
       subscription,
+      latestPaymentIntent: latestPaymentIntent ? {
+        _id: latestPaymentIntent._id,
+        reference: latestPaymentIntent.reference,
+        amount: latestPaymentIntent.amount,
+        currency: latestPaymentIntent.currency,
+        status: latestPaymentIntent.status,
+        paymentMethod: latestPaymentIntent.paymentMethod,
+        senderPhoneNumber: latestPaymentIntent.senderPhoneNumber,
+        planName: latestPaymentIntent.planName,
+        billingInterval: latestPaymentIntent.billingInterval,
+        createdAt: latestPaymentIntent.createdAt
+      } : null,
       whatsappConnection,
       offers,
       products,

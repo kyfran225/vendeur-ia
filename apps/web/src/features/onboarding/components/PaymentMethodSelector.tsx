@@ -17,11 +17,7 @@ export function PaymentMethodSelector({
   countryCode?: string;
   onChange: (val: string) => void;
 }) {
-  const methods = getProvidersForCountry(countryCode || "CI").map(p => ({
-    id: p.id,
-    label: p.label,
-    color: p.color
-  }));
+  const methods = getProvidersForCountry(countryCode || "CI");
 
   const parsed = useMemo(() => {
     const map: Record<string, string> = {};
@@ -71,18 +67,23 @@ export function PaymentMethodSelector({
           const meta = methods.find(m => m.id === id);
           if (!meta) return null;
           return (
-            <div key={id} className="flex items-center gap-2 animate-in slide-in-from-left-2 duration-300">
-               <div className={cn("w-14 shrink-0 text-[10px] font-black uppercase text-white/40")}>{meta.label}</div>
-               <input
-                 className="flex-1 h-10 rounded-lg border border-white/5 bg-black/40 px-3 text-white text-xs outline-none focus:border-vendeur-emerald transition-all"
-                 placeholder={id === "visa" ? "Lien ou IBAN..." : `Numéro...`}
-                 value={num === "FIXME" ? "" : num}
-                 autoFocus={num === "FIXME"}
-                 onChange={(e) => update(id, e.target.value)}
-               />
-               <button type="button" onClick={() => update(id, "")} className="text-white/20 hover:text-red-400 p-1">
-                 <X size={14} />
-               </button>
+            <div key={id} className="flex flex-col sm:flex-row sm:items-center gap-2 p-2 rounded-xl bg-white/[0.02] border border-white/5 animate-in slide-in-from-left-2 duration-300">
+               <div className="flex items-center gap-1.5 min-w-[120px]">
+                 <div className={cn("h-2 w-2 rounded-full shrink-0", meta.color)} />
+                 <span className="text-[10px] font-black uppercase text-white/70 truncate">{meta.label}</span>
+               </div>
+               <div className="flex-1 flex items-center gap-2">
+                 <input
+                   className="flex-1 h-10 rounded-lg border border-white/10 bg-black/40 px-3 text-white text-xs outline-none focus:border-vendeur-emerald transition-all font-mono"
+                   placeholder={meta.placeholder || (meta.inputKind === "iban" ? "IBAN / Coordonnées..." : "Numéro...")}
+                   value={num === "FIXME" ? "" : num}
+                   autoFocus={num === "FIXME"}
+                   onChange={(e) => update(id, e.target.value)}
+                 />
+                 <button type="button" onClick={() => update(id, "")} className="text-white/30 hover:text-red-400 p-1.5 rounded-lg hover:bg-white/5 transition-colors">
+                   <X size={14} />
+                 </button>
+               </div>
             </div>
           );
         })}

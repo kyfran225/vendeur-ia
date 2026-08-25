@@ -564,8 +564,26 @@ router.post("/conversations/:id/fast-pay", authenticate, async (req, res) => {
     if (!provider || provider === "all" || provider === "mtn") {
       lines.push(`🟡 *MTN MOBILE MONEY :*`);
       lines.push(`Transférez au : *${momoNum}*`);
-      lines.push(`Composez le : **133#*\n`);
+      lines.push(`Composez le : *#133#*\n`);
     }
+
+    // Additional channels (IBAN / Bank transfer / custom channels)
+    const otherChannels = (merchant.paymentChannels || []).filter(c =>
+      !c.provider?.toLowerCase().includes("wave") &&
+      !c.provider?.toLowerCase().includes("orange") &&
+      !c.provider?.toLowerCase().includes("mtn")
+    );
+
+    if (otherChannels.length > 0 && (!provider || provider === "all")) {
+      for (const ch of otherChannels) {
+        const channelName = (ch.label || ch.provider || "PAIEMENT").toUpperCase();
+        lines.push(`💳 *${channelName} :*`);
+        lines.push(`Coordonnées : *${ch.number}*\n`);
+      }
+    }
+
+    lines.push(`🌍 *Depuis l'étranger (France, Europe, USA, Canada) :*`);
+    lines.push(`Réglez directement vers nos numéros Mobile Money avec les apps *TapTap Send*, *Sendwave* ou *Orange Money Europe* par carte bancaire.\n`);
 
     lines.push(
       `━━━━━━━━━━━━━━━━━━━━`,
@@ -1959,6 +1977,23 @@ router.get("/payments/intent/:id", authenticate, async (req, res) => {
     res.json(intent);
   } catch (error: any) {
     res.status(500).json({ error: error.message });
+  }
+});
+
+// POST /api/commerce/payments/intent/:id/scan-proof - Scan and run Vision Forensic Audit on receipt
+const receiptUpload = multer({ dest: "uploads/temp/", limits: { fileSize: 15 * 1024 * 1024 } });
+router.post("/payments/intent/:id/scan-proof", authenticate, receiptUpload.single("receipt"), async (req, res) => {
+  try {
+    const userId = (req as any).user.id;
+    if (!req.file) {
+      return res.status(400).json({ error: "Veuillez sélectionner ou prendre en photo une capture de reçu." });
+    }
+
+    const result = await paymentService.scanReceiptProof(req.params.id, userId, req.file);
+    res.json(result);
+  } catch (error: any) {
+    logger.error(`[Payment Scan Proof] Error: ${error.message}`);
+    res.status(400).json({ error: error.message });
   }
 });
 

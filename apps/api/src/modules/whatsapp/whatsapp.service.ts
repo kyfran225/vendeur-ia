@@ -7,6 +7,7 @@ import path from "path";
 import { env } from "../../config/env.js";
 import { commerceService } from "../commerce/commerce.service.js";
 import { CommerceMerchantModel, CommerceConversationModel, CommerceMessageModel, CommerceCustomerModel, CommerceProductModel, CommerceKnowledgeModel } from "../commerce/commerce.model.js";
+import { SubscriptionModel } from "../commerce/subscription.model.js";
 import { WhatsAppConnectionModel } from "../commerce/whatsapp-connection.model.js";
 import { emitToUser } from "../../realtime/socketServer.js";
 import axios from "axios";
@@ -631,7 +632,13 @@ class WhatsAppService {
     // --- 2. CHECK SUBSCRIPTION (MODE DÉCOUVERTE) ---
     // If merchant has no active subscription (unpaid), AI is locked on WhatsApp so merchant maintains 100% manual control
     const isFounder = isFounderNumber(merchant.whatsappNumber || merchant.phone || "") || (merchant.ownerId && isFounderNumber(merchant.ownerId));
-    const isSubscriptionActive = merchant.subscription?.status === "active" || isFounder;
+    let isSubscriptionActive = merchant.subscription?.status === "active" || isFounder;
+    if (!isSubscriptionActive) {
+      const sub = await SubscriptionModel.findOne({ userId });
+      if (sub && sub.status === "active") {
+        isSubscriptionActive = true;
+      }
+    }
     if (!isSubscriptionActive) {
       console.log(`[WhatsApp] Mode Découverte: AI locked on WhatsApp for unpaid merchant "${merchant.businessName}". Conversations remain 100% manual.`);
       return;

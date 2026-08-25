@@ -3,10 +3,11 @@ import { Link, useSearchParams, useLocation } from "react-router-dom";
 import { useAuthStore } from "@/stores/authStore";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/apiClient";
-import { Store, User, LogOut, AlertCircle } from "lucide-react";
+import { Store, User, LogOut, AlertCircle, ShieldAlert } from "lucide-react";
 import { Logo } from "@/components/ui/Logo";
 import { PackProModal } from "@/features/dashboard/components/PackProModal";
 import { useSocket } from "@/hooks/useSocket";
+import { formatDisplayPhone } from "@/features/onboarding/components/CountrySelector";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
@@ -65,6 +66,39 @@ export function ShellHeader({ isVisible = true }: ShellHeaderProps) {
   const merchant = dashboard?.merchant;
   const subscription = dashboard?.subscription;
   const whatsapp = dashboard?.whatsappConnection;
+  const activePhone = merchant?.whatsappNumber || merchant?.phone || whatsapp?.phoneNumber || user?.whatsappNumber || "";
+
+  const isAdmin = Boolean(user?.roles?.includes("admin") || user?.email === "franck@vendeur-ia.com");
+
+  // Admin: Fetch pending payments count with real-time socket updates
+  const { data: pendingPayments } = useQuery({
+    queryKey: ["admin:header:pending_payments"],
+    queryFn: async () => {
+      const res = await apiClient.get("/api/admin/payments?status=under_verification");
+      return res.data;
+    },
+    enabled: !!accessToken && isAdmin,
+    refetchInterval: 12000
+  });
+
+  const pendingPaymentsCount = pendingPayments?.length || 0;
+
+  useEffect(() => {
+    if (!socket || !isAdmin) return;
+
+    const handleAdminPaymentAlert = () => {
+      queryClient.invalidateQueries({ queryKey: ["admin:header:pending_payments"] });
+      queryClient.invalidateQueries({ queryKey: ["admin:payments:pendingCount"] });
+    };
+
+    socket.on("admin:payment_incoming", handleAdminPaymentAlert);
+    socket.on("payment:pending_review", handleAdminPaymentAlert);
+
+    return () => {
+      socket.off("admin:payment_incoming", handleAdminPaymentAlert);
+      socket.off("payment:pending_review", handleAdminPaymentAlert);
+    };
+  }, [socket, isAdmin, queryClient]);
 
   // Détection absolue du Pack Pro / Formule Clé en Main / Expert
   const isPackPro = 
@@ -142,7 +176,41 @@ export function ShellHeader({ isVisible = true }: ShellHeaderProps) {
         </div>
       </div>
 
-      <div className="flex items-center gap-3 md:gap-6 shrink-0">
+      <div className="flex items-center gap-3 md:gap-4 shrink-0">
+        {isAdmin && (
+          <Link
+            to="/admin"
+            className={cn(
+              "inline-flex items-center gap-1.5 px-3 py-1.5 md:py-2 rounded-xl md:rounded-2xl border transition-all text-xs font-black uppercase tracking-wider shadow-sm",
+              pendingPaymentsCount > 0
+                ? "bg-amber-500/15 hover:bg-amber-500/25 border-amber-500/30 text-amber-400 animate-pulse"
+                : "bg-white/5 hover:bg-white/10 border-white/10 text-white/70 hover:text-white"
+            )}
+            title="Cockpit Administrateur"
+          >
+            <ShieldAlert size={14} className={pendingPaymentsCount > 0 ? "text-amber-400" : "text-white/40"} />
+            <span className="hidden sm:inline">Admin</span>
+            {pendingPaymentsCount > 0 && (
+              <span className="h-5 px-1.5 rounded-full bg-amber-400 text-black font-mono font-black text-[10px] flex items-center justify-center">
+                {pendingPaymentsCount}
+              </span>
+            )}
+          </Link>
+        )}
+
+        {activePhone && (
+          <Link
+            to="/settings?tab=connexions"
+            className="hidden sm:inline-flex items-center gap-2 px-3.5 py-2 rounded-xl md:rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-vendeur-emerald/30 text-white transition-all group shadow-sm"
+            title="Ligne WhatsApp Connectée"
+          >
+            <span className="h-2 w-2 rounded-full bg-vendeur-emerald animate-pulse shrink-0" />
+            <span className="text-[11px] font-mono font-bold text-white/90 group-hover:text-vendeur-emerald transition-colors">
+              {formatDisplayPhone(activePhone, merchant?.country || "CI")}
+            </span>
+          </Link>
+        )}
+
         <Link
           to="/settings"
           className="h-9 w-9 md:h-12 md:w-12 rounded-xl md:rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-white/60 hover:bg-white/10 hover:border-vendeur-emerald/30 hover:text-vendeur-emerald transition-all overflow-hidden group shadow-lg"

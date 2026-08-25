@@ -958,89 +958,97 @@ function BoutiqueTab({ merchant, initialKnowledge, accessToken }: { merchant: an
          </div>
 
          <div className="space-y-4">
-            {payments.map((p: any, idx: number) => (
-              <div key={idx} className="relative group space-y-2 animate-in slide-in-from-left-2 duration-300 py-1">
-                <div className="flex flex-row gap-2 items-center w-full">
-                  <div className="w-[35%] md:w-[25%] shrink-0">
-                      <div className="relative">
-                        <select
-                          className="w-full h-14 bg-black/40 border border-white/10 rounded-2xl px-2 text-[10px] font-black uppercase tracking-tight text-white focus:border-emerald-500 outline-none transition-all appearance-none cursor-pointer"
-                          value={p.provider}
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            setPayments((prev: any[]) => prev.map((item: any, i: number) => i === idx ? { ...item, provider: val } : item));
-                            setIsDirty(true);
-                          }}
-                        >
-                          {getProvidersForCountry(localMerchant?.country || "CI").map(provider => (
-                            <option key={provider.id} value={provider.label}>{provider.label}</option>
-                          ))}
-                        </select>
-                        <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 text-white/20 pointer-events-none" size={14} />
-                      </div>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                      <div className="relative">
-                        {p.provider !== "Espèces" && p.provider !== "Virement Bancaire" && p.provider !== "Bank Transfer" && p.provider !== "Carte Bancaire" && p.provider !== "Autre (Préciser)" && (
-                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-black text-white/30 font-mono">
-                            {getCountryByCode(localMerchant?.country || "CI")?.dialCode}
-                          </span>
-                        )}
-                        <input
-                          className={cn(
-                            "w-full h-14 bg-black/40 border border-white/10 rounded-2xl px-4 text-sm font-bold text-white focus:border-emerald-500 outline-none transition-all font-mono",
-                            (p.provider !== "Espèces" && p.provider !== "Virement Bancaire" && p.provider !== "Bank Transfer" && p.provider !== "Carte Bancaire" && p.provider !== "Autre (Préciser)") && "pl-12"
+            {payments.map((p: any, idx: number) => {
+              const countryProviders = getProvidersForCountry(localMerchant?.country || "CI");
+              const matchedProvider = countryProviders.find(cp => cp.label === p.provider || cp.id === p.provider);
+              const isPhoneType = matchedProvider ? (matchedProvider.inputKind === "phone" || matchedProvider.type === "mobile_money") : (!["Espèces", "Virement Bancaire", "Bank Transfer", "Carte Bancaire", "Autre (Préciser)"].some(k => p.provider?.includes(k)));
+              const placeholder = matchedProvider?.placeholder || (p.provider === "Carte Bancaire" ? "Lien ou instructions" : p.provider?.includes("Virement") || p.provider?.includes("Bank") ? "IBAN / Détails bancaires" : p.provider === "Autre (Préciser)" ? "Détails" : "07 00 00 00 00");
+
+              return (
+                <div key={idx} className="relative group space-y-2 animate-in slide-in-from-left-2 duration-300 py-1">
+                  <div className="flex flex-row gap-2 items-center w-full">
+                    <div className="w-[35%] md:w-[28%] shrink-0">
+                        <div className="relative">
+                          <select
+                            className="w-full h-14 bg-black/40 border border-white/10 rounded-2xl px-2 text-[10px] font-black uppercase tracking-tight text-white focus:border-emerald-500 outline-none transition-all appearance-none cursor-pointer"
+                            value={p.provider}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setPayments((prev: any[]) => prev.map((item: any, i: number) => i === idx ? { ...item, provider: val } : item));
+                              setIsDirty(true);
+                            }}
+                          >
+                            {countryProviders.map(provider => (
+                              <option key={provider.id} value={provider.label}>{provider.label}</option>
+                            ))}
+                          </select>
+                          <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 text-white/20 pointer-events-none" size={14} />
+                        </div>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                        <div className="relative">
+                          {isPhoneType && (
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-black text-white/30 font-mono">
+                              {getCountryByCode(localMerchant?.country || "CI")?.dialCode}
+                            </span>
                           )}
-                          value={p.number}
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            setPayments((prev: any[]) => prev.map((item: any, i: number) => i === idx ? { ...item, number: val } : item));
-                            setIsDirty(true);
-                          }}
-                          placeholder={
-                            p.provider === "Carte Bancaire"
-                              ? "Lien ou instructions"
-                              : p.provider === "Virement Bancaire" || p.provider === "Bank Transfer"
-                              ? "RIB / Détails bancaires"
-                              : p.provider === "Autre (Préciser)"
-                              ? "Détails"
-                              : "07 00 00 00 00"
-                          }
-                        />
-                      </div>
+                          <input
+                            className={cn(
+                              "w-full h-14 bg-black/40 border border-white/10 rounded-2xl px-4 text-sm font-bold text-white focus:border-emerald-500 outline-none transition-all font-mono",
+                              isPhoneType && "pl-12"
+                            )}
+                            value={p.number}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setPayments((prev: any[]) => prev.map((item: any, i: number) => i === idx ? { ...item, number: val } : item));
+                              setIsDirty(true);
+                            }}
+                            placeholder={placeholder}
+                          />
+                        </div>
+                    </div>
                   </div>
+
+                  {matchedProvider?.corridorNote && (
+                    <p className="text-[10px] text-emerald-400/80 font-medium px-2 flex items-center gap-1.5">
+                      <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shrink-0"></span>
+                      <span>{matchedProvider.corridorNote}</span>
+                    </p>
+                  )}
+
+                  {p.provider === "Autre (Préciser)" && (
+                    <div className="animate-in slide-in-from-top-1 duration-200">
+                      <input
+                        className="w-full md:w-2/3 h-10 bg-emerald-500/5 border border-emerald-500/10 rounded-xl px-4 text-[9px] font-black text-emerald-400 outline-none focus:border-emerald-500 transition-all uppercase tracking-widest"
+                        placeholder="NOM DU CANAL..."
+                        value={p.customLabel || ""}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setPayments((prev: any[]) => prev.map((item: any, i: number) => i === idx ? { ...item, customLabel: val } : item));
+                          setIsDirty(true);
+                        }}
+                      />
+                    </div>
+                  )}
+
+                  <button
+                    onClick={() => {
+                      setPayments((prev: any[]) => prev.filter((_: any, i: number) => i !== idx));
+                      setIsDirty(true);
+                    }}
+                    className="absolute -right-2 top-0 h-7 w-7 bg-rose-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all shadow-lg hover:scale-110 active:scale-95 z-10"
+                  >
+                      <Trash2 size={12} />
+                  </button>
                 </div>
-
-                {p.provider === "Autre (Préciser)" && (
-                  <div className="animate-in slide-in-from-top-1 duration-200">
-                    <input
-                      className="w-full md:w-2/3 h-10 bg-emerald-500/5 border border-emerald-500/10 rounded-xl px-4 text-[9px] font-black text-emerald-400 outline-none focus:border-emerald-500 transition-all uppercase tracking-widest"
-                      placeholder="NOM DU CANAL..."
-                      value={p.customLabel || ""}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        setPayments((prev: any[]) => prev.map((item: any, i: number) => i === idx ? { ...item, customLabel: val } : item));
-                        setIsDirty(true);
-                      }}
-                    />
-                  </div>
-                )}
-
-                <button
-                  onClick={() => {
-                    setPayments((prev: any[]) => prev.filter((_: any, i: number) => i !== idx));
-                    setIsDirty(true);
-                  }}
-                  className="absolute -right-2 top-0 h-7 w-7 bg-rose-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all shadow-lg hover:scale-110 active:scale-95 z-10"
-                >
-                    <Trash2 size={12} />
-                </button>
-              </div>
-            ))}
+              );
+            })}
 
             <button
               onClick={() => {
-                setPayments((prev: any[]) => [...prev, { provider: "Wave", number: "" }]);
+                const countryProviders = getProvidersForCountry(localMerchant?.country || "CI");
+                const defaultProvider = countryProviders[0]?.label || "Wave";
+                setPayments((prev: any[]) => [...prev, { provider: defaultProvider, number: "" }]);
                 setIsDirty(true);
               }}
               className="flex items-center gap-2 text-emerald-400 text-[10px] font-black uppercase tracking-[0.2em] hover:underline pt-2 px-1"
@@ -1169,75 +1177,92 @@ function SavoirTab({ initialKnowledge }: { initialKnowledge: any }) {
   };
 
   return (
-    <div className="space-y-8 animate-in slide-in-from-bottom-2 duration-500">
-      <section className="bg-vendeur-coal border border-white/10 p-6 md:p-10 rounded-[2.5rem] md:rounded-[3.5rem] space-y-8 shadow-2xl overflow-hidden">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-3 md:gap-4">
-              <div className="h-12 w-12 md:h-14 md:w-14 bg-amber-500/10 rounded-2xl flex items-center justify-center text-amber-400 border border-amber-500/20 shrink-0">
-                <HelpCircle size={24} className="md:w-7 md:h-7" />
-              </div>
-              <div>
-                <h2 className="text-xl md:text-2xl font-black uppercase text-white leading-tight whitespace-nowrap">Mémoire de Vendeur IA (FAQ)</h2>
-                <p className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] text-white/30">Donnez des réponses précises à votre Vendeur IA.</p>
-              </div>
+    <div className="space-y-6 sm:space-y-8 animate-in slide-in-from-bottom-2 duration-500 w-full max-w-full overflow-hidden box-border">
+      <section className="bg-vendeur-coal border border-white/10 p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl md:rounded-[2.5rem] space-y-6 sm:space-y-8 shadow-2xl overflow-hidden w-full max-w-full box-border">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 w-full">
+          <div className="flex items-center gap-3 md:gap-4 min-w-0 flex-1">
+            <div className="h-11 w-11 sm:h-12 sm:w-12 md:h-14 md:w-14 bg-amber-500/10 rounded-2xl flex items-center justify-center text-amber-400 border border-amber-500/20 shrink-0">
+              <HelpCircle size={22} className="md:w-7 md:h-7" />
             </div>
-            <button
-              onClick={() => saveMutation.mutate(localData)}
-              disabled={saveMutation.isPending}
-              className="flex h-12 w-full sm:w-auto items-center justify-center gap-2 rounded-2xl bg-white text-vendeur-coal px-8 text-[10px] font-black uppercase shadow-lg hover:scale-105 active:scale-95 transition-all disabled:opacity-50 whitespace-nowrap"
-            >
-              {saveMutation.isPending ? <Loader2 className="animate-spin" size={16} /> : <Save size={16} />}
-              Enregistrer
-            </button>
+            <div className="min-w-0 flex-1">
+              <h2 className="text-lg sm:text-xl md:text-2xl font-black uppercase text-white leading-tight break-words">
+                Mémoire de Vendeur IA (FAQ)
+              </h2>
+              <p className="text-[10px] md:text-xs text-white/40 font-medium mt-0.5">
+                Donnez des réponses précises à votre Vendeur IA.
+              </p>
+            </div>
           </div>
+          <button
+            onClick={() => saveMutation.mutate(localData)}
+            disabled={saveMutation.isPending}
+            className="flex h-11 sm:h-12 w-full sm:w-auto items-center justify-center gap-2 rounded-xl sm:rounded-2xl bg-white text-vendeur-coal px-6 sm:px-8 text-xs font-black uppercase shadow-lg hover:scale-105 active:scale-95 transition-all disabled:opacity-50 whitespace-nowrap cursor-pointer shrink-0"
+          >
+            {saveMutation.isPending ? <Loader2 className="animate-spin" size={15} /> : <Save size={15} />}
+            <span>Enregistrer</span>
+          </button>
+        </div>
 
-          <div className="space-y-6">
-            {(localData?.faq || []).map((item: any, i: number) => (
-              <div key={i} className="relative group p-6 bg-black/20 border border-white/5 rounded-3xl space-y-4 hover:border-vendeur-emerald/30 transition-all">
-                 <div className="space-y-2">
-                    <label className="text-[9px] font-black uppercase text-white/20 ml-1">Question Client</label>
-                    <input
-                      className="w-full bg-vendeur-coal border border-white/5 rounded-xl px-4 h-12 text-sm font-bold text-white focus:border-vendeur-emerald outline-none transition-all"
-                      placeholder="Ex: Livrez-vous à Bassam ?"
-                      value={item.question}
-                      onChange={(e) => {
-                         const faq = [...localData.faq];
-                         faq[i].question = e.target.value;
-                         setLocalData({...localData, faq});
-                      }}
-                    />
-                 </div>
-                 <div className="space-y-2">
-                    <label className="text-[9px] font-black uppercase text-white/20 ml-1">Réponse de Vendeur IA</label>
-                    <textarea
-                      className="w-full bg-vendeur-coal border border-white/5 rounded-xl px-4 py-4 text-sm text-white/70 focus:border-vendeur-emerald outline-none min-h-[100px] transition-all resize-none"
-                      placeholder="Oui, nous livrons partout à Bassam..."
-                      value={item.answer}
-                      onChange={(e) => {
-                         const faq = [...localData.faq];
-                         faq[i].answer = e.target.value;
-                         setLocalData({...localData, faq});
-                      }}
-                    />
-                 </div>
+        <div className="space-y-4 sm:space-y-5 w-full max-w-full">
+          {(localData?.faq || []).map((item: any, i: number) => (
+            <div key={i} className="relative p-4 sm:p-5 bg-white/[0.02] border border-white/10 rounded-2xl sm:rounded-3xl space-y-3.5 hover:border-vendeur-emerald/30 transition-all w-full max-w-full box-border">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-[10px] font-black uppercase tracking-wider text-vendeur-emerald flex items-center gap-1.5">
+                  <span className="h-1.5 w-1.5 rounded-full bg-vendeur-emerald" />
+                  <span>Question & Réponse #{i + 1}</span>
+                </span>
                 <button
+                  type="button"
                   onClick={() => {
                     const faq = localData.faq.filter((_: any, idx: number) => idx !== i);
                     setLocalData({ ...localData, faq });
                   }}
-                  className="absolute right-4 top-4 h-10 w-10 bg-rose-500/10 text-rose-500 rounded-xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all hover:bg-rose-500 hover:text-white"
+                  className="h-8 w-8 sm:h-9 sm:w-9 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 flex items-center justify-center transition-all cursor-pointer active:scale-95 shrink-0"
+                  title="Supprimer cette question"
                 >
-                  <Trash2 size={16} />
+                  <Trash2 size={14} />
                 </button>
               </div>
-            ))}
-            <button
-              onClick={handleAddFaq}
-              className="w-full py-6 border-2 border-dashed border-white/10 rounded-[2rem] text-vendeur-emerald text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-white/5 transition-all"
-            >
-              <Plus size={16} /> Ajouter une information
-            </button>
-          </div>
+
+              <div className="space-y-1.5 min-w-0">
+                <label className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-white/30 ml-1">Question Client</label>
+                <input
+                  className="w-full bg-black/40 border border-white/10 rounded-xl px-3.5 sm:px-4 h-11 sm:h-12 text-xs sm:text-sm font-medium text-white focus:border-vendeur-emerald outline-none transition-all box-border placeholder-white/20"
+                  placeholder="Ex: Livrez-vous à Bassam ?"
+                  value={item.question}
+                  onChange={(e) => {
+                    const faq = [...localData.faq];
+                    faq[i].question = e.target.value;
+                    setLocalData({ ...localData, faq });
+                  }}
+                />
+              </div>
+
+              <div className="space-y-1.5 min-w-0">
+                <label className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-white/30 ml-1">Réponse de Vendeur IA</label>
+                <textarea
+                  className="w-full bg-black/40 border border-white/10 rounded-xl px-3.5 sm:px-4 py-3 text-xs sm:text-sm font-medium text-white/80 focus:border-vendeur-emerald outline-none min-h-[90px] transition-all resize-none box-border placeholder-white/20"
+                  placeholder="Oui, nous livrons partout à Bassam en 24h..."
+                  value={item.answer}
+                  onChange={(e) => {
+                    const faq = [...localData.faq];
+                    faq[i].answer = e.target.value;
+                    setLocalData({ ...localData, faq });
+                  }}
+                />
+              </div>
+            </div>
+          ))}
+
+          <button
+            type="button"
+            onClick={handleAddFaq}
+            className="w-full py-4 sm:py-5 border-2 border-dashed border-white/15 hover:border-vendeur-emerald/40 rounded-2xl sm:rounded-3xl text-vendeur-emerald text-[11px] font-black uppercase tracking-wider flex items-center justify-center gap-2 hover:bg-vendeur-emerald/5 transition-all cursor-pointer active:scale-[0.99]"
+          >
+            <Plus size={16} />
+            <span>Ajouter une information</span>
+          </button>
+        </div>
       </section>
     </div>
   );
@@ -1447,65 +1472,69 @@ function ConnexionsTab({ merchant, systemSettings }: { merchant: any; systemSett
   const [isPackProOpen, setIsPackProOpen] = useState(false);
 
   return (
-    <div className="space-y-6 md:space-y-10 animate-in slide-in-from-bottom-2 duration-500">
-      <section id="whatsapp" className="bg-vendeur-coal border border-white/10 p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl md:rounded-[2.5rem] shadow-2xl scroll-mt-28">
-         <WhatsAppConnectionFlow />
-      </section>
+    <div className="space-y-8 animate-in slide-in-from-bottom-2 duration-500 w-full max-w-full overflow-hidden box-border">
+      <div id="whatsapp" className="scroll-mt-28 w-full max-w-full">
+        <WhatsAppConnectionFlow />
+      </div>
 
-      <section className="space-y-6">
-        <div className="flex items-center gap-4">
-           <div className="h-12 w-12 md:h-14 md:w-14 bg-vendeur-emerald/10 rounded-2xl flex items-center justify-center text-vendeur-emerald border border-vendeur-emerald/20 shrink-0">
-              <Globe size={24} className="md:w-7 md:h-7" />
-           </div>
-           <div>
-              <h2 className="text-xl md:text-2xl font-black text-white uppercase tracking-tighter leading-tight whitespace-nowrap">Canaux Connectés</h2>
-              <p className="text-xs md:text-sm text-white/40">Gérez les plateformes où votre Vendeur IA est active.</p>
-           </div>
+      <section className="space-y-4 sm:space-y-5 w-full max-w-full">
+        <div className="flex items-center gap-3.5 px-1">
+          <div className="h-11 w-11 sm:h-12 sm:w-12 md:h-14 md:w-14 bg-vendeur-emerald/10 rounded-2xl flex items-center justify-center text-vendeur-emerald border border-vendeur-emerald/20 shrink-0">
+            <Globe size={22} className="md:w-7 md:h-7" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <h2 className="text-lg sm:text-xl md:text-2xl font-black text-white uppercase tracking-tight leading-tight">
+              Canaux Connectés
+            </h2>
+            <p className="text-xs sm:text-sm text-white/40 font-medium">
+              Gérez les plateformes où votre Vendeur IA est actif.
+            </p>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-           <SocialCard
-              icon={<Facebook size={24} />}
-              name="Facebook Messenger"
-              status={merchant?.facebookConfig?.pageId ? "Actif" : "Non configuré"}
-              active={!!merchant?.facebookConfig?.pageId}
-              color="bg-[#1877F2]"
-              onClick={() => setIsFacebookModalOpen(true)}
-           />
-           <SocialCard
-              icon={<InstagramIcon size={24} />}
-              name="Instagram Business"
-              status={merchant?.instagramConfig?.pageId ? "Actif" : "Non configuré"}
-              active={!!merchant?.instagramConfig?.pageId}
-              color="bg-gradient-to-tr from-[#f09433] via-[#e6683c] via-[#dc2743] via-[#cc2366] to-[#bc1888]"
-           />
-           <SocialCard
-              icon={<TikTokIcon size={24} />}
-              name="TikTok Shop"
-              status="En développement"
-              active={false}
-              color="bg-black"
-           />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 sm:gap-5 w-full max-w-full">
+          <SocialCard
+            icon={<Facebook size={22} />}
+            name="Facebook Messenger"
+            status={merchant?.facebookConfig?.pageId ? "Actif & Connecté" : "Non configuré"}
+            active={!!merchant?.facebookConfig?.pageId}
+            color="bg-[#1877F2]"
+            onClick={() => setIsFacebookModalOpen(true)}
+          />
+          <SocialCard
+            icon={<InstagramIcon size={22} />}
+            name="Instagram Business"
+            status={merchant?.instagramConfig?.pageId ? "Actif & Connecté" : "Non configuré"}
+            active={!!merchant?.instagramConfig?.pageId}
+            color="bg-gradient-to-tr from-[#f09433] via-[#e6683c] via-[#dc2743] via-[#cc2366] to-[#bc1888]"
+          />
+          <SocialCard
+            icon={<TikTokIcon size={22} />}
+            name="TikTok Shop"
+            status="Bientôt disponible"
+            active={false}
+            color="bg-black"
+          />
         </div>
       </section>
 
       <FacebookConnectionModal
-         isOpen={isFacebookModalOpen}
-         onClose={() => setIsFacebookModalOpen(false)}
-         merchant={merchant}
-         onRefresh={() => queryClient.invalidateQueries({ queryKey: ["dashboard"] })}
-         onOpenMarketplaceGuide={() => setIsMarketplaceGuideOpen(true)}
+        isOpen={isFacebookModalOpen}
+        onClose={() => setIsFacebookModalOpen(false)}
+        merchant={merchant}
+        onRefresh={() => queryClient.invalidateQueries({ queryKey: ["dashboard"] })}
+        onOpenMarketplaceGuide={() => setIsMarketplaceGuideOpen(true)}
       />
 
       <MarketplaceGuideModal
-         isOpen={isMarketplaceGuideOpen}
-         onClose={() => setIsMarketplaceGuideOpen(false)}
-         onOpenPackPro={() => setIsPackProOpen(true)}
+        isOpen={isMarketplaceGuideOpen}
+        onClose={() => setIsMarketplaceGuideOpen(false)}
+        onOpenPackPro={() => setIsPackProOpen(true)}
       />
 
       <PackProModal
-         isOpen={isPackProOpen}
-         onClose={() => setIsPackProOpen(false)}
+        isOpen={isPackProOpen}
+        onClose={() => setIsPackProOpen(false)}
       />
     </div>
   );
@@ -1564,28 +1593,33 @@ function ToggleButton({ active, onToggle, color }: any) {
 function SocialCard({ icon, name, status, active, color, onClick }: any) {
   return (
     <div className={cn(
-      "p-8 rounded-[2.5rem] border transition-all flex items-center justify-between group",
-      active ? "bg-white/5 border-white/10" : "bg-black/20 border-white/5 opacity-60"
+      "p-4 sm:p-5 md:p-6 rounded-2xl sm:rounded-3xl border transition-all flex items-center justify-between gap-3.5 group w-full max-w-full box-border",
+      active ? "bg-white/[0.04] border-white/15 shadow-lg" : "bg-white/[0.02] border-white/5 opacity-70 hover:opacity-100"
     )}>
-       <div className="flex items-center gap-6">
-          <div className={cn("h-14 w-14 rounded-2xl flex items-center justify-center text-white shadow-lg group-hover:scale-110 transition-transform", color)}>
-             {icon}
-          </div>
-          <div>
-             <h4 className="text-lg font-black text-white">{name}</h4>
-             <p className="text-[10px] font-black uppercase tracking-widest text-white/30">{status}</p>
-          </div>
-       </div>
-       <button
-         onClick={onClick}
-         disabled={!onClick && !active}
-         className={cn(
-           "h-10 px-6 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all",
-           active ? "bg-white/5 text-white/60 hover:bg-white/10" : "bg-white/10 text-white/20 hover:bg-white/20 cursor-pointer"
-         )}
-       >
-          {active ? "Détails" : "Lier"}
-       </button>
+      <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1">
+        <div className={cn("h-11 w-11 sm:h-13 sm:w-13 rounded-xl sm:rounded-2xl flex items-center justify-center text-white shadow-lg shrink-0 group-hover:scale-105 transition-transform", color)}>
+          {icon}
+        </div>
+        <div className="min-w-0 flex-1">
+          <h4 className="text-sm sm:text-base font-black text-white truncate">{name}</h4>
+          <p className="text-[10px] font-bold uppercase tracking-wider text-white/40 truncate">{status}</p>
+        </div>
+      </div>
+      <button
+        type="button"
+        onClick={onClick}
+        disabled={!onClick && !active}
+        className={cn(
+          "h-9 sm:h-10 px-3.5 sm:px-5 rounded-xl text-[10px] sm:text-xs font-black uppercase tracking-wider transition-all shrink-0 active:scale-95",
+          active
+            ? "bg-vendeur-emerald/15 hover:bg-vendeur-emerald/25 text-vendeur-emerald border border-vendeur-emerald/30 cursor-pointer"
+            : onClick
+              ? "bg-white/10 hover:bg-white/20 text-white cursor-pointer border border-white/10"
+              : "bg-white/5 text-white/30 cursor-not-allowed border border-white/5"
+        )}
+      >
+        {active ? "Détails" : onClick ? "Lier" : "Bientôt"}
+      </button>
     </div>
   );
 }

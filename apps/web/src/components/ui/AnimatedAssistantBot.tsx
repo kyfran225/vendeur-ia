@@ -1,0 +1,107 @@
+import React from "react";
+import { cn } from "@/lib/utils";
+
+export interface AnimatedAssistantBotProps {
+  size?: number | string;
+  className?: string;
+  color?: string;
+  useGradient?: boolean;
+  glow?: boolean;
+  withBackground?: boolean;
+  variant?: "idle" | "thinking" | "active" | "float";
+  style?: React.CSSProperties;
+}
+
+export function AnimatedAssistantBot({
+  size = 40,
+  className = "",
+  color,
+  useGradient = true,
+  glow = false,
+  withBackground = false,
+  variant = "idle",
+  style = {}
+}: AnimatedAssistantBotProps) {
+  const gradientId = React.useId().replace(/:/g, "_");
+
+  // Pure hardware-accelerated CSS animations (Compositor Thread - 0% JS overhead on mobile)
+  const getVariantClass = () => {
+    switch (variant) {
+      case "float":
+        return "animate-[pulse_4s_ease-in-out_infinite] transform-gpu will-change-transform";
+      case "thinking":
+        return "animate-pulse transform-gpu will-change-transform scale-105";
+      case "active":
+        return "transform-gpu will-change-transform hover:scale-105 transition-transform duration-200";
+      case "idle":
+      default:
+        return "transform-gpu";
+    }
+  };
+
+  return (
+    <div
+      className={cn(
+        "inline-flex items-center justify-center relative select-none shrink-0",
+        getVariantClass(),
+        className
+      )}
+      style={{ width: size, height: size, ...style }}
+    >
+      {/* Subtle soft glow only if explicitly requested */}
+      {glow && (
+        <div
+          className="absolute -inset-0.5 rounded-full pointer-events-none opacity-20 blur-[2px] bg-emerald-500 transform-gpu"
+        />
+      )}
+
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 1000 1000"
+        width="100%"
+        height="100%"
+        className="relative z-10 overflow-visible"
+        fill="none"
+      >
+        <defs>
+          {/* Linear Gradient for Modern Tech Look */}
+          <linearGradient id={`${gradientId}-bot-grad`} x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#34D399" />
+            <stop offset="50%" stopColor="#10B981" />
+            <stop offset="100%" stopColor="#059669" />
+          </linearGradient>
+
+          {/* Background Squircle Gradient */}
+          <linearGradient id={`${gradientId}-bg-grad`} x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor="#064e3b" />
+            <stop offset="100%" stopColor="#022c22" />
+          </linearGradient>
+        </defs>
+
+        {/* 1. Optional background squircle */}
+        {withBackground && (
+          <rect
+            x="20"
+            y="20"
+            width="960"
+            height="960"
+            rx="240"
+            ry="240"
+            fill={`url(#${gradientId}-bg-grad)`}
+            stroke="#10B981"
+            strokeWidth="16"
+            strokeOpacity="0.2"
+          />
+        )}
+
+        {/* 2. Mathematically precise bot vector */}
+        <path
+          d="M 698.7 888.6 C 709.2 883.4, 716.9 875.3, 719.1 867.0 L 720.6 861.3 L 738.4 855.5 C 784.4 840.5, 838.3 804.0, 870.6 765.8 C 889.1 743.9, 902.0 724.1, 908.3 708.1 C 911.5 699.9, 912.6 698.4, 917.5 695.9 C 920.6 694.4, 928.4 687.7, 934.8 681.0 C 944.2 671.1, 947.6 666.2, 953.2 654.9 C 957.0 647.2, 961.7 634.8, 963.7 627.3 C 966.9 615.3, 967.3 611.1, 967.3 593.2 C 967.2 570.5, 964.5 556.6, 956.0 536.3 C 948.3 517.6, 934.8 501.1, 918.0 489.7 C 909.8 484.0, 889.7 475.6, 888.1 477.2 C 887.8 477.5, 888.6 482.0, 889.8 487.1 C 891.8 494.8, 892.4 508.2, 893.4 567.3 C 895.0 660.0, 894.1 670.9, 881.8 696.8 C 860.7 741.4, 814.9 786.7, 765.4 811.9 C 752.1 818.7, 724.8 829.7, 721.3 829.7 C 719.9 829.7, 714.8 825.8, 710.1 821.1 C 698.8 809.5, 692.8 807.5, 669.7 807.3 C 647.8 807.2, 640.9 809.4, 630.0 820.2 C 620.7 829.4, 617.2 838.1, 617.3 852.3 C 617.3 865.5, 622.0 875.0, 632.6 883.5 C 643.7 892.5, 649.1 893.8, 671.1 893.4 C 688.9 893.1, 689.9 892.9, 698.7 888.6 Z M 304.9 870.2 C 280.2 857.3, 252.6 837.0, 236.9 820.0 C 216.1 797.5, 199.3 764.6, 189.6 726.8 L 185.0 709.1 L 185.0 629.3 C 185.0 542.8, 185.2 540.0, 192.8 516.9 C 206.4 474.9, 237.4 436.9, 276.4 414.3 C 296.5 402.7, 315.0 396.6, 342.2 392.6 C 362.7 389.7, 632.1 389.8, 654.9 392.8 C 692.1 397.6, 719.3 408.5, 748.8 430.4 C 777.2 451.4, 796.1 478.0, 808.0 513.8 C 816.8 539.9, 817.2 544.6, 817.9 611.6 C 818.7 693.1, 816.4 717.3, 805.2 747.4 C 802.6 754.3, 800.6 760.3, 800.6 760.7 C 800.6 763.4, 805.0 760.2, 815.9 749.6 C 837.7 728.3, 853.4 707.5, 862.2 688.2 C 870.4 670.4, 870.4 670.3, 871.1 607.5 C 872.0 525.2, 870.1 502.6, 859.7 471.3 C 850.7 444.2, 837.7 420.0, 820.9 398.9 C 783.5 352.1, 737.4 321.7, 682.5 307.5 C 658.2 301.3, 632.8 299.4, 572.7 299.4 L 521.1 299.4 L 521.1 251.1 L 521.1 202.8 L 526.2 199.7 C 544.6 188.3, 553.7 171.6, 552.0 151.9 C 549.8 125.2, 529.6 106.7, 502.6 106.6 C 492.5 106.5, 490.6 107.0, 481.2 111.7 C 461.9 121.2, 453.5 134.8, 453.7 156.3 C 453.8 172.1, 457.5 181.5, 467.9 192.0 C 472.5 196.6, 477.5 200.2, 480.2 200.9 L 484.8 202.1 L 484.5 246.3 C 484.3 270.6, 483.8 292.5, 483.4 294.9 L 482.6 299.3 L 424.9 299.4 C 366.0 299.5, 354.2 300.2, 331.8 304.9 C 234.0 325.8, 154.3 402.7, 133.6 496.1 C 130.6 509.7, 130.5 512.0, 130.5 589.8 C 130.5 676.6, 130.6 678.4, 138.8 706.7 C 154.9 762.4, 198.5 819.8, 247.1 849.2 C 269.7 862.9, 306.7 878.6, 316.6 878.7 C 320.8 878.7, 319.3 877.7, 304.9 870.2 Z M 536.8 776.7 C 551.2 772.9, 569.3 763.7, 577.3 756.0 C 582.8 750.8, 583.8 749.0, 583.8 744.7 C 583.8 728.9, 571.7 725.9, 548.6 736.3 C 516.2 750.8, 481.3 749.4, 447.1 732.2 C 431.0 724.0, 426.3 723.3, 419.4 727.6 C 413.9 731.0, 411.6 737.5, 413.5 744.4 C 416.6 755.4, 445.5 772.9, 469.2 778.1 C 485.3 781.6, 520.7 780.9, 536.8 776.7 Z M 112.1 705.3 C 112.1 704.4, 111.4 701.2, 110.7 698.2 C 105.2 675.5, 104.8 667.4, 105.1 591.1 C 105.5 516.0, 105.7 511.5, 110.1 489.9 C 111.4 483.3, 112.2 477.6, 111.7 477.1 C 110.0 475.4, 97.8 479.6, 88.3 485.1 C 76.0 492.3, 58.4 509.9, 51.0 522.4 C 38.7 543.1, 32.6 567.6, 32.7 595.2 C 32.8 620.3, 37.1 636.9, 49.4 660.5 C 58.9 678.8, 74.4 693.4, 94.5 702.9 C 103.5 707.2, 112.1 708.4, 112.1 705.3 Z M 303.8 625.5 C 305.3 624.7, 308.9 619.6, 311.9 614.2 C 318.0 603.1, 326.5 593.8, 334.8 589.4 C 339.5 586.9, 342.7 586.4, 353.4 586.4 C 365.0 586.4, 367.2 586.8, 374.2 590.4 C 383.8 595.2, 391.4 603.1, 396.9 614.1 C 403.6 627.4, 411.5 631.2, 421.0 625.4 C 430.5 619.6, 430.2 606.2, 420.1 586.1 C 398.3 542.8, 340.4 532.7, 304.5 566.0 C 290.8 578.6, 283.4 592.7, 281.7 609.1 C 280.9 617.2, 281.1 618.1, 284.4 622.1 C 289.0 627.5, 297.4 629.0, 303.8 625.5 Z M 598.2 625.4 C 600.8 623.8, 604.3 619.2, 607.3 613.4 C 612.8 602.9, 623.1 592.3, 631.2 588.7 C 634.6 587.2, 640.2 586.5, 648.5 586.5 C 659.0 586.4, 662.0 587.0, 668.5 590.0 C 678.6 594.7, 685.8 602.3, 692.8 615.6 C 697.8 625.3, 698.9 626.6, 703.0 627.4 C 713.8 629.4, 721.3 624.1, 722.5 613.7 C 724.1 599.7, 710.6 573.2, 696.5 562.6 C 664.9 539.0, 626.2 540.9, 597.6 567.4 C 576.3 587.2, 568.1 620.6, 583.1 626.7 C 587.8 628.6, 593.8 628.1, 598.2 625.4 Z"
+          fill={color || (useGradient ? `url(#${gradientId}-bot-grad)` : "#10B981")}
+          fillRule="evenodd"
+          clipRule="evenodd"
+        />
+      </svg>
+    </div>
+  );
+}

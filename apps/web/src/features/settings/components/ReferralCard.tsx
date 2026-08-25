@@ -18,7 +18,7 @@ function cn(...inputs: ClassValue[]) {
 
 export function ReferralCard({ merchant }: { merchant: any }) {
   const referralCode = merchant?.referralCode || "BETA-REF";
-  const referralLink = `${window.location.origin}/onboarding?ref=${referralCode}`;
+  const referralLink = `${window.location.origin}/?ref=${referralCode}`;
 
   const stats = merchant?.referralStats || { count: 0, earnedMonths: 0 };
 

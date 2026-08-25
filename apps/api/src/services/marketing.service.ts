@@ -7,6 +7,7 @@ import {
   CommerceMessageModel,
   MarketingCampaignModel
 } from "../modules/commerce/commerce.model.js";
+import { SubscriptionModel } from "../modules/commerce/subscription.model.js";
 import { aiProvider } from "./ai-provider.js";
 import { aiQueue } from "./ai-queue.service.js";
 import { messagingService } from "./messaging.service.js";
@@ -179,6 +180,12 @@ Réponds UNIQUEMENT avec le texte du message.`;
   ) {
     const merchant = await CommerceMerchantModel.findById(merchantId);
     if (!merchant) throw new Error("Marchand non trouvé");
+
+    const subscription = await SubscriptionModel.findOne({ userId: merchant.ownerId });
+    const isSubscriptionActive = (subscription && subscription.status === "active") || merchant.subscription?.status === "active";
+    if (!isSubscriptionActive) {
+      throw new Error("Les campagnes de diffusion WhatsApp nécessitent un forfait Vendeur IA actif.");
+    }
 
     if (!customText || !customText.trim()) {
       throw new Error("Le message de la campagne ne peut pas être vide.");

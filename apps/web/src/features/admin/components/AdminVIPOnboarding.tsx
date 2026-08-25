@@ -26,6 +26,7 @@ import {
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/apiClient";
 import { toast } from "sonner";
+import { formatDisplayPhone } from "@/features/onboarding/components/CountrySelector";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
@@ -424,7 +425,7 @@ export function AdminVIPOnboarding() {
                       {item.whatsappNumber && (
                         <div className="flex items-center gap-1.5 font-mono">
                           <Phone size={13} className="text-vendeur-emerald" />
-                          <span>{item.whatsappNumber}</span>
+                          <span>{formatDisplayPhone(item.whatsappNumber)}</span>
                           <button
                             onClick={() => handleCopy(item.whatsappNumber || "", `phone-${item._id}`)}
                             className="p-1 hover:text-white transition-colors text-white/30"

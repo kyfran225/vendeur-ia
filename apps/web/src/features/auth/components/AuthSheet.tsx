@@ -122,16 +122,52 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
     toast.success(`Connexion réussie ! 🎉`);
     onClose();
 
-    // Auto-initialize merchant from landing demo form if available
+    // 1. Auto-initialize merchant from landing demo form if already filled
     if (tempData?.businessName) {
       try {
         await apiClient.post("/api/commerce/merchant", {
           ...tempData,
-          city: tempData.city || ""
+          city: tempData.city || "",
+          onboardingCompleted: true
         });
+        useAuthStore.getState().updateUser({ onboardingCompleted: true });
       } catch (e) {
         console.warn("[Auth] Auto-merchant init:", e);
       }
+      navigate("/dashboard");
+      return;
+    }
+
+    // 2. Check if merchant profile already exists in DB
+    try {
+      const res = await apiClient.get("/api/commerce/merchant");
+      if (res.data && res.data.businessName && res.data.businessName !== "Votre boutique") {
+        navigate("/dashboard");
+        return;
+      }
+    } catch {
+      // New user without merchant profile yet
+    }
+
+    // 3. If brand new user without a configured store: bring them to the Landing Page demo setup form
+    if (!sessionData.user?.onboardingCompleted) {
+      const userPhone = sessionData.user?.whatsappNumber || "";
+      if (userPhone) {
+        useOnboardingStore.getState().setTempData({
+          ...tempData,
+          whatsappNumber: userPhone
+        });
+      }
+
+      toast.info("Bienvenue ! Renseignez les informations de votre boutique pour initialiser votre Vendeur IA. 🛍️");
+      const el = document.getElementById("demo-card");
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+        setTimeout(() => {
+          document.getElementById("business-name-input")?.focus();
+        }, 500);
+      }
+      return;
     }
 
     navigate("/dashboard");
@@ -390,7 +426,9 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
           <p className="text-xs text-white/60 max-w-xs mx-auto">
             {authMethod === "whatsapp"
               ? (whatsappStep === "waiting"
-                  ? `Envoyez "CONNEXION" sur WhatsApp pour vous connecter instantanément.`
+                  ? (showMobileQr
+                      ? "Scannez ce QR Code avec l'appareil photo du téléphone où se trouve votre WhatsApp."
+                      : `Envoyez "CONNEXION" sur WhatsApp pour vous connecter instantanément.`)
                   : "Numéro personnel ou professionnel pour gérer votre boutique et recevoir vos alertes.")
               : "Espace d'accès sécurisé pour l'équipe."}
           </p>
@@ -463,12 +501,29 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
                 </div>
               )}
 
-              {/* Discrete Email Fallback Link */}
-              <div className="pt-2 text-center border-t border-white/5 mt-3">
+              {/* Discrete New User & Email Fallback Links */}
+              <div className="pt-3 text-center border-t border-white/5 mt-3 space-y-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    onClose();
+                    const el = document.getElementById("demo-card");
+                    if (el) {
+                      el.scrollIntoView({ behavior: "smooth", block: "center" });
+                      setTimeout(() => {
+                        document.getElementById("business-name-input")?.focus();
+                      }, 500);
+                    }
+                  }}
+                  className="text-xs text-vendeur-emerald hover:underline transition-colors font-bold cursor-pointer block w-full"
+                >
+                  Nouveau ? Créer mon Vendeur IA en 1 min →
+                </button>
+
                 <button
                   type="button"
                   onClick={() => setAuthMethod("email")}
-                  className="text-[11px] text-white/30 hover:text-white/70 transition-colors font-medium cursor-pointer"
+                  className="text-[11px] text-white/30 hover:text-white/70 transition-colors font-medium cursor-pointer block w-full"
                 >
                   Connexion par Email / Équipe →
                 </button>
@@ -543,10 +598,10 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
                     <div className="space-y-1">
                       <p className="text-xs font-bold text-white flex items-center justify-center gap-1.5">
                         <Smartphone size={14} className="text-vendeur-emerald" />
-                        <span>Scannez avec votre téléphone</span>
+                        <span>Scannez avec le téléphone où se trouve votre WhatsApp</span>
                       </p>
                       <p className="text-[11px] text-white/50 max-w-xs">
-                        Ouvrez l'appareil photo de votre smartphone pour valider la connexion instantanément sur cet écran.
+                        Ouvrez l'appareil photo de ce téléphone et visez le QR Code pour valider votre accès.
                       </p>
                     </div>
 
@@ -580,7 +635,7 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
                           <ChevronRight size={16} className="shrink-0" />
                         </a>
 
-                        {/* Toggle to show QR code for 2nd phone */}
+                        {/* Toggle to show QR code if WhatsApp is on another device */}
                         <div className="pt-1 text-center">
                           <button
                             type="button"
@@ -588,7 +643,7 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
                             className="text-[11px] text-vendeur-emerald hover:underline font-bold flex items-center justify-center gap-1.5 mx-auto cursor-pointer py-1"
                           >
                             <QrCode size={13} className="shrink-0" />
-                            <span>Afficher le QR Code pour un 2ème téléphone</span>
+                            <span>Votre WhatsApp est sur un autre téléphone ? (Afficher le QR Code)</span>
                           </button>
                         </div>
                       </div>
@@ -611,10 +666,10 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
                         <div className="space-y-0.5">
                           <p className="text-xs font-bold text-white flex items-center justify-center gap-1.5">
                             <Smartphone size={13} className="text-vendeur-emerald" />
-                            <span>Scannez avec votre 2ème téléphone</span>
+                            <span>Scannez avec le téléphone où est votre WhatsApp</span>
                           </p>
                           <p className="text-[10px] text-white/50 max-w-xs">
-                            Pointez l'appareil photo de votre autre smartphone vers ce QR Code.
+                            Ouvrez l'appareil photo de ce téléphone et visez le QR Code pour valider votre accès.
                           </p>
                         </div>
 
@@ -623,7 +678,7 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
                           onClick={() => setShowMobileQr(false)}
                           className="text-[11px] text-emerald-400 hover:text-emerald-300 underline font-bold cursor-pointer pt-0.5"
                         >
-                          ← Revenir au bouton 1-Clic
+                          ← Revenir à l'ouverture directe sur cet appareil
                         </button>
                       </div>
                     )}

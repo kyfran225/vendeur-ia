@@ -442,19 +442,31 @@ function LandingHero({
     }
   };
 
-  const handleActivate = () => {
+  const handleActivate = async () => {
     const fullPhone = localPhone && selectedCountry ? `${selectedCountry.dialCode}${localPhone}` : form.whatsappNumber;
-    setTempData({
+    const updatedData = {
       ...form,
       country: selectedCountry?.code || form.country,
       currency: selectedCountry?.currency || "XOF",
       whatsappNumber: fullPhone,
       city: form.city
-    });
+    };
+    setTempData(updatedData);
     setSimulatorActive(true);
     if (!user) {
       onAuth();
     } else {
+      try {
+        await apiClient.post("/api/commerce/merchant", {
+          ...updatedData,
+          city: updatedData.city || "",
+          onboardingCompleted: true
+        });
+        useAuthStore.getState().updateUser({ onboardingCompleted: true });
+        toast.success("Boutique configurée avec succès ! 🎉");
+      } catch (err) {
+        console.warn("[Landing] Auto-create merchant error:", err);
+      }
       navigate("/dashboard");
     }
   };
@@ -891,7 +903,7 @@ export function LandingPage() {
   };
 
   useEffect(() => {
-    if (user) {
+    if (user && user.onboardingCompleted) {
       navigate("/dashboard");
     }
   }, [user, navigate]);

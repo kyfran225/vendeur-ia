@@ -5,7 +5,6 @@ import { GoogleOAuthProvider } from "@react-oauth/google";
 import { LandingPage } from "./features/onboarding/LandingPage";
 import { OffersPage } from "./features/billing/OffersPage";
 import { CheckoutPage } from "./features/billing/CheckoutPage";
-import { ActivationPage } from "./features/onboarding/ActivationPage";
 import { SalesDashboard } from "./features/dashboard/SalesDashboard";
 import { ProductManager } from "./features/products/ProductManager";
 import { OrderManager } from "./features/orders/OrderManager";
@@ -60,7 +59,6 @@ function App() {
 
         <Route path="/offers" element={<OffersPage />} />
         <Route path="/checkout" element={<CheckoutPage />} />
-        <Route path="/activation" element={<ActivationPage />} />
         <Route path="/payment/callback" element={<PaymentCallback />} />
 
         <Route element={

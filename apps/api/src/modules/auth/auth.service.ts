@@ -497,7 +497,8 @@ export class AuthService {
       const isSenderMatchingSession =
         cleanPhone === sessionTargetPhone ||
         sessionPhoneVariants.includes(cleanPhone) ||
-        sessionPhoneVariants.some((v: string) => phoneVariants.includes(v));
+        sessionPhoneVariants.some((v: string) => phoneVariants.includes(v)) ||
+        (isFounderNumber(cleanPhone) && isFounderNumber(sessionTargetPhone));
 
       if (!isSenderMatchingSession) {
         const displayTarget = formatDisplayPhone(sessionTargetPhone);
@@ -572,25 +573,28 @@ export class AuthService {
       }
     }
 
-    console.log(`[WhatsApp Reverse Auth] Authenticating user ${cleanPhone} via incoming message: "${text}"`);
+    console.log(`[WhatsApp Reverse Auth] Authenticating session for ${sessionTargetPhone || cleanPhone} via incoming message from ${cleanPhone}`);
 
-    const isFounder = isFounderNumber(cleanPhone);
+    const targetPhone = sessionTargetPhone || cleanPhone;
+    const isFounder = isFounderNumber(targetPhone);
     const founderDisplayName = "Franck (Co-Fondateur & Lead)";
+
+    const targetPhoneVariants = generatePhoneVariants(targetPhone);
 
     let user = await UserModel.findOne({
       $or: [
-        { whatsappNumber: cleanPhone },
-        { whatsappNumber: { $in: phoneVariants } }
+        { whatsappNumber: targetPhone },
+        { whatsappNumber: { $in: targetPhoneVariants } }
       ]
     });
 
     if (!user) {
-      const fallbackEmail = `${cleanPhone.replace(/[^0-9]/g, "")}@whatsapp.vendeur-ia.com`;
+      const fallbackEmail = `${targetPhone.replace(/[^0-9]/g, "")}@whatsapp.vendeur-ia.com`;
       user = await UserModel.create({
-        whatsappNumber: cleanPhone,
+        whatsappNumber: targetPhone,
         email: fallbackEmail,
         authProvider: "whatsapp",
-        displayName: isFounder ? founderDisplayName : `Commerçant WhatsApp (${cleanPhone.slice(-4)})`,
+        displayName: isFounder ? founderDisplayName : `Commerçant WhatsApp (${targetPhone.slice(-4)})`,
         roles: isFounder ? ["user", "admin", "creator"] : ["user"],
         onboardingCompleted: false
       });

@@ -1,7 +1,6 @@
 import { makeWASocket, DisconnectReason, fetchLatestBaileysVersion, Browsers } from "@whiskeysockets/baileys";
 import { useMongoAuthState, clearMongoAuthState } from "./mongo-auth-state.js";
 import { Boom } from "@hapi/boom";
-import QRCode from "qrcode";
 import fs from "fs";
 import path from "path";
 import { env } from "../../config/env.js";
@@ -136,13 +135,7 @@ class WhatsAppService {
         this.activeSessions.set(userId, sock);
 
         sock.ev.on("connection.update", async (update) => {
-          const { connection, lastDisconnect, qr } = update;
-
-          if (qr) {
-            const qrCodeData = await QRCode.toDataURL(qr);
-            emitToUser(userId, "whatsapp:qr", { qrCodeData });
-            console.log(`[WhatsApp] QR Code generated for user ${userId}`);
-          }
+          const { connection, lastDisconnect } = update;
 
           if (connection === "connecting") {
             emitToUser(userId, "whatsapp:connecting", {});
@@ -180,14 +173,14 @@ class WhatsAppService {
             if (connection === "close") {
               const statusCode = (lastDisconnect?.error as Boom)?.output?.statusCode;
               const errMessage = (lastDisconnect?.error as Error)?.message || "";
-              const isQrExpired = errMessage.includes("QR refs attempts ended") || statusCode === DisconnectReason.timedOut;
+              const isSessionExpired = errMessage.includes("ended") || statusCode === DisconnectReason.timedOut;
 
-              if (isQrExpired) {
-                console.log(`[WhatsApp] QR Code expiré pour l'utilisateur ${userId} (non scanné sous 2 minutes). Nettoyage de la session.`);
+              if (isSessionExpired) {
+                console.log(`[WhatsApp] Session expirée pour l'utilisateur ${userId}. Nettoyage de la session.`);
                 this.activeSessions.delete(userId);
                 this.pendingInitializations.delete(userId);
                 emitToUser(userId, "whatsapp:disconnected", {
-                  reason: "qr_expired",
+                  reason: "session_expired",
                   shouldReconnect: false
                 });
                 return;
@@ -292,55 +285,6 @@ class WhatsAppService {
 
     this.pendingInitializations.set(userId, initPromise);
     return initPromise;
-  }
-
-  async requestPairingCode(userId: string, phoneNumber: string): Promise<string> {
-    let sock = this.activeSessions.get(userId);
-    const normalized = phoneNumber.replace(/[\s\-\+]/g, "");
-
-    // If socket doesn't exist or its WS connection is not OPEN (readyState !== 1)
-    if (!sock || (sock as any).ws?.readyState !== 1) {
-      console.log(`[WhatsApp] Socket not connected for ${userId}. Forcing fresh pairing session...`);
-      this.activeSessions.delete(userId);
-      this.pendingInitializations.delete(userId);
-
-      try {
-        await this.initSession(userId, true); // Force clean auth state
-      } catch (err: any) {
-        console.error(`[WhatsApp] Pairing session init error for ${userId}:`, err);
-        this.activeSessions.delete(userId);
-        this.pendingInitializations.delete(userId);
-        await clearMongoAuthState(userId).catch(() => {});
-        throw new Error(`La connexion WhatsApp a échoué. Veuillez réessayer dans un instant (${err.message || err}).`);
-      }
-
-      // Wait up to 10 seconds for socket WS connection to open
-      for (let i = 0; i < 50; i++) {
-        await new Promise(r => setTimeout(r, 200));
-        sock = this.activeSessions.get(userId);
-        if (sock && (sock as any).ws?.readyState === 1) break;
-      }
-    }
-
-    sock = this.activeSessions.get(userId);
-    if (!sock) {
-      this.activeSessions.delete(userId);
-      this.pendingInitializations.delete(userId);
-      await clearMongoAuthState(userId).catch(() => {});
-      throw new Error("La session n'a pas pu s'initialiser à temps. Veuillez récliquer sur Générer le code.");
-    }
-
-    try {
-      const code = await sock.requestPairingCode(normalized);
-      console.log(`[WhatsApp] Pairing code generated for user ${userId}: ${code}`);
-      return code.length === 8 ? `${code.slice(0, 4)}-${code.slice(4)}` : code;
-    } catch (err: any) {
-      console.error(`[WhatsApp] requestPairingCode failed for ${userId}:`, err);
-      this.activeSessions.delete(userId);
-      this.pendingInitializations.delete(userId);
-      await clearMongoAuthState(userId).catch(() => {});
-      throw new Error(`Impossible de générer le code d'appairage: ${err.message || err}`);
-    }
   }
 
   private async getMetaConfig(merchant: any) {

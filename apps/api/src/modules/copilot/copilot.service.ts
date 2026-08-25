@@ -175,7 +175,7 @@ Ton objectif absolu : GUIDER, ORIENTER ET AIDER le marchand avec une clarté tot
 
 ---
 ### 🧭 CARTE COMPLÈTE DE L'APPLICATION VENDEUR IA (Pour orienter précisément le marchand) :
-1. **/dashboard** (Tableau de Bord) : Vue d'ensemble des ventes, conseils IA de croissance, QR code WhatsApp rapide, raccourci simulateur IA "Tester mon Vendeur IA", et boutique publique.
+1. **/dashboard** (Tableau de Bord) : Vue d'ensemble des ventes, conseils IA de croissance, lien de boutique rapide, raccourci simulateur IA "Tester mon Vendeur IA", et boutique publique.
 2. **/products** (Gestion Catalogue) :
    - Ajouter un produit individuel ou scanner un rayon entier en 1 photo (Batch Vision IA).
    - Définir prix, stock, catégorie, options et mettre "En Vedette ⭐" pour le carrousel vitrine.
@@ -194,7 +194,7 @@ Ton objectif absolu : GUIDER, ORIENTER ET AIDER le marchand avec une clarté tot
    - Diffusion de campagnes WhatsApp segmentées (VIP, Inactifs, etc.).
    - Programme de fidélité par points automatiques.
 6. **/settings** (Paramètres Détaillés par Onglets) :
-   - **/settings?tab=connexions** : Connexion WhatsApp QR Code & passerelle Meta Cloud API.
+   - **/settings?tab=connexions** : Connexion WhatsApp native et passerelle Meta Cloud API.
    - **/settings?tab=boutique** : Moyens d'encaissement Mobile Money (Wave, Orange Money, MTN MoMo) et Grille tarifaire de livraison par quartier (Cocody, Yopougon, etc.).
    - **/settings?tab=apparence** : Studio Vitrine & Design (Logo, Bannière de couverture, Thème de couleurs, Annonce flash défilante, Réseaux sociaux).
    - **/settings?tab=personnalite** : Personnalité, ton et consignes d'attitude de l'agent Vendeur IA.
@@ -209,7 +209,7 @@ Ton objectif absolu : GUIDER, ORIENTER ET AIDER le marchand avec une clarté tot
 Pour offrir une expérience hors-norme, insère TOUJOURS des balises d'action précises à la fin de tes explications si pertinent :
 - \`[[ACTION_NAVIGATE:/route,Libellé du bouton]]\` : pour emmener l'utilisateur directement sur la bonne page et le bon onglet.
   Exemples précis :
-  \`[[ACTION_NAVIGATE:/settings?tab=connexions,📱 Connecter WhatsApp QR]]\`
+  \`[[ACTION_NAVIGATE:/settings?tab=connexions,📱 Connecter WhatsApp]]\`
   \`[[ACTION_NAVIGATE:/settings?tab=boutique,💳 Configurer Paiements & Livraison]]\`
   \`[[ACTION_NAVIGATE:/settings?tab=apparence,🎨 Personnaliser Logo & Vitrine]]\`
   \`[[ACTION_NAVIGATE:/settings?tab=personnalite,🧠 Ajuster la Personnalité IA]]\`
@@ -473,7 +473,7 @@ Pour offrir une expérience hors-norme, insère TOUJOURS des balises d'action pr
         impact: "-25 pts (Ventes perdues immédiates)",
         actionType: "navigate",
         actionPayload: "/settings?tab=connexions&section=whatsapp",
-        actionLabel: "Connecter WhatsApp QR",
+        actionLabel: "Connecter WhatsApp",
         pointsLost: 25
       });
     }
@@ -711,7 +711,7 @@ Pour offrir une expérience hors-norme, insère TOUJOURS des balises d'action pr
       suggestions.push({
         text: "Comment connecter mon WhatsApp Business en 1 clic ?",
         category: "setup",
-        icon: "qr"
+        icon: "zap"
       });
     }
 

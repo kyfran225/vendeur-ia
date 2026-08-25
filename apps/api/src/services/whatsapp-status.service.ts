@@ -143,7 +143,7 @@ Réponds UNIQUEMENT au format JSON strict suivant :
     if (!merchant) throw new Error("Marchand introuvable");
 
     if (merchant.whatsappConfig?.provider !== "baileys" || merchant.whatsappConfig?.status !== "connected") {
-      throw new Error("La publication automatique de statut nécessite une connexion WhatsApp active par QR Code.");
+      throw new Error("La publication automatique de statut nécessite une connexion WhatsApp active.");
     }
 
     const statuses = await this.generateStatusPack(merchantId);

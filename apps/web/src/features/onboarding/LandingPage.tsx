@@ -169,7 +169,6 @@ function BentoFeatures() {
             {/* Top clean badge */}
             <div className="flex items-center">
               <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 text-[11px] font-black uppercase tracking-wider">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
                 <span>Commercial Virtuel Intelligent</span>
               </div>
             </div>
@@ -648,9 +647,6 @@ function LandingHero({
                 <div className="relative h-11 w-11 rounded-xl bg-[#101e17] border border-emerald-500/20 flex items-center justify-center p-1.5 shadow-sm">
                   <AnimatedAssistantBot size={26} glow={false} />
                 </div>
-                <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
-                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500" />
-                </span>
               </div>
               <div className="text-left whitespace-nowrap">
                 <div className="flex items-center gap-1.5">
@@ -939,7 +935,6 @@ export function LandingPage() {
             <div className="min-w-0">
               <p className="truncate text-sm md:text-lg font-black text-white uppercase leading-tight tracking-tighter">{dynamicTitle}</p>
               <div className="flex items-center gap-1.5">
-                 <div className="h-1 w-1 rounded-full bg-emerald-400 animate-pulse" />
                  <p className="truncate text-[7px] md:text-[8px] uppercase tracking-[0.2em] text-white/40 font-black">AI Sales Machine</p>
               </div>
             </div>

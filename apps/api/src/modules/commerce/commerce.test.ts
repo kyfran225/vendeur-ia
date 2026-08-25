@@ -189,7 +189,7 @@ describe('Commerce Module API', () => {
       const waStep = dashRes.body.setupStatus.steps.find((s: any) => s.id === 'whatsapp');
       expect(waStep).toBeDefined();
       expect(waStep.completed).toBe(true);
-      expect(waStep.weight).toBe(35);
+      expect(waStep.weight).toBe(30);
     });
   });
 });

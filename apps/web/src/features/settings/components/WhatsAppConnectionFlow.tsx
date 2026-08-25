@@ -159,7 +159,7 @@ export function WhatsAppConnectionFlow() {
                       ? "En Vente 24h/24"
                       : isPaused
                         ? "Mode Pause (Manuel)"
-                        : "Mode Découverte (Manuel)"}
+                        : "IA en attente d'activation"}
                   </span>
                 </span>
                 <h3 className="text-base sm:text-lg md:text-xl font-black text-white uppercase tracking-tight">

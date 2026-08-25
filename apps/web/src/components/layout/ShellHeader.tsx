@@ -141,7 +141,7 @@ export function ShellHeader({ isVisible = true }: ShellHeaderProps) {
           "absolute top-full left-0 right-0 py-2 px-4 flex items-center justify-center gap-3 animate-in slide-in-from-top duration-500 shadow-lg z-50",
           isProPlan ? "bg-vendeur-emerald text-vendeur-coal" : "bg-red-500 text-white"
         )}>
-          <AlertCircle size={14} className={isProPlan ? "text-vendeur-coal animate-pulse" : "text-white animate-pulse"} />
+          <AlertCircle size={14} className={isProPlan ? "text-vendeur-coal" : "text-white"} />
           <p className="text-[10px] font-black uppercase tracking-widest">
             {isProPlan 
               ? "⚡ Votre Vendeur IA Pro nécessite une ré-activation." 
@@ -183,7 +183,7 @@ export function ShellHeader({ isVisible = true }: ShellHeaderProps) {
             className={cn(
               "inline-flex items-center gap-1.5 px-3 py-1.5 md:py-2 rounded-xl md:rounded-2xl border transition-all text-xs font-black uppercase tracking-wider shadow-sm",
               pendingPaymentsCount > 0
-                ? "bg-amber-500/15 hover:bg-amber-500/25 border-amber-500/30 text-amber-400 animate-pulse"
+                ? "bg-amber-500/15 hover:bg-amber-500/25 border-amber-500/30 text-amber-400"
                 : "bg-white/5 hover:bg-white/10 border-white/10 text-white/70 hover:text-white"
             )}
             title="Cockpit Administrateur"
@@ -204,7 +204,6 @@ export function ShellHeader({ isVisible = true }: ShellHeaderProps) {
             className="hidden sm:inline-flex items-center gap-2 px-3.5 py-2 rounded-xl md:rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-vendeur-emerald/30 text-white transition-all group shadow-sm"
             title="Ligne WhatsApp Connectée"
           >
-            <span className="h-2 w-2 rounded-full bg-vendeur-emerald animate-pulse shrink-0" />
             <span className="text-[11px] font-mono font-bold text-white/90 group-hover:text-vendeur-emerald transition-colors">
               {formatDisplayPhone(activePhone, merchant?.country || "CI")}
             </span>

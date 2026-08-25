@@ -573,7 +573,7 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
                 <div className="bg-[#0c1410]/90 border border-emerald-500/20 rounded-3xl p-4 sm:p-6 text-left space-y-4 shadow-2xl">
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2 text-vendeur-emerald font-bold text-xs">
-                      <span className="w-2 h-2 rounded-full bg-vendeur-emerald animate-ping" />
+                      <span className="w-2 h-2 rounded-full bg-vendeur-emerald" />
                       <span>Liaison en direct active</span>
                     </div>
                     {sessionCode && (

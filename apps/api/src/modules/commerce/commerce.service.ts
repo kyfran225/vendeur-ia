@@ -164,12 +164,15 @@ export class CommerceService {
 
     const hasDeliveryFees = (knowledge?.businessRules?.deliveryFees?.length || 0) > 0;
 
+    const isSubscriptionActive = subscription?.status === 'active';
+
     const setupSteps = [
-      { id: 'identity', label: 'Identité du Commerce', completed: true, weight: 10 }, // New step
-      { id: 'whatsapp', label: 'Numéro WhatsApp de vente', completed: isWhatsAppConnected, weight: 35 },
-      { id: 'products', label: 'Ajouter des produits', completed: hasProducts, weight: 25 },
+      { id: 'identity', label: 'Identité du Commerce', completed: true, weight: 10 },
+      { id: 'whatsapp', label: 'Numéro WhatsApp de vente', completed: isWhatsAppConnected, weight: 30 },
+      { id: 'products', label: 'Ajouter des produits', completed: hasProducts, weight: 20 },
       { id: 'payments', label: 'Modes de paiement', completed: hasPaymentMethods, weight: 15 },
-      { id: 'delivery', label: 'Tarifs de livraison', completed: hasDeliveryFees, weight: 15 }
+      { id: 'delivery', label: 'Tarifs de livraison', completed: hasDeliveryFees, weight: 10 },
+      { id: 'subscription', label: 'Forfait Vendeur IA', completed: isSubscriptionActive, weight: 15 }
     ];
 
     const setupScore = setupSteps.reduce((acc, step) => acc + (step.completed ? step.weight : 0), 0);

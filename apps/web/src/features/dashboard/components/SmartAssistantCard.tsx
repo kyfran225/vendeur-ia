@@ -103,6 +103,7 @@ export function SmartAssistantCard({ dashboard, onOpenTestIA, onOpenShare }: Sma
       case "products": return "/products";
       case "payments": return "/settings?tab=boutique#payments";
       case "delivery": return "/settings?tab=boutique#delivery";
+      case "subscription": return "/offers";
       default: return "/";
     }
   };
@@ -208,10 +209,10 @@ export function SmartAssistantCard({ dashboard, onOpenTestIA, onOpenShare }: Sma
               )}>
                 <span className={cn(
                   "w-2.5 h-2.5 rounded-full",
-                  isPaidActive && !isPaused ? "bg-vendeur-emerald animate-pulse" :
-                  isUnderVerification ? "bg-emerald-400 animate-pulse" :
+                  isPaidActive && !isPaused ? "bg-vendeur-emerald" :
+                  isUnderVerification ? "bg-emerald-400" :
                   isPaused ? "bg-sky-400" :
-                  isExpired ? "bg-red-400 animate-pulse" : "bg-amber-400 animate-pulse"
+                  isExpired ? "bg-red-400" : "bg-amber-400"
                 )} />
                 <span>{theme.badgeText}</span>
               </div>
@@ -233,7 +234,11 @@ export function SmartAssistantCard({ dashboard, onOpenTestIA, onOpenShare }: Sma
                     Votre Vendeur IA est actuellement en pause. Votre WhatsApp reste connecté et vous échangez manuellement avec vos clients. Vous pouvez réactiver les ventes automatiques 24h/24 en 1 clic quand vous le souhaitez.
                   </>
                 ) : isDiscoveryMode ? (
-                  nextStep?.id === "whatsapp" ? (
+                  nextStep?.id === "subscription" ? (
+                    <>
+                      Félicitations <span className="text-amber-400 font-bold not-italic">{businessName}</span>, votre configuration est terminée ! 🏁 Votre Vendeur IA est en <strong>Mode Découverte (En attente d'activation)</strong>. Activez votre forfait pour qu'il prenne le relais de vos ventes 24h/24.
+                    </>
+                  ) : nextStep?.id === "whatsapp" ? (
                     <>
                       Bienvenue chez <span className="text-amber-400 font-bold not-italic">{businessName}</span> ! 🚀 Vous êtes en <strong>Mode Découverte Gratuit</strong> : je ne réponds pas encore à vos clients sur WhatsApp afin que vous gardiez 100% le contrôle. Première étape : relions votre WhatsApp !
                     </>
@@ -243,7 +248,7 @@ export function SmartAssistantCard({ dashboard, onOpenTestIA, onOpenShare }: Sma
                     </>
                   ) : (
                     <>
-                      Bienvenue chez <span className="text-amber-400 font-bold not-italic">{businessName}</span> ! {hasProducts ? `Votre catalogue (${productsCount} article${productsCount > 1 ? 's' : ''}) et votre vitrine sont prêts.` : "Ajoutez vos articles pour activer votre vitrine."} Testez vos ventes dans le simulateur avant d'activer le pilote automatique 24h/24.
+                      Bienvenue chez <span className="text-amber-400 font-bold not-italic">{businessName}</span> ! {hasProducts ? `Votre catalogue (${productsCount} article${productsCount > 1 ? 's' : ''}) et votre vitrine sont prêts.` : "Ajoutez vos articles pour activer votre vitrine."} Le Vendeur IA ne répondra pas sur WhatsApp tant que le forfait n'est pas activé.
                     </>
                   )
                 ) : isFullyOperational ? (
@@ -323,12 +328,13 @@ export function SmartAssistantCard({ dashboard, onOpenTestIA, onOpenShare }: Sma
                         to={getActionLink(nextStep.id)}
                         className="flex-1 flex items-center justify-center gap-2.5 min-h-[52px] sm:min-h-[56px] px-5 py-3.5 rounded-2xl bg-vendeur-emerald text-vendeur-coal font-black uppercase text-xs sm:text-sm tracking-wider hover:bg-emerald-400 active:scale-95 transition-all shadow-lg shadow-vendeur-emerald/20 cursor-pointer shrink-0 truncate"
                       >
-                        <Zap size={17} fill="currentColor" className="shrink-0 animate-pulse" />
+                        <Zap size={17} fill="currentColor" className="shrink-0" />
                         <span className="truncate">
                           {nextStep.id === "whatsapp" ? "Brancher mon WhatsApp" :
                            nextStep.id === "products" ? "Ajouter mes articles & prix" :
                            nextStep.id === "payments" ? "Configurer mes paiements" :
-                           nextStep.id === "identity" ? "Configurer ma boutique" : "Compléter la configuration"}
+                           nextStep.id === "identity" ? "Configurer ma boutique" :
+                           nextStep.id === "subscription" ? "Activer les Ventes 24h/24" : "Compléter la configuration"}
                         </span>
                         <ArrowRight size={17} className="shrink-0" />
                       </Link>
@@ -417,7 +423,7 @@ export function SmartAssistantCard({ dashboard, onOpenTestIA, onOpenShare }: Sma
                 >
                   <div className={cn(
                     "h-5 w-5 rounded-full flex items-center justify-center shrink-0",
-                    step.completed ? "text-vendeur-emerald" : step.id === nextStep?.id ? (isDiscoveryMode ? "text-amber-400 animate-pulse" : "text-vendeur-emerald animate-pulse") : "text-white/20"
+                    step.completed ? "text-vendeur-emerald" : step.id === nextStep?.id ? (isDiscoveryMode ? "text-amber-400" : "text-vendeur-emerald") : "text-white/20"
                   )}>
                     {step.completed ? <CheckCircle2 size={18} /> : <Circle size={18} />}
                   </div>

@@ -802,7 +802,7 @@ function HealthItem({ label, status }: { label: string; status: "operational" | 
         <div className="flex items-center justify-between p-4 bg-black/40 rounded-2xl border border-white/5">
             <span className="text-xs font-black uppercase tracking-widest text-white/60">{label}</span>
             <div className="flex items-center gap-2">
-                <div className="h-2 w-2 rounded-full bg-vendeur-emerald animate-pulse" />
+                <div className="h-2 w-2 rounded-full bg-vendeur-emerald" />
                 <span className="text-[9px] font-black uppercase text-vendeur-emerald tracking-[0.1em]">Opérationnel</span>
             </div>
         </div>

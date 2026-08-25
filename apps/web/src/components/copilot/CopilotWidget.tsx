@@ -449,7 +449,7 @@ export function CopilotWidget() {
           {/* Main Round Orb Button */}
           <div className="relative w-14 h-14 rounded-full bg-vendeur-coal/90 hover:bg-vendeur-coal/98 border border-white/10 hover:border-vendeur-emerald/60 text-white flex items-center justify-center shadow-[0_6px_24px_rgba(0,0,0,0.45)] hover:shadow-[0_0_26px_rgba(16,185,129,0.45)] backdrop-blur-xl transition-all duration-300">
             {/* Green Online Dot */}
-            <span className="absolute top-1 right-1 w-3 h-3 bg-vendeur-emerald rounded-full ring-2 ring-vendeur-coal animate-pulse pointer-events-none" />
+            <span className="absolute top-1 right-1 w-3 h-3 bg-vendeur-emerald rounded-full ring-2 ring-vendeur-coal pointer-events-none" />
 
             {/* Logo Heartbeat Sphere */}
             <div className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center p-2 animate-orb-beat group-hover:bg-vendeur-emerald/10 group-hover:scale-105 transition-all duration-300 pointer-events-none">
@@ -457,7 +457,7 @@ export function CopilotWidget() {
                 size={22}
                 leftBranchColor="#ffffff"
                 rightBranchColor="#10b981"
-                className="animate-pulse drop-shadow-[0_0_8px_rgba(16,185,129,0.5)] group-hover:rotate-6 group-hover:scale-110 transition-transform duration-300"
+                className="drop-shadow-[0_0_8px_rgba(16,185,129,0.5)] group-hover:rotate-6 group-hover:scale-110 transition-transform duration-300"
               />
             </div>
 
@@ -504,10 +504,9 @@ export function CopilotWidget() {
               {/* Identity & Live indicator */}
               <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
                 <div className="relative w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-gradient-to-br from-vendeur-emerald/25 to-vendeur-emerald/5 border border-vendeur-emerald/40 flex items-center justify-center p-1.5 text-vendeur-emerald shrink-0 shadow-[inset_0_1px_1px_rgba(255,255,255,0.2)]">
-                  <Logo size={20} leftBranchColor="#ffffff" rightBranchColor="#10b981" className="animate-pulse" />
+                  <Logo size={20} leftBranchColor="#ffffff" rightBranchColor="#10b981" />
                   {/* Glowing Live Dot */}
                   <span className="absolute -top-0.5 -right-0.5 flex h-3 w-3">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                     <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500 ring-2 ring-vendeur-coal border border-white/40"></span>
                   </span>
                 </div>
@@ -664,7 +663,7 @@ export function CopilotWidget() {
                             >
                               {isSpeaking ? (
                                 <>
-                                  <VolumeX size={14} className="text-rose-400 animate-pulse" />
+                                  <VolumeX size={14} className="text-rose-400" />
                                   <span>Stop</span>
                                 </>
                               ) : (

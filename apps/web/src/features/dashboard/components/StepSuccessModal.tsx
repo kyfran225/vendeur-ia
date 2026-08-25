@@ -29,6 +29,7 @@ const STEP_ICONS: Record<string, React.ReactNode> = {
   products: <Package size={32} />,
   payments: <CreditCard size={32} />,
   delivery: <Truck size={32} />,
+  subscription: <Zap size={32} />,
 };
 
 const STEP_MESSAGES: Record<string, string> = {
@@ -36,7 +37,8 @@ const STEP_MESSAGES: Record<string, string> = {
   whatsapp: "WhatsApp est relié ! Votre Vendeur IA peut maintenant discuter avec vos clients.",
   products: "Votre catalogue est en ligne ! Votre vitrine publique est désormais active.",
   payments: "Vos moyens d'encaissement sont configurés ! Votre Vendeur IA peut maintenant valider les paiements automatiquement.",
-  delivery: "Vos zones de livraison sont définies ! Vos clients seront informés des délais et tarifs automatiquement.",
+  delivery: "Vos zones de livraison sont définies ! Votre boutique est maintenant techniquement prête à 100%.",
+  subscription: "Votre forfait est actif ! Votre Vendeur IA est désormais en service 24h/24 pour propulser vos ventes.",
 };
 
 const NEXT_STEP_LINKS: Record<string, string> = {
@@ -44,7 +46,8 @@ const NEXT_STEP_LINKS: Record<string, string> = {
   whatsapp: "/products",
   products: "/settings?tab=boutique#payments",
   payments: "/settings?tab=boutique#delivery",
-  delivery: "/dashboard",
+  delivery: "/offers",
+  subscription: "/dashboard",
 };
 
 const NEXT_STEP_CTA: Record<string, string> = {
@@ -52,7 +55,8 @@ const NEXT_STEP_CTA: Record<string, string> = {
   whatsapp: "Ajouter mes articles & prix",
   products: "Configurer mes paiements",
   payments: "Définir mes zones de livraison",
-  delivery: "Voir mon tableau de bord",
+  delivery: "Activer les Ventes 24h/24",
+  subscription: "Voir mon tableau de bord",
 };
 
 export function StepSuccessModal({

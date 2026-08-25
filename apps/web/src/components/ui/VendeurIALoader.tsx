@@ -64,7 +64,7 @@ export const VendeurIALoader: React.FC<VendeurIALoaderProps> = ({
           <p className={cn("font-black uppercase tracking-[0.2em] text-white/70 text-center", config.text)}>
             {label}
           </p>
-          <div className="h-0.5 w-10 bg-gradient-to-r from-transparent via-vendeur-emerald to-transparent rounded-full animate-pulse" />
+          <div className="h-0.5 w-10 bg-gradient-to-r from-transparent via-vendeur-emerald to-transparent rounded-full" />
         </div>
       )}
     </div>

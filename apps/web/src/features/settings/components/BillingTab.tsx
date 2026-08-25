@@ -122,7 +122,7 @@ export function BillingTab({ merchant }: { merchant: any }) {
             <div className="space-y-3 flex-1">
               <div className="flex flex-wrap items-center gap-2.5">
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
-                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-400" />
                   Vérification du paiement en cours
                 </span>
                 <span className="text-xs text-white/50 font-bold">
@@ -364,7 +364,7 @@ export function BillingTab({ merchant }: { merchant: any }) {
           <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 sm:gap-8">
             <div className="space-y-3.5 max-w-xl">
               <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-black uppercase tracking-wider">
-                <span className="h-2 w-2 rounded-full bg-amber-400 animate-pulse" />
+                <span className="h-2 w-2 rounded-full bg-amber-400" />
                 Mode Découverte Actif (Gratuit)
               </div>
 

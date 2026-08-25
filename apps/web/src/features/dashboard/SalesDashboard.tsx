@@ -214,7 +214,7 @@ export function SalesDashboard() {
                 className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-vendeur-emerald/30 text-white/90 transition-all group shadow-sm"
                 title="Gérer la ligne WhatsApp"
               >
-                <span className={cn("h-2 w-2 rounded-full", isWhatsAppConnected ? "bg-vendeur-emerald animate-pulse" : "bg-amber-400")} />
+                <span className={cn("h-2 w-2 rounded-full", isWhatsAppConnected ? "bg-vendeur-emerald" : "bg-amber-400")} />
                 <MessageCircle size={14} className="text-vendeur-emerald shrink-0" />
                 <span className="text-[11px] text-white/50 font-medium">Ligne WhatsApp :</span>
                 <span className="text-xs font-mono font-bold text-white group-hover:text-vendeur-emerald transition-colors">
@@ -413,9 +413,9 @@ function HomePanel({
                     Conseiller de Croissance IA
                   </h2>
                   <div className="flex items-center gap-2 mt-1">
-                    <div className={cn("h-2 w-2 md:h-2.5 md:w-2.5 rounded-full animate-pulse", status === 'connected' ? "bg-vendeur-emerald" : "bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]")} />
-                    <p className="text-xs sm:text-xs font-bold uppercase text-vendeur-emerald tracking-wider truncate">
-                      {status === 'connected' ? "IA en ligne & active 24h/24" : "IA en attente de connexion"}
+                    <div className={cn("h-2 w-2 md:h-2.5 md:w-2.5 rounded-full", (status === 'connected' && isPaidActive) ? "bg-vendeur-emerald" : "bg-amber-400")} />
+                    <p className={cn("text-xs sm:text-xs font-bold uppercase tracking-wider truncate", (status === 'connected' && isPaidActive) ? "text-vendeur-emerald" : "text-amber-400")}>
+                      {status === 'connected' ? (isPaidActive ? "IA en ligne & active 24h/24" : "Mode Découverte (Activation requise)") : "IA en attente de connexion"}
                     </p>
                   </div>
                 </div>

@@ -588,7 +588,7 @@ function ChatListItem({ name, lastMsg, time, unread, active, platform, isOnline,
       <div className="h-12 w-12 rounded-2xl bg-white/5 flex items-center justify-center border border-white/5 relative">
         <User className="text-white/20" size={20} />
         {isOnline && (
-          <div className="absolute -top-1 -right-1 h-3 w-3 bg-vendeur-emerald rounded-full border-2 border-vendeur-coal animate-pulse" />
+          <div className="absolute -top-1 -right-1 h-3 w-3 bg-vendeur-emerald rounded-full border-2 border-vendeur-coal" />
         )}
         <div className="absolute -bottom-1 -right-1 bg-vendeur-bg rounded-full p-1 border border-white/10">
            {platform === 'instagram' && <Instagram size={12} className="text-pink-500" />}
@@ -604,7 +604,7 @@ function ChatListItem({ name, lastMsg, time, unread, active, platform, isOnline,
           <p className="text-[10px] text-white/30">{time}</p>
         </div>
         <p className="text-xs text-white/40 truncate flex items-center gap-2">
-          {lastMsg === "active" && <span className="h-1.5 w-1.5 rounded-full bg-vendeur-emerald animate-pulse" />}
+          {lastMsg === "active" && <span className="h-1.5 w-1.5 rounded-full bg-vendeur-emerald" />}
           {lastMsg}
         </p>
       </div>
@@ -643,7 +643,7 @@ function ChatBubble({ role, text, time, type, mediaUrl }: any) {
 
         {isVoiceMessage && (
           <div className="flex items-center gap-1.5 mb-1.5 px-2 py-0.5 bg-sky-500/10 border border-sky-500/20 text-sky-400 rounded-md text-[9px] font-black uppercase tracking-widest w-fit">
-            <span className="h-1.5 w-1.5 rounded-full bg-sky-400 animate-pulse" />
+            <span className="h-1.5 w-1.5 rounded-full bg-sky-400" />
             Message Vocal • Transcrit par Vendeur IA
           </div>
         )}

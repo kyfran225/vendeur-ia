@@ -480,14 +480,35 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
                 )}
               </button>
 
-              <div className="flex items-center justify-center gap-1.5 pt-1 text-[11px] text-white/40">
+              {/* DIRECT HIGH-VISIBILITY SHORTCUT FOR NEW USERS (Above the fold & keyboard) */}
+              <div className="text-center pt-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    onClose();
+                    const el = document.getElementById("demo-card");
+                    if (el) {
+                      el.scrollIntoView({ behavior: "smooth", block: "center" });
+                      setTimeout(() => {
+                        document.getElementById("business-name-input")?.focus();
+                      }, 500);
+                    }
+                  }}
+                  className="text-xs text-vendeur-emerald hover:underline transition-colors font-bold cursor-pointer inline-flex items-center gap-1 py-1"
+                >
+                  <span>Pas encore inscrit ?</span>
+                  <span className="underline font-black">Créer mon Vendeur IA en 1 min →</span>
+                </button>
+              </div>
+
+              <div className="flex items-center justify-center gap-1.5 text-[11px] text-white/40">
                 <ShieldCheck size={14} className="text-vendeur-emerald shrink-0" />
                 <span>Connexion instantanée & sécurisée</span>
               </div>
 
               {/* Google Social Login */}
               {GOOGLE_CLIENT_ID && (
-                <div className="pt-2 space-y-3">
+                <div className="pt-1 space-y-2.5">
                   <div className="flex items-center gap-3">
                     <div className="h-px flex-1 bg-white/5" />
                     <span className="text-[10px] font-black text-white/20 uppercase tracking-widest">ou</span>
@@ -501,29 +522,12 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
                 </div>
               )}
 
-              {/* Discrete New User & Email Fallback Links */}
-              <div className="pt-3 text-center border-t border-white/5 mt-3 space-y-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    onClose();
-                    const el = document.getElementById("demo-card");
-                    if (el) {
-                      el.scrollIntoView({ behavior: "smooth", block: "center" });
-                      setTimeout(() => {
-                        document.getElementById("business-name-input")?.focus();
-                      }, 500);
-                    }
-                  }}
-                  className="text-xs text-vendeur-emerald hover:underline transition-colors font-bold cursor-pointer block w-full"
-                >
-                  Nouveau ? Créer mon Vendeur IA en 1 min →
-                </button>
-
+              {/* Discrete Email Fallback Link */}
+              <div className="pt-2 text-center border-t border-white/5 mt-2">
                 <button
                   type="button"
                   onClick={() => setAuthMethod("email")}
-                  className="text-[11px] text-white/30 hover:text-white/70 transition-colors font-medium cursor-pointer block w-full"
+                  className="text-[11px] text-white/30 hover:text-white/70 transition-colors font-medium cursor-pointer"
                 >
                   Connexion par Email / Équipe →
                 </button>

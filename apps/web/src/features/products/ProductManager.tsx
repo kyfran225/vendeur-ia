@@ -510,7 +510,7 @@ export function ProductManager() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto p-4 md:p-10 space-y-6 md:space-y-8 relative min-h-full pb-24 md:pb-12 animate-in fade-in duration-500">
+    <div className="max-w-7xl mx-auto p-4 md:p-10 space-y-6 md:space-y-8 relative min-h-full pb-24 md:pb-12 animate-in fade-in duration-500 overflow-x-hidden">
       {isScannerOpen && (
         <ProductScanner
           onClose={() => setIsScannerOpen(false)}
@@ -824,29 +824,29 @@ export function ProductManager() {
       )}
 
       {/* Main Header */}
-      <header id="tour-products-catalog" className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
-        <div>
-          <h1 className="text-3xl md:text-5xl font-black tracking-tighter text-white uppercase">{config.title}</h1>
-          <p className="text-white/40 mt-1 md:text-lg">Gérez vos {config.itemLabel.toLowerCase()}s et laissez le Vendeur IA conclure les transactions.</p>
+      <header id="tour-products-catalog" className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-6">
+        <div className="min-w-0">
+          <h1 className="text-2xl sm:text-3xl md:text-5xl font-black tracking-tighter text-white uppercase truncate">{config.title}</h1>
+          <p className="text-white/40 mt-1 text-sm md:text-lg">Gérez vos {config.itemLabel.toLowerCase()}s et laissez le Vendeur IA conclure les transactions.</p>
         </div>
-        <div className="flex flex-col xs:flex-row gap-3">
+        <div className="flex flex-row gap-3 shrink-0">
           {config.showScanner && (
             <button
               onClick={() => setIsScannerOpen(true)}
-              className="flex items-center justify-center gap-2 bg-sky-400 text-black px-6 py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] md:text-xs shadow-xl hover:bg-sky-500 hover:scale-[1.02] active:scale-95 transition-all w-full sm:w-auto"
+              className="flex items-center justify-center gap-2 bg-sky-400 text-black px-4 md:px-6 py-3 md:py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] md:text-xs shadow-xl hover:bg-sky-500 hover:scale-[1.02] active:scale-95 transition-all"
             >
-              <Camera size={18} /> Scanner
+              <Camera size={16} /> <span className="hidden xs:inline">Scanner</span>
             </button>
           )}
           <button
             onClick={() => setIsAddingManual(true)}
             className={cn(
-              "flex items-center justify-center gap-2 px-6 py-4 rounded-2xl text-[10px] md:text-xs tracking-widest uppercase shadow-xl hover:scale-[1.02] active:scale-95 transition-all w-full sm:w-auto",
+              "flex items-center justify-center gap-2 px-4 md:px-6 py-3 md:py-4 rounded-2xl text-[10px] md:text-xs tracking-widest uppercase shadow-xl hover:scale-[1.02] active:scale-95 transition-all flex-1 sm:flex-none",
               config.btnBg
             )}
           >
-            {!config.showScanner ? <Zap size={18} /> : <Plus size={18} />}
-            {config.actionButtonLabel}
+            {!config.showScanner ? <Zap size={16} /> : <Plus size={16} />}
+            <span className="truncate">{config.actionButtonLabel}</span>
           </button>
         </div>
       </header>
@@ -899,7 +899,7 @@ export function ProductManager() {
                   </div>
                 </div>
 
-                <div className="p-6 space-y-3">
+                <div className="p-4 sm:p-5 space-y-2">
                   <div className="flex items-start justify-between gap-2">
                     <div>
                       <h3 className="font-black text-lg text-white line-clamp-1">{p.name}</h3>
@@ -913,11 +913,12 @@ export function ProductManager() {
                 </div>
               </div>
 
-              <div className="p-6 pt-0 space-y-4">
-                <div className="flex items-center justify-between pt-4 border-t border-white/5">
+              <div className="p-4 pt-0 space-y-3">
+                {/* Stock / Badge row */}
+                <div className="flex items-center justify-between pt-3 border-t border-white/5 gap-2">
                   {config.showStock ? (
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-bold text-white/60">{config.stockLabel}:</span>
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <span className="text-xs font-bold text-white/60 shrink-0">{config.stockLabel}:</span>
                       <div className="flex items-center bg-white/5 rounded-lg border border-white/10 px-1 py-0.5">
                         <button
                           onClick={(e) => {
@@ -929,7 +930,7 @@ export function ProductManager() {
                         >
                           <Minus size={12} />
                         </button>
-                        <span className="w-8 text-center text-xs font-black text-white">
+                        <span className="w-7 text-center text-xs font-black text-white">
                           {updateStockMutation.isPending && updateStockMutation.variables?.id === p._id
                             ? <Loader2 size={10} className="animate-spin inline" />
                             : p.stock
@@ -948,31 +949,32 @@ export function ProductManager() {
                       </div>
                     </div>
                   ) : (
-                    <span className={cn("text-[10px] font-black px-2.5 py-1 rounded-lg uppercase tracking-wider border", config.badgeBg)}>
+                    <span className={cn("text-[9px] font-black px-2 py-0.5 rounded-lg uppercase tracking-wider border truncate", config.badgeBg)}>
                       {businessCategory === "digital" ? (p.digitalFormat || "Accès Digital") :
                        businessCategory === "services" ? (p.serviceDuration ? `⏳ ${p.serviceDuration}` : (p.serviceDeliveryType || "Sur RDV")) :
                        businessCategory === "food" ? (p.preparationTime ? `⏱ ${p.preparationTime}` : "Au menu") : "Disponible"}
                     </span>
                   )}
 
-                  <div className="flex gap-1.5 md:gap-2">
+                  {/* Action buttons - icônes seulement sur mobile */}
+                  <div className="flex gap-1 shrink-0">
                     <button
                       onClick={() => setPosterProduct(p)}
-                      className="p-2 bg-emerald-500/10 text-emerald-400 rounded-xl hover:bg-emerald-500/20 transition-all flex items-center gap-1.5"
+                      className="p-2 bg-emerald-500/10 text-emerald-400 rounded-xl hover:bg-emerald-500/20 transition-all"
                       title="Créer Affiche Statut WhatsApp / Story"
                     >
-                      <ImageIcon size={16} />
+                      <ImageIcon size={14} />
                     </button>
                     <button
                       onClick={() => generateCaptionMutation.mutate(p._id)}
                       disabled={generateCaptionMutation.isPending}
-                      className="p-2 bg-sky-500/10 text-sky-400 rounded-xl hover:bg-sky-500/20 transition-all flex items-center gap-2 group/btn"
+                      className="p-2 bg-sky-500/10 text-sky-400 rounded-xl hover:bg-sky-500/20 transition-all"
                       title="Générer Légende TikTok/Insta par IA"
                     >
                       {generateCaptionMutation.isPending && generateCaptionMutation.variables === p._id ? (
-                        <Loader2 size={16} className="animate-spin" />
+                        <Loader2 size={14} className="animate-spin" />
                       ) : (
-                        <MessageSquareText size={16} />
+                        <MessageSquareText size={14} />
                       )}
                     </button>
                     <button
@@ -980,14 +982,14 @@ export function ProductManager() {
                       className="p-2 bg-white/5 text-white/60 rounded-xl hover:bg-white/10 hover:text-white transition-all"
                       title="Modifier"
                     >
-                      <Edit size={16} />
+                      <Edit size={14} />
                     </button>
                     <button
                       onClick={() => setDeletingProduct(p)}
                       className="p-2 bg-rose-500/10 text-rose-400 rounded-xl hover:bg-rose-500/20 transition-all"
                       title="Supprimer"
                     >
-                      <Trash2 size={16} />
+                      <Trash2 size={14} />
                     </button>
                   </div>
                 </div>

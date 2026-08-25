@@ -28,7 +28,7 @@ export function Sidebar() {
   const isAdmin = !!user?.roles?.includes("admin");
 
   const links = [
-    { to: "/dashboard", icon: LayoutDashboard, label: "Stats" },
+    { to: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
     ...(isAdmin ? [{ to: "/admin", icon: Shield, label: "Admin", desc: "Console Super Admin" }] : []),
     { to: "/inbox", icon: MessageCircle, label: "Inbox" },
     { to: "/orders", icon: ShoppingCart, label: "Commandes" },
@@ -39,13 +39,13 @@ export function Sidebar() {
 
   const bottomLinks = isAdmin
     ? [
-        { to: "/dashboard", icon: LayoutDashboard, label: "Stats" },
+        { to: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
         { to: "/admin", icon: Shield, label: "Admin" },
         { to: "/inbox", icon: MessageCircle, label: "Messages" },
         { to: "/orders", icon: ShoppingCart, label: "Commandes" },
       ]
     : [
-        { to: "/dashboard", icon: LayoutDashboard, label: "Stats" },
+        { to: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
         { to: "/inbox", icon: MessageCircle, label: "Messages" },
         { to: "/orders", icon: ShoppingCart, label: "Commandes" },
         { to: "/products", icon: Package, label: "Catalogue" },

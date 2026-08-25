@@ -14,7 +14,10 @@ import {
   Rocket,
   ShieldCheck,
   RefreshCw,
-  Clock
+  Clock,
+  Share2,
+  ExternalLink,
+  Package
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { clsx, type ClassValue } from "clsx";
@@ -25,6 +28,7 @@ import { WhatsAppIcon } from "@/components/ui/WhatsAppIcon";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/apiClient";
 import { toast } from "sonner";
+import { getMerchantShopPath } from "@/lib/slugify";
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -33,9 +37,10 @@ function cn(...inputs: ClassValue[]) {
 interface SmartAssistantCardProps {
   dashboard: any;
   onOpenTestIA: () => void;
+  onOpenShare?: () => void;
 }
 
-export function SmartAssistantCard({ dashboard, onOpenTestIA }: SmartAssistantCardProps) {
+export function SmartAssistantCard({ dashboard, onOpenTestIA, onOpenShare }: SmartAssistantCardProps) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [isPackProModalOpen, setIsPackProModalOpen] = useState(false);
@@ -71,6 +76,8 @@ export function SmartAssistantCard({ dashboard, onOpenTestIA }: SmartAssistantCa
   const { score, steps, isFullyOperational } = setupStatus;
   const nextStep = steps.find((s: any) => !s.completed);
   const firstProduct = dashboard?.products?.[0];
+  const productsCount = dashboard?.products?.length || 0;
+  const hasProducts = productsCount > 0 || Boolean(steps.find((s: any) => s.id === "products")?.completed);
   const hasPackPro = subscription?.type === "pack_pro" || dashboard?.whatsappConnection?.connectionType === "meta";
 
   // 1-Click Resume Mutation for Pause Mode
@@ -231,23 +238,17 @@ export function SmartAssistantCard({ dashboard, onOpenTestIA }: SmartAssistantCa
                       Bienvenue chez <span className="text-amber-400 font-bold not-italic">{businessName}</span> ! 🚀 Vous êtes en <strong>Mode Découverte Gratuit</strong> : je ne réponds pas encore à vos clients sur WhatsApp afin que vous gardiez 100% le contrôle. Première étape : relions votre WhatsApp !
                     </>
                   ) : nextStep?.id === "products" ? (
-                    firstProduct ? (
-                      <>
-                        Superbe avancée pour <span className="text-amber-400 font-bold not-italic">{businessName}</span> ! Vous êtes en <strong>Mode Découverte</strong>. Ajoutez vos articles pour tester mon comportement dans le simulateur gratuit illimité.
-                      </>
-                    ) : (
-                      <>
-                        Génial, WhatsApp est relié à <span className="text-amber-400 font-bold not-italic">{businessName}</span> ! 🛍️ En <strong>Mode Découverte</strong>, vous pouvez ajouter vos articles et me tester librement dans le simulateur.
-                      </>
-                    )
+                    <>
+                      Génial, WhatsApp est relié à <span className="text-amber-400 font-bold not-italic">{businessName}</span> ! 🛍️ Ajoutez vos articles : votre vitrine publique sera automatiquement générée et vous pourrez me tester librement dans le simulateur.
+                    </>
                   ) : (
                     <>
-                      Bienvenue chez <span className="text-amber-400 font-bold not-italic">{businessName}</span> ! En <strong>Mode Découverte</strong>, explorez toutes les fonctionnalités et testez vos ventes dans le simulateur avant d'activer le pilote automatique 24h/24.
+                      Bienvenue chez <span className="text-amber-400 font-bold not-italic">{businessName}</span> ! {hasProducts ? `Votre catalogue (${productsCount} article${productsCount > 1 ? 's' : ''}) et votre vitrine sont prêts.` : "Ajoutez vos articles pour activer votre vitrine."} Testez vos ventes dans le simulateur avant d'activer le pilote automatique 24h/24.
                     </>
                   )
                 ) : isFullyOperational ? (
                   <>
-                    Tout est parfait pour <span className="text-vendeur-emerald font-bold not-italic">{businessName}</span> ! 🎯 Je réponds à vos clients, présente votre catalogue et enregistre vos commandes 24h/24 sur WhatsApp.
+                    Tout est parfait pour <span className="text-vendeur-emerald font-bold not-italic">{businessName}</span> ! 🎯 Votre catalogue ({productsCount} article{productsCount > 1 ? 's' : ''}) et votre vitrine sont actifs 24h/24. Je réponds à vos clients, présente vos produits et enregistre vos commandes sur WhatsApp.
                   </>
                 ) : (
                   nextStep?.id === "whatsapp" ? (
@@ -256,11 +257,11 @@ export function SmartAssistantCard({ dashboard, onOpenTestIA }: SmartAssistantCa
                     </>
                   ) : nextStep?.id === "products" ? (
                     <>
-                      Votre ligne est prête ! 🛍️ Il ne me manque plus que vos articles et leurs prix pour vendre à vos clients.
+                      Votre ligne est prête ! 🛍️ Ajoutez vos articles et leurs prix pour activer votre vitrine publique et me permettre de vendre à vos clients.
                     </>
                   ) : nextStep?.id === "payments" ? (
                     <>
-                      Votre catalogue est en place ! 💰 Configurez vos moyens d'encaissement (Wave, Orange Money, MoMo) pour valider les paiements automatiques.
+                      Votre catalogue est en place ({productsCount} article{productsCount > 1 ? 's' : ''}) et votre vitrine est active ! 💰 Configurez vos moyens d'encaissement (Wave, Orange Money, MoMo) pour valider les paiements automatiques.
                     </>
                   ) : (
                     <>
@@ -342,7 +343,19 @@ export function SmartAssistantCard({ dashboard, onOpenTestIA }: SmartAssistantCa
                       </button>
                     )}
 
-                    {/* Secondary Action: Simulator in Discovery Mode OR Upgrade Button */}
+                    {/* Secondary Action: Vitrine Share (when products added) or Simulator in Discovery Mode or Upgrade */}
+                    {hasProducts && onOpenShare && (
+                      <button
+                        type="button"
+                        onClick={onOpenShare}
+                        className="min-h-[52px] sm:min-h-[56px] px-5 py-3.5 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 text-white font-black uppercase text-xs tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95 shrink-0"
+                        title="Partager ma vitrine en ligne"
+                      >
+                        <Share2 size={16} className="text-vendeur-emerald" />
+                        <span>Partager vitrine</span>
+                      </button>
+                    )}
+
                     {isDiscoveryMode ? (
                       <Link
                         to="/offers"

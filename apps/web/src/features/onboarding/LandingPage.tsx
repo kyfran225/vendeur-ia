@@ -340,6 +340,26 @@ function LandingHero({
   const [isRecording, setIsRecording] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  // Synchroniser le numéro de téléphone dès qu'il est disponible (authentification WhatsApp ou store)
+  useEffect(() => {
+    const activePhone = tempData?.whatsappNumber || user?.whatsappNumber;
+    if (activePhone) {
+      const parsed = parsePhoneNumber(activePhone, tempData?.country || "CI");
+      if (parsed.local) {
+        setLocalPhone(parsed.local);
+        if (parsed.country) {
+          setSelectedCountry(parsed.country);
+        }
+        setForm(prev => ({
+          ...prev,
+          whatsappNumber: parsed.e164 || activePhone,
+          country: parsed.country?.code || prev.country,
+          currency: parsed.country?.currency || prev.currency
+        }));
+      }
+    }
+  }, [tempData?.whatsappNumber, user?.whatsappNumber, tempData?.country]);
+
   useEffect(() => {
     if (selectedCountry) {
       const fullPhone = localPhone ? `${selectedCountry.dialCode}${localPhone}` : "";
@@ -730,20 +750,14 @@ function LandingHero({
                   {/* WhatsApp UI Inside Frame */}
                   <div className="bg-[#202c33] px-3.5 pt-8 pb-3 flex items-center justify-between border-b border-white/5 shrink-0">
                     <div className="flex items-center gap-2.5 min-w-0">
-                      <div className="h-9 w-9 rounded-full bg-gradient-to-b from-emerald-500/20 to-emerald-950/80 border border-emerald-500/40 flex items-center justify-center text-emerald-400 shrink-0 p-1 shadow-inner relative">
-                        <AnimatedAssistantBot size={22} variant={isReplying ? "thinking" : "idle"} glow={isReplying} />
-                        <span className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-[#202c33] flex items-center justify-center">
-                          <span className={cn("h-1.5 w-1.5 rounded-full", isReplying ? "bg-amber-400 animate-ping" : "bg-emerald-400 animate-pulse")} />
-                        </span>
+                      <div className="h-9 w-9 rounded-full bg-gradient-to-b from-emerald-500/20 to-emerald-950/80 border border-emerald-500/40 flex items-center justify-center text-emerald-400 shrink-0 p-1 shadow-inner">
+                        <AnimatedAssistantBot size={22} variant="idle" glow={false} />
                       </div>
                       <div className="min-w-0">
                         <p className="text-xs font-bold text-white leading-tight truncate">{form.businessName}</p>
-                        <div className="flex items-center gap-1.5 mt-0.5">
-                          <span className={cn("h-1.5 w-1.5 rounded-full", isReplying ? "bg-amber-400 animate-ping" : "bg-emerald-400 animate-pulse")} />
-                          <span className="text-[10px] font-medium text-emerald-400 leading-none">
-                            {isReplying ? "en train d'écrire..." : "en ligne"}
-                          </span>
-                        </div>
+                        <p className="text-[10px] font-medium text-emerald-400/90 leading-none mt-0.5">
+                          {isReplying ? "en train d'écrire..." : "en ligne"}
+                        </p>
                       </div>
                     </div>
                     

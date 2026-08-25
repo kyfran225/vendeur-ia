@@ -17,7 +17,16 @@ registerSW({
   },
 });
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      // Rafraîchit automatiquement les données quand l'utilisateur revient sur l'onglet
+      // (ex: après avoir configuré les paiements dans les Réglages → retour au dashboard)
+      refetchOnWindowFocus: true,
+      staleTime: 30_000, // 30 secondes avant de considérer les données comme périmées
+    },
+  },
+});
 const GOOGLE_CLIENT_ID = (import.meta as any).env.VITE_GOOGLE_CLIENT_ID;
 
 const RootApp = () => {

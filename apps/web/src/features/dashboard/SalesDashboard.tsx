@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   LayoutDashboard,
   TrendingUp,
@@ -11,7 +11,8 @@ import {
   Share2,
   ExternalLink,
   Play,
-  PauseCircle
+  PauseCircle,
+  Plus
 } from "lucide-react";
 
 import { useSocket } from "@/hooks/useSocket";
@@ -25,8 +26,10 @@ import { twMerge } from "tailwind-merge";
 import { SmartAssistantCard } from "./components/SmartAssistantCard";
 import { VendeurIAPlaygroundModal } from "./components/VendeurIAPlaygroundModal";
 import { SetupCompletionModal } from "./components/SetupCompletionModal";
+import { StepSuccessModal } from "./components/StepSuccessModal";
 import { OffersModal } from "@/features/settings/components/OffersModal";
 import { PauseConfirmationModal } from "@/components/modals/PauseConfirmationModal";
+import { ShareShopModal } from "@/features/shop/components/ShareShopModal";
 import { AssistantIcon } from "@/components/ui/AssistantIcon";
 import { getMerchantShopUrl, getMerchantShopPath } from "@/lib/slugify";
 import { formatDisplayPhone } from "@/features/onboarding/components/CountrySelector";
@@ -51,6 +54,16 @@ export function SalesDashboard() {
   const isTestIAOpen = searchParams.get("test_ia") === "true";
   const [isCompletionModalOpen, setIsCompletionModalOpen] = useState(false);
   const [isOffersModalOpen, setIsOffersModalOpen] = useState(false);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+
+  // Suivi des étapes complétées pour détecter les nouvelles complétion
+  const [stepSuccessModal, setStepSuccessModal] = useState<{
+    isOpen: boolean;
+    completedStepId: string;
+    completedStepLabel: string;
+    nextStep: { id: string; label: string } | null;
+  }>({ isOpen: false, completedStepId: "", completedStepLabel: "", nextStep: null });
+  const previousCompletedStepsRef = useRef<Set<string>>(new Set());
 
   const setIsTestIAOpen = (open: boolean) => {
     if (open) {
@@ -106,6 +119,50 @@ export function SalesDashboard() {
     }
   }, [dashboard?.setupStatus, dashboard?.merchant?._id]);
 
+  // Détecte quand une étape passe à "complétée" pour afficher le pop-up de succès intermédiaire
+  useEffect(() => {
+    const steps: Array<{ id: string; label: string; completed: boolean }> = dashboard?.setupStatus?.steps || [];
+    if (!steps.length || !dashboard?.merchant?._id) return;
+
+    const isFullyOperational = dashboard?.setupStatus?.isFullyOperational;
+    // Ne pas afficher le modal d'étape si la boutique est déjà 100% opérationnelle
+    if (isFullyOperational) {
+      // Initialiser la ref sans déclencher de modal
+      const nowCompleted = new Set<string>(steps.filter((s) => s.completed).map((s) => s.id));
+      previousCompletedStepsRef.current = nowCompleted;
+      return;
+    }
+
+    const nowCompleted = new Set<string>(steps.filter((s) => s.completed).map((s) => s.id));
+    const prev = previousCompletedStepsRef.current;
+
+    if (prev.size === 0) {
+      // Premier chargement : initialiser la ref sans déclencher de modal
+      previousCompletedStepsRef.current = nowCompleted;
+      return;
+    }
+
+    // Trouver les étapes nouvellement complétées (pas dans prev, dans nowCompleted)
+    const newlyCompleted = steps.filter((s) => s.completed && !prev.has(s.id));
+
+    if (newlyCompleted.length > 0) {
+      // Prendre la première nouvellement complétée
+      const justDone = newlyCompleted[0];
+      // L'étape suivante non complétée
+      const nextPending = steps.find((s) => !s.completed && s.id !== justDone.id) || null;
+
+      setStepSuccessModal({
+        isOpen: true,
+        completedStepId: justDone.id,
+        completedStepLabel: justDone.label,
+        nextStep: nextPending ? { id: nextPending.id, label: nextPending.label } : null,
+      });
+    }
+
+    previousCompletedStepsRef.current = nowCompleted;
+  }, [dashboard?.setupStatus?.steps, dashboard?.merchant?._id, dashboard?.setupStatus?.isFullyOperational]);
+
+
   useEffect(() => {
     if (socket) {
       socket.on("whatsapp:connected", () => {
@@ -135,15 +192,11 @@ export function SalesDashboard() {
     );
   }
 
-  const handleShareShop = () => {
-    const url = getMerchantShopUrl(dashboard?.merchant);
-    navigator.clipboard.writeText(url);
-    toast.success("Lien personnalisé de votre vitrine copié !");
-  };
-
   const activeWhatsApp = dashboard?.merchant?.whatsappNumber || dashboard?.merchant?.phone || dashboard?.whatsappConnection?.phoneNumber || "";
   const isWhatsAppConnected = dashboard?.whatsappConnection?.status === "CONNECTED" || dashboard?.merchant?.whatsappConfig?.status === "connected" || Boolean(dashboard?.merchant?.whatsappNumber);
   const isPaidActive = dashboard?.merchant?.subscription?.status === "active";
+  const productsCount = dashboard?.products?.length || 0;
+  const hasProducts = productsCount > 0 || Boolean(dashboard?.setupStatus?.steps?.find((s: any) => s.id === "products")?.completed);
 
   return (
     <main className="max-w-6xl mx-auto p-4 md:p-10 space-y-8 pb-24 md:pb-8 animate-in fade-in duration-700">
@@ -183,29 +236,46 @@ export function SalesDashboard() {
             </button>
           )}
 
-          <button
-            onClick={handleShareShop}
-            className="h-12 px-6 rounded-2xl bg-white/5 border border-white/10 text-white text-xs font-black uppercase tracking-wider hover:bg-white/10 transition-all flex items-center justify-center text-center gap-2 cursor-pointer active:scale-95"
-          >
-            <Share2 size={16} />
-            <span>Partager ma vitrine</span>
-          </button>
+          {hasProducts ? (
+            <>
+              <button
+                onClick={() => setIsShareModalOpen(true)}
+                className="h-12 px-6 rounded-2xl bg-white/5 border border-white/10 text-white text-xs font-black uppercase tracking-wider hover:bg-white/10 hover:border-white/20 transition-all flex items-center justify-center text-center gap-2 cursor-pointer active:scale-95 group shadow-sm"
+                title="Partager le lien ou QR Code de votre vitrine"
+              >
+                <Share2 size={16} className="text-vendeur-emerald group-hover:scale-110 transition-transform" />
+                <span>Partager ma vitrine</span>
+              </button>
 
-          <Link
-            to={getMerchantShopPath(dashboard?.merchant)}
-            target="_blank"
-            className="h-12 px-6 rounded-2xl bg-vendeur-emerald text-vendeur-coal text-xs font-black uppercase tracking-wider hover:scale-105 active:scale-95 transition-all flex items-center justify-center text-center gap-2 shadow-lg shadow-vendeur-emerald/20 cursor-pointer"
-          >
-            <ExternalLink size={16} />
-            <span>Voir ma boutique</span>
-          </Link>
+              <Link
+                to={getMerchantShopPath(dashboard?.merchant)}
+                target="_blank"
+                className="h-12 px-6 rounded-2xl bg-vendeur-emerald text-vendeur-coal text-xs font-black uppercase tracking-wider hover:bg-emerald-400 hover:scale-105 active:scale-95 transition-all flex items-center justify-center text-center gap-2 shadow-lg shadow-vendeur-emerald/20 cursor-pointer"
+                title="Ouvrir votre vitrine publique"
+              >
+                <ExternalLink size={16} />
+                <span>Voir ma boutique</span>
+              </Link>
+            </>
+          ) : (
+            <Link
+              to="/products"
+              className="h-12 px-5 rounded-2xl bg-vendeur-emerald/15 hover:bg-vendeur-emerald border border-vendeur-emerald/30 text-vendeur-emerald hover:text-vendeur-coal text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95 shadow-sm"
+              title="Ajoutez vos premiers produits pour activer automatiquement votre vitrine"
+            >
+              <Plus size={16} />
+              <span>Ajouter mes articles</span>
+            </Link>
+          )}
         </div>
       </header>
 
       <HomePanel 
         dashboard={dashboard} 
+        hasProducts={hasProducts}
         onOpenTestIA={() => setIsTestIAOpen(true)}
         onOpenOffers={() => setIsOffersModalOpen(true)}
+        onOpenShare={() => setIsShareModalOpen(true)}
       />
 
       <VendeurIAPlaygroundModal
@@ -220,15 +290,43 @@ export function SalesDashboard() {
         businessName={dashboard?.merchant?.businessName || "Votre boutique"}
       />
 
+      <StepSuccessModal
+        isOpen={stepSuccessModal.isOpen}
+        onClose={() => setStepSuccessModal((s) => ({ ...s, isOpen: false }))}
+        completedStepId={stepSuccessModal.completedStepId}
+        completedStepLabel={stepSuccessModal.completedStepLabel}
+        nextStep={stepSuccessModal.nextStep}
+        businessName={dashboard?.merchant?.businessName}
+      />
+
       <OffersModal
         isOpen={isOffersModalOpen}
         onClose={() => setIsOffersModalOpen(false)}
+      />
+
+      <ShareShopModal
+        isOpen={isShareModalOpen}
+        onClose={() => setIsShareModalOpen(false)}
+        merchant={dashboard?.merchant}
+        shopUrl={getMerchantShopUrl(dashboard?.merchant)}
       />
     </main>
   );
 }
 
-function HomePanel({ dashboard, onOpenTestIA, onOpenOffers }: { dashboard: any, onOpenTestIA: () => void, onOpenOffers: () => void }) {
+function HomePanel({
+  dashboard,
+  hasProducts,
+  onOpenTestIA,
+  onOpenOffers,
+  onOpenShare
+}: {
+  dashboard: any;
+  hasProducts: boolean;
+  onOpenTestIA: () => void;
+  onOpenOffers: () => void;
+  onOpenShare: () => void;
+}) {
   const [isPauseModalOpen, setIsPauseModalOpen] = useState(false);
   const tips = dashboard?.aiGrowthAdvice?.tips || [];
   const status = dashboard?.merchant?.whatsappConfig?.status || 'disconnected';
@@ -248,11 +346,12 @@ function HomePanel({ dashboard, onOpenTestIA, onOpenOffers }: { dashboard: any, 
         <SmartAssistantCard
           dashboard={dashboard}
           onOpenTestIA={onOpenTestIA}
+          onOpenShare={onOpenShare}
         />
       )}
 
       {/* MOBILE-ONLY QUICK ACTION BUTTONS (Generous height, non-squished) */}
-      <div className={cn("grid gap-3 md:hidden", !isPaidActive ? "grid-cols-3" : "grid-cols-2")}>
+      <div className={cn("grid gap-3 md:hidden", !isPaidActive ? (hasProducts ? "grid-cols-3" : "grid-cols-2") : (hasProducts ? "grid-cols-2" : "grid-cols-1"))}>
         {!isPaidActive && (
           <button
             onClick={onOpenOffers}
@@ -263,26 +362,34 @@ function HomePanel({ dashboard, onOpenTestIA, onOpenOffers }: { dashboard: any, 
           </button>
         )}
 
-        <button
-          onClick={() => {
-            const url = getMerchantShopUrl(dashboard?.merchant);
-            navigator.clipboard.writeText(url);
-            toast.success("Lien personnalisé de votre vitrine copié !");
-          }}
-          className="min-h-[52px] h-13 px-3 rounded-2xl bg-white/5 border border-white/10 text-white text-[11px] font-black uppercase tracking-wider hover:bg-white/10 transition-all flex items-center justify-center text-center gap-1.5 active:scale-95 cursor-pointer shadow-sm shrink-0"
-        >
-          <Share2 size={14} className="shrink-0 text-white/70" />
-          <span className="truncate">Partager</span>
-        </button>
+        {hasProducts ? (
+          <>
+            <button
+              onClick={onOpenShare}
+              className="min-h-[52px] h-13 px-3 rounded-2xl bg-white/5 border border-white/10 text-white text-[11px] font-black uppercase tracking-wider hover:bg-white/10 transition-all flex items-center justify-center text-center gap-1.5 active:scale-95 cursor-pointer shadow-sm shrink-0"
+            >
+              <Share2 size={14} className="shrink-0 text-vendeur-emerald" />
+              <span className="truncate">Partager</span>
+            </button>
 
-        <Link
-          to={getMerchantShopPath(dashboard?.merchant)}
-          target="_blank"
-          className="min-h-[52px] h-13 px-3 rounded-2xl bg-vendeur-emerald text-vendeur-coal text-[11px] font-black uppercase tracking-wider hover:scale-105 active:scale-95 transition-all flex items-center justify-center text-center gap-1.5 shadow-lg shadow-vendeur-emerald/20 cursor-pointer shrink-0"
-        >
-          <ExternalLink size={14} className="shrink-0" />
-          <span className="truncate">Vitrine</span>
-        </Link>
+            <Link
+              to={getMerchantShopPath(dashboard?.merchant)}
+              target="_blank"
+              className="min-h-[52px] h-13 px-3 rounded-2xl bg-vendeur-emerald text-vendeur-coal text-[11px] font-black uppercase tracking-wider hover:scale-105 active:scale-95 transition-all flex items-center justify-center text-center gap-1.5 shadow-lg shadow-vendeur-emerald/20 cursor-pointer shrink-0"
+            >
+              <ExternalLink size={14} className="shrink-0" />
+              <span className="truncate">Vitrine</span>
+            </Link>
+          </>
+        ) : (
+          <Link
+            to="/products"
+            className="min-h-[52px] h-13 px-3 rounded-2xl bg-vendeur-emerald/15 border border-vendeur-emerald/30 text-vendeur-emerald text-[11px] font-black uppercase tracking-wider hover:bg-vendeur-emerald hover:text-vendeur-coal transition-all flex items-center justify-center text-center gap-2 active:scale-95 cursor-pointer shadow-sm shrink-0"
+          >
+            <Plus size={15} />
+            <span className="truncate">Ajouter mes articles</span>
+          </Link>
+        )}
       </div>
 
       {/* 
@@ -315,6 +422,18 @@ function HomePanel({ dashboard, onOpenTestIA, onOpenOffers }: { dashboard: any, 
               </div>
 
               <div className="flex flex-wrap sm:flex-nowrap items-center gap-2.5 w-full md:w-auto">
+                {hasProducts && (
+                  <button
+                    type="button"
+                    onClick={onOpenShare}
+                    className="flex items-center justify-center gap-2 min-h-[48px] h-12 px-4 py-3 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 text-white text-xs font-black uppercase tracking-wider transition-all w-full sm:w-auto cursor-pointer active:scale-95 shrink-0"
+                    title="Partager le lien ou QR Code de votre vitrine"
+                  >
+                    <Share2 size={15} className="text-vendeur-emerald" />
+                    <span>Partager Vitrine</span>
+                  </button>
+                )}
+
                 <button
                   type="button"
                   onClick={() => setIsPauseModalOpen(true)}

@@ -293,3 +293,81 @@
 .tabs-scrollbar::-webkit-scrollbar-thumb:hover {
   background: #10b981;
 }
+
+/* ==========================================================================
+   VENDEUR IA PREMIUM TOAST NOTIFICATION THEME (SONNER GLOBAL OVERRIDES)
+   ========================================================================== */
+[data-sonner-toaster] {
+  --normal-bg: #09140f !important;
+  --normal-border: rgba(16, 185, 129, 0.25) !important;
+  --normal-text: #ffffff !important;
+  --success-bg: #081a12 !important;
+  --success-border: rgba(16, 185, 129, 0.45) !important;
+  --success-text: #ffffff !important;
+  --error-bg: #180a0d !important;
+  --error-border: rgba(244, 63, 94, 0.45) !important;
+  --error-text: #ffffff !important;
+  --info-bg: #09151d !important;
+  --info-border: rgba(14, 165, 233, 0.4) !important;
+  --info-text: #ffffff !important;
+  --warning-bg: #1a1407 !important;
+  --warning-border: rgba(245, 158, 11, 0.45) !important;
+  --warning-text: #ffffff !important;
+  font-family: inherit !important;
+}
+
+[data-sonner-toast] {
+  border-radius: 1.25rem !important;
+  padding: 1rem 1.15rem !important;
+  font-weight: 600 !important;
+  font-size: 0.875rem !important;
+  box-shadow: 0 15px 40px -5px rgba(0, 0, 0, 0.65), 0 0 25px rgba(16, 185, 129, 0.15) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+}
+
+[data-sonner-toast][data-type="success"] {
+  border-color: rgba(16, 185, 129, 0.4) !important;
+}
+
+[data-sonner-toast][data-type="success"] [data-icon] {
+  color: #10b981 !important;
+}
+
+[data-sonner-toast][data-type="error"] {
+  border-color: rgba(244, 63, 94, 0.4) !important;
+}
+
+[data-sonner-toast][data-type="error"] [data-icon] {
+  color: #f43f5e !important;
+}
+
+[data-sonner-toast][data-type="warning"] {
+  border-color: rgba(245, 158, 11, 0.4) !important;
+}
+
+[data-sonner-toast][data-type="warning"] [data-icon] {
+  color: #f59e0b !important;
+}
+
+[data-sonner-toast][data-type="info"] {
+  border-color: rgba(14, 165, 233, 0.4) !important;
+}
+
+[data-sonner-toast][data-type="info"] [data-icon] {
+  color: #38bdf8 !important;
+}
+
+[data-sonner-toast] [data-close-button] {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  color: rgba(255, 255, 255, 0.7) !important;
+  border-radius: 9999px !important;
+  transition: all 0.2s ease !important;
+}
+
+[data-sonner-toast] [data-close-button]:hover {
+  background: rgba(255, 255, 255, 0.18) !important;
+  color: #ffffff !important;
+}
+

@@ -1002,38 +1002,38 @@ export function ProductManager() {
       {/* Step Milestone Progression Modal */}
       {(() => {
         const setupSteps = dashboard?.setupStatus?.steps || [];
-        const isWhatsAppConnected = setupSteps.find((s: any) => s.id === 'whatsapp')?.completed;
-        const isPaymentSetup = setupSteps.find((s: any) => s.id === 'payments')?.completed;
-        const isDeliverySetup = setupSteps.find((s: any) => s.id === 'delivery')?.completed;
+        const isPaymentSetup = Boolean(setupSteps.find((s: any) => s.id === 'payments')?.completed);
+        const isDeliverySetup = Boolean(setupSteps.find((s: any) => s.id === 'delivery')?.completed);
+        const isSubscriptionActive = Boolean(setupSteps.find((s: any) => s.id === 'subscription')?.completed);
 
         let nextActionConfig = {
-          label: "Étape suivante : Connecter WhatsApp",
-          sublabel: "Reliez votre WhatsApp Business",
-          href: "/settings?tab=connexions#whatsapp"
+          label: "Configurer mes Moyens de Paiement",
+          sublabel: "Activez Mobile Money (Wave, OM, MTN)",
+          href: "/settings?tab=boutique#payments"
         };
 
-        if (!isWhatsAppConnected) {
+        if (!isPaymentSetup) {
           nextActionConfig = {
-            label: "Étape suivante : Connecter WhatsApp",
-            sublabel: "Activez votre commercial sur WhatsApp",
-            href: "/settings?tab=connexions#whatsapp"
-          };
-        } else if (!isPaymentSetup) {
-          nextActionConfig = {
-            label: "Étape suivante : Moyens de Paiement",
-            sublabel: "Activez Mobile Money (Wave, OM, MTN)",
+            label: "Configurer mes Moyens de Paiement",
+            sublabel: "Wave, Orange Money, MTN, Moov",
             href: "/settings?tab=boutique#payments"
           };
         } else if (!isDeliverySetup) {
           nextActionConfig = {
-            label: "Étape suivante : Tarifs de Livraison",
-            sublabel: "Définissez vos zones d'expédition",
+            label: "Définir mes Tarifs de Livraison",
+            sublabel: "Configurez vos zones d'expédition",
             href: "/settings?tab=boutique#delivery"
+          };
+        } else if (!isSubscriptionActive) {
+          nextActionConfig = {
+            label: "Activer mon Forfait 24h/24",
+            sublabel: "Lancez votre Vendeur IA autonome",
+            href: "/offers"
           };
         } else {
           nextActionConfig = {
             label: "Tester mon Vendeur IA",
-            sublabel: "Simulez une conversation de vente",
+            sublabel: "Simulez une conversation dans le bac à sable",
             href: "/dashboard?test_ia=true"
           };
         }

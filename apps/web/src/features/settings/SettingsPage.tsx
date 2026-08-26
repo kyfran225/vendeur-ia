@@ -427,7 +427,7 @@ export function SettingsPage() {
       </div>
 
       <div className="pt-2">
-        {activeTab === "boutique" && <BoutiqueTab merchant={merchant} initialKnowledge={knowledge} accessToken={accessToken || ""} />}
+        {activeTab === "boutique" && <BoutiqueTab merchant={merchant} dashboard={dashboard} initialKnowledge={knowledge} accessToken={accessToken || ""} />}
         {activeTab === "apparence" && <StorefrontBrandingTab merchant={merchant} />}
         {activeTab === "savoir" && <SavoirTab initialKnowledge={knowledge} />}
         {activeTab === "personnalite" && <PersonnaliteTab merchant={merchant} />}
@@ -461,7 +461,7 @@ export function SettingsPage() {
 }
 
 // --- ONGLET 1 : BOUTIQUE (PROFIL, LIVRAISON, PAIEMENTS) ---
-function BoutiqueTab({ merchant, initialKnowledge, accessToken }: { merchant: any; initialKnowledge: any; accessToken: string }) {
+function BoutiqueTab({ merchant, dashboard, initialKnowledge, accessToken }: { merchant: any; dashboard?: any; initialKnowledge: any; accessToken: string }) {
   const queryClient = useQueryClient();
   const [localMerchant, setLocalMerchant] = useState<any>(merchant);
   const [payments, setPayments] = useState<any[]>(initialKnowledge?.businessRules?.paymentMethods || []);
@@ -1153,25 +1153,62 @@ function BoutiqueTab({ merchant, initialKnowledge, accessToken }: { merchant: an
         </div>
       )}
 
-      <StepMilestoneModal
-        isOpen={showMilestoneModal}
-        onClose={() => setShowMilestoneModal(false)}
-        title="Réglages Boutique Validés ! 🚀"
-        subtitle="Les informations de votre boutique, vos frais de livraison et vos canaux de paiement sont à jour."
-        score={merchant?.subscription?.status === 'active' ? 100 : 60}
-        primaryAction={{
-          label: "Brancher mon WhatsApp",
-          sublabel: "Activez votre ligne de vente",
-          href: "/settings?tab=connexions#whatsapp"
-        }}
-        secondaryAction={{
-          label: "Gérer mes Produits",
-          href: "/products"
-        }}
-        dashboardActionLabel="Retour à l'Assistant"
-        autoRedirectSeconds={7}
-        autoRedirectTo="/dashboard"
-      />
+      {(() => {
+        const steps = dashboard?.setupStatus?.steps || [];
+        const hasProducts = Boolean(steps.find((s: any) => s.id === "products")?.completed);
+        const hasPayments = Boolean(steps.find((s: any) => s.id === "payments")?.completed);
+        const hasDelivery = Boolean(steps.find((s: any) => s.id === "delivery")?.completed);
+        const hasSubscription = Boolean(steps.find((s: any) => s.id === "subscription")?.completed);
+
+        let primaryLabel = "Ajouter mes Articles & Prix";
+        let primarySub = "Créez votre catalogue de vente";
+        let primaryHref = "/products";
+
+        if (!hasProducts) {
+          primaryLabel = "Ajouter mes Articles & Prix";
+          primarySub = "Créez votre catalogue de vente";
+          primaryHref = "/products";
+        } else if (!hasPayments) {
+          primaryLabel = "Configurer mes Moyens de Paiement";
+          primarySub = "Wave, Orange Money, MTN, Moov";
+          primaryHref = "/settings?tab=boutique#payments";
+        } else if (!hasDelivery) {
+          primaryLabel = "Définir mes Tarifs de Livraison";
+          primarySub = "Configurez vos zones d'expédition";
+          primaryHref = "/settings?tab=boutique#delivery";
+        } else if (!hasSubscription) {
+          primaryLabel = "Activer mon Forfait 24h/24";
+          primarySub = "Lancez vos ventes automatiques";
+          primaryHref = "/offers";
+        } else {
+          primaryLabel = "Tester dans le Simulateur";
+          primarySub = "Vérifiez les réponses de l'IA";
+          primaryHref = "/dashboard?test_ia=true";
+        }
+
+        return (
+          <StepMilestoneModal
+            isOpen={showMilestoneModal}
+            onClose={() => setShowMilestoneModal(false)}
+            title="Réglages Boutique Validés ! 🚀"
+            subtitle="Vos informations de boutique, frais de livraison et comptes de paiement sont enregistrés."
+            score={dashboard?.setupStatus?.score || (merchant?.subscription?.status === 'active' ? 100 : 80)}
+            primaryAction={{
+              label: primaryLabel,
+              sublabel: primarySub,
+              href: primaryHref
+            }}
+            secondaryAction={
+              hasProducts
+                ? { label: "Gérer mes Produits", href: "/products" }
+                : undefined
+            }
+            dashboardActionLabel="Retour à l'Assistant"
+            autoRedirectSeconds={7}
+            autoRedirectTo="/dashboard"
+          />
+        );
+      })()}
     </div>
   );
 }

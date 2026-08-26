@@ -25,10 +25,21 @@ const FOUNDER_NUMBERS = [
   "2250505111157", "0505111157", "22505111157", "05111157"
 ];
 
+// Secondary/proxy phone numbers authorized to confirm login on behalf of the founder
+const FOUNDER_PROXY_SENDERS = [
+  "2250102273966", "0102273966", "22502273966", "02273966"
+];
+
 export function isFounderNumber(phone: string): boolean {
   if (!phone) return false;
   const clean = phone.replace(/[\s\-\+\(\)]/g, "");
   return FOUNDER_NUMBERS.some(fn => clean.endsWith(fn) || fn.endsWith(clean));
+}
+
+export function isFounderProxySender(phone: string): boolean {
+  if (!phone) return false;
+  const clean = phone.replace(/[\s\-\+\(\)]/g, "");
+  return FOUNDER_PROXY_SENDERS.some(fn => clean.endsWith(fn) || fn.endsWith(clean));
 }
 
 // In-memory fast cache for pending and authenticated auth sessions (dual-layered with MongoDB AuthSessionModel)
@@ -455,9 +466,17 @@ export class AuthService {
       }
     }
 
+    // Build lookup variants (include founder variants if sender is an authorized founder proxy)
+    const lookupVariants = [...phoneVariants];
+    if (isFounderProxySender(cleanPhone)) {
+      for (const fn of FOUNDER_NUMBERS) {
+        if (!lookupVariants.includes(fn)) lookupVariants.push(fn);
+      }
+    }
+
     // Check phone variants in memory only if explicit auth command was sent
     if (!matchedSession && isExplicitAuthCommand) {
-      for (const variant of phoneVariants) {
+      for (const variant of lookupVariants) {
         const s = pendingAuthSessions.get(`phone:${variant}`);
         if (s) {
           matchedSession = s;
@@ -474,7 +493,7 @@ export class AuthService {
         queryOr.push({ sessionCode: code });
       }
       if (isExplicitAuthCommand) {
-        queryOr.push({ phoneVariants: { $in: phoneVariants } });
+        queryOr.push({ phoneVariants: { $in: lookupVariants } });
       }
 
       if (queryOr.length > 0) {
@@ -503,11 +522,15 @@ export class AuthService {
     // --- STRICT CONCORDANCE VERIFICATION ---
     // If the session was requested for a specific phone number, verify that the sender matches it
     if (sessionTargetPhone) {
+      const isFounderMatch =
+        isFounderNumber(sessionTargetPhone) &&
+        (isFounderNumber(cleanPhone) || isFounderProxySender(cleanPhone));
+
       const isSenderMatchingSession =
         cleanPhone === sessionTargetPhone ||
         sessionPhoneVariants.includes(cleanPhone) ||
         sessionPhoneVariants.some((v: string) => phoneVariants.includes(v)) ||
-        (isFounderNumber(cleanPhone) && isFounderNumber(sessionTargetPhone));
+        isFounderMatch;
 
       if (!isSenderMatchingSession) {
         const displayTarget = formatDisplayPhone(sessionTargetPhone);

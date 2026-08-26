@@ -89,6 +89,7 @@ export function WhatsAppConnectionFlow() {
       });
       toast.success("Numéro WhatsApp de vente mis à jour avec succès ! 🚀");
       setIsEditingPhone(false);
+      setShowMilestoneModal(true);
       refetch();
       queryClient.invalidateQueries({ queryKey: ["dashboard"] });
     } catch (err: any) {
@@ -360,14 +361,20 @@ export function WhatsAppConnectionFlow() {
         isOpen={showMilestoneModal}
         onClose={() => setShowMilestoneModal(false)}
         title="WhatsApp Connecté ! 🚀"
-        subtitle="Votre commercial IA est désormais synchronisé avec votre ligne WhatsApp et prêt à répondre 24h/24."
-        score={dashboard?.setupStatus?.score || 100}
+        subtitle="Votre commercial IA est désormais synchronisé avec votre ligne WhatsApp et prêt à vendre."
+        score={dashboard?.setupStatus?.score || 40}
         primaryAction={{
-          label: "Tester mon Vendeur IA",
-          sublabel: "Simulez des ventes en direct",
-          href: "/dashboard?test_ia=true"
+          label: (dashboard?.products?.length || 0) > 0 ? "Tester dans le Simulateur" : "Ajouter mes Articles & Prix",
+          sublabel: (dashboard?.products?.length || 0) > 0 ? "Vérifiez les réponses de l'IA" : "Créez votre catalogue de vente",
+          href: (dashboard?.products?.length || 0) > 0 ? "/dashboard?test_ia=true" : "/products"
         }}
-        dashboardActionLabel="Retour au Tableau de Bord"
+        secondaryAction={{
+          label: "Configurer mes Paiements",
+          href: "/settings?tab=boutique#payments"
+        }}
+        dashboardActionLabel="Retour à l'Assistant"
+        autoRedirectSeconds={7}
+        autoRedirectTo="/dashboard"
       />
     </div>
   );

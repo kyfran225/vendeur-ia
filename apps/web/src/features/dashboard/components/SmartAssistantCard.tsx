@@ -322,23 +322,48 @@ export function SmartAssistantCard({ dashboard, onOpenTestIA, onOpenShare }: Sma
                   </button>
                 ) : (
                   <>
-                    <button
-                      type="button"
-                      onClick={onOpenTestIA}
-                      className="flex-1 flex items-center justify-center gap-2.5 min-h-[52px] sm:min-h-[56px] px-5 py-3.5 rounded-2xl bg-vendeur-emerald text-vendeur-coal font-black uppercase text-xs sm:text-sm tracking-wider hover:bg-emerald-400 active:scale-95 transition-all shadow-lg shadow-vendeur-emerald/20 cursor-pointer shrink-0 truncate"
-                    >
-                      <Play size={17} fill="currentColor" className="shrink-0" />
-                      <span>Simulateur & Test IA</span>
-                    </button>
+                    {!isFullyOperational && nextStep ? (
+                      <>
+                        <Link
+                          to={getActionLink(nextStep.id)}
+                          className="flex-1 flex items-center justify-center gap-2.5 min-h-[52px] sm:min-h-[56px] px-5 py-3.5 rounded-2xl bg-vendeur-emerald text-vendeur-coal font-black uppercase text-xs sm:text-sm tracking-wider hover:bg-emerald-400 active:scale-95 transition-all shadow-lg shadow-vendeur-emerald/20 cursor-pointer shrink-0 truncate group"
+                        >
+                          <Zap size={17} fill="currentColor" className="shrink-0 group-hover:scale-110 transition-transform" />
+                          <span className="truncate">Étape Suivante : {nextStep.label}</span>
+                          <ArrowRight size={17} className="shrink-0 group-hover:translate-x-1 transition-transform" />
+                        </Link>
 
-                    {isDiscoveryMode && !nextStep && (
-                      <Link
-                        to="/offers"
-                        className="min-h-[52px] sm:min-h-[56px] px-5 py-3.5 rounded-2xl bg-white/10 hover:bg-white/15 text-white font-black uppercase text-xs tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95 shrink-0"
-                      >
-                        <Sparkles size={16} className="text-amber-300" />
-                        <span>Activer le Forfait 24h/24</span>
-                      </Link>
+                        <button
+                          type="button"
+                          onClick={onOpenTestIA}
+                          className="min-h-[52px] sm:min-h-[56px] px-5 py-3.5 rounded-2xl bg-white/10 hover:bg-white/15 border border-white/10 text-white font-black uppercase text-xs tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95 shrink-0"
+                          title="Tester les réponses de l'IA"
+                        >
+                          <Play size={16} fill="currentColor" className="text-vendeur-emerald shrink-0" />
+                          <span>Simulateur & Test IA</span>
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <button
+                          type="button"
+                          onClick={onOpenTestIA}
+                          className="flex-1 flex items-center justify-center gap-2.5 min-h-[52px] sm:min-h-[56px] px-5 py-3.5 rounded-2xl bg-vendeur-emerald text-vendeur-coal font-black uppercase text-xs sm:text-sm tracking-wider hover:bg-emerald-400 active:scale-95 transition-all shadow-lg shadow-vendeur-emerald/20 cursor-pointer shrink-0 truncate"
+                        >
+                          <Play size={17} fill="currentColor" className="shrink-0" />
+                          <span>Simulateur & Test IA</span>
+                        </button>
+
+                        {isDiscoveryMode && (
+                          <Link
+                            to="/offers"
+                            className="min-h-[52px] sm:min-h-[56px] px-5 py-3.5 rounded-2xl bg-white/10 hover:bg-white/15 text-white font-black uppercase text-xs tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95 shrink-0"
+                          >
+                            <Sparkles size={16} className="text-amber-300" />
+                            <span>Activer le Forfait 24h/24</span>
+                          </Link>
+                        )}
+                      </>
                     )}
                   </>
                 )}

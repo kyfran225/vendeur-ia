@@ -79,7 +79,7 @@ function App() {
 
         <Route path="/shop/:merchantId" element={<PublicShopPage />} />
       </Routes>
-      <Toaster theme="dark" position="top-center" />
+      <Toaster theme="dark" position="top-center" richColors closeButton duration={3500} />
     </BrowserRouter>
   );
 

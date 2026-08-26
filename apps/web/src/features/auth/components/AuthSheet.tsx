@@ -105,6 +105,15 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
   const [mismatchError, setMismatchError] = useState<string | null>(null);
   const [showMobileQr, setShowMobileQr] = useState(false);
 
+  // Track single execution of auth completion to prevent duplicate toasts & executions
+  const isAuthCompletedRef = React.useRef(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      isAuthCompletedRef.current = false;
+    }
+  }, [isOpen, whatsappStep]);
+
   // Sync phone if opened with existing tempData
   useEffect(() => {
     if (isOpen && tempData?.whatsappNumber) {
@@ -118,8 +127,11 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
 
   // Stable complete login helper — useCallback ensures the socket effect doesn't get a stale closure
   const completeAuth = React.useCallback(async (sessionData: any) => {
+    if (isAuthCompletedRef.current) return;
+    isAuthCompletedRef.current = true;
+
     setSession(sessionData);
-    toast.success(`Connexion réussie ! 🎉`);
+    toast.success(`Connexion réussie ! 🎉`, { id: "auth-toast" });
     onClose();
 
     // 1. Auto-initialize merchant from landing demo form if already filled
@@ -159,7 +171,7 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
         });
       }
 
-      toast.info("Bienvenue ! Renseignez les informations de votre boutique pour initialiser votre Vendeur IA. 🛍️");
+      toast.info("Bienvenue ! Renseignez les informations de votre boutique pour initialiser votre Vendeur IA. 🛍️", { id: "onboarding-welcome-toast" });
       const el = document.getElementById("demo-card");
       if (el) {
         el.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -215,6 +227,8 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
     joinRooms();
 
     socket.on("auth:success", (sessionData) => {
+      if (isAuthCompletedRef.current) return;
+      isCancelled = true;
       completeAuth(sessionData);
     });
 
@@ -228,7 +242,7 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
     let isCancelled = false;
 
     const checkAuth = async () => {
-      if (isCancelled) return;
+      if (isCancelled || isAuthCompletedRef.current) return;
       try {
         const res = await apiClient.post("/api/auth/poll-status", {
           authSessionId: authSessionIdRef.current || authSessionId || undefined,
@@ -236,6 +250,7 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
           phoneNumber: fullPhoneNumber
         });
         if (res.data && res.data.status === "authenticated" && res.data.sessionData) {
+          if (isAuthCompletedRef.current) return;
           isCancelled = true;
           completeAuth(res.data.sessionData);
         } else if (res.data && res.data.status === "mismatch") {

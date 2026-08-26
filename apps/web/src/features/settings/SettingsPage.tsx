@@ -62,6 +62,7 @@ import { useNavigate } from "react-router-dom";
 import { useSocket } from "@/hooks/useSocket";
 import { getProvidersForCountry, getZonesForCity, getCountryByCode, convertCurrencyAmount, CURRENCIES_DATA } from "@vendeur-ia/core";
 import { ConfirmationModal } from "@/components/ui/ConfirmationModal";
+import { StepMilestoneModal } from "@/components/ui/StepMilestoneModal";
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -513,6 +514,8 @@ function BoutiqueTab({ merchant, initialKnowledge, accessToken }: { merchant: an
   const initialPayments = initialKnowledge?.businessRules?.paymentMethods || [];
   const initialFees = initialKnowledge?.businessRules?.deliveryFees || [];
 
+  const [showMilestoneModal, setShowMilestoneModal] = useState(false);
+
   const isModified =
     JSON.stringify(localMerchant) !== JSON.stringify(merchant) ||
     JSON.stringify(payments) !== JSON.stringify(initialPayments) ||
@@ -532,7 +535,8 @@ function BoutiqueTab({ merchant, initialKnowledge, accessToken }: { merchant: an
     onSuccess: () => {
       setIsDirty(false);
       setCategoryChangeWarning(null);
-      toast.success("Réglages Boutique enregistrés !");
+      toast.success("Réglages Boutique enregistrés ! 🚀");
+      setShowMilestoneModal(true);
       // Invalidate ALL queries that depend on merchant data so the whole UI reacts
       queryClient.invalidateQueries({ queryKey: ["dashboard"] });
       queryClient.invalidateQueries({ queryKey: ["knowledge"] });
@@ -1148,6 +1152,26 @@ function BoutiqueTab({ merchant, initialKnowledge, accessToken }: { merchant: an
           </div>
         </div>
       )}
+
+      <StepMilestoneModal
+        isOpen={showMilestoneModal}
+        onClose={() => setShowMilestoneModal(false)}
+        title="Réglages Boutique Validés ! 🚀"
+        subtitle="Les informations de votre boutique, vos frais de livraison et vos canaux de paiement sont à jour."
+        score={merchant?.subscription?.status === 'active' ? 100 : 60}
+        primaryAction={{
+          label: "Brancher mon WhatsApp",
+          sublabel: "Activez votre ligne de vente",
+          href: "/settings?tab=connexions#whatsapp"
+        }}
+        secondaryAction={{
+          label: "Gérer mes Produits",
+          href: "/products"
+        }}
+        dashboardActionLabel="Retour à l'Assistant"
+        autoRedirectSeconds={7}
+        autoRedirectTo="/dashboard"
+      />
     </div>
   );
 }

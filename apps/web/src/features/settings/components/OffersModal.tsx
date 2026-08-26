@@ -98,16 +98,12 @@ export function OffersModal({ isOpen, onClose }: OffersModalProps) {
             </div>
 
             <div className="space-y-3.5">
-              {essential?.features?.slice(0, 5).map((f: string, i: number) => (
-                <OfferFeature key={i} text={f} />
-              )) || (
-                <>
-                  <OfferFeature text="Session WhatsApp 24h/7 active" />
-                  <OfferFeature text="Réponses automatiques IA" />
-                  <OfferFeature text="Support standard par ticket" />
-                  <OfferFeature text="Mises à jour IA incluses" />
-                </>
-              )}
+              <OfferFeature text="Agent Vendeur IA autonome 24h/24 & 7j/7" />
+              <OfferFeature text="Catalogue produits & Vitrine web dédiée" />
+              <OfferFeature text="PaymentShield : Détection Mobile Money (Wave, OM, MTN, Moov)" />
+              <OfferFeature text="Prise de commandes & Reçus automatiques" />
+              <OfferFeature text="Studio Créatif : Affiches IA & Statuts WhatsApp" />
+              <OfferFeature text="Messagerie avec reprise en main humaine" />
             </div>
           </div>
 
@@ -127,8 +123,8 @@ export function OffersModal({ isOpen, onClose }: OffersModalProps) {
               className={cn(
                 "w-full h-13 sm:h-16 rounded-2xl font-black uppercase tracking-wider text-xs sm:text-sm flex items-center justify-center gap-3 transition-all shadow-xl cursor-pointer",
                 isUnderVerification
-                  ? "bg-white/5 text-white/40 border border-white/10 cursor-not-allowed shadow-none"
-                  : "bg-white text-vendeur-coal hover:bg-vendeur-emerald active:scale-95 shadow-white/5"
+                   ? "bg-white/5 text-white/40 border border-white/10 cursor-not-allowed shadow-none"
+                   : "bg-white text-vendeur-coal hover:bg-vendeur-emerald active:scale-95 shadow-white/5"
               )}
             >
               {isRedirecting === "essential" ? (
@@ -138,7 +134,7 @@ export function OffersModal({ isOpen, onClose }: OffersModalProps) {
               ) : (
                 <>
                   <Zap size={18} />
-                  <span>Choisir cette offre</span>
+                  <span>Choisir Essentiel</span>
                 </>
               )}
             </button>
@@ -165,11 +161,12 @@ export function OffersModal({ isOpen, onClose }: OffersModalProps) {
             </div>
 
             <div className="space-y-3.5">
-              <OfferFeature text="Forfait Vendeur IA Pro Inclus" highlight />
-              <OfferFeature text="Configuration Meta Cloud WhatsApp" highlight />
-              <OfferFeature text="Import Catalogue & Inventaire" highlight />
-              <OfferFeature text="Personnalisation IA Avancée" highlight />
-              <OfferFeature text="Support VIP 24h/7 WhatsApp" highlight />
+              <OfferFeature text="Forfait Vendeur IA Pro Inclus (20 000 FCFA/mois)" highlight />
+              <OfferFeature text="Numéro d'Entreprise Officiel Meta Cloud API" highlight />
+              <OfferFeature text="Multi-Canal : WhatsApp + Instagram & Messenger" highlight />
+              <OfferFeature text="Broadcast IA : Envoi de promos en 1 clic" highlight />
+              <OfferFeature text="Import Catalogue & Inventaire Clé en main" highlight />
+              <OfferFeature text="Support VIP Prioritaire 24h/7 WhatsApp Dédié" highlight />
             </div>
           </div>
 

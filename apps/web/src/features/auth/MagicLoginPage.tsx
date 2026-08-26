@@ -26,6 +26,8 @@ export function MagicLoginPage() {
       (window.navigator as any).standalone === true ||
       document.referrer.includes("android-app://"));
 
+  const hasVerifiedRef = React.useRef(false);
+
   useEffect(() => {
     const token = searchParams.get("t");
     const phoneNumber = searchParams.get("p");
@@ -34,10 +36,13 @@ export function MagicLoginPage() {
     if (!token || !phoneNumber) {
       setStatus("error");
       setErrorMessage("Lien de connexion invalide ou incomplet.");
-      toast.error("Lien de connexion invalide ou incomplet.");
+      toast.error("Lien de connexion invalide ou incomplet.", { id: "auth-toast" });
       setTimeout(() => navigate("/"), 2500);
       return;
     }
+
+    if (hasVerifiedRef.current) return;
+    hasVerifiedRef.current = true;
 
     const verifyToken = async () => {
       try {
@@ -51,7 +56,7 @@ export function MagicLoginPage() {
         const target = "/dashboard";
         setDestination(target);
         setStatus("success");
-        toast.success("Authentification réussie ! ✨");
+        toast.success("Authentification réussie ! ✨", { id: "auth-toast" });
 
         // If directly inside standalone PWA, navigate immediately
         if (isStandalone) {
@@ -61,7 +66,7 @@ export function MagicLoginPage() {
         console.error("Magic Link Error:", err);
         setStatus("error");
         setErrorMessage(err.response?.data?.error || "Lien expiré ou déjà utilisé.");
-        toast.error(err.response?.data?.error || "Lien expiré ou déjà utilisé.");
+        toast.error(err.response?.data?.error || "Lien expiré ou déjà utilisé.", { id: "auth-toast" });
         setTimeout(() => navigate("/"), 3000);
       }
     };

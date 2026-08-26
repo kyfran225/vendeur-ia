@@ -31,6 +31,7 @@ import { SmartAssistantCard } from "./components/SmartAssistantCard";
 import { VendeurIAPlaygroundModal } from "./components/VendeurIAPlaygroundModal";
 import { SetupCompletionModal } from "./components/SetupCompletionModal";
 import { StepSuccessModal } from "./components/StepSuccessModal";
+import { QuickWhatsAppConnectModal } from "./components/QuickWhatsAppConnectModal";
 import { OffersModal } from "@/features/settings/components/OffersModal";
 import { PauseConfirmationModal } from "@/components/modals/PauseConfirmationModal";
 import { ShareShopModal } from "@/features/shop/components/ShareShopModal";
@@ -60,6 +61,7 @@ export function SalesDashboard() {
   const [isCompletionModalOpen, setIsCompletionModalOpen] = useState(false);
   const [confirmedPaymentData, setConfirmedPaymentData] = useState<any>(null);
   const [isOffersModalOpen, setIsOffersModalOpen] = useState(false);
+  const [isQuickConnectOpen, setIsQuickConnectOpen] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
 
   // Suivi des étapes complétées pour détecter les nouvelles complétion
@@ -90,9 +92,21 @@ export function SalesDashboard() {
     enabled: !!accessToken
   });
 
-  // Check if first-time user to display the welcome Offers modal
+  // Check if first-time user: PRIORITIZE WhatsApp Quick Connect BEFORE Offers
   useEffect(() => {
     if (!dashboard?.merchant?._id || isFounder) return;
+    const isWhatsAppConnected = dashboard?.whatsappConnection?.status === "CONNECTED" || dashboard?.merchant?.whatsappConfig?.status === "connected" || Boolean(dashboard?.merchant?.whatsappConfig?.meta?.phoneNumberId);
+    const waStorageKey = `vendeur_wa_quick_connect_prompt_${dashboard.merchant._id}`;
+    const waAlreadyPrompted = sessionStorage.getItem(waStorageKey);
+
+    // 1. SI WHATSAPP N'EST PAS CONNECTÉ : Proposer immédiatement la liaison WhatsApp en 1er !
+    if (!isWhatsAppConnected && !waAlreadyPrompted) {
+      setIsQuickConnectOpen(true);
+      sessionStorage.setItem(waStorageKey, "true");
+      return;
+    }
+
+    // 2. Si WhatsApp est déjà connecté (ou déjà vu), vérifier l'abonnement
     const isPaidActive = dashboard.merchant.subscription?.status === "active";
     const latestPaymentIntent = dashboard?.latestPaymentIntent;
     const isUnderVerification = Boolean(
@@ -105,11 +119,11 @@ export function SalesDashboard() {
     const storageKey = `vendeur_welcome_offers_seen_${dashboard.merchant._id}`;
     const alreadySeen = localStorage.getItem(storageKey);
 
-    if (!isPaidActive && !isUnderVerification && !alreadySeen) {
+    if (!isPaidActive && !isUnderVerification && !alreadySeen && isWhatsAppConnected) {
       setIsOffersModalOpen(true);
       localStorage.setItem(storageKey, "true");
     }
-  }, [dashboard?.merchant?._id, dashboard?.merchant?.subscription?.status, dashboard?.latestPaymentIntent, isFounder]);
+  }, [dashboard?.merchant?._id, dashboard?.merchant?.subscription?.status, dashboard?.latestPaymentIntent, dashboard?.whatsappConnection?.status, dashboard?.merchant?.whatsappConfig?.status, isFounder]);
 
   // Check if all setup steps are completed to auto-trigger celebration modal once
   useEffect(() => {
@@ -297,6 +311,15 @@ export function SalesDashboard() {
         completedStepLabel={stepSuccessModal.completedStepLabel}
         nextStep={stepSuccessModal.nextStep}
         businessName={dashboard?.merchant?.businessName}
+      />
+
+      <QuickWhatsAppConnectModal
+        isOpen={isQuickConnectOpen}
+        onClose={() => setIsQuickConnectOpen(false)}
+        merchant={dashboard?.merchant}
+        onSuccess={() => {
+          queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+        }}
       />
 
       <OffersModal

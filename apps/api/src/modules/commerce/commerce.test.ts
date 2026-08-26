@@ -146,7 +146,7 @@ describe('Commerce Module API', () => {
   });
 
   describe('WhatsApp Cloud Direct (Auto-Provisioning & Setup Status)', () => {
-    it('should auto-provision WhatsApp Cloud Meta connection when merchant has phone', async () => {
+    it('should initialize WhatsApp Baileys connection record when merchant has phone', async () => {
       const uniquePhone = `+225070000${Math.floor(1000 + Math.random() * 9000)}`;
       const res = await request(app)
         .post('/api/commerce/merchant')
@@ -159,14 +159,14 @@ describe('Commerce Module API', () => {
         });
 
       expect([200, 201]).toContain(res.status);
-      expect(res.body.whatsappConfig?.provider).toBe('meta');
-      expect(res.body.whatsappConfig?.status).toBe('connected');
+      expect(res.body.whatsappConfig?.provider).toBe('baileys');
+      expect(res.body.whatsappConfig?.status).toBe('disconnected');
 
-      // Check WhatsAppConnectionModel is also created with CONNECTED & meta
+      // Check WhatsAppConnectionModel is also created with NOT_CONNECTED & baileys
       const conn = await WhatsAppConnectionModel.findOne({ userId });
       expect(conn).toBeDefined();
-      expect(conn?.status).toBe('CONNECTED');
-      expect(conn?.connectionType).toBe('meta');
+      expect(conn?.status).toBe('NOT_CONNECTED');
+      expect(conn?.connectionType).toBe('baileys');
     });
 
     it('should calculate setupStatus with isWhatsAppConnected true immediately upon entering phone', async () => {

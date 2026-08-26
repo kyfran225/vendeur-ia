@@ -280,8 +280,8 @@ export class CommerceService {
           phone: data.phone || whatsappNum,
           city: data.city,
           country: data.country,
-          "whatsappConfig.provider": "meta",
-          "whatsappConfig.status": hasPhone ? "connected" : "disconnected",
+          "whatsappConfig.provider": "baileys",
+          "whatsappConfig.status": "disconnected",
           "whatsappConfig.phoneNumberId": whatsappNum
         },
         $setOnInsert: {
@@ -294,15 +294,15 @@ export class CommerceService {
 
     if (!merchant) throw new Error("Failed to create or update merchant");
 
-    // Auto-provision WhatsApp Cloud Connection Record
+    // Provision initial WhatsApp Connection Record as NOT_CONNECTED
     await WhatsAppConnectionModel.findOneAndUpdate(
       { userId: ownerId },
       {
         $set: {
           phoneNumber: whatsappNum || undefined,
-          status: hasPhone ? 'CONNECTED' : 'NOT_CONNECTED',
-          connectionType: 'meta',
-          connectedAt: hasPhone ? new Date() : null,
+          status: 'NOT_CONNECTED',
+          connectionType: 'baileys',
+          connectedAt: null,
           disconnectedAt: null
         }
       },

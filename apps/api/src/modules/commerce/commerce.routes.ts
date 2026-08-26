@@ -152,9 +152,7 @@ router.get("/verify-transaction/:reference", authenticate, async (req, res) => {
               "subscription.plan": offerSlug || (type === 'pack_pro' ? 'pro' : 'essential'),
               "subscription.status": "active",
               "subscription.billingInterval": isYearly ? 'yearly' : 'monthly',
-              "subscription.expiresAt": expiresAt,
-              "whatsappConfig.provider": "meta",
-              "whatsappConfig.status": hasMerchantPhone ? "connected" : "disconnected"
+              "subscription.expiresAt": expiresAt
             }
           }
         );
@@ -913,9 +911,7 @@ router.post("/checkout/confirm", authenticate, async (req, res) => {
           "subscription.plan": offerSlug || "essential",
           "subscription.status": "active",
           "subscription.billingInterval": isYearly ? 'yearly' : 'monthly',
-          "subscription.expiresAt": expiresAt,
-          "whatsappConfig.provider": "meta",
-          "whatsappConfig.status": hasPhone ? "connected" : "disconnected"
+          "subscription.expiresAt": expiresAt
         }
       }
     );
@@ -1231,9 +1227,7 @@ router.post("/webhooks/paystack", async (req, res) => {
             "subscription.plan": offerSlug || (type === 'pack_pro' ? 'pro' : 'essential'),
             "subscription.status": "active",
             "subscription.billingInterval": isYearly ? 'yearly' : 'monthly',
-            "subscription.expiresAt": expiresAt,
-            "whatsappConfig.provider": "meta",
-            "whatsappConfig.status": hasPhone ? "connected" : "disconnected"
+            "subscription.expiresAt": expiresAt
           }
         }
       );

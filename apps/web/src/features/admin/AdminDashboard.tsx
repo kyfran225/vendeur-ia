@@ -681,18 +681,31 @@ function SettingsPanel({ settings, onUpdate, isUpdating }: { settings: any, onUp
   const [formData, setFormData] = useState({
     supportWhatsApp: settings?.supportWhatsApp || "",
     maintenanceMode: settings?.maintenanceMode || false,
+    "pricing.essentialMonthly": settings?.pricing?.essentialMonthly || settings?.pricing?.premiumSubscriptionMonthly || 5000,
+    "pricing.proMonthly": settings?.pricing?.proMonthly || 20000,
+    "pricing.packProFee": settings?.pricing?.packProFee || 25000,
     "pricing.ramContributionFee": settings?.pricing?.ramContributionFee || 5000,
-    "pricing.packProFee": settings?.pricing?.packProFee || 20000,
-    "pricing.premiumSubscriptionMonthly": settings?.pricing?.premiumSubscriptionMonthly || 5000,
+    "pricing.premiumSubscriptionMonthly": settings?.pricing?.premiumSubscriptionMonthly || settings?.pricing?.essentialMonthly || 5000,
     "pricing.regional": settings?.pricing?.regional || [],
     "metaConfig.globalAppId": settings?.metaConfig?.globalAppId || "",
-    "metaConfig.globalVerifyToken": settings?.metaConfig?.globalVerifyToken || "",
+    "metaConfig.globalVerifyToken": settings?.metaConfig?.globalVerifyToken || "vendeur_ia_secret_webhook_token_2026",
     "metaConfig.whatsappDefaults.phoneNumberId": settings?.metaConfig?.whatsappDefaults?.phoneNumberId || "",
     "metaConfig.whatsappDefaults.accessToken": settings?.metaConfig?.whatsappDefaults?.accessToken || ""
   });
 
   const addRegionalPricing = () => {
-    const newRegional = [...formData["pricing.regional"], { currency: "GHS", premiumMonthly: 100, businessMonthly: 400, packPro: 500, ramFee: 100 }];
+    const newRegional = [
+      ...formData["pricing.regional"],
+      {
+        currency: "GHS",
+        essentialMonthly: 100,
+        proMonthly: 400,
+        packPro: 500,
+        ramFee: 100,
+        premiumMonthly: 100,
+        businessMonthly: 400
+      }
+    ];
     setFormData({ ...formData, "pricing.regional": newRegional });
   };
 
@@ -704,6 +717,12 @@ function SettingsPanel({ settings, onUpdate, isUpdating }: { settings: any, onUp
   const updateRegionalField = (index: number, field: string, value: any) => {
     const newRegional = [...formData["pricing.regional"]];
     newRegional[index] = { ...newRegional[index], [field]: value };
+    // Synchronize legacy keys
+    if (field === "essentialMonthly") {
+      newRegional[index].premiumMonthly = value;
+    } else if (field === "proMonthly") {
+      newRegional[index].businessMonthly = value;
+    }
     setFormData({ ...formData, "pricing.regional": newRegional });
   };
 
@@ -715,7 +734,7 @@ function SettingsPanel({ settings, onUpdate, isUpdating }: { settings: any, onUp
               <ShieldCheck size={24} className="text-vendeur-emerald" />
               Master Control Center
           </h2>
-          <p className="text-[10px] text-white/40 uppercase tracking-widest font-black pl-9">Architecture & Gouvernance</p>
+          <p className="text-[10px] text-white/40 uppercase tracking-widest font-black pl-9">Architecture, Tarification & Meta Webhooks</p>
         </div>
 
         <div className="space-y-6">
@@ -740,7 +759,7 @@ function SettingsPanel({ settings, onUpdate, isUpdating }: { settings: any, onUp
           </div>
 
           <div className="space-y-2 pt-4 border-t border-white/5">
-            <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Ligne Support VIP (Assistance)</label>
+            <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Ligne Support VIP (Assistance WhatsApp)</label>
             <input
               className="w-full h-12 md:h-14 bg-black/40 border border-white/10 rounded-xl md:rounded-2xl px-5 md:px-6 text-white focus:border-vendeur-emerald outline-none transition-all font-bold text-sm"
               value={formData.supportWhatsApp}
@@ -749,33 +768,57 @@ function SettingsPanel({ settings, onUpdate, isUpdating }: { settings: any, onUp
             />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
-            <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">OFFRE ESSENTIEL (Base XOF)</label>
-                <input
-                    type="number"
-                    className="w-full h-12 md:h-14 bg-black/40 border border-white/10 rounded-xl md:rounded-2xl px-5 md:px-6 text-white focus:border-vendeur-emerald outline-none font-bold text-sm"
-                    value={formData["pricing.premiumSubscriptionMonthly"]}
-                    onChange={e => setFormData({...formData, "pricing.premiumSubscriptionMonthly": Number(e.target.value)})}
-                />
-            </div>
-            <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">FRAIS RAM (BAILEYS)</label>
-                <input
-                    type="number"
-                    className="w-full h-12 md:h-14 bg-black/40 border border-white/10 rounded-xl md:rounded-2xl px-5 md:px-6 text-white focus:border-vendeur-emerald outline-none font-bold text-sm"
-                    value={formData["pricing.ramContributionFee"]}
-                    onChange={e => setFormData({...formData, "pricing.ramContributionFee": Number(e.target.value)})}
-                />
-            </div>
-            <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">OFFRE PRO (BASE XOF)</label>
-                <input
-                    type="number"
-                    className="w-full h-12 md:h-14 bg-black/40 border border-white/10 rounded-xl md:rounded-2xl px-5 md:px-6 text-white focus:border-vendeur-emerald outline-none font-bold text-sm"
-                    value={formData["pricing.packProFee"]}
-                    onChange={e => setFormData({...formData, "pricing.packProFee": Number(e.target.value)})}
-                />
+          {/* Grille des offres officielles */}
+          <div className="pt-4 border-t border-white/5 space-y-4">
+            <h3 className="text-[11px] font-black uppercase tracking-widest text-white/60 flex items-center gap-2">
+              <Banknote size={14} className="text-vendeur-emerald" />
+              Barème des Offres & Services (Base XOF)
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="space-y-2 bg-black/30 p-4 rounded-xl border border-white/5">
+                  <label className="text-[10px] font-black uppercase tracking-wider text-vendeur-emerald block">OFFRE ESSENTIEL</label>
+                  <p className="text-[9px] text-white/40 font-bold uppercase">Abonnement Mensuel</p>
+                  <input
+                      type="number"
+                      className="w-full h-11 bg-white/5 border border-white/10 rounded-xl px-3 text-white focus:border-vendeur-emerald outline-none font-bold text-sm"
+                      value={formData["pricing.essentialMonthly"]}
+                      onChange={e => setFormData({
+                        ...formData,
+                        "pricing.essentialMonthly": Number(e.target.value),
+                        "pricing.premiumSubscriptionMonthly": Number(e.target.value)
+                      })}
+                  />
+              </div>
+              <div className="space-y-2 bg-black/30 p-4 rounded-xl border border-white/5">
+                  <label className="text-[10px] font-black uppercase tracking-wider text-blue-400 block">OFFRE PRO</label>
+                  <p className="text-[9px] text-white/40 font-bold uppercase">Abonnement Mensuel</p>
+                  <input
+                      type="number"
+                      className="w-full h-11 bg-white/5 border border-white/10 rounded-xl px-3 text-white focus:border-vendeur-emerald outline-none font-bold text-sm"
+                      value={formData["pricing.proMonthly"]}
+                      onChange={e => setFormData({...formData, "pricing.proMonthly": Number(e.target.value)})}
+                  />
+              </div>
+              <div className="space-y-2 bg-black/30 p-4 rounded-xl border border-white/5">
+                  <label className="text-[10px] font-black uppercase tracking-wider text-amber-400 block">PACK PRO EXPERT</label>
+                  <p className="text-[9px] text-white/40 font-bold uppercase">Setup Clé en main VIP</p>
+                  <input
+                      type="number"
+                      className="w-full h-11 bg-white/5 border border-white/10 rounded-xl px-3 text-white focus:border-vendeur-emerald outline-none font-bold text-sm"
+                      value={formData["pricing.packProFee"]}
+                      onChange={e => setFormData({...formData, "pricing.packProFee": Number(e.target.value)})}
+                  />
+              </div>
+              <div className="space-y-2 bg-black/30 p-4 rounded-xl border border-white/5">
+                  <label className="text-[10px] font-black uppercase tracking-wider text-white/60 block">SERVEUR DÉDIÉ (RAM)</label>
+                  <p className="text-[9px] text-white/40 font-bold uppercase">Frais Baileys</p>
+                  <input
+                      type="number"
+                      className="w-full h-11 bg-white/5 border border-white/10 rounded-xl px-3 text-white focus:border-vendeur-emerald outline-none font-bold text-sm"
+                      value={formData["pricing.ramContributionFee"]}
+                      onChange={e => setFormData({...formData, "pricing.ramContributionFee": Number(e.target.value)})}
+                  />
+              </div>
             </div>
           </div>
 
@@ -784,13 +827,13 @@ function SettingsPanel({ settings, onUpdate, isUpdating }: { settings: any, onUp
              <div className="flex items-center justify-between">
                 <h3 className="text-[11px] font-black uppercase tracking-widest text-white/60 flex items-center gap-2">
                     <Globe size={14} className="text-vendeur-emerald" />
-                    Global Devises Matrix
+                    Grille Tarifaire Internationale (Devises)
                 </h3>
                 <button
                     onClick={addRegionalPricing}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-vendeur-emerald/10 text-vendeur-emerald rounded-lg text-[9px] font-black uppercase border border-vendeur-emerald/20 hover:bg-vendeur-emerald hover:text-vendeur-coal transition-all"
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-vendeur-emerald/10 text-vendeur-emerald rounded-lg text-[9px] font-black uppercase border border-vendeur-emerald/20 hover:bg-vendeur-emerald hover:text-vendeur-coal transition-all cursor-pointer"
                 >
-                    <Plus size={12} /> ADD
+                    <Plus size={12} /> AJOUTER DEVISE
                 </button>
              </div>
 
@@ -798,44 +841,45 @@ function SettingsPanel({ settings, onUpdate, isUpdating }: { settings: any, onUp
                 {formData["pricing.regional"].map((reg: any, idx: number) => (
                     <div key={idx} className="p-4 md:p-6 bg-black/40 border border-white/5 rounded-xl md:rounded-2xl grid grid-cols-2 md:grid-cols-5 gap-3 md:gap-4 relative group">
                         <div className="space-y-1">
-                            <label className="text-[8px] font-black text-white/20 uppercase">CURRENCY</label>
+                            <label className="text-[8px] font-black text-white/20 uppercase">DEVISE</label>
                             <input
-                                className="w-full bg-white/5 border border-white/10 rounded-lg px-2 py-2 text-xs font-bold text-vendeur-emerald outline-none"
+                                className="w-full bg-white/5 border border-white/10 rounded-lg px-2 py-2 text-xs font-bold text-vendeur-emerald outline-none uppercase"
                                 value={reg.currency}
                                 onChange={e => updateRegionalField(idx, 'currency', e.target.value.toUpperCase())}
                             />
                         </div>
                         <div className="space-y-1">
-                            <label className="text-[8px] font-black text-white/20 uppercase">ESSENTIEL</label>
+                            <label className="text-[8px] font-black text-white/20 uppercase">ESSENTIEL (MOIS)</label>
                             <input
                                 type="number"
                                 className="w-full bg-white/5 border border-white/10 rounded-lg px-2 py-2 text-xs font-bold text-white outline-none"
-                                value={reg.premiumMonthly}
-                                onChange={e => updateRegionalField(idx, 'premiumMonthly', Number(e.target.value))}
+                                value={reg.essentialMonthly ?? reg.premiumMonthly ?? 0}
+                                onChange={e => updateRegionalField(idx, 'essentialMonthly', Number(e.target.value))}
                             />
                         </div>
                         <div className="space-y-1">
-                            <label className="text-[8px] font-black text-white/20 uppercase">PRO</label>
+                            <label className="text-[8px] font-black text-white/20 uppercase">PRO (MOIS)</label>
                             <input
                                 type="number"
                                 className="w-full bg-white/5 border border-white/10 rounded-lg px-2 py-2 text-xs font-bold text-white outline-none"
-                                value={reg.businessMonthly}
-                                onChange={e => updateRegionalField(idx, 'businessMonthly', Number(e.target.value))}
+                                value={reg.proMonthly ?? reg.businessMonthly ?? 0}
+                                onChange={e => updateRegionalField(idx, 'proMonthly', Number(e.target.value))}
                             />
                         </div>
                         <div className="space-y-1">
-                            <label className="text-[8px] font-black text-white/20 uppercase">EXPERTISE</label>
+                            <label className="text-[8px] font-black text-white/20 uppercase">PACK PRO EXPERT</label>
                             <input
                                 type="number"
                                 className="w-full bg-white/5 border border-white/10 rounded-lg px-2 py-2 text-xs font-bold text-white outline-none"
-                                value={reg.packPro}
+                                value={reg.packPro ?? 0}
                                 onChange={e => updateRegionalField(idx, 'packPro', Number(e.target.value))}
                             />
                         </div>
                         <div className="flex items-end pb-1 md:justify-center">
                             <button
                                 onClick={() => removeRegionalPricing(idx)}
-                                className="p-2 text-white/20 hover:text-rose-500 transition-colors"
+                                className="p-2 text-white/20 hover:text-rose-500 transition-colors cursor-pointer"
+                                title="Supprimer cette devise"
                             >
                                 <Trash2 size={18} />
                             </button>
@@ -844,7 +888,7 @@ function SettingsPanel({ settings, onUpdate, isUpdating }: { settings: any, onUp
                 ))}
                 {formData["pricing.regional"].length === 0 && (
                     <div className="text-center py-6 text-white/10 text-[10px] font-black uppercase tracking-widest border border-dashed border-white/5 rounded-2xl">
-                        No regional rules defined
+                        Aucune règle régionale spécifique définie (les taux de conversion par défaut s'appliquent).
                     </div>
                 )}
              </div>

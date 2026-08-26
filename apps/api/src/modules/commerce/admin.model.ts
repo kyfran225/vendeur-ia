@@ -3,11 +3,15 @@ import mongoose, { Schema } from "mongoose";
 const SystemSettingsSchema = new Schema({
   supportWhatsApp: { type: String, default: "+22505111157" },
   pricing: {
-    ramContributionFee: { type: Number, default: 5000 },
+    essentialMonthly: { type: Number, default: 5000 },
+    proMonthly: { type: Number, default: 20000 },
     packProFee: { type: Number, default: 25000 },
+    ramContributionFee: { type: Number, default: 5000 },
     premiumSubscriptionMonthly: { type: Number, default: 5000 },
     regional: [{
       currency: { type: String, required: true },
+      essentialMonthly: { type: Number, default: 5000 },
+      proMonthly: { type: Number, default: 20000 },
       premiumMonthly: { type: Number, required: true },
       businessMonthly: { type: Number, required: true },
       packPro: { type: Number, required: true },

@@ -36,30 +36,108 @@ router.get("/pulse", authenticate, isAdmin, async (req, res) => {
   }
 });
 
+import { env } from "../../config/env.js";
+import { logger } from "../../services/logger.service.js";
+
 // GET Global Settings
 router.get("/settings", authenticate, isAdmin, async (req, res) => {
   try {
     let settings = await SystemSettingsModel.findOne();
     if (!settings) {
-      settings = await SystemSettingsModel.create({});
+      settings = await SystemSettingsModel.create({
+        pricing: {
+          essentialMonthly: 5000,
+          proMonthly: 20000,
+          packProFee: 25000,
+          ramContributionFee: 5000,
+          premiumSubscriptionMonthly: 5000
+        },
+        metaConfig: {
+          globalVerifyToken: env.WHATSAPP_META_VERIFY_TOKEN || "vendeur_ia_secret_webhook_token_2026",
+          whatsappDefaults: {
+            phoneNumberId: env.WHATSAPP_PHONE_ID || "",
+            accessToken: env.WHATSAPP_ACCESS_TOKEN || ""
+          }
+        }
+      });
     }
-    res.json(settings);
+
+    const settingsObj: any = settings.toObject();
+
+    // Ensure default fallbacks if metaConfig fields are empty in DB
+    if (!settingsObj.metaConfig) {
+      settingsObj.metaConfig = {
+        globalAppId: env.WHATSAPP_META_APP_ID || "1254472436747356",
+        globalVerifyToken: env.WHATSAPP_META_VERIFY_TOKEN || "vendeur_ia_secret_webhook_token_2026",
+        whatsappDefaults: {
+          phoneNumberId: env.WHATSAPP_PHONE_ID || "",
+          accessToken: env.WHATSAPP_ACCESS_TOKEN || ""
+        }
+      };
+    } else {
+      if (!settingsObj.metaConfig.globalAppId) {
+        settingsObj.metaConfig.globalAppId = env.WHATSAPP_META_APP_ID || "1254472436747356";
+      }
+      if (!settingsObj.metaConfig.globalVerifyToken) {
+        settingsObj.metaConfig.globalVerifyToken = env.WHATSAPP_META_VERIFY_TOKEN || "vendeur_ia_secret_webhook_token_2026";
+      }
+      if (!settingsObj.metaConfig.whatsappDefaults) {
+        settingsObj.metaConfig.whatsappDefaults = {
+          phoneNumberId: env.WHATSAPP_PHONE_ID || "",
+          accessToken: env.WHATSAPP_ACCESS_TOKEN || ""
+        };
+      } else {
+        if (!settingsObj.metaConfig.whatsappDefaults.phoneNumberId && env.WHATSAPP_PHONE_ID) {
+          settingsObj.metaConfig.whatsappDefaults.phoneNumberId = env.WHATSAPP_PHONE_ID;
+        }
+        if (!settingsObj.metaConfig.whatsappDefaults.accessToken && env.WHATSAPP_ACCESS_TOKEN) {
+          settingsObj.metaConfig.whatsappDefaults.accessToken = env.WHATSAPP_ACCESS_TOKEN;
+        }
+      }
+    }
+
+    // Ensure pricing object has default values
+    if (!settingsObj.pricing) {
+      settingsObj.pricing = {
+        essentialMonthly: 5000,
+        proMonthly: 20000,
+        packProFee: 25000,
+        ramContributionFee: 5000,
+        premiumSubscriptionMonthly: 5000,
+        regional: []
+      };
+    } else {
+      settingsObj.pricing.essentialMonthly = settingsObj.pricing.essentialMonthly || settingsObj.pricing.premiumSubscriptionMonthly || 5000;
+      settingsObj.pricing.proMonthly = settingsObj.pricing.proMonthly || 20000;
+      settingsObj.pricing.packProFee = settingsObj.pricing.packProFee || 25000;
+      settingsObj.pricing.ramContributionFee = settingsObj.pricing.ramContributionFee || 5000;
+      settingsObj.pricing.premiumSubscriptionMonthly = settingsObj.pricing.essentialMonthly;
+    }
+
+    res.json(settingsObj);
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
 });
 
-import { logger } from "../../services/logger.service.js";
-
 // UPDATE Global Settings
 router.patch("/settings", authenticate, isAdmin, async (req, res) => {
   try {
+    const updateData = { ...req.body };
+    
+    // Keep backward-compatible sync
+    if (updateData["pricing.essentialMonthly"] !== undefined) {
+      updateData["pricing.premiumSubscriptionMonthly"] = updateData["pricing.essentialMonthly"];
+    } else if (updateData["pricing.premiumSubscriptionMonthly"] !== undefined) {
+      updateData["pricing.essentialMonthly"] = updateData["pricing.premiumSubscriptionMonthly"];
+    }
+
     const settings = await SystemSettingsModel.findOneAndUpdate(
       {},
-      { $set: req.body },
+      { $set: updateData },
       { new: true, upsert: true }
     );
-    logger.info("[Admin MasterControl] Clés et configuration IA mises à jour avec succès ✅");
+    logger.info("[Admin MasterControl] Paramètres système et configuration Meta mis à jour avec succès ✅");
     res.json(settings);
   } catch (error: any) {
     res.status(500).json({ error: error.message });
@@ -431,7 +509,6 @@ router.patch("/merchants/:id/subscription", authenticate, isAdmin, async (req, r
 });
 
 import jwt from "jsonwebtoken";
-import { env } from "../../config/env.js";
 
 // FOUNDER IMPERSONATION (Human Takeover)
 router.post("/merchants/:id/impersonate", authenticate, isAdmin, async (req, res) => {

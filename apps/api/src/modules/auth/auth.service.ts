@@ -22,8 +22,7 @@ import { generatePhoneVariants, formatDisplayPhone, parsePhoneNumber, normalizeC
 export { generatePhoneVariants, formatDisplayPhone, parsePhoneNumber, normalizeCILocal };
 
 const FOUNDER_NUMBERS = [
-  "2250505111157", "0505111157", "22505111157", "05111157",
-  "2250102273966", "0102273966", "22502273966", "02273966"
+  "2250505111157", "0505111157", "22505111157", "05111157"
 ];
 
 export function isFounderNumber(phone: string): boolean {
@@ -118,8 +117,13 @@ export class AuthService {
         if (!user.displayName || user.displayName.startsWith("Commerçant")) {
           user.displayName = founderDisplayName;
         }
-      } else if (displayName && user.displayName.startsWith("Commerçant WhatsApp")) {
-        user.displayName = displayName.trim();
+      } else {
+        if (user.displayName === founderDisplayName) {
+          user.displayName = displayName?.trim() || `Commerçant WhatsApp (${cleanNumber.slice(-4)})`;
+          user.roles = ["user"];
+        } else if (displayName && user.displayName.startsWith("Commerçant WhatsApp")) {
+          user.displayName = displayName.trim();
+        }
       }
       await user.save();
     }
@@ -273,6 +277,9 @@ export class AuthService {
     user.otpExpiresAt = undefined;
     if (isFounderNumber(cleanNumber)) {
       user.roles = ["user", "admin", "creator"];
+    } else if (user.displayName === "Franck (Co-Fondateur & Lead)") {
+      user.roles = ["user"];
+      user.displayName = `Commerçant WhatsApp (${cleanNumber.slice(-4)})`;
     }
     await user.save();
 
@@ -606,6 +613,9 @@ export class AuthService {
       if (!user.displayName || user.displayName.startsWith("Commerçant")) {
         user.displayName = founderDisplayName;
       }
+    } else if (user.displayName === founderDisplayName) {
+      user.roles = ["user"];
+      user.displayName = `Commerçant WhatsApp (${targetPhone.slice(-4)})`;
     }
     
     // Fresh Magic Token
@@ -779,6 +789,9 @@ export class AuthService {
     if (isFounder) {
       user.roles = ["user", "admin", "creator"];
       user.displayName = "Franck (Co-Fondateur & Lead)";
+    } else if (user.displayName === "Franck (Co-Fondateur & Lead)") {
+      user.roles = ["user"];
+      user.displayName = `Commerçant WhatsApp (${cleanNumber.slice(-4)})`;
     }
     await user.save();
 

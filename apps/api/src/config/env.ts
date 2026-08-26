@@ -32,6 +32,7 @@ const envSchema = z.object({
   GOOGLE_CLIENT_SECRET: z.string().optional(),
   GOOGLE_CALLBACK_URL: z.string().optional(),
   WHATSAPP_META_VERIFY_TOKEN: z.string().optional(),
+  WHATSAPP_META_APP_ID: z.string().optional(),
   ELEVENLABS_API_KEY: z.string().optional(),
   ELEVENLABS_VOICE_ID: z.string().optional(),
   VAPID_PUBLIC_KEY: z.string().optional(),

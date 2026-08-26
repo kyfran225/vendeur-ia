@@ -65,6 +65,25 @@ interface ExpertSetupItem {
   };
 }
 
+function KPICard({ label, value, icon, color }: any) {
+  const colors: any = {
+    amber: "border-amber-500/20 text-amber-400",
+    blue: "border-blue-500/20 text-blue-400",
+    emerald: "border-vendeur-emerald/20 text-vendeur-emerald",
+    rose: "border-rose-500/20 text-rose-400",
+    default: "border-white/10 text-white/40"
+  };
+  return (
+    <div className={cn("p-4 rounded-2xl bg-vendeur-coal/60 border space-y-1", colors[color] || colors.default)}>
+       <div className="flex items-center justify-between opacity-60">
+          <span className="text-[9px] font-black uppercase tracking-widest">{label}</span>
+          {icon}
+       </div>
+       <p className="text-xl font-black text-white">{value}</p>
+    </div>
+  );
+}
+
 export function AdminVIPOnboarding() {
   const queryClient = useQueryClient();
   const [filterStatus, setFilterStatus] = useState<string>("all");
@@ -199,161 +218,87 @@ export function AdminVIPOnboarding() {
   };
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500">
-      {/* Header & Quick stats */}
+    <div className="space-y-6 md:space-y-8 animate-in fade-in duration-500">
+      {/* Header & Quick stats - Flattened */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-3">
-            <span className="p-2.5 rounded-2xl bg-amber-400/10 text-amber-400 border border-amber-400/20 shadow-lg shadow-amber-400/5">
-              <Sparkles size={22} />
-            </span>
-            <div>
-              <h2 className="text-2xl md:text-3xl font-black uppercase tracking-tighter text-white">
-                Onboarding VIP • Pack Pro
-              </h2>
-              <p className="text-xs text-white/50 font-medium mt-0.5">
-                Assistance dédiée, assignation des techniciens, configuration Meta Cloud et activation officielle.
-              </p>
-            </div>
+        <div className="flex items-center gap-3">
+          <span className="p-2.5 rounded-xl bg-amber-400/10 text-amber-400 border border-amber-400/20">
+            <Sparkles size={20} />
+          </span>
+          <div>
+            <h2 className="text-xl md:text-2xl font-black uppercase tracking-tighter text-white leading-none">
+              Expertise Setup Protocol
+            </h2>
+            <p className="text-[10px] text-white/40 font-black uppercase tracking-widest mt-1">
+              Installation Expert & Meta Cloud Deployment
+            </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
-          <div className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-2xl bg-white/5 border border-white/5 text-[11px] text-white/60">
-            <Phone size={14} className="text-vendeur-emerald" />
-            <span>Alerte Admin :</span>
-            <span className="font-mono font-bold text-white">
-              {settings?.supportWhatsApp || "+225 07 00 00 00 00"}
-            </span>
-          </div>
-
+        <div className="flex items-center gap-2">
           <button
             onClick={() => refetch()}
             disabled={isLoading || isRefetching}
-            className="flex items-center gap-2 px-4 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl text-xs font-black uppercase tracking-wider text-white transition-all active:scale-95"
+            className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-[10px] font-black uppercase tracking-widest text-white transition-all"
           >
             <RefreshCw size={14} className={cn("text-vendeur-emerald", (isLoading || isRefetching) && "animate-spin")} />
-            Actualiser
+            Sync Pulse
           </button>
         </div>
       </div>
 
-      {/* KPI Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-        <div className="bg-vendeur-coal border border-white/10 p-5 rounded-[2rem] space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="text-[10px] font-black uppercase tracking-widest text-white/40">Total Dossiers</span>
-            <Building2 size={16} className="text-white/40" />
-          </div>
-          <p className="text-3xl font-black text-white">{totalOrders}</p>
-          <p className="text-[10px] text-white/40 font-semibold">Commandes Pack Pro</p>
-        </div>
+      {/* KPI Stats Grid - Flattened */}
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+        <KPICard label="Total Assets" value={totalOrders} icon={<Building2 size={14}/>} />
+        <KPICard label="Awaiting" value={pendingCount} icon={<Clock size={14}/>} color="amber" />
+        <KPICard label="Active Ops" value={inProgressCount} icon={<RefreshCw size={14}/>} color="blue" />
+        <KPICard label="Deployed" value={completedCount} icon={<CheckCircle2 size={14}/>} color="emerald" />
+        <KPICard label="Expertise Gross" value={`${totalRevenue.toLocaleString()} F`} icon={<DollarSign size={14}/>} color="emerald" />
+      </div>
 
-        <div className="bg-vendeur-coal border border-amber-500/20 p-5 rounded-[2rem] space-y-2 relative overflow-hidden">
-          <div className="flex items-center justify-between">
-            <span className="text-[10px] font-black uppercase tracking-widest text-amber-400">En Attente</span>
-            <span className="flex h-2.5 w-2.5 relative">
-              {pendingCount > 0 && (
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
+      {/* Filter and Search Bar - Flattened */}
+      <div className="flex flex-col md:flex-row items-center justify-between gap-3 bg-vendeur-coal/40 p-3 md:p-4 rounded-2xl border border-white/5">
+        <div className="flex items-center gap-1.5 p-1 bg-black/40 rounded-xl border border-white/5 w-full md:w-auto overflow-x-auto no-scrollbar">
+          {[
+            { id: "all", label: "All" },
+            { id: "pending", label: "Awaiting" },
+            { id: "in_progress", label: "Ops" },
+            { id: "completed", label: "Ready" }
+          ].map((s) => (
+            <button
+              key={s.id}
+              onClick={() => setFilterStatus(s.id)}
+              className={cn(
+                "px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap",
+                filterStatus === s.id ? "bg-white/10 text-white" : "text-white/30"
               )}
-              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-500" />
-            </span>
-          </div>
-          <p className="text-3xl font-black text-amber-400">{pendingCount}</p>
-          <p className="text-[10px] text-amber-400/60 font-semibold">À assigner en priorité</p>
+            >
+              {s.label}
+            </button>
+          ))}
         </div>
 
-        <div className="bg-vendeur-coal border border-blue-500/20 p-5 rounded-[2rem] space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="text-[10px] font-black uppercase tracking-widest text-blue-400">En Cours</span>
-            <Clock size={16} className="text-blue-400" />
-          </div>
-          <p className="text-3xl font-black text-blue-400">{inProgressCount}</p>
-          <p className="text-[10px] text-blue-400/60 font-semibold">Technicien en contact</p>
-        </div>
-
-        <div className="bg-vendeur-coal border border-vendeur-emerald/20 p-5 rounded-[2rem] space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="text-[10px] font-black uppercase tracking-widest text-vendeur-emerald">Clôturés</span>
-            <CheckCircle2 size={16} className="text-vendeur-emerald" />
-          </div>
-          <p className="text-3xl font-black text-vendeur-emerald">{completedCount}</p>
-          <p className="text-[10px] text-vendeur-emerald/60 font-semibold">Installations actives</p>
-        </div>
-
-        <div className="bg-vendeur-coal border border-white/10 p-5 rounded-[2rem] space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="text-[10px] font-black uppercase tracking-widest text-white/40">Revenus VIP</span>
-            <DollarSign size={16} className="text-vendeur-emerald" />
-          </div>
-          <p className="text-2xl font-black text-white">{totalRevenue.toLocaleString()} F</p>
-          <p className="text-[10px] text-vendeur-emerald font-semibold">Frais d'installation Pack Pro</p>
-        </div>
-      </div>
-
-      {/* Filter and Search Bar */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-vendeur-coal border border-white/5 p-4 rounded-2xl">
-        <div className="flex items-center gap-1.5 p-1 bg-black/40 rounded-xl border border-white/5 w-full sm:w-auto overflow-x-auto">
-          <button
-            onClick={() => setFilterStatus("all")}
-            className={cn(
-              "px-4 py-2 rounded-lg text-xs font-black uppercase tracking-wider transition-all",
-              filterStatus === "all" ? "bg-white/10 text-white" : "text-white/40 hover:text-white"
-            )}
-          >
-            Tous ({setups.length})
-          </button>
-          <button
-            onClick={() => setFilterStatus("pending")}
-            className={cn(
-              "px-4 py-2 rounded-lg text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5",
-              filterStatus === "pending" ? "bg-amber-400 text-black font-bold" : "text-white/40 hover:text-white"
-            )}
-          >
-            En Attente ({pendingCount})
-          </button>
-          <button
-            onClick={() => setFilterStatus("in_progress")}
-            className={cn(
-              "px-4 py-2 rounded-lg text-xs font-black uppercase tracking-wider transition-all",
-              filterStatus === "in_progress" ? "bg-blue-500 text-white" : "text-white/40 hover:text-white"
-            )}
-          >
-            En Cours ({inProgressCount})
-          </button>
-          <button
-            onClick={() => setFilterStatus("completed")}
-            className={cn(
-              "px-4 py-2 rounded-lg text-xs font-black uppercase tracking-wider transition-all",
-              filterStatus === "completed" ? "bg-vendeur-emerald text-black font-bold" : "text-white/40 hover:text-white"
-            )}
-          >
-            Terminés ({completedCount})
-          </button>
-        </div>
-
-        <div className="relative w-full sm:w-80">
-          <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30" />
+        <div className="relative w-full md:w-80">
+          <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" />
           <input
             type="text"
-            placeholder="Rechercher boutique, nom, contact..."
+            placeholder="Search Target records..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full h-11 bg-black/40 border border-white/10 rounded-xl pl-11 pr-4 text-xs text-white placeholder:text-white/30 focus:border-vendeur-emerald outline-none transition-all"
+            className="w-full h-10 bg-black/40 border border-white/10 rounded-xl pl-11 pr-4 text-xs text-white focus:border-vendeur-emerald outline-none"
           />
         </div>
       </div>
 
-      {/* Main List */}
+      {/* Main List - Flattened for mobile */}
       {isLoading ? (
         <div className="py-24">
-          <VendeurIALoader size="lg" label="Chargement des commandes VIP..." />
+          <VendeurIALoader size="lg" label="Scanning VIP Protocols..." />
         </div>
       ) : filteredSetups.length === 0 ? (
-        <div className="py-20 text-center bg-vendeur-coal border border-white/5 rounded-[2.5rem] p-8 space-y-3">
-          <AlertCircle size={32} className="text-white/20 mx-auto" />
-          <p className="text-sm font-bold text-white/60">Aucun dossier trouvé pour cette sélection.</p>
-          <p className="text-xs text-white/30">Les nouvelles commandes Pack Pro apparaîtront automatiquement ici.</p>
+        <div className="py-20 text-center bg-vendeur-coal/30 border border-white/5 rounded-3xl p-8">
+          <AlertCircle size={32} className="text-white/10 mx-auto mb-2" />
+          <p className="text-[10px] font-black uppercase tracking-widest text-white/20">Empty Protocol Buffer</p>
         </div>
       ) : (
         <div className="space-y-4">
@@ -363,239 +308,110 @@ export function AdminVIPOnboarding() {
               assignedEdits[item._id] !== undefined
                 ? assignedEdits[item._id]
                 : item.expertSetup?.assignedTo || "";
-            const currentNotes =
-              notesEdits[item._id] !== undefined
-                ? notesEdits[item._id]
-                : item.expertSetup?.notes || "";
             const hasMetaConfig = Boolean(item.metaConfig?.phoneNumberId && item.metaConfig?.accessToken);
 
             return (
               <div
                 key={item._id}
                 className={cn(
-                  "bg-vendeur-coal border rounded-[2rem] p-6 transition-all duration-300",
-                  currentStatus === "pending" || currentStatus === "none"
-                    ? "border-amber-500/30 shadow-lg shadow-amber-500/5"
+                  "bg-vendeur-coal border rounded-2xl md:rounded-[2rem] p-4 md:p-6 transition-all duration-300",
+                  (currentStatus === "pending" || currentStatus === "none")
+                    ? "border-amber-500/30"
                     : currentStatus === "in_progress"
                     ? "border-blue-500/30"
-                    : "border-white/5 opacity-90"
+                    : "border-white/5 opacity-80"
                 )}
               >
-                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-                  {/* Left: Merchant Info */}
-                  <div className="space-y-3 flex-1 min-w-[280px]">
+                <div className="flex flex-col lg:flex-row gap-5">
+                  {/* Left: Merchant Info - No nested card */}
+                  <div className="flex-1 space-y-3">
                     <div className="flex items-center gap-3">
-                      <div className="h-12 w-12 rounded-2xl bg-amber-400/10 border border-amber-400/20 flex items-center justify-center font-black text-amber-400 text-lg uppercase shrink-0">
-                        {item.businessName?.charAt(0) || "B"}
+                      <div className="h-11 w-11 rounded-xl bg-amber-400/10 border border-amber-400/20 flex items-center justify-center font-black text-amber-400 text-lg uppercase">
+                        {item.businessName?.charAt(0)}
                       </div>
                       <div>
                         <div className="flex items-center gap-2 flex-wrap">
-                          <h3 className="text-lg font-black text-white uppercase tracking-tight">
+                          <h3 className="text-base font-black text-white uppercase tracking-tight">
                             {item.businessName}
                           </h3>
-                          <span
-                            className={cn(
-                              "px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider",
-                              currentStatus === "pending" || currentStatus === "none"
-                                ? "bg-amber-400/10 text-amber-400 border border-amber-400/30"
-                                : currentStatus === "in_progress"
-                                ? "bg-blue-500/10 text-blue-400 border border-blue-500/30"
-                                : "bg-vendeur-emerald/10 text-vendeur-emerald border border-vendeur-emerald/30"
-                            )}
-                          >
-                            {currentStatus === "in_progress"
-                              ? "En Cours"
-                              : currentStatus === "completed"
-                              ? "Terminé"
-                              : "En Attente"}
+                          <span className={cn(
+                            "px-2 py-0.5 rounded bg-white/5 border border-white/10 text-[8px] font-black uppercase tracking-widest text-white/40",
+                            currentStatus === "in_progress" && "text-blue-400 border-blue-500/30 bg-blue-500/5",
+                            currentStatus === "completed" && "text-vendeur-emerald border-vendeur-emerald/30 bg-vendeur-emerald/5"
+                          )}>
+                            {currentStatus}
                           </span>
-                          {hasMetaConfig && (
-                            <span className="px-2 py-0.5 rounded-md bg-blue-500/10 border border-blue-500/20 text-blue-400 text-[8px] font-black uppercase">
-                              Meta Configuré
-                            </span>
-                          )}
                         </div>
-                        <p className="text-xs text-white/50 font-medium">
-                          {item.userName || "Commerçant"} • {item.userEmail || "Pas d'email"}
+                        <p className="text-[10px] text-white/40 font-bold uppercase tracking-wider truncate max-w-[200px]">
+                          {item.userName} • {item.userEmail}
                         </p>
                       </div>
                     </div>
 
-                    <div className="flex flex-wrap items-center gap-4 text-[11px] text-white/60 font-medium">
-                      {item.whatsappNumber && (
-                        <div className="flex items-center gap-1.5 font-mono">
-                          <Phone size={13} className="text-vendeur-emerald" />
-                          <span>{formatDisplayPhone(item.whatsappNumber)}</span>
-                          <button
-                            onClick={() => handleCopy(item.whatsappNumber || "", `phone-${item._id}`)}
-                            className="p-1 hover:text-white transition-colors text-white/30"
-                            title="Copier le numéro"
-                          >
-                            {copiedId === `phone-${item._id}` ? (
-                              <Check size={12} className="text-vendeur-emerald" />
-                            ) : (
-                              <Copy size={12} />
-                            )}
-                          </button>
-                        </div>
-                      )}
-                      {item.transaction?.paidAt && (
-                        <div className="flex items-center gap-1.5">
-                          <Calendar size={13} className="text-white/40" />
-                          <span>Payé le {new Date(item.transaction.paidAt).toLocaleDateString()}</span>
-                        </div>
-                      )}
-                      {item.transaction?.amount && (
-                        <div className="px-2 py-0.5 rounded-md bg-white/5 text-[10px] font-black text-vendeur-emerald">
-                          {item.transaction.amount.toLocaleString()} {item.transaction.currency || "XOF"}
-                        </div>
+                    <div className="flex flex-wrap items-center gap-3 text-[10px] font-bold uppercase text-white/60">
+                      <div className="flex items-center gap-1.5 font-mono text-vendeur-emerald bg-black/40 px-2 py-1 rounded-lg">
+                        <Phone size={12} />
+                        <span>{item.whatsappNumber}</span>
+                      </div>
+                      <div className="flex items-center gap-1 text-white/40">
+                        <Calendar size={12} />
+                        <span>{new Date(item.expertSetup?.orderedAt || '').toLocaleDateString()}</span>
+                      </div>
+                      {hasMetaConfig && (
+                         <span className="px-2 py-1 rounded bg-blue-500/10 text-blue-400 text-[8px] font-black border border-blue-500/20">META READY</span>
                       )}
                     </div>
                   </div>
 
-                  {/* Center: Technician & Notes inputs */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 flex-1">
-                    <div className="space-y-1">
-                      <label className="text-[9px] font-black uppercase tracking-widest text-white/40 flex items-center gap-1">
-                        <UserCheck size={11} className="text-vendeur-emerald" /> Technicien Assigné
-                      </label>
-                      <div className="flex gap-1.5">
+                  {/* Right: Technical Ops - Flattened for mobile */}
+                  <div className="lg:w-[450px] space-y-4">
+                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <input
                           type="text"
-                          placeholder="Ex: Franck, Support #1..."
+                          placeholder="Assign Technician..."
                           value={currentAssigned}
-                          onChange={(e) =>
-                            setAssignedEdits({ ...assignedEdits, [item._id]: e.target.value })
-                          }
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") {
-                              handleUpdate(item._id, { assignedTo: currentAssigned });
-                            }
-                          }}
-                          className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-xs text-white placeholder:text-white/20 focus:border-vendeur-emerald outline-none font-bold"
+                          onChange={(e) => setAssignedEdits({ ...assignedEdits, [item._id]: e.target.value })}
+                          className="h-10 bg-black/40 border border-white/10 rounded-xl px-4 text-xs text-white focus:border-vendeur-emerald outline-none font-bold"
                         />
-                        {assignedEdits[item._id] !== undefined && (
-                          <button
-                            onClick={() =>
-                              handleUpdate(item._id, { assignedTo: assignedEdits[item._id] })
-                            }
-                            disabled={updateMutation.isPending}
-                            className="p-2 bg-vendeur-emerald text-black rounded-xl hover:scale-105 active:scale-95 transition-all shrink-0"
-                            title="Sauvegarder technicien"
-                          >
-                            <Save size={14} />
-                          </button>
-                        )}
-                      </div>
-                    </div>
+                        <div className="flex gap-2">
+                           <button
+                             onClick={() => handleUpdate(item._id, { assignedTo: currentAssigned })}
+                             className="flex-1 h-10 bg-white/5 hover:bg-white/10 text-white rounded-xl text-[10px] font-black uppercase tracking-widest border border-white/5 transition-all"
+                           >
+                             Save
+                           </button>
+                           <button
+                             onClick={() => openMetaModal(item)}
+                             className="w-10 h-10 bg-white/5 hover:bg-white/10 text-blue-400 rounded-xl flex items-center justify-center border border-white/5"
+                           >
+                             <Settings2 size={16} />
+                           </button>
+                        </div>
+                     </div>
 
-                    <div className="space-y-1">
-                      <label className="text-[9px] font-black uppercase tracking-widest text-white/40">
-                        Notes Internes
-                      </label>
-                      <div className="flex gap-1.5">
-                        <input
-                          type="text"
-                          placeholder="Ex: RDV Meta à 16h..."
-                          value={currentNotes}
-                          onChange={(e) =>
-                            setNotesEdits({ ...notesEdits, [item._id]: e.target.value })
-                          }
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") {
-                              handleUpdate(item._id, { notes: currentNotes });
-                            }
-                          }}
-                          className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-xs text-white placeholder:text-white/20 focus:border-vendeur-emerald outline-none font-medium"
-                        />
-                        {notesEdits[item._id] !== undefined && (
-                          <button
-                            onClick={() =>
-                              handleUpdate(item._id, { notes: notesEdits[item._id] })
-                            }
-                            disabled={updateMutation.isPending}
-                            className="p-2 bg-vendeur-emerald text-black rounded-xl hover:scale-105 active:scale-95 transition-all shrink-0"
-                            title="Sauvegarder notes"
-                          >
-                            <Save size={14} />
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Right: Quick Actions */}
-                  <div className="flex flex-wrap lg:flex-nowrap items-center gap-2">
-                    {/* Meta Cloud Config Button */}
-                    <button
-                      onClick={() => openMetaModal(item)}
-                      className="p-2.5 bg-white/5 hover:bg-white/10 border border-white/10 text-white/70 hover:text-white rounded-xl transition-all"
-                      title="Configurer Meta Cloud Token & IDs"
-                    >
-                      <Settings2 size={16} />
-                    </button>
-
-                    {/* 1-Click WhatsApp Button */}
-                    <button
-                      onClick={() => openWhatsAppChat(item)}
-                      className="flex items-center gap-2 px-4 py-2.5 bg-emerald-500/10 hover:bg-emerald-500 hover:text-black border border-emerald-500/30 text-emerald-400 rounded-xl text-xs font-black uppercase tracking-wider transition-all active:scale-95"
-                      title="Ouvrir WhatsApp avec message pré-rempli"
-                    >
-                      <MessageCircle size={15} />
-                      <span>WhatsApp</span>
-                    </button>
-
-                    {/* 1-Click Smart AI Reminder */}
-                    {currentStatus !== "completed" && (
-                      <button
-                        onClick={() => remindMutation.mutate(item._id)}
-                        disabled={remindMutation.isPending}
-                        className="flex items-center gap-1.5 px-3 py-2.5 bg-amber-400/10 hover:bg-amber-400 hover:text-black border border-amber-400/30 text-amber-400 rounded-xl text-xs font-black uppercase tracking-wider transition-all active:scale-95"
-                        title={
-                          item.expertSetup?.lastFollowUpAt
-                            ? `Dernière relance: ${new Date(item.expertSetup.lastFollowUpAt).toLocaleDateString()}`
-                            : "Envoyer un rappel automatique bienveillant au commerçant"
-                        }
-                      >
-                        {remindMutation.isPending ? (
-                          <Loader2 size={14} className="animate-spin" />
+                     <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => openWhatsAppChat(item)}
+                          className="flex-1 h-10 bg-emerald-500/10 hover:bg-emerald-500 hover:text-black text-emerald-400 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border border-emerald-500/20"
+                        >
+                          Direct Connect
+                        </button>
+                        {currentStatus !== "completed" ? (
+                           <button
+                             onClick={() => handleUpdate(item._id, { status: "completed" })}
+                             className="flex-1 h-10 bg-vendeur-emerald text-vendeur-coal rounded-xl text-[10px] font-black uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-lg shadow-vendeur-emerald/20"
+                           >
+                             Close Dossier
+                           </button>
                         ) : (
-                          <SendHorizontal size={14} />
+                           <button
+                             onClick={() => handleUpdate(item._id, { status: "in_progress" })}
+                             className="flex-1 h-10 bg-white/5 text-white/40 rounded-xl text-[10px] font-black uppercase tracking-widest"
+                           >
+                             Reopen
+                           </button>
                         )}
-                        <span>Relancer IA</span>
-                      </button>
-                    )}
-
-                    {/* Status Toggle / Progression Buttons */}
-                    {currentStatus !== "in_progress" && currentStatus !== "completed" && (
-                      <button
-                        onClick={() => handleUpdate(item._id, { status: "in_progress" })}
-                        disabled={updateMutation.isPending}
-                        className="flex items-center gap-1.5 px-3 py-2.5 bg-blue-500/10 hover:bg-blue-500 text-blue-400 hover:text-white border border-blue-500/20 rounded-xl text-xs font-black uppercase tracking-wider transition-all"
-                      >
-                        <Clock size={14} />
-                        <span>Prendre en charge</span>
-                      </button>
-                    )}
-
-                    {currentStatus !== "completed" ? (
-                      <button
-                        onClick={() => handleUpdate(item._id, { status: "completed" })}
-                        disabled={updateMutation.isPending}
-                        className="flex items-center gap-1.5 px-4 py-2.5 bg-vendeur-emerald text-vendeur-coal rounded-xl text-xs font-black uppercase tracking-wider hover:scale-105 active:scale-95 transition-all shadow-lg shadow-vendeur-emerald/20 font-bold"
-                      >
-                        <CheckCircle2 size={15} />
-                        <span>Terminer</span>
-                      </button>
-                    ) : (
-                      <button
-                        onClick={() => handleUpdate(item._id, { status: "in_progress" })}
-                        disabled={updateMutation.isPending}
-                        className="px-3 py-2 bg-white/5 hover:bg-white/10 text-white/40 hover:text-white rounded-xl text-[10px] font-black uppercase tracking-wider transition-all"
-                      >
-                        Rouvrir
-                      </button>
-                    )}
+                     </div>
                   </div>
                 </div>
               </div>

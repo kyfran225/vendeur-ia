@@ -11,6 +11,7 @@ import { getSocketServer } from "../../realtime/socketServer.js";
 
 import { AuthSessionModel } from "./auth-session.model.js";
 import { SystemSettingsModel } from "../commerce/admin.model.js";
+import { auditLogService } from "../../services/audit-log.service.js";
 
 const ACCESS_TOKEN_EXPIRES_IN = "15m";
 const REFRESH_TOKEN_EXPIRES_IN = "7d";
@@ -108,11 +109,12 @@ export class AuthService {
         authProvider: "whatsapp",
         displayName: isFounder ? founderDisplayName : (displayName?.trim() || `Commerçant WhatsApp (${cleanNumber.slice(-4)})`),
         roles: isFounder ? ["user", "admin", "creator"] : ["user"],
-        onboardingCompleted: false
+        onboardingCompleted: true
       });
     } else {
       if (isFounder) {
         user.roles = ["user", "admin", "creator"];
+        user.onboardingCompleted = true;
         if (!user.displayName || user.displayName.startsWith("Commerçant")) {
           user.displayName = founderDisplayName;
         }
@@ -596,10 +598,11 @@ export class AuthService {
         authProvider: "whatsapp",
         displayName: isFounder ? founderDisplayName : `Commerçant WhatsApp (${targetPhone.slice(-4)})`,
         roles: isFounder ? ["user", "admin", "creator"] : ["user"],
-        onboardingCompleted: false
+        onboardingCompleted: true
       });
     } else if (isFounder) {
       user.roles = ["user", "admin", "creator"];
+      user.onboardingCompleted = true;
       if (!user.displayName || user.displayName.startsWith("Commerçant")) {
         user.displayName = founderDisplayName;
       }
@@ -624,6 +627,16 @@ export class AuthService {
     await user.save();
 
     const tokens = await this.generateTokens(user);
+
+    if (isFounder) {
+      await auditLogService.log({
+        userId: user._id,
+        action: "founder_login",
+        entity: "user",
+        severity: "info",
+        metadata: { ip: "hidden", method: "whatsapp_otp" }
+      });
+    }
 
     // Update in-memory session
     const sessionUpdate: PendingAuthSession = {
@@ -718,13 +731,14 @@ export class AuthService {
         roles: userRoles,
         otpCodeHash: codeHash,
         otpExpiresAt: expiresAt,
-        onboardingCompleted: isFounder ? true : false
+        onboardingCompleted: true
       });
     } else {
       user.otpCodeHash = codeHash;
       user.otpExpiresAt = expiresAt;
       if (isFounder) {
         user.roles = ["user", "admin", "creator"];
+        user.onboardingCompleted = true;
         if (!user.displayName || user.displayName.startsWith("Commerçant")) {
           user.displayName = founderDisplayName;
         }

@@ -14,6 +14,7 @@ import { logger } from "./logger.service.js";
 import { emitToUser } from "../realtime/socketServer.js";
 import { paymentShieldService, ForensicExtractionResult } from "./payment-shield.service.js";
 import { storageService } from "./storage.service.js";
+import { auditLogService } from "./audit-log.service.js";
 
 export class PaymentService {
   public static readonly RATES: Record<string, { rate: number; round: number; symbol: string }> = {
@@ -241,13 +242,15 @@ export class PaymentService {
     } else {
       // Fallbacks
       if (offerSlug === "pro" || offerSlug === "premium") {
-        planName = "Pro";
-        amount = billingInterval === "yearly" ? 150000 : 15000;
+        planName = "Vendeur IA Pro";
+        amount = billingInterval === "yearly" ? 200000 : 20000;
       } else if (offerSlug === "business") {
-        planName = "Business";
+        planName = "Vendeur IA Business";
         amount = billingInterval === "yearly" ? 350000 : 35000;
       } else if (offerSlug === "pack_pro") {
-        planName = "Pack Pro Assistance Déploiement";
+        planName = "Pack Pro Expert (Clé en Main)";
+        // 20k (Pro) + 25k (Expert Setup) = 45k
+        amount = 45000;
         amount = 25000;
       }
     }
@@ -602,6 +605,17 @@ export class PaymentService {
 
     if (decision.action === "approve") {
       await this.activateSubscriptionForIntent(intent, adminId);
+
+      await auditLogService.log({
+        userId: adminId as any,
+        merchantId: intent.merchantId,
+        action: "payment_approved",
+        entity: "payment",
+        entityId: intent._id.toString(),
+        severity: "info",
+        metadata: { reference: intent.reference, amount: intent.amount, notes: decision.adminNotes }
+      });
+
       logger.info(`[PaymentService] Intent ${intent.reference} approuvé manuellement par admin ${adminId}`);
       return { message: "Paiement validé et abonnement activé !", intent };
     } else if (decision.action === "request_rescan") {
@@ -609,6 +623,16 @@ export class PaymentService {
       intent.adminNotes = decision.adminNotes || "Veuillez fournir une capture d'écran plus nette du reçu.";
       intent.verifiedBy = adminId;
       await intent.save();
+
+      await auditLogService.log({
+        userId: adminId as any,
+        merchantId: intent.merchantId,
+        action: "payment_rescan_requested",
+        entity: "payment",
+        entityId: intent._id.toString(),
+        severity: "warning",
+        metadata: { reference: intent.reference, notes: decision.adminNotes }
+      });
 
       // Notify merchant via WebSocket
       emitToUser(intent.userId, "payment:rescan_requested", {
@@ -633,6 +657,16 @@ export class PaymentService {
       intent.verifiedBy = adminId;
       intent.verifiedAt = new Date();
       await intent.save();
+
+      await auditLogService.log({
+        userId: adminId as any,
+        merchantId: intent.merchantId,
+        action: "payment_rejected",
+        entity: "payment",
+        entityId: intent._id.toString(),
+        severity: "error",
+        metadata: { reference: intent.reference, reason: intent.rejectionReason }
+      });
 
       const reasonMsg = intent.rejectionReason || "Le virement n'a pas pu être validé.";
 

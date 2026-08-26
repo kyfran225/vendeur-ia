@@ -10,13 +10,15 @@ import {
   ShoppingCart, 
   MoreHorizontal, 
   X, 
-  Shield, 
+  Shield,
+  ShieldCheck,
   ChevronRight,
   Sparkles,
   LogOut
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/stores/authStore";
+import { useFounderRole } from "@/hooks/useFounderRole";
 import { ConfirmationModal } from "@/components/ui/ConfirmationModal";
 
 export function Sidebar() {
@@ -24,12 +26,11 @@ export function Sidebar() {
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const location = useLocation();
   const { user, logout } = useAuthStore();
-
-  const isAdmin = !!user?.roles?.includes("admin");
+  const { isFounder } = useFounderRole();
 
   const links = [
     { to: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
-    ...(isAdmin ? [{ to: "/admin", icon: Shield, label: "Admin", desc: "Console Super Admin" }] : []),
+    ...(isFounder ? [{ to: "/admin", icon: ShieldCheck, label: "Founder", desc: "Master Control Cockpit" }] : []),
     { to: "/inbox", icon: MessageCircle, label: "Inbox" },
     { to: "/orders", icon: ShoppingCart, label: "Commandes" },
     { to: "/products", icon: Package, label: "Catalogue", desc: "Gestion des stocks & articles" },
@@ -37,12 +38,12 @@ export function Sidebar() {
     { to: "/settings", icon: Settings, label: "Réglages", desc: "Boutique, Savoir IA & Canaux" },
   ];
 
-  const bottomLinks = isAdmin
+  const bottomLinks = isFounder
     ? [
-        { to: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
-        { to: "/admin", icon: Shield, label: "Admin" },
-        { to: "/inbox", icon: MessageCircle, label: "Messages" },
-        { to: "/orders", icon: ShoppingCart, label: "Commandes" },
+        { to: "/dashboard", icon: LayoutDashboard, label: "Nexus" },
+        { to: "/admin", icon: ShieldCheck, label: "Founder" },
+        { to: "/inbox", icon: MessageCircle, label: "Live" },
+        { to: "/orders", icon: ShoppingCart, label: "Flux" },
       ]
     : [
         { to: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },

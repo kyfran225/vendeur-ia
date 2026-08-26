@@ -19,6 +19,7 @@ import { useSocket } from "@/hooks/useSocket";
 import { useQuery as useTanstackQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { useAuthStore } from "@/stores/authStore";
+import { useFounderRole } from "@/hooks/useFounderRole";
 import { toast } from "sonner";
 import { apiClient } from "@/lib/apiClient";
 import { clsx, type ClassValue } from "clsx";
@@ -48,6 +49,7 @@ function formatAmount(value: number) {
 
 export function SalesDashboard() {
   const { accessToken } = useAuthStore();
+  const { isFounder } = useFounderRole();
   const socket = useSocket();
   const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -86,7 +88,7 @@ export function SalesDashboard() {
 
   // Check if first-time user to display the welcome Offers modal
   useEffect(() => {
-    if (!dashboard?.merchant?._id) return;
+    if (!dashboard?.merchant?._id || isFounder) return;
     const isPaidActive = dashboard.merchant.subscription?.status === "active";
     const latestPaymentIntent = dashboard?.latestPaymentIntent;
     const isUnderVerification = Boolean(
@@ -107,7 +109,7 @@ export function SalesDashboard() {
 
   // Check if all setup steps are completed to auto-trigger celebration modal once
   useEffect(() => {
-    if (!dashboard?.setupStatus || !dashboard?.merchant?._id) return;
+    if (!dashboard?.setupStatus || !dashboard?.merchant?._id || isFounder) return;
     
     const { isFullyOperational } = dashboard.setupStatus;
     const storageKey = `vendeur_ia_setup_celebrated_${dashboard.merchant._id}`;
@@ -122,7 +124,7 @@ export function SalesDashboard() {
   // Détecte quand une étape passe à "complétée" pour afficher le pop-up de succès intermédiaire
   useEffect(() => {
     const steps: Array<{ id: string; label: string; completed: boolean }> = dashboard?.setupStatus?.steps || [];
-    if (!steps.length || !dashboard?.merchant?._id) return;
+    if (!steps.length || !dashboard?.merchant?._id || isFounder) return;
 
     const isFullyOperational = dashboard?.setupStatus?.isFullyOperational;
     // Ne pas afficher le modal d'étape si la boutique est déjà 100% opérationnelle
@@ -197,6 +199,10 @@ export function SalesDashboard() {
   const isPaidActive = dashboard?.merchant?.subscription?.status === "active";
   const productsCount = dashboard?.products?.length || 0;
   const hasProducts = productsCount > 0 || Boolean(dashboard?.setupStatus?.steps?.find((s: any) => s.id === "products")?.completed);
+  const isFullyOperational = dashboard?.setupStatus?.isFullyOperational;
+  const isPaused = isPaidActive && dashboard?.merchant?.aiSettings?.autoReply === false;
+  const isExpired = dashboard?.merchant?.subscription?.status === "past_due";
+  const showAssistant = !isFullyOperational || isPaused || isExpired;
 
   return (
     <main className="max-w-6xl mx-auto p-4 md:p-10 space-y-8 pb-24 md:pb-8 animate-in fade-in duration-700">
@@ -226,7 +232,7 @@ export function SalesDashboard() {
         </div>
 
         <div className="hidden md:flex items-center gap-3">
-          {!isPaidActive && (
+          {!isPaidActive && !isFounder && (
             <button
               onClick={() => setIsOffersModalOpen(true)}
               className="h-12 px-5 rounded-2xl bg-vendeur-emerald/10 border border-vendeur-emerald/30 text-vendeur-emerald text-xs font-black uppercase tracking-wider hover:bg-vendeur-emerald hover:text-vendeur-coal transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95 shadow-sm"
@@ -241,27 +247,27 @@ export function SalesDashboard() {
               <button
                 onClick={() => setIsShareModalOpen(true)}
                 className="h-12 px-6 rounded-2xl bg-white/5 border border-white/10 text-white text-xs font-black uppercase tracking-wider hover:bg-white/10 hover:border-white/20 transition-all flex items-center justify-center text-center gap-2 cursor-pointer active:scale-95 group shadow-sm"
-                title="Partager le lien ou QR Code de votre vitrine"
+                title="Propulser votre boutique (Lien & QR Code)"
               >
                 <Share2 size={16} className="text-vendeur-emerald group-hover:scale-110 transition-transform" />
-                <span>Partager ma vitrine</span>
+                <span>Propulser ma Boutique</span>
               </button>
 
               <Link
                 to={getMerchantShopPath(dashboard?.merchant)}
                 target="_blank"
                 className="h-12 px-6 rounded-2xl bg-vendeur-emerald text-vendeur-coal text-xs font-black uppercase tracking-wider hover:bg-emerald-400 hover:scale-105 active:scale-95 transition-all flex items-center justify-center text-center gap-2 shadow-lg shadow-vendeur-emerald/20 cursor-pointer"
-                title="Ouvrir votre vitrine publique"
+                title="Voir l'aperçu public de votre boutique"
               >
                 <ExternalLink size={16} />
-                <span>Voir ma boutique</span>
+                <span>Aperçu de ma Vitrine</span>
               </Link>
             </>
-          ) : (
+          ) : !showAssistant && (
             <Link
               to="/products"
               className="h-12 px-5 rounded-2xl bg-vendeur-emerald/15 hover:bg-vendeur-emerald border border-vendeur-emerald/30 text-vendeur-emerald hover:text-vendeur-coal text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95 shadow-sm"
-              title="Ajoutez vos premiers produits pour activer automatiquement votre vitrine"
+              title="Ajoutez vos produits pour activer votre boutique"
             >
               <Plus size={16} />
               <span>Ajouter mes articles</span>
@@ -273,6 +279,7 @@ export function SalesDashboard() {
       <HomePanel 
         dashboard={dashboard} 
         hasProducts={hasProducts}
+        isFounder={isFounder}
         onOpenTestIA={() => setIsTestIAOpen(true)}
         onOpenOffers={() => setIsOffersModalOpen(true)}
         onOpenShare={() => setIsShareModalOpen(true)}
@@ -317,12 +324,14 @@ export function SalesDashboard() {
 function HomePanel({
   dashboard,
   hasProducts,
+  isFounder,
   onOpenTestIA,
   onOpenOffers,
   onOpenShare
 }: {
   dashboard: any;
   hasProducts: boolean;
+  isFounder: boolean;
   onOpenTestIA: () => void;
   onOpenOffers: () => void;
   onOpenShare: () => void;
@@ -334,6 +343,7 @@ function HomePanel({
   const isPaidActive = dashboard?.merchant?.subscription?.status === "active";
   const isPaused = isPaidActive && dashboard?.merchant?.aiSettings?.autoReply === false;
   const isExpired = dashboard?.merchant?.subscription?.status === "past_due";
+  const showAssistant = !isFullyOperational || isPaused || isExpired;
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-700">
@@ -342,7 +352,7 @@ function HomePanel({
         Si la boutique est en cours de configuration ou nécessite une action vitale (pause, expiration),
         l'Assistant SmartAssistantCard prend la priorité absolue.
       */}
-      {(!isFullyOperational || isPaused || isExpired) && (
+      {showAssistant && !isFounder && (
         <SmartAssistantCard
           dashboard={dashboard}
           onOpenTestIA={onOpenTestIA}
@@ -351,8 +361,8 @@ function HomePanel({
       )}
 
       {/* MOBILE-ONLY QUICK ACTION BUTTONS (Generous height, non-squished) */}
-      <div className={cn("grid gap-3 md:hidden", !isPaidActive ? (hasProducts ? "grid-cols-3" : "grid-cols-2") : (hasProducts ? "grid-cols-2" : "grid-cols-1"))}>
-        {!isPaidActive && (
+      <div className={cn("grid gap-3 md:hidden", (!isPaidActive && !isFounder) ? (hasProducts ? "grid-cols-3" : (showAssistant ? "grid-cols-1" : "grid-cols-2")) : (hasProducts ? "grid-cols-2" : (showAssistant ? "hidden" : "grid-cols-1")))}>
+        {!isPaidActive && !isFounder && (
           <button
             onClick={onOpenOffers}
             className="min-h-[52px] h-13 px-2 rounded-2xl bg-vendeur-emerald/15 border border-vendeur-emerald/30 text-vendeur-emerald text-[11px] font-black uppercase tracking-wider hover:bg-vendeur-emerald hover:text-vendeur-coal transition-all flex items-center justify-center text-center gap-1.5 active:scale-95 cursor-pointer shadow-sm shrink-0"
@@ -369,7 +379,7 @@ function HomePanel({
               className="min-h-[52px] h-13 px-3 rounded-2xl bg-white/5 border border-white/10 text-white text-[11px] font-black uppercase tracking-wider hover:bg-white/10 transition-all flex items-center justify-center text-center gap-1.5 active:scale-95 cursor-pointer shadow-sm shrink-0"
             >
               <Share2 size={14} className="shrink-0 text-vendeur-emerald" />
-              <span className="truncate">Partager</span>
+              <span className="truncate">Propulser</span>
             </button>
 
             <Link
@@ -378,10 +388,10 @@ function HomePanel({
               className="min-h-[52px] h-13 px-3 rounded-2xl bg-vendeur-emerald text-vendeur-coal text-[11px] font-black uppercase tracking-wider hover:scale-105 active:scale-95 transition-all flex items-center justify-center text-center gap-1.5 shadow-lg shadow-vendeur-emerald/20 cursor-pointer shrink-0"
             >
               <ExternalLink size={14} className="shrink-0" />
-              <span className="truncate">Vitrine</span>
+              <span className="truncate">Ma Vitrine</span>
             </Link>
           </>
-        ) : (
+        ) : !showAssistant && (
           <Link
             to="/products"
             className="min-h-[52px] h-13 px-3 rounded-2xl bg-vendeur-emerald/15 border border-vendeur-emerald/30 text-vendeur-emerald text-[11px] font-black uppercase tracking-wider hover:bg-vendeur-emerald hover:text-vendeur-coal transition-all flex items-center justify-center text-center gap-2 active:scale-95 cursor-pointer shadow-sm shrink-0"
@@ -427,10 +437,10 @@ function HomePanel({
                     type="button"
                     onClick={onOpenShare}
                     className="flex items-center justify-center gap-2 min-h-[48px] h-12 px-4 py-3 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 text-white text-xs font-black uppercase tracking-wider transition-all w-full sm:w-auto cursor-pointer active:scale-95 shrink-0"
-                    title="Partager le lien ou QR Code de votre vitrine"
+                    title="Propulser votre boutique"
                   >
                     <Share2 size={15} className="text-vendeur-emerald" />
-                    <span>Partager Vitrine</span>
+                    <span>Propulser ma Boutique</span>
                   </button>
                 )}
 

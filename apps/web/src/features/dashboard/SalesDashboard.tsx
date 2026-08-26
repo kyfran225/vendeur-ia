@@ -203,6 +203,8 @@ export function SalesDashboard() {
   const isPaused = isPaidActive && dashboard?.merchant?.aiSettings?.autoReply === false;
   const isExpired = dashboard?.merchant?.subscription?.status === "past_due";
   const showAssistant = !isFullyOperational || isPaused || isExpired;
+  const isEssentialPlan = isPaidActive && (dashboard?.merchant?.subscription?.plan === "essential" || dashboard?.merchant?.subscription?.planId?.toLowerCase().includes("essential"));
+  const canUpgradeToPro = isEssentialPlan && !isFounder;
 
   return (
     <main className="max-w-6xl mx-auto p-4 md:p-10 space-y-8 pb-24 md:pb-8 animate-in fade-in duration-700">
@@ -232,7 +234,7 @@ export function SalesDashboard() {
         </div>
 
         <div className="hidden md:flex items-center gap-3">
-          {!isPaidActive && !isFounder && (
+          {canUpgradeToPro && (
             <button
               onClick={() => setIsOffersModalOpen(true)}
               className="h-12 px-5 rounded-2xl bg-vendeur-emerald/10 border border-vendeur-emerald/30 text-vendeur-emerald text-xs font-black uppercase tracking-wider hover:bg-vendeur-emerald hover:text-vendeur-coal transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95 shadow-sm"
@@ -344,6 +346,8 @@ function HomePanel({
   const isPaused = isPaidActive && dashboard?.merchant?.aiSettings?.autoReply === false;
   const isExpired = dashboard?.merchant?.subscription?.status === "past_due";
   const showAssistant = !isFullyOperational || isPaused || isExpired;
+  const isEssentialPlan = isPaidActive && (dashboard?.merchant?.subscription?.plan === "essential" || dashboard?.merchant?.subscription?.planId?.toLowerCase().includes("essential"));
+  const canUpgradeToPro = isEssentialPlan && !isFounder;
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-700">
@@ -361,14 +365,14 @@ function HomePanel({
       )}
 
       {/* MOBILE-ONLY QUICK ACTION BUTTONS (Generous height, non-squished) */}
-      <div className={cn("grid gap-3 md:hidden", (!isPaidActive && !isFounder) ? (hasProducts ? "grid-cols-3" : (showAssistant ? "grid-cols-1" : "grid-cols-2")) : (hasProducts ? "grid-cols-2" : (showAssistant ? "hidden" : "grid-cols-1")))}>
-        {!isPaidActive && !isFounder && (
+      <div className={cn("grid gap-3 md:hidden", canUpgradeToPro ? (hasProducts ? "grid-cols-3" : "grid-cols-1") : (hasProducts ? "grid-cols-2" : "hidden"))}>
+        {canUpgradeToPro && (
           <button
             onClick={onOpenOffers}
             className="min-h-[52px] h-13 px-2 rounded-2xl bg-vendeur-emerald/15 border border-vendeur-emerald/30 text-vendeur-emerald text-[11px] font-black uppercase tracking-wider hover:bg-vendeur-emerald hover:text-vendeur-coal transition-all flex items-center justify-center text-center gap-1.5 active:scale-95 cursor-pointer shadow-sm shrink-0"
           >
             <Zap size={14} className="shrink-0" />
-            <span className="truncate">Pack Pro</span>
+            <span className="truncate">Passer en Pro</span>
           </button>
         )}
 

@@ -482,7 +482,26 @@ function LandingHero({
           onboardingCompleted: true
         });
         useAuthStore.getState().updateUser({ onboardingCompleted: true });
-        toast.success("Boutique configurée avec succès ! 🎉");
+        toast.custom(
+          (t) => (
+            <div className="flex items-center gap-3.5 bg-[#0b1410] border border-vendeur-emerald/40 text-white p-4 rounded-2xl shadow-[0_10px_30px_rgba(16,185,129,0.25)] min-w-[320px] animate-in slide-in-from-top-2 duration-300">
+              <div className="h-10 w-10 rounded-xl bg-vendeur-emerald/15 border border-vendeur-emerald/30 flex items-center justify-center shrink-0">
+                <AssistantIcon size={24} color="#10B981" withBackground={false} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[10px] font-black uppercase text-vendeur-emerald tracking-wider">Vendeur IA</span>
+                  <span className="text-white/40 text-[10px]">·</span>
+                  <span className="text-[10px] text-white/50 font-bold uppercase">Boutique Créée</span>
+                </div>
+                <p className="text-xs sm:text-sm font-black text-white truncate mt-0.5">
+                  Boutique configurée avec succès ! 🎉
+                </p>
+              </div>
+            </div>
+          ),
+          { id: "store-created-toast", duration: 3500 }
+        );
       } catch (err) {
         console.warn("[Landing] Auto-create merchant error:", err);
       }

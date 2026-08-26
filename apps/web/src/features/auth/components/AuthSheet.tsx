@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { X, Mail, Lock, User, ChevronRight, Loader2, ShieldCheck, Sparkles, Phone, ArrowLeft, Eye, EyeOff, QrCode, AlertTriangle, Smartphone, Laptop } from "lucide-react";
 import { Logo } from "@/components/ui/Logo";
+import { AssistantIcon } from "@/components/ui/AssistantIcon";
 import { WhatsAppIcon } from "@/components/ui/WhatsAppIcon";
 import { CountrySelector, COUNTRIES, Country, parsePhoneNumber, formatDisplayPhone } from "@/features/onboarding/components/CountrySelector";
 import { useAuthStore } from "@/stores/authStore";
@@ -131,7 +132,26 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
     isAuthCompletedRef.current = true;
 
     setSession(sessionData);
-    toast.success(`Connexion réussie ! 🎉`, { id: "auth-toast" });
+    toast.custom(
+      (t) => (
+        <div className="flex items-center gap-3.5 bg-[#0b1410] border border-vendeur-emerald/40 text-white p-4 rounded-2xl shadow-[0_10px_30px_rgba(16,185,129,0.25)] min-w-[320px] animate-in slide-in-from-top-2 duration-300">
+          <div className="h-10 w-10 rounded-xl bg-vendeur-emerald/15 border border-vendeur-emerald/30 flex items-center justify-center shrink-0">
+            <AssistantIcon size={24} color="#10B981" withBackground={false} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10px] font-black uppercase text-vendeur-emerald tracking-wider">Vendeur IA</span>
+              <span className="text-white/40 text-[10px]">·</span>
+              <span className="text-[10px] text-white/50 font-bold uppercase">En Ligne</span>
+            </div>
+            <p className="text-xs sm:text-sm font-black text-white truncate mt-0.5">
+              Connexion réussie ! Bienvenue 🚀
+            </p>
+          </div>
+        </div>
+      ),
+      { id: "auth-toast", duration: 3500 }
+    );
     onClose();
 
     // 1. Auto-initialize merchant from landing demo form if already filled

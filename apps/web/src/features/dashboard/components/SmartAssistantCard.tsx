@@ -329,7 +329,7 @@ export function SmartAssistantCard({ dashboard, onOpenTestIA, onOpenShare }: Sma
                           className="flex-1 flex items-center justify-center gap-2.5 min-h-[52px] sm:min-h-[56px] px-5 py-3.5 rounded-2xl bg-vendeur-emerald text-vendeur-coal font-black uppercase text-xs sm:text-sm tracking-wider hover:bg-emerald-400 active:scale-95 transition-all shadow-lg shadow-vendeur-emerald/20 cursor-pointer shrink-0 truncate group"
                         >
                           <Zap size={17} fill="currentColor" className="shrink-0 group-hover:scale-110 transition-transform" />
-                          <span className="truncate">Étape Suivante : {nextStep.label}</span>
+                          <span className="truncate">{nextStep.label}</span>
                           <ArrowRight size={17} className="shrink-0 group-hover:translate-x-1 transition-transform" />
                         </Link>
 
@@ -484,78 +484,6 @@ export function SmartAssistantCard({ dashboard, onOpenTestIA, onOpenShare }: Sma
 
               {/* Decorative background glow */}
               <div className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/4 h-32 w-32 bg-blue-500/20 blur-[60px] rounded-full pointer-events-none" />
-            </div>
-          </div>
-        )}
-
-        {/*
-          BLOC PREMIUM PACK PRO AVEC CAROUSEL D'AVANTAGES
-          Affiché pour inciter à passer à l'offre Pro/Expert
-        */}
-        {!hasPackPro && !isFullyOperational && (
-          <div className="pt-6 border-t border-white/5 space-y-4">
-            <div className="bg-gradient-to-r from-vendeur-emerald/10 via-vendeur-emerald/5 to-transparent border border-vendeur-emerald/20 p-4 sm:p-6 rounded-3xl flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 relative overflow-hidden group/nudge">
-              <div className="space-y-4 relative z-10 flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                   <div className="h-8 w-8 rounded-xl bg-vendeur-emerald/20 text-vendeur-emerald flex items-center justify-center shrink-0 shadow-inner">
-                    <Rocket size={16} />
-                  </div>
-                  <h4 className="text-sm sm:text-base font-black uppercase tracking-tight text-white">
-                    Passez à la vitesse supérieure avec le <span className="text-vendeur-emerald">Pack Pro Expert</span>
-                  </h4>
-                </div>
-
-                {/* HORIZONTAL ADVANTAGES CAROUSEL */}
-                <div className="relative w-full overflow-hidden h-10 sm:h-12">
-                  <motion.div
-                    className="flex items-center gap-4 whitespace-nowrap absolute left-0"
-                    animate={{
-                      x: [0, -1200]
-                    }}
-                    transition={{
-                      duration: 30,
-                      repeat: Infinity,
-                      ease: "linear"
-                    }}
-                  >
-                    {[
-                      { icon: <Sparkles size={14} />, text: "Numéro Meta Cloud Officiel (Fiabilité 100%)" },
-                      { icon: <WhatsAppIcon size={14} />, text: "IA Multicanale : Instagram, Messenger & WhatsApp" },
-                      { icon: <Rocket size={14} />, text: "Broadcast IA : Envoyez vos promos en 1 clic" },
-                      { icon: <ShieldCheck size={14} />, text: "PaymentShield Forensic : Protection anti-fraude" },
-                      { icon: <AssistantIcon size={14} withBackground={false} />, text: "Support VIP Prioritaire 24h/7" },
-                      // Duplicate for seamless loop
-                      { icon: <Sparkles size={14} />, text: "Numéro Meta Cloud Officiel (Fiabilité 100%)" },
-                      { icon: <WhatsAppIcon size={14} />, text: "IA Multicanale : Instagram, Messenger & WhatsApp" },
-                      { icon: <Rocket size={14} />, text: "Broadcast IA : Envoyez vos promos en 1 clic" },
-                      { icon: <ShieldCheck size={14} />, text: "PaymentShield Forensic : Protection anti-fraude" },
-                      { icon: <AssistantIcon size={14} withBackground={false} />, text: "Support VIP Prioritaire 24h/7" },
-                    ].map((benefit, i) => (
-                      <div key={i} className="flex items-center gap-2.5 px-4 py-2 rounded-full bg-white/5 border border-white/10 text-white/80 text-[11px] sm:text-xs font-bold shadow-sm">
-                        <span className="text-vendeur-emerald">{benefit.icon}</span>
-                        <span>{benefit.text}</span>
-                      </div>
-                    ))}
-                  </motion.div>
-                  {/* Subtle Fade gradients on sides */}
-                  <div className="absolute inset-y-0 left-0 w-12 bg-gradient-to-r from-[#0c1410] to-transparent z-10" />
-                  <div className="absolute inset-y-0 right-0 w-12 bg-gradient-to-l from-[#0c1410] to-transparent z-10" />
-                </div>
-              </div>
-
-              <div className="w-full lg:w-auto shrink-0 relative z-10">
-                <button
-                  type="button"
-                  onClick={() => setIsPackProModalOpen(true)}
-                  className="w-full lg:w-auto h-12 sm:h-14 px-6 sm:px-8 rounded-2xl bg-vendeur-emerald text-vendeur-coal font-black uppercase tracking-wider text-xs sm:text-sm flex items-center justify-center gap-2.5 transition-all shadow-xl shadow-vendeur-emerald/20 hover:scale-[1.03] active:scale-95 cursor-pointer"
-                >
-                  <Rocket size={18} />
-                  <span>Activer Pack Pro</span>
-                </button>
-              </div>
-
-              {/* Decorative background glow */}
-              <div className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/4 h-32 w-32 bg-vendeur-emerald/20 blur-[60px] rounded-full pointer-events-none group-hover/nudge:bg-vendeur-emerald/30 transition-colors" />
             </div>
           </div>
         )}

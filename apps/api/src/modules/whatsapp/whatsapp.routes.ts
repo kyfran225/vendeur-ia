@@ -62,6 +62,52 @@ router.get("/status", authenticate, async (req, res) => {
   }
 });
 
+// Demande d'un Code de Jumelage Mobile (Pairing Code à 8 caractères)
+router.post("/pair-code", authenticate, async (req, res) => {
+  try {
+    const userId = (req as any).user.id;
+    let { phoneNumber } = req.body;
+
+    if (!phoneNumber) {
+      const merchant = await CommerceMerchantModel.findOne({ ownerId: userId });
+      phoneNumber = merchant?.whatsappNumber || merchant?.phone;
+    }
+
+    if (!phoneNumber) {
+      return res.status(400).json({ error: "Le numéro WhatsApp est requis pour générer le code de jumelage." });
+    }
+
+    const code = await whatsappService.requestPairingCode(userId, phoneNumber);
+    res.json({ success: true, code });
+  } catch (error: any) {
+    console.error("[WhatsApp Pair Code Error]:", error.message);
+    res.status(400).json({ error: error.message || "Impossible de générer le code de jumelage." });
+  }
+});
+
+// Demande d'un QR Code WhatsApp Web
+router.post("/pair-qr", authenticate, async (req, res) => {
+  try {
+    const userId = (req as any).user.id;
+    const qr = await whatsappService.requestQrCode(userId);
+    res.json({ success: true, qr });
+  } catch (error: any) {
+    console.error("[WhatsApp Pair QR Error]:", error.message);
+    res.status(500).json({ error: error.message || "Impossible de générer le QR Code." });
+  }
+});
+
+// Récupération de l'état actuel du jumelage (code ou QR en cours)
+router.get("/pairing-data", authenticate, async (req, res) => {
+  try {
+    const userId = (req as any).user.id;
+    const data = whatsappService.getSessionPairingData(userId);
+    res.json(data);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Enregistrement manuel des clés API Meta (Phone Number ID, WABA ID, Access Token)
 router.post("/meta-config", authenticate, async (req, res) => {
   try {

@@ -25,6 +25,8 @@ class WhatsAppService {
   private pendingInitializations: Map<string, Promise<void>> = new Map();
   private heartbeatInterval: NodeJS.Timeout | null = null;
   private processedMessageIds: Set<string> = new Set();
+  private lastQrMap: Map<string, string> = new Map();
+  private lastPairingCodeMap: Map<string, string> = new Map();
 
   constructor() {
     this.startHeartbeat();
@@ -103,6 +105,106 @@ class WhatsAppService {
     }
   }
 
+  private async handleConnectionClose(userId: string, lastDisconnect: any) {
+    const statusCode = (lastDisconnect?.error as Boom)?.output?.statusCode;
+    const errMessage = (lastDisconnect?.error as Error)?.message || "";
+    const isSessionExpired = errMessage.includes("ended") || statusCode === DisconnectReason.timedOut;
+
+    if (isSessionExpired) {
+      console.log(`[WhatsApp] Session expirée pour l'utilisateur ${userId}. Nettoyage de la session.`);
+      this.activeSessions.delete(userId);
+      this.pendingInitializations.delete(userId);
+      this.lastPairingCodeMap.delete(userId);
+      this.lastQrMap.delete(userId);
+      emitToUser(userId, "whatsapp:disconnected", {
+        reason: "session_expired",
+        shouldReconnect: false
+      });
+      return;
+    }
+
+    const isReplaced = statusCode === DisconnectReason.connectionReplaced;
+    const shouldReconnect = statusCode !== DisconnectReason.loggedOut && statusCode !== DisconnectReason.connectionClosed && !isReplaced;
+
+    await CommerceMerchantModel.findOneAndUpdate(
+      { ownerId: userId },
+      { $set: { "whatsappConfig.status": shouldReconnect ? "error" : "disconnected" } }
+    );
+
+    await WhatsAppConnectionModel.findOneAndUpdate(
+      { userId },
+      {
+        $set: {
+          status: shouldReconnect ? 'RECONNECTING' : 'DISCONNECTED',
+          disconnectedAt: new Date()
+        }
+      },
+      { upsert: true }
+    );
+
+    // Notify front-end in real-time about disconnection/error status
+    emitToUser(userId, "whatsapp:disconnected", {
+      reason: isReplaced ? "connection_replaced" : (statusCode === DisconnectReason.loggedOut ? "logged_out" : "error"),
+      statusCode,
+      shouldReconnect
+    });
+
+    // Trigger push notification to merchant
+    pushService.sendNotification(userId, {
+      title: "⚠️ WhatsApp Déconnecté !",
+      body: "La connexion WhatsApp de votre assistant IA s'est interrompue. Cliquez ici pour la rétablir.",
+      data: { url: "/settings?tab=connexions" }
+    }).catch(err => console.error("[WhatsApp] Push notification send failed:", err));
+
+    if (shouldReconnect) {
+      console.warn(`[WhatsApp] Critical disconnection for user ${userId}. Reconnecting...`);
+
+      const merchant = await CommerceMerchantModel.findOneAndUpdate(
+        { ownerId: userId },
+        { $inc: { "whatsappConfig.reconnectAttempts": 1 } },
+        { new: true }
+      );
+
+      const attempts = merchant?.whatsappConfig?.reconnectAttempts || 0;
+
+      if (attempts <= 3) {
+        this.activeSessions.delete(userId);
+        console.log(`[WhatsApp] Reconnection attempt ${attempts}/3 for ${userId}`);
+        this.initSession(userId).catch(err => console.error(`[WhatsApp] Auto-reconnect failed for ${userId}:`, err));
+      } else {
+        console.error(`[WhatsApp] Max reconnection attempts reached for ${userId}. Alerting merchant.`);
+        this.activeSessions.delete(userId);
+        await CommerceMerchantModel.findOneAndUpdate(
+          { ownerId: userId },
+          { $set: { "whatsappConfig.status": "error" } }
+        );
+
+        if (merchant?.whatsappNumber) {
+          smsService.sendAlert(
+            merchant.whatsappNumber,
+            `🛑 Chef, votre Vendeur IA a un problème de connexion persistant. Veuillez vous reconnecter manuellement sur votre tableau de bord.`
+          );
+        }
+      }
+    } else {
+      this.activeSessions.delete(userId);
+      await CommerceMerchantModel.findOneAndUpdate(
+        { ownerId: userId },
+        { $set: { "whatsappConfig.reconnectAttempts": 0 } }
+      );
+    }
+
+    if (statusCode === DisconnectReason.badSession || statusCode === DisconnectReason.connectionClosed || isReplaced) {
+      console.log(`[WhatsApp] Stale/replaced session detected for ${userId} (status ${statusCode}), clearing storage.`);
+      await clearMongoAuthState(userId);
+    }
+
+    this.activeSessions.delete(userId);
+    this.pendingInitializations.delete(userId);
+    this.lastPairingCodeMap.delete(userId);
+    this.lastQrMap.delete(userId);
+  }
+
   async initSession(userId: string, force: boolean = false): Promise<void> {
     if (force) {
       const existingSock = this.activeSessions.get(userId);
@@ -113,6 +215,8 @@ class WhatsAppService {
         this.activeSessions.delete(userId);
       }
       this.pendingInitializations.delete(userId);
+      this.lastPairingCodeMap.delete(userId);
+      this.lastQrMap.delete(userId);
 
       await clearMongoAuthState(userId);
     }
@@ -135,149 +239,65 @@ class WhatsAppService {
         this.activeSessions.set(userId, sock);
 
         sock.ev.on("connection.update", async (update) => {
-          const { connection, lastDisconnect } = update;
+          const { connection, lastDisconnect, qr } = update;
+
+          if (qr) {
+            this.lastQrMap.set(userId, qr);
+            emitToUser(userId, "whatsapp:qr", { qr });
+          }
 
           if (connection === "connecting") {
             emitToUser(userId, "whatsapp:connecting", {});
           }
 
-            if (connection === "open") {
-              await CommerceMerchantModel.findOneAndUpdate(
-                { ownerId: userId },
-                {
-                  $set: {
-                    "whatsappConfig.status": "connected",
-                    "whatsappConfig.provider": "baileys",
-                    "whatsappConfig.reconnectAttempts": 0 // Reset attempts on success
-                  }
-                }
-              );
+          if (connection === "open") {
+            this.lastPairingCodeMap.delete(userId);
+            this.lastQrMap.delete(userId);
 
-              await WhatsAppConnectionModel.findOneAndUpdate(
-                { userId },
-                {
-                  $set: {
-                    status: 'CONNECTED',
-                    connectionType: 'baileys',
-                    connectedAt: new Date(),
-                    disconnectedAt: null
-                  }
-                },
-                { upsert: true }
-              );
-
-              emitToUser(userId, "whatsapp:connected", {});
-              console.log(`[WhatsApp] User ${userId} connected`);
-            }
-
-            if (connection === "close") {
-              const statusCode = (lastDisconnect?.error as Boom)?.output?.statusCode;
-              const errMessage = (lastDisconnect?.error as Error)?.message || "";
-              const isSessionExpired = errMessage.includes("ended") || statusCode === DisconnectReason.timedOut;
-
-              if (isSessionExpired) {
-                console.log(`[WhatsApp] Session expirée pour l'utilisateur ${userId}. Nettoyage de la session.`);
-                this.activeSessions.delete(userId);
-                this.pendingInitializations.delete(userId);
-                emitToUser(userId, "whatsapp:disconnected", {
-                  reason: "session_expired",
-                  shouldReconnect: false
-                });
-                return;
-              }
-
-              const isReplaced = statusCode === DisconnectReason.connectionReplaced;
-              const shouldReconnect = statusCode !== DisconnectReason.loggedOut && statusCode !== DisconnectReason.connectionClosed && !isReplaced;
-
-              await CommerceMerchantModel.findOneAndUpdate(
-                { ownerId: userId },
-                { $set: { "whatsappConfig.status": shouldReconnect ? "error" : "disconnected" } }
-              );
-
-              await WhatsAppConnectionModel.findOneAndUpdate(
-                { userId },
-                {
-                  $set: {
-                    status: shouldReconnect ? 'RECONNECTING' : 'DISCONNECTED',
-                    disconnectedAt: new Date()
-                  }
-                },
-                { upsert: true }
-              );
-
-              // Notify front-end in real-time about disconnection/error status
-              emitToUser(userId, "whatsapp:disconnected", {
-                reason: isReplaced ? "connection_replaced" : (statusCode === DisconnectReason.loggedOut ? "logged_out" : "error"),
-                statusCode,
-                shouldReconnect
-              });
-
-              // Trigger push notification to merchant
-              pushService.sendNotification(userId, {
-                title: "⚠️ WhatsApp Déconnecté !",
-                body: "La connexion WhatsApp de votre assistant IA s'est interrompue. Cliquez ici pour la rétablir.",
-                data: { url: "/settings?tab=connexions" }
-              }).catch(err => console.error("[WhatsApp] Push notification send failed:", err));
-
-              if (shouldReconnect) {
-                console.warn(`[WhatsApp] Critical disconnection for user ${userId}. Reconnecting...`);
-
-                const merchant = await CommerceMerchantModel.findOneAndUpdate(
-                  { ownerId: userId },
-                  { $inc: { "whatsappConfig.reconnectAttempts": 1 } },
-                  { new: true }
-                );
-
-                const attempts = merchant?.whatsappConfig?.reconnectAttempts || 0;
-
-                if (attempts <= 3) {
-                  this.activeSessions.delete(userId);
-                  console.log(`[WhatsApp] Reconnection attempt ${attempts}/3 for ${userId}`);
-                  this.initSession(userId).catch(err => console.error(`[WhatsApp] Auto-reconnect failed for ${userId}:`, err));
-                } else {
-                  console.error(`[WhatsApp] Max reconnection attempts reached for ${userId}. Alerting merchant.`);
-                  this.activeSessions.delete(userId);
-                  await CommerceMerchantModel.findOneAndUpdate(
-                    { ownerId: userId },
-                    { $set: { "whatsappConfig.status": "error" } }
-                  );
-
-                  if (merchant?.whatsappNumber) {
-                    smsService.sendAlert(
-                      merchant.whatsappNumber,
-                      `🛑 Chef, votre Vendeur IA a un problème de connexion persistant. Veuillez vous reconnecter manuellement sur votre tableau de bord.`
-                    );
-                  }
-                }
-              } else {
-                this.activeSessions.delete(userId);
-                await CommerceMerchantModel.findOneAndUpdate(
-                  { ownerId: userId },
-                  { $set: { "whatsappConfig.reconnectAttempts": 0 } }
-                );
-              }
-
-              if (statusCode === DisconnectReason.badSession || statusCode === DisconnectReason.connectionClosed || isReplaced) {
-                  console.log(`[WhatsApp] Stale/replaced session detected for ${userId} (status ${statusCode}), clearing storage.`);
-                  await clearMongoAuthState(userId);
-              }
-
-              this.activeSessions.delete(userId);
-              this.pendingInitializations.delete(userId);
-            }
-          });
-
-          sock.ev.on("creds.update", saveCreds);
-
-          sock.ev.on("messages.upsert", async (m) => {
-            if (m.type === "notify") {
-              for (const msg of m.messages) {
-                if (!msg.key.fromMe) {
-                  await this.handleIncomingMessage(userId, msg);
+            await CommerceMerchantModel.findOneAndUpdate(
+              { ownerId: userId },
+              {
+                $set: {
+                  "whatsappConfig.status": "connected",
+                  "whatsappConfig.provider": "baileys",
+                  "whatsappConfig.reconnectAttempts": 0
                 }
               }
+            );
+
+            await WhatsAppConnectionModel.findOneAndUpdate(
+              { userId },
+              {
+                $set: {
+                  status: 'CONNECTED',
+                  connectionType: 'baileys',
+                  connectedAt: new Date(),
+                  disconnectedAt: null
+                }
+              },
+              { upsert: true }
+            );
+
+            emitToUser(userId, "whatsapp:connected", {});
+            console.log(`[WhatsApp] User ${userId} connected`);
+          }
+
+          if (connection === "close") {
+            await this.handleConnectionClose(userId, lastDisconnect);
+          }
+        });
+
+        sock.ev.on("creds.update", saveCreds);
+
+        sock.ev.on("messages.upsert", async (m) => {
+          if (m.type === "notify") {
+            for (const msg of m.messages) {
+              if (!msg.key.fromMe) {
+                await this.handleIncomingMessage(userId, msg);
+              }
             }
-          });
+          }
+        });
       } finally {
         this.pendingInitializations.delete(userId);
       }
@@ -285,6 +305,211 @@ class WhatsAppService {
 
     this.pendingInitializations.set(userId, initPromise);
     return initPromise;
+  }
+
+  async requestPairingCode(userId: string, phoneNumber: string): Promise<string> {
+    const cleanNumber = phoneNumber.replace(/\D/g, "");
+    if (!cleanNumber || cleanNumber.length < 6) {
+      throw new Error("Numéro WhatsApp invalide pour le jumelage (ex: +225 07 00 00 00 00).");
+    }
+
+    // Force-clean any existing socket for fresh pairing
+    const existingSock = this.activeSessions.get(userId);
+    if (existingSock) {
+      try { existingSock.end(undefined); } catch (e) {}
+      this.activeSessions.delete(userId);
+    }
+    this.pendingInitializations.delete(userId);
+    this.lastPairingCodeMap.delete(userId);
+    this.lastQrMap.delete(userId);
+
+    await clearMongoAuthState(userId);
+
+    const { state, saveCreds } = await useMongoAuthState(userId);
+    const { version } = await fetchLatestBaileysVersion();
+
+    const sock = makeWASocket({
+      version,
+      auth: state,
+      printQRInTerminal: false,
+      browser: Browsers.ubuntu("Chrome"),
+    });
+
+    this.activeSessions.set(userId, sock);
+
+    sock.ev.on("creds.update", saveCreds);
+
+    sock.ev.on("connection.update", async (update) => {
+      const { connection, lastDisconnect } = update;
+
+      if (connection === "connecting") {
+        emitToUser(userId, "whatsapp:connecting", {});
+      }
+
+      if (connection === "open") {
+        this.lastPairingCodeMap.delete(userId);
+        this.lastQrMap.delete(userId);
+
+        await CommerceMerchantModel.findOneAndUpdate(
+          { ownerId: userId },
+          {
+            $set: {
+              "whatsappConfig.status": "connected",
+              "whatsappConfig.provider": "baileys",
+              "whatsappConfig.reconnectAttempts": 0,
+              "whatsappNumber": cleanNumber
+            }
+          }
+        );
+
+        await WhatsAppConnectionModel.findOneAndUpdate(
+          { userId },
+          {
+            $set: {
+              status: 'CONNECTED',
+              connectionType: 'baileys',
+              phoneNumber: cleanNumber,
+              connectedAt: new Date(),
+              disconnectedAt: null
+            }
+          },
+          { upsert: true }
+        );
+
+        emitToUser(userId, "whatsapp:connected", { phoneNumber: cleanNumber });
+        console.log(`[WhatsApp] User ${userId} successfully connected via Pairing Code`);
+      }
+
+      if (connection === "close") {
+        await this.handleConnectionClose(userId, lastDisconnect);
+      }
+    });
+
+    sock.ev.on("messages.upsert", async (m) => {
+      if (m.type === "notify") {
+        for (const msg of m.messages) {
+          if (!msg.key.fromMe) {
+            await this.handleIncomingMessage(userId, msg);
+          }
+        }
+      }
+    });
+
+    // Wait a brief tick for Baileys handshake before requesting code
+    await new Promise(resolve => setTimeout(resolve, 1200));
+
+    if (!sock.authState.creds.registered) {
+      const rawCode = await sock.requestPairingCode(cleanNumber);
+      // Format 8-char code cleanly e.g. "ABCD-1234"
+      const formattedCode = rawCode?.match(/.{1,4}/g)?.join("-") || rawCode;
+      this.lastPairingCodeMap.set(userId, formattedCode);
+      emitToUser(userId, "whatsapp:pairing_code", { code: formattedCode });
+      return formattedCode;
+    } else {
+      throw new Error("L'appareil est déjà enregistré ou connecté.");
+    }
+  }
+
+  async requestQrCode(userId: string): Promise<string | null> {
+    const existingSock = this.activeSessions.get(userId);
+    if (existingSock) {
+      try { existingSock.end(undefined); } catch (e) {}
+      this.activeSessions.delete(userId);
+    }
+    this.pendingInitializations.delete(userId);
+    this.lastPairingCodeMap.delete(userId);
+    this.lastQrMap.delete(userId);
+
+    await clearMongoAuthState(userId);
+
+    const { state, saveCreds } = await useMongoAuthState(userId);
+    const { version } = await fetchLatestBaileysVersion();
+
+    const sock = makeWASocket({
+      version,
+      auth: state,
+      printQRInTerminal: false,
+      browser: Browsers.ubuntu("Chrome"),
+    });
+
+    this.activeSessions.set(userId, sock);
+
+    sock.ev.on("creds.update", saveCreds);
+
+    return new Promise((resolve) => {
+      const timeout = setTimeout(() => {
+        resolve(this.lastQrMap.get(userId) || null);
+      }, 6000);
+
+      sock.ev.on("connection.update", async (update) => {
+        const { connection, lastDisconnect, qr } = update;
+
+        if (qr) {
+          this.lastQrMap.set(userId, qr);
+          emitToUser(userId, "whatsapp:qr", { qr });
+          clearTimeout(timeout);
+          resolve(qr);
+        }
+
+        if (connection === "connecting") {
+          emitToUser(userId, "whatsapp:connecting", {});
+        }
+
+        if (connection === "open") {
+          this.lastPairingCodeMap.delete(userId);
+          this.lastQrMap.delete(userId);
+
+          await CommerceMerchantModel.findOneAndUpdate(
+            { ownerId: userId },
+            {
+              $set: {
+                "whatsappConfig.status": "connected",
+                "whatsappConfig.provider": "baileys",
+                "whatsappConfig.reconnectAttempts": 0
+              }
+            }
+          );
+
+          await WhatsAppConnectionModel.findOneAndUpdate(
+            { userId },
+            {
+              $set: {
+                status: 'CONNECTED',
+                connectionType: 'baileys',
+                connectedAt: new Date(),
+                disconnectedAt: null
+              }
+            },
+            { upsert: true }
+          );
+
+          emitToUser(userId, "whatsapp:connected", {});
+          console.log(`[WhatsApp] User ${userId} successfully connected via QR Code`);
+        }
+
+        if (connection === "close") {
+          await this.handleConnectionClose(userId, lastDisconnect);
+        }
+      });
+
+      sock.ev.on("messages.upsert", async (m) => {
+        if (m.type === "notify") {
+          for (const msg of m.messages) {
+            if (!msg.key.fromMe) {
+              await this.handleIncomingMessage(userId, msg);
+            }
+          }
+        }
+      });
+    });
+  }
+
+  getSessionPairingData(userId: string) {
+    return {
+      pairingCode: this.lastPairingCodeMap.get(userId) || null,
+      qr: this.lastQrMap.get(userId) || null,
+      isActive: this.activeSessions.has(userId)
+    };
   }
 
   private async getMetaConfig(merchant: any) {

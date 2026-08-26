@@ -3,14 +3,18 @@ import {
   ShieldCheck,
   Loader2,
   Check,
-  Sparkles,
   Phone,
   Settings2,
   ChevronDown,
   ChevronUp,
   MessageSquare,
   Zap,
-  ExternalLink
+  Copy,
+  Smartphone,
+  QrCode,
+  RefreshCw,
+  LogOut,
+  CheckCircle2
 } from "lucide-react";
 import { AssistantIcon } from "@/components/ui/AssistantIcon";
 import { toast } from "sonner";
@@ -19,8 +23,13 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { StepMilestoneModal } from "@/components/ui/StepMilestoneModal";
 import { formatDisplayPhone, parsePhoneNumber } from "@/features/onboarding/components/CountrySelector";
+import { QRCodeSVG } from "qrcode.react";
+import { io, Socket } from "socket.io-client";
+import { useAuthStore } from "@/stores/authStore";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+
+const API_URL = (import.meta as any).env.VITE_API_URL || "http://localhost:3001";
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -29,10 +38,22 @@ function cn(...inputs: ClassValue[]) {
 export function WhatsAppConnectionFlow() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { user } = useAuthStore();
 
-  const [savingPhone, setSavingPhone] = useState(false);
+  const [activeTab, setActiveTab] = useState<"pairing_code" | "qr_code" | "meta">("pairing_code");
   const [storeWhatsApp, setStoreWhatsApp] = useState("");
   const [isEditingPhone, setIsEditingPhone] = useState(false);
+  const [savingPhone, setSavingPhone] = useState(false);
+
+  // Pairing Code & QR State
+  const [pairingCode, setPairingCode] = useState<string | null>(null);
+  const [qrCodeData, setQrCodeData] = useState<string | null>(null);
+  const [isRequestingPairing, setIsRequestingPairing] = useState(false);
+  const [isRequestingQr, setIsRequestingQr] = useState(false);
+  const [copiedCode, setCopiedCode] = useState(false);
+  const [isDisconnecting, setIsDisconnecting] = useState(false);
+
+  // Meta Cloud API Form
   const [metaForm, setMetaForm] = useState({
     phoneNumberId: "",
     wabaId: "",
@@ -52,30 +73,165 @@ export function WhatsAppConnectionFlow() {
 
   const merchant = dashboard?.merchant;
   const whatsapp = dashboard?.whatsappConnection;
-  const subscription = dashboard?.subscription;
-
   const activeNumber = merchant?.whatsappNumber || merchant?.phone || whatsapp?.phoneNumber || "";
+  const isBaileysConnected = whatsapp?.status === "CONNECTED" || merchant?.whatsappConfig?.status === "connected";
+  const isMetaConnected = merchant?.whatsappConfig?.provider === "meta" && Boolean(merchant?.whatsappConfig?.meta?.phoneNumberId || merchant?.whatsappConfig?.phoneNumberId);
+  const isConnectedLive = isBaileysConnected || isMetaConnected;
 
+  const isPaidActive = merchant?.subscription?.status === "active";
+  const isPaused = isPaidActive && merchant?.aiSettings?.autoReply === false;
+  const isDiscoveryMode = !isPaidActive;
+
+  // Prefill phone on load
   useEffect(() => {
-    if (activeNumber) {
+    if (activeNumber && !storeWhatsApp) {
       setStoreWhatsApp(activeNumber);
     }
-  }, [activeNumber]);
+  }, [activeNumber, storeWhatsApp]);
 
+  // Socket.io Realtime event listeners for live pairing
   useEffect(() => {
-    if (merchant?.whatsappConfig?.meta) {
-      setMetaForm({
-        phoneNumberId: merchant.whatsappConfig.meta.phoneNumberId || "",
-        wabaId: merchant.whatsappConfig.meta.wabaId || "",
-        accessToken: merchant.whatsappConfig.meta.accessToken || ""
-      });
-    }
-  }, [merchant?.whatsappConfig]);
+    const s: Socket = io(API_URL);
 
+    if (user?.id) {
+      s.emit("join", user.id);
+    }
+
+    const handlePairingCode = (data: { code: string }) => {
+      if (data?.code) {
+        setPairingCode(data.code);
+        setIsRequestingPairing(false);
+      }
+    };
+
+    const handleQrCode = (data: { qr: string }) => {
+      if (data?.qr) {
+        setQrCodeData(data.qr);
+        setIsRequestingQr(false);
+      }
+    };
+
+    const handleConnected = () => {
+      setIsRequestingPairing(false);
+      setIsRequestingQr(false);
+      setPairingCode(null);
+      setQrCodeData(null);
+      toast.success("🎉 Votre WhatsApp de vente est connecté avec succès ! L'IA est prête.");
+      setShowMilestoneModal(true);
+      refetch();
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+    };
+
+    const handleDisconnected = (data: any) => {
+      refetch();
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+      if (data?.reason === "logged_out" || data?.reason === "session_expired") {
+        toast.info("Session WhatsApp déconnectée.");
+      }
+    };
+
+    s.on("whatsapp:pairing_code", handlePairingCode);
+    s.on("whatsapp:qr", handleQrCode);
+    s.on("whatsapp:connected", handleConnected);
+    s.on("whatsapp:disconnected", handleDisconnected);
+
+    return () => {
+      s.off("whatsapp:pairing_code", handlePairingCode);
+      s.off("whatsapp:qr", handleQrCode);
+      s.off("whatsapp:connected", handleConnected);
+      s.off("whatsapp:disconnected", handleDisconnected);
+      s.disconnect();
+    };
+  }, [user?.id, refetch, queryClient]);
+
+  // Fetch pairing data on mount if any active session is pending
+  useEffect(() => {
+    apiClient.get("/api/whatsapp/pairing-data").then((res) => {
+      if (res.data?.pairingCode) {
+        setPairingCode(res.data.pairingCode);
+      }
+      if (res.data?.qr) {
+        setQrCodeData(res.data.qr);
+      }
+    }).catch(() => {});
+  }, []);
+
+  // Request Mobile Pairing Code
+  const handleRequestPairingCode = async () => {
+    const targetPhone = (storeWhatsApp || activeNumber).trim();
+    if (!targetPhone || targetPhone.replace(/\D/g, "").length < 6) {
+      toast.error("Veuillez renseigner un numéro WhatsApp valide pour générer le code.");
+      return;
+    }
+    const parsed = parsePhoneNumber(targetPhone, merchant?.country || "CI");
+    const normalizedPhone = parsed.e164 || targetPhone;
+
+    setIsRequestingPairing(true);
+    setPairingCode(null);
+    try {
+      const res = await apiClient.post("/api/whatsapp/pair-code", { phoneNumber: normalizedPhone });
+      if (res.data?.code) {
+        setPairingCode(res.data.code);
+        toast.success("Code de jumelage généré ! Collez-le dans WhatsApp.");
+      }
+    } catch (err: any) {
+      toast.error(err.response?.data?.error || "Impossible de générer le code de jumelage. Réessayez.");
+    } finally {
+      setIsRequestingPairing(false);
+    }
+  };
+
+  // Request Desktop QR Code
+  const handleRequestQrCode = async () => {
+    setIsRequestingQr(true);
+    setQrCodeData(null);
+    try {
+      const res = await apiClient.post("/api/whatsapp/pair-qr");
+      if (res.data?.qr) {
+        setQrCodeData(res.data.qr);
+      }
+    } catch (err: any) {
+      toast.error(err.response?.data?.error || "Impossible de générer le QR Code.");
+    } finally {
+      setIsRequestingQr(false);
+    }
+  };
+
+  // Disconnect WhatsApp
+  const handleDisconnect = async () => {
+    setIsDisconnecting(true);
+    try {
+      await apiClient.post("/api/whatsapp/disconnect");
+      toast.success("WhatsApp déconnecté.");
+      setPairingCode(null);
+      setQrCodeData(null);
+      refetch();
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+    } catch (err: any) {
+      toast.error(err.response?.data?.error || "Erreur lors de la déconnexion.");
+    } finally {
+      setIsDisconnecting(false);
+    }
+  };
+
+  // Copy pairing code & open WhatsApp
+  const handleCopyCodeAndOpenWhatsApp = () => {
+    if (!pairingCode) return;
+    const cleanCode = pairingCode.replace(/[^A-Za-z0-9]/g, "");
+    navigator.clipboard.writeText(cleanCode);
+    setCopiedCode(true);
+    toast.success("Code copié ! Ouverture de WhatsApp...");
+    setTimeout(() => setCopiedCode(false), 3000);
+
+    // Deep link directly to WhatsApp app on mobile
+    window.location.href = "whatsapp://";
+  };
+
+  // Save Selling Phone Number
   const handleUpdatePhone = async () => {
     const raw = storeWhatsApp.trim();
     if (!raw || raw.replace(/\D/g, "").length < 6) {
-      toast.error("Veuillez renseigner un numéro WhatsApp valide (ex: +225 07 00 00 00 00).");
+      toast.error("Veuillez renseigner un numéro WhatsApp valide.");
       return;
     }
     const parsed = parsePhoneNumber(raw, merchant?.country || "CI");
@@ -87,9 +243,8 @@ export function WhatsAppConnectionFlow() {
         whatsappNumber: normalizedPhone,
         phone: normalizedPhone
       });
-      toast.success("Numéro WhatsApp de vente mis à jour avec succès ! 🚀");
+      toast.success("Numéro de vente enregistré ! 🚀");
       setIsEditingPhone(false);
-      setShowMilestoneModal(true);
       refetch();
       queryClient.invalidateQueries({ queryKey: ["dashboard"] });
     } catch (err: any) {
@@ -99,6 +254,7 @@ export function WhatsAppConnectionFlow() {
     }
   };
 
+  // Save Meta Config
   const handleSaveMetaConfig = async () => {
     if (!metaForm.phoneNumberId || !metaForm.accessToken) {
       toast.error("Veuillez remplir le Phone Number ID et le Jeton d'accès Meta.");
@@ -111,202 +267,364 @@ export function WhatsAppConnectionFlow() {
       refetch();
       queryClient.invalidateQueries({ queryKey: ["dashboard"] });
     } catch (err: any) {
-      toast.error(err.response?.data?.error || "Erreur lors de l'enregistrement de la configuration Meta.");
+      toast.error(err.response?.data?.error || "Erreur lors de l'enregistrement Meta.");
     } finally {
       setSavingMeta(false);
     }
   };
 
-  const isUsingCustomMeta = !!merchant?.whatsappConfig?.meta?.phoneNumberId;
-  const cleanPhone = activeNumber.replace(/\D/g, "");
-
-  const isPaidActive = merchant?.subscription?.status === "active";
-  const isPaused = isPaidActive && merchant?.aiSettings?.autoReply === false;
-  const isDiscoveryMode = !isPaidActive;
-
   return (
     <div className="space-y-6 w-full max-w-full overflow-hidden box-border">
-      {/* 1. Statut WhatsApp Cloud & Mode Réel */}
-      <div className="bg-vendeur-coal border border-white/10 rounded-2xl sm:rounded-3xl md:rounded-[2.5rem] p-4 sm:p-6 md:p-8 space-y-5 sm:space-y-6 text-left shadow-2xl w-full max-w-full overflow-hidden box-border">
-        <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 sm:gap-5 border-b border-white/5 pb-5 sm:pb-6 w-full">
-          <div className="flex items-start sm:items-center gap-3.5 sm:gap-4 min-w-0 flex-1 w-full">
+      {/* 1. Header Statut WhatsApp */}
+      <div className="bg-vendeur-coal border border-white/10 rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-8 space-y-5 text-left shadow-2xl w-full max-w-full overflow-hidden box-border">
+        <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 border-b border-white/5 pb-5 w-full">
+          <div className="flex items-start sm:items-center gap-3.5 min-w-0 flex-1 w-full">
             <div className={cn(
-              "h-11 w-11 sm:h-13 sm:w-13 md:h-14 md:w-14 rounded-2xl flex items-center justify-center font-black shrink-0 border",
-              isPaidActive && !isPaused
+              "h-12 w-12 sm:h-14 sm:w-14 rounded-2xl flex items-center justify-center font-black shrink-0 border",
+              isConnectedLive && isPaidActive && !isPaused
                 ? "bg-vendeur-emerald/10 border-vendeur-emerald/20 text-vendeur-emerald"
-                : isPaused
+                : isConnectedLive && isPaused
                   ? "bg-sky-500/10 border-sky-500/20 text-sky-400"
-                  : "bg-amber-500/10 border-amber-500/20 text-amber-400"
+                  : isConnectedLive
+                    ? "bg-amber-500/10 border-amber-500/20 text-amber-400"
+                    : "bg-white/5 border-white/10 text-white/40"
             )}>
-              <ShieldCheck size={24} className="md:w-7 md:h-7" />
+              <ShieldCheck size={26} className="shrink-0" />
             </div>
+
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2">
                 <span className={cn(
                   "inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full border text-[9px] font-black uppercase tracking-widest",
-                  isPaidActive && !isPaused
+                  isConnectedLive && isPaidActive && !isPaused
                     ? "bg-vendeur-emerald/15 border-vendeur-emerald/30 text-vendeur-emerald"
-                    : isPaused
+                    : isConnectedLive && isPaused
                       ? "bg-sky-500/15 border-sky-500/30 text-sky-300"
-                      : "bg-amber-500/15 border-amber-500/30 text-amber-300"
+                      : isConnectedLive
+                        ? "bg-amber-500/15 border-amber-500/30 text-amber-300"
+                        : "bg-white/5 border-white/10 text-white/50"
                 )}>
                   <span className={cn(
                     "h-1.5 w-1.5 rounded-full shrink-0",
-                    isPaidActive && !isPaused ? "bg-vendeur-emerald animate-pulse" :
-                    isPaused ? "bg-sky-400" : "bg-amber-400 animate-pulse"
+                    isConnectedLive ? "bg-vendeur-emerald animate-pulse" : "bg-white/30"
                   )} />
                   <span>
-                    {isPaidActive && !isPaused
-                      ? "En Vente 24h/24"
-                      : isPaused
-                        ? "Mode Pause (Manuel)"
-                        : "IA en attente d'activation"}
+                    {isConnectedLive
+                      ? isPaidActive && !isPaused
+                        ? "🟢 En Vente 24h/24"
+                        : isPaused
+                          ? "⏸️ Mode Pause (Manuel)"
+                          : "🟡 Ligne Connectée (En attente d'activation)"
+                      : "🔴 Ligne Non Connectée"}
                   </span>
                 </span>
                 <h3 className="text-base sm:text-lg md:text-xl font-black text-white uppercase tracking-tight">
-                  WhatsApp Cloud Direct
+                  Ligne WhatsApp de Vente
                 </h3>
               </div>
-              <p className="text-xs text-white/50 font-medium mt-1 break-words">
-                Ligne associée : <strong className={cn(
-                  "font-bold font-mono",
-                  isPaidActive && !isPaused ? "text-vendeur-emerald" : isPaused ? "text-sky-300" : "text-amber-300"
-                )}>{formatDisplayPhone(activeNumber, merchant?.country || "CI") || "En attente"}</strong>
-                {isDiscoveryMode && (
-                  <span className="block text-[11px] text-amber-200/80 font-normal mt-0.5 leading-relaxed">
-                    L'IA ne répond pas encore aux clients sur WhatsApp. Vous gardez 100% le contrôle tant que votre forfait n'est pas activé.
+
+              <p className="text-xs text-white/60 font-medium mt-1 break-words">
+                Numéro associé : <strong className="font-bold font-mono text-white">
+                  {formatDisplayPhone(activeNumber, merchant?.country || "CI") || "Non configuré"}
+                </strong>
+                {isConnectedLive ? (
+                  <span className="block text-[11px] text-vendeur-emerald font-semibold mt-0.5">
+                    ✅ Votre Vendeur IA intercepte et répond aux messages envoyés à ce numéro.
                   </span>
-                )}
-                {isPaused && (
-                  <span className="block text-[11px] text-sky-200/80 font-normal mt-0.5 leading-relaxed">
-                    Mode pause activé : vous répondez manuellement à vos clients.
+                ) : (
+                  <span className="block text-[11px] text-white/40 mt-0.5">
+                    Liez votre numéro ci-dessous pour que l'IA commence à répondre à vos clients.
                   </span>
                 )}
               </p>
             </div>
           </div>
 
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full lg:w-auto shrink-0 pt-1 lg:pt-0">
+          {/* Quick Actions Header */}
+          <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto shrink-0 pt-1 lg:pt-0">
+            {isConnectedLive && (
+              <button
+                type="button"
+                onClick={handleDisconnect}
+                disabled={isDisconnecting}
+                className="h-11 px-4 rounded-xl bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 font-bold uppercase tracking-wider text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer active:scale-95 disabled:opacity-50"
+              >
+                {isDisconnecting ? <Loader2 size={14} className="animate-spin shrink-0" /> : <LogOut size={14} className="shrink-0" />}
+                <span>Déconnecter</span>
+              </button>
+            )}
+
+            <button
+              type="button"
+              onClick={() => navigate("/dashboard?test_ia=true")}
+              className="h-11 px-4 rounded-xl bg-white/5 border border-white/10 text-white font-bold uppercase tracking-wider text-xs hover:bg-white/10 transition-all flex items-center justify-center gap-1.5 cursor-pointer active:scale-[0.98]"
+            >
+              <AssistantIcon size={15} color="#10B981" />
+              <span>Simulateur IA</span>
+            </button>
+          </div>
+        </div>
+
+        {/* 2. Onglets de Connexion & Jumelage */}
+        {!isConnectedLive ? (
+          <div className="space-y-5 pt-2">
+            {/* Tab Selector (Ergonomique 48px) */}
+            <div className="grid grid-cols-2 sm:flex sm:items-center gap-2 p-1 bg-black/40 border border-white/10 rounded-2xl">
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTab("pairing_code");
+                  if (!pairingCode) handleRequestPairingCode();
+                }}
+                className={cn(
+                  "h-12 px-4 rounded-xl font-black uppercase tracking-wider text-xs flex items-center justify-center gap-2 transition-all cursor-pointer",
+                  activeTab === "pairing_code"
+                    ? "bg-vendeur-emerald text-vendeur-coal shadow-md"
+                    : "text-white/60 hover:text-white"
+                )}
+              >
+                <Smartphone size={16} className="shrink-0" />
+                <span>Sur ce Téléphone (Code)</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTab("qr_code");
+                  if (!qrCodeData) handleRequestQrCode();
+                }}
+                className={cn(
+                  "h-12 px-4 rounded-xl font-black uppercase tracking-wider text-xs flex items-center justify-center gap-2 transition-all cursor-pointer",
+                  activeTab === "qr_code"
+                    ? "bg-vendeur-emerald text-vendeur-coal shadow-md"
+                    : "text-white/60 hover:text-white"
+                )}
+              >
+                <QrCode size={16} className="shrink-0" />
+                <span>Scanner un QR Code</span>
+              </button>
+            </div>
+
+            {/* CONTENU TAB 1 : CODE DE JUMELAGE MOBILE (100% Facile) */}
+            {activeTab === "pairing_code" && (
+              <div className="space-y-4 pt-1 animate-in fade-in duration-300">
+                <div className="p-4 sm:p-5 rounded-2xl bg-white/[0.03] border border-white/10 space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div>
+                      <h4 className="text-sm sm:text-base font-black text-white tracking-tight">
+                        Lier votre numéro WhatsApp en 5 secondes
+                      </h4>
+                      <p className="text-xs text-white/50 font-medium mt-0.5">
+                        Aucun deuxième écran requis. Générez le code et collez-le directement dans WhatsApp.
+                      </p>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={handleRequestPairingCode}
+                      disabled={isRequestingPairing}
+                      className="h-11 px-4 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-50 shrink-0"
+                    >
+                      {isRequestingPairing ? <Loader2 size={14} className="animate-spin shrink-0" /> : <RefreshCw size={14} className="shrink-0" />}
+                      <span>{pairingCode ? "Régénérer le Code" : "Obtenir le Code"}</span>
+                    </button>
+                  </div>
+
+                  {/* Modification du numéro si besoin */}
+                  <div className="flex items-center justify-between gap-2 border-t border-b border-white/5 py-3">
+                    <div className="flex items-center gap-2">
+                      <Phone size={14} className="text-vendeur-emerald shrink-0" />
+                      <span className="text-xs font-mono font-bold text-white">
+                        {storeWhatsApp || activeNumber || "Aucun numéro"}
+                      </span>
+                    </div>
+                    {!isEditingPhone ? (
+                      <button
+                        type="button"
+                        onClick={() => setIsEditingPhone(true)}
+                        className="text-[11px] font-black uppercase text-vendeur-emerald hover:underline cursor-pointer"
+                      >
+                        Modifier le numéro
+                      </button>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="tel"
+                          value={storeWhatsApp}
+                          onChange={(e) => setStoreWhatsApp(e.target.value)}
+                          className="h-9 px-2 bg-black/50 border border-white/20 rounded-lg text-xs font-mono text-white"
+                        />
+                        <button
+                          type="button"
+                          onClick={handleUpdatePhone}
+                          disabled={savingPhone}
+                          className="h-9 px-3 bg-vendeur-emerald text-vendeur-coal font-bold text-xs rounded-lg cursor-pointer"
+                        >
+                          {savingPhone ? "..." : "OK"}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Affichage du Code de Jumelage */}
+                  {pairingCode ? (
+                    <div className="space-y-4 pt-2">
+                      <div className="p-4 sm:p-6 rounded-2xl bg-black/60 border border-vendeur-emerald/30 text-center space-y-3 shadow-inner">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-vendeur-emerald">
+                          Votre Code de Jumelage WhatsApp
+                        </span>
+                        <div className="text-3xl sm:text-4xl md:text-5xl font-black font-mono tracking-widest text-white select-all">
+                          {pairingCode}
+                        </div>
+                        <p className="text-[11px] text-white/50 font-medium">
+                          Ce code reste valide pendant 2 minutes.
+                        </p>
+                      </div>
+
+                      {/* Gros bouton d'action tactile (56px) */}
+                      <button
+                        type="button"
+                        onClick={handleCopyCodeAndOpenWhatsApp}
+                        className="w-full min-h-[56px] py-3.5 px-6 rounded-2xl bg-vendeur-emerald hover:bg-emerald-400 text-vendeur-coal font-black uppercase tracking-wider text-sm flex items-center justify-center gap-2.5 shadow-lg shadow-vendeur-emerald/20 transition-all cursor-pointer active:scale-[0.98]"
+                      >
+                        {copiedCode ? <Check size={18} className="shrink-0" /> : <Copy size={18} className="shrink-0" />}
+                        <span>{copiedCode ? "Code Copié ! Ouverture de WhatsApp..." : "📋 Copier le code & Ouvrir WhatsApp"}</span>
+                      </button>
+
+                      {/* Instructions pas à pas */}
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 text-left">
+                        <div className="p-3.5 rounded-xl bg-white/[0.02] border border-white/5 space-y-1">
+                          <span className="text-[10px] font-black text-vendeur-emerald uppercase tracking-widest">Étape 1</span>
+                          <p className="text-xs text-white/80 font-medium leading-snug">
+                            Ouvrez WhatsApp sur votre smartphone.
+                          </p>
+                        </div>
+                        <div className="p-3.5 rounded-xl bg-white/[0.02] border border-white/5 space-y-1">
+                          <span className="text-[10px] font-black text-vendeur-emerald uppercase tracking-widest">Étape 2</span>
+                          <p className="text-xs text-white/80 font-medium leading-snug">
+                            Allez dans <strong>Réglages / Menu</strong> &gt; <strong>Appareils connectés</strong>.
+                          </p>
+                        </div>
+                        <div className="p-3.5 rounded-xl bg-white/[0.02] border border-white/5 space-y-1">
+                          <span className="text-[10px] font-black text-vendeur-emerald uppercase tracking-widest">Étape 3</span>
+                          <p className="text-xs text-white/80 font-medium leading-snug">
+                            Appuyez sur <strong>Lier avec un numéro</strong> et collez le code.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="py-6 text-center space-y-3">
+                      <p className="text-xs text-white/60">
+                        Numéro de vente : <strong className="text-white font-mono">{activeNumber || "Veuillez renseigner votre numéro"}</strong>
+                      </p>
+                      <button
+                        type="button"
+                        onClick={handleRequestPairingCode}
+                        disabled={isRequestingPairing}
+                        className="min-h-[52px] px-6 rounded-2xl bg-vendeur-emerald text-vendeur-coal font-black uppercase tracking-wider text-xs inline-flex items-center justify-center gap-2 shadow-md hover:bg-emerald-400 transition-all cursor-pointer disabled:opacity-50"
+                      >
+                        {isRequestingPairing ? <Loader2 size={16} className="animate-spin shrink-0" /> : <Smartphone size={16} className="shrink-0" />}
+                        <span>Générer mon Code de Jumelage</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* CONTENU TAB 2 : SCANNER UN QR CODE (WhatsApp Web) */}
+            {activeTab === "qr_code" && (
+              <div className="space-y-4 pt-1 animate-in fade-in duration-300">
+                <div className="p-4 sm:p-6 rounded-2xl bg-white/[0.03] border border-white/10 flex flex-col items-center text-center space-y-4">
+                  <div className="space-y-1">
+                    <h4 className="text-sm sm:text-base font-black text-white tracking-tight">
+                      Scanner le QR Code avec WhatsApp
+                    </h4>
+                    <p className="text-xs text-white/50 font-medium">
+                      Ouvrez WhatsApp sur votre téléphone &gt; <strong>Appareils connectés</strong> &gt; <strong>Lier un appareil</strong>.
+                    </p>
+                  </div>
+
+                  {qrCodeData ? (
+                    <div className="p-4 bg-white rounded-2xl shadow-2xl">
+                      <QRCodeSVG value={qrCodeData} size={220} level="M" />
+                    </div>
+                  ) : (
+                    <div className="h-[220px] w-[220px] rounded-2xl bg-black/40 border border-white/10 flex flex-col items-center justify-center gap-3 p-4">
+                      {isRequestingQr ? (
+                        <>
+                          <Loader2 size={28} className="text-vendeur-emerald animate-spin shrink-0" />
+                          <span className="text-xs text-white/60">Génération du QR Code...</span>
+                        </>
+                      ) : (
+                        <>
+                          <QrCode size={32} className="text-white/30" />
+                          <span className="text-xs text-white/40">En attente du flux WhatsApp</span>
+                        </>
+                      )}
+                    </div>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={handleRequestQrCode}
+                    disabled={isRequestingQr}
+                    className="h-11 px-5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-50"
+                  >
+                    {isRequestingQr ? <Loader2 size={14} className="animate-spin shrink-0" /> : <RefreshCw size={14} className="shrink-0" />}
+                    <span>Actualiser le QR Code</span>
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        ) : (
+          /* Statut Connecté avec succès */
+          <div className="p-4 sm:p-5 rounded-2xl bg-vendeur-emerald/5 border border-vendeur-emerald/20 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-xl bg-vendeur-emerald/20 text-vendeur-emerald flex items-center justify-center shrink-0">
+                <CheckCircle2 size={20} />
+              </div>
+              <div>
+                <h4 className="text-sm font-black text-white tracking-tight">Ligne WhatsApp Live Active</h4>
+                <p className="text-xs text-white/60">
+                  Votre Vendeur IA répond aux messages entrants sur votre numéro en temps réel.
+                </p>
+              </div>
+            </div>
+
             {isDiscoveryMode && (
               <button
                 type="button"
                 onClick={() => navigate("/offers")}
-                className="h-11 sm:h-12 px-4 rounded-xl sm:rounded-2xl bg-vendeur-emerald text-vendeur-coal font-black uppercase tracking-wider text-xs hover:bg-emerald-400 transition-all flex items-center justify-center gap-1.5 cursor-pointer active:scale-95 shadow-md shadow-vendeur-emerald/20"
+                className="h-12 px-5 rounded-xl bg-vendeur-emerald text-vendeur-coal font-black uppercase tracking-wider text-xs hover:bg-emerald-400 transition-all flex items-center justify-center gap-1.5 shrink-0 shadow-md active:scale-95"
               >
                 <Zap size={15} fill="currentColor" className="shrink-0" />
-                <span>Activer les Ventes 24h/24</span>
-              </button>
-            )}
-
-            <div className="grid grid-cols-2 sm:flex items-center gap-2">
-              {cleanPhone && (
-                <a
-                  href={`https://wa.me/${cleanPhone}?text=Bonjour`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="h-11 sm:h-12 px-3 sm:px-4 rounded-xl sm:rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 text-white font-bold uppercase tracking-wider text-xs flex items-center justify-center gap-1.5 active:scale-[0.98] transition-all cursor-pointer text-center"
-                >
-                  <MessageSquare size={14} className="shrink-0" />
-                  <span className="truncate">Tester WhatsApp</span>
-                </a>
-              )}
-
-              <button
-                type="button"
-                onClick={() => navigate("/dashboard?test_ia=true")}
-                className="h-11 sm:h-12 px-3 sm:px-4 rounded-xl sm:rounded-2xl bg-white/5 border border-white/10 text-white font-bold uppercase tracking-wider text-xs hover:bg-white/10 hover:border-white/20 transition-all flex items-center justify-center gap-1.5 cursor-pointer active:scale-[0.98] text-center"
-              >
-                <AssistantIcon size={15} color="#10B981" />
-                <span className="truncate">Simulateur IA</span>
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* 2. Modification du Numéro de Vente */}
-        <div className="space-y-2.5 w-full max-w-full">
-          <div className="flex items-center justify-between gap-2">
-            <label className="text-[10px] sm:text-[11px] font-black uppercase tracking-widest text-white/40">
-              Numéro WhatsApp de vente
-            </label>
-            {!isEditingPhone && (
-              <button
-                type="button"
-                onClick={() => setIsEditingPhone(true)}
-                className="text-[10px] sm:text-[11px] font-black uppercase tracking-wider text-vendeur-emerald hover:underline cursor-pointer"
-              >
-                Modifier
+                <span>Activer mon Forfait pour les Ventes</span>
               </button>
             )}
           </div>
+        )}
 
-          {isEditingPhone ? (
-            <div className="flex flex-col sm:flex-row gap-2 w-full max-w-full">
-              <div className="relative flex-1 min-w-0">
-                <Phone className="absolute left-3.5 sm:left-4 top-1/2 -translate-y-1/2 text-white/30 shrink-0" size={16} />
-                <input
-                  type="tel"
-                  value={storeWhatsApp}
-                  onChange={(e) => setStoreWhatsApp(e.target.value)}
-                  placeholder="Ex: +2250700000000"
-                  className="w-full h-12 sm:h-13 rounded-xl sm:rounded-2xl bg-black/40 border border-white/15 px-3 pl-10 sm:pl-11 text-white font-mono text-xs sm:text-sm outline-none focus:border-vendeur-emerald transition-all shadow-inner box-border"
-                />
-              </div>
-              <div className="flex items-center gap-2 shrink-0">
-                <button
-                  type="button"
-                  onClick={handleUpdatePhone}
-                  disabled={savingPhone}
-                  className="flex-1 sm:flex-initial h-12 sm:h-13 px-4 sm:px-6 rounded-xl sm:rounded-2xl bg-vendeur-emerald text-vendeur-coal font-black uppercase tracking-wider text-xs flex items-center justify-center gap-1.5 hover:scale-[1.01] active:scale-[0.98] transition-all shadow-md disabled:opacity-50 cursor-pointer"
-                >
-                  {savingPhone ? <Loader2 className="animate-spin shrink-0" size={15} /> : <Check size={15} className="shrink-0" />}
-                  <span>Enregistrer</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setStoreWhatsApp(activeNumber);
-                    setIsEditingPhone(false);
-                  }}
-                  className="h-12 sm:h-13 px-3 sm:px-4 rounded-xl sm:rounded-2xl bg-white/5 border border-white/10 text-white/50 hover:text-white text-xs font-black uppercase tracking-wider transition-all cursor-pointer"
-                >
-                  Annuler
-                </button>
-              </div>
-            </div>
-          ) : (
-            <div className="p-3.5 sm:p-4 rounded-xl sm:rounded-2xl bg-white/[0.03] border border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-              <div className="flex items-center gap-2.5 min-w-0">
-                <Phone size={15} className="text-vendeur-emerald shrink-0" />
-                <span className="font-mono text-xs sm:text-sm font-bold text-white tracking-wider truncate">
-                  {activeNumber || "Aucun numéro défini"}
-                </span>
-              </div>
-              <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-white/40">
-                {isUsingCustomMeta ? "Ligne Dédiée Meta" : "Réseau Vendeur IA Cloud"}
-              </span>
-            </div>
-          )}
-        </div>
-
-        {/* 3. Section Dédiée Meta Cloud (Collapsible) */}
+        {/* 3. Section Meta Cloud API Développeur (Collapsible) */}
         <div className="border-t border-white/5 pt-3">
           <button
             type="button"
             onClick={() => setShowAdvancedMeta(!showAdvancedMeta)}
-            className="flex items-center justify-between w-full text-left py-1 text-xs font-bold text-white/50 hover:text-white transition-colors cursor-pointer"
+            className="flex items-center justify-between w-full text-left py-2 text-xs font-bold text-white/50 hover:text-white transition-colors cursor-pointer"
           >
             <div className="flex items-center gap-2">
               <Settings2 size={14} className="text-white/40 shrink-0" />
-              <span className="text-[11px] sm:text-xs">Paramètres Développeur Meta Cloud (Optionnel)</span>
+              <span className="text-[11px] sm:text-xs">Option Entreprise : Meta WhatsApp Cloud API (Optionnel)</span>
             </div>
             {showAdvancedMeta ? <ChevronUp size={14} className="shrink-0" /> : <ChevronDown size={14} className="shrink-0" />}
           </button>
 
           {showAdvancedMeta && (
-            <div className="space-y-3.5 pt-3 mt-1 border-t border-white/5 animate-in fade-in duration-300 w-full max-w-full">
+            <div className="space-y-4 pt-3 mt-1 border-t border-white/5 animate-in fade-in duration-300 w-full max-w-full">
               <p className="text-[10px] sm:text-[11px] text-white/40 leading-relaxed">
-                Si vous possédez votre propre compte WhatsApp Business API vérifié sur Meta Business Suite, vous pouvez saisir vos clés dédiées ici.
+                Réservé aux comptes WhatsApp Business API vérifiés sur Meta Business Suite.
               </p>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full">
@@ -360,17 +678,17 @@ export function WhatsAppConnectionFlow() {
       <StepMilestoneModal
         isOpen={showMilestoneModal}
         onClose={() => setShowMilestoneModal(false)}
-        title="Ligne WhatsApp Enregistrée ! 📱"
-        subtitle="Votre numéro WhatsApp de vente est configuré. Votre Vendeur IA l'utilisera pour recevoir et convertir les messages clients."
-        score={dashboard?.setupStatus?.score || 40}
+        title="Ligne WhatsApp Connectée ! 🎉"
+        subtitle="Votre WhatsApp de vente est désormais relié à votre Vendeur IA. Vos clients reçoivent des réponses automatiques en direct."
+        score={dashboard?.setupStatus?.score || 60}
         primaryAction={{
           label: (dashboard?.products?.length || 0) > 0 ? "Tester dans le Simulateur" : "Ajouter mes Articles & Prix",
           sublabel: (dashboard?.products?.length || 0) > 0 ? "Vérifiez les réponses de l'IA" : "Créez votre catalogue de vente",
           href: (dashboard?.products?.length || 0) > 0 ? "/dashboard?test_ia=true" : "/products"
         }}
         secondaryAction={{
-          label: "Configurer mes Moyens de Paiement",
-          href: "/settings?tab=boutique#payments"
+          label: "Voir mon Tableau de Bord",
+          href: "/dashboard"
         }}
         dashboardActionLabel="Retour au Tableau de Bord"
         autoRedirectSeconds={7}

@@ -201,7 +201,7 @@ export function SalesDashboard() {
   }
 
   const activeWhatsApp = dashboard?.merchant?.whatsappNumber || dashboard?.merchant?.phone || dashboard?.whatsappConnection?.phoneNumber || "";
-  const isWhatsAppConnected = dashboard?.whatsappConnection?.status === "CONNECTED" || dashboard?.merchant?.whatsappConfig?.status === "connected" || Boolean(dashboard?.merchant?.whatsappNumber);
+  const isWhatsAppConnected = dashboard?.whatsappConnection?.status === "CONNECTED" || dashboard?.merchant?.whatsappConfig?.status === "connected" || Boolean(dashboard?.merchant?.whatsappConfig?.meta?.phoneNumberId);
   const isPaidActive = dashboard?.merchant?.subscription?.status === "active";
   const productsCount = dashboard?.products?.length || 0;
   const hasProducts = productsCount > 0 || Boolean(dashboard?.setupStatus?.steps?.find((s: any) => s.id === "products")?.completed);
@@ -228,11 +228,14 @@ export function SalesDashboard() {
                 className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-vendeur-emerald/30 text-white/90 transition-all group shadow-sm"
                 title="Gérer la ligne WhatsApp"
               >
-                <span className={cn("h-2 w-2 rounded-full", isWhatsAppConnected ? "bg-vendeur-emerald" : "bg-amber-400")} />
-                <MessageCircle size={14} className="text-vendeur-emerald shrink-0" />
+                <span className={cn("h-2 w-2 rounded-full", isWhatsAppConnected ? "bg-vendeur-emerald animate-pulse" : "bg-amber-400")} />
+                <MessageCircle size={14} className={cn("shrink-0", isWhatsAppConnected ? "text-vendeur-emerald" : "text-amber-400")} />
                 <span className="text-[11px] text-white/50 font-medium">Ligne WhatsApp :</span>
                 <span className="text-xs font-mono font-bold text-white group-hover:text-vendeur-emerald transition-colors">
                   {formatDisplayPhone(activeWhatsApp, dashboard?.merchant?.country || "CI")}
+                </span>
+                <span className={cn("text-[10px] font-black uppercase px-2 py-0.5 rounded-md", isWhatsAppConnected ? "bg-vendeur-emerald/10 text-vendeur-emerald" : "bg-amber-500/10 text-amber-300")}>
+                  {isWhatsAppConnected ? "Live" : "À lier"}
                 </span>
               </Link>
             </div>

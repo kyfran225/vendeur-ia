@@ -1780,6 +1780,15 @@ router.post("/demo/transcribe", upload.single("audio"), async (req, res) => {
   }
 });
 
+router.get("/push/vapid-public-key", async (req, res) => {
+  try {
+    const publicKey = await pushService.getPublicKey();
+    res.json({ publicKey });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 router.post("/push/subscribe", authenticate, async (req, res) => {
   try {
     const userId = (req as any).user.id;

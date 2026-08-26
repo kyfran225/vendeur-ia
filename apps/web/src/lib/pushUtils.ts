@@ -11,22 +11,46 @@ function urlBase64ToUint8Array(base64String: string) {
   return outputArray;
 }
 
-export async function subscribeToPush(accessToken: string) {
-  const publicVapidKey = import.meta.env.VITE_VAPID_PUBLIC_KEY;
-  if (!publicVapidKey) {
-    console.warn("[Push] VAPID public key missing.");
-    return;
+export async function fetchVapidPublicKey(): Promise<string | null> {
+  const envKey = import.meta.env.VITE_VAPID_PUBLIC_KEY;
+  if (envKey && envKey.trim().length > 10) {
+    return envKey.trim();
   }
 
+  try {
+    const res = await apiClient.get("/api/commerce/push/vapid-public-key");
+    if (res.data?.publicKey) {
+      return res.data.publicKey;
+    }
+  } catch (err: any) {
+    console.warn("[Push] Could not fetch VAPID public key from backend:", err.message);
+  }
+  return null;
+}
+
+export function getPushPermission(): NotificationPermission {
+  if (typeof window === "undefined" || !("Notification" in window)) {
+    return "denied";
+  }
+  return Notification.permission;
+}
+
+export async function subscribeToPush(accessToken?: string): Promise<boolean> {
   if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
     console.warn("[Push] Service Workers or Push not supported.");
-    return;
+    return false;
+  }
+
+  const publicVapidKey = await fetchVapidPublicKey();
+  if (!publicVapidKey) {
+    console.warn("[Push] VAPID public key missing or unavailable.");
+    return false;
   }
 
   // Check current permission
   if (Notification.permission === 'denied') {
     console.warn("[Push] Permission explicitly denied by user.");
-    return;
+    return false;
   }
 
   // Request permission if default
@@ -34,7 +58,7 @@ export async function subscribeToPush(accessToken: string) {
     const permission = await Notification.requestPermission();
     if (permission !== 'granted') {
       console.warn("[Push] Permission not granted after request.");
-      return;
+      return false;
     }
   }
 
@@ -42,18 +66,22 @@ export async function subscribeToPush(accessToken: string) {
     const registration = await navigator.serviceWorker.ready;
     console.log("[Push] Service Worker ready.");
 
-    const subscription = await registration.pushManager.subscribe({
-      userVisibleOnly: true,
-      applicationServerKey: urlBase64ToUint8Array(publicVapidKey)
-    });
+    let subscription = await registration.pushManager.getSubscription();
+    if (!subscription) {
+      subscription = await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(publicVapidKey)
+      });
+    }
 
-    console.log("[Push] Subscription created:", subscription.endpoint);
+    console.log("[Push] Subscription active:", subscription.endpoint);
     await apiClient.post("/api/commerce/push/subscribe", subscription);
 
-    console.log("[Push] Subscribed successfully on server.");
+    console.log("[Push] Subscribed successfully on server. ✅");
     return true;
   } catch (err) {
     console.error("[Push] Subscription failed:", err);
-    throw err;
+    return false;
   }
 }
+

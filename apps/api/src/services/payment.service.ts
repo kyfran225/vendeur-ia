@@ -259,13 +259,38 @@ export class PaymentService {
     const paymentConfig = await this.getPaymentConfig(country || merchant?.country, amount);
     const selectedMethodCfg = paymentConfig.methods.find(m => m.id === paymentMethod);
 
-    const reference = this.generateReference();
-    const expiresAt = new Date(Date.now() + 48 * 3600 * 1000); // 48h validity
-
     const finalCurrency = paymentConfig.targetCurrency || currency;
     const finalAmount = paymentConfig.localAmount || amount;
 
-    const intent = await PaymentIntentModel.create({
+    // Check if there is already an active "initiated" intent for this user to update & reuse
+    let intent = await PaymentIntentModel.findOne({
+      userId,
+      status: "initiated",
+      expiresAt: { $gt: new Date() }
+    }).sort({ createdAt: -1 });
+
+    if (intent) {
+      intent.offerSlug = offerSlug;
+      intent.planName = planName;
+      intent.billingInterval = billingInterval;
+      intent.amount = finalAmount;
+      intent.currency = finalCurrency;
+      intent.paymentMethod = paymentMethod;
+      intent.provider = paymentMethod === "google_play" ? "google_play" : ((provider as any) || "manual_mobile_money");
+      if (senderPhoneNumber) intent.senderPhoneNumber = senderPhoneNumber;
+      if (senderName) intent.senderName = senderName;
+      intent.recipientPhoneNumber = selectedMethodCfg?.number || intent.recipientPhoneNumber || "";
+      intent.recipientName = paymentConfig.recipientName;
+      intent.metadata = { country, localAmount: finalAmount, localCurrency: finalCurrency, baseAmountXOF: amount };
+      await intent.save();
+      logger.info(`[PaymentService] Intent mis à jour: ${intent.reference} (${finalAmount} ${finalCurrency}, ${billingInterval}) pour user ${userId} [Method: ${paymentMethod}]`);
+      return intent;
+    }
+
+    const reference = this.generateReference();
+    const expiresAt = new Date(Date.now() + 48 * 3600 * 1000); // 48h validity
+
+    intent = await PaymentIntentModel.create({
       userId,
       merchantId: merchant?._id,
       offerSlug,
@@ -286,7 +311,7 @@ export class PaymentService {
       metadata: { country, localAmount: finalAmount, localCurrency: finalCurrency, baseAmountXOF: amount }
     });
 
-    logger.info(`[PaymentService] Intent créé: ${reference} (${finalAmount} ${finalCurrency}) pour user ${userId} [Method: ${paymentMethod}]`);
+    logger.info(`[PaymentService] Intent créé: ${reference} (${finalAmount} ${finalCurrency}, ${billingInterval}) pour user ${userId} [Method: ${paymentMethod}]`);
     return intent;
   }
 
@@ -551,21 +576,32 @@ export class PaymentService {
   async notifyAdminsNewPayment(intent: IPaymentIntent, merchantName?: string) {
     try {
       const admins = await UserModel.find({
-        $or: [{ roles: "admin" }, { email: "franck@vendeur-ia.com" }]
+        $or: [
+          { roles: "admin" },
+          { email: "franck@vendeur-ia.com" },
+          { email: /franck/i }
+        ]
       });
 
-      const bodyText = `${intent.amount.toLocaleString("fr-FR")} ${intent.currency} - ${intent.planName} (${intent.paymentMethod?.toUpperCase() || "MOBILE MONEY"}) pour ${merchantName || intent.senderName || "un commerçant"}`;
+      const intervalLabel = intent.billingInterval === "yearly" ? "Annuel (-17%)" : "Mensuel";
+      const pushTitle = `💰 Paiement Reçu • ${intent.amount.toLocaleString("fr-FR")} ${intent.currency}`;
+      const pushBody = `Marchand : ${merchantName || intent.senderName || "Commerçant"}\nFormule : ${intent.planName} (${intervalLabel})\n👉 Touchez pour inspecter & activer le compte.`;
 
       for (const admin of admins) {
         await pushService.sendNotification(admin._id.toString(), {
-          title: "⏳ Nouveau Virement à Vérifier",
-          body: bodyText,
-          icon: "/apple-touch-icon.png",
+          title: pushTitle,
+          body: pushBody,
+          icon: "/android-chrome-192x192.png",
+          badge: "/favicon-32x32.png",
           data: {
             url: "/admin",
             intentId: intent._id.toString(),
             reference: intent.reference
-          }
+          },
+          actions: [
+            { action: "inspect", title: "🔍 Inspecter" },
+            { action: "open", title: "⚡ Ouvrir Admin" }
+          ]
         });
 
         emitToUser(admin._id.toString(), "admin:payment_incoming", {
@@ -574,10 +610,23 @@ export class PaymentService {
           amount: intent.amount,
           currency: intent.currency,
           planName: intent.planName,
+          billingInterval: intent.billingInterval,
           senderPhone: intent.senderPhoneNumber,
           merchantName: merchantName || intent.senderName
         });
       }
+
+      // Also broadcast to generic 'admin' channel
+      emitToUser("admin", "admin:payment_incoming", {
+        intentId: intent._id.toString(),
+        reference: intent.reference,
+        amount: intent.amount,
+        currency: intent.currency,
+        planName: intent.planName,
+        billingInterval: intent.billingInterval,
+        senderPhone: intent.senderPhoneNumber,
+        merchantName: merchantName || intent.senderName
+      });
     } catch (err: any) {
       logger.warn(`[PaymentService] Erreur notification push admins: ${err.message}`);
     }

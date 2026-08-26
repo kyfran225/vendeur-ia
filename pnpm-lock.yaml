@@ -244,6 +244,9 @@ importers:
       '@types/react-helmet-async':
         specifier: ^1.0.3
         version: 1.0.3(react@18.3.1)
+      '@types/serviceworker':
+        specifier: ^0.0.200
+        version: 0.0.200
       '@vitejs/plugin-react':
         specifier: ^4.3.4
         version: 4.7.0(vite@6.4.3(@types/node@20.19.43)(jiti@1.21.7)(terser@5.49.0)(tsx@4.23.1)(yaml@2.9.0))
@@ -271,6 +274,9 @@ importers:
       vitest:
         specifier: ^4.1.10
         version: 4.1.10(@types/node@20.19.43)(@vitest/ui@4.1.10)(jsdom@30.0.1(@noble/hashes@1.8.0))(vite@6.4.3(@types/node@20.19.43)(jiti@1.21.7)(terser@5.49.0)(tsx@4.23.1)(yaml@2.9.0))
+      workbox-precaching:
+        specifier: ^7.4.1
+        version: 7.4.1
 
   packages/vendeur-core:
     dependencies:
@@ -2022,6 +2028,9 @@ packages:
 
   '@types/serve-static@1.15.10':
     resolution: {integrity: sha512-tRs1dB+g8Itk72rlSI2ZrW6vZg0YrLI81iQSTkMmOqnqCaNr/8Ek4VwWcN5vZgCYWbg/JJSGBlUaYGAOP73qBw==}
+
+  '@types/serviceworker@0.0.200':
+    resolution: {integrity: sha512-g6wCD+XlCDKytamqjiVvYRUJbS0jr/1lZ2PpXSYTU802UyPNlOVl9DN6A9EhRuFRH7s2LATTgheBnMEWJahV8A==}
 
   '@types/superagent@8.1.11':
     resolution: {integrity: sha512-KA7srSW/HENDtOw9DOqaFLgWuMqN9WgjEw62lh9dpvRaZDkhdOkazASd7X7i2eMUYLHa1U37ZttnePsH5zTDHw==}
@@ -6523,6 +6532,8 @@ snapshots:
       '@types/http-errors': 2.0.5
       '@types/node': 20.19.43
       '@types/send': 0.17.6
+
+  '@types/serviceworker@0.0.200': {}
 
   '@types/superagent@8.1.11':
     dependencies:

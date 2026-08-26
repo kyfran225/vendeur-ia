@@ -517,10 +517,7 @@ function BoutiqueTab({ merchant, dashboard, initialKnowledge, accessToken }: { m
   const [showMilestoneModal, setShowMilestoneModal] = useState(false);
   const [savedSectionType, setSavedSectionType] = useState<"delivery" | "payments" | "all">("all");
 
-  const isModified =
-    JSON.stringify(localMerchant) !== JSON.stringify(merchant) ||
-    JSON.stringify(payments) !== JSON.stringify(initialPayments) ||
-    JSON.stringify(deliveryFees) !== JSON.stringify(initialFees);
+  const isModified = JSON.stringify(localMerchant) !== JSON.stringify(merchant);
 
   const updateMutation = useMutation({
     mutationFn: async (targetType?: "delivery" | "payments" | "all") => {
@@ -1234,14 +1231,8 @@ function BoutiqueTab({ merchant, dashboard, initialKnowledge, accessToken }: { m
             <button
               type="button"
               onClick={() => {
-                let targetType: "delivery" | "payments" | "all" = "all";
-                if (JSON.stringify(deliveryFees) !== JSON.stringify(initialFees) && JSON.stringify(payments) === JSON.stringify(initialPayments)) {
-                  targetType = "delivery";
-                } else if (JSON.stringify(payments) !== JSON.stringify(initialPayments) && JSON.stringify(deliveryFees) === JSON.stringify(initialFees)) {
-                  targetType = "payments";
-                }
-                setSavedSectionType(targetType);
-                updateMutation.mutate(targetType);
+                setSavedSectionType("all");
+                updateMutation.mutate("all");
               }}
               disabled={updateMutation.isPending}
               className="h-11 sm:h-12 px-5 sm:px-8 rounded-xl sm:rounded-2xl bg-vendeur-emerald hover:bg-emerald-400 text-vendeur-coal font-black uppercase text-xs tracking-widest flex items-center justify-center gap-2 hover:scale-105 active:scale-95 transition-all shadow-xl shadow-vendeur-emerald/30 disabled:opacity-50 shrink-0 whitespace-nowrap cursor-pointer"

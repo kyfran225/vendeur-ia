@@ -58,6 +58,7 @@ export function SalesDashboard() {
   const [searchParams, setSearchParams] = useSearchParams();
   const isTestIAOpen = searchParams.get("test_ia") === "true";
   const [isCompletionModalOpen, setIsCompletionModalOpen] = useState(false);
+  const [confirmedPaymentData, setConfirmedPaymentData] = useState<any>(null);
   const [isOffersModalOpen, setIsOffersModalOpen] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
 
@@ -177,6 +178,8 @@ export function SalesDashboard() {
       socket.on("payment:confirmed", (data: any) => {
         toast.success(`🎉 Paiement validé ! Votre forfait ${data?.planName || "Vendeur IA"} est désormais actif.`);
         queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+        setConfirmedPaymentData(data);
+        setIsCompletionModalOpen(true);
       });
       socket.on("payment:update", () => {
         queryClient.invalidateQueries({ queryKey: ["dashboard"] });
@@ -266,8 +269,22 @@ export function SalesDashboard() {
 
       <SetupCompletionModal
         isOpen={isCompletionModalOpen}
-        onClose={() => setIsCompletionModalOpen(false)}
+        onClose={() => {
+          setIsCompletionModalOpen(false);
+          setConfirmedPaymentData(null);
+        }}
         businessName={dashboard?.merchant?.businessName || "Votre boutique"}
+        paymentDetails={
+          confirmedPaymentData ||
+          (isPaidActive
+            ? {
+                planName: dashboard?.merchant?.subscription?.plan,
+                billingInterval: dashboard?.merchant?.subscription?.billingInterval,
+                expiresAt: dashboard?.merchant?.subscription?.expiresAt
+              }
+            : null)
+        }
+        isPaymentConfirmed={Boolean(confirmedPaymentData || isPaidActive)}
       />
 
       <StepSuccessModal
@@ -347,81 +364,6 @@ function HomePanel({
             <span>Passer en Pro</span>
           </button>
         </div>
-      )}
-
-      {/* 
-        BLOC OFFICIEL : VOTRE VITRINE EN LIGNE
-        Affiché lorsque la configuration initiale est terminée pour un accès direct permanent
-      */}
-      {!showAssistant && (
-        <section className="relative overflow-hidden bg-vendeur-coal/90 border border-white/10 p-5 sm:p-7 md:p-8 rounded-2xl sm:rounded-3xl md:rounded-[2.5rem] shadow-2xl group space-y-5">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-5">
-          <div className="flex items-center gap-3.5 sm:gap-4 min-w-0">
-            <div className="h-12 w-12 sm:h-14 sm:w-14 rounded-2xl bg-vendeur-emerald/10 border border-vendeur-emerald/20 flex items-center justify-center text-vendeur-emerald shrink-0 group-hover:scale-105 transition-transform">
-              <Store size={26} />
-            </div>
-            <div className="min-w-0">
-              <div className="flex items-center gap-2.5 flex-wrap">
-                <h2 className="text-lg sm:text-xl md:text-2xl font-black text-white uppercase tracking-tight truncate">
-                  Votre Vitrine en Ligne
-                </h2>
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-vendeur-emerald/10 border border-vendeur-emerald/30 text-vendeur-emerald text-[10px] font-black uppercase tracking-wider shrink-0">
-                  <span className="h-1.5 w-1.5 rounded-full bg-vendeur-emerald animate-pulse" />
-                  {hasProducts ? `${productsCount} article${productsCount > 1 ? "s" : ""} en ligne` : "Vitrine active"}
-                </span>
-              </div>
-              <p className="text-xs sm:text-sm text-white/50 font-medium mt-0.5 line-clamp-1">
-                Partagez ce lien à vos clients sur WhatsApp, Instagram ou TikTok pour commander en 1 clic.
-              </p>
-            </div>
-          </div>
-
-          <div className="flex flex-wrap sm:flex-nowrap items-center gap-2.5 w-full md:w-auto shrink-0">
-            <button
-              type="button"
-              onClick={onOpenShare}
-              className="flex-1 sm:flex-none flex items-center justify-center gap-2 min-h-[46px] h-12 px-5 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 text-white text-xs font-black uppercase tracking-wider transition-all cursor-pointer active:scale-95 group shadow-sm"
-              title="Propulser & Obtenir le QR Code"
-            >
-              <Share2 size={16} className="text-vendeur-emerald group-hover:scale-110 transition-transform" />
-              <span>Propulser / QR Code</span>
-            </button>
-
-            <Link
-              to={getMerchantShopPath(dashboard?.merchant)}
-              target="_blank"
-              className="flex-1 sm:flex-none flex items-center justify-center gap-2 min-h-[46px] h-12 px-6 rounded-2xl bg-vendeur-emerald hover:bg-emerald-400 text-vendeur-coal text-xs font-black uppercase tracking-wider transition-all shadow-lg shadow-vendeur-emerald/20 cursor-pointer active:scale-95 group hover:scale-[1.02]"
-              title="Ouvrir la vitrine publique"
-            >
-              <span>Voir ma Vitrine</span>
-              <ExternalLink size={16} className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
-            </Link>
-          </div>
-        </div>
-
-        {/* Storefront Link Bar */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 p-2 bg-black/40 border border-white/10 rounded-2xl">
-          <div className="flex-1 flex items-center gap-2 px-3 min-w-0 overflow-hidden">
-            <Globe size={15} className="text-vendeur-emerald shrink-0" />
-            <span className="text-xs font-mono font-bold text-white/90 truncate">
-              {getMerchantShopUrl(dashboard?.merchant)}
-            </span>
-          </div>
-
-          <button
-            type="button"
-            onClick={() => {
-              const url = getMerchantShopUrl(dashboard?.merchant);
-              navigator.clipboard.writeText(url);
-              toast.success("Lien de votre vitrine copié ! 🚀");
-            }}
-            className="min-h-[40px] px-5 rounded-xl bg-white/10 hover:bg-white/15 active:scale-95 text-white text-xs font-black uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all cursor-pointer shrink-0"
-          >
-            <Copy size={14} className="text-vendeur-emerald" />
-            <span>Copier le lien</span>
-          </button>
-        </div>
-      </section>
       )}
 
       {/* 
@@ -507,6 +449,81 @@ function HomePanel({
                  <div className="col-span-3 text-white/40 text-xs sm:text-sm italic">Analyse de votre business en cours...</div>
               )}
             </div>
+          </div>
+        </section>
+      )}
+
+      {/* 
+        BLOC OFFICIEL : VOTRE VITRINE EN LIGNE
+        Affiché lorsque la configuration initiale est terminée pour un accès direct permanent
+      */}
+      {!showAssistant && (
+        <section className="relative overflow-hidden bg-vendeur-coal/90 border border-white/10 p-5 sm:p-7 md:p-8 rounded-2xl sm:rounded-3xl md:rounded-[2.5rem] shadow-2xl group space-y-5">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-5">
+            <div className="flex items-center gap-3.5 sm:gap-4 min-w-0">
+              <div className="h-12 w-12 sm:h-14 sm:w-14 rounded-2xl bg-vendeur-emerald/10 border border-vendeur-emerald/20 flex items-center justify-center text-vendeur-emerald shrink-0 group-hover:scale-105 transition-transform">
+                <Store size={26} />
+              </div>
+              <div className="min-w-0">
+                <div className="flex items-center gap-2.5 flex-wrap">
+                  <h2 className="text-lg sm:text-xl md:text-2xl font-black text-white uppercase tracking-tight truncate">
+                    Votre Vitrine en Ligne
+                  </h2>
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-vendeur-emerald/10 border border-vendeur-emerald/30 text-vendeur-emerald text-[10px] font-black uppercase tracking-wider shrink-0">
+                    <span className="h-1.5 w-1.5 rounded-full bg-vendeur-emerald animate-pulse" />
+                    {hasProducts ? `${productsCount} article${productsCount > 1 ? "s" : ""} en ligne` : "Vitrine active"}
+                  </span>
+                </div>
+                <p className="text-xs sm:text-sm text-white/50 font-medium mt-0.5 line-clamp-1">
+                  Partagez ce lien à vos clients sur WhatsApp, Instagram ou TikTok pour commander en 1 clic.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap sm:flex-nowrap items-center gap-2.5 w-full md:w-auto shrink-0">
+              <button
+                type="button"
+                onClick={onOpenShare}
+                className="flex-1 sm:flex-none flex items-center justify-center gap-2 min-h-[46px] h-12 px-5 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 text-white text-xs font-black uppercase tracking-wider transition-all cursor-pointer active:scale-95 group shadow-sm"
+                title="Propulser & Obtenir le QR Code"
+              >
+                <Share2 size={16} className="text-vendeur-emerald group-hover:scale-110 transition-transform" />
+                <span>Propulser / QR Code</span>
+              </button>
+
+              <Link
+                to={getMerchantShopPath(dashboard?.merchant)}
+                target="_blank"
+                className="flex-1 sm:flex-none flex items-center justify-center gap-2 min-h-[46px] h-12 px-6 rounded-2xl bg-vendeur-emerald hover:bg-emerald-400 text-vendeur-coal text-xs font-black uppercase tracking-wider transition-all shadow-lg shadow-vendeur-emerald/20 cursor-pointer active:scale-95 group hover:scale-[1.02]"
+                title="Ouvrir la vitrine publique"
+              >
+                <span>Voir ma Vitrine</span>
+                <ExternalLink size={16} className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+              </Link>
+            </div>
+          </div>
+
+          {/* Storefront Link Bar */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 p-2 bg-black/40 border border-white/10 rounded-2xl">
+            <div className="flex-1 flex items-center gap-2 px-3 min-w-0 overflow-hidden">
+              <Globe size={15} className="text-vendeur-emerald shrink-0" />
+              <span className="text-xs font-mono font-bold text-white/90 truncate">
+                {getMerchantShopUrl(dashboard?.merchant)}
+              </span>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                const url = getMerchantShopUrl(dashboard?.merchant);
+                navigator.clipboard.writeText(url);
+                toast.success("Lien de votre vitrine copié ! 🚀");
+              }}
+              className="min-h-[40px] px-5 rounded-xl bg-white/10 hover:bg-white/15 active:scale-95 text-white text-xs font-black uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all cursor-pointer shrink-0"
+            >
+              <Copy size={14} className="text-vendeur-emerald" />
+              <span>Copier le lien</span>
+            </button>
           </div>
         </section>
       )}

@@ -1,6 +1,7 @@
 import webpush from 'web-push';
 import { env } from '../config/env.js';
 import mongoose from 'mongoose';
+import { SystemSettingsModel } from '../modules/commerce/admin.model.js';
 
 // Define Push Subscription Schema
 const PushSubscriptionSchema = new mongoose.Schema({
@@ -17,6 +18,9 @@ const PushSubscriptionSchema = new mongoose.Schema({
 export const PushSubscriptionModel = mongoose.model('PushSubscription', PushSubscriptionSchema);
 
 export class PushService {
+  private isConfigured = false;
+  private currentPublicKey: string | null = null;
+
   constructor() {
     this.init();
   }
@@ -26,15 +30,68 @@ export class PushService {
     const privateKey = env.VAPID_PRIVATE_KEY;
 
     if (publicKey && privateKey) {
-      webpush.setVapidDetails(
-        'mailto:support@vendeur-ia.com',
-        publicKey,
-        privateKey
-      );
-      console.log("[Push Service] VAPID keys configured successfully. ✅");
-    } else {
-      console.warn("[Push Service] VAPID keys missing. Push notifications will not be sent. ⚠️");
+      try {
+        webpush.setVapidDetails(
+          'mailto:support@vendeur-ia.com',
+          publicKey,
+          privateKey
+        );
+        this.isConfigured = true;
+        this.currentPublicKey = publicKey;
+        console.log("[Push Service] VAPID keys configured from env successfully. ✅");
+      } catch (err: any) {
+        console.warn("[Push Service] Error configuring VAPID from env:", err.message);
+      }
     }
+  }
+
+  async ensureVapidConfigured(): Promise<string | null> {
+    if (this.isConfigured && this.currentPublicKey) {
+      return this.currentPublicKey;
+    }
+
+    let pub = env.VAPID_PUBLIC_KEY;
+    let priv = env.VAPID_PRIVATE_KEY;
+
+    if (!pub || !priv) {
+      try {
+        const settings = await SystemSettingsModel.findOne();
+        if (settings?.pushConfig?.vapidPublicKey && settings?.pushConfig?.vapidPrivateKey) {
+          pub = settings.pushConfig.vapidPublicKey;
+          priv = settings.pushConfig.vapidPrivateKey;
+        } else {
+          // Generate a resilient VAPID keypair
+          const keys = webpush.generateVAPIDKeys();
+          pub = keys.publicKey;
+          priv = keys.privateKey;
+          await SystemSettingsModel.findOneAndUpdate(
+            {},
+            { $set: { "pushConfig.vapidPublicKey": pub, "pushConfig.vapidPrivateKey": priv } },
+            { upsert: true }
+          );
+          console.log("[Push Service] Auto-generated and persisted new VAPID keys ✅");
+        }
+      } catch (err: any) {
+        console.error("[Push Service] Failed to load/generate VAPID keys:", err.message);
+      }
+    }
+
+    if (pub && priv) {
+      try {
+        webpush.setVapidDetails('mailto:support@vendeur-ia.com', pub, priv);
+        this.isConfigured = true;
+        this.currentPublicKey = pub;
+        console.log("[Push Service] VAPID configured successfully ✅");
+        return pub;
+      } catch (err: any) {
+        console.error("[Push Service] Failed to set VAPID details:", err.message);
+      }
+    }
+    return null;
+  }
+
+  async getPublicKey(): Promise<string | null> {
+    return this.ensureVapidConfigured();
   }
 
   async subscribe(userId: string, subscription: any) {
@@ -51,7 +108,20 @@ export class PushService {
     }).catch(err => console.error("[Push Service] Welcome notification failed:", err));
   }
 
-  async sendNotification(userId: string, payload: { title: string; body: string; icon?: string; data?: any }) {
+  async sendNotification(userId: string, payload: {
+    title: string;
+    body: string;
+    icon?: string;
+    badge?: string;
+    image?: string;
+    vibrate?: number[];
+    tag?: string;
+    renotify?: boolean;
+    requireInteraction?: boolean;
+    actions?: Array<{ action: string; title: string; icon?: string }>;
+    data?: any;
+  }) {
+    await this.ensureVapidConfigured();
     const subscriptions = await PushSubscriptionModel.find({ userId });
 
     const notifications = subscriptions.map(async (sub) => {

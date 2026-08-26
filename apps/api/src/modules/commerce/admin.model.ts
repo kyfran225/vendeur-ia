@@ -75,6 +75,10 @@ const SystemSettingsSchema = new Schema({
     }],
     autoApproveConfidenceThreshold: { type: Number, default: 95 }
   },
+  pushConfig: {
+    vapidPublicKey: { type: String, default: "" },
+    vapidPrivateKey: { type: String, default: "" }
+  },
   maintenanceMode: { type: Boolean, default: false }
 }, { timestamps: true });
 

@@ -9,8 +9,8 @@ export interface IPaymentIntent extends Document {
   amount: number;
   currency: string;
   reference: string;
-  provider: "manual_mobile_money" | "wave" | "orange_money" | "mtn_momo" | "moov" | "djamo" | "paystack" | "lygos" | "cinetpay";
-  paymentMethod: "wave" | "orange_money" | "mtn_momo" | "moov" | "djamo" | "card" | "other";
+  provider: "manual_mobile_money" | "wave" | "orange_money" | "mtn_momo" | "moov" | "djamo" | "paystack" | "lygos" | "cinetpay" | "google_play";
+  paymentMethod: "wave" | "orange_money" | "mtn_momo" | "moov" | "djamo" | "card" | "google_play" | "other";
   senderPhoneNumber?: string;
   senderName?: string;
   recipientPhoneNumber?: string;
@@ -60,12 +60,12 @@ const PaymentIntentSchema = new Schema<IPaymentIntent>(
     reference: { type: String, required: true, unique: true, index: true },
     provider: {
       type: String,
-      enum: ["manual_mobile_money", "wave", "orange_money", "mtn_momo", "moov", "djamo", "paystack", "lygos", "cinetpay"],
+      enum: ["manual_mobile_money", "wave", "orange_money", "mtn_momo", "moov", "djamo", "paystack", "lygos", "cinetpay", "google_play"],
       default: "manual_mobile_money"
     },
     paymentMethod: {
       type: String,
-      enum: ["wave", "orange_money", "mtn_momo", "moov", "djamo", "card", "other"],
+      enum: ["wave", "orange_money", "mtn_momo", "moov", "djamo", "card", "google_play", "other"],
       default: "wave"
     },
     senderPhoneNumber: { type: String, default: "" },

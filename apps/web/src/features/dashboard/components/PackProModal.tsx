@@ -7,7 +7,6 @@ import { useAuthStore } from "@/stores/authStore";
 import { useQueryClient } from "@tanstack/react-query";
 import { useBillingCurrency } from "@/hooks/useBillingCurrency";
 import { convertCurrencyAmount } from "@vendeur-ia/core";
-import { useNavigate } from "react-router-dom";
 
 interface PackProModalProps {
   isOpen: boolean;
@@ -20,7 +19,6 @@ export function PackProModal({ isOpen, onClose }: PackProModalProps) {
   const { user } = useAuthStore();
   const queryClient = useQueryClient();
   const currency = useBillingCurrency();
-  const navigate = useNavigate();
 
   if (!isOpen) return null;
 

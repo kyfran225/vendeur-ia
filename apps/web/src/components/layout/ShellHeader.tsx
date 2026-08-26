@@ -70,7 +70,7 @@ export function ShellHeader({ isVisible = true }: ShellHeaderProps) {
   const whatsapp = dashboard?.whatsappConnection;
   const activePhone = merchant?.whatsappNumber || merchant?.phone || whatsapp?.phoneNumber || user?.whatsappNumber || "";
 
-  const isAdmin = Boolean(user?.roles?.includes("admin") || user?.email === "franck@vendeur-ia.com");
+  const isAdmin = isFounder;
 
   // Admin: Fetch pending payments count with real-time socket updates
   const { data: pendingPayments } = useQuery({

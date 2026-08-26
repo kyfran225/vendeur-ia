@@ -53,11 +53,18 @@ function cn(...inputs: ClassValue[]) {
 }
 
 export function AdminDashboard() {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<"overview" | "vip" | "payments" | "merchants" | "tickets" | "broadcast" | "settings" | "ai" | "billing">("overview");
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { accessToken } = useAuthStore();
   const { isFounder } = useFounderRole();
   const queryClient = useQueryClient();
+
+  useEffect(() => {
+    if (!isFounder) {
+      navigate("/dashboard", { replace: true });
+    }
+  }, [isFounder, navigate]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -75,9 +82,6 @@ export function AdminDashboard() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  // ... rest of data fetching ...
-
-
   // 0a. Fetch Pending Payments Count
   const { data: pendingPaymentsData } = useQuery({
     queryKey: ["admin:payments:pendingCount"],
@@ -85,7 +89,7 @@ export function AdminDashboard() {
       const res = await apiClient.get("/api/admin/payments?status=under_verification");
       return res.data;
     },
-    enabled: !!accessToken,
+    enabled: !!accessToken && isFounder,
     refetchInterval: 10000
   });
   const pendingPaymentsCount = pendingPaymentsData?.length || 0;
@@ -97,7 +101,7 @@ export function AdminDashboard() {
       const res = await apiClient.get("/api/admin/expert-setups");
       return res.data;
     },
-    enabled: !!accessToken,
+    enabled: !!accessToken && isFounder,
     refetchInterval: 15000
   });
   const pendingVipCount = (vipData || []).filter((s: any) => s.expertSetup?.status === "pending" || s.expertSetup?.status === "none").length;
@@ -109,7 +113,7 @@ export function AdminDashboard() {
       const res = await apiClient.get("/api/copilot/admin/tickets?status=unread");
       return res.data;
     },
-    enabled: !!accessToken,
+    enabled: !!accessToken && isFounder,
     refetchInterval: 15000
   });
   const unreadTicketsCount = unreadTicketsData?.tickets?.length || 0;
@@ -121,7 +125,7 @@ export function AdminDashboard() {
       const res = await apiClient.get("/api/admin/stats");
       return res.data;
     },
-    enabled: !!accessToken,
+    enabled: !!accessToken && isFounder,
     retry: 1,
     refetchInterval: 15000 // Refresh every 15s
   });
@@ -133,7 +137,7 @@ export function AdminDashboard() {
       const res = await apiClient.get("/api/admin/billing/stats");
       return res.data;
     },
-    enabled: !!accessToken && activeTab === "billing",
+    enabled: !!accessToken && isFounder && activeTab === "billing",
     retry: 1
   });
 
@@ -143,7 +147,7 @@ export function AdminDashboard() {
       const res = await apiClient.get("/api/admin/queue/failed");
       return res.data;
     },
-    enabled: !!accessToken && activeTab === "overview",
+    enabled: !!accessToken && isFounder && activeTab === "overview",
     retry: 1
   });
 
@@ -154,7 +158,7 @@ export function AdminDashboard() {
       const res = await apiClient.get("/api/admin/merchants");
       return res.data;
     },
-    enabled: !!accessToken
+    enabled: !!accessToken && isFounder
   });
 
   // 3. Fetch Global Settings
@@ -164,7 +168,7 @@ export function AdminDashboard() {
       const res = await apiClient.get("/api/admin/settings");
       return res.data;
     },
-    enabled: !!accessToken
+    enabled: !!accessToken && isFounder
   });
 
   const updateSettingsMutation = useMutation({
@@ -970,12 +974,15 @@ function SettingsPanel({ settings, onUpdate, isUpdating }: { settings: any, onUp
 }
 
 function SystemDiagnosticsPanel() {
+  const { isFounder } = useFounderRole();
+  const { accessToken } = useAuthStore();
   const { data: health } = useQuery({
     queryKey: ["admin:system:health"],
     queryFn: async () => {
       const res = await apiClient.get("/api/admin/system/health");
       return res.data;
-    }
+    },
+    enabled: !!accessToken && isFounder
   });
 
   const formatUptime = (seconds: number) => {
@@ -1033,12 +1040,15 @@ function QueueStat({ label, value, icon, color }: any) {
 }
 
 function HealthCheckGrid() {
+  const { isFounder } = useFounderRole();
+  const { accessToken } = useAuthStore();
   const { data: health, isLoading } = useQuery({
     queryKey: ["admin:system:health"],
     queryFn: async () => {
       const res = await apiClient.get("/api/admin/system/health");
       return res.data;
     },
+    enabled: !!accessToken && isFounder,
     refetchInterval: 30000
   });
 
@@ -1083,7 +1093,8 @@ function HealthItem({ label, status, latency, info }: { label: string; status: "
 }
 
 function MerchantAuditModal({ merchant, onClose }: { merchant: any, onClose: () => void }) {
-  const { setSession } = useAuthStore();
+  const { setSession, accessToken } = useAuthStore();
+  const { isFounder } = useFounderRole();
   const navigate = useNavigate();
 
   const { data: auditLogs, isLoading } = useQuery({
@@ -1091,7 +1102,8 @@ function MerchantAuditModal({ merchant, onClose }: { merchant: any, onClose: () 
     queryFn: async () => {
       const res = await apiClient.get(`/api/admin/merchants/${merchant._id}/audit`);
       return res.data;
-    }
+    },
+    enabled: !!accessToken && isFounder && !!merchant?._id
   });
 
   const impersonateMutation = useMutation({

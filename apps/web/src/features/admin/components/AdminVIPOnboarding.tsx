@@ -27,6 +27,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/apiClient";
 import { toast } from "sonner";
 import { formatDisplayPhone } from "@/features/onboarding/components/CountrySelector";
+import { useAuthStore } from "@/stores/authStore";
+import { useFounderRole } from "@/hooks/useFounderRole";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
@@ -86,6 +88,8 @@ function KPICard({ label, value, icon, color }: any) {
 
 export function AdminVIPOnboarding() {
   const queryClient = useQueryClient();
+  const { accessToken } = useAuthStore();
+  const { isFounder } = useFounderRole();
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [assignedEdits, setAssignedEdits] = useState<Record<string, string>>({});
@@ -107,6 +111,7 @@ export function AdminVIPOnboarding() {
       const res = await apiClient.get("/api/admin/expert-setups");
       return res.data;
     },
+    enabled: !!accessToken && isFounder,
     refetchInterval: 15000
   });
 
@@ -116,7 +121,8 @@ export function AdminVIPOnboarding() {
     queryFn: async () => {
       const res = await apiClient.get("/api/admin/settings");
       return res.data;
-    }
+    },
+    enabled: !!accessToken && isFounder
   });
 
   // 3. Mutation to update status, technician, notes, or meta credentials

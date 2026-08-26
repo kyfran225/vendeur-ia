@@ -20,6 +20,8 @@ import {
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/apiClient";
 import { toast } from "sonner";
+import { useAuthStore } from "@/stores/authStore";
+import { useFounderRole } from "@/hooks/useFounderRole";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
@@ -44,6 +46,8 @@ const mergeProviders = (existing: any[] = []) => {
 
 export function AIControlCenter() {
   const queryClient = useQueryClient();
+  const { accessToken } = useAuthStore();
+  const { isFounder } = useFounderRole();
   const [isEditing, setIsEditing] = useState(false);
   const [localAiConfig, setLocalAiConfig] = useState<any>(null);
   const [visibleKeys, setVisibleKeys] = useState<Record<string, boolean>>({});
@@ -64,7 +68,8 @@ export function AIControlCenter() {
     queryFn: async () => {
       const res = await apiClient.get("/api/admin/ai/status");
       return res.data;
-    }
+    },
+    enabled: !!accessToken && isFounder
   });
 
   // 2. Fetch System Settings (includes aiConfig)
@@ -73,7 +78,8 @@ export function AIControlCenter() {
     queryFn: async () => {
       const res = await apiClient.get("/api/admin/settings");
       return res.data;
-    }
+    },
+    enabled: !!accessToken && isFounder
   });
 
   // 3. Fetch Real Usage Stats
@@ -82,7 +88,8 @@ export function AIControlCenter() {
     queryFn: async () => {
       const res = await apiClient.get("/api/admin/stats");
       return res.data;
-    }
+    },
+    enabled: !!accessToken && isFounder
   });
 
   const updateSettingsMutation = useMutation({

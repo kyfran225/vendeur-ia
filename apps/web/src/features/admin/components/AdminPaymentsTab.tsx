@@ -42,6 +42,8 @@ import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
 import { playPaymentNotificationChime } from "@/lib/audioUtils";
+import { useAuthStore } from "@/stores/authStore";
+import { useFounderRole } from "@/hooks/useFounderRole";
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -59,6 +61,8 @@ const REJECTION_REASONS = [
 export function AdminPaymentsTab() {
   const queryClient = useQueryClient();
   const socket = useSocket();
+  const { accessToken } = useAuthStore();
+  const { isFounder } = useFounderRole();
 
   const [filterStatus, setFilterStatus] = useState<string>("under_verification");
   const [searchQuery, setSearchQuery] = useState<string>("");
@@ -85,6 +89,7 @@ export function AdminPaymentsTab() {
       const res = await apiClient.get(url);
       return res.data;
     },
+    enabled: !!accessToken && isFounder,
     refetchInterval: 10000
   });
 
@@ -94,7 +99,8 @@ export function AdminPaymentsTab() {
     queryFn: async () => {
       const res = await apiClient.get("/api/admin/settings");
       return res.data?.manualPaymentConfig || {};
-    }
+    },
+    enabled: !!accessToken && isFounder
   });
 
   const [paymentConfig, setPaymentConfig] = useState<any>(null);

@@ -3,6 +3,8 @@ import { Activity, Zap, Shield, AlertTriangle, MessageSquare, Banknote, User } f
 import { useSocket } from "@/hooks/useSocket";
 import { useQuery } from "@tanstack/react-query";
 import { apiClient } from "@/lib/apiClient";
+import { useAuthStore } from "@/stores/authStore";
+import { useFounderRole } from "@/hooks/useFounderRole";
 import { cn } from "@/lib/utils";
 
 interface AuditLog {
@@ -18,6 +20,8 @@ interface AuditLog {
 
 export function SystemPulseTicker() {
   const socket = useSocket();
+  const { accessToken } = useAuthStore();
+  const { isFounder } = useFounderRole();
   const [logs, setLogs] = useState<AuditLog[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -26,7 +30,8 @@ export function SystemPulseTicker() {
     queryFn: async () => {
       const res = await apiClient.get("/api/admin/pulse");
       return res.data;
-    }
+    },
+    enabled: !!accessToken && isFounder
   });
 
   useEffect(() => {

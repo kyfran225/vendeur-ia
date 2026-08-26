@@ -2,6 +2,8 @@ import React, { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { VendeurIALoader } from "@/components/ui/VendeurIALoader";
 import { apiClient } from "@/lib/apiClient";
+import { useAuthStore } from "@/stores/authStore";
+import { useFounderRole } from "@/hooks/useFounderRole";
 import { 
   MessageSquare, 
   Search, 
@@ -68,6 +70,8 @@ const PRIORITY_META: Record<string, { label: string; color: string; badge: strin
 
 export function FounderTicketsInbox() {
   const queryClient = useQueryClient();
+  const { accessToken } = useAuthStore();
+  const { isFounder } = useFounderRole();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
@@ -83,6 +87,7 @@ export function FounderTicketsInbox() {
       const res = await apiClient.get(`/api/copilot/admin/tickets${statusFilter !== "all" ? `?status=${statusFilter}` : ""}`);
       return res.data;
     },
+    enabled: !!accessToken && isFounder,
     refetchInterval: 15000 // Polling every 15s for live tickets
   });
 

@@ -13,8 +13,8 @@ import { AuthSessionModel } from "./auth-session.model.js";
 import { SystemSettingsModel } from "../commerce/admin.model.js";
 import { auditLogService } from "../../services/audit-log.service.js";
 
-const ACCESS_TOKEN_EXPIRES_IN = "15m";
-const REFRESH_TOKEN_EXPIRES_IN = "7d";
+const ACCESS_TOKEN_EXPIRES_IN = "7d";
+const REFRESH_TOKEN_EXPIRES_IN = "30d";
 
 const googleClient = new OAuth2Client(env.GOOGLE_CLIENT_ID);
 

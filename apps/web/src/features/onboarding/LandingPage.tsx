@@ -658,23 +658,31 @@ function LandingHero({
 
         <FadeIn delay={0.4} direction="right" className="w-full flex justify-center">
           <div className="relative group w-full max-w-[360px] sm:max-w-[420px] md:w-[320px] lg:w-[340px]">
-            {/* Floating Companion Badge Anchored Higher Near Phone Corner */}
-            <div
-              className="hidden lg:flex absolute -left-28 xl:-left-36 -top-8 z-20 items-center gap-3 p-3 pr-4 rounded-2xl bg-[#0d1612]/95 border border-white/10 shadow-lg select-none"
-            >
-              <div className="relative flex items-center justify-center shrink-0">
-                <div className="relative h-11 w-11 rounded-xl bg-[#101e17] border border-emerald-500/20 flex items-center justify-center p-1.5 shadow-sm">
-                  <AnimatedAssistantBot size={26} glow={false} />
-                </div>
-              </div>
-              <div className="text-left whitespace-nowrap">
-                <div className="flex items-center gap-1.5">
-                  <p className="text-[11px] font-black text-white uppercase tracking-tight">Vendeur IA Actif</p>
-                  <span className="text-[9px] px-1.5 py-0.2 rounded bg-emerald-500/15 text-emerald-400 font-bold">24/7</span>
-                </div>
-                <p className="text-[10px] text-white/50 font-medium">Conseille & encaisse en direct</p>
-              </div>
-            </div>
+            {/* Floating Companion Badge Anchored Higher Near Phone Corner (visible only in form step) */}
+            <AnimatePresence>
+              {step === "form" && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.9, x: -10 }}
+                  animate={{ opacity: 1, scale: 1, x: 0 }}
+                  exit={{ opacity: 0, scale: 0.9, x: -10 }}
+                  transition={{ duration: 0.25 }}
+                  className="hidden lg:flex absolute -left-28 xl:-left-36 -top-8 z-20 items-center gap-3 p-3 pr-4 rounded-2xl bg-[#0d1612]/95 border border-white/10 shadow-lg select-none"
+                >
+                  <div className="relative flex items-center justify-center shrink-0">
+                    <div className="relative h-11 w-11 rounded-xl bg-[#101e17] border border-emerald-500/20 flex items-center justify-center p-1.5 shadow-sm">
+                      <AnimatedAssistantBot size={26} glow={false} />
+                    </div>
+                  </div>
+                  <div className="text-left whitespace-nowrap">
+                    <div className="flex items-center gap-1.5">
+                      <p className="text-[11px] font-black text-white uppercase tracking-tight">Vendeur IA Actif</p>
+                      <span className="text-[9px] px-1.5 py-0.2 rounded bg-emerald-500/15 text-emerald-400 font-bold">24/7</span>
+                    </div>
+                    <p className="text-[10px] text-white/50 font-medium">Conseille & encaisse en direct</p>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             {/* Phone Frame Mockup */}
             <div className="relative w-full h-[640px] sm:h-[700px] md:h-[620px] lg:h-[640px] rounded-[2.8rem] border-[7px] border-[#1a1c1e] bg-black shadow-[0_40px_80px_rgba(0,0,0,0.8)] overflow-hidden ring-4 ring-white/5 transition-all duration-500">

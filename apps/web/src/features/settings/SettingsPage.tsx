@@ -515,6 +515,7 @@ function BoutiqueTab({ merchant, dashboard, initialKnowledge, accessToken }: { m
   const initialFees = initialKnowledge?.businessRules?.deliveryFees || [];
 
   const [showMilestoneModal, setShowMilestoneModal] = useState(false);
+  const [savedSectionType, setSavedSectionType] = useState<"delivery" | "payments" | "all">("all");
 
   const isModified =
     JSON.stringify(localMerchant) !== JSON.stringify(merchant) ||
@@ -522,27 +523,67 @@ function BoutiqueTab({ merchant, dashboard, initialKnowledge, accessToken }: { m
     JSON.stringify(deliveryFees) !== JSON.stringify(initialFees);
 
   const updateMutation = useMutation({
-    mutationFn: async () => {
-      await apiClient.patch("/api/commerce/merchant", localMerchant);
+    mutationFn: async (targetType?: "delivery" | "payments" | "all") => {
+      const effectiveType = targetType || savedSectionType;
+
+      // 1. Build sanitized merchant payload
+      const merchantPayload: any = {};
+      if (localMerchant?.businessName !== undefined) merchantPayload.businessName = (localMerchant.businessName || "").trim();
+      if (localMerchant?.city !== undefined) merchantPayload.city = localMerchant.city;
+      if (localMerchant?.country !== undefined) merchantPayload.country = localMerchant.country;
+      if (localMerchant?.address !== undefined) merchantPayload.address = localMerchant.address;
+      if (localMerchant?.description !== undefined) merchantPayload.description = localMerchant.description;
+      if (localMerchant?.category !== undefined) merchantPayload.category = localMerchant.category;
+      if (localMerchant?.currency !== undefined) merchantPayload.currency = localMerchant.currency;
+      if (localMerchant?.billingCurrency !== undefined) merchantPayload.billingCurrency = localMerchant.billingCurrency;
+      if (localMerchant?.phone !== undefined) merchantPayload.phone = localMerchant.phone;
+      if (localMerchant?.whatsappNumber !== undefined) merchantPayload.whatsappNumber = localMerchant.whatsappNumber;
+
+      const cleanPayments = payments.filter((p: any) => p && (p.number?.trim() || p.provider?.trim()));
+      const cleanDelivery = deliveryFees.filter((f: any) => f && f.zone?.trim());
+
+      merchantPayload.paymentChannels = cleanPayments.map((p: any) => ({
+        provider: p.provider || "Wave",
+        number: p.number || "",
+        label: p.label || p.provider || "Wave",
+        customLabel: p.customLabel || ""
+      }));
+
+      // Patch merchant with safe sanitized payload
+      await apiClient.patch("/api/commerce/merchant", merchantPayload);
+
+      // 2. Patch knowledge business rules
       await apiClient.patch("/api/commerce/knowledge", {
         businessRules: {
           ...initialKnowledge?.businessRules,
-          paymentMethods: payments,
-          deliveryFees: deliveryFees
+          paymentMethods: cleanPayments,
+          deliveryFees: cleanDelivery
         }
       });
+
+      return effectiveType;
     },
-    onSuccess: () => {
+    onSuccess: (effectiveType) => {
       setIsDirty(false);
       setCategoryChangeWarning(null);
-      toast.success("Réglages Boutique enregistrés ! 🚀");
+      setSavedSectionType(effectiveType || "all");
+      if (effectiveType === "delivery") {
+        toast.success("Tarifs de livraison enregistrés ! 🛵");
+      } else if (effectiveType === "payments") {
+        toast.success("Moyens de paiement enregistrés ! 💳");
+      } else {
+        toast.success("Réglages Boutique enregistrés ! 🚀");
+      }
       setShowMilestoneModal(true);
-      // Invalidate ALL queries that depend on merchant data so the whole UI reacts
+      // Invalidate queries so that dashboard score and data update everywhere
       queryClient.invalidateQueries({ queryKey: ["dashboard"] });
       queryClient.invalidateQueries({ queryKey: ["knowledge"] });
       queryClient.invalidateQueries({ queryKey: ["offers"] });
-      queryClient.invalidateQueries({ queryKey: ["products"] }); // Re-render ProductManager with new category config
-      queryClient.invalidateQueries({ queryKey: ["merchant"] }); // Clear useMerchant cache if used
+      queryClient.invalidateQueries({ queryKey: ["products"] });
+      queryClient.invalidateQueries({ queryKey: ["merchant"] });
+    },
+    onError: (err: any) => {
+      toast.error(err.response?.data?.error || "Erreur lors de l'enregistrement des réglages.");
     }
   });
 
@@ -939,15 +980,40 @@ function BoutiqueTab({ merchant, dashboard, initialKnowledge, accessToken }: { m
              </div>
            )}
 
-           <button
-              onClick={() => {
-                setDeliveryFees((prev: any[]) => [...prev, { zone: "", price: 1000 }]);
-                setIsDirty(true);
-              }}
-              className="flex items-center gap-2 text-sky-400 text-xs font-black uppercase tracking-widest hover:underline px-4 pt-2"
-           >
-              <Plus size={16} /> Ajouter une zone
-           </button>
+           <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-2">
+             <button
+                type="button"
+                onClick={() => {
+                  setDeliveryFees((prev: any[]) => [...prev, { zone: "", price: 1000 }]);
+                  setIsDirty(true);
+                }}
+                className="flex items-center gap-2 text-sky-400 text-xs font-black uppercase tracking-widest hover:underline px-2 py-1 cursor-pointer"
+             >
+                <Plus size={16} /> Ajouter une zone
+             </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  const validDelivery = deliveryFees.filter((f: any) => f && f.zone && f.zone.trim() !== "");
+                  if (validDelivery.length === 0) {
+                    toast.error("Veuillez renseigner le nom de votre zone de livraison (ex: Cocody, Plateau, Yopougon...).");
+                    return;
+                  }
+                  setSavedSectionType("delivery");
+                  updateMutation.mutate("delivery");
+                }}
+                disabled={updateMutation.isPending || deliveryFees.length === 0}
+                className="h-12 px-6 rounded-2xl bg-sky-500 hover:bg-sky-400 text-vendeur-coal font-black uppercase text-xs tracking-wider flex items-center justify-center gap-2 hover:scale-105 active:scale-95 transition-all shadow-lg shadow-sky-500/20 disabled:opacity-50 cursor-pointer shrink-0"
+              >
+                {updateMutation.isPending && savedSectionType === "delivery" ? (
+                  <Loader2 size={16} className="animate-spin" />
+                ) : (
+                  <Check size={16} />
+                )}
+                <span>Valider les Tarifs de Livraison</span>
+              </button>
+           </div>
         </div>
       </section>
 
@@ -1040,7 +1106,7 @@ function BoutiqueTab({ merchant, dashboard, initialKnowledge, accessToken }: { m
                       setPayments((prev: any[]) => prev.filter((_: any, i: number) => i !== idx));
                       setIsDirty(true);
                     }}
-                    className="absolute -right-2 top-0 h-7 w-7 bg-rose-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all shadow-lg hover:scale-110 active:scale-95 z-10"
+                    className="absolute -right-2 top-0 h-7 w-7 bg-rose-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all shadow-lg hover:scale-110 active:scale-95 z-10 cursor-pointer"
                   >
                       <Trash2 size={12} />
                   </button>
@@ -1048,17 +1114,42 @@ function BoutiqueTab({ merchant, dashboard, initialKnowledge, accessToken }: { m
               );
             })}
 
-            <button
-              onClick={() => {
-                const countryProviders = getProvidersForCountry(localMerchant?.country || "CI");
-                const defaultProvider = countryProviders[0]?.label || "Wave";
-                setPayments((prev: any[]) => [...prev, { provider: defaultProvider, number: "" }]);
-                setIsDirty(true);
-              }}
-              className="flex items-center gap-2 text-emerald-400 text-[10px] font-black uppercase tracking-[0.2em] hover:underline pt-2 px-1"
-            >
-               <Plus size={16} /> Ajouter un canal de paiement
-            </button>
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  const countryProviders = getProvidersForCountry(localMerchant?.country || "CI");
+                  const defaultProvider = countryProviders[0]?.label || "Wave";
+                  setPayments((prev: any[]) => [...prev, { provider: defaultProvider, number: "" }]);
+                  setIsDirty(true);
+                }}
+                className="flex items-center gap-2 text-emerald-400 text-[10px] font-black uppercase tracking-[0.2em] hover:underline px-1 py-1 cursor-pointer"
+              >
+                 <Plus size={16} /> Ajouter un canal de paiement
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  const validPayments = payments.filter((p: any) => p && p.number && p.number.trim() !== "");
+                  if (validPayments.length === 0) {
+                    toast.error("Veuillez renseigner le numéro pour votre moyen de paiement (ex: 0700000000).");
+                    return;
+                  }
+                  setSavedSectionType("payments");
+                  updateMutation.mutate("payments");
+                }}
+                disabled={updateMutation.isPending || payments.length === 0}
+                className="h-12 px-6 rounded-2xl bg-vendeur-emerald hover:bg-emerald-400 text-vendeur-coal font-black uppercase text-xs tracking-wider flex items-center justify-center gap-2 hover:scale-105 active:scale-95 transition-all shadow-lg shadow-vendeur-emerald/20 disabled:opacity-50 cursor-pointer shrink-0"
+              >
+                {updateMutation.isPending && savedSectionType === "payments" ? (
+                  <Loader2 size={16} className="animate-spin" />
+                ) : (
+                  <Check size={16} />
+                )}
+                <span>Valider mes Canaux de Paiement</span>
+              </button>
+            </div>
          </div>
       </section>
 
@@ -1134,7 +1225,7 @@ function BoutiqueTab({ merchant, dashboard, initialKnowledge, accessToken }: { m
               type="button"
               onClick={handleCancel}
               disabled={updateMutation.isPending}
-              className="h-11 sm:h-12 px-3.5 sm:px-5 rounded-xl sm:rounded-2xl bg-white/5 hover:bg-white/10 text-white/70 hover:text-white font-black uppercase text-xs tracking-wider flex items-center justify-center gap-1.5 transition-all shrink-0 active:scale-95"
+              className="h-11 sm:h-12 px-3.5 sm:px-5 rounded-xl sm:rounded-2xl bg-white/5 hover:bg-white/10 text-white/70 hover:text-white font-black uppercase text-xs tracking-wider flex items-center justify-center gap-1.5 transition-all shrink-0 active:scale-95 cursor-pointer"
             >
               <RotateCcw size={15} className="shrink-0" />
               <span>Annuler</span>
@@ -1142,9 +1233,18 @@ function BoutiqueTab({ merchant, dashboard, initialKnowledge, accessToken }: { m
 
             <button
               type="button"
-              onClick={() => updateMutation.mutate()}
+              onClick={() => {
+                let targetType: "delivery" | "payments" | "all" = "all";
+                if (JSON.stringify(deliveryFees) !== JSON.stringify(initialFees) && JSON.stringify(payments) === JSON.stringify(initialPayments)) {
+                  targetType = "delivery";
+                } else if (JSON.stringify(payments) !== JSON.stringify(initialPayments) && JSON.stringify(deliveryFees) === JSON.stringify(initialFees)) {
+                  targetType = "payments";
+                }
+                setSavedSectionType(targetType);
+                updateMutation.mutate(targetType);
+              }}
               disabled={updateMutation.isPending}
-              className="h-11 sm:h-12 px-5 sm:px-8 rounded-xl sm:rounded-2xl bg-vendeur-emerald hover:bg-emerald-400 text-vendeur-coal font-black uppercase text-xs tracking-widest flex items-center justify-center gap-2 hover:scale-105 active:scale-95 transition-all shadow-xl shadow-vendeur-emerald/30 disabled:opacity-50 shrink-0 whitespace-nowrap"
+              className="h-11 sm:h-12 px-5 sm:px-8 rounded-xl sm:rounded-2xl bg-vendeur-emerald hover:bg-emerald-400 text-vendeur-coal font-black uppercase text-xs tracking-widest flex items-center justify-center gap-2 hover:scale-105 active:scale-95 transition-all shadow-xl shadow-vendeur-emerald/30 disabled:opacity-50 shrink-0 whitespace-nowrap cursor-pointer"
             >
               {updateMutation.isPending ? <Loader2 className="animate-spin shrink-0" size={16} /> : <Save size={16} className="shrink-0" />}
               <span>{updateMutation.isPending ? "Enregistrement..." : "Enregistrer"}</span>
@@ -1156,54 +1256,121 @@ function BoutiqueTab({ merchant, dashboard, initialKnowledge, accessToken }: { m
       {(() => {
         const steps = dashboard?.setupStatus?.steps || [];
         const hasProducts = Boolean(steps.find((s: any) => s.id === "products")?.completed);
-        const hasPayments = Boolean(steps.find((s: any) => s.id === "payments")?.completed);
-        const hasDelivery = Boolean(steps.find((s: any) => s.id === "delivery")?.completed);
-        const hasSubscription = Boolean(steps.find((s: any) => s.id === "subscription")?.completed);
+        const hasPayments = payments.length > 0;
+        const hasDelivery = deliveryFees.length > 0;
+        const hasSubscription = Boolean(steps.find((s: any) => s.id === "subscription")?.completed || merchant?.subscription?.status === "active");
 
-        let primaryLabel = "Ajouter mes Articles & Prix";
-        let primarySub = "Créez votre catalogue de vente";
-        let primaryHref = "/products";
+        let modalTitle = "Réglages Boutique Validés ! 🚀";
+        let modalSubtitle = "Vos informations de boutique, frais de livraison et comptes de paiement sont enregistrés.";
+        let primaryLabel = "Tester dans le Simulateur";
+        let primarySub = "Vérifiez les réponses de l'IA";
+        let primaryHref = "/dashboard?test_ia=true";
+        let secondaryActionConfig: any = undefined;
 
-        if (!hasProducts) {
-          primaryLabel = "Ajouter mes Articles & Prix";
-          primarySub = "Créez votre catalogue de vente";
-          primaryHref = "/products";
-        } else if (!hasPayments) {
-          primaryLabel = "Configurer mes Moyens de Paiement";
-          primarySub = "Wave, Orange Money, MTN, Moov";
-          primaryHref = "/settings?tab=boutique#payments";
-        } else if (!hasDelivery) {
-          primaryLabel = "Définir mes Tarifs de Livraison";
-          primarySub = "Configurez vos zones d'expédition";
-          primaryHref = "/settings?tab=boutique#delivery";
-        } else if (!hasSubscription) {
-          primaryLabel = "Activer mon Forfait 24h/24";
-          primarySub = "Lancez vos ventes automatiques";
-          primaryHref = "/offers";
+        if (savedSectionType === "delivery") {
+          modalTitle = "Tarifs de Livraison Validés ! 🛵";
+          modalSubtitle = "Vos zones et tarifs de livraison sont enregistrés. Vendeur IA calculera automatiquement les frais de livraison correspondants pour vos clients.";
+          if (!hasPayments) {
+            primaryLabel = "Configurer mes Moyens de Paiement";
+            primarySub = "Wave, Orange Money, MTN, Moov";
+            primaryHref = "/settings?tab=boutique#payments";
+          } else if (!hasSubscription) {
+            primaryLabel = "Activer mon Forfait 24h/24";
+            primarySub = "Lancez vos ventes automatiques";
+            primaryHref = "/offers";
+          } else {
+            primaryLabel = "Tester dans le Simulateur";
+            primarySub = "Simulez une commande avec livraison";
+            primaryHref = "/dashboard?test_ia=true";
+          }
+          secondaryActionConfig = {
+            label: "Ajouter une autre zone de livraison",
+            onClick: () => {
+              setDeliveryFees((prev: any[]) => [...prev, { zone: "", price: 1000 }]);
+              setShowMilestoneModal(false);
+              setTimeout(() => {
+                const el = document.getElementById("delivery");
+                if (el) el.scrollIntoView({ behavior: "smooth" });
+              }, 150);
+            }
+          };
+        } else if (savedSectionType === "payments") {
+          modalTitle = "Canaux de Paiement Validés ! 💳";
+          modalSubtitle = "Vos comptes et numéros de paiement (Wave, OM, MoMo...) sont enregistrés. Vendeur IA transmettra ces coordonnées directes à vos clients.";
+          if (!hasDelivery) {
+            primaryLabel = "Définir mes Tarifs de Livraison";
+            primarySub = "Configurez vos zones d'expédition";
+            primaryHref = "/settings?tab=boutique#delivery";
+          } else if (!hasSubscription) {
+            primaryLabel = "Activer mon Forfait 24h/24";
+            primarySub = "Lancez vos ventes automatiques";
+            primaryHref = "/offers";
+          } else {
+            primaryLabel = "Tester dans le Simulateur";
+            primarySub = "Simulez une vente avec encaissement";
+            primaryHref = "/dashboard?test_ia=true";
+          }
+          secondaryActionConfig = {
+            label: "Ajouter un autre moyen de paiement",
+            onClick: () => {
+              const countryProviders = getProvidersForCountry(localMerchant?.country || "CI");
+              const defaultProvider = countryProviders[0]?.label || "Wave";
+              setPayments((prev: any[]) => [...prev, { provider: defaultProvider, number: "" }]);
+              setShowMilestoneModal(false);
+              setTimeout(() => {
+                const el = document.getElementById("payments");
+                if (el) el.scrollIntoView({ behavior: "smooth" });
+              }, 150);
+            }
+          };
         } else {
-          primaryLabel = "Tester dans le Simulateur";
-          primarySub = "Vérifiez les réponses de l'IA";
-          primaryHref = "/dashboard?test_ia=true";
+          // General / all
+          if (!hasProducts) {
+            primaryLabel = "Ajouter mes Articles & Prix";
+            primarySub = "Créez votre catalogue de vente";
+            primaryHref = "/products";
+          } else if (!hasPayments) {
+            primaryLabel = "Configurer mes Moyens de Paiement";
+            primarySub = "Wave, Orange Money, MTN, Moov";
+            primaryHref = "/settings?tab=boutique#payments";
+          } else if (!hasDelivery) {
+            primaryLabel = "Définir mes Tarifs de Livraison";
+            primarySub = "Configurez vos zones d'expédition";
+            primaryHref = "/settings?tab=boutique#delivery";
+          } else if (!hasSubscription) {
+            primaryLabel = "Activer mon Forfait 24h/24";
+            primarySub = "Lancez vos ventes automatiques";
+            primaryHref = "/offers";
+          } else {
+            primaryLabel = "Tester dans le Simulateur";
+            primarySub = "Vérifiez les réponses de l'IA";
+            primaryHref = "/dashboard?test_ia=true";
+          }
+          if (hasProducts) {
+            secondaryActionConfig = { label: "Gérer mes Produits", href: "/products" };
+          }
         }
+
+        let calculatedScore = 25; // Base WhatsApp
+        if (hasProducts) calculatedScore += 25;
+        if (hasPayments) calculatedScore += 20;
+        if (hasDelivery) calculatedScore += 15;
+        if (hasSubscription) calculatedScore += 15;
 
         return (
           <StepMilestoneModal
             isOpen={showMilestoneModal}
             onClose={() => setShowMilestoneModal(false)}
-            title="Réglages Boutique Validés ! 🚀"
-            subtitle="Vos informations de boutique, frais de livraison et comptes de paiement sont enregistrés."
-            score={dashboard?.setupStatus?.score || (merchant?.subscription?.status === 'active' ? 100 : 80)}
+            title={modalTitle}
+            subtitle={modalSubtitle}
+            score={calculatedScore}
             primaryAction={{
               label: primaryLabel,
               sublabel: primarySub,
               href: primaryHref
             }}
-            secondaryAction={
-              hasProducts
-                ? { label: "Gérer mes Produits", href: "/products" }
-                : undefined
-            }
-            dashboardActionLabel="Retour à l'Assistant"
+            secondaryAction={secondaryActionConfig}
+            dashboardActionLabel="Retour au Tableau de Bord"
             autoRedirectSeconds={7}
             autoRedirectTo="/dashboard"
           />
@@ -1349,71 +1516,74 @@ function PersonnaliteTab({ merchant }: { merchant: any }) {
   });
 
   return (
-    <div className="space-y-8 animate-in slide-in-from-bottom-2 duration-500">
-      <section className="bg-vendeur-coal border border-white/10 p-6 md:p-10 rounded-[2.5rem] md:rounded-[3.5rem] space-y-10 shadow-2xl overflow-hidden">
+    <div className="space-y-6 sm:space-y-8 animate-in slide-in-from-bottom-2 duration-500 w-full max-w-full overflow-hidden box-border">
+      <section className="bg-vendeur-coal/60 sm:bg-vendeur-coal border border-white/10 p-4 sm:p-6 md:p-10 rounded-2xl sm:rounded-3xl md:rounded-[3rem] space-y-6 sm:space-y-10 shadow-2xl overflow-hidden w-full max-w-full box-border">
          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div className="space-y-1">
-               <h2 className="text-xl md:text-2xl font-black text-white flex items-center gap-3">
-                 <span className="whitespace-nowrap">Style de Communication</span>
+            <div className="space-y-1 min-w-0 flex-1">
+               <h2 className="text-xl md:text-2xl font-black text-white flex items-center gap-2.5 sm:gap-3 flex-wrap">
+                 <Bot size={22} className="text-vendeur-emerald shrink-0" />
+                 <span>Style de Communication</span>
                </h2>
-               <p className="text-[10px] md:text-xs text-white/40">Définissez le caractère de votre Vendeur IA.</p>
+               <p className="text-[10px] md:text-xs text-white/40 font-medium">Définissez le caractère et les automatismes de votre Vendeur IA.</p>
             </div>
             <button
                onClick={() => updateMutation.mutate()}
                disabled={updateMutation.isPending}
-               className="h-12 w-full sm:w-auto bg-vendeur-emerald text-vendeur-coal px-8 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-lg whitespace-nowrap"
+               className="h-11 sm:h-12 w-full sm:w-auto bg-vendeur-emerald hover:bg-emerald-400 text-vendeur-coal px-6 sm:px-8 rounded-xl sm:rounded-2xl text-xs font-black uppercase tracking-wider hover:scale-105 active:scale-95 transition-all shadow-lg whitespace-nowrap cursor-pointer shrink-0"
             >
                {updateMutation.isPending ? <Loader2 className="animate-spin" size={16} /> : "Enregistrer"}
             </button>
          </div>
 
-          <div className="grid gap-8">
+          <div className="grid gap-4 sm:gap-6 md:gap-8 w-full max-w-full">
             {/* Master Switch: Vendeur IA Actif 24h/24 vs Mode Pause */}
             <div className={cn(
-              "p-6 sm:p-8 rounded-[2rem] border transition-all space-y-4",
+              "p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-[2rem] border transition-all space-y-3 sm:space-y-4 w-full max-w-full box-border",
               aiSettings.autoReply !== false
                 ? "bg-emerald-500/10 border-emerald-500/30 shadow-xl shadow-emerald-500/5"
                 : "bg-amber-500/10 border-amber-500/30 shadow-xl shadow-amber-500/5"
             )}>
-              <div className="flex items-center justify-between gap-4">
-                <div className="flex items-center gap-3.5">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 sm:gap-4">
+                <div className="flex items-start sm:items-center gap-3 sm:gap-3.5 flex-1 min-w-0">
                   <div className={cn(
-                    "h-12 w-12 rounded-2xl flex items-center justify-center font-black shrink-0",
+                    "h-11 w-11 sm:h-12 sm:w-12 rounded-xl sm:rounded-2xl flex items-center justify-center font-black shrink-0",
                     aiSettings.autoReply !== false
                       ? "bg-vendeur-emerald text-vendeur-coal shadow-lg shadow-vendeur-emerald/20"
                       : "bg-amber-500 text-vendeur-coal shadow-lg shadow-amber-500/20"
                   )}>
-                    {aiSettings.autoReply !== false ? <Zap size={24} /> : <PauseCircle size={24} />}
+                    {aiSettings.autoReply !== false ? <Zap size={22} /> : <PauseCircle size={22} />}
                   </div>
-                  <div>
-                    <div className="flex items-center gap-2">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <span className={cn(
-                        "w-2 h-2 rounded-full",
+                        "w-2 h-2 rounded-full shrink-0",
                         aiSettings.autoReply !== false ? "bg-vendeur-emerald animate-pulse" : "bg-amber-400"
                       )} />
                       <h3 className="font-black text-white text-sm sm:text-base uppercase tracking-tight">
                         {aiSettings.autoReply !== false ? "Vendeur IA Actif (En Vente 24h/24)" : "Mode Pause (WhatsApp Manuel)"}
                       </h3>
                     </div>
-                    <p className="text-xs text-white/60 mt-0.5 max-w-xl leading-relaxed">
+                    <p className="text-xs text-white/60 mt-1 max-w-xl leading-relaxed">
                       {aiSettings.autoReply !== false
                         ? "L'IA prend le relais automatiquement pour répondre aux clients, présenter vos articles et enregistrer vos commandes."
                         : "L'IA ne répond plus automatiquement. Votre WhatsApp reste connecté et vous échangez manuellement avec vos clients."}
                     </p>
                   </div>
                 </div>
-                <ToggleButton
-                  active={aiSettings.autoReply !== false}
-                  onToggle={() => setAiSettings({ ...aiSettings, autoReply: aiSettings.autoReply === false ? true : false })}
-                  color="bg-vendeur-emerald"
-                />
+                <div className="flex justify-end sm:justify-center shrink-0 self-end sm:self-center">
+                  <ToggleButton
+                    active={aiSettings.autoReply !== false}
+                    onToggle={() => setAiSettings({ ...aiSettings, autoReply: aiSettings.autoReply === false ? true : false })}
+                    color="bg-vendeur-emerald"
+                  />
+                </div>
               </div>
             </div>
 
             {/* Personnalité */}
-            <div className="space-y-4">
-              <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-vendeur-emerald ml-1">Tempérament Dominant</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="space-y-3 sm:space-y-4">
+              <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-vendeur-emerald ml-1">Tempérament Dominant</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
                  <PersonalityButton
                     active={aiSettings.personality === "friendly"}
                     onClick={() => setAiSettings({...aiSettings, personality: "friendly"})}
@@ -1436,14 +1606,14 @@ function PersonnaliteTab({ merchant }: { merchant: any }) {
             </div>
 
             {/* Voix & Slang */}
-            <div className="grid md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 sm:gap-6">
                <div className={cn(
-                 "p-8 rounded-[2rem] border transition-all space-y-6",
-                 aiSettings.voiceMode ? "bg-sky-500/5 border-sky-400/30" : "bg-white/5 border-white/5"
+                 "p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-[2rem] border transition-all space-y-4 sm:space-y-6 w-full max-w-full box-border",
+                 aiSettings.voiceMode ? "bg-sky-500/5 border-sky-400/30" : "bg-white/[0.03] border-white/5"
                )}>
-                  <div className="flex items-center justify-between">
-                     <div className="h-12 w-12 rounded-2xl bg-sky-400/10 flex items-center justify-center text-sky-400">
-                        <Mic size={24} />
+                  <div className="flex items-center justify-between gap-3">
+                     <div className="h-11 w-11 sm:h-12 sm:w-12 rounded-xl sm:rounded-2xl bg-sky-400/10 flex items-center justify-center text-sky-400 shrink-0">
+                        <Mic size={22} />
                      </div>
                      <ToggleButton
                         active={aiSettings.voiceMode}
@@ -1452,18 +1622,18 @@ function PersonnaliteTab({ merchant }: { merchant: any }) {
                      />
                   </div>
                   <div>
-                    <h4 className="font-black text-white">Mode Note Vocale</h4>
-                    <p className="text-xs text-white/40 mt-1">Vendeur IA répondra par audio.</p>
+                    <h4 className="font-black text-white text-sm sm:text-base">Mode Note Vocale</h4>
+                    <p className="text-xs text-white/40 mt-1">Vendeur IA répondra par notes vocales.</p>
                   </div>
                </div>
 
                <div className={cn(
-                 "p-8 rounded-[2rem] border transition-all space-y-6",
-                 aiSettings.localSlang ? "bg-amber-500/5 border-amber-400/30" : "bg-white/5 border-white/5"
+                 "p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-[2rem] border transition-all space-y-4 sm:space-y-6 w-full max-w-full box-border",
+                 aiSettings.localSlang ? "bg-amber-500/5 border-amber-400/30" : "bg-white/[0.03] border-white/5"
                )}>
-                  <div className="flex items-center justify-between">
-                     <div className="h-12 w-12 rounded-2xl bg-amber-400/10 flex items-center justify-center text-amber-400">
-                        <MessageSquare size={24} />
+                  <div className="flex items-center justify-between gap-3">
+                     <div className="h-11 w-11 sm:h-12 sm:w-12 rounded-xl sm:rounded-2xl bg-amber-400/10 flex items-center justify-center text-amber-400 shrink-0">
+                        <MessageSquare size={22} />
                      </div>
                      <ToggleButton
                         active={aiSettings.localSlang}
@@ -1472,19 +1642,19 @@ function PersonnaliteTab({ merchant }: { merchant: any }) {
                      />
                   </div>
                   <div>
-                    <h4 className="font-black text-white">Ton Ivoirien (Slang)</h4>
-                    <p className="text-xs text-white/40 mt-1">Utilise le Nouchi/etc pour plus de proximité.</p>
+                    <h4 className="font-black text-white text-sm sm:text-base">Ton Ivoirien (Slang)</h4>
+                    <p className="text-xs text-white/40 mt-1">Utilise le Nouchi et expressions locales pour plus de proximité.</p>
                   </div>
                </div>
 
                {/* Assistant Statuts WhatsApp du Matin */}
                 <div className={cn(
-                  "p-8 rounded-[2rem] border transition-all space-y-6",
-                  aiSettings.dailyStatusAssistant !== false ? "bg-emerald-500/5 border-emerald-400/30" : "bg-white/5 border-white/5"
+                  "p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-[2rem] border transition-all space-y-4 sm:space-y-6 w-full max-w-full box-border",
+                  aiSettings.dailyStatusAssistant !== false ? "bg-emerald-500/5 border-emerald-400/30" : "bg-white/[0.03] border-white/5"
                 )}>
-                   <div className="flex items-center justify-between">
-                      <div className="h-12 w-12 rounded-2xl bg-emerald-400/10 flex items-center justify-center text-emerald-400">
-                         <MessageSquare size={24} />
+                   <div className="flex items-center justify-between gap-3">
+                      <div className="h-11 w-11 sm:h-12 sm:w-12 rounded-xl sm:rounded-2xl bg-emerald-400/10 flex items-center justify-center text-emerald-400 shrink-0">
+                         <MessageSquare size={22} />
                       </div>
                       <ToggleButton
                          active={aiSettings.dailyStatusAssistant !== false}
@@ -1493,19 +1663,19 @@ function PersonnaliteTab({ merchant }: { merchant: any }) {
                       />
                    </div>
                    <div>
-                     <h4 className="font-black text-white">Pack Statuts WhatsApp Quotidien</h4>
+                     <h4 className="font-black text-white text-sm sm:text-base">Pack Statuts WhatsApp Quotidien</h4>
                      <p className="text-xs text-white/40 mt-1">Reçois chaque matin 3 textes percutants prêts à être postés en statut.</p>
                    </div>
                 </div>
 
                 {/* Auto-Publication Statut WhatsApp (QR Code / Baileys) */}
                 <div className={cn(
-                  "p-8 rounded-[2rem] border transition-all space-y-6",
-                  aiSettings.autoPostStatus ? "bg-purple-500/5 border-purple-400/30" : "bg-white/5 border-white/5"
+                  "p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-[2rem] border transition-all space-y-4 sm:space-y-6 w-full max-w-full box-border",
+                  aiSettings.autoPostStatus ? "bg-purple-500/5 border-purple-400/30" : "bg-white/[0.03] border-white/5"
                 )}>
-                   <div className="flex items-center justify-between">
-                      <div className="h-12 w-12 rounded-2xl bg-purple-400/10 flex items-center justify-center text-purple-400">
-                         <Zap size={24} />
+                   <div className="flex items-center justify-between gap-3">
+                      <div className="h-11 w-11 sm:h-12 sm:w-12 rounded-xl sm:rounded-2xl bg-purple-400/10 flex items-center justify-center text-purple-400 shrink-0">
+                         <Zap size={22} />
                       </div>
                       <ToggleButton
                          active={aiSettings.autoPostStatus}
@@ -1514,7 +1684,7 @@ function PersonnaliteTab({ merchant }: { merchant: any }) {
                       />
                    </div>
                    <div>
-                     <h4 className="font-black text-white">Publication Automatique en Statut</h4>
+                     <h4 className="font-black text-white text-sm sm:text-base">Publication Automatique en Statut</h4>
                      <p className="text-xs text-white/40 mt-1">Poste automatiquement 1 produit en statut chaque matin.</p>
                    </div>
                 </div>
@@ -1621,13 +1791,13 @@ function PersonalityButton({ active, onClick, label, desc, emoji }: any) {
     <button
       onClick={onClick}
       className={cn(
-        "p-6 rounded-[2rem] border-2 text-left transition-all relative overflow-hidden group",
+        "p-4 sm:p-5 md:p-6 rounded-2xl sm:rounded-[2rem] border-2 text-left transition-all relative overflow-hidden group w-full cursor-pointer active:scale-[0.98]",
         active ? "bg-vendeur-emerald/10 border-vendeur-emerald shadow-lg" : "bg-white/5 border-white/5 hover:border-white/20"
       )}
     >
       <div className="relative z-10">
-        {emoji && <span className="text-2xl mb-2 block">{emoji}</span>}
-        <p className={cn("font-black text-sm uppercase tracking-widest", active ? "text-vendeur-emerald" : "text-white")}>{label}</p>
+        {emoji && <span className="text-xl sm:text-2xl mb-1.5 sm:mb-2 block">{emoji}</span>}
+        <p className={cn("font-black text-xs sm:text-sm uppercase tracking-wider", active ? "text-vendeur-emerald" : "text-white")}>{label}</p>
         <p className="text-[10px] text-white/40 font-medium mt-0.5">{desc}</p>
       </div>
     </button>

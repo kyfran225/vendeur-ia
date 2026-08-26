@@ -360,8 +360,8 @@ export function WhatsAppConnectionFlow() {
       <StepMilestoneModal
         isOpen={showMilestoneModal}
         onClose={() => setShowMilestoneModal(false)}
-        title="WhatsApp Connecté ! 🚀"
-        subtitle="Votre commercial IA est désormais synchronisé avec votre ligne WhatsApp et prêt à vendre."
+        title="Ligne WhatsApp Enregistrée ! 📱"
+        subtitle="Votre numéro WhatsApp de vente est configuré. Votre Vendeur IA l'utilisera pour recevoir et convertir les messages clients."
         score={dashboard?.setupStatus?.score || 40}
         primaryAction={{
           label: (dashboard?.products?.length || 0) > 0 ? "Tester dans le Simulateur" : "Ajouter mes Articles & Prix",
@@ -369,10 +369,10 @@ export function WhatsAppConnectionFlow() {
           href: (dashboard?.products?.length || 0) > 0 ? "/dashboard?test_ia=true" : "/products"
         }}
         secondaryAction={{
-          label: "Configurer mes Paiements",
+          label: "Configurer mes Moyens de Paiement",
           href: "/settings?tab=boutique#payments"
         }}
-        dashboardActionLabel="Retour à l'Assistant"
+        dashboardActionLabel="Retour au Tableau de Bord"
         autoRedirectSeconds={7}
         autoRedirectTo="/dashboard"
       />

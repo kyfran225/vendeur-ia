@@ -1013,22 +1013,22 @@ function CheckoutSuccessModal({
             <button
               type="button"
               onClick={onNavigateDashboard}
-              className="w-full h-13 sm:h-14 min-h-[48px] bg-vendeur-emerald hover:bg-emerald-400 text-vendeur-coal font-black uppercase tracking-wider text-xs sm:text-sm rounded-2xl flex items-center justify-center gap-2 transition-all shadow-xl shadow-vendeur-emerald/20 active:scale-95 cursor-pointer px-4"
+              className="w-full h-12 sm:h-14 min-h-[48px] bg-vendeur-emerald hover:bg-emerald-400 text-vendeur-coal font-black uppercase tracking-wider text-xs sm:text-sm rounded-xl sm:rounded-2xl flex items-center justify-center gap-2 transition-all shadow-xl shadow-vendeur-emerald/20 active:scale-95 cursor-pointer px-3 sm:px-4"
             >
-              <span>Accéder à mon tableau de bord</span>
-              <span className="text-[11px] font-bold bg-vendeur-coal/20 px-2 py-0.5 rounded-full text-vendeur-coal">
+              <span className="truncate">Accéder au tableau de bord</span>
+              <span className="text-[10px] sm:text-[11px] font-bold bg-vendeur-coal/20 px-2 py-0.5 rounded-full text-vendeur-coal shrink-0">
                 {secondsRemaining}s
               </span>
-              <ChevronRight size={16} />
+              <ChevronRight size={16} className="shrink-0" />
             </button>
 
             <button
               type="button"
               onClick={handleSupportWhatsApp}
-              className="w-full h-11 sm:h-12 text-white/60 hover:text-white text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 hover:bg-white/5 rounded-xl cursor-pointer"
+              className="w-full h-11 sm:h-12 text-white/70 hover:text-white text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 hover:bg-white/5 rounded-xl cursor-pointer"
             >
-              <WhatsAppIcon size={15} variant="brand" />
-              <span>Besoin d'aide ? Contactez-nous</span>
+              <WhatsAppIcon size={16} variant="brand" />
+              <span>Assistance WhatsApp</span>
             </button>
           </div>
         </div>

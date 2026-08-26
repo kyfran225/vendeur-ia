@@ -60,7 +60,7 @@ export const CreateOrderSchema = z.object({
 
 export const UpdateMerchantSchema = z.object({
   body: z.object({
-    businessName: z.string().min(2).optional(),
+    businessName: z.string().min(2).optional().or(z.literal("")),
     slug: z.string().optional(),
     category: z.string().optional(),
     description: z.string().optional(),

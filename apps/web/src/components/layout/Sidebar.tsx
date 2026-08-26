@@ -126,9 +126,6 @@ export function Sidebar() {
             isMoreActive || isOpen ? "text-vendeur-emerald font-bold" : "text-white/40 hover:text-white/70"
           )}
         >
-          {isMoreActive && !isOpen && (
-            <span className="absolute top-0 right-[25%] h-2 w-2 rounded-full bg-vendeur-emerald ring-2 ring-[#0f1714]" />
-          )}
           <MoreHorizontal size={19} />
           <span className="text-[9px] font-black uppercase tracking-tight truncate max-w-full block">Plus</span>
         </button>

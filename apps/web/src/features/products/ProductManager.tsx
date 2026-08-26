@@ -543,45 +543,45 @@ export function ProductManager() {
 
       {/* Edit / Add Form Modal */}
       {(editingProduct || isAddingManual) && (
-        <div className="fixed inset-0 z-[150] flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[150] flex items-center justify-center p-3 sm:p-4">
           <div className="absolute inset-0 bg-black/90 backdrop-blur-md" onClick={() => { setEditingProduct(null); setIsAddingManual(false); }} />
           <form
             onSubmit={editingProduct ? handleUpdate : handleManualCreate}
-            className="relative w-full max-w-xl bg-[#0c0f0d] border border-white/10 rounded-[2.5rem] p-8 space-y-6 shadow-2xl animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto"
+            className="relative w-full max-w-xl bg-[#0c0f0d] border border-white/10 rounded-2xl sm:rounded-[2.5rem] p-4 sm:p-6 md:p-8 space-y-4 sm:space-y-6 shadow-2xl animate-in zoom-in-95 duration-200 max-h-[92vh] overflow-y-auto"
           >
-            <div className="flex justify-between items-center mb-2">
-              <h2 className="text-2xl font-black text-white">
+            <div className="flex justify-between items-center mb-1">
+              <h2 className="text-xl sm:text-2xl font-black text-white uppercase tracking-tight">
                 {editingProduct ? "Modifier" : "Nouveau"} {config.itemLabel}
               </h2>
-              <button onClick={() => { setEditingProduct(null); setIsAddingManual(false); }} type="button" className="text-white/40 hover:text-white"><X size={24} /></button>
+              <button onClick={() => { setEditingProduct(null); setIsAddingManual(false); }} type="button" className="text-white/40 hover:text-white p-1 rounded-lg hover:bg-white/5 transition-all"><X size={20} /></button>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-3.5 sm:space-y-4">
               {/* Unified Intelligent Photo Uploader */}
               {businessCategory !== "digital" && (
-                <div className="flex flex-col items-center gap-3 pb-2">
+                <div className="flex flex-col items-center gap-2.5 pb-1">
                   <div className="relative w-full">
                     <label className={cn(
-                      "relative flex flex-col items-center justify-center w-full h-36 rounded-3xl bg-white/5 border-2 border-dashed border-white/10 hover:border-emerald-400/50 transition-all cursor-pointer overflow-hidden p-4 group text-center",
+                      "relative flex flex-col items-center justify-center w-full h-32 sm:h-36 rounded-2xl sm:rounded-3xl bg-white/5 border-2 border-dashed border-white/10 hover:border-emerald-400/50 transition-all cursor-pointer overflow-hidden p-3 sm:p-4 group text-center",
                       analyzing && "opacity-75 cursor-wait border-sky-400/50"
                     )}>
                       {(editingProduct ? (editingProduct as any).imageUrl : newProduct.imageUrl) ? (
                         <img
                           src={editingProduct ? (editingProduct as any).imageUrl : newProduct.imageUrl}
-                          className="w-full h-full object-cover rounded-2xl"
+                          className="w-full h-full object-cover rounded-xl sm:rounded-2xl"
                           alt="Preview"
                         />
                       ) : (
                         <div className="flex flex-col items-center gap-2">
                           {analyzing ? (
                             <>
-                              <Loader2 size={28} className="animate-spin text-sky-400" />
+                              <Loader2 size={24} className="animate-spin text-sky-400" />
                               <span className="text-xs font-black uppercase text-sky-400 tracking-wider">Analyse de la photo par Vendeur IA...</span>
                             </>
                           ) : (
                             <>
-                              <div className="p-3 bg-white/5 rounded-2xl text-white/40 group-hover:text-emerald-400 group-hover:bg-emerald-400/10 transition-all">
-                                <Camera size={24} />
+                              <div className="p-2.5 sm:p-3 bg-white/5 rounded-xl sm:rounded-2xl text-white/40 group-hover:text-emerald-400 group-hover:bg-emerald-400/10 transition-all">
+                                <Camera size={22} />
                               </div>
                               <div>
                                 <p className="text-xs font-black uppercase text-white tracking-wider">Ajouter une photo</p>
@@ -610,12 +610,12 @@ export function ProductManager() {
 
                   {/* AI Auto-fill Checkbox / Toggle */}
                   {config.showScanner && (
-                    <label className="flex items-center gap-2.5 px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-white/70 hover:text-white transition-all cursor-pointer w-full justify-center">
+                    <label className="flex items-center gap-2.5 px-3 sm:px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-white/70 hover:text-white transition-all cursor-pointer w-full justify-center text-center">
                       <input
                         type="checkbox"
                         checked={autoAnalyzeWithIA}
                         onChange={(e) => setAutoAnalyzeWithIA(e.target.checked)}
-                        className="w-4 h-4 rounded border-white/20 text-emerald-400 focus:ring-emerald-400 accent-emerald-400"
+                        className="w-4 h-4 rounded border-white/20 text-emerald-400 focus:ring-emerald-400 accent-emerald-400 shrink-0"
                       />
                       <span className="text-[10px] font-black uppercase tracking-wider">Pré-remplir automatiquement les infos avec Vendeur IA</span>
                     </label>
@@ -624,13 +624,13 @@ export function ProductManager() {
               )}
 
               {/* Title / Name Field */}
-              <label className="grid gap-2 text-xs font-black uppercase tracking-widest text-white/60">
+              <label className="grid gap-1.5 text-xs font-black uppercase tracking-wider text-white/60">
                 {businessCategory === "digital" && "Titre du Contenu / E-Book / Formation"}
                 {businessCategory === "services" && "Intitulé de la Prestation"}
                 {businessCategory === "food" && "Nom du Plat ou Formule"}
                 {businessCategory !== "digital" && businessCategory !== "services" && businessCategory !== "food" && "Nom de l'Article"}
                 <input
-                  className="h-12 rounded-xl bg-white/5 border border-white/10 px-4 text-white outline-none focus:border-emerald-300 transition-all placeholder:text-white/20"
+                  className="h-11 sm:h-12 rounded-xl bg-white/5 border border-white/10 px-3.5 sm:px-4 text-sm font-medium text-white outline-none focus:border-emerald-300 transition-all placeholder:text-white/20"
                   value={editingProduct ? editingProduct.name : newProduct.name}
                   onChange={e => editingProduct
                     ? setEditingProduct({...editingProduct, name: e.target.value})
@@ -646,12 +646,12 @@ export function ProductManager() {
               </label>
 
               {/* Price & Stock/Duration */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <label className="grid gap-2 text-xs font-black uppercase tracking-widest text-white/60">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                <label className="grid gap-1.5 text-xs font-black uppercase tracking-wider text-white/60">
                   Prix ({activeCurrency})
                   <input
                     type="number"
-                    className="h-12 rounded-xl bg-white/5 border border-white/10 px-4 text-white outline-none focus:border-emerald-300 transition-all"
+                    className="h-11 sm:h-12 rounded-xl bg-white/5 border border-white/10 px-3.5 sm:px-4 text-sm font-bold text-white outline-none focus:border-emerald-300 transition-all"
                     value={editingProduct ? (isNaN(editingProduct.price) ? "" : editingProduct.price) : (isNaN(newProduct.price) ? "" : newProduct.price)}
                     onChange={e => {
                       const val = e.target.value === "" ? NaN : parseInt(e.target.value);
@@ -666,10 +666,10 @@ export function ProductManager() {
 
                 {/* DOMAIN SPECIFIC SECOND FIELD */}
                 {businessCategory === "digital" && (
-                  <label className="grid gap-2 text-xs font-black uppercase tracking-widest text-white/60">
+                  <label className="grid gap-1.5 text-xs font-black uppercase tracking-wider text-white/60">
                     Format du Contenu
                     <select
-                      className="h-12 rounded-xl bg-[#141815] border border-white/10 px-4 text-white outline-none focus:border-emerald-300 transition-all"
+                      className="h-11 sm:h-12 rounded-xl bg-[#141815] border border-white/10 px-3.5 sm:px-4 text-sm text-white outline-none focus:border-emerald-300 transition-all"
                       value={editingProduct ? (editingProduct.digitalFormat || "PDF / E-Book") : newProduct.digitalFormat}
                       onChange={e => editingProduct
                         ? setEditingProduct({...editingProduct, digitalFormat: e.target.value})
@@ -685,10 +685,10 @@ export function ProductManager() {
                 )}
 
                 {businessCategory === "services" && (
-                  <label className="grid gap-2 text-xs font-black uppercase tracking-widest text-white/60">
+                  <label className="grid gap-1.5 text-xs font-black uppercase tracking-wider text-white/60">
                     Durée Estimée
                     <input
-                      className="h-12 rounded-xl bg-white/5 border border-white/10 px-4 text-white outline-none focus:border-emerald-300 transition-all"
+                      className="h-11 sm:h-12 rounded-xl bg-white/5 border border-white/10 px-3.5 sm:px-4 text-sm text-white outline-none focus:border-emerald-300 transition-all"
                       value={editingProduct ? (editingProduct.serviceDuration || "1h") : newProduct.serviceDuration}
                       onChange={e => editingProduct
                         ? setEditingProduct({...editingProduct, serviceDuration: e.target.value})
@@ -700,10 +700,10 @@ export function ProductManager() {
                 )}
 
                 {businessCategory === "food" && (
-                  <label className="grid gap-2 text-xs font-black uppercase tracking-widest text-white/60">
+                  <label className="grid gap-1.5 text-xs font-black uppercase tracking-wider text-white/60">
                     Temps de Préparation
                     <input
-                      className="h-12 rounded-xl bg-white/5 border border-white/10 px-4 text-white outline-none focus:border-emerald-300 transition-all"
+                      className="h-11 sm:h-12 rounded-xl bg-white/5 border border-white/10 px-3.5 sm:px-4 text-sm text-white outline-none focus:border-emerald-300 transition-all"
                       value={editingProduct ? (editingProduct.preparationTime || "15-20 min") : newProduct.preparationTime}
                       onChange={e => editingProduct
                         ? setEditingProduct({...editingProduct, preparationTime: e.target.value})
@@ -715,11 +715,11 @@ export function ProductManager() {
                 )}
 
                 {config.showStock && (
-                  <label className="grid gap-2 text-xs font-black uppercase tracking-widest text-white/60">
+                  <label className="grid gap-1.5 text-xs font-black uppercase tracking-wider text-white/60">
                     {config.stockLabel}
                     <input
                       type="number"
-                      className="h-12 rounded-xl bg-white/5 border border-white/10 px-4 text-white outline-none focus:border-emerald-300 transition-all"
+                      className="h-11 sm:h-12 rounded-xl bg-white/5 border border-white/10 px-3.5 sm:px-4 text-sm text-white outline-none focus:border-emerald-300 transition-all"
                       value={editingProduct ? (isNaN(editingProduct.stock) ? "" : editingProduct.stock) : (isNaN(newProduct.stock) ? "" : newProduct.stock)}
                       onChange={e => {
                         const val = e.target.value === "" ? NaN : parseInt(e.target.value);
@@ -735,10 +735,10 @@ export function ProductManager() {
 
               {/* SPECIFIC FIELD: FOOD OPTIONS */}
               {businessCategory === "food" && (
-                <label className="grid gap-2 text-xs font-black uppercase tracking-widest text-white/60">
+                <label className="grid gap-1.5 text-xs font-black uppercase tracking-wider text-white/60">
                   Options / Formules disponibles
                   <input
-                    className="h-12 rounded-xl bg-white/5 border border-white/10 px-4 text-white outline-none focus:border-emerald-300 transition-all placeholder:text-white/20"
+                    className="h-11 sm:h-12 rounded-xl bg-white/5 border border-white/10 px-3.5 sm:px-4 text-sm text-white outline-none focus:border-emerald-300 transition-all placeholder:text-white/20"
                     value={editingProduct ? (editingProduct.foodOptions || "") : newProduct.foodOptions}
                     onChange={e => editingProduct
                       ? setEditingProduct({...editingProduct, foodOptions: e.target.value})
@@ -752,10 +752,10 @@ export function ProductManager() {
 
               {/* SPECIFIC FIELD: DIGITAL LINK */}
               {businessCategory === "digital" && (
-                <label className="grid gap-2 text-xs font-black uppercase tracking-widest text-white/60">
+                <label className="grid gap-1.5 text-xs font-black uppercase tracking-wider text-white/60">
                   Lien du Fichier / Accès (Google Drive, Notion, etc.)
                   <input
-                    className="h-12 rounded-xl bg-white/5 border border-white/10 px-4 text-emerald-400 outline-none focus:border-emerald-300 transition-all placeholder:text-white/20"
+                    className="h-11 sm:h-12 rounded-xl bg-white/5 border border-white/10 px-3.5 sm:px-4 text-sm text-emerald-400 outline-none focus:border-emerald-300 transition-all placeholder:text-white/20"
                     value={editingProduct ? (editingProduct.digitalUrl || "") : newProduct.digitalUrl}
                     onChange={e => editingProduct
                       ? setEditingProduct({...editingProduct, digitalUrl: e.target.value})
@@ -769,10 +769,10 @@ export function ProductManager() {
 
               {/* SPECIFIC FIELD: SERVICE DELIVERY */}
               {businessCategory === "services" && (
-                <label className="grid gap-2 text-xs font-black uppercase tracking-widest text-white/60">
+                <label className="grid gap-1.5 text-xs font-black uppercase tracking-wider text-white/60">
                   Mode de délivrance
                   <select
-                    className="h-12 rounded-xl bg-[#141815] border border-white/10 px-4 text-white outline-none focus:border-emerald-300 transition-all"
+                    className="h-11 sm:h-12 rounded-xl bg-[#141815] border border-white/10 px-3.5 sm:px-4 text-sm text-white outline-none focus:border-emerald-300 transition-all"
                     value={editingProduct ? (editingProduct.serviceDeliveryType || "Présentiel") : newProduct.serviceDeliveryType}
                     onChange={e => editingProduct
                       ? setEditingProduct({...editingProduct, serviceDeliveryType: e.target.value})
@@ -787,10 +787,10 @@ export function ProductManager() {
               )}
 
               {/* Description Field */}
-              <label className="grid gap-2 text-xs font-black uppercase tracking-widest text-white/60">
+              <label className="grid gap-1.5 text-xs font-black uppercase tracking-wider text-white/60">
                 Description détaillée
                 <textarea
-                  className="min-h-[100px] rounded-xl bg-white/5 border border-white/10 p-4 text-white outline-none focus:border-emerald-300 transition-all resize-none placeholder:text-white/20"
+                  className="min-h-[90px] rounded-xl bg-white/5 border border-white/10 p-3.5 sm:p-4 text-sm text-white outline-none focus:border-emerald-300 transition-all resize-none placeholder:text-white/20"
                   value={editingProduct ? (editingProduct.description || "") : newProduct.description}
                   onChange={e => editingProduct
                     ? setEditingProduct({...editingProduct, description: e.target.value})
@@ -808,7 +808,7 @@ export function ProductManager() {
             <button
               type="submit"
               disabled={createMutation.isPending || updateMutation.isPending}
-              className="w-full h-14 bg-emerald-400 hover:bg-emerald-500 text-black font-black uppercase tracking-widest rounded-2xl flex items-center justify-center gap-2 hover:scale-[1.01] active:scale-95 transition-all shadow-xl shadow-emerald-400/20 disabled:opacity-50"
+              className="w-full h-12 sm:h-14 min-h-[48px] bg-emerald-400 hover:bg-emerald-500 text-vendeur-coal font-black uppercase text-xs sm:text-sm tracking-wider rounded-xl sm:rounded-2xl flex items-center justify-center gap-2 hover:scale-[1.01] active:scale-95 transition-all shadow-xl shadow-emerald-400/20 disabled:opacity-50 cursor-pointer"
             >
               {(createMutation.isPending || updateMutation.isPending) ? (
                 <Loader2 size={18} className="animate-spin" />
@@ -817,7 +817,7 @@ export function ProductManager() {
               ) : (
                 <Plus size={18} />
               )}
-              {editingProduct ? "Enregistrer les modifications" : "Enregistrer et Publier"}
+              <span>{editingProduct ? "Enregistrer les modifications" : "Enregistrer et Publier"}</span>
             </button>
           </form>
         </div>

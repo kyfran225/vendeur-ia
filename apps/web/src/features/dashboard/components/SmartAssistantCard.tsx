@@ -438,6 +438,55 @@ export function SmartAssistantCard({ dashboard, onOpenTestIA, onOpenShare }: Sma
             </div>
           )}
         </div>
+
+        {/*
+          BLOC VITRINE & CROISSANCE
+          Affiché quand la boutique a des articles pour encourager le partage
+        */}
+        {hasProducts && (
+          <div className="pt-6 border-t border-white/5 space-y-4">
+            <div className="bg-gradient-to-r from-blue-500/10 via-blue-500/5 to-transparent border border-blue-500/20 p-4 sm:p-6 rounded-3xl flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 relative overflow-hidden group/showcase shadow-xl">
+              <div className="space-y-2 relative z-10 flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                   <div className="h-8 w-8 rounded-xl bg-blue-500/20 text-blue-400 flex items-center justify-center shrink-0 shadow-inner">
+                    <Package size={16} />
+                  </div>
+                  <h4 className="text-sm sm:text-base font-black uppercase tracking-tight text-white">
+                    Votre Vitrine est en ligne ! 🚀
+                  </h4>
+                </div>
+                <p className="text-xs sm:text-sm text-white/70 font-medium leading-relaxed max-w-lg">
+                  Attirez vos premiers clients en diffusant votre lien ou vérifiez le rendu de vos articles côté acheteur.
+                </p>
+              </div>
+
+              <div className="flex flex-col sm:flex-row items-stretch lg:items-center gap-3 w-full lg:w-auto shrink-0 relative z-10">
+                {onOpenShare && (
+                  <button
+                    type="button"
+                    onClick={onOpenShare}
+                    className="h-12 sm:h-14 px-6 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 text-white font-black uppercase tracking-wider text-xs sm:text-sm flex items-center justify-center gap-2.5 transition-all active:scale-95 cursor-pointer"
+                  >
+                    <Share2 size={18} className="text-vendeur-emerald" />
+                    <span>Propulser ma Boutique</span>
+                  </button>
+                )}
+
+                <Link
+                  to={getMerchantShopPath(merchant)}
+                  target="_blank"
+                  className="h-12 sm:h-14 px-6 rounded-2xl bg-blue-500 hover:bg-blue-400 text-white font-black uppercase tracking-wider text-xs sm:text-sm flex items-center justify-center gap-2.5 transition-all shadow-lg shadow-blue-500/20 active:scale-95 cursor-pointer"
+                >
+                  <ExternalLink size={18} />
+                  <span>Aperçu de ma Vitrine</span>
+                </Link>
+              </div>
+
+              {/* Decorative background glow */}
+              <div className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/4 h-32 w-32 bg-blue-500/20 blur-[60px] rounded-full pointer-events-none" />
+            </div>
+          </div>
+        )}
       </motion.section>
     </>
   );

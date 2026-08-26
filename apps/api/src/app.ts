@@ -17,6 +17,7 @@ import webChatRoutes from "./modules/commerce/web-chat.routes.js";
 import copilotRoutes from "./modules/copilot/copilot.routes.js";
 import "./services/ai-queue.service.js";
 import { globalLimiter } from "./middleware/rate-limiter.js";
+import { maintenanceMode } from "./middleware/maintenance.js";
 import mongoose from "mongoose";
 import { getRedisClient } from "./config/redis.js";
 import { whatsappService } from "./modules/whatsapp/whatsapp.service.js";
@@ -50,6 +51,7 @@ app.use((req, res, next) => {
 });
 
 app.use(globalLimiter);
+app.use(maintenanceMode);
 app.use("/uploads", express.static("uploads"));
 
 app.get("/", (req, res) => {

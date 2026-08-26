@@ -1,4 +1,5 @@
 import { Router } from "express";
+import mongoose from "mongoose";
 import { authenticate } from "../../middleware/authenticate.js";
 import { SystemSettingsModel } from "./admin.model.js";
 import { CommerceMerchantModel, CommerceConversationModel, CommerceMessageModel, CommerceOrderModel } from "./commerce.model.js";
@@ -10,6 +11,9 @@ import { aiQueue } from "../../services/ai-queue.service.js";
 import { aiProvider } from "../../services/ai-provider.js";
 import { PaymentIntentModel } from "./payment-intent.model.js";
 import { paymentService } from "../../services/payment.service.js";
+import { auditLogService } from "../../services/audit-log.service.js";
+import { SubscriptionModel } from "./subscription.model.js";
+import { getSocketServer } from "../../realtime/socketServer.js";
 
 const router = Router();
 
@@ -21,6 +25,16 @@ const isAdmin = (req: any, res: any, next: any) => {
     res.status(403).json({ error: "Access denied. Admin only." });
   }
 };
+
+// GET /api/admin/pulse - Get recent audit logs
+router.get("/pulse", authenticate, isAdmin, async (req, res) => {
+  try {
+    const logs = await auditLogService.getRecent(50);
+    res.json(logs);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
 
 // GET Global Settings
 router.get("/settings", authenticate, isAdmin, async (req, res) => {
@@ -368,6 +382,101 @@ router.post("/merchants/:id/reactivate", authenticate, isAdmin, async (req, res)
   }
 });
 
+// MANUAL PLAN OVERRIDE (Founder Tool)
+router.patch("/merchants/:id/subscription", authenticate, isAdmin, async (req, res) => {
+  try {
+    const { plan, status, expiresAt, billingInterval } = req.body;
+
+    const update: any = {};
+    if (plan) update["subscription.plan"] = plan;
+    if (status) update["subscription.status"] = status;
+    if (expiresAt) update["subscription.expiresAt"] = new Date(expiresAt);
+    if (billingInterval) update["subscription.billingInterval"] = billingInterval;
+
+    const merchant = await CommerceMerchantModel.findByIdAndUpdate(
+      req.params.id,
+      { $set: update },
+      { new: true }
+    );
+
+    if (!merchant) return res.status(404).json({ error: "Marchand non trouvé." });
+
+    // Also update/sync the Subscription model
+    await SubscriptionModel.findOneAndUpdate(
+      { userId: merchant.ownerId },
+      {
+        $set: {
+          status: status || merchant.subscription?.status || "active",
+          currentPeriodEnd: expiresAt ? new Date(expiresAt) : merchant.subscription?.expiresAt,
+          billingInterval: billingInterval || merchant.subscription?.billingInterval || "monthly"
+        }
+      },
+      { upsert: true }
+    );
+
+    await auditLogService.log({
+      userId: (req as any).user.id,
+      merchantId: merchant._id,
+      action: "manual_plan_override",
+      entity: "merchant",
+      entityId: merchant._id.toString(),
+      severity: "warning",
+      metadata: { plan, status, expiresAt }
+    });
+
+    res.json({ message: "Abonnement mis à jour manuellement.", merchant });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+import jwt from "jsonwebtoken";
+import { env } from "../../config/env.js";
+
+// FOUNDER IMPERSONATION (Human Takeover)
+router.post("/merchants/:id/impersonate", authenticate, isAdmin, async (req, res) => {
+  try {
+    const merchant = await CommerceMerchantModel.findById(req.params.id);
+    if (!merchant) return res.status(404).json({ error: "Marchand non trouvé." });
+
+    const user = await UserModel.findOne({ ownerId: merchant.ownerId });
+    if (!user) return res.status(404).json({ error: "Utilisateur non trouvé." });
+
+    // Generate a short-lived token for this merchant
+    const impersonationToken = jwt.sign(
+      {
+        id: user._id,
+        email: user.email,
+        roles: user.roles,
+        impersonatedBy: (req as any).user.id
+      },
+      env.JWT_SECRET,
+      { expiresIn: "1h" }
+    );
+
+    await auditLogService.log({
+      userId: (req as any).user.id,
+      merchantId: merchant._id,
+      action: "founder_impersonation",
+      entity: "user",
+      severity: "warning",
+      metadata: { targetUserId: user._id }
+    });
+
+    res.json({
+      success: true,
+      token: impersonationToken,
+      user: {
+        id: user._id,
+        displayName: user.displayName,
+        whatsappNumber: user.whatsappNumber
+      }
+    });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // LIST ALL EXPERT SETUPS (Pack Pro Orders)
 router.get("/expert-setups", authenticate, isAdmin, async (req, res) => {
   try {
@@ -558,6 +667,132 @@ router.patch("/payments/config", authenticate, isAdmin, async (req, res) => {
       { new: true, upsert: true }
     );
     res.json({ success: true, manualPaymentConfig: (settings as any).manualPaymentConfig });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// POST /api/admin/system/broadcast - Send mass notifications
+router.post("/system/broadcast", authenticate, isAdmin, async (req, res) => {
+  try {
+    const { title, message, channels, target = "all" } = req.body;
+
+    if (!message) return res.status(400).json({ error: "Message is required." });
+
+    // In a real app, this would be a background job (BullMQ)
+    const merchants = await CommerceMerchantModel.find({ "whatsappConfig.status": "connected" });
+
+    let pushCount = 0;
+    let waCount = 0;
+
+    for (const merchant of merchants) {
+      if (channels.includes("push") && merchant.ownerId) {
+        pushService.sendNotification(merchant.ownerId, {
+          title: title || "Vendeur IA : Annonce",
+          body: message,
+          data: { url: "/dashboard" }
+        }).catch(() => {});
+        pushCount++;
+      }
+
+      if (channels.includes("whatsapp") && merchant.whatsappNumber) {
+         // Throttled WhatsApp sending (simulation for now)
+         waCount++;
+      }
+    }
+
+    await auditLogService.log({
+      userId: (req as any).user.id,
+      action: "global_broadcast",
+      entity: "system",
+      severity: "critical",
+      metadata: { title, message, channels, target, pushCount, waCount }
+    });
+
+    res.json({ success: true, message: `Broadcast envoyé à ${pushCount} marchands via Push.` });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// POST /api/admin/system/emergency-stop - Kill all AI processing
+router.post("/system/emergency-stop", authenticate, isAdmin, async (req, res) => {
+  try {
+    const { action } = req.body; // 'pause' or 'resume'
+
+    if (action === "pause") {
+      await aiQueue.pause();
+      logger.warn(`[Founder MasterControl] EMERGENCY STOP ACTIVATED by ${(req as any).user?.email} ⚠️`);
+      return res.json({ success: true, message: "AI Processing PAUSED globally." });
+    } else if (action === "resume") {
+      await aiQueue.resume();
+      logger.info(`[Founder MasterControl] System resumed by ${(req as any).user?.email} ✅`);
+      return res.json({ success: true, message: "AI Processing RESUMED globally." });
+    }
+
+    res.status(400).json({ error: "Invalid action. Use 'pause' or 'resume'." });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// GET /api/admin/system/health - Deep system health & infrastructure metrics
+router.get("/system/health", authenticate, isAdmin, async (req, res) => {
+  try {
+    const start = Date.now();
+
+    // 1. Database Health
+    let dbStatus = "down";
+    let dbLatency = -1;
+    try {
+      const dbStart = Date.now();
+      if (mongoose.connection.db) {
+        await mongoose.connection.db.admin().ping();
+        dbStatus = "operational";
+        dbLatency = Date.now() - dbStart;
+      }
+    } catch (err) {
+      dbStatus = "error";
+    }
+
+    // 2. Redis / Queue Health
+    let redisStatus = "down";
+    let redisLatency = -1;
+    try {
+      const redisStart = Date.now();
+      // BullMQ Queue doesn't expose client directly in types easily
+      await aiQueue.getJobCounts();
+      redisStatus = "operational";
+      redisLatency = Date.now() - redisStart;
+    } catch (err) {
+      redisStatus = "error";
+    }
+
+    // 3. Socket.io Stats
+    const io = getSocketServer();
+    const activeConnections = io ? io.engine.clientsCount : 0;
+
+    // 4. Memory Usage
+    const memoryUsage = process.memoryUsage();
+
+    res.json({
+      status: (dbStatus === "operational" && redisStatus === "operational") ? "healthy" : "degraded",
+      timestamp: new Date(),
+      latency: Date.now() - start,
+      infrastructure: {
+        database: { status: dbStatus, latency: `${dbLatency}ms` },
+        redis: { status: redisStatus, latency: `${redisLatency}ms` },
+        sockets: { status: io ? "operational" : "down", activeConnections }
+      },
+      process: {
+        uptime: process.uptime(),
+        memory: {
+          rss: `${Math.round(memoryUsage.rss / 1024 / 1024)}MB`,
+          heapTotal: `${Math.round(memoryUsage.heapTotal / 1024 / 1024)}MB`,
+          heapUsed: `${Math.round(memoryUsage.heapUsed / 1024 / 1024)}MB`
+        }
+      }
+    });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }

@@ -569,7 +569,7 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
                   </div>
                 </div>
               ) : (
-                /* Normal Waiting Flow: Desktop QR Code & Mobile 1-Click WhatsApp */
+                /* Normal Waiting Flow: Desktop Direct Link & Mobile 1-Click WhatsApp */
                 <div className="bg-[#0c1410]/90 border border-emerald-500/20 rounded-3xl p-4 sm:p-6 text-left space-y-4 shadow-2xl">
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2 text-vendeur-emerald font-bold text-xs">
@@ -583,29 +583,15 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
                     )}
                   </div>
 
-                  {/* DESKTOP VIEW: Dedicated WhatsApp QR Code */}
-                  <div className="hidden sm:flex flex-col items-center justify-center py-3 space-y-3 text-center">
-                    <div className="relative p-2.5 bg-white rounded-2xl shadow-xl shadow-vendeur-emerald/15 inline-block">
-                      <img
-                        src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(`https://wa.me/${(systemWhatsAppNumber && !systemWhatsAppNumber.includes("00000000")) ? systemWhatsAppNumber : "22505111157"}?text=${encodeURIComponent(`CONNEXION ${sessionCode || (authSessionId ? authSessionId.slice(0, 6).toUpperCase() : "")}`)}`)}&bgcolor=ffffff&color=0b120f&margin=4`}
-                        alt="QR Code Connexion WhatsApp"
-                        className="w-36 h-36 rounded-xl object-contain block"
-                        loading="lazy"
-                      />
-                      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                        <div className="w-8 h-8 rounded-full bg-[#0c1410] border-2 border-white flex items-center justify-center shadow-md">
-                          <WhatsAppIcon size={16} />
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="space-y-1">
+                  {/* DESKTOP VIEW: Dedicated WhatsApp Direct Link */}
+                  <div className="hidden sm:flex flex-col items-center justify-center py-6 space-y-4 text-center">
+                    <div className="space-y-3">
                       <p className="text-xs font-bold text-white flex items-center justify-center gap-1.5">
                         <Smartphone size={14} className="text-vendeur-emerald" />
-                        <span>Scannez avec le téléphone où se trouve votre WhatsApp</span>
+                        <span>Connectez-vous via votre WhatsApp</span>
                       </p>
                       <p className="text-[11px] text-white/50 max-w-xs">
-                        Ouvrez l'appareil photo de ce téléphone et visez le QR Code pour valider votre accès.
+                        Cliquez sur le bouton ci-dessous pour envoyer votre code de connexion sécurisé.
                       </p>
                     </div>
 
@@ -613,79 +599,36 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
                       href={`https://wa.me/${(systemWhatsAppNumber && !systemWhatsAppNumber.includes("00000000")) ? systemWhatsAppNumber : "22505111157"}?text=${encodeURIComponent(`CONNEXION ${sessionCode || (authSessionId ? authSessionId.slice(0, 6).toUpperCase() : "")}`)}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-[11px] text-vendeur-emerald hover:underline font-bold flex items-center gap-1 mt-1 cursor-pointer"
+                      className="w-full h-13 bg-vendeur-emerald hover:bg-emerald-400 text-vendeur-coal font-black text-xs uppercase tracking-wider rounded-2xl flex items-center justify-center gap-2 transition-all shadow-xl shadow-vendeur-emerald/20 active:scale-[0.98] cursor-pointer whitespace-nowrap px-4"
                     >
-                      <Laptop size={13} />
-                      <span>Ou ouvrir WhatsApp Web sur cet ordinateur →</span>
+                      <WhatsAppIcon size={18} className="shrink-0" />
+                      <span>Ouvrir WhatsApp</span>
+                      <ChevronRight size={16} className="shrink-0" />
                     </a>
+
+                    <p className="text-[10px] text-white/30 italic">
+                      Aucun scan de QR Code requis. Simple et sécurisé.
+                    </p>
                   </div>
 
-                  {/* MOBILE VIEW: 1-Click WhatsApp Direct Open + Optional QR Code Toggle */}
-                  <div className="sm:hidden space-y-3">
-                    {!showMobileQr ? (
-                      <div className="space-y-3">
-                        <p className="text-xs text-white/80 leading-relaxed font-medium">
-                          Appuyez sur le bouton vert ci-dessous puis sur <strong className="text-emerald-400">Envoyer</strong> dans WhatsApp :
-                        </p>
+                  {/* MOBILE VIEW: 1-Click WhatsApp Direct Open */}
+                  <div className="sm:hidden space-y-4 pt-2">
+                    <div className="space-y-3">
+                      <p className="text-xs text-white/80 leading-relaxed font-medium">
+                        Appuyez sur le bouton vert ci-dessous puis sur <strong className="text-emerald-400">Envoyer</strong> dans WhatsApp :
+                      </p>
 
-                        <a
-                          href={`https://wa.me/${(systemWhatsAppNumber && !systemWhatsAppNumber.includes("00000000")) ? systemWhatsAppNumber : "22505111157"}?text=${encodeURIComponent(`CONNEXION ${sessionCode || (authSessionId ? authSessionId.slice(0, 6).toUpperCase() : "")}`)}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="w-full h-13 bg-vendeur-emerald hover:bg-emerald-400 text-vendeur-coal font-black text-xs uppercase tracking-wider rounded-2xl flex items-center justify-center gap-2 transition-all shadow-xl shadow-vendeur-emerald/20 active:scale-[0.98] cursor-pointer whitespace-nowrap px-4"
-                        >
-                          <WhatsAppIcon size={18} className="shrink-0" />
-                          <span>Envoyer sur WhatsApp</span>
-                          <ChevronRight size={16} className="shrink-0" />
-                        </a>
-
-                        {/* Toggle to show QR code if WhatsApp is on another device */}
-                        <div className="pt-1 text-center">
-                          <button
-                            type="button"
-                            onClick={() => setShowMobileQr(true)}
-                            className="text-[11px] text-vendeur-emerald hover:underline font-bold flex items-center justify-center gap-1.5 mx-auto cursor-pointer py-1"
-                          >
-                            <QrCode size={13} className="shrink-0" />
-                            <span>Votre WhatsApp est sur un autre téléphone ? (Afficher le QR Code)</span>
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="flex flex-col items-center justify-center py-2 space-y-3 text-center animate-in fade-in duration-200">
-                        <div className="relative p-2 bg-white rounded-2xl shadow-xl shadow-vendeur-emerald/15 inline-block">
-                          <img
-                            src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(`https://wa.me/${(systemWhatsAppNumber && !systemWhatsAppNumber.includes("00000000")) ? systemWhatsAppNumber : "22505111157"}?text=${encodeURIComponent(`CONNEXION ${sessionCode || (authSessionId ? authSessionId.slice(0, 6).toUpperCase() : "")}`)}`)}&bgcolor=ffffff&color=0b120f&margin=4`}
-                            alt="QR Code Connexion WhatsApp"
-                            className="w-32 h-32 rounded-xl object-contain block"
-                            loading="lazy"
-                          />
-                          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                            <div className="w-7 h-7 rounded-full bg-[#0c1410] border-2 border-white flex items-center justify-center shadow-md">
-                              <WhatsAppIcon size={14} />
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="space-y-0.5">
-                          <p className="text-xs font-bold text-white flex items-center justify-center gap-1.5">
-                            <Smartphone size={13} className="text-vendeur-emerald" />
-                            <span>Scannez avec le téléphone où est votre WhatsApp</span>
-                          </p>
-                          <p className="text-[10px] text-white/50 max-w-xs">
-                            Ouvrez l'appareil photo de ce téléphone et visez le QR Code pour valider votre accès.
-                          </p>
-                        </div>
-
-                        <button
-                          type="button"
-                          onClick={() => setShowMobileQr(false)}
-                          className="text-[11px] text-emerald-400 hover:text-emerald-300 underline font-bold cursor-pointer pt-0.5"
-                        >
-                          ← Revenir à l'ouverture directe sur cet appareil
-                        </button>
-                      </div>
-                    )}
+                      <a
+                        href={`https://wa.me/${(systemWhatsAppNumber && !systemWhatsAppNumber.includes("00000000")) ? systemWhatsAppNumber : "22505111157"}?text=${encodeURIComponent(`CONNEXION ${sessionCode || (authSessionId ? authSessionId.slice(0, 6).toUpperCase() : "")}`)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="w-full h-13 bg-vendeur-emerald hover:bg-emerald-400 text-vendeur-coal font-black text-xs uppercase tracking-wider rounded-2xl flex items-center justify-center gap-2 transition-all shadow-xl shadow-vendeur-emerald/20 active:scale-[0.98] cursor-pointer whitespace-nowrap px-4"
+                      >
+                        <WhatsAppIcon size={18} className="shrink-0" />
+                        <span>Envoyer sur WhatsApp</span>
+                        <ChevronRight size={16} className="shrink-0" />
+                      </a>
+                    </div>
                   </div>
 
                   {/* Instant Check Button */}

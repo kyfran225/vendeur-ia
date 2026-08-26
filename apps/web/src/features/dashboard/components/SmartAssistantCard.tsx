@@ -223,7 +223,7 @@ export function SmartAssistantCard({ dashboard, onOpenTestIA, onOpenShare }: Sma
               <p className="text-sm sm:text-base md:text-[16px] text-white/95 leading-relaxed italic break-words font-medium">
                 "{isUnderVerification ? (
                   <>
-                    Votre règlement de <span className="text-emerald-400 font-bold not-italic">{latestPaymentIntent?.amount?.toLocaleString() || "..."} {latestPaymentIntent?.currency || "XOF"}</span> (Réf : <span className="font-mono font-bold text-white not-italic">{latestPaymentIntent?.reference || "TRX"}</span>) est en cours de validation. Votre Vendeur IA 24h/24 sera activé dès confirmation !
+                    Votre règlement de <span className="text-emerald-400 font-bold not-italic">{latestPaymentIntent?.amount?.toLocaleString() || "..."} {latestPaymentIntent?.currency || "XOF"}</span> (Réf : <span className="font-mono font-bold text-white not-italic">{latestPaymentIntent?.reference || "TRX"}</span>) est en cours de validation par notre équipe. Votre Vendeur IA 24h/24 sera activé dès confirmation !
                   </>
                 ) : isExpired ? (
                   <>
@@ -322,63 +322,23 @@ export function SmartAssistantCard({ dashboard, onOpenTestIA, onOpenShare }: Sma
                   </button>
                 ) : (
                   <>
-                    {/* Primary Next Action */}
-                    {nextStep ? (
-                      <Link
-                        to={getActionLink(nextStep.id)}
-                        className="flex-1 flex items-center justify-center gap-2.5 min-h-[52px] sm:min-h-[56px] px-5 py-3.5 rounded-2xl bg-vendeur-emerald text-vendeur-coal font-black uppercase text-xs sm:text-sm tracking-wider hover:bg-emerald-400 active:scale-95 transition-all shadow-lg shadow-vendeur-emerald/20 cursor-pointer shrink-0 truncate"
-                      >
-                        <Zap size={17} fill="currentColor" className="shrink-0" />
-                        <span className="truncate">
-                          {nextStep.id === "whatsapp" ? "Brancher mon WhatsApp" :
-                           nextStep.id === "products" ? "Ajouter mes articles & prix" :
-                           nextStep.id === "payments" ? "Configurer mes paiements" :
-                           nextStep.id === "identity" ? "Configurer ma boutique" :
-                           nextStep.id === "subscription" ? "Activer les Ventes 24h/24" : "Compléter la configuration"}
-                        </span>
-                        <ArrowRight size={17} className="shrink-0" />
-                      </Link>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={onOpenTestIA}
-                        className="flex-1 flex items-center justify-center gap-2.5 min-h-[52px] sm:min-h-[56px] px-5 py-3.5 rounded-2xl bg-vendeur-emerald text-vendeur-coal font-black uppercase text-xs sm:text-sm tracking-wider hover:bg-emerald-400 active:scale-95 transition-all shadow-lg shadow-vendeur-emerald/20 cursor-pointer shrink-0 truncate"
-                      >
-                        <Play size={17} fill="currentColor" className="shrink-0" />
-                        <span>Tester mon Vendeur IA</span>
-                      </button>
-                    )}
+                    <button
+                      type="button"
+                      onClick={onOpenTestIA}
+                      className="flex-1 flex items-center justify-center gap-2.5 min-h-[52px] sm:min-h-[56px] px-5 py-3.5 rounded-2xl bg-vendeur-emerald text-vendeur-coal font-black uppercase text-xs sm:text-sm tracking-wider hover:bg-emerald-400 active:scale-95 transition-all shadow-lg shadow-vendeur-emerald/20 cursor-pointer shrink-0 truncate"
+                    >
+                      <Play size={17} fill="currentColor" className="shrink-0" />
+                      <span>Simulateur & Test IA</span>
+                    </button>
 
                     {isDiscoveryMode && !nextStep && (
-                      <div className="flex flex-col sm:flex-row gap-2 w-full">
-                        <Link
-                          to={getMerchantShopPath(merchant)}
-                          target="_blank"
-                          className="flex-1 min-h-[52px] sm:min-h-[56px] px-5 py-3.5 rounded-2xl bg-white/10 hover:bg-white/15 text-white font-black uppercase text-xs tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95"
-                        >
-                          <ExternalLink size={16} />
-                          <span>Voir ma Vitrine</span>
-                        </Link>
-
-                        <Link
-                          to="/offers"
-                          className="flex-1 min-h-[52px] sm:min-h-[56px] px-5 py-3.5 rounded-2xl bg-vendeur-emerald text-vendeur-coal font-black uppercase text-xs sm:text-sm tracking-wider hover:bg-emerald-400 active:scale-95 transition-all shadow-lg shadow-vendeur-emerald/20 cursor-pointer"
-                        >
-                          <Sparkles size={16} fill="currentColor" />
-                          <span>Activer les Ventes 24h/24</span>
-                        </Link>
-                      </div>
-                    )}
-
-                    {!isDiscoveryMode && nextStep && (
-                      <button
-                        type="button"
-                        onClick={onOpenTestIA}
-                        className="min-h-[52px] sm:min-h-[56px] px-5 py-3.5 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 text-white/90 hover:text-white font-black uppercase text-xs tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95 shrink-0"
+                      <Link
+                        to="/offers"
+                        className="min-h-[52px] sm:min-h-[56px] px-5 py-3.5 rounded-2xl bg-white/10 hover:bg-white/15 text-white font-black uppercase text-xs tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95 shrink-0"
                       >
-                        <Play size={15} />
-                        <span>Simulateur</span>
-                      </button>
+                        <Sparkles size={16} className="text-amber-300" />
+                        <span>Activer le Forfait 24h/24</span>
+                      </Link>
                     )}
                   </>
                 )}
@@ -455,10 +415,6 @@ export function SmartAssistantCard({ dashboard, onOpenTestIA, onOpenShare }: Sma
         </div>
 
         {/*
-          BLOC PREMIUM PACK PRO AVEC CAROUSEL D'AVANTAGES
-          Affiché pour inciter à passer à l'offre Pro/Expert
-        */}
-        {/*
           BLOC VITRINE & CROISSANCE
           Affiché quand la boutique a des articles pour encourager le partage
         */}
@@ -480,15 +436,6 @@ export function SmartAssistantCard({ dashboard, onOpenTestIA, onOpenShare }: Sma
               </div>
 
               <div className="flex flex-col sm:flex-row items-stretch lg:items-center gap-3 w-full lg:w-auto shrink-0 relative z-10">
-                <Link
-                  to={getMerchantShopPath(merchant)}
-                  target="_blank"
-                  className="h-12 sm:h-14 px-6 rounded-2xl bg-blue-500 hover:bg-blue-400 text-white font-black uppercase tracking-wider text-xs sm:text-sm flex items-center justify-center gap-2.5 transition-all shadow-lg shadow-blue-500/20 active:scale-95 cursor-pointer"
-                >
-                  <ExternalLink size={18} />
-                  <span>Aperçu de ma Vitrine</span>
-                </Link>
-
                 {onOpenShare && (
                   <button
                     type="button"
@@ -499,6 +446,15 @@ export function SmartAssistantCard({ dashboard, onOpenTestIA, onOpenShare }: Sma
                     <span>Propulser ma Boutique</span>
                   </button>
                 )}
+
+                <Link
+                  to={getMerchantShopPath(merchant)}
+                  target="_blank"
+                  className="h-12 sm:h-14 px-6 rounded-2xl bg-blue-500 hover:bg-blue-400 text-white font-black uppercase tracking-wider text-xs sm:text-sm flex items-center justify-center gap-2.5 transition-all shadow-lg shadow-blue-500/20 active:scale-95 cursor-pointer"
+                >
+                  <ExternalLink size={18} />
+                  <span>Aperçu de ma Vitrine</span>
+                </Link>
               </div>
 
               {/* Decorative background glow */}
@@ -507,6 +463,10 @@ export function SmartAssistantCard({ dashboard, onOpenTestIA, onOpenShare }: Sma
           </div>
         )}
 
+        {/*
+          BLOC PREMIUM PACK PRO AVEC CAROUSEL D'AVANTAGES
+          Affiché pour inciter à passer à l'offre Pro/Expert
+        */}
         {!hasPackPro && !isFullyOperational && (
           <div className="pt-6 border-t border-white/5 space-y-4">
             <div className="bg-gradient-to-r from-vendeur-emerald/10 via-vendeur-emerald/5 to-transparent border border-vendeur-emerald/20 p-4 sm:p-6 rounded-3xl flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 relative overflow-hidden group/nudge">

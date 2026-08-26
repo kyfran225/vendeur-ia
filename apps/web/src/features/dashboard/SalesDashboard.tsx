@@ -19,6 +19,7 @@ import { useSocket } from "@/hooks/useSocket";
 import { useQuery as useTanstackQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { useAuthStore } from "@/stores/authStore";
+import { useFounderRole } from "@/hooks/useFounderRole";
 import { toast } from "sonner";
 import { apiClient } from "@/lib/apiClient";
 import { clsx, type ClassValue } from "clsx";
@@ -48,6 +49,7 @@ function formatAmount(value: number) {
 
 export function SalesDashboard() {
   const { accessToken } = useAuthStore();
+  const { isFounder } = useFounderRole();
   const socket = useSocket();
   const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -86,7 +88,7 @@ export function SalesDashboard() {
 
   // Check if first-time user to display the welcome Offers modal
   useEffect(() => {
-    if (!dashboard?.merchant?._id) return;
+    if (!dashboard?.merchant?._id || isFounder) return;
     const isPaidActive = dashboard.merchant.subscription?.status === "active";
     const latestPaymentIntent = dashboard?.latestPaymentIntent;
     const isUnderVerification = Boolean(
@@ -103,11 +105,11 @@ export function SalesDashboard() {
       setIsOffersModalOpen(true);
       localStorage.setItem(storageKey, "true");
     }
-  }, [dashboard?.merchant?._id, dashboard?.merchant?.subscription?.status, dashboard?.latestPaymentIntent]);
+  }, [dashboard?.merchant?._id, dashboard?.merchant?.subscription?.status, dashboard?.latestPaymentIntent, isFounder]);
 
   // Check if all setup steps are completed to auto-trigger celebration modal once
   useEffect(() => {
-    if (!dashboard?.setupStatus || !dashboard?.merchant?._id) return;
+    if (!dashboard?.setupStatus || !dashboard?.merchant?._id || isFounder) return;
     
     const { isFullyOperational } = dashboard.setupStatus;
     const storageKey = `vendeur_ia_setup_celebrated_${dashboard.merchant._id}`;
@@ -117,29 +119,38 @@ export function SalesDashboard() {
       setIsCompletionModalOpen(true);
       localStorage.setItem(storageKey, "true");
     }
-  }, [dashboard?.setupStatus, dashboard?.merchant?._id]);
+  }, [dashboard?.setupStatus, dashboard?.merchant?._id, isFounder]);
 
   // Détecte quand une étape passe à "complétée" pour afficher le pop-up de succès intermédiaire
   useEffect(() => {
     const steps: Array<{ id: string; label: string; completed: boolean }> = dashboard?.setupStatus?.steps || [];
-    if (!steps.length || !dashboard?.merchant?._id) return;
+    if (!steps.length || !dashboard?.merchant?._id || isFounder) return;
 
     const isFullyOperational = dashboard?.setupStatus?.isFullyOperational;
     // Ne pas afficher le modal d'étape si la boutique est déjà 100% opérationnelle
     if (isFullyOperational) {
+      // Initialiser la ref sans déclencher de modal
+      const nowCompleted = new Set<string>(steps.filter((s) => s.completed).map((s) => s.id));
+      previousCompletedStepsRef.current = nowCompleted;
       return;
     }
 
-    const storageKey = `vendeur_completed_steps_${dashboard.merchant._id}`;
-    const storedCompleted = JSON.parse(localStorage.getItem(storageKey) || "[]");
-    const storedSet = new Set<string>(storedCompleted);
+    const nowCompleted = new Set<string>(steps.filter((s) => s.completed).map((s) => s.id));
+    const prev = previousCompletedStepsRef.current;
 
-    const nowCompleted = steps.filter((s) => s.completed);
-    const newlyCompleted = nowCompleted.filter((s) => !storedSet.has(s.id));
+    if (prev.size === 0) {
+      // Premier chargement : initialiser la ref sans déclencher de modal
+      previousCompletedStepsRef.current = nowCompleted;
+      return;
+    }
+
+    // Trouver les étapes nouvellement complétées (pas dans prev, dans nowCompleted)
+    const newlyCompleted = steps.filter((s) => s.completed && !prev.has(s.id));
 
     if (newlyCompleted.length > 0) {
-      // Prendre la dernière complétée (ou la première de la liste des nouvelles)
+      // Prendre la première nouvellement complétée
       const justDone = newlyCompleted[0];
+      // L'étape suivante non complétée
       const nextPending = steps.find((s) => !s.completed && s.id !== justDone.id) || null;
 
       setStepSuccessModal({
@@ -148,15 +159,10 @@ export function SalesDashboard() {
         completedStepLabel: justDone.label,
         nextStep: nextPending ? { id: nextPending.id, label: nextPending.label } : null,
       });
-
-      // Mettre à jour le localStorage pour ne plus l'afficher
-      const updatedStored = [...storedCompleted, ...newlyCompleted.map(s => s.id)];
-      localStorage.setItem(storageKey, JSON.stringify(updatedStored));
-    } else if (storedCompleted.length === 0 && nowCompleted.length > 0) {
-      // Initialisation au premier lancement de l'app pour cet utilisateur
-      localStorage.setItem(storageKey, JSON.stringify(nowCompleted.map(s => s.id)));
     }
-  }, [dashboard?.setupStatus?.steps, dashboard?.merchant?._id, dashboard?.setupStatus?.isFullyOperational]);
+
+    previousCompletedStepsRef.current = nowCompleted;
+  }, [dashboard?.setupStatus?.steps, dashboard?.merchant?._id, dashboard?.setupStatus?.isFullyOperational, isFounder]);
 
 
   useEffect(() => {
@@ -226,7 +232,7 @@ export function SalesDashboard() {
         </div>
 
         <div className="hidden md:flex items-center gap-3">
-          {!isPaidActive && (
+          {!isPaidActive && !isFounder && (
             <button
               onClick={() => setIsOffersModalOpen(true)}
               className="h-12 px-5 rounded-2xl bg-vendeur-emerald/10 border border-vendeur-emerald/30 text-vendeur-emerald text-xs font-black uppercase tracking-wider hover:bg-vendeur-emerald hover:text-vendeur-coal transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95 shadow-sm"
@@ -238,6 +244,15 @@ export function SalesDashboard() {
 
           {hasProducts ? (
             <>
+              <button
+                onClick={() => setIsShareModalOpen(true)}
+                className="h-12 px-6 rounded-2xl bg-white/5 border border-white/10 text-white text-xs font-black uppercase tracking-wider hover:bg-white/10 hover:border-white/20 transition-all flex items-center justify-center text-center gap-2 cursor-pointer active:scale-95 group shadow-sm"
+                title="Propulser votre boutique (Lien & QR Code)"
+              >
+                <Share2 size={16} className="text-vendeur-emerald group-hover:scale-110 transition-transform" />
+                <span>Propulser ma Boutique</span>
+              </button>
+
               <Link
                 to={getMerchantShopPath(dashboard?.merchant)}
                 target="_blank"
@@ -247,15 +262,6 @@ export function SalesDashboard() {
                 <ExternalLink size={16} />
                 <span>Aperçu de ma Vitrine</span>
               </Link>
-
-              <button
-                onClick={() => setIsShareModalOpen(true)}
-                className="h-12 px-6 rounded-2xl bg-white/5 border border-white/10 text-white text-xs font-black uppercase tracking-wider hover:bg-white/10 hover:border-white/20 transition-all flex items-center justify-center text-center gap-2 cursor-pointer active:scale-95 group shadow-sm"
-                title="Propulser votre boutique (Lien & QR Code)"
-              >
-                <Share2 size={16} className="text-vendeur-emerald group-hover:scale-110 transition-transform" />
-                <span>Propulser ma Boutique</span>
-              </button>
             </>
           ) : !showAssistant && (
             <Link
@@ -273,6 +279,7 @@ export function SalesDashboard() {
       <HomePanel 
         dashboard={dashboard} 
         hasProducts={hasProducts}
+        isFounder={isFounder}
         onOpenTestIA={() => setIsTestIAOpen(true)}
         onOpenOffers={() => setIsOffersModalOpen(true)}
         onOpenShare={() => setIsShareModalOpen(true)}
@@ -317,12 +324,14 @@ export function SalesDashboard() {
 function HomePanel({
   dashboard,
   hasProducts,
+  isFounder,
   onOpenTestIA,
   onOpenOffers,
   onOpenShare
 }: {
   dashboard: any;
   hasProducts: boolean;
+  isFounder: boolean;
   onOpenTestIA: () => void;
   onOpenOffers: () => void;
   onOpenShare: () => void;
@@ -343,7 +352,7 @@ function HomePanel({
         Si la boutique est en cours de configuration ou nécessite une action vitale (pause, expiration),
         l'Assistant SmartAssistantCard prend la priorité absolue.
       */}
-      {showAssistant && (
+      {showAssistant && !isFounder && (
         <SmartAssistantCard
           dashboard={dashboard}
           onOpenTestIA={onOpenTestIA}
@@ -352,8 +361,8 @@ function HomePanel({
       )}
 
       {/* MOBILE-ONLY QUICK ACTION BUTTONS (Generous height, non-squished) */}
-      <div className={cn("grid gap-3 md:hidden", !isPaidActive ? (hasProducts ? "grid-cols-3" : (showAssistant ? "grid-cols-1" : "grid-cols-2")) : (hasProducts ? "grid-cols-2" : (showAssistant ? "hidden" : "grid-cols-1")))}>
-        {!isPaidActive && (
+      <div className={cn("grid gap-3 md:hidden", (!isPaidActive && !isFounder) ? (hasProducts ? "grid-cols-3" : (showAssistant ? "grid-cols-1" : "grid-cols-2")) : (hasProducts ? "grid-cols-2" : (showAssistant ? "hidden" : "grid-cols-1")))}>
+        {!isPaidActive && !isFounder && (
           <button
             onClick={onOpenOffers}
             className="min-h-[52px] h-13 px-2 rounded-2xl bg-vendeur-emerald/15 border border-vendeur-emerald/30 text-vendeur-emerald text-[11px] font-black uppercase tracking-wider hover:bg-vendeur-emerald hover:text-vendeur-coal transition-all flex items-center justify-center text-center gap-1.5 active:scale-95 cursor-pointer shadow-sm shrink-0"
@@ -365,6 +374,14 @@ function HomePanel({
 
         {hasProducts ? (
           <>
+            <button
+              onClick={onOpenShare}
+              className="min-h-[52px] h-13 px-3 rounded-2xl bg-white/5 border border-white/10 text-white text-[11px] font-black uppercase tracking-wider hover:bg-white/10 transition-all flex items-center justify-center text-center gap-1.5 active:scale-95 cursor-pointer shadow-sm shrink-0"
+            >
+              <Share2 size={14} className="shrink-0 text-vendeur-emerald" />
+              <span className="truncate">Propulser</span>
+            </button>
+
             <Link
               to={getMerchantShopPath(dashboard?.merchant)}
               target="_blank"
@@ -373,14 +390,6 @@ function HomePanel({
               <ExternalLink size={14} className="shrink-0" />
               <span className="truncate">Ma Vitrine</span>
             </Link>
-
-            <button
-              onClick={onOpenShare}
-              className="min-h-[52px] h-13 px-3 rounded-2xl bg-white/5 border border-white/10 text-white text-[11px] font-black uppercase tracking-wider hover:bg-white/10 transition-all flex items-center justify-center text-center gap-1.5 active:scale-95 cursor-pointer shadow-sm shrink-0"
-            >
-              <Share2 size={14} className="shrink-0 text-vendeur-emerald" />
-              <span className="truncate">Propulser</span>
-            </button>
           </>
         ) : !showAssistant && (
           <Link
@@ -574,5 +583,25 @@ function PipelineStep({ label, value, max, color }: { label: string; value: numb
       </div>
       <div className="w-12 text-right font-black text-xs sm:text-sm text-white">{value}</div>
     </div>
+  );
+}
+
+function TrendingUp(props: any) {
+  return (
+    <svg
+      {...props}
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <polyline points="22 7 13.5 15.5 8.5 10.5 2 17" />
+      <polyline points="16 7 22 7 22 13" />
+    </svg>
   );
 }

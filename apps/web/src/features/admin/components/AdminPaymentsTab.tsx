@@ -231,54 +231,54 @@ export function AdminPaymentsTab() {
   };
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-300">
-      {/* Header Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-        <div className="p-5 rounded-3xl bg-[#0c0f0d] border border-amber-500/20 space-y-1">
-          <div className="flex items-center justify-between text-white/40 text-xs font-black uppercase tracking-wider">
-            <span>En Attente de Revue</span>
-            <Clock size={16} className="text-amber-400" />
+    <div className="space-y-6 md:space-y-8 animate-in fade-in duration-300">
+      {/* Header Stats - Flattened for mobile */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+        <div className="p-4 md:p-5 rounded-2xl md:rounded-3xl bg-[#0c0f0d] border border-amber-500/20 space-y-1">
+          <div className="flex items-center justify-between text-white/40 text-[10px] font-black uppercase tracking-wider">
+            <span>Pending</span>
+            <Clock size={14} className="text-amber-400" />
           </div>
-          <div className="text-3xl font-black font-mono text-amber-400">{pendingCount}</div>
+          <div className="text-2xl md:text-3xl font-black font-mono text-amber-400">{pendingCount}</div>
         </div>
 
-        <div className="p-5 rounded-3xl bg-[#0c0f0d] border border-vendeur-emerald/20 space-y-1">
-          <div className="flex items-center justify-between text-white/40 text-xs font-black uppercase tracking-wider">
-            <span>Souscriptions Validées</span>
-            <CheckCircle2 size={16} className="text-vendeur-emerald" />
+        <div className="p-4 md:p-5 rounded-2xl md:rounded-3xl bg-[#0c0f0d] border border-vendeur-emerald/20 space-y-1">
+          <div className="flex items-center justify-between text-white/40 text-[10px] font-black uppercase tracking-wider">
+            <span>Confirmed</span>
+            <CheckCircle2 size={14} className="text-vendeur-emerald" />
           </div>
-          <div className="text-3xl font-black font-mono text-vendeur-emerald">{confirmedCount}</div>
+          <div className="text-2xl md:text-3xl font-black font-mono text-vendeur-emerald">{confirmedCount}</div>
         </div>
 
-        <div className="p-5 rounded-3xl bg-[#0c0f0d] border border-rose-500/20 space-y-1">
-          <div className="flex items-center justify-between text-white/40 text-xs font-black uppercase tracking-wider">
-            <span>Alertes Anti-Fraude</span>
-            <ShieldAlert size={16} className="text-rose-400" />
+        <div className="p-4 md:p-5 rounded-2xl md:rounded-3xl bg-[#0c0f0d] border border-rose-500/20 space-y-1">
+          <div className="flex items-center justify-between text-white/40 text-[10px] font-black uppercase tracking-wider">
+            <span>Frauds</span>
+            <ShieldAlert size={14} className="text-rose-400" />
           </div>
-          <div className="text-3xl font-black font-mono text-rose-400">{fraudFlaggedCount}</div>
+          <div className="text-2xl md:text-3xl font-black font-mono text-rose-400">{fraudFlaggedCount}</div>
         </div>
 
-        <div className="p-5 rounded-3xl bg-[#0c0f0d] border border-sky-500/20 space-y-1">
-          <div className="flex items-center justify-between text-white/40 text-xs font-black uppercase tracking-wider">
-            <span>Corridors Multi-Pays</span>
-            <Globe size={16} className="text-sky-400" />
+        <div className="p-4 md:p-5 rounded-2xl md:rounded-3xl bg-[#0c0f0d] border border-sky-500/20 space-y-1">
+          <div className="flex items-center justify-between text-white/40 text-[10px] font-black uppercase tracking-wider">
+            <span>Corridors</span>
+            <Globe size={14} className="text-sky-400" />
           </div>
-          <div className="text-xs font-bold text-white/70 pt-1">
-            {COUNTRIES.length} Pays Actifs (Afrique & Diaspora)
+          <div className="text-[10px] font-bold text-white/70 pt-1">
+            {COUNTRIES.length} Countries
           </div>
         </div>
       </div>
 
       {/* Main Container: Payments Review & Config */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8 items-start">
         {/* Left: Pending Payments List (7 cols) */}
         <div className="lg:col-span-7 space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-[#0c0f0d] p-4 rounded-2xl border border-white/5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-[#0c0f0d] p-3 md:p-4 rounded-2xl border border-white/5">
             <div className="flex items-center gap-2 flex-1">
               <Search size={16} className="text-white/30" />
               <input
                 type="text"
-                placeholder="Rechercher par référence, transaction ID, téléphone, boutique..."
+                placeholder="Search TID, Phone, Merchant..."
                 className="bg-transparent text-xs text-white placeholder:text-white/30 outline-none w-full"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -286,38 +286,37 @@ export function AdminPaymentsTab() {
             </div>
 
             {/* Filter Pills */}
-            <div className="flex items-center gap-1.5 shrink-0 overflow-x-auto">
+            <div className="flex items-center gap-1.5 shrink-0 overflow-x-auto no-scrollbar">
               {["all", "under_verification", "confirmed", "rejected"].map((st) => (
                 <button
                   key={st}
                   onClick={() => setFilterStatus(st)}
                   className={cn(
-                    "px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer",
+                    "px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer whitespace-nowrap",
                     filterStatus === st
                       ? "bg-vendeur-emerald text-vendeur-coal"
                       : "bg-white/5 text-white/50 hover:text-white"
                   )}
                 >
-                  {st === "all" ? "Tous" : st === "under_verification" ? "À Vérifier" : st === "confirmed" ? "Validés" : "Rejetés"}
+                  {st === "all" ? "All" : st === "under_verification" ? "Review" : st === "confirmed" ? "Pass" : "Fail"}
                 </button>
               ))}
               <button
                 onClick={() => refetch()}
-                className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-white/50 hover:text-white transition-all cursor-pointer"
-                title="Actualiser"
+                className="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-white/50 hover:text-white transition-all cursor-pointer"
               >
-                <RefreshCw size={14} />
+                <RefreshCw size={14} className={isLoading ? "animate-spin" : ""} />
               </button>
             </div>
           </div>
 
           {isLoading ? (
             <div className="py-12">
-              <VendeurIALoader size="md" label="Chargement des intentions de paiement..." />
+              <VendeurIALoader size="md" label="Loading Payment Ledger..." />
             </div>
           ) : filteredPayments.length === 0 ? (
-            <div className="p-12 text-center rounded-3xl bg-[#0c0f0d] border border-white/5 text-white/40 text-xs">
-              Aucun paiement correspondant.
+            <div className="p-12 text-center rounded-2xl md:rounded-3xl bg-[#0c0f0d] border border-white/5 text-white/40 text-[10px] uppercase font-black tracking-widest">
+              No matching records
             </div>
           ) : (
             <div className="space-y-3">
@@ -331,11 +330,11 @@ export function AdminPaymentsTab() {
                   <div
                     key={p._id}
                     className={cn(
-                      "p-5 rounded-3xl border transition-all space-y-4 relative group",
+                      "p-4 md:p-5 rounded-2xl md:rounded-3xl border transition-all space-y-4 relative group shadow-lg",
                       hasFraudAlert
-                        ? "bg-[#160c0c] border-rose-500/40 shadow-lg shadow-rose-500/5"
+                        ? "bg-[#160c0c] border-rose-500/40"
                         : isUnderReview
-                        ? "bg-[#111714] border-amber-500/30 shadow-lg shadow-amber-500/5"
+                        ? "bg-[#111714] border-amber-500/30"
                         : isConfirmed
                         ? "bg-[#0c0f0d] border-vendeur-emerald/20"
                         : "bg-[#0c0f0d] border-white/5 opacity-60"
@@ -343,10 +342,10 @@ export function AdminPaymentsTab() {
                   >
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-white/5">
                       <div className="flex items-center gap-2.5 flex-wrap">
-                        <div className="font-mono text-sm font-black text-white">{p.reference}</div>
+                        <div className="font-mono text-[11px] md:text-sm font-black text-white">{p.reference}</div>
                         <span
                           className={cn(
-                            "px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider",
+                            "px-2.5 py-0.5 rounded-full text-[8px] md:text-[9px] font-black uppercase tracking-wider",
                             hasFraudAlert
                               ? "bg-rose-500/20 text-rose-400 border border-rose-500/40"
                               : isUnderReview
@@ -356,45 +355,40 @@ export function AdminPaymentsTab() {
                               : "bg-rose-500/10 text-rose-400 border border-rose-500/20"
                           )}
                         >
-                          {hasFraudAlert ? "⚠️ Alerte Fraude" : p.status}
+                          {hasFraudAlert ? "⚠️ FRAUD" : p.status}
                         </span>
-                        {p.proofImageUrl && (
-                          <span className="px-2 py-0.5 rounded-full bg-sky-500/10 text-sky-400 border border-sky-500/20 text-[9px] font-black uppercase flex items-center gap-1">
-                            <ImageIcon size={10} /> Reçu Joint
-                          </span>
-                        )}
                       </div>
 
                       <div className="flex items-center gap-2 text-xs font-mono font-black text-vendeur-emerald">
                         <span>
                           {p.amount?.toLocaleString()} {p.currency}
                         </span>
-                        <span className="text-[10px] text-white/40 uppercase font-sans">
-                          ({p.planName} - {p.billingInterval === "yearly" ? "Annuel" : "Mensuel"})
+                        <span className="text-[9px] md:text-[10px] text-white/40 uppercase font-sans">
+                          ({p.planName})
                         </span>
                       </div>
                     </div>
 
-                    {/* Metadata & Signals */}
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
-                      <div className="space-y-0.5">
-                        <span className="text-[9px] font-black uppercase text-white/40 tracking-wider">Client / Boutique</span>
+                    {/* Metadata & Signals - Condensed for mobile */}
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-[11px]">
+                      <div className="space-y-0.5 col-span-2 md:col-span-1">
+                        <span className="text-[8px] font-black uppercase text-white/30 tracking-wider">Merchant</span>
                         <div className="font-bold text-white truncate">
-                          {p.senderName || p.merchantId?.businessName || "Commerçant"}
+                          {p.senderName || p.merchantId?.businessName || "Unknown"}
                         </div>
-                        <div className="text-white/50 text-[11px] font-mono">{p.senderPhoneNumber || "Numéro non précisé"}</div>
+                        <div className="text-white/40 font-mono">{p.senderPhoneNumber}</div>
                       </div>
 
                       <div className="space-y-0.5">
-                        <span className="text-[9px] font-black uppercase text-white/40 tracking-wider">Moyen & Transaction ID</span>
+                        <span className="text-[8px] font-black uppercase text-white/30 tracking-wider">Asset & TID</span>
                         <div className="font-bold text-sky-400 uppercase">{p.paymentMethod}</div>
-                        <div className="font-mono text-[11px] text-white/80 truncate">
-                          {p.transactionId || "Aucun ID renseigné"}
+                        <div className="font-mono text-white/60 truncate">
+                          {p.transactionId || "N/A"}
                         </div>
                       </div>
 
                       <div className="space-y-0.5">
-                        <span className="text-[9px] font-black uppercase text-white/40 tracking-wider">Score Confiance IA</span>
+                        <span className="text-[8px] font-black uppercase text-white/30 tracking-wider">AI Signal</span>
                         <div className="flex items-center gap-1.5">
                           <span
                             className={cn(
@@ -408,16 +402,12 @@ export function AdminPaymentsTab() {
                           >
                             {p.confidenceScore || 0}%
                           </span>
-                          <span className="text-[9px] text-white/40">
-                            {p.confidenceScore >= 80 ? "Élevé" : "À inspecter"}
-                          </span>
                         </div>
-                        <div className="text-[9px] text-white/30">{new Date(p.createdAt).toLocaleString("fr-FR")}</div>
                       </div>
                     </div>
 
                     {/* Action Bar */}
-                    <div className="pt-2 flex items-center justify-between gap-2 flex-wrap border-t border-white/5">
+                    <div className="pt-2 flex items-center justify-between gap-2 border-t border-white/5">
                       <button
                         type="button"
                         onClick={() => {
@@ -425,10 +415,9 @@ export function AdminPaymentsTab() {
                           setZoomLevel(1);
                           setRotationAngle(0);
                         }}
-                        className="px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-white text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer"
+                        className="px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-white text-[10px] font-black uppercase flex items-center gap-1.5 transition-all cursor-pointer"
                       >
-                        <Eye size={14} />
-                        <span>Inspecter le Reçu & IA</span>
+                        <Eye size={14} /> Inspect
                       </button>
 
                       {isUnderReview && (
@@ -439,19 +428,18 @@ export function AdminPaymentsTab() {
                               setSelectedIntent(p);
                               setIsRejectModalOpen(true);
                             }}
-                            disabled={decisionMutation.isPending}
-                            className="px-3.5 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 text-xs font-black uppercase tracking-wider transition-all cursor-pointer"
+                            className="px-3 py-2 rounded-xl bg-rose-500/10 text-rose-400 text-[10px] font-black uppercase transition-all"
                           >
-                            Rejeter
+                            Fail
                           </button>
                           <button
                             type="button"
                             onClick={() => decisionMutation.mutate({ id: p._id, action: "approve" })}
                             disabled={decisionMutation.isPending}
-                            className="px-4 py-2 rounded-xl bg-vendeur-emerald text-vendeur-coal text-xs font-black uppercase tracking-wider flex items-center gap-1.5 hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-vendeur-emerald/20 cursor-pointer"
+                            className="px-4 py-2 rounded-xl bg-vendeur-emerald text-vendeur-coal text-[10px] font-black uppercase flex items-center gap-1.5 hover:scale-[1.02] active:scale-95 transition-all"
                           >
-                            <CheckCircle2 size={15} />
-                            <span>Valider</span>
+                            {decisionMutation.isPending ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
+                            Pass
                           </button>
                         </div>
                       )}
@@ -463,24 +451,21 @@ export function AdminPaymentsTab() {
           )}
         </div>
 
-        {/* Right: Multi-Country Corridors Config (5 cols) */}
-        <div className="lg:col-span-5 bg-[#0c0f0d] border border-white/5 p-6 rounded-3xl space-y-6 sticky top-6">
+        {/* Right: Multi-Country Corridors Config (5 cols) - Flattened */}
+        <div className="lg:col-span-5 bg-[#0c0f0d] border border-white/5 p-4 md:p-6 rounded-2xl md:rounded-3xl space-y-6 lg:sticky lg:top-6">
           <div className="flex items-center justify-between pb-3 border-b border-white/5">
             <div className="flex items-center gap-2.5">
               <Globe size={18} className="text-vendeur-emerald" />
-              <h3 className="text-sm font-black uppercase tracking-wider text-white">
-                Corridors & Coordonnées de Paiement
+              <h3 className="text-xs md:text-sm font-black uppercase tracking-wider text-white">
+                Payment Corridors Gateway
               </h3>
             </div>
-            <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-vendeur-emerald/10 text-vendeur-emerald border border-vendeur-emerald/20">
-              Multi-Pays
-            </span>
           </div>
 
           {/* Country Selector Dropdown */}
           <div className="space-y-1.5">
-            <label className="text-[10px] font-black uppercase tracking-widest text-white/40">
-              Sélectionner le Pays à Configurer
+            <label className="text-[9px] font-black uppercase tracking-widest text-white/40 ml-1">
+              Configuration Target Country
             </label>
             <select
               value={selectedCountryCode}
@@ -489,37 +474,36 @@ export function AdminPaymentsTab() {
             >
               {COUNTRIES.map((c) => (
                 <option key={c.code} value={c.code} className="bg-[#121212] text-white">
-                  {c.name} ({c.code}) - {c.currency}
+                  {c.name} ({c.currency})
                 </option>
               ))}
             </select>
           </div>
 
           {paymentConfig && (
-            <div className="space-y-4">
-              <div className="space-y-1">
-                <label className="text-[9px] font-black uppercase tracking-widest text-white/40">
-                  Nom du Bénéficiaire Officiel
+            <div className="space-y-6">
+              <div className="space-y-1.5">
+                <label className="text-[9px] font-black uppercase tracking-widest text-white/40 ml-1">
+                  Master Beneficiary Name
                 </label>
                 <input
                   type="text"
                   value={paymentConfig.recipientName || ""}
                   onChange={(e) => setPaymentConfig({ ...paymentConfig, recipientName: e.target.value })}
-                  className="w-full h-10 bg-black/50 border border-white/10 rounded-xl px-3 text-xs text-white outline-none focus:border-vendeur-emerald"
+                  className="w-full h-11 bg-black/50 border border-white/10 rounded-xl px-4 text-xs text-white outline-none focus:border-vendeur-emerald font-bold"
                   placeholder="Vendeur IA SAS"
                 />
               </div>
 
-              {/* Dynamic Providers for the selected country */}
-              <div className="p-3.5 rounded-2xl bg-black/30 border border-white/5 space-y-3">
-                <div className="text-[10px] font-black uppercase tracking-wider text-vendeur-emerald flex items-center justify-between">
-                  <span>Moyens de Paiement pour {activeCountryData.name}</span>
-                  <span className="font-mono text-white/40">{activeCountryData.currency}</span>
+              {/* Dynamic Providers - Flattened */}
+              <div className="space-y-4">
+                <div className="text-[10px] font-black uppercase tracking-widest text-vendeur-emerald flex items-center justify-between border-b border-vendeur-emerald/10 pb-2">
+                  <span>Routing for {activeCountryData.name}</span>
                 </div>
 
-                <div className="space-y-2.5">
-                  <div className="space-y-1">
-                    <label className="text-[9px] font-black uppercase tracking-widest text-[#1dc5d8]">Numéro Wave</label>
+                <div className="grid grid-cols-1 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-[9px] font-black uppercase tracking-widest text-[#1dc5d8] ml-1">Wave Protocol</label>
                     <input
                       type="text"
                       value={activeRegionalConfig.waveNumber || (selectedCountryCode === "CI" ? paymentConfig.waveNumber : "") || ""}
@@ -530,13 +514,13 @@ export function AdminPaymentsTab() {
                           handleUpdateRegionalField("waveNumber", e.target.value);
                         }
                       }}
-                      className="w-full h-9 bg-black/50 border border-white/10 rounded-xl px-3 text-xs font-mono text-white outline-none focus:border-[#1dc5d8]"
-                      placeholder="+2250700000000"
+                      className="w-full h-10 bg-black/50 border border-white/10 rounded-xl px-4 text-xs font-mono text-white outline-none focus:border-[#1dc5d8]"
+                      placeholder="+225..."
                     />
                   </div>
 
-                  <div className="space-y-1">
-                    <label className="text-[9px] font-black uppercase tracking-widest text-[#ff7900]">Numéro Orange Money</label>
+                  <div className="space-y-1.5">
+                    <label className="text-[9px] font-black uppercase tracking-widest text-[#ff7900] ml-1">Orange Money Layer</label>
                     <input
                       type="text"
                       value={activeRegionalConfig.orangeMoneyNumber || (selectedCountryCode === "CI" ? paymentConfig.orangeMoneyNumber : "") || ""}
@@ -547,13 +531,13 @@ export function AdminPaymentsTab() {
                           handleUpdateRegionalField("orangeMoneyNumber", e.target.value);
                         }
                       }}
-                      className="w-full h-9 bg-black/50 border border-white/10 rounded-xl px-3 text-xs font-mono text-white outline-none focus:border-[#ff7900]"
-                      placeholder="+2250700000000"
+                      className="w-full h-10 bg-black/50 border border-white/10 rounded-xl px-4 text-xs font-mono text-white outline-none focus:border-[#ff7900]"
+                      placeholder="+225..."
                     />
                   </div>
 
-                  <div className="space-y-1">
-                    <label className="text-[9px] font-black uppercase tracking-widest text-[#ffcc00]">Numéro MTN MoMo</label>
+                  <div className="space-y-1.5">
+                    <label className="text-[9px] font-black uppercase tracking-widest text-[#ffcc00] ml-1">MTN MoMo Gateway</label>
                     <input
                       type="text"
                       value={activeRegionalConfig.mtnNumber || (selectedCountryCode === "CI" ? paymentConfig.mtnNumber : "") || ""}
@@ -564,64 +548,31 @@ export function AdminPaymentsTab() {
                           handleUpdateRegionalField("mtnNumber", e.target.value);
                         }
                       }}
-                      className="w-full h-9 bg-black/50 border border-white/10 rounded-xl px-3 text-xs font-mono text-white outline-none focus:border-[#ffcc00]"
-                      placeholder="+2250500000000"
-                    />
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="text-[9px] font-black uppercase tracking-widest text-[#0066b2]">Numéro Moov Money</label>
-                    <input
-                      type="text"
-                      value={activeRegionalConfig.moovNumber || (selectedCountryCode === "CI" ? paymentConfig.moovNumber : "") || ""}
-                      onChange={(e) => {
-                        if (selectedCountryCode === "CI") {
-                          setPaymentConfig({ ...paymentConfig, moovNumber: e.target.value });
-                        } else {
-                          handleUpdateRegionalField("moovNumber", e.target.value);
-                        }
-                      }}
-                      className="w-full h-9 bg-black/50 border border-white/10 rounded-xl px-3 text-xs font-mono text-white outline-none focus:border-[#0066b2]"
-                      placeholder="+2250100000000"
-                    />
-                  </div>
-
-                  {/* International Remittance / Bank / Diaspora IBAN */}
-                  {(selectedCountryCode === "FR" || selectedCountryCode === "BE" || selectedCountryCode === "US" || selectedCountryCode === "CA" || selectedCountryCode === "GB" || selectedCountryCode === "MA") && (
-                    <div className="space-y-1 pt-1 border-t border-white/5">
-                      <label className="text-[9px] font-black uppercase tracking-widest text-emerald-400">
-                        Coordonnées Virement / IBAN / Zelle / Interac ({selectedCountryCode})
-                      </label>
-                      <input
-                        type="text"
-                        value={activeRegionalConfig.bankDetails || ""}
-                        onChange={(e) => handleUpdateRegionalField("bankDetails", e.target.value)}
-                        className="w-full h-9 bg-black/50 border border-white/10 rounded-xl px-3 text-xs font-mono text-white outline-none focus:border-emerald-400"
-                        placeholder="IBAN / Email Interac / Handle Zelle"
-                      />
-                    </div>
-                  )}
-
-                  <div className="space-y-1 pt-1 border-t border-white/5">
-                    <label className="text-[9px] font-black uppercase tracking-widest text-white/40">
-                      Instructions Spécifiques pour {activeCountryData.name}
-                    </label>
-                    <textarea
-                      rows={2}
-                      value={activeRegionalConfig.instructions || ""}
-                      onChange={(e) => handleUpdateRegionalField("instructions", e.target.value)}
-                      className="w-full bg-black/50 border border-white/10 rounded-xl p-2 text-xs text-white outline-none focus:border-vendeur-emerald resize-none"
-                      placeholder="Instructions affichées aux marchands de ce pays..."
+                      className="w-full h-10 bg-black/50 border border-white/10 rounded-xl px-4 text-xs font-mono text-white outline-none focus:border-[#ffcc00]"
+                      placeholder="+225..."
                     />
                   </div>
                 </div>
+
+                <div className="space-y-1.5 pt-2">
+                  <label className="text-[9px] font-black uppercase tracking-widest text-white/40 ml-1">
+                    Checkout Instructions
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={activeRegionalConfig.instructions || ""}
+                    onChange={(e) => handleUpdateRegionalField("instructions", e.target.value)}
+                    className="w-full bg-black/50 border border-white/10 rounded-xl p-4 text-xs text-white outline-none focus:border-vendeur-emerald resize-none font-medium"
+                    placeholder="Specific regional instructions..."
+                  />
+                </div>
               </div>
 
-              {/* Auto-Approval Confidence Threshold Slider */}
-              <div className="p-3.5 rounded-2xl bg-black/30 border border-white/5 space-y-2">
-                <div className="flex items-center justify-between text-xs font-bold text-white">
+              {/* Auto-Approval Slider - Flattened */}
+              <div className="p-4 rounded-2xl bg-black/40 border border-white/10 space-y-3">
+                <div className="flex items-center justify-between text-[11px] font-bold text-white uppercase">
                   <span className="flex items-center gap-1.5 text-sky-400">
-                    <Sliders size={14} /> Seuil d'Auto-Validation IA
+                    <Sliders size={14} /> AI Verification Threshold
                   </span>
                   <span className="font-mono text-vendeur-emerald font-black">
                     {paymentConfig.autoApproveConfidenceThreshold || 95}%
@@ -641,19 +592,16 @@ export function AdminPaymentsTab() {
                   }
                   className="w-full accent-vendeur-emerald cursor-pointer"
                 />
-                <p className="text-[10px] text-white/40">
-                  Les reçus ayant un score IA supérieur ou égal à ce seuil seront automatiquement activés sans intervention.
-                </p>
               </div>
 
               <button
                 type="button"
                 onClick={() => updateConfigMutation.mutate(paymentConfig)}
                 disabled={updateConfigMutation.isPending}
-                className="w-full h-12 bg-vendeur-emerald hover:bg-emerald-400 text-vendeur-coal font-black uppercase tracking-widest text-xs rounded-2xl flex items-center justify-center gap-2 hover:scale-[1.01] active:scale-98 transition-all disabled:opacity-50 cursor-pointer shadow-lg shadow-vendeur-emerald/20"
+                className="w-full h-14 bg-vendeur-emerald hover:bg-emerald-400 text-vendeur-coal font-black uppercase tracking-widest text-xs rounded-xl flex items-center justify-center gap-2 transition-all disabled:opacity-50 shadow-xl shadow-vendeur-emerald/20"
               >
                 {updateConfigMutation.isPending ? <Loader2 className="animate-spin" size={16} /> : <Save size={16} />}
-                <span>Enregistrer la Configuration</span>
+                <span>Sync Payment Gateway</span>
               </button>
             </div>
           )}

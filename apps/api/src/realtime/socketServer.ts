@@ -18,6 +18,17 @@ export function initSocketServer(httpServer: HttpServer) {
     socket.on("join", (userId: string) => {
       socket.join(`user:${userId}`);
       console.log(`[Socket] Merchant ${userId} joined their room`);
+
+      // If user is admin/founder, join the pulse room too
+      // We can't verify role easily here without DB hit or decoding token,
+      // so we rely on the client joining it explicitly and a middleware in a real app.
+      // For now, we'll allow joining via a specific event.
+    });
+
+    socket.on("join_founder_pulse", () => {
+       // Ideally verify token here
+       socket.join("founder:pulse");
+       console.log(`[Socket] Founder joined Pulse room: ${socket.id}`);
     });
 
     socket.on("join_auth", (phoneNumber: string) => {

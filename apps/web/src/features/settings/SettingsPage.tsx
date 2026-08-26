@@ -1454,7 +1454,7 @@ function PersonnaliteTab({ merchant }: { merchant: any }) {
                    </div>
                    <div>
                      <h4 className="font-black text-white">Publication Automatique en Statut</h4>
-                     <p className="text-xs text-white/40 mt-1">Poste automatiquement 1 produit en statut chaque matin (Connexion QR Code).</p>
+                     <p className="text-xs text-white/40 mt-1">Poste automatiquement 1 produit en statut chaque matin.</p>
                    </div>
                 </div>
             </div>

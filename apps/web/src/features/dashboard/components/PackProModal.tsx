@@ -2,6 +2,7 @@ import React from "react";
 import { X, Sparkles, Check, Rocket, ShieldCheck, Loader2 } from "lucide-react";
 import { apiClient } from "@/lib/apiClient";
 import { toast } from "sonner";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuthStore } from "@/stores/authStore";
 import { useQueryClient } from "@tanstack/react-query";
 import { useBillingCurrency } from "@/hooks/useBillingCurrency";
@@ -14,6 +15,7 @@ interface PackProModalProps {
 }
 
 export function PackProModal({ isOpen, onClose }: PackProModalProps) {
+  const navigate = useNavigate();
   const [loading, setLoading] = React.useState(false);
   const { user } = useAuthStore();
   const queryClient = useQueryClient();

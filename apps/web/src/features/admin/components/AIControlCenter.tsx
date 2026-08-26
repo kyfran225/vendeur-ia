@@ -14,7 +14,8 @@ import {
   Sparkles,
   Eye,
   EyeOff,
-  Copy
+  Copy,
+  Skull
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/apiClient";
@@ -110,6 +111,19 @@ export function AIControlCenter() {
     setIsEditing(!isEditing);
   };
 
+  const emergencyStopMutation = useMutation({
+    mutationFn: async (action: 'pause' | 'resume') => {
+      const res = await apiClient.post("/api/admin/system/emergency-stop", { action });
+      return res.data;
+    },
+    onSuccess: (data) => {
+      toast.success(data.message, {
+        duration: 5000,
+        icon: <Skull className="text-rose-500" />
+      });
+    }
+  });
+
   const testProviderMutation = useMutation({
     mutationFn: async (provider: string) => {
       const res = await apiClient.post(`/api/admin/ai/test/${provider}`);
@@ -138,84 +152,83 @@ export function AIControlCenter() {
   };
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500">
-      {/* 1. PROVIDER STATUS GRID */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+    <div className="space-y-6 md:space-y-8 animate-in fade-in duration-500">
+      {/* 1. PROVIDER STATUS GRID - Flattened */}
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
         {aiStatus?.map((p: any) => (
-          <div key={p.name} className="bg-vendeur-coal border border-white/5 p-6 rounded-[2rem] space-y-4">
+          <div key={p.name} className="bg-vendeur-coal/60 border border-white/5 p-4 rounded-2xl space-y-3">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <h3 className="font-black uppercase tracking-tighter text-sm">{p.name}</h3>
-              </div>
+              <h3 className="font-black uppercase tracking-tighter text-[11px] text-white/60">{p.name}</h3>
               <button
                 onClick={() => testProviderMutation.mutate(p.name)}
                 disabled={testProviderMutation.isPending}
-                className="p-2 hover:bg-white/5 rounded-lg transition-colors text-white/20 hover:text-white"
+                className="p-1.5 hover:bg-white/5 rounded-lg transition-colors text-white/20"
               >
-                <RefreshCw size={14} className={testProviderMutation.isPending ? "animate-spin" : ""} />
+                <RefreshCw size={12} className={testProviderMutation.isPending ? "animate-spin" : ""} />
               </button>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5">
               {p.success ? (
-                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 text-[10px] font-black uppercase text-emerald-400 border border-emerald-500/20">
-                  <CheckCircle2 size={10} /> Opérationnel
-                </div>
+                <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
               ) : (
-                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-rose-500/10 text-[10px] font-black uppercase text-rose-400 border border-rose-500/20">
-                  <XCircle size={10} /> Échec
-                </div>
+                <div className="h-1.5 w-1.5 rounded-full bg-rose-500" />
               )}
+              <span className={cn("text-[9px] font-black uppercase tracking-widest", p.success ? "text-emerald-400" : "text-rose-400")}>
+                {p.success ? "Online" : "Error"}
+              </span>
             </div>
-
-            {!p.success && (
-              <p className="text-[9px] text-rose-400/60 font-medium leading-tight line-clamp-2">
-                {p.message}
-              </p>
-            )}
           </div>
         ))}
       </div>
 
-      {/* 2. CONFIGURATION PANEL */}
-      <div className="bg-vendeur-coal border border-white/5 rounded-[2.5rem] overflow-hidden">
-        <div className="p-6 md:p-8 border-b border-white/5 flex flex-col md:flex-row md:items-center justify-between gap-6">
+      {/* 2. CONFIGURATION PANEL - Flattened */}
+      <div className="bg-vendeur-coal border border-white/5 rounded-2xl md:rounded-[2.5rem] overflow-hidden">
+        <div className="p-4 md:p-8 border-b border-white/5 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
-            <div className="h-12 w-12 bg-vendeur-emerald/10 rounded-2xl flex items-center justify-center text-vendeur-emerald border border-vendeur-emerald/20 shrink-0">
-              <Shield size={24} />
+            <div className="h-10 w-10 md:h-12 md:w-12 bg-vendeur-emerald/10 rounded-xl md:rounded-2xl flex items-center justify-center text-vendeur-emerald border border-vendeur-emerald/20 shrink-0">
+              <Shield size={20} />
             </div>
             <div>
-              <h2 className="text-lg md:text-xl font-black uppercase tracking-tighter leading-tight">Cerveau & API Keys</h2>
-              <p className="text-[10px] text-white/40 uppercase tracking-widest font-black">Governance IA</p>
+              <h2 className="text-lg md:text-xl font-black uppercase tracking-tighter leading-none">AI Governance Layer</h2>
+              <p className="text-[10px] text-white/40 uppercase tracking-widest font-black mt-1">Core Neural Routing</p>
             </div>
           </div>
-          <button
-            onClick={handleEditClick}
-            className="w-full md:w-auto px-6 py-3 bg-white/5 hover:bg-white/10 rounded-xl text-xs font-black uppercase tracking-widest transition-all"
-          >
-            {isEditing ? "Annuler" : "Modifier la Config"}
-          </button>
+          <div className="flex items-center gap-2 w-full md:w-auto">
+            <button
+              onClick={() => emergencyStopMutation.mutate('pause')}
+              className="flex-1 md:flex-none px-4 py-2.5 bg-rose-500/10 hover:bg-rose-500 text-rose-500 hover:text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 border border-rose-500/20"
+            >
+              <Skull size={14} /> STOP
+            </button>
+            <button
+              onClick={handleEditClick}
+              className="flex-1 md:flex-none px-5 py-2.5 bg-white/5 hover:bg-white/10 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border border-white/10"
+            >
+              {isEditing ? "Cancel" : "Modify"}
+            </button>
+          </div>
         </div>
 
-        <div className="p-6 md:p-8 space-y-8">
+        <div className="p-4 md:p-8 space-y-6 md:space-y-8">
           {/* Default Routing */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
             <RoutingSelect
-              label="Cerveau Texte (Chat)"
+              label="Neural Text (Chat)"
               value={isEditing ? localAiConfig?.defaultTextProvider : aiConfig.defaultTextProvider}
               onChange={(v: string) => isEditing && setLocalAiConfig({ ...localAiConfig, defaultTextProvider: v })}
               options={['gemini', 'openai', 'groq', 'openrouter']}
               disabled={!isEditing}
             />
             <RoutingSelect
-              label="Cerveau Vision (Images)"
+              label="Vision Layer (OCR)"
               value={isEditing ? localAiConfig?.defaultVisionProvider : aiConfig.defaultVisionProvider}
               onChange={(v: string) => isEditing && setLocalAiConfig({ ...localAiConfig, defaultVisionProvider: v })}
               options={['gemini', 'openai']}
               disabled={!isEditing}
             />
             <RoutingSelect
-              label="Cerveau Audio (TTS)"
+              label="Audio Matrix (TTS)"
               value={isEditing ? localAiConfig?.defaultAudioProvider : aiConfig.defaultAudioProvider}
               onChange={(v: string) => isEditing && setLocalAiConfig({ ...localAiConfig, defaultAudioProvider: v })}
               options={['elevenlabs', 'openai']}
@@ -223,16 +236,16 @@ export function AIControlCenter() {
             />
           </div>
 
-          {/* Providers List */}
-          <div className="space-y-4 pt-4">
+          {/* Providers List - Flattened */}
+          <div className="space-y-3">
             {(isEditing ? localAiConfig?.providers : aiConfig.providers).map((p: any, idx: number) => (
-              <div key={p.name} className="flex flex-col md:flex-row items-center gap-4 p-4 md:p-6 bg-black/40 rounded-3xl border border-white/5 group">
-                <div className="flex items-center gap-4 w-full md:w-48">
-                  <span className="font-black uppercase tracking-widest text-xs">{p.name}</span>
+              <div key={p.name} className="flex flex-col md:flex-row items-center gap-3 p-3 md:p-5 bg-black/40 rounded-2xl border border-white/5 group">
+                <div className="flex items-center gap-3 w-full md:w-40 shrink-0">
+                  <span className="font-black uppercase tracking-widest text-[10px] text-white/60">{p.name}</span>
                 </div>
 
                 <div className="flex-1 w-full relative">
-                  <Key size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" />
+                  <Key size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" />
                   <input
                     type={visibleKeys[p.name] ? "text" : "password"}
                     disabled={!isEditing}
@@ -243,29 +256,27 @@ export function AIControlCenter() {
                       newProviders[idx] = { ...newProviders[idx], apiKey: e.target.value };
                       setLocalAiConfig({ ...localAiConfig, providers: newProviders });
                     }}
-                    placeholder="sk-••••••••••••••••••••••••"
-                    className="w-full h-12 bg-black/20 border border-white/10 rounded-xl pl-12 pr-24 text-xs font-mono text-white/60 focus:border-vendeur-emerald outline-none transition-all disabled:opacity-50"
+                    placeholder="sk-••••••••"
+                    className="w-full h-10 md:h-11 bg-black/20 border border-white/10 rounded-xl pl-10 pr-20 text-[10px] font-mono text-white/60 focus:border-vendeur-emerald outline-none"
                   />
-                  <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                  <div className="absolute right-1.5 top-1/2 -translate-y-1/2 flex items-center">
                     <button
                       onClick={() => toggleKeyVisibility(p.name)}
-                      className="p-2 hover:bg-white/5 rounded-lg text-white/40 hover:text-white transition-all"
-                      title={visibleKeys[p.name] ? "Masquer" : "Afficher"}
+                      className="p-1.5 text-white/30 hover:text-white"
                     >
                       {visibleKeys[p.name] ? <EyeOff size={14} /> : <Eye size={14} />}
                     </button>
                     <button
                       onClick={() => copyToClipboard(p.apiKey)}
-                      className="p-2 hover:bg-white/5 rounded-lg text-white/40 hover:text-white transition-all"
-                      title="Copier"
+                      className="p-1.5 text-white/30 hover:text-white"
                     >
                       <Copy size={14} />
                     </button>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-4 w-full md:w-auto justify-end">
-                  <label className="flex items-center gap-2 cursor-pointer">
+                <div className="flex items-center gap-3 w-full md:w-auto justify-end">
+                  <label className="flex items-center gap-2 cursor-pointer bg-white/5 px-3 py-1.5 rounded-lg border border-white/5">
                     <input
                       type="checkbox"
                       disabled={!isEditing}
@@ -276,9 +287,9 @@ export function AIControlCenter() {
                         newProviders[idx] = { ...newProviders[idx], isActive: e.target.checked };
                         setLocalAiConfig({ ...localAiConfig, providers: newProviders });
                       }}
-                      className="w-4 h-4 rounded border-white/10 bg-black/40 text-vendeur-emerald focus:ring-vendeur-emerald"
+                      className="w-3.5 h-3.5 rounded border-white/10 bg-black/40 text-vendeur-emerald"
                     />
-                    <span className="text-[10px] font-black uppercase text-white/40">Actif</span>
+                    <span className="text-[9px] font-black uppercase text-white/40">Active</span>
                   </label>
                 </div>
               </div>
@@ -286,55 +297,51 @@ export function AIControlCenter() {
           </div>
 
           {isEditing && (
-            <div className="flex justify-center pt-4">
+            <div className="flex justify-center">
               <button
                 onClick={() => updateSettingsMutation.mutate({ aiConfig: localAiConfig })}
                 disabled={updateSettingsMutation.isPending}
-                className="w-full md:w-auto min-w-[240px] px-8 h-14 bg-vendeur-emerald text-vendeur-coal font-black uppercase tracking-widest rounded-2xl flex items-center justify-center gap-3 hover:scale-[1.02] active:scale-95 transition-all shadow-xl shadow-vendeur-emerald/20 disabled:opacity-50"
+                className="w-full md:w-auto min-w-[200px] h-12 bg-vendeur-emerald text-vendeur-coal font-black uppercase tracking-widest rounded-xl flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all shadow-xl shadow-vendeur-emerald/20 text-[11px]"
               >
-                {updateSettingsMutation.isPending ? (
-                  <RefreshCw className="animate-spin" size={20} />
-                ) : (
-                  <Save size={20} />
-                )}
-                Sauvegarder
+                {updateSettingsMutation.isPending ? <RefreshCw className="animate-spin" size={16} /> : <Save size={16} />}
+                Commit Config
               </button>
             </div>
           )}
         </div>
       </div>
 
-      {/* 3. PERFORMANCE & QUOTA */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <div className="bg-vendeur-coal border border-white/5 p-8 rounded-[2.5rem] space-y-6">
-            <h2 className="text-xl font-black uppercase tracking-tighter flex items-center gap-3">
-              <Activity className="text-vendeur-emerald" size={24} />
-              Utilisation (Tokens)
+      {/* 3. PERFORMANCE & QUOTA - Flattened */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
+          <div className="bg-vendeur-coal border border-white/5 p-4 md:p-8 rounded-2xl md:rounded-[2.5rem] space-y-6">
+            <h2 className="text-lg md:text-xl font-black uppercase tracking-tighter flex items-center gap-3">
+              <Activity className="text-vendeur-emerald" size={20} />
+              Token Economics Matrix
             </h2>
             <div className="space-y-6">
                <RealUsageBar
-                 label="Gemini 3.6 Flash"
+                 label="Gemini 1.5 Flash (Core)"
                  provider="gemini"
                  usageData={adminStats?.providerUsage}
                  total={1000000}
                  color="emerald"
                />
                <RealUsageBar
-                 label="Groq Llama 3"
+                 label="Groq Llama 3 (Latency Ops)"
                  provider="groq"
                  usageData={adminStats?.providerUsage}
                  total={500000}
                  color="sky"
                />
                <RealUsageBar
-                 label="OpenRouter (Llama 3.3)"
+                 label="OpenRouter (Universal)"
                  provider="openrouter"
                  usageData={adminStats?.providerUsage}
                  total={500000}
                  color="indigo"
                />
                <RealUsageBar
-                 label="ElevenLabs Audio"
+                 label="ElevenLabs (Neural Voice)"
                  provider="elevenlabs"
                  usageData={adminStats?.providerUsage}
                  total={10000}
@@ -343,15 +350,15 @@ export function AIControlCenter() {
             </div>
           </div>
 
-          <div className="bg-vendeur-coal border border-white/5 p-8 rounded-[2.5rem] space-y-6">
+          <div className="bg-vendeur-coal border border-white/5 p-4 md:p-8 rounded-2xl md:rounded-[2.5rem] space-y-6">
              <div className="flex items-center justify-between">
-                <h2 className="text-xl font-black uppercase tracking-tighter flex items-center gap-3">
-                  <Zap className="text-vendeur-emerald" size={24} />
-                  Dernières Erreurs
+                <h2 className="text-lg md:text-xl font-black uppercase tracking-tighter flex items-center gap-3">
+                  <Zap className="text-vendeur-emerald" size={20} />
+                  Live Error Registry
                 </h2>
-                <span className="text-[10px] font-black text-white/20 uppercase tracking-widest">Temps Réel</span>
+                <span className="text-[10px] font-black text-white/20 uppercase tracking-widest">Master Logs</span>
              </div>
-             <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2 no-scrollbar">
+             <div className="space-y-2 md:space-y-3 max-h-[350px] overflow-y-auto pr-1 no-scrollbar">
                 {settings?.aiConfig?.lastErrors?.length > 0 ? (
                   settings.aiConfig.lastErrors.map((err: any, i: number) => (
                     <ErrorLog
@@ -362,33 +369,33 @@ export function AIControlCenter() {
                     />
                   ))
                 ) : (
-                  <div className="text-center py-8 text-white/20 uppercase text-[10px] font-black tracking-widest italic">
-                    Aucune erreur détectée ✨
+                  <div className="text-center py-12 text-white/10 uppercase text-[10px] font-black tracking-widest italic border border-dashed border-white/5 rounded-2xl">
+                    Clear Skies - No errors ✨
                   </div>
                 )}
              </div>
           </div>
       </div>
 
-      {/* 4. NOTIFICATION SETTINGS */}
-      <div className="bg-vendeur-coal border border-white/5 rounded-[2.5rem] p-8 space-y-8">
+      {/* 4. NOTIFICATION SETTINGS - Flattened */}
+      <div className="bg-vendeur-coal border border-white/5 rounded-2xl md:rounded-[2.5rem] p-4 md:p-8 space-y-8">
         <div className="flex items-center gap-4">
-          <div className="h-12 w-12 bg-indigo-500/10 rounded-2xl flex items-center justify-center text-indigo-400 border border-indigo-500/20 shrink-0">
-            <Sparkles size={24} />
+          <div className="h-10 w-10 md:h-12 md:w-12 bg-indigo-500/10 rounded-xl md:rounded-2xl flex items-center justify-center text-indigo-400 border border-indigo-500/20 shrink-0">
+            <Sparkles size={20} />
           </div>
           <div>
-            <h2 className="text-lg md:text-xl font-black uppercase tracking-tighter leading-tight">Alertes & Notifications</h2>
-            <p className="text-[10px] text-white/40 uppercase tracking-widest font-black">Supervision Critique</p>
+            <h2 className="text-lg md:text-xl font-black uppercase tracking-tighter leading-none">Alerte Protocol</h2>
+            <p className="text-[10px] text-white/40 uppercase tracking-widest font-black mt-1">Foundation Supervision</p>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <div className="space-y-4">
-            <h3 className="text-xs font-black uppercase tracking-[0.2em] text-white/60 mb-4">Canaux d'alerte</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
+          <div className="space-y-3">
+            <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-white/30 mb-2">Transmission Channels</h3>
 
             <NotificationToggle
-              label="Notifications Push Web"
-              description="Recevoir une alerte immédiate sur votre navigateur/mobile."
+              label="Push Infrastructure"
+              description="Direct browser/OS critical alerts."
               checked={isEditing ? localAiConfig?.notificationSettings?.enablePush : settings?.aiConfig?.notificationSettings?.enablePush}
               onChange={(v: boolean) => isEditing && setLocalAiConfig({
                 ...localAiConfig,
@@ -398,8 +405,8 @@ export function AIControlCenter() {
             />
 
             <NotificationToggle
-              label="Alertes Email"
-              description="Envoyer un rapport d'erreur sur l'email des administrateurs."
+              label="Email Ledger Report"
+              description="Detailed error dumps via SMTP."
               checked={isEditing ? localAiConfig?.notificationSettings?.enableEmail : settings?.aiConfig?.notificationSettings?.enableEmail}
               onChange={(v: boolean) => isEditing && setLocalAiConfig({
                 ...localAiConfig,
@@ -409,9 +416,9 @@ export function AIControlCenter() {
             />
           </div>
 
-          <div className="space-y-4">
-            <h3 className="text-xs font-black uppercase tracking-[0.2em] text-white/60 mb-4">Fréquence des alertes</h3>
-            <div className="p-6 bg-black/40 rounded-3xl border border-white/5 space-y-4">
+          <div className="space-y-3">
+            <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-white/30 mb-2">Pulse Frequency</h3>
+            <div className="p-4 md:p-6 bg-black/40 rounded-2xl border border-white/5 space-y-4">
                <select
                  disabled={!isEditing}
                  value={isEditing ? localAiConfig?.notificationSettings?.alertThreshold : settings?.aiConfig?.notificationSettings?.alertThreshold}
@@ -419,13 +426,13 @@ export function AIControlCenter() {
                    ...localAiConfig,
                    notificationSettings: { ...localAiConfig.notificationSettings, alertThreshold: e.target.value }
                  })}
-                 className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-xs font-bold text-white outline-none focus:border-vendeur-emerald transition-all disabled:opacity-50"
+                 className="w-full h-11 bg-black/20 border border-white/10 rounded-xl px-4 text-xs font-bold text-white outline-none focus:border-vendeur-emerald transition-all"
                >
-                 <option value="always">Toujours notifier (Chaque erreur)</option>
-                 <option value="high_frequency" disabled>Seulement en cas de panne répétée (Bientôt)</option>
+                 <option value="always">Continuous (Every Signal)</option>
+                 <option value="high_frequency">Threshold Pattern Only</option>
                </select>
                <p className="text-[9px] text-white/20 uppercase font-bold leading-relaxed italic">
-                 Note : Les notifications Push nécessitent que vous ayez autorisé les notifications dans votre navigateur.
+                 Web-Push requires active handshake permission in Master browser.
                </p>
             </div>
           </div>

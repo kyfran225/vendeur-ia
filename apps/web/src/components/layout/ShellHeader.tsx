@@ -3,7 +3,8 @@ import { Link, useSearchParams, useLocation } from "react-router-dom";
 import { useAuthStore } from "@/stores/authStore";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/apiClient";
-import { Store, User, LogOut, AlertCircle, ShieldAlert } from "lucide-react";
+import { Store, User, LogOut, AlertCircle, ShieldAlert, ShieldCheck } from "lucide-react";
+import { useFounderRole } from "@/hooks/useFounderRole";
 import { Logo } from "@/components/ui/Logo";
 import { PackProModal } from "@/features/dashboard/components/PackProModal";
 import { useSocket } from "@/hooks/useSocket";
@@ -20,6 +21,7 @@ interface ShellHeaderProps {
 }
 
 export function ShellHeader({ isVisible = true }: ShellHeaderProps) {
+  const { isFounder } = useFounderRole();
   const location = useLocation();
   const [searchParams] = useSearchParams();
   const isProParam = searchParams.get("pro") === "true";
@@ -164,34 +166,38 @@ export function ShellHeader({ isVisible = true }: ShellHeaderProps) {
           <Logo size={22} />
         </div>
         <div className="hidden md:flex h-10 w-10 rounded-2xl bg-vendeur-emerald/10 items-center justify-center border border-vendeur-emerald/20 shrink-0">
-          <Store className="text-vendeur-emerald" size={20} />
+          {isFounder ? (
+            <ShieldCheck className="text-vendeur-emerald" size={20} />
+          ) : (
+            <Store className="text-vendeur-emerald" size={20} />
+          )}
         </div>
         <div className="text-left min-w-0">
           <p className="text-base md:text-xl font-black text-white uppercase tracking-tight truncate leading-tight">
-            {merchant?.businessName || "SYSTEM CORE"}
+            {isFounder ? "MASTER CONTROL" : (merchant?.businessName || "SYSTEM CORE")}
           </p>
           <p className="text-[8px] md:text-[10px] uppercase tracking-[0.2em] text-vendeur-emerald/60 font-black leading-none truncate">
-            Boutique Active
+            {isFounder ? "FOUNDER OS v2.4-STABLE" : "Boutique Active"}
           </p>
         </div>
       </div>
 
       <div className="flex items-center gap-3 md:gap-4 shrink-0">
-        {isAdmin && (
+        {isFounder && (
           <Link
             to="/admin"
             className={cn(
               "inline-flex items-center gap-1.5 px-3 py-1.5 md:py-2 rounded-xl md:rounded-2xl border transition-all text-xs font-black uppercase tracking-wider shadow-sm",
               pendingPaymentsCount > 0
                 ? "bg-amber-500/15 hover:bg-amber-500/25 border-amber-500/30 text-amber-400"
-                : "bg-white/5 hover:bg-white/10 border-white/10 text-white/70 hover:text-white"
+                : "bg-vendeur-emerald text-vendeur-coal border-vendeur-emerald/20 hover:scale-105"
             )}
             title="Cockpit Administrateur"
           >
-            <ShieldAlert size={14} className={pendingPaymentsCount > 0 ? "text-amber-400" : "text-white/40"} />
-            <span className="hidden sm:inline">Admin</span>
+            <ShieldCheck size={14} className={pendingPaymentsCount > 0 ? "text-amber-400" : "text-vendeur-coal"} />
+            <span className="hidden sm:inline">Founder</span>
             {pendingPaymentsCount > 0 && (
-              <span className="h-5 px-1.5 rounded-full bg-amber-400 text-black font-mono font-black text-[10px] flex items-center justify-center">
+              <span className="h-5 px-1.5 rounded-full bg-vendeur-coal text-white font-mono font-black text-[10px] flex items-center justify-center">
                 {pendingPaymentsCount}
               </span>
             )}

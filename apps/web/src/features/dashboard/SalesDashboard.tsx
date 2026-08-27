@@ -99,33 +99,15 @@ export function SalesDashboard() {
     if (!dashboard?.merchant?._id || isFounder) return;
     const isWhatsAppConnected = dashboard?.whatsappConnection?.status === "CONNECTED" || dashboard?.merchant?.whatsappConfig?.status === "connected" || Boolean(dashboard?.merchant?.whatsappConfig?.meta?.phoneNumberId);
     const waStorageKey = `vendeur_wa_quick_connect_prompt_${dashboard.merchant._id}`;
-    const waAlreadyPrompted = sessionStorage.getItem(waStorageKey);
+    const waAlreadyPrompted = localStorage.getItem(waStorageKey);
 
-    // 1. SI WHATSAPP N'EST PAS CONNECTÉ : Proposer immédiatement la liaison WhatsApp en 1er !
+    // 1. SI WHATSAPP N'EST PAS CONNECTÉ : Proposer immédiatement la liaison WhatsApp en 1er (une seule fois à l'inscription)
     if (!isWhatsAppConnected && !waAlreadyPrompted) {
       setIsQuickConnectOpen(true);
-      sessionStorage.setItem(waStorageKey, "true");
+      localStorage.setItem(waStorageKey, "true");
       return;
     }
-
-    // 2. Si WhatsApp est déjà connecté (ou déjà vu), vérifier l'abonnement
-    const isPaidActive = dashboard.merchant.subscription?.status === "active";
-    const latestPaymentIntent = dashboard?.latestPaymentIntent;
-    const isUnderVerification = Boolean(
-      latestPaymentIntent &&
-      (latestPaymentIntent.status === "under_verification" ||
-       latestPaymentIntent.status === "pending" ||
-       latestPaymentIntent.status === "payment_detected" ||
-       latestPaymentIntent.status === "awaiting_payment")
-    );
-    const storageKey = `vendeur_welcome_offers_seen_${dashboard.merchant._id}`;
-    const alreadySeen = localStorage.getItem(storageKey);
-
-    if (!isPaidActive && !isUnderVerification && !alreadySeen && isWhatsAppConnected) {
-      setIsOffersModalOpen(true);
-      localStorage.setItem(storageKey, "true");
-    }
-  }, [dashboard?.merchant?._id, dashboard?.merchant?.subscription?.status, dashboard?.latestPaymentIntent, dashboard?.whatsappConnection?.status, dashboard?.merchant?.whatsappConfig?.status, isFounder]);
+  }, [dashboard?.merchant?._id, dashboard?.whatsappConnection?.status, dashboard?.merchant?.whatsappConfig?.status, isFounder]);
 
   // Check if all setup steps are completed to auto-trigger celebration modal once
   useEffect(() => {
@@ -170,6 +152,13 @@ export function SalesDashboard() {
     if (newlyCompleted.length > 0) {
       // Prendre la première nouvellement complétée
       const justDone = newlyCompleted[0];
+      
+      // Si l'étape complétée est 'whatsapp', StepMilestoneModal la prend déjà en charge
+      if (justDone.id === "whatsapp") {
+        previousCompletedStepsRef.current = nowCompleted;
+        return;
+      }
+
       // L'étape suivante non complétée
       const nextPending = steps.find((s) => !s.completed && s.id !== justDone.id) || null;
 

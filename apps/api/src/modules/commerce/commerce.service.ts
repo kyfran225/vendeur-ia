@@ -389,17 +389,17 @@ export class CommerceService {
     const previousCurrency = existingMerchant.currency || "XOF";
     const targetCurrency = data.currency || existingMerchant.currency || "XOF";
 
-    // Auto-provision WhatsApp Cloud Meta provider on update
-    const resolvedPhone = data.whatsappNumber || data.phone || existingMerchant.whatsappNumber || existingMerchant.phone;
-    const hasPhone = !!(resolvedPhone && resolvedPhone.trim().length >= 6);
-
+    // Preserve existing WhatsApp configuration unless explicitly provided
     if (!data.whatsappConfig) {
-      data.whatsappConfig = existingMerchant.whatsappConfig ? { ...existingMerchant.whatsappConfig } : {};
+      delete data.whatsappConfig;
     }
-    data.whatsappConfig.provider = "meta";
-    if (hasPhone) {
-      data.whatsappConfig.status = "connected";
-      data.whatsappConfig.phoneNumberId = resolvedPhone;
+
+    const resolvedPhone = data.whatsappNumber || data.phone;
+    if (resolvedPhone && resolvedPhone.trim().length >= 6) {
+      await WhatsAppConnectionModel.findOneAndUpdate(
+        { userId: ownerId },
+        { $set: { phoneNumber: resolvedPhone } }
+      );
     }
 
     // Detect if currency changed
@@ -411,22 +411,6 @@ export class CommerceService {
       { new: true }
     );
     if (!merchant) throw new Error("Merchant not found");
-
-    if (hasPhone) {
-      await WhatsAppConnectionModel.findOneAndUpdate(
-        { userId: ownerId },
-        {
-          $set: {
-            phoneNumber: resolvedPhone,
-            status: 'CONNECTED',
-            connectionType: 'meta',
-            connectedAt: new Date(),
-            disconnectedAt: null
-          }
-        },
-        { upsert: true }
-      );
-    }
 
     // If currency changed, convert all existing products and knowledge delivery fees
     if (currencyChanged) {

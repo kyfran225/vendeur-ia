@@ -106,10 +106,10 @@ export function QuickWhatsAppConnectModal({
       setIsRequestingPairing(false);
       setIsRequestingQr(false);
       toast.success("🎉 WhatsApp connecté ! L'IA est prête.");
-      if (onSuccess) onSuccess();
       setTimeout(() => {
         onClose();
-      }, 1800);
+        if (onSuccess) onSuccess();
+      }, 1200);
     });
 
     return () => {
@@ -124,6 +124,7 @@ export function QuickWhatsAppConnectModal({
 
     setIsRequestingPairing(true);
     setPairingCode(null);
+    setCopiedCode(false);
     setTimeLeft(120);
     try {
       const res = await apiClient.post("/api/whatsapp/pair-code", { phoneNumber: normalizedPhone });

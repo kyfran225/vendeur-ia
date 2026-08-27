@@ -473,7 +473,13 @@ function BoutiqueTab({ merchant, dashboard, initialKnowledge, accessToken }: { m
   const [currencyChangeWarning, setCurrencyChangeWarning] = useState<{ newCurrency: string; oldCurrency: string } | null>(null);
 
   useEffect(() => {
-    if (merchant) setLocalMerchant(JSON.parse(JSON.stringify(merchant)));
+    if (merchant) {
+      const copy = JSON.parse(JSON.stringify(merchant));
+      if (!copy.whatsappNumber && (copy.phone || copy.whatsappConfig?.phoneNumberId)) {
+        copy.whatsappNumber = copy.phone || copy.whatsappConfig?.phoneNumberId || "";
+      }
+      setLocalMerchant(copy);
+    }
     if (initialKnowledge?.businessRules?.paymentMethods) {
       setPayments(JSON.parse(JSON.stringify(initialKnowledge.businessRules.paymentMethods)));
     }
@@ -496,7 +502,13 @@ function BoutiqueTab({ merchant, dashboard, initialKnowledge, accessToken }: { m
   }, []);
 
   const handleCancel = () => {
-    if (merchant) setLocalMerchant(JSON.parse(JSON.stringify(merchant)));
+    if (merchant) {
+      const copy = JSON.parse(JSON.stringify(merchant));
+      if (!copy.whatsappNumber && (copy.phone || copy.whatsappConfig?.phoneNumberId)) {
+        copy.whatsappNumber = copy.phone || copy.whatsappConfig?.phoneNumberId || "";
+      }
+      setLocalMerchant(copy);
+    }
     if (initialKnowledge?.businessRules?.paymentMethods) {
       setPayments(JSON.parse(JSON.stringify(initialKnowledge.businessRules.paymentMethods)));
     } else {
@@ -513,6 +525,8 @@ function BoutiqueTab({ merchant, dashboard, initialKnowledge, accessToken }: { m
 
   const initialPayments = initialKnowledge?.businessRules?.paymentMethods || [];
   const initialFees = initialKnowledge?.businessRules?.deliveryFees || [];
+  const isPaymentsModified = JSON.stringify(payments) !== JSON.stringify(initialPayments);
+  const isDeliveryModified = JSON.stringify(deliveryFees) !== JSON.stringify(initialFees);
 
   const [showMilestoneModal, setShowMilestoneModal] = useState(false);
   const [savedSectionType, setSavedSectionType] = useState<"delivery" | "payments" | "all">("all");
@@ -599,7 +613,7 @@ function BoutiqueTab({ merchant, dashboard, initialKnowledge, accessToken }: { m
 
         <div className="grid gap-5 md:gap-6 md:grid-cols-2 w-full max-w-full">
           <InputGroup label="Nom du commerce" value={localMerchant?.businessName} onChange={v => { setLocalMerchant({...localMerchant, businessName: v, slug: slugify(v)}); setIsDirty(true); }} placeholder="Ex: Ma Boutique Chic" />
-          <InputGroup label="WhatsApp Business" value={localMerchant?.whatsappNumber} onChange={v => { setLocalMerchant({...localMerchant, whatsappNumber: v}); setIsDirty(true); }} placeholder="Ex: 07 00 00 00 00" />
+          <InputGroup label="WhatsApp Business" type="tel" inputMode="tel" value={localMerchant?.whatsappNumber} onChange={v => { setLocalMerchant({...localMerchant, whatsappNumber: v}); setIsDirty(true); }} placeholder="Ex: 07 00 00 00 00" />
 
           {/* Custom Slug / Storefront URL Display */}
           <div className="md:col-span-2 p-3.5 sm:p-4 md:p-5 rounded-2xl bg-white/[0.03] border border-white/5 space-y-3 w-full max-w-full overflow-hidden box-border">
@@ -749,8 +763,10 @@ function BoutiqueTab({ merchant, dashboard, initialKnowledge, accessToken }: { m
                         price: convertCurrencyAmount(f.price || 0, oldCurr, newCurr)
                       })));
                       setCurrencyChangeWarning(null);
+                      setIsDirty(true);
+                      toast.info(`Devise changée en ${newCurr}. Pensez à enregistrer vos réglages.`);
                     }}
-                    className="h-12 rounded-2xl bg-amber-500 text-black font-black text-[10px] uppercase tracking-widest hover:bg-amber-400 transition-all"
+                    className="h-12 rounded-2xl bg-amber-500 hover:bg-amber-400 text-vendeur-coal font-black uppercase tracking-widest text-[10px] transition-all"
                   >
                     Confirmer
                   </button>
@@ -928,12 +944,14 @@ function BoutiqueTab({ merchant, dashboard, initialKnowledge, accessToken }: { m
                 />
                 <div className="relative w-24 sm:w-36 md:w-40 shrink-0">
                   <input
-                      type="number"
+                      type="text"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
                       className="w-full h-12 sm:h-14 bg-black/40 border border-white/10 rounded-xl sm:rounded-2xl px-2.5 sm:px-3 text-xs sm:text-sm text-vendeur-emerald font-black outline-none focus:border-sky-500 transition-all font-mono"
                       placeholder="1500"
                       value={fee.price}
                       onChange={(e) => {
-                        const val = parseInt(e.target.value) || 0;
+                        const val = parseInt(e.target.value.replace(/\D/g, "")) || 0;
                         setDeliveryFees((prev: any[]) => prev.map((f: any, i: number) => i === idx ? { ...f, price: val } : f));
                         setIsDirty(true);
                       }}
@@ -1000,15 +1018,26 @@ function BoutiqueTab({ merchant, dashboard, initialKnowledge, accessToken }: { m
                   setSavedSectionType("delivery");
                   updateMutation.mutate("delivery");
                 }}
-                disabled={updateMutation.isPending || deliveryFees.length === 0}
-                className="h-12 px-6 rounded-2xl bg-sky-500 hover:bg-sky-400 text-vendeur-coal font-black uppercase text-xs tracking-wider flex items-center justify-center gap-2 hover:scale-105 active:scale-95 transition-all shadow-lg shadow-sky-500/20 disabled:opacity-50 cursor-pointer shrink-0"
+                disabled={updateMutation.isPending || deliveryFees.length === 0 || !isDeliveryModified}
+                className={cn(
+                  "h-12 px-6 rounded-2xl font-black uppercase text-xs tracking-wider flex items-center justify-center gap-2 transition-all shadow-lg shrink-0",
+                  !isDeliveryModified && deliveryFees.length > 0
+                    ? "bg-white/10 text-white/50 border border-white/10 cursor-default"
+                    : "bg-sky-500 hover:bg-sky-400 text-vendeur-coal hover:scale-105 active:scale-95 shadow-sky-500/20 cursor-pointer disabled:opacity-50"
+                )}
               >
                 {updateMutation.isPending && savedSectionType === "delivery" ? (
                   <Loader2 size={16} className="animate-spin" />
+                ) : !isDeliveryModified && deliveryFees.length > 0 ? (
+                  <Check size={16} className="text-sky-400" />
                 ) : (
                   <Check size={16} />
                 )}
-                <span>Valider les Tarifs de Livraison</span>
+                <span>
+                  {!isDeliveryModified && deliveryFees.length > 0
+                    ? "Tarifs de Livraison Validés"
+                    : "Valider les Tarifs de Livraison"}
+                </span>
               </button>
            </div>
         </div>
@@ -1060,6 +1089,8 @@ function BoutiqueTab({ merchant, dashboard, initialKnowledge, accessToken }: { m
                             </span>
                           )}
                           <input
+                            type={isPhoneType ? "tel" : "text"}
+                            inputMode={isPhoneType ? "tel" : "text"}
                             className={cn(
                               "w-full h-14 bg-black/40 border border-white/10 rounded-2xl px-4 text-sm font-bold text-white focus:border-emerald-500 outline-none transition-all font-mono",
                               isPhoneType && "pl-12"
@@ -1136,15 +1167,26 @@ function BoutiqueTab({ merchant, dashboard, initialKnowledge, accessToken }: { m
                   setSavedSectionType("payments");
                   updateMutation.mutate("payments");
                 }}
-                disabled={updateMutation.isPending || payments.length === 0}
-                className="h-12 px-6 rounded-2xl bg-vendeur-emerald hover:bg-emerald-400 text-vendeur-coal font-black uppercase text-xs tracking-wider flex items-center justify-center gap-2 hover:scale-105 active:scale-95 transition-all shadow-lg shadow-vendeur-emerald/20 disabled:opacity-50 cursor-pointer shrink-0"
+                disabled={updateMutation.isPending || payments.length === 0 || !isPaymentsModified}
+                className={cn(
+                  "h-12 px-6 rounded-2xl font-black uppercase text-xs tracking-wider flex items-center justify-center gap-2 transition-all shadow-lg shrink-0",
+                  !isPaymentsModified && payments.length > 0
+                    ? "bg-white/10 text-white/50 border border-white/10 cursor-default"
+                    : "bg-vendeur-emerald hover:bg-emerald-400 text-vendeur-coal hover:scale-105 active:scale-95 shadow-vendeur-emerald/20 cursor-pointer disabled:opacity-50"
+                )}
               >
                 {updateMutation.isPending && savedSectionType === "payments" ? (
                   <Loader2 size={16} className="animate-spin" />
+                ) : !isPaymentsModified && payments.length > 0 ? (
+                  <Check size={16} className="text-vendeur-emerald" />
                 ) : (
                   <Check size={16} />
                 )}
-                <span>Valider mes Canaux de Paiement</span>
+                <span>
+                  {!isPaymentsModified && payments.length > 0
+                    ? "Canaux de Paiement Validés"
+                    : "Valider mes Canaux de Paiement"}
+                </span>
               </button>
             </div>
          </div>
@@ -1763,12 +1805,31 @@ function ConnexionsTab({ merchant, systemSettings }: { merchant: any; systemSett
 }
 
 // --- COMPOSANTS UI PARTAGES ---
-function InputGroup({ label, value, onChange, placeholder }: { label: string; value: string; onChange: (v: string) => void; placeholder?: string }) {
+function InputGroup({
+  label,
+  value,
+  onChange,
+  placeholder,
+  type = "text",
+  inputMode,
+  pattern
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+  type?: string;
+  inputMode?: "search" | "text" | "none" | "tel" | "url" | "email" | "numeric" | "decimal";
+  pattern?: string;
+}) {
   return (
     <div className="space-y-1.5">
       <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">{label}</label>
       <input
-        className="w-full h-14 rounded-2xl bg-black/40 border border-white/10 px-5 text-white focus:border-vendeur-emerald outline-none transition-all shadow-inner"
+        type={type}
+        inputMode={inputMode}
+        pattern={pattern}
+        className="w-full h-14 rounded-2xl bg-black/40 border border-white/10 px-5 text-white focus:border-vendeur-emerald outline-none transition-all shadow-inner font-sans"
         value={value || ""}
         onChange={e => onChange(e.target.value)}
         placeholder={placeholder}

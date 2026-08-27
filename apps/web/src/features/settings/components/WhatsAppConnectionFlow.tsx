@@ -188,10 +188,13 @@ export function WhatsAppConnectionFlow() {
 
     setIsRequestingPairing(true);
     setPairingCode(null);
+    setCopiedCode(false);
+    setTimeLeft(120);
     try {
       const res = await apiClient.post("/api/whatsapp/pair-code", { phoneNumber: normalizedPhone });
       if (res.data?.code) {
         setPairingCode(res.data.code);
+        setTimeLeft(120);
         toast.success("Code de jumelage généré ! Collez-le dans WhatsApp.");
       }
     } catch (err: any) {

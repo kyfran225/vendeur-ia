@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { Package, Sparkles, Trash2, Edit, Camera, X, Save, Zap, Utensils, Laptop, Palette, Hammer, ShoppingBag, Loader2, MessageSquareText, Plus, Minus, Heart, Monitor, Home, ShoppingCart, Activity, Car, Box, Image as ImageIcon, Star } from "lucide-react";
 import { ProductScanner } from "./components/ProductScanner";
 import { CaptionModal } from "./components/CaptionModal";
@@ -228,6 +228,18 @@ export function ProductManager() {
   const [posterProduct, setPosterProduct] = useState<Product | null>(null);
   const [showMilestoneModal, setShowMilestoneModal] = useState(false);
   const [lastAddedName, setLastAddedName] = useState("");
+
+  // Lock background scrolling when any modal is open
+  useEffect(() => {
+    const isModalOpen = Boolean(editingProduct || isAddingManual || isScannerOpen || deletingProduct || captionData.isOpen || showMilestoneModal);
+    if (isModalOpen) {
+      const prevOverflow = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
+      return () => {
+        document.body.style.overflow = prevOverflow;
+      };
+    }
+  }, [editingProduct, isAddingManual, isScannerOpen, deletingProduct, captionData.isOpen, showMilestoneModal]);
 
   const { data: dashboard } = useQuery({
     queryKey: ["dashboard"],
@@ -543,11 +555,11 @@ export function ProductManager() {
 
       {/* Edit / Add Form Modal */}
       {(editingProduct || isAddingManual) && (
-        <div className="fixed inset-0 z-[150] flex items-center justify-center p-3 sm:p-4">
-          <div className="absolute inset-0 bg-black/90 backdrop-blur-md" onClick={() => { setEditingProduct(null); setIsAddingManual(false); }} />
+        <div className="fixed inset-0 z-[150] flex items-center justify-center p-3 sm:p-4 overflow-y-auto overscroll-contain">
+          <div className="fixed inset-0 bg-black/90 backdrop-blur-md" onClick={() => { setEditingProduct(null); setIsAddingManual(false); }} />
           <form
             onSubmit={editingProduct ? handleUpdate : handleManualCreate}
-            className="relative w-full max-w-xl bg-[#0c0f0d] border border-white/10 rounded-2xl sm:rounded-[2.5rem] p-4 sm:p-6 md:p-8 space-y-4 sm:space-y-6 shadow-2xl animate-in zoom-in-95 duration-200 max-h-[92vh] overflow-y-auto"
+            className="relative w-full max-w-xl bg-[#0c0f0d] border border-white/10 rounded-2xl sm:rounded-[2.5rem] p-4 sm:p-6 md:p-8 space-y-4 sm:space-y-6 shadow-2xl animate-in zoom-in-95 duration-200 max-h-[88vh] overflow-y-auto overscroll-contain my-auto touch-pan-y"
           >
             <div className="flex justify-between items-center mb-1">
               <h2 className="text-xl sm:text-2xl font-black text-white uppercase tracking-tight">

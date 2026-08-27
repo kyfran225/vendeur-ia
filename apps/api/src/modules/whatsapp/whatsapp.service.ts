@@ -1289,11 +1289,24 @@ class WhatsAppService {
   }
 
   async getSessionStatus(userId: string) {
-    const session = this.activeSessions.get(userId);
-    if (!session) return "disconnected";
-
     const merchant = await CommerceMerchantModel.findOne({ ownerId: userId });
-    return merchant?.whatsappConfig?.status || "disconnected";
+    if (!merchant) return "disconnected";
+
+    if (merchant.whatsappConfig?.status === "connected") {
+      return "connected";
+    }
+
+    const session = this.activeSessions.get(userId);
+    if (session) {
+      return "connected";
+    }
+
+    const connection = await WhatsAppConnectionModel.findOne({ userId });
+    if (connection?.status === "CONNECTED") {
+      return "connected";
+    }
+
+    return merchant.whatsappConfig?.status || "disconnected";
   }
 
   async disconnectSession(userId: string) {

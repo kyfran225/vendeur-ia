@@ -179,6 +179,8 @@ export function SalesDashboard() {
       socket.on("whatsapp:connected", () => {
         toast.success("WhatsApp connecté avec succès !");
         queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+        setIsQuickConnectOpen(false);
+        setIsOffersModalOpen(true);
       });
       socket.on("payment:confirmed", (data: any) => {
         toast.success(`🎉 Paiement validé ! Votre forfait ${data?.planName || "Vendeur IA"} est désormais actif.`);
@@ -342,7 +344,8 @@ export function SalesDashboard() {
         merchant={dashboard?.merchant}
         onSuccess={() => {
           queryClient.invalidateQueries({ queryKey: ["dashboard"] });
-          setIsWhatsAppMilestoneOpen(true);
+          setIsQuickConnectOpen(false);
+          setIsOffersModalOpen(true);
         }}
       />
 

@@ -131,14 +131,7 @@ export function ShellHeader({ isVisible = true }: ShellHeaderProps) {
   const showBanner = Boolean(isUnexpectedDisconnect && !isPackPro && !isConnexionsPage);
 
   return (
-    <div
-      className={cn(
-        "sticky top-0 z-20 w-full flex flex-col shrink-0 transition-all duration-300 ease-in-out",
-        isVisible
-          ? "translate-y-0 opacity-100 mt-0"
-          : "-translate-y-full opacity-0 pointer-events-none -mt-14 md:-mt-16"
-      )}
-    >
+    <div className="sticky top-0 z-20 w-full flex flex-col shrink-0">
       <PackProModal isOpen={isPackProOpen} onClose={() => setIsPackProOpen(false)} />
 
       <header

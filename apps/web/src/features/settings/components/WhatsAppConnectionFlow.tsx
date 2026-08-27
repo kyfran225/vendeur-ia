@@ -155,11 +155,23 @@ export function WhatsAppConnectionFlow() {
     s.on("whatsapp:connected", handleConnected);
     s.on("whatsapp:disconnected", handleDisconnected);
 
+    const handleVisibilityOrFocus = () => {
+      if (document.visibilityState === "visible") {
+        refetch();
+        queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityOrFocus);
+    window.addEventListener("focus", handleVisibilityOrFocus);
+
     return () => {
       s.off("whatsapp:pairing_code", handlePairingCode);
       s.off("whatsapp:qr", handleQrCode);
       s.off("whatsapp:connected", handleConnected);
       s.off("whatsapp:disconnected", handleDisconnected);
+      document.removeEventListener("visibilitychange", handleVisibilityOrFocus);
+      window.removeEventListener("focus", handleVisibilityOrFocus);
       s.disconnect();
     };
   }, [user?.id, refetch, queryClient]);

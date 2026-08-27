@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   X,
@@ -9,14 +9,16 @@ import {
   CheckCircle2,
   QrCode,
   Smartphone,
-  Clock
+  Clock,
+  AlertTriangle,
+  Sparkles
 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { io, Socket } from "socket.io-client";
 import { useAuthStore } from "@/stores/authStore";
 import { apiClient } from "@/lib/apiClient";
 import { toast } from "sonner";
-import { parsePhoneNumber, formatDisplayPhone } from "@/features/onboarding/components/CountrySelector";
+import { parsePhoneNumber } from "@/features/onboarding/components/CountrySelector";
 import { WhatsAppIcon } from "@/components/ui/WhatsAppIcon";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
@@ -49,13 +51,45 @@ export function QuickWhatsAppConnectModal({
   const [copiedCode, setCopiedCode] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
   const [timeLeft, setTimeLeft] = useState<number>(120);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+  const hasTriggeredSuccessRef = useRef(false);
   const activeNumber = merchant?.whatsappNumber || merchant?.phone || "";
   const isExpired = timeLeft <= 0;
 
+  // Handle successful connection cleanly
+  const handleSuccess = useCallback(() => {
+    if (hasTriggeredSuccessRef.current) return;
+    hasTriggeredSuccessRef.current = true;
+    setIsConnected(true);
+    setIsRequestingPairing(false);
+    setIsRequestingQr(false);
+    setErrorMessage(null);
+
+    toast.success("🎉 WhatsApp connecté avec succès ! L'IA est prête.");
+
+    // Short graceful delay for celebratory feedback before closing and opening offers
+    setTimeout(() => {
+      onClose();
+      if (onSuccess) {
+        onSuccess();
+      }
+    }, 900);
+  }, [onClose, onSuccess]);
+
+  // Reset state on modal open
+  useEffect(() => {
+    if (isOpen) {
+      hasTriggeredSuccessRef.current = false;
+      setIsConnected(false);
+      setErrorMessage(null);
+      setTimeLeft(120);
+    }
+  }, [isOpen]);
+
   // Auto-request pairing code on mount if in code mode
   useEffect(() => {
-    if (isOpen && activeNumber && !pairingCode && !isConnected && mode === "code") {
+    if (isOpen && activeNumber && !pairingCode && !isConnected && mode === "code" && !isRequestingPairing) {
       handleRequestPairingCode();
     }
   }, [isOpen, activeNumber, mode]);
@@ -77,9 +111,9 @@ export function QuickWhatsAppConnectModal({
     return () => clearInterval(timer);
   }, [pairingCode, isConnected, isExpired]);
 
-  // Realtime Socket listeners
+  // Realtime Socket listeners + Tab focus recovery + Polling fallback
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen || isConnected) return;
 
     const s: Socket = io(API_URL);
     if (user?.id) {
@@ -90,6 +124,7 @@ export function QuickWhatsAppConnectModal({
       if (data?.code) {
         setPairingCode(data.code);
         setTimeLeft(120);
+        setErrorMessage(null);
         setIsRequestingPairing(false);
       }
     });
@@ -97,32 +132,75 @@ export function QuickWhatsAppConnectModal({
     s.on("whatsapp:qr", (data: { qr: string }) => {
       if (data?.qr) {
         setQrCodeData(data.qr);
+        setErrorMessage(null);
         setIsRequestingQr(false);
       }
     });
 
     s.on("whatsapp:connected", () => {
-      setIsConnected(true);
-      setIsRequestingPairing(false);
-      setIsRequestingQr(false);
-      toast.success("🎉 WhatsApp connecté ! L'IA est prête.");
-      setTimeout(() => {
-        onClose();
-        if (onSuccess) onSuccess();
-      }, 1200);
+      handleSuccess();
     });
 
+    s.on("whatsapp:disconnected", (data: any) => {
+      if (!isConnected && data?.reason === "session_expired") {
+        setErrorMessage("La session de liaison a expiré. Veuillez générer un nouveau code.");
+      }
+    });
+
+    s.on("whatsapp:error", (err: any) => {
+      if (!isConnected) {
+        setErrorMessage(typeof err === "string" ? err : err?.message || "Erreur de liaison WhatsApp.");
+      }
+    });
+
+    // Check status function to recover if socket missed event while in background
+    const checkConnectionStatus = async () => {
+      if (hasTriggeredSuccessRef.current) return;
+      try {
+        const res = await apiClient.get("/api/whatsapp/status");
+        if (res.data?.status === "connected") {
+          handleSuccess();
+        }
+      } catch (err) {
+        // silent check
+      }
+    };
+
+    // Active polling interval while modal is open (every 2.5s)
+    const pollInterval = setInterval(checkConnectionStatus, 2500);
+
+    // Event listener when user switches back from WhatsApp app to browser tab
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        checkConnectionStatus();
+      }
+    };
+
+    const handleWindowFocus = () => {
+      checkConnectionStatus();
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("focus", handleWindowFocus);
+
     return () => {
+      clearInterval(pollInterval);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("focus", handleWindowFocus);
       s.disconnect();
     };
-  }, [isOpen, user?.id, onSuccess, onClose]);
+  }, [isOpen, user?.id, isConnected, handleSuccess]);
 
   const handleRequestPairingCode = async () => {
-    if (!activeNumber || activeNumber.replace(/\D/g, "").length < 6) return;
+    if (!activeNumber || activeNumber.replace(/\D/g, "").length < 6) {
+      setErrorMessage("Numéro WhatsApp invalide ou manquant. Vérifiez votre numéro.");
+      return;
+    }
     const parsed = parsePhoneNumber(activeNumber, merchant?.country || "CI");
     const normalizedPhone = parsed.e164 || activeNumber;
 
     setIsRequestingPairing(true);
+    setErrorMessage(null);
     setPairingCode(null);
     setCopiedCode(false);
     setTimeLeft(120);
@@ -134,6 +212,7 @@ export function QuickWhatsAppConnectModal({
       }
     } catch (err: any) {
       console.warn("[QuickConnect] Code error:", err);
+      setErrorMessage(err?.response?.data?.error || "Impossible de générer le code. Veuillez réessayer.");
     } finally {
       setIsRequestingPairing(false);
     }
@@ -141,6 +220,7 @@ export function QuickWhatsAppConnectModal({
 
   const handleRequestQrCode = async () => {
     setIsRequestingQr(true);
+    setErrorMessage(null);
     setQrCodeData(null);
     try {
       const res = await apiClient.post("/api/whatsapp/pair-qr");
@@ -149,6 +229,7 @@ export function QuickWhatsAppConnectModal({
       }
     } catch (err: any) {
       console.warn("[QuickConnect] QR error:", err);
+      setErrorMessage(err?.response?.data?.error || "Impossible de charger le QR Code.");
     } finally {
       setIsRequestingQr(false);
     }
@@ -159,7 +240,7 @@ export function QuickWhatsAppConnectModal({
     const cleanCode = pairingCode.replace(/[^A-Za-z0-9]/g, "");
     navigator.clipboard.writeText(cleanCode);
     setCopiedCode(true);
-    toast.success("Code copié !");
+    toast.success("Code copié ! Ouverture de WhatsApp...");
     setTimeout(() => setCopiedCode(false), 3000);
 
     // Direct WhatsApp app launch
@@ -203,12 +284,18 @@ export function QuickWhatsAppConnectModal({
 
             {/* Success State */}
             {isConnected ? (
-              <div className="py-8 text-center space-y-3 animate-in zoom-in-95 duration-300">
-                <div className="h-16 w-16 mx-auto rounded-full bg-vendeur-emerald/20 border border-vendeur-emerald/40 text-vendeur-emerald flex items-center justify-center">
+              <div className="py-8 text-center space-y-4 animate-in zoom-in-95 duration-300">
+                <div className="h-16 w-16 mx-auto rounded-full bg-vendeur-emerald/20 border border-vendeur-emerald/40 text-vendeur-emerald flex items-center justify-center shadow-lg shadow-vendeur-emerald/20">
                   <CheckCircle2 size={36} />
                 </div>
-                <h4 className="text-xl font-black text-white uppercase tracking-tight">WhatsApp Connecté ! 🎉</h4>
-                <p className="text-xs text-white/60">Votre Vendeur IA est prêt à répondre à vos clients 24h/24.</p>
+                <div className="space-y-1">
+                  <div className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-vendeur-emerald/10 text-vendeur-emerald text-[10px] font-black uppercase tracking-wider">
+                    <Sparkles size={11} />
+                    <span>Liaison Réussie</span>
+                  </div>
+                  <h4 className="text-xl font-black text-white uppercase tracking-tight">WhatsApp Connecté ! 🎉</h4>
+                  <p className="text-xs text-white/60">Votre Vendeur IA est prêt. Redirection vers vos offres...</p>
+                </div>
               </div>
             ) : (
               <div className="space-y-5">
@@ -231,6 +318,23 @@ export function QuickWhatsAppConnectModal({
                 <p className="text-xs text-white/80 leading-relaxed">
                   Pour que votre Vendeur IA réponde automatiquement à vos clients, ouvrez <strong>WhatsApp</strong> &gt; <strong>Appareils connectés</strong> &gt; <strong>{mode === "code" ? "Lier avec un numéro" : "Connecter un appareil"}</strong> et {mode === "code" ? "entrez ce code :" : "scannez ce code :"}
                 </p>
+
+                {/* Message d'erreur éventuel */}
+                {errorMessage && (
+                  <div className="p-3.5 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-300 text-xs flex items-start gap-2.5">
+                    <AlertTriangle size={16} className="shrink-0 text-red-400 mt-0.5" />
+                    <div className="flex-1 space-y-1">
+                      <p className="font-semibold">{errorMessage}</p>
+                      <button
+                        type="button"
+                        onClick={mode === "code" ? handleRequestPairingCode : handleRequestQrCode}
+                        className="text-[11px] font-black uppercase tracking-wider text-white underline hover:no-underline cursor-pointer"
+                      >
+                        Réessayer maintenant
+                      </button>
+                    </div>
+                  </div>
+                )}
 
                 {/* MODE 1 : CODE DE JUMELAGE (Par défaut sur mobile) */}
                 {mode === "code" && (

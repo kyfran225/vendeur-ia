@@ -469,7 +469,7 @@ export function AdminPaymentsTab() {
                     </div>
 
                     {/* Action Bar */}
-                    <div className="pt-3 flex items-center justify-between gap-3 border-t border-white/10">
+                    <div className="pt-3 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 border-t border-white/10">
                       <button
                         type="button"
                         onClick={() => {
@@ -477,12 +477,13 @@ export function AdminPaymentsTab() {
                           setZoomLevel(1);
                           setRotationAngle(0);
                         }}
-                        className="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs md:text-sm font-black uppercase flex items-center gap-2 transition-all cursor-pointer"
+                        className="w-full sm:w-auto h-11 sm:h-auto min-h-[44px] px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs md:text-sm font-black uppercase flex items-center justify-center gap-2 transition-all cursor-pointer shrink-0"
                       >
-                        <Eye size={16} /> Inspecter
+                        <Eye size={16} className="shrink-0" />
+                        <span>Inspecter</span>
                       </button>
 
-                      <div className="flex items-center gap-2.5">
+                      <div className="flex flex-col xs:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
                         {isUnderReview && (
                           <>
                             <button
@@ -491,23 +492,24 @@ export function AdminPaymentsTab() {
                                 setSelectedIntent(p);
                                 setIsRejectModalOpen(true);
                               }}
-                              className="px-4 py-2.5 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 text-xs md:text-sm font-black uppercase transition-all cursor-pointer"
+                              className="flex-1 sm:flex-none h-11 sm:h-auto min-h-[44px] px-4 py-2.5 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 text-xs md:text-sm font-black uppercase transition-all cursor-pointer flex items-center justify-center gap-1.5 shrink-0"
                             >
-                              Rejeter
+                              <XCircle size={15} className="shrink-0" />
+                              <span>Rejeter</span>
                             </button>
                             <button
                               type="button"
                               onClick={() => decisionMutation.mutate({ id: p._id, action: "approve" })}
                               disabled={decisionMutation.isPending}
-                              className="px-5 py-2.5 rounded-xl bg-vendeur-emerald hover:bg-emerald-400 text-vendeur-coal text-xs md:text-sm font-black uppercase flex items-center gap-2 hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-vendeur-emerald/20 cursor-pointer"
+                              className="flex-1 sm:flex-none h-11 sm:h-auto min-h-[44px] px-5 py-2.5 rounded-xl bg-vendeur-emerald hover:bg-emerald-400 text-vendeur-coal text-xs md:text-sm font-black uppercase flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-vendeur-emerald/20 cursor-pointer disabled:opacity-50 shrink-0"
                             >
-                              {decisionMutation.isPending ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />}
-                              Valider & Activer
+                              {decisionMutation.isPending ? <Loader2 size={16} className="animate-spin shrink-0" /> : <Check size={16} className="shrink-0" />}
+                              <span>Valider & Activer</span>
                             </button>
                           </>
                         )}
                         {isInitiated && (
-                          <span className="text-xs md:text-sm text-white/50 italic">
+                          <span className="text-xs md:text-sm text-white/50 italic text-center sm:text-right">
                             En attente de confirmation par le client...
                           </span>
                         )}

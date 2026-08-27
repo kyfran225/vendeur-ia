@@ -417,12 +417,12 @@ export function OrderManager() {
                   {/* Action Buttons: 3 on same line on mobile, flex row on desktop */}
                   <div className="space-y-2 w-full lg:w-auto">
                     
-                    {/* Primary 3 Action Buttons in 1 Row */}
-                    <div className="grid grid-cols-3 lg:flex lg:flex-wrap items-center gap-2 w-full">
+                    {/* Primary Action Buttons */}
+                    <div className="flex flex-wrap items-center gap-2 w-full">
                       {/* 1. Reçu */}
                       <button
                         onClick={() => setSelectedReceiptOrder(order)}
-                        className="h-10 px-3 rounded-xl bg-white/5 text-white/85 border border-white/10 hover:bg-white/10 hover:text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-all active:scale-95 shadow-sm"
+                        className="flex-1 sm:flex-none min-w-[80px] h-10 min-h-[40px] px-3 rounded-xl bg-white/5 text-white/85 border border-white/10 hover:bg-white/10 hover:text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-all active:scale-95 shadow-sm"
                         title="Imprimer ou partager le Bon de commande"
                       >
                         <Receipt size={14} className="text-white/60 shrink-0" />
@@ -430,24 +430,22 @@ export function OrderManager() {
                       </button>
 
                       {/* 2. Livreur */}
-                      {order.status !== "delivered" && order.status !== "cancelled" ? (
+                      {order.status !== "delivered" && order.status !== "cancelled" && (
                         <button
                           onClick={() => setSelectedDispatchOrder(order)}
-                          className="h-10 px-3 rounded-xl bg-purple-500/10 text-purple-300 border border-purple-500/25 hover:bg-purple-500 hover:text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-all active:scale-95 shadow-sm"
+                          className="flex-1 sm:flex-none min-w-[80px] h-10 min-h-[40px] px-3 rounded-xl bg-purple-500/10 text-purple-300 border border-purple-500/25 hover:bg-purple-500 hover:text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-all active:scale-95 shadow-sm"
                           title="Assigner un livreur (WhatsApp)"
                         >
                           <Truck size={14} className="shrink-0" />
                           <span className="truncate">Livreur</span>
                         </button>
-                      ) : (
-                        <div className="hidden lg:hidden" />
                       )}
 
                       {/* 3. Action de Validation (Encaissé ou Livré) */}
                       {order.status === "pending" ? (
                         <button
                           onClick={() => updateStatusMutation.mutate({ id: order._id, status: "paid" })}
-                          className="h-10 px-3 rounded-xl bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500 hover:text-black font-bold text-xs flex items-center justify-center gap-1.5 transition-all active:scale-95 shadow-sm"
+                          className="flex-1 sm:flex-none min-w-[80px] h-10 min-h-[40px] px-3 rounded-xl bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500 hover:text-black font-bold text-xs flex items-center justify-center gap-1.5 transition-all active:scale-95 shadow-sm"
                           title="Marquer comme payée / Encaissée"
                         >
                           <Banknote size={14} className="shrink-0" />
@@ -456,7 +454,7 @@ export function OrderManager() {
                       ) : order.status === "paid" ? (
                         <button
                           onClick={() => updateStatusMutation.mutate({ id: order._id, status: "delivered" })}
-                          className="h-10 px-3 rounded-xl bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 hover:bg-emerald-500 hover:text-black font-bold text-xs flex items-center justify-center gap-1.5 transition-all active:scale-95 shadow-sm"
+                          className="flex-1 sm:flex-none min-w-[80px] h-10 min-h-[40px] px-3 rounded-xl bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 hover:bg-emerald-500 hover:text-black font-bold text-xs flex items-center justify-center gap-1.5 transition-all active:scale-95 shadow-sm"
                           title="Marquer comme livrée"
                         >
                           <CheckCircle2 size={14} className="shrink-0" />

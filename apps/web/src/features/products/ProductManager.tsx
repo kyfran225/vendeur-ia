@@ -927,7 +927,7 @@ export function ProductManager() {
 
               <div className="p-4 pt-0 space-y-3">
                 {/* Stock / Badge row */}
-                <div className="flex items-center justify-between pt-3 border-t border-white/5 gap-2">
+                <div className="flex flex-wrap items-center justify-between pt-3 border-t border-white/5 gap-2">
                   {config.showStock ? (
                     <div className="flex items-center gap-1.5 min-w-0">
                       <span className="text-xs font-bold text-white/60 shrink-0">{config.stockLabel}:</span>
@@ -938,7 +938,7 @@ export function ProductManager() {
                             updateStockMutation.mutate({ id: p._id, stock: Math.max(0, p.stock - 1) });
                           }}
                           disabled={updateStockMutation.isPending}
-                          className="p-1 hover:text-rose-400 transition-colors disabled:opacity-30"
+                          className="p-1 hover:text-rose-400 transition-colors disabled:opacity-30 cursor-pointer"
                         >
                           <Minus size={12} />
                         </button>
@@ -954,25 +954,25 @@ export function ProductManager() {
                             updateStockMutation.mutate({ id: p._id, stock: p.stock + 1 });
                           }}
                           disabled={updateStockMutation.isPending}
-                          className="p-1 hover:text-emerald-400 transition-colors disabled:opacity-30"
+                          className="p-1 hover:text-emerald-400 transition-colors disabled:opacity-30 cursor-pointer"
                         >
                           <Plus size={12} />
                         </button>
                       </div>
                     </div>
                   ) : (
-                    <span className={cn("text-[9px] font-black px-2 py-0.5 rounded-lg uppercase tracking-wider border truncate", config.badgeBg)}>
+                    <span className={cn("text-[9px] font-black px-2 py-0.5 rounded-lg uppercase tracking-wider border truncate max-w-[150px]", config.badgeBg)}>
                       {businessCategory === "digital" ? (p.digitalFormat || "Accès Digital") :
                        businessCategory === "services" ? (p.serviceDuration ? `⏳ ${p.serviceDuration}` : (p.serviceDeliveryType || "Sur RDV")) :
                        businessCategory === "food" ? (p.preparationTime ? `⏱ ${p.preparationTime}` : "Au menu") : "Disponible"}
                     </span>
                   )}
 
-                  {/* Action buttons - icônes seulement sur mobile */}
-                  <div className="flex gap-1 shrink-0">
+                  {/* Action buttons */}
+                  <div className="flex items-center gap-1 shrink-0 ml-auto">
                     <button
                       onClick={() => setPosterProduct(p)}
-                      className="p-2 bg-emerald-500/10 text-emerald-400 rounded-xl hover:bg-emerald-500/20 transition-all"
+                      className="p-2 min-h-[34px] min-w-[34px] flex items-center justify-center bg-emerald-500/10 text-emerald-400 rounded-xl hover:bg-emerald-500/20 transition-all cursor-pointer"
                       title="Créer Affiche Statut WhatsApp / Story"
                     >
                       <ImageIcon size={14} />
@@ -980,7 +980,7 @@ export function ProductManager() {
                     <button
                       onClick={() => generateCaptionMutation.mutate(p._id)}
                       disabled={generateCaptionMutation.isPending}
-                      className="p-2 bg-sky-500/10 text-sky-400 rounded-xl hover:bg-sky-500/20 transition-all"
+                      className="p-2 min-h-[34px] min-w-[34px] flex items-center justify-center bg-sky-500/10 text-sky-400 rounded-xl hover:bg-sky-500/20 transition-all cursor-pointer disabled:opacity-50"
                       title="Générer Légende TikTok/Insta par IA"
                     >
                       {generateCaptionMutation.isPending && generateCaptionMutation.variables === p._id ? (
@@ -991,14 +991,14 @@ export function ProductManager() {
                     </button>
                     <button
                       onClick={() => setEditingProduct(p)}
-                      className="p-2 bg-white/5 text-white/60 rounded-xl hover:bg-white/10 hover:text-white transition-all"
+                      className="p-2 min-h-[34px] min-w-[34px] flex items-center justify-center bg-white/5 text-white/60 rounded-xl hover:bg-white/10 hover:text-white transition-all cursor-pointer"
                       title="Modifier"
                     >
                       <Edit size={14} />
                     </button>
                     <button
                       onClick={() => setDeletingProduct(p)}
-                      className="p-2 bg-rose-500/10 text-rose-400 rounded-xl hover:bg-rose-500/20 transition-all"
+                      className="p-2 min-h-[34px] min-w-[34px] flex items-center justify-center bg-rose-500/10 text-rose-400 rounded-xl hover:bg-rose-500/20 transition-all cursor-pointer"
                       title="Supprimer"
                     >
                       <Trash2 size={14} />

@@ -393,17 +393,17 @@ function AdminTabButton({ active, onClick, icon, label, badge }: { active: boole
     <button
       onClick={onClick}
       className={cn(
-        "relative flex-1 md:flex-none min-w-[80px] md:min-w-0 flex flex-col md:flex-row items-center justify-center gap-1 md:gap-2 px-1 md:px-6 py-2 md:py-3 rounded-xl transition-all whitespace-nowrap",
-        active ? "bg-vendeur-emerald text-vendeur-coal shadow-lg shadow-vendeur-emerald/20" : "text-white/40 hover:bg-white/5 hover:text-white"
+        "relative flex items-center justify-center gap-2 px-3.5 lg:px-5 py-2.5 rounded-xl transition-all whitespace-nowrap cursor-pointer shrink-0",
+        active ? "bg-vendeur-emerald text-vendeur-coal shadow-lg shadow-vendeur-emerald/20 font-black" : "text-white/50 hover:bg-white/5 hover:text-white font-bold"
       )}
     >
       <div className="shrink-0">{icon}</div>
-      <span className="text-[7px] md:text-xs font-black uppercase tracking-[0.05em] md:tracking-widest leading-none">
+      <span className="text-xs uppercase tracking-wider leading-none">
         {label}
       </span>
       {badge !== undefined && (
         <span className={cn(
-          "px-1.5 py-0.5 rounded-full text-[9px] font-black leading-none",
+          "px-1.5 py-0.5 rounded-full text-[10px] font-black leading-none",
           active ? "bg-black text-white" : "bg-emerald-500 text-black animate-pulse"
         )}>
           {badge}

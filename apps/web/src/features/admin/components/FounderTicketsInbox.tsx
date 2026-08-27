@@ -302,14 +302,15 @@ export function FounderTicketsInbox() {
                        <span className="truncate max-w-[150px]">{ticket.userEmail}</span>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 self-end md:self-center">
+                  <div className="flex items-center gap-2 w-full md:w-auto">
                     {phoneClean && (
                       <a
                         href={`https://wa.me/${phoneClean}?text=${encodeURIComponent(`Founder Connect Protocol: Re: ${ticket.subject}`)}`}
                         target="_blank"
-                        className="h-10 px-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-black uppercase text-[10px] tracking-widest flex items-center gap-2 transition-all shadow-xl shadow-emerald-500/10"
+                        className="w-full md:w-auto h-10 min-h-[40px] px-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-black uppercase text-[10px] tracking-widest flex items-center justify-center gap-2 transition-all shadow-xl shadow-emerald-500/10 shrink-0 cursor-pointer"
                       >
-                        <Send size={14} /> CONNECT
+                        <Send size={14} className="shrink-0" />
+                        <span>CONNECT</span>
                       </a>
                     )}
                   </div>

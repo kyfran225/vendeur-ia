@@ -387,13 +387,13 @@ export function WhatsAppConnectionFlow() {
           </div>
 
           {/* Quick Actions Header */}
-          <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto shrink-0 pt-1 lg:pt-0">
+          <div className="flex flex-col xs:flex-row items-stretch sm:items-center gap-2 w-full lg:w-auto shrink-0 pt-1 lg:pt-0">
             {isConnectedLive && (
               <button
                 type="button"
                 onClick={handleDisconnect}
                 disabled={isDisconnecting}
-                className="h-11 px-4 rounded-xl bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 font-bold uppercase tracking-wider text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer active:scale-95 disabled:opacity-50"
+                className="flex-1 sm:flex-none h-11 min-h-[44px] px-4 rounded-xl bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 font-bold uppercase tracking-wider text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer active:scale-95 disabled:opacity-50"
               >
                 {isDisconnecting ? <Loader2 size={14} className="animate-spin shrink-0" /> : <LogOut size={14} className="shrink-0" />}
                 <span>Déconnecter</span>
@@ -403,7 +403,7 @@ export function WhatsAppConnectionFlow() {
             <button
               type="button"
               onClick={() => navigate("/dashboard?test_ia=true")}
-              className="h-11 px-4 rounded-xl bg-white/5 border border-white/10 text-white font-bold uppercase tracking-wider text-xs hover:bg-white/10 transition-all flex items-center justify-center gap-1.5 cursor-pointer active:scale-[0.98]"
+              className="flex-1 sm:flex-none h-11 min-h-[44px] px-4 rounded-xl bg-white/5 border border-white/10 text-white font-bold uppercase tracking-wider text-xs hover:bg-white/10 transition-all flex items-center justify-center gap-1.5 cursor-pointer active:scale-[0.98]"
             >
               <AssistantIcon size={15} color="#10B981" />
               <span>Simulateur IA</span>

@@ -1063,10 +1063,10 @@ function BoutiqueTab({ merchant, dashboard, initialKnowledge, accessToken }: { m
               return (
                 <div key={idx} className="relative group space-y-2 animate-in slide-in-from-left-2 duration-300 py-1">
                   <div className="flex flex-row gap-2 items-center w-full">
-                    <div className="w-[35%] md:w-[28%] shrink-0">
+                    <div className="w-[38%] sm:w-[30%] md:w-[26%] shrink-0">
                         <div className="relative">
                           <select
-                            className="w-full h-14 bg-black/40 border border-white/10 rounded-2xl px-2 text-[10px] font-black uppercase tracking-tight text-white focus:border-emerald-500 outline-none transition-all appearance-none cursor-pointer"
+                            className="w-full h-12 sm:h-14 bg-black/40 border border-white/10 rounded-xl sm:rounded-2xl px-2 text-[10px] sm:text-xs font-black uppercase tracking-tight text-white focus:border-emerald-500 outline-none transition-all appearance-none cursor-pointer"
                             value={p.provider}
                             onChange={(e) => {
                               const val = e.target.value;
@@ -1092,8 +1092,8 @@ function BoutiqueTab({ merchant, dashboard, initialKnowledge, accessToken }: { m
                             type={isPhoneType ? "tel" : "text"}
                             inputMode={isPhoneType ? "tel" : "text"}
                             className={cn(
-                              "w-full h-14 bg-black/40 border border-white/10 rounded-2xl px-4 text-sm font-bold text-white focus:border-emerald-500 outline-none transition-all font-mono",
-                              isPhoneType && "pl-12"
+                              "w-full h-12 sm:h-14 bg-black/40 border border-white/10 rounded-xl sm:rounded-2xl px-3 sm:px-4 text-xs sm:text-sm font-bold text-white focus:border-emerald-500 outline-none transition-all font-mono",
+                              isPhoneType && "pl-11 sm:pl-12"
                             )}
                             value={p.number}
                             onChange={(e) => {
@@ -1105,6 +1105,17 @@ function BoutiqueTab({ merchant, dashboard, initialKnowledge, accessToken }: { m
                           />
                         </div>
                     </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setPayments((prev: any[]) => prev.filter((_: any, i: number) => i !== idx));
+                        setIsDirty(true);
+                      }}
+                      className="h-12 w-9 sm:h-14 sm:w-11 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 rounded-xl sm:rounded-2xl flex items-center justify-center transition-all active:scale-95 shrink-0 cursor-pointer"
+                      title="Supprimer ce canal"
+                    >
+                      <Trash2 size={14} />
+                    </button>
                   </div>
 
                   {matchedProvider?.corridorNote && (
@@ -1128,16 +1139,6 @@ function BoutiqueTab({ merchant, dashboard, initialKnowledge, accessToken }: { m
                       />
                     </div>
                   )}
-
-                  <button
-                    onClick={() => {
-                      setPayments((prev: any[]) => prev.filter((_: any, i: number) => i !== idx));
-                      setIsDirty(true);
-                    }}
-                    className="absolute -right-2 top-0 h-7 w-7 bg-rose-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all shadow-lg hover:scale-110 active:scale-95 z-10 cursor-pointer"
-                  >
-                      <Trash2 size={12} />
-                  </button>
                 </div>
               );
             })}

@@ -9,10 +9,25 @@ export function useSocket() {
   const socketRef = useRef<Socket | null>(null);
 
   useEffect(() => {
-    if (user && !socketRef.current) {
-      socketRef.current = io(API_URL);
-      socketRef.current.emit("join", user.id);
-      console.log(`[Socket] Joined room for user ${user.id}`);
+    if (user?.id && !socketRef.current) {
+      const s = io(API_URL, {
+        reconnection: true,
+        reconnectionAttempts: Infinity,
+        reconnectionDelay: 1000,
+      });
+      socketRef.current = s;
+
+      const joinRoom = () => {
+        if (user?.id) {
+          s.emit("join", user.id);
+          console.log(`[Socket] Joined room for user ${user.id}`);
+        }
+      };
+
+      s.on("connect", joinRoom);
+      if (s.connected) {
+        joinRoom();
+      }
     }
 
     return () => {
@@ -21,7 +36,7 @@ export function useSocket() {
         socketRef.current = null;
       }
     };
-  }, [user]);
+  }, [user?.id]);
 
   return socketRef.current;
 }

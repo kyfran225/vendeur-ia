@@ -115,9 +115,21 @@ export function QuickWhatsAppConnectModal({
   useEffect(() => {
     if (!isOpen || isConnected) return;
 
-    const s: Socket = io(API_URL);
-    if (user?.id) {
-      s.emit("join", user.id);
+    const s: Socket = io(API_URL, {
+      reconnection: true,
+      reconnectionAttempts: Infinity,
+      reconnectionDelay: 1000,
+    });
+
+    const joinRoom = () => {
+      if (user?.id) {
+        s.emit("join", user.id);
+      }
+    };
+
+    s.on("connect", joinRoom);
+    if (s.connected) {
+      joinRoom();
     }
 
     s.on("whatsapp:pairing_code", (data: { code: string }) => {
@@ -160,14 +172,31 @@ export function QuickWhatsAppConnectModal({
         const res = await apiClient.get("/api/whatsapp/status");
         if (res.data?.status === "connected") {
           handleSuccess();
+          return;
+        }
+      } catch (err) {
+        // silent check
+      }
+
+      try {
+        const dashRes = await apiClient.get("/api/commerce/dashboard");
+        const isConn =
+          dashRes.data?.whatsappConnection?.status === "CONNECTED" ||
+          dashRes.data?.merchant?.whatsappConfig?.status === "connected" ||
+          Boolean(dashRes.data?.merchant?.whatsappConfig?.meta?.phoneNumberId);
+        if (isConn) {
+          handleSuccess();
         }
       } catch (err) {
         // silent check
       }
     };
 
-    // Active polling interval while modal is open (every 2.5s)
-    const pollInterval = setInterval(checkConnectionStatus, 2500);
+    // Immediate check on modal mount/open
+    checkConnectionStatus();
+
+    // Active polling interval while modal is open (every 1.5s)
+    const pollInterval = setInterval(checkConnectionStatus, 1500);
 
     // Event listener when user switches back from WhatsApp app to browser tab
     const handleVisibilityChange = () => {

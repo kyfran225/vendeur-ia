@@ -108,101 +108,71 @@ class WhatsAppService {
   private async handleConnectionClose(userId: string, lastDisconnect: any) {
     const statusCode = (lastDisconnect?.error as Boom)?.output?.statusCode;
     const errMessage = (lastDisconnect?.error as Error)?.message || "";
-    const isSessionExpired = errMessage.includes("ended") || statusCode === DisconnectReason.timedOut;
 
-    if (isSessionExpired) {
-      console.log(`[WhatsApp] Session expirée pour l'utilisateur ${userId}. Nettoyage de la session.`);
+    console.log(`[WhatsApp Connection Close] User: ${userId}, StatusCode: ${statusCode}, Error: ${errMessage}`);
+
+    // ONLY permanent unlinking / logged out from phone or corrupt credentials
+    const isLoggedOut = statusCode === DisconnectReason.loggedOut;
+    const isBadSession = statusCode === DisconnectReason.badSession;
+    const isReplaced = statusCode === DisconnectReason.connectionReplaced;
+
+    if (isLoggedOut || isBadSession) {
+      console.log(`[WhatsApp] Session explicitement déconnectée/invalide pour ${userId}. Nettoyage.`);
       this.activeSessions.delete(userId);
       this.pendingInitializations.delete(userId);
       this.lastPairingCodeMap.delete(userId);
       this.lastQrMap.delete(userId);
+
+      await clearMongoAuthState(userId);
+
+      await CommerceMerchantModel.findOneAndUpdate(
+        { ownerId: userId },
+        { $set: { "whatsappConfig.status": "disconnected", "whatsappConfig.reconnectAttempts": 0 } }
+      );
+
+      await WhatsAppConnectionModel.findOneAndUpdate(
+        { userId },
+        {
+          $set: {
+            status: 'DISCONNECTED',
+            disconnectedAt: new Date()
+          }
+        },
+        { upsert: true }
+      );
+
       emitToUser(userId, "whatsapp:disconnected", {
-        reason: "session_expired",
+        reason: isLoggedOut ? "logged_out" : "bad_session",
+        statusCode,
         shouldReconnect: false
       });
       return;
     }
 
-    const isReplaced = statusCode === DisconnectReason.connectionReplaced;
-    const shouldReconnect = statusCode !== DisconnectReason.loggedOut && statusCode !== DisconnectReason.connectionClosed && !isReplaced;
-
-    await CommerceMerchantModel.findOneAndUpdate(
-      { ownerId: userId },
-      { $set: { "whatsappConfig.status": shouldReconnect ? "error" : "disconnected" } }
-    );
-
-    await WhatsAppConnectionModel.findOneAndUpdate(
-      { userId },
-      {
-        $set: {
-          status: shouldReconnect ? 'RECONNECTING' : 'DISCONNECTED',
-          disconnectedAt: new Date()
-        }
-      },
-      { upsert: true }
-    );
-
-    // Notify front-end in real-time about disconnection/error status
-    emitToUser(userId, "whatsapp:disconnected", {
-      reason: isReplaced ? "connection_replaced" : (statusCode === DisconnectReason.loggedOut ? "logged_out" : "error"),
-      statusCode,
-      shouldReconnect
-    });
-
-    // Trigger push notification to merchant
-    pushService.sendNotification(userId, {
-      title: "⚠️ WhatsApp Déconnecté !",
-      body: "La connexion WhatsApp de votre assistant IA s'est interrompue. Cliquez ici pour la rétablir.",
-      data: { url: "/settings?tab=connexions" }
-    }).catch(err => console.error("[WhatsApp] Push notification send failed:", err));
-
-    if (shouldReconnect) {
-      console.warn(`[WhatsApp] Critical disconnection for user ${userId}. Reconnecting...`);
-
-      const merchant = await CommerceMerchantModel.findOneAndUpdate(
-        { ownerId: userId },
-        { $inc: { "whatsappConfig.reconnectAttempts": 1 } },
-        { new: true }
-      );
-
-      const attempts = merchant?.whatsappConfig?.reconnectAttempts || 0;
-
-      if (attempts <= 3) {
-        this.activeSessions.delete(userId);
-        console.log(`[WhatsApp] Reconnection attempt ${attempts}/3 for ${userId}`);
-        this.initSession(userId).catch(err => console.error(`[WhatsApp] Auto-reconnect failed for ${userId}:`, err));
-      } else {
-        console.error(`[WhatsApp] Max reconnection attempts reached for ${userId}. Alerting merchant.`);
-        this.activeSessions.delete(userId);
-        await CommerceMerchantModel.findOneAndUpdate(
-          { ownerId: userId },
-          { $set: { "whatsappConfig.status": "error" } }
-        );
-
-        if (merchant?.whatsappNumber) {
-          smsService.sendAlert(
-            merchant.whatsappNumber,
-            `🛑 Chef, votre Vendeur IA a un problème de connexion persistant. Veuillez vous reconnecter manuellement sur votre tableau de bord.`
-          );
-        }
-      }
-    } else {
+    if (isReplaced) {
+      console.log(`[WhatsApp] Session remplacée sur un autre appareil pour ${userId}. Arrêt.`);
       this.activeSessions.delete(userId);
-      await CommerceMerchantModel.findOneAndUpdate(
-        { ownerId: userId },
-        { $set: { "whatsappConfig.reconnectAttempts": 0 } }
-      );
+      this.pendingInitializations.delete(userId);
+      emitToUser(userId, "whatsapp:disconnected", {
+        reason: "connection_replaced",
+        statusCode,
+        shouldReconnect: false
+      });
+      return;
     }
 
-    if (statusCode === DisconnectReason.badSession || statusCode === DisconnectReason.connectionClosed || isReplaced) {
-      console.log(`[WhatsApp] Stale/replaced session detected for ${userId} (status ${statusCode}), clearing storage.`);
-      await clearMongoAuthState(userId);
-    }
-
+    // For all transient network disconnects (connectionClosed, connectionLost, timedOut, restartRequired, etc.):
+    // The session credentials in MongoDB REMAIN VALID. Do NOT clear credentials or drop merchant to disconnected.
+    console.log(`[WhatsApp] Déconnexion transitoire pour ${userId} (Code ${statusCode}). Reconnexion automatique en tâche de fond...`);
     this.activeSessions.delete(userId);
     this.pendingInitializations.delete(userId);
-    this.lastPairingCodeMap.delete(userId);
-    this.lastQrMap.delete(userId);
+
+    // Exponential backoff or rapid auto-reconnect (2s)
+    setTimeout(() => {
+      this.initSession(userId).catch(err => {
+        console.warn(`[WhatsApp] Auto-reconnect attempt in background for ${userId}:`, err?.message || err);
+      });
+    }, 2000);
   }
 
   async initSession(userId: string, force: boolean = false): Promise<void> {
@@ -1288,25 +1258,29 @@ class WhatsAppService {
     }
   }
 
-  async getSessionStatus(userId: string) {
+  async getSessionStatus(userId: string): Promise<string> {
     const merchant = await CommerceMerchantModel.findOne({ ownerId: userId });
-    if (!merchant) return "disconnected";
+    const connection = await WhatsAppConnectionModel.findOne({ userId });
 
-    if (merchant.whatsappConfig?.status === "connected") {
+    const isConnected =
+      merchant?.whatsappConfig?.status === "connected" ||
+      connection?.status === "CONNECTED" ||
+      (merchant?.whatsappConfig?.provider === "meta" && Boolean(merchant?.whatsappConfig?.meta?.phoneNumberId));
+
+    if (isConnected) {
       return "connected";
     }
 
     const session = this.activeSessions.get(userId);
-    if (session) {
+    if (session && session.user) {
       return "connected";
     }
 
-    const connection = await WhatsAppConnectionModel.findOne({ userId });
-    if (connection?.status === "CONNECTED") {
-      return "connected";
+    if (connection?.status === "CONNECTING") {
+      return "connecting";
     }
 
-    return merchant.whatsappConfig?.status || "disconnected";
+    return merchant?.whatsappConfig?.status || "disconnected";
   }
 
   async disconnectSession(userId: string) {
@@ -1318,12 +1292,20 @@ class WhatsAppService {
       this.activeSessions.delete(userId);
     }
     this.pendingInitializations.delete(userId);
+    this.lastPairingCodeMap.delete(userId);
+    this.lastQrMap.delete(userId);
 
     await clearMongoAuthState(userId);
 
     await CommerceMerchantModel.findOneAndUpdate(
       { ownerId: userId },
       { $set: { "whatsappConfig.status": "disconnected" } }
+    );
+
+    await WhatsAppConnectionModel.findOneAndUpdate(
+      { userId },
+      { $set: { status: "DISCONNECTED", disconnectedAt: new Date() } },
+      { upsert: true }
     );
   }
 }

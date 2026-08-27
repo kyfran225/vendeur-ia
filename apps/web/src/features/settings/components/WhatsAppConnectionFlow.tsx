@@ -110,10 +110,21 @@ export function WhatsAppConnectionFlow() {
 
   // Socket.io Realtime event listeners for live pairing
   useEffect(() => {
-    const s: Socket = io(API_URL);
+    const s: Socket = io(API_URL, {
+      reconnection: true,
+      reconnectionAttempts: Infinity,
+      reconnectionDelay: 1000,
+    });
 
-    if (user?.id) {
-      s.emit("join", user.id);
+    const joinRoom = () => {
+      if (user?.id) {
+        s.emit("join", user.id);
+      }
+    };
+
+    s.on("connect", joinRoom);
+    if (s.connected) {
+      joinRoom();
     }
 
     const handlePairingCode = (data: { code: string }) => {

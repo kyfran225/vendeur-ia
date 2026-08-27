@@ -38,9 +38,10 @@ interface SmartAssistantCardProps {
   dashboard: any;
   onOpenTestIA: () => void;
   onOpenShare?: () => void;
+  onConnectWhatsApp?: () => void;
 }
 
-export function SmartAssistantCard({ dashboard, onOpenTestIA, onOpenShare }: SmartAssistantCardProps) {
+export function SmartAssistantCard({ dashboard, onOpenTestIA, onOpenShare, onConnectWhatsApp }: SmartAssistantCardProps) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [isPackProModalOpen, setIsPackProModalOpen] = useState(false);
@@ -324,14 +325,26 @@ export function SmartAssistantCard({ dashboard, onOpenTestIA, onOpenShare }: Sma
                   <>
                     {!isFullyOperational && nextStep ? (
                       <>
-                        <Link
-                          to={getActionLink(nextStep.id)}
-                          className="flex-1 flex items-center justify-center gap-2.5 min-h-[52px] sm:min-h-[56px] px-5 py-3.5 rounded-2xl bg-vendeur-emerald text-vendeur-coal font-black uppercase text-xs sm:text-sm tracking-wider hover:bg-emerald-400 active:scale-95 transition-all shadow-lg shadow-vendeur-emerald/20 cursor-pointer shrink-0 truncate group"
-                        >
-                          <Zap size={17} fill="currentColor" className="shrink-0 group-hover:scale-110 transition-transform" />
-                          <span className="truncate">{nextStep.label}</span>
-                          <ArrowRight size={17} className="shrink-0 group-hover:translate-x-1 transition-transform" />
-                        </Link>
+                        {nextStep.id === "whatsapp" && onConnectWhatsApp ? (
+                          <button
+                            type="button"
+                            onClick={onConnectWhatsApp}
+                            className="flex-1 flex items-center justify-center gap-2.5 min-h-[52px] sm:min-h-[56px] px-5 py-3.5 rounded-2xl bg-vendeur-emerald text-vendeur-coal font-black uppercase text-xs sm:text-sm tracking-wider hover:bg-emerald-400 active:scale-95 transition-all shadow-lg shadow-vendeur-emerald/20 cursor-pointer shrink-0 truncate group"
+                          >
+                            <Zap size={17} fill="currentColor" className="shrink-0 group-hover:scale-110 transition-transform" />
+                            <span className="truncate">Lier mon WhatsApp</span>
+                            <ArrowRight size={17} className="shrink-0 group-hover:translate-x-1 transition-transform" />
+                          </button>
+                        ) : (
+                          <Link
+                            to={getActionLink(nextStep.id)}
+                            className="flex-1 flex items-center justify-center gap-2.5 min-h-[52px] sm:min-h-[56px] px-5 py-3.5 rounded-2xl bg-vendeur-emerald text-vendeur-coal font-black uppercase text-xs sm:text-sm tracking-wider hover:bg-emerald-400 active:scale-95 transition-all shadow-lg shadow-vendeur-emerald/20 cursor-pointer shrink-0 truncate group"
+                          >
+                            <Zap size={17} fill="currentColor" className="shrink-0 group-hover:scale-110 transition-transform" />
+                            <span className="truncate">{nextStep.label}</span>
+                            <ArrowRight size={17} className="shrink-0 group-hover:translate-x-1 transition-transform" />
+                          </Link>
+                        )}
 
                         <button
                           type="button"
@@ -392,49 +405,72 @@ export function SmartAssistantCard({ dashboard, onOpenTestIA, onOpenShare }: Sma
           {/* RIGHT SIDE: Compact Step Checklist (Visible when setup is not 100%) */}
           {!isFullyOperational && steps.length > 0 && (
             <div className="w-full md:w-[320px] lg:w-[360px] space-y-2.5 shrink-0 min-w-0">
-              <p className="text-xs font-black uppercase text-white/50 tracking-widest px-1 mb-2">Étapes de configuration</p>
-              {steps.map((step: any) => (
-                <Link
-                  key={step.id}
-                  to={getActionLink(step.id)}
-                  className={cn(
-                    "flex items-center gap-3 p-3.5 sm:p-4 rounded-2xl border transition-all group min-w-0 min-h-[48px]",
-                    step.completed
-                      ? "bg-vendeur-emerald/5 border-vendeur-emerald/20 opacity-60"
-                      : step.id === nextStep?.id
-                        ? cn("border-opacity-60 shadow-md", isDiscoveryMode ? "bg-amber-500/10 border-amber-500/40" : "bg-vendeur-emerald/10 border-vendeur-emerald/40")
-                        : "bg-white/5 border-white/5 hover:border-white/20"
-                  )}
-                >
-                  <div className={cn(
-                    "h-5 w-5 rounded-full flex items-center justify-center shrink-0",
-                    step.completed ? "text-vendeur-emerald" : step.id === nextStep?.id ? (isDiscoveryMode ? "text-amber-400" : "text-vendeur-emerald") : "text-white/20"
-                  )}>
-                    {step.completed ? <CheckCircle2 size={18} /> : <Circle size={18} />}
-                  </div>
-                  <span className={cn(
-                    "flex-1 text-xs sm:text-sm font-bold truncate min-w-0",
-                    step.completed ? "text-white/40 line-through" : step.id === nextStep?.id ? "text-white font-black" : "text-white/80"
-                  )}>
-                    {step.label}
-                  </span>
-                  
-                  {!step.completed && step.id === nextStep?.id && (
-                    <span className={cn(
-                      "text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full shrink-0 border",
-                      isDiscoveryMode
-                        ? "text-amber-300 bg-amber-500/10 border-amber-500/30"
-                        : "text-vendeur-emerald bg-vendeur-emerald/10 border-vendeur-emerald/30"
+              {steps.map((step: any) => {
+                const isWhatsAppInteractive = step.id === "whatsapp" && !step.completed && Boolean(onConnectWhatsApp);
+                const content = (
+                  <>
+                    <div className={cn(
+                      "h-5 w-5 rounded-full flex items-center justify-center shrink-0",
+                      step.completed ? "text-vendeur-emerald" : step.id === nextStep?.id ? (isDiscoveryMode ? "text-amber-400" : "text-vendeur-emerald") : "text-white/20"
                     )}>
-                      En cours
+                      {step.completed ? <CheckCircle2 size={18} /> : <Circle size={18} />}
+                    </div>
+                    <span className={cn(
+                      "flex-1 text-xs sm:text-sm font-bold truncate min-w-0 text-left",
+                      step.completed ? "text-white/40 line-through" : step.id === nextStep?.id ? "text-white font-black" : "text-white/80"
+                    )}>
+                      {step.label}
                     </span>
-                  )}
+                    
+                    {!step.completed && step.id === nextStep?.id && (
+                      <span className={cn(
+                        "text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full shrink-0 border",
+                        isDiscoveryMode
+                          ? "text-amber-300 bg-amber-500/10 border-amber-500/30"
+                          : "text-vendeur-emerald bg-vendeur-emerald/10 border-vendeur-emerald/30"
+                      )}>
+                        En cours
+                      </span>
+                    )}
 
-                  {!step.completed && (
-                    <ChevronRight size={16} className="text-white/30 group-hover:text-white transition-colors shrink-0" />
-                  )}
-                </Link>
-              ))}
+                    {!step.completed && (
+                      <ChevronRight size={16} className="text-white/30 group-hover:text-white transition-colors shrink-0" />
+                    )}
+                  </>
+                );
+
+                const itemClass = cn(
+                  "w-full flex items-center gap-3 p-3.5 sm:p-4 rounded-2xl border transition-all group min-w-0 min-h-[48px] cursor-pointer",
+                  step.completed
+                    ? "bg-vendeur-emerald/5 border-vendeur-emerald/20 opacity-60"
+                    : step.id === nextStep?.id
+                      ? cn("border-opacity-60 shadow-md", isDiscoveryMode ? "bg-amber-500/10 border-amber-500/40" : "bg-vendeur-emerald/10 border-vendeur-emerald/40")
+                      : "bg-white/5 border-white/5 hover:border-white/20"
+                );
+
+                if (isWhatsAppInteractive) {
+                  return (
+                    <button
+                      key={step.id}
+                      type="button"
+                      onClick={onConnectWhatsApp}
+                      className={itemClass}
+                    >
+                      {content}
+                    </button>
+                  );
+                }
+
+                return (
+                  <Link
+                    key={step.id}
+                    to={getActionLink(step.id)}
+                    className={itemClass}
+                  >
+                    {content}
+                  </Link>
+                );
+              })}
             </div>
           )}
         </div>

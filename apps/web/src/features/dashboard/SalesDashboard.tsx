@@ -35,6 +35,7 @@ import { QuickWhatsAppConnectModal } from "./components/QuickWhatsAppConnectModa
 import { OffersModal } from "@/features/settings/components/OffersModal";
 import { PauseConfirmationModal } from "@/components/modals/PauseConfirmationModal";
 import { ShareShopModal } from "@/features/shop/components/ShareShopModal";
+import { StepMilestoneModal } from "@/components/ui/StepMilestoneModal";
 import { AssistantIcon } from "@/components/ui/AssistantIcon";
 import { getMerchantShopUrl, getMerchantShopPath } from "@/lib/slugify";
 import { formatDisplayPhone } from "@/features/onboarding/components/CountrySelector";
@@ -62,6 +63,7 @@ export function SalesDashboard() {
   const [confirmedPaymentData, setConfirmedPaymentData] = useState<any>(null);
   const [isOffersModalOpen, setIsOffersModalOpen] = useState(false);
   const [isQuickConnectOpen, setIsQuickConnectOpen] = useState(false);
+  const [isWhatsAppMilestoneOpen, setIsWhatsAppMilestoneOpen] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
 
   // Suivi des étapes complétées pour détecter les nouvelles complétion
@@ -236,22 +238,32 @@ export function SalesDashboard() {
           </h1>
           <p className="text-white/50 text-xs sm:text-sm md:text-base font-medium">Gérez votre croissance et suivez vos performances en direct.</p>
           {activeWhatsApp && (
-            <div className="pt-2">
-              <Link
-                to="/settings?tab=connexions"
-                className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-vendeur-emerald/30 text-white/90 transition-all group shadow-sm"
-                title="Gérer la ligne WhatsApp"
+            <div className="pt-1 w-full sm:w-auto">
+              <button
+                type="button"
+                onClick={() => setIsQuickConnectOpen(true)}
+                className="w-full sm:w-auto inline-flex items-center justify-between sm:justify-start gap-3 px-4 py-2.5 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-vendeur-emerald/30 text-white transition-all group shadow-sm text-left cursor-pointer"
+                title="Lier ou gérer votre ligne WhatsApp"
               >
-                <span className={cn("h-2 w-2 rounded-full", isWhatsAppConnected ? "bg-vendeur-emerald animate-pulse" : "bg-amber-400")} />
-                <MessageCircle size={14} className={cn("shrink-0", isWhatsAppConnected ? "text-vendeur-emerald" : "text-amber-400")} />
-                <span className="text-[11px] text-white/50 font-medium">Ligne WhatsApp :</span>
-                <span className="text-xs font-mono font-bold text-white group-hover:text-vendeur-emerald transition-colors">
-                  {formatDisplayPhone(activeWhatsApp, dashboard?.merchant?.country || "CI")}
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <span className={cn("h-2.5 w-2.5 rounded-full shrink-0", isWhatsAppConnected ? "bg-vendeur-emerald animate-pulse" : "bg-amber-400")} />
+                  <MessageCircle size={16} className={cn("shrink-0", isWhatsAppConnected ? "text-vendeur-emerald" : "text-amber-400")} />
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <span className="text-[10px] text-white/40 font-bold uppercase tracking-wider hidden sm:inline">Ligne WhatsApp :</span>
+                    <span className="text-xs sm:text-sm font-mono font-bold text-white group-hover:text-vendeur-emerald transition-colors truncate">
+                      {formatDisplayPhone(activeWhatsApp, dashboard?.merchant?.country || "CI")}
+                    </span>
+                  </div>
+                </div>
+                <span className={cn(
+                  "text-[10px] font-black uppercase px-2.5 py-1 rounded-lg shrink-0 border",
+                  isWhatsAppConnected 
+                    ? "bg-vendeur-emerald/15 text-vendeur-emerald border-vendeur-emerald/30" 
+                    : "bg-amber-500/15 text-amber-300 border-amber-500/30"
+                )}>
+                  {isWhatsAppConnected ? "Live" : "Lier la ligne"}
                 </span>
-                <span className={cn("text-[10px] font-black uppercase px-2 py-0.5 rounded-md", isWhatsAppConnected ? "bg-vendeur-emerald/10 text-vendeur-emerald" : "bg-amber-500/10 text-amber-300")}>
-                  {isWhatsAppConnected ? "Live" : "À lier"}
-                </span>
-              </Link>
+              </button>
             </div>
           )}
         </div>
@@ -276,6 +288,7 @@ export function SalesDashboard() {
         onOpenTestIA={() => setIsTestIAOpen(true)}
         onOpenOffers={() => setIsOffersModalOpen(true)}
         onOpenShare={() => setIsShareModalOpen(true)}
+        onConnectWhatsApp={() => setIsQuickConnectOpen(true)}
       />
 
       <VendeurIAPlaygroundModal
@@ -313,12 +326,34 @@ export function SalesDashboard() {
         businessName={dashboard?.merchant?.businessName}
       />
 
+      <StepMilestoneModal
+        isOpen={isWhatsAppMilestoneOpen}
+        onClose={() => setIsWhatsAppMilestoneOpen(false)}
+        title="Étape 1 validée : WhatsApp Connecté !"
+        subtitle={`Félicitations ${dashboard?.merchant?.businessName || ""}, votre Vendeur IA est désormais relié à votre ligne WhatsApp. Passons à l'étape suivante : ajoutez vos produits !`}
+        stepNumber={2}
+        totalSteps={5}
+        score={40}
+        primaryAction={{
+          label: "Ajouter mes produits",
+          href: "/products",
+          isPrimary: true
+        }}
+        secondaryAction={{
+          label: "Tester le simulateur IA",
+          onClick: () => setIsTestIAOpen(true)
+        }}
+        dashboardActionLabel="Voir mon Tableau de Bord"
+        onDashboardClick={() => setIsWhatsAppMilestoneOpen(false)}
+      />
+
       <QuickWhatsAppConnectModal
         isOpen={isQuickConnectOpen}
         onClose={() => setIsQuickConnectOpen(false)}
         merchant={dashboard?.merchant}
         onSuccess={() => {
           queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+          setIsWhatsAppMilestoneOpen(true);
         }}
       />
 
@@ -343,7 +378,8 @@ function HomePanel({
   isFounder,
   onOpenTestIA,
   onOpenOffers,
-  onOpenShare
+  onOpenShare,
+  onConnectWhatsApp
 }: {
   dashboard: any;
   hasProducts: boolean;
@@ -351,6 +387,7 @@ function HomePanel({
   onOpenTestIA: () => void;
   onOpenOffers: () => void;
   onOpenShare: () => void;
+  onConnectWhatsApp?: () => void;
 }) {
   const [isPauseModalOpen, setIsPauseModalOpen] = useState(false);
   const tips = dashboard?.aiGrowthAdvice?.tips || [];
@@ -376,6 +413,7 @@ function HomePanel({
           dashboard={dashboard}
           onOpenTestIA={onOpenTestIA}
           onOpenShare={onOpenShare}
+          onConnectWhatsApp={onConnectWhatsApp}
         />
       )}
 

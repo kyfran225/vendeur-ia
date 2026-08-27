@@ -169,7 +169,7 @@ describe('Commerce Module API', () => {
       expect(conn?.connectionType).toBe('baileys');
     });
 
-    it('should calculate setupStatus with isWhatsAppConnected true immediately upon entering phone', async () => {
+    it('should calculate setupStatus with whatsapp step completed only when actually connected', async () => {
       await request(app)
         .post('/api/commerce/merchant')
         .set('Authorization', `Bearer ${accessToken}`)
@@ -180,16 +180,30 @@ describe('Commerce Module API', () => {
           whatsappNumber: "+2250700112233"
         });
 
-      const dashRes = await request(app)
+      // 1. Initially NOT connected
+      const dashRes1 = await request(app)
         .get('/api/commerce/dashboard')
         .set('Authorization', `Bearer ${accessToken}`);
 
-      expect(dashRes.status).toBe(200);
-      expect(dashRes.body.setupStatus).toBeDefined();
-      const waStep = dashRes.body.setupStatus.steps.find((s: any) => s.id === 'whatsapp');
-      expect(waStep).toBeDefined();
-      expect(waStep.completed).toBe(true);
-      expect(waStep.weight).toBe(30);
+      expect(dashRes1.status).toBe(200);
+      expect(dashRes1.body.setupStatus).toBeDefined();
+      const waStep1 = dashRes1.body.setupStatus.steps.find((s: any) => s.id === 'whatsapp');
+      expect(waStep1).toBeDefined();
+      expect(waStep1.completed).toBe(false);
+
+      // 2. Once connected via socket/cloud
+      await WhatsAppConnectionModel.updateOne(
+        { userId },
+        { status: 'CONNECTED', connectedAt: new Date() }
+      );
+
+      const dashRes2 = await request(app)
+        .get('/api/commerce/dashboard')
+        .set('Authorization', `Bearer ${accessToken}`);
+
+      const waStep2 = dashRes2.body.setupStatus.steps.find((s: any) => s.id === 'whatsapp');
+      expect(waStep2.completed).toBe(true);
+      expect(waStep2.weight).toBe(30);
     });
   });
 });

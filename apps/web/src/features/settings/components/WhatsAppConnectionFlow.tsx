@@ -14,7 +14,8 @@ import {
   QrCode,
   RefreshCw,
   LogOut,
-  CheckCircle2
+  CheckCircle2,
+  Clock
 } from "lucide-react";
 import { AssistantIcon } from "@/components/ui/AssistantIcon";
 import { toast } from "sonner";
@@ -52,6 +53,7 @@ export function WhatsAppConnectionFlow() {
   const [isRequestingQr, setIsRequestingQr] = useState(false);
   const [copiedCode, setCopiedCode] = useState(false);
   const [isDisconnecting, setIsDisconnecting] = useState(false);
+  const [timeLeft, setTimeLeft] = useState<number>(120);
 
   // Meta Cloud API Form
   const [metaForm, setMetaForm] = useState({
@@ -89,6 +91,23 @@ export function WhatsAppConnectionFlow() {
     }
   }, [activeNumber, storeWhatsApp]);
 
+  // Countdown timer for pairing code (120s)
+  useEffect(() => {
+    if (!pairingCode || isConnectedLive || timeLeft <= 0) return;
+
+    const timer = setInterval(() => {
+      setTimeLeft((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [pairingCode, isConnectedLive, timeLeft]);
+
   // Socket.io Realtime event listeners for live pairing
   useEffect(() => {
     const s: Socket = io(API_URL);
@@ -100,6 +119,7 @@ export function WhatsAppConnectionFlow() {
     const handlePairingCode = (data: { code: string }) => {
       if (data?.code) {
         setPairingCode(data.code);
+        setTimeLeft(120);
         setIsRequestingPairing(false);
       }
     };
@@ -469,27 +489,47 @@ export function WhatsAppConnectionFlow() {
                   {/* Affichage du Code de Jumelage */}
                   {pairingCode ? (
                     <div className="space-y-4 pt-2">
-                      <div className="p-4 sm:p-6 rounded-2xl bg-black/60 border border-vendeur-emerald/30 text-center space-y-3 shadow-inner">
-                        <span className="text-[10px] font-black uppercase tracking-widest text-vendeur-emerald">
-                          Votre Code de Jumelage WhatsApp
-                        </span>
-                        <div className="text-3xl sm:text-4xl md:text-5xl font-black font-mono tracking-widest text-white select-all">
+                      <div className="p-4 sm:p-6 rounded-2xl bg-black/60 border border-vendeur-emerald/30 text-center space-y-2 shadow-inner">
+                        <div className="flex items-center justify-center gap-1.5 text-[10px] font-bold uppercase tracking-wider">
+                          {timeLeft <= 0 ? (
+                            <span className="text-amber-400 font-black">⚠️ Code expiré</span>
+                          ) : (
+                            <span className="text-vendeur-emerald flex items-center gap-1">
+                              <Clock size={11} />
+                              <span>Expire dans {Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, "0")}</span>
+                            </span>
+                          )}
+                        </div>
+
+                        <div className={cn(
+                          "text-3xl sm:text-4xl md:text-5xl font-black font-mono tracking-widest text-white select-all transition-opacity",
+                          timeLeft <= 0 && "opacity-40 line-through"
+                        )}>
                           {pairingCode}
                         </div>
-                        <p className="text-[11px] text-white/50 font-medium">
-                          Ce code reste valide pendant 2 minutes.
-                        </p>
                       </div>
 
-                      {/* Gros bouton d'action tactile (56px) */}
-                      <button
-                        type="button"
-                        onClick={handleCopyCodeAndOpenWhatsApp}
-                        className="w-full min-h-[56px] py-3.5 px-6 rounded-2xl bg-vendeur-emerald hover:bg-emerald-400 text-vendeur-coal font-black uppercase tracking-wider text-sm flex items-center justify-center gap-2.5 shadow-lg shadow-vendeur-emerald/20 transition-all cursor-pointer active:scale-[0.98]"
-                      >
-                        {copiedCode ? <Check size={18} className="shrink-0" /> : <Copy size={18} className="shrink-0" />}
-                        <span>{copiedCode ? "Code Copié ! Ouverture de WhatsApp..." : "📋 Copier le code & Ouvrir WhatsApp"}</span>
-                      </button>
+                      {/* Gros bouton d'action tactile (56px) : Copier OU Régénérer si expiré */}
+                      {timeLeft <= 0 ? (
+                        <button
+                          type="button"
+                          onClick={handleRequestPairingCode}
+                          disabled={isRequestingPairing}
+                          className="w-full min-h-[56px] py-3.5 px-6 rounded-2xl bg-amber-500 hover:bg-amber-400 text-vendeur-coal font-black uppercase tracking-wider text-sm flex items-center justify-center gap-2.5 shadow-lg shadow-amber-500/20 transition-all cursor-pointer active:scale-[0.98]"
+                        >
+                          {isRequestingPairing ? <Loader2 size={18} className="animate-spin shrink-0" /> : <RefreshCw size={18} className="shrink-0" />}
+                          <span>Générer un nouveau code</span>
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={handleCopyCodeAndOpenWhatsApp}
+                          className="w-full min-h-[56px] py-3.5 px-6 rounded-2xl bg-vendeur-emerald hover:bg-emerald-400 text-vendeur-coal font-black uppercase tracking-wider text-sm flex items-center justify-center gap-2.5 shadow-lg shadow-vendeur-emerald/20 transition-all cursor-pointer active:scale-[0.98]"
+                        >
+                          {copiedCode ? <Check size={18} className="shrink-0" /> : <Copy size={18} className="shrink-0" />}
+                          <span>{copiedCode ? "Code Copié ! Ouverture de WhatsApp..." : "Copier le code & Ouvrir WhatsApp"}</span>
+                        </button>
+                      )}
 
                       {/* Instructions pas à pas */}
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 text-left">

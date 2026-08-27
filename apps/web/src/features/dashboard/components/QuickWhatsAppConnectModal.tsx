@@ -8,7 +8,8 @@ import {
   Loader2,
   CheckCircle2,
   QrCode,
-  Smartphone
+  Smartphone,
+  Clock
 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { io, Socket } from "socket.io-client";
@@ -47,8 +48,10 @@ export function QuickWhatsAppConnectModal({
   const [isRequestingQr, setIsRequestingQr] = useState(false);
   const [copiedCode, setCopiedCode] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
+  const [timeLeft, setTimeLeft] = useState<number>(120);
 
   const activeNumber = merchant?.whatsappNumber || merchant?.phone || "";
+  const isExpired = timeLeft <= 0;
 
   // Auto-request pairing code on mount if in code mode
   useEffect(() => {
@@ -56,6 +59,23 @@ export function QuickWhatsAppConnectModal({
       handleRequestPairingCode();
     }
   }, [isOpen, activeNumber, mode]);
+
+  // Countdown timer for pairing code (120s)
+  useEffect(() => {
+    if (!pairingCode || isConnected || isExpired) return;
+
+    const timer = setInterval(() => {
+      setTimeLeft((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [pairingCode, isConnected, isExpired]);
 
   // Realtime Socket listeners
   useEffect(() => {
@@ -69,6 +89,7 @@ export function QuickWhatsAppConnectModal({
     s.on("whatsapp:pairing_code", (data: { code: string }) => {
       if (data?.code) {
         setPairingCode(data.code);
+        setTimeLeft(120);
         setIsRequestingPairing(false);
       }
     });
@@ -103,10 +124,12 @@ export function QuickWhatsAppConnectModal({
 
     setIsRequestingPairing(true);
     setPairingCode(null);
+    setTimeLeft(120);
     try {
       const res = await apiClient.post("/api/whatsapp/pair-code", { phoneNumber: normalizedPhone });
       if (res.data?.code) {
         setPairingCode(res.data.code);
+        setTimeLeft(120);
       }
     } catch (err: any) {
       console.warn("[QuickConnect] Code error:", err);
@@ -131,7 +154,7 @@ export function QuickWhatsAppConnectModal({
   };
 
   const handleCopyCodeAndOpenWhatsApp = () => {
-    if (!pairingCode) return;
+    if (!pairingCode || isExpired) return;
     const cleanCode = pairingCode.replace(/[^A-Za-z0-9]/g, "");
     navigator.clipboard.writeText(cleanCode);
     setCopiedCode(true);
@@ -140,6 +163,12 @@ export function QuickWhatsAppConnectModal({
 
     // Direct WhatsApp app launch
     window.location.href = "whatsapp://";
+  };
+
+  const formatCountdown = (seconds: number) => {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m}:${s.toString().padStart(2, "0")}`;
   };
 
   return (
@@ -206,7 +235,7 @@ export function QuickWhatsAppConnectModal({
                 {mode === "code" && (
                   <div className="space-y-4">
                     {/* Bloc Code Épuré */}
-                    <div className="py-4 px-3 rounded-2xl bg-black/60 border border-vendeur-emerald/30 text-center space-y-1 shadow-inner">
+                    <div className="py-4 px-3 rounded-2xl bg-black/60 border border-vendeur-emerald/30 text-center space-y-1 shadow-inner relative">
                       {isRequestingPairing ? (
                         <div className="py-3 flex flex-col items-center justify-center gap-2">
                           <Loader2 size={24} className="text-vendeur-emerald animate-spin" />
@@ -214,13 +243,23 @@ export function QuickWhatsAppConnectModal({
                         </div>
                       ) : pairingCode ? (
                         <>
-                          <span className="text-[9px] font-black uppercase tracking-widest text-vendeur-emerald">
-                            Code de jumelage WhatsApp
-                          </span>
-                          <div className="text-3xl sm:text-4xl font-black font-mono tracking-widest text-white select-all">
+                          <div className="flex items-center justify-center gap-1.5 text-[10px] font-bold uppercase tracking-wider">
+                            {isExpired ? (
+                              <span className="text-amber-400 font-black">⚠️ Code expiré</span>
+                            ) : (
+                              <span className="text-vendeur-emerald flex items-center gap-1">
+                                <Clock size={11} />
+                                <span>Expire dans {formatCountdown(timeLeft)}</span>
+                              </span>
+                            )}
+                          </div>
+
+                          <div className={cn(
+                            "text-3xl sm:text-4xl font-black font-mono tracking-widest text-white select-all transition-opacity",
+                            isExpired && "opacity-40 line-through"
+                          )}>
                             {pairingCode}
                           </div>
-                          <span className="text-[10px] text-white/40 block">Valide 2 minutes</span>
                         </>
                       ) : (
                         <div className="py-2">
@@ -235,20 +274,32 @@ export function QuickWhatsAppConnectModal({
                       )}
                     </div>
 
-                    {/* Bouton d'action unique (56px, 1 seule icône propre) */}
-                    <button
-                      type="button"
-                      onClick={handleCopyCodeAndOpenWhatsApp}
-                      disabled={!pairingCode}
-                      className="w-full min-h-[56px] h-14 px-6 rounded-2xl bg-vendeur-emerald hover:bg-emerald-400 disabled:opacity-50 text-vendeur-coal font-black uppercase tracking-wider text-xs sm:text-sm flex items-center justify-center gap-2.5 shadow-lg shadow-vendeur-emerald/20 transition-all cursor-pointer active:scale-[0.98]"
-                    >
-                      {copiedCode ? (
-                        <Check size={18} className="shrink-0" />
-                      ) : (
-                        <Copy size={18} className="shrink-0" />
-                      )}
-                      <span>{copiedCode ? "Code copié ! Ouverture..." : "Copier le code & Ouvrir WhatsApp"}</span>
-                    </button>
+                    {/* Bouton d'action unique (56px) : Copier OU Régénérer si expiré */}
+                    {isExpired ? (
+                      <button
+                        type="button"
+                        onClick={handleRequestPairingCode}
+                        disabled={isRequestingPairing}
+                        className="w-full min-h-[56px] h-14 px-6 rounded-2xl bg-amber-500 hover:bg-amber-400 text-vendeur-coal font-black uppercase tracking-wider text-xs sm:text-sm flex items-center justify-center gap-2.5 shadow-lg shadow-amber-500/20 transition-all cursor-pointer active:scale-[0.98]"
+                      >
+                        {isRequestingPairing ? <Loader2 size={18} className="animate-spin shrink-0" /> : <RefreshCw size={18} className="shrink-0" />}
+                        <span>Générer un nouveau code</span>
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={handleCopyCodeAndOpenWhatsApp}
+                        disabled={!pairingCode}
+                        className="w-full min-h-[56px] h-14 px-6 rounded-2xl bg-vendeur-emerald hover:bg-emerald-400 disabled:opacity-50 text-vendeur-coal font-black uppercase tracking-wider text-xs sm:text-sm flex items-center justify-center gap-2.5 shadow-lg shadow-vendeur-emerald/20 transition-all cursor-pointer active:scale-[0.98]"
+                      >
+                        {copiedCode ? (
+                          <Check size={18} className="shrink-0" />
+                        ) : (
+                          <Copy size={18} className="shrink-0" />
+                        )}
+                        <span>{copiedCode ? "Code copié ! Ouverture..." : "Copier le code & Ouvrir WhatsApp"}</span>
+                      </button>
+                    )}
                   </div>
                 )}
 

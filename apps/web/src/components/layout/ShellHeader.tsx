@@ -119,17 +119,21 @@ export function ShellHeader({ isVisible = true }: ShellHeaderProps) {
   // Détection des états de connexion
   const isConnexionsPage = location.pathname.includes('/settings') || location.pathname.includes('/connexions') || location.pathname.includes('/plus');
 
-  // Une déconnexion inopinée (qui nécessite l'alerte rouge) ne s'applique que si le marchand avait une session active qui est tombée en erreur ou explicitement déconnectée après avoir été active.
-  const isUnexpectedDisconnect = merchant?.whatsappConfig?.status === 'error' || 
-    (merchant?.whatsappConfig?.status === 'disconnected' && merchant?.whatsappConfig?.connectedAt);
+  // Une déconnexion inopinée ne s'applique que si le marchand avait une session active qui est tombée en erreur ou explicitement déconnectée après avoir été connectée.
+  const hasEverConnected = Boolean(whatsapp?.connectedAt || merchant?.whatsappConfig?.connectedAt);
+  const isUnexpectedDisconnect = hasEverConnected && (
+    merchant?.whatsappConfig?.status === 'error' || 
+    whatsapp?.status === 'DISCONNECTED' ||
+    (merchant?.whatsappConfig?.status === 'disconnected' && Boolean(merchant?.whatsappConfig?.disconnectedAt))
+  );
 
-  // Ne JAMAIS afficher le bandeau si l'utilisateur est sur les réglages/connexions, si c'est un Pack Pro, ou s'il n'a encore jamais configuré son WhatsApp.
-  const showBanner = isUnexpectedDisconnect && !isPackPro && !isConnexionsPage;
+  // Ne JAMAIS afficher le bandeau si l'utilisateur est sur les réglages/connexions, si c'est un Pack Pro, ou s'il n'a encore jamais connecté son WhatsApp.
+  const showBanner = Boolean(isUnexpectedDisconnect && !isPackPro && !isConnexionsPage);
 
   return (
-    <header
+    <div
       className={cn(
-        "h-14 md:h-16 border-b border-white/5 bg-vendeur-bg/80 backdrop-blur-md flex items-center justify-between px-4 md:px-10 sticky top-0 z-20 w-full gap-4 shrink-0 transition-all duration-300 ease-in-out",
+        "sticky top-0 z-20 w-full flex flex-col shrink-0 transition-all duration-300 ease-in-out",
         isVisible
           ? "translate-y-0 opacity-100 mt-0"
           : "-translate-y-full opacity-0 pointer-events-none -mt-14 md:-mt-16"
@@ -137,14 +141,85 @@ export function ShellHeader({ isVisible = true }: ShellHeaderProps) {
     >
       <PackProModal isOpen={isPackProOpen} onClose={() => setIsPackProOpen(false)} />
 
-      {/* Connection Status Banner - uniquement en cas de déconnexion inopinée d'un WhatsApp précédemment relié */}
+      <header
+        className="h-14 md:h-16 border-b border-white/5 bg-vendeur-bg/80 backdrop-blur-md flex items-center justify-between px-4 md:px-10 w-full gap-4 shrink-0"
+      >
+        <div className="flex items-center gap-3 md:gap-5 flex-1 min-w-0">
+          <div className="md:hidden h-9 w-9 flex items-center justify-center overflow-hidden bg-white/5 rounded-xl p-1.5 border border-white/10 shrink-0 text-vendeur-emerald">
+            <Logo size={22} />
+          </div>
+          <div className="hidden md:flex h-10 w-10 rounded-2xl bg-vendeur-emerald/10 items-center justify-center border border-vendeur-emerald/20 shrink-0">
+            {isFounder ? (
+              <ShieldCheck className="text-vendeur-emerald" size={20} />
+            ) : (
+              <Store className="text-vendeur-emerald" size={20} />
+            )}
+          </div>
+          <div className="text-left min-w-0">
+            <p className="text-base md:text-xl font-black text-white uppercase tracking-tight truncate leading-tight">
+              {isFounder ? "MASTER CONTROL" : (merchant?.businessName || "SYSTEM CORE")}
+            </p>
+            <p className="text-[8px] md:text-[10px] uppercase tracking-[0.2em] text-vendeur-emerald/60 font-black leading-none truncate">
+              {isFounder ? "FOUNDER OS v2.4-STABLE" : "Boutique Active"}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3 md:gap-4 shrink-0">
+          {isFounder && (
+            <Link
+              to="/admin"
+              className={cn(
+                "inline-flex items-center gap-1.5 px-3 py-1.5 md:py-2 rounded-xl md:rounded-2xl border transition-all text-xs font-black uppercase tracking-wider shadow-sm",
+                pendingPaymentsCount > 0
+                  ? "bg-amber-500/15 hover:bg-amber-500/25 border-amber-500/30 text-amber-400"
+                  : "bg-vendeur-emerald text-vendeur-coal border-vendeur-emerald/20 hover:scale-105"
+              )}
+              title="Cockpit Administrateur"
+            >
+              <ShieldCheck size={14} className={pendingPaymentsCount > 0 ? "text-amber-400" : "text-vendeur-coal"} />
+              <span className="hidden sm:inline">Founder</span>
+              {pendingPaymentsCount > 0 && (
+                <span className="h-5 px-1.5 rounded-full bg-vendeur-coal text-white font-mono font-black text-[10px] flex items-center justify-center">
+                  {pendingPaymentsCount}
+                </span>
+              )}
+            </Link>
+          )}
+
+          {activePhone && (
+            <Link
+              to="/settings?tab=connexions"
+              className="hidden sm:inline-flex items-center gap-2 px-3.5 py-2 rounded-xl md:rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-vendeur-emerald/30 text-white transition-all group shadow-sm"
+              title="Ligne WhatsApp Connectée"
+            >
+              <span className="text-[11px] font-mono font-bold text-white/90 group-hover:text-vendeur-emerald transition-colors">
+                {formatDisplayPhone(activePhone, merchant?.country || "CI")}
+              </span>
+            </Link>
+          )}
+
+          <Link
+            to="/settings"
+            className="h-9 w-9 md:h-12 md:w-12 rounded-xl md:rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-white/60 hover:bg-white/10 hover:border-vendeur-emerald/30 hover:text-vendeur-emerald transition-all overflow-hidden group shadow-lg"
+          >
+            {user?.avatarUrl ? (
+              <img src={user.avatarUrl} alt="Profil" className="h-full w-full object-cover group-hover:scale-110 transition-transform" />
+            ) : (
+              <User size={18} />
+            )}
+          </Link>
+        </div>
+      </header>
+
+      {/* Connection Status Banner - flux normal en dessous du header, ne masque jamais le titre */}
       {showBanner && (
         <div className={cn(
-          "absolute top-full left-0 right-0 py-2 px-4 flex items-center justify-center gap-3 animate-in slide-in-from-top duration-500 shadow-lg z-50",
+          "w-full py-2 px-4 flex items-center justify-center gap-3 animate-in slide-in-from-top duration-300 shadow-md border-b border-black/10 shrink-0",
           isProPlan ? "bg-vendeur-emerald text-vendeur-coal" : "bg-red-500 text-white"
         )}>
           <AlertCircle size={14} className={isProPlan ? "text-vendeur-coal" : "text-white"} />
-          <p className="text-[10px] font-black uppercase tracking-widest">
+          <p className="text-[10px] sm:text-xs font-black uppercase tracking-widest text-center truncate">
             {isProPlan 
               ? "⚡ Votre Vendeur IA Pro nécessite une ré-activation." 
               : "Attention : Votre session WhatsApp a été interrompue !"}
@@ -152,7 +227,7 @@ export function ShellHeader({ isVisible = true }: ShellHeaderProps) {
           <Link
             to="/settings?tab=connexions"
             className={cn(
-              "px-3 py-1 rounded-lg text-[9px] font-black uppercase transition-all shadow-sm",
+              "px-3 py-1 rounded-lg text-[9px] sm:text-[10px] font-black uppercase transition-all shadow-sm shrink-0",
               isProPlan ? "bg-vendeur-coal text-vendeur-emerald hover:bg-black" : "bg-white text-red-500 hover:bg-white/90"
             )}
           >
@@ -160,73 +235,6 @@ export function ShellHeader({ isVisible = true }: ShellHeaderProps) {
           </Link>
         </div>
       )}
-
-      <div className="flex items-center gap-3 md:gap-5 flex-1 min-w-0">
-        <div className="md:hidden h-9 w-9 flex items-center justify-center overflow-hidden bg-white/5 rounded-xl p-1.5 border border-white/10 shrink-0 text-vendeur-emerald">
-          <Logo size={22} />
-        </div>
-        <div className="hidden md:flex h-10 w-10 rounded-2xl bg-vendeur-emerald/10 items-center justify-center border border-vendeur-emerald/20 shrink-0">
-          {isFounder ? (
-            <ShieldCheck className="text-vendeur-emerald" size={20} />
-          ) : (
-            <Store className="text-vendeur-emerald" size={20} />
-          )}
-        </div>
-        <div className="text-left min-w-0">
-          <p className="text-base md:text-xl font-black text-white uppercase tracking-tight truncate leading-tight">
-            {isFounder ? "MASTER CONTROL" : (merchant?.businessName || "SYSTEM CORE")}
-          </p>
-          <p className="text-[8px] md:text-[10px] uppercase tracking-[0.2em] text-vendeur-emerald/60 font-black leading-none truncate">
-            {isFounder ? "FOUNDER OS v2.4-STABLE" : "Boutique Active"}
-          </p>
-        </div>
-      </div>
-
-      <div className="flex items-center gap-3 md:gap-4 shrink-0">
-        {isFounder && (
-          <Link
-            to="/admin"
-            className={cn(
-              "inline-flex items-center gap-1.5 px-3 py-1.5 md:py-2 rounded-xl md:rounded-2xl border transition-all text-xs font-black uppercase tracking-wider shadow-sm",
-              pendingPaymentsCount > 0
-                ? "bg-amber-500/15 hover:bg-amber-500/25 border-amber-500/30 text-amber-400"
-                : "bg-vendeur-emerald text-vendeur-coal border-vendeur-emerald/20 hover:scale-105"
-            )}
-            title="Cockpit Administrateur"
-          >
-            <ShieldCheck size={14} className={pendingPaymentsCount > 0 ? "text-amber-400" : "text-vendeur-coal"} />
-            <span className="hidden sm:inline">Founder</span>
-            {pendingPaymentsCount > 0 && (
-              <span className="h-5 px-1.5 rounded-full bg-vendeur-coal text-white font-mono font-black text-[10px] flex items-center justify-center">
-                {pendingPaymentsCount}
-              </span>
-            )}
-          </Link>
-        )}
-
-        {activePhone && (
-          <Link
-            to="/settings?tab=connexions"
-            className="hidden sm:inline-flex items-center gap-2 px-3.5 py-2 rounded-xl md:rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-vendeur-emerald/30 text-white transition-all group shadow-sm"
-            title="Ligne WhatsApp Connectée"
-          >
-            <span className="text-[11px] font-mono font-bold text-white/90 group-hover:text-vendeur-emerald transition-colors">
-              {formatDisplayPhone(activePhone, merchant?.country || "CI")}
-            </span>
-          </Link>
-        )}
-
-        <Link
-          to="/settings"
-          className="h-9 w-9 md:h-12 md:w-12 rounded-xl md:rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-white/60 hover:bg-white/10 hover:border-vendeur-emerald/30 hover:text-vendeur-emerald transition-all overflow-hidden group shadow-lg"
-        >
-          {user?.avatarUrl ? (
-            <img src={user.avatarUrl} alt="Profil" className="h-full w-full object-cover group-hover:scale-110 transition-transform" />
-          ) : (
-            <User size={18} />
-          )}
-        </Link>
-      </div>
-    </header>
+    </div>
   );
 }

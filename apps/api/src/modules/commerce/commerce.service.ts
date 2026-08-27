@@ -155,8 +155,9 @@ export class CommerceService {
     const knowledge = await CommerceKnowledgeModel.findOne({ merchantId: merchant._id });
 
     const hasProducts = (products?.length || 0) > 0;
-    const hasWhatsAppNumber = !!(merchant.whatsappNumber && merchant.whatsappNumber.trim().length >= 8) || !!(merchant.phone && merchant.phone.trim().length >= 8);
-    const isWhatsAppConnected = hasWhatsAppNumber || merchant.whatsappConfig?.status === 'connected' || whatsappConnection?.status === 'CONNECTED';
+    const isWhatsAppConnected = (whatsappConnection?.status === 'CONNECTED') || 
+                                (merchant.whatsappConfig?.status === 'connected') || 
+                                Boolean(merchant.whatsappConfig?.meta?.phoneNumberId && merchant.whatsappConfig?.meta?.accessToken);
 
     // Check if user has actually ADDED payment methods (not just the default empty ones)
     const hasPaymentMethods = (knowledge?.businessRules?.paymentMethods?.length || 0) > 0 &&

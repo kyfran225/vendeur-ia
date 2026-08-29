@@ -609,7 +609,7 @@ class WhatsAppService {
                   country: storeData.country || "CI",
                   currency: storeData.currency || "XOF",
                   onboardingCompleted: true
-                } : { onboardingCompleted: true })
+                } : {})
               }
             },
             { upsert: true, new: true }

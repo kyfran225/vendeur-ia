@@ -119,7 +119,7 @@ export class AuthService {
         authProvider: "whatsapp",
         displayName: isFounder ? founderDisplayName : (displayName?.trim() || `Commerçant WhatsApp (${cleanNumber.slice(-4)})`),
         roles: isFounder ? ["user", "admin", "creator"] : ["user"],
-        onboardingCompleted: true
+        onboardingCompleted: isFounder ? true : Boolean(displayName && displayName !== "Votre boutique" && !displayName.startsWith("Commerçant WhatsApp"))
       });
     } else {
       if (isFounder) {

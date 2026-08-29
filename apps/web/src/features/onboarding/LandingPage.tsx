@@ -694,8 +694,17 @@ function LandingHero({
               {step === "form" ? (
                 <div className="h-full w-full bg-[#0c0f0d] p-5 pt-8 pb-4 flex flex-col justify-between no-scrollbar overflow-y-auto">
                   <div className="mb-2.5 space-y-0.5 shrink-0">
-                    <h2 className="text-xl md:text-2xl font-black text-white uppercase tracking-tighter">Lancez Vendeur IA.</h2>
-                    <p className="text-[10px] md:text-[11px] text-white/40 font-medium">Configurez votre boutique en quelques secondes.</p>
+                    <div className="flex items-center justify-between">
+                      <h2 className="text-xl md:text-2xl font-black text-white uppercase tracking-tighter">Lancez Vendeur IA.</h2>
+                      {user && (
+                        <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-400">
+                          Connecté ✅
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-[10px] md:text-[11px] text-white/40 font-medium">
+                      {user ? "WhatsApp relié ! Nommez et configurez votre boutique." : "Configurez votre boutique en quelques secondes."}
+                    </p>
                   </div>
 
                   <div className="flex-1 flex flex-col justify-between min-h-0">
@@ -921,8 +930,18 @@ export function LandingPage() {
   };
 
   useEffect(() => {
-    if (user && user.onboardingCompleted) {
-      navigate("/dashboard");
+    if (user) {
+      if (user.onboardingCompleted) {
+        navigate("/dashboard");
+      } else {
+        const el = document.getElementById("demo-card");
+        if (el) {
+          el.scrollIntoView({ behavior: "smooth", block: "center" });
+          setTimeout(() => {
+            document.getElementById("business-name-input")?.focus();
+          }, 600);
+        }
+      }
     }
   }, [user, navigate]);
 
@@ -950,10 +969,16 @@ export function LandingPage() {
 
           <div className="flex items-center gap-3 shrink-0">
             <button
-              onClick={() => setIsAuthOpen(true)}
+              onClick={() => {
+                if (user && !user.onboardingCompleted) {
+                  handleLaunchDemo();
+                } else {
+                  setIsAuthOpen(true);
+                }
+              }}
               className="h-9 md:h-10 px-5 md:px-8 rounded-xl md:rounded-2xl bg-white/5 border border-white/10 hover:border-emerald-500/50 hover:bg-emerald-500/5 text-white text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all active:scale-95"
             >
-              Connexion
+              {user && !user.onboardingCompleted ? "Créer ma Boutique" : "Connexion"}
             </button>
           </div>
         </div>

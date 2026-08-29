@@ -223,10 +223,11 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
         return;
       }
 
-      // 2. Check if merchant profile already exists in DB
+      // 2. Check if merchant profile already exists and is configured in DB
       try {
         const res = await apiClient.get("/api/commerce/merchant");
-        if (res.data && res.data.businessName && res.data.businessName !== "Votre boutique") {
+        if (res.data && res.data.businessName && res.data.businessName !== "Votre boutique" && res.data.onboardingCompleted) {
+          useAuthStore.getState().updateUser({ onboardingCompleted: true });
           navigate("/dashboard");
           return;
         }
@@ -234,7 +235,10 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
         // New user without merchant profile yet
       }
 
-      navigate("/dashboard");
+      // 3. User authenticated via WhatsApp/email but hasn't configured store yet:
+      // Stay on landing page form so they can configure their store name & details!
+      useAuthStore.getState().updateUser({ onboardingCompleted: false });
+      navigate("/");
     },
     [setSession, onClose, navigate, tempData]
   );

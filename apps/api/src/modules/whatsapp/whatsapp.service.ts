@@ -1,5 +1,5 @@
 import { makeWASocket, DisconnectReason, fetchLatestBaileysVersion, Browsers } from "@whiskeysockets/baileys";
-import { useMongoAuthState, clearMongoAuthState } from "./mongo-auth-state.js";
+import { useMongoAuthState, clearMongoAuthState, migrateMongoAuthState, WhatsAppSessionModel } from "./mongo-auth-state.js";
 import { Boom } from "@hapi/boom";
 import fs from "fs";
 import path from "path";
@@ -8,7 +8,7 @@ import { commerceService } from "../commerce/commerce.service.js";
 import { CommerceMerchantModel, CommerceConversationModel, CommerceMessageModel, CommerceCustomerModel, CommerceProductModel, CommerceKnowledgeModel } from "../commerce/commerce.model.js";
 import { SubscriptionModel } from "../commerce/subscription.model.js";
 import { WhatsAppConnectionModel } from "../commerce/whatsapp-connection.model.js";
-import { emitToUser } from "../../realtime/socketServer.js";
+import { emitToUser, emitToSession, emitToAuth, getSocketServer } from "../../realtime/socketServer.js";
 import axios from "axios";
 import { addAIJob } from "../../services/ai-queue.service.js";
 import { scheduleRecovery } from "../../services/marketing-queue.service.js";
@@ -86,16 +86,39 @@ class WhatsAppService {
   async bootSessions() {
     console.log("[WhatsApp] Booting sessions for active merchants...");
     try {
-      const activeMerchants = await CommerceMerchantModel.find({
-        "whatsappConfig.status": "connected",
-        "whatsappConfig.provider": "baileys",
-        ownerId: { $nin: ["recurring-test-user", "load-test-user"] } // Exclude test accounts
+      const [merchants, activeConnections, storedCreds] = await Promise.all([
+        CommerceMerchantModel.find({
+          "whatsappConfig.status": "connected",
+          "whatsappConfig.provider": "baileys",
+          ownerId: { $nin: ["recurring-test-user", "load-test-user"] }
+        }).select("ownerId").lean(),
+        WhatsAppConnectionModel.find({
+          status: { $in: ["CONNECTED", "connected"] },
+          connectionType: "baileys",
+          userId: { $nin: ["recurring-test-user", "load-test-user"] }
+        }).select("userId").lean(),
+        WhatsAppSessionModel.find({
+          key: "creds",
+          sessionId: { $nin: ["recurring-test-user", "load-test-user"] }
+        }).select("sessionId").lean()
+      ]);
+
+      const userIdsToBoot = new Set<string>();
+      merchants.forEach(m => m.ownerId && userIdsToBoot.add(m.ownerId));
+      activeConnections.forEach(c => c.userId && userIdsToBoot.add(c.userId));
+      storedCreds.forEach(s => {
+        // Exclude temporary session IDs (like onboarding uuid timestamps)
+        if (s.sessionId && !s.sessionId.startsWith("auth_") && !s.sessionId.startsWith("temp_")) {
+          userIdsToBoot.add(s.sessionId);
+        }
       });
 
-      const bootPromises = activeMerchants.map(merchant => {
-        console.log(`[WhatsApp] Auto-reconnecting session for user: ${merchant.ownerId}`);
-        return this.initSession(merchant.ownerId).catch(err =>
-          console.error(`[WhatsApp] Failed to boot session for ${merchant.ownerId}:`, err)
+      console.log(`[WhatsApp] Found ${userIdsToBoot.size} user sessions with saved WhatsApp auth state to boot.`);
+
+      const bootPromises = Array.from(userIdsToBoot).map(userId => {
+        console.log(`[WhatsApp] Auto-reconnecting session for user: ${userId}`);
+        return this.initSession(userId).catch(err =>
+          console.error(`[WhatsApp] Failed to boot session for ${userId}:`, err)
         );
       });
 
@@ -204,6 +227,10 @@ class WhatsAppService {
           auth: state,
           printQRInTerminal: false,
           browser: Browsers.ubuntu("Chrome"),
+          syncFullHistory: false,
+          markOnlineOnConnect: true,
+          connectTimeoutMs: 60000,
+          keepAliveIntervalMs: 25000,
         });
 
         this.activeSessions.set(userId, sock);
@@ -303,6 +330,10 @@ class WhatsAppService {
       auth: state,
       printQRInTerminal: false,
       browser: Browsers.ubuntu("Chrome"),
+      syncFullHistory: false,
+      markOnlineOnConnect: true,
+      connectTimeoutMs: 60000,
+      keepAliveIntervalMs: 25000,
     });
 
     this.activeSessions.set(userId, sock);
@@ -400,6 +431,10 @@ class WhatsAppService {
       auth: state,
       printQRInTerminal: false,
       browser: Browsers.ubuntu("Chrome"),
+      syncFullHistory: false,
+      markOnlineOnConnect: true,
+      connectTimeoutMs: 60000,
+      keepAliveIntervalMs: 25000,
     });
 
     this.activeSessions.set(userId, sock);
@@ -474,12 +509,237 @@ class WhatsAppService {
     });
   }
 
+  isSessionConnected(userId: string): boolean {
+    const sock = this.activeSessions.get(userId);
+    return !!(sock && sock.authState?.creds?.registered);
+  }
+
   getSessionPairingData(userId: string) {
     return {
       pairingCode: this.lastPairingCodeMap.get(userId) || null,
       qr: this.lastQrMap.get(userId) || null,
       isActive: this.activeSessions.has(userId)
     };
+  }
+
+  private async startOnboardingSocket(
+    authSessionId: string,
+    cleanNumber: string,
+    storeData?: any
+  ): Promise<any> {
+    const { state, saveCreds, updateSessionId } = await useMongoAuthState(authSessionId);
+    const { version } = await fetchLatestBaileysVersion();
+
+    let currentOwnerId: string = authSessionId;
+
+    const sock = makeWASocket({
+      version,
+      auth: state,
+      printQRInTerminal: false,
+      browser: Browsers.ubuntu("Chrome"),
+      syncFullHistory: false,
+      markOnlineOnConnect: true,
+      connectTimeoutMs: 60000,
+      keepAliveIntervalMs: 25000,
+    });
+
+    this.activeSessions.set(authSessionId, sock);
+    sock.ev.on("creds.update", saveCreds);
+
+    sock.ev.on("connection.update", async (update) => {
+      const { connection, lastDisconnect, qr } = update;
+
+      if (qr) {
+        this.lastQrMap.set(authSessionId, qr);
+        emitToSession(authSessionId, "whatsapp:qr", { qr });
+        emitToAuth(cleanNumber, "whatsapp:qr", { qr });
+        emitToAuth(authSessionId, "whatsapp:qr", { qr });
+      }
+
+      if (connection === "connecting") {
+        emitToSession(authSessionId, "whatsapp:connecting", {});
+        emitToAuth(cleanNumber, "whatsapp:connecting", {});
+        emitToAuth(authSessionId, "whatsapp:connecting", {});
+      }
+
+      if (connection === "open") {
+        this.lastPairingCodeMap.delete(authSessionId);
+        console.log(`[WhatsApp Onboarding] Pairing successful for session ${authSessionId}`);
+
+        try {
+          // Dynamic import to avoid circular dependency
+          const { authService } = await import("../auth/auth.service.js");
+
+          // 1. Extract physical connected WhatsApp phone number
+          const rawJid = sock.user?.id || "";
+          const pairedPhone = rawJid.split("@")[0].split(":")[0].replace(/\D/g, "") || cleanNumber;
+
+          // 2. Create or login the merchant user
+          const sessionData = await authService.loginOrRegisterWithWhatsApp(
+            pairedPhone,
+            storeData?.businessName || storeData?.displayName
+          );
+          const userId = sessionData.user.id;
+          currentOwnerId = userId;
+
+          // 3. Migrate Mongo auth state from temporary authSessionId to actual userId
+          await migrateMongoAuthState(authSessionId, userId);
+          updateSessionId(userId);
+          await saveCreds();
+
+          // 4. Move active socket to userId in memory
+          this.activeSessions.delete(authSessionId);
+          this.activeSessions.set(userId, sock);
+
+          // 5. Initialize or update Commerce Merchant profile
+          await CommerceMerchantModel.findOneAndUpdate(
+            { ownerId: userId },
+            {
+              $set: {
+                "whatsappConfig.status": "connected",
+                "whatsappConfig.provider": "baileys",
+                "whatsappConfig.reconnectAttempts": 0,
+                whatsappNumber: pairedPhone,
+                ...(storeData?.businessName ? {
+                  businessName: storeData.businessName,
+                  category: storeData.category || "other",
+                  description: storeData.description || "",
+                  city: storeData.city || "",
+                  address: storeData.address || "",
+                  country: storeData.country || "CI",
+                  currency: storeData.currency || "XOF",
+                  onboardingCompleted: true
+                } : { onboardingCompleted: true })
+              }
+            },
+            { upsert: true, new: true }
+          );
+
+          await WhatsAppConnectionModel.findOneAndUpdate(
+            { userId },
+            {
+              $set: {
+                status: 'CONNECTED',
+                connectionType: 'baileys',
+                phoneNumber: pairedPhone,
+                connectedAt: new Date(),
+                disconnectedAt: null
+              }
+            },
+            { upsert: true }
+          );
+
+          // 6. Register authenticated session so polling & sockets both catch it
+          authService.registerAuthenticatedSession(authSessionId, pairedPhone, sessionData);
+
+          // 7. Emit real-time auth:success & whatsapp:connected
+          const io = getSocketServer();
+          if (io) {
+            io.to(`session:${authSessionId}`).emit("auth:success", sessionData);
+            io.to(`auth:${authSessionId}`).emit("auth:success", sessionData);
+            io.to(`auth:${cleanNumber}`).emit("auth:success", sessionData);
+            io.to(`auth:${pairedPhone}`).emit("auth:success", sessionData);
+            io.to(`user:${userId}`).emit("whatsapp:connected", { phoneNumber: pairedPhone });
+          }
+
+          // 8. Wire message processing for this newly connected user
+          sock.ev.on("messages.upsert", async (m: any) => {
+            if (m.type === "notify") {
+              for (const msg of m.messages) {
+                if (!msg.key.fromMe) {
+                  await this.handleIncomingMessage(userId, msg);
+                }
+              }
+            }
+          });
+
+          console.log(`[WhatsApp Onboarding] Merchant ${userId} (${pairedPhone}) fully initialized and logged in.`);
+        } catch (err: any) {
+          console.error("[WhatsApp Onboarding] Error completing auto-auth after pairing:", err);
+        }
+      }
+
+      if (connection === "close") {
+        const statusCode = (lastDisconnect?.error as Boom)?.output?.statusCode;
+        const errMessage = (lastDisconnect?.error as Error)?.message || "";
+        console.log(`[WhatsApp Onboarding Close] Session: ${currentOwnerId}, StatusCode: ${statusCode}, Error: ${errMessage}`);
+
+        const isLoggedOut = statusCode === DisconnectReason.loggedOut;
+        const isBadSession = statusCode === DisconnectReason.badSession;
+
+        if (isLoggedOut || isBadSession) {
+          this.activeSessions.delete(currentOwnerId);
+          this.activeSessions.delete(authSessionId);
+          await clearMongoAuthState(authSessionId);
+          if (currentOwnerId !== authSessionId) {
+            await clearMongoAuthState(currentOwnerId);
+          }
+          return;
+        }
+
+        // If session was already established with userId, delegate to handleConnectionClose
+        if (currentOwnerId !== authSessionId) {
+          await this.handleConnectionClose(currentOwnerId, lastDisconnect);
+          return;
+        }
+
+        // Transient disconnect during pairing handshake (e.g. 515 restart required)
+        console.log(`[WhatsApp Onboarding] Restarting connection for ${authSessionId} to finalize pairing handshake (Code ${statusCode})...`);
+        this.activeSessions.delete(authSessionId);
+        setTimeout(() => {
+          this.startOnboardingSocket(authSessionId, cleanNumber, storeData).catch(err => {
+            console.error(`[WhatsApp Onboarding] Reconnection failed for ${authSessionId}:`, err);
+          });
+        }, 1500);
+      }
+    });
+
+    return sock;
+  }
+
+  async requestOnboardingPairingCode(
+    authSessionId: string,
+    phoneNumber: string,
+    storeData?: any
+  ): Promise<{ pairingCode: string; qr?: string | null; authSessionId: string }> {
+    const cleanNumber = phoneNumber.replace(/\D/g, "");
+    if (!cleanNumber || cleanNumber.length < 6) {
+      throw new Error("Numéro WhatsApp invalide pour l'appairage.");
+    }
+
+    // Force-clean any existing socket for this authSessionId
+    const existingSock = this.activeSessions.get(authSessionId);
+    if (existingSock) {
+      try { existingSock.end(undefined); } catch (e) {}
+      this.activeSessions.delete(authSessionId);
+    }
+    this.pendingInitializations.delete(authSessionId);
+    this.lastPairingCodeMap.delete(authSessionId);
+
+    await clearMongoAuthState(authSessionId);
+
+    const sock = await this.startOnboardingSocket(authSessionId, cleanNumber, storeData);
+
+    // Wait a brief tick for Baileys handshake before requesting code
+    await new Promise((resolve) => setTimeout(resolve, 1400));
+
+    if (!sock.authState.creds.registered) {
+      const rawCode = await sock.requestPairingCode(cleanNumber);
+      const formattedCode = rawCode?.match(/.{1,4}/g)?.join("-") || rawCode;
+      this.lastPairingCodeMap.set(authSessionId, formattedCode);
+
+      emitToSession(authSessionId, "whatsapp:pairing_code", { code: formattedCode });
+      emitToAuth(cleanNumber, "whatsapp:pairing_code", { code: formattedCode });
+      emitToAuth(authSessionId, "whatsapp:pairing_code", { code: formattedCode });
+
+      return {
+        pairingCode: formattedCode,
+        qr: this.lastQrMap.get(authSessionId) || null,
+        authSessionId
+      };
+    } else {
+      throw new Error("L'appareil est déjà enregistré ou connecté.");
+    }
   }
 
   private async getMetaConfig(merchant: any) {

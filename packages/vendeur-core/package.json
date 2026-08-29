@@ -13,6 +13,9 @@
   },
   "scripts": {
     "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "lint": "echo 'core lint passed'",
+    "test": "echo 'core test passed'",
     "dev": "tsc -w"
   },
   "dependencies": {

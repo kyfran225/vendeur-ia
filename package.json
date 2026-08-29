@@ -15,6 +15,7 @@
     "build": "turbo build",
     "lint": "turbo lint",
     "typecheck": "turbo typecheck",
+    "test": "turbo test",
     "db:reset": "pnpm --filter @vendeur-ia/api db:reset",
     "db:purge": "pnpm --filter @vendeur-ia/api db:purge",
     "db:backup": "pnpm --filter @vendeur-ia/api db:backup"

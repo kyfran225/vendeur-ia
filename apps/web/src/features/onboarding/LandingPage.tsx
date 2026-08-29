@@ -704,7 +704,7 @@ function LandingHero({
                         <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Nom du commerce</label>
                         <input
                           id="business-name-input"
-                          className="w-full h-10 sm:h-11 rounded-xl bg-black/40 border border-white/25 px-3.5 text-white outline-none focus:border-emerald-400 transition-all text-sm shadow-inner"
+                          className="w-full h-11 sm:h-12 rounded-xl sm:rounded-2xl bg-black/40 border border-white/25 px-3.5 text-white outline-none focus:border-emerald-400 transition-all text-sm shadow-inner"
                           value={form.businessName}
                           onChange={(e) => setForm({ ...form, businessName: e.target.value })}
                           placeholder="Ex: Ma Boutique Chic"
@@ -725,9 +725,14 @@ function LandingHero({
                           <CountrySelector
                             selected={selectedCountry}
                             onSelect={(c) => { setSelectedCountry(c); setForm({ ...form, country: c.code }); }}
-                            className="h-10 sm:h-11"
+                            className="h-11 sm:h-12"
                           />
-                          <input className="flex-1 min-w-0 w-full h-10 sm:h-11 rounded-xl bg-black/40 border border-white/10 px-3.5 text-white font-mono text-sm outline-none focus:border-emerald-400" value={localPhone} onChange={(e) => setLocalPhone(e.target.value.replace(/\D/g, ""))} placeholder="0700000000" />
+                          <input
+                            className="flex-1 min-w-0 w-full h-11 sm:h-12 rounded-xl sm:rounded-2xl bg-black/40 border border-white/10 px-3.5 text-white font-mono text-sm outline-none focus:border-emerald-400 shadow-inner"
+                            value={localPhone}
+                            onChange={(e) => setLocalPhone(e.target.value.replace(/\D/g, ""))}
+                            placeholder="0700000000"
+                          />
                         </div>
                       </div>
 
@@ -773,11 +778,11 @@ function LandingHero({
                   {/* WhatsApp UI Inside Frame */}
                   <div className="bg-[#202c33] px-3.5 pt-8 pb-3 flex items-center justify-between border-b border-white/5 shrink-0">
                     <div className="flex items-center gap-2.5 min-w-0">
-                      <div className="h-9 w-9 rounded-full bg-gradient-to-b from-emerald-500/20 to-emerald-950/80 border border-emerald-500/40 flex items-center justify-center text-emerald-400 shrink-0 p-1 shadow-inner">
-                        <AnimatedAssistantBot size={22} variant="idle" glow={false} />
+                      <div className="h-9 w-9 rounded-full bg-emerald-700/80 border border-emerald-400/40 flex items-center justify-center text-white font-black text-sm shrink-0 shadow-inner">
+                        {form.businessName ? form.businessName.charAt(0).toUpperCase() : "V"}
                       </div>
                       <div className="min-w-0">
-                        <p className="text-xs font-bold text-white leading-tight truncate">{form.businessName}</p>
+                        <p className="text-xs font-bold text-white leading-tight truncate">{form.businessName || "Votre Boutique"}</p>
                         <p className="text-[10px] font-medium text-emerald-400/90 leading-none mt-0.5">
                           {isReplying ? "en train d'écrire..." : "en ligne"}
                         </p>
@@ -803,28 +808,6 @@ function LandingHero({
                     className="flex-1 overflow-y-auto p-4 space-y-2 no-scrollbar flex flex-col"
                     style={{ backgroundImage: "url('https://static.whatsapp.net/rsrc.php/v3/y6/r/wa669ae5qee.png')", backgroundSize: "400px" }}
                   >
-                    {history.length === 0 && !isReplying && (
-                      <motion.div
-                        initial={{ opacity: 0, scale: 0.95 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        className="flex flex-col items-center justify-center py-6 text-center my-auto px-2"
-                      >
-                        <div className="relative mb-3 flex items-center justify-center">
-                          <div className="relative h-14 w-14 rounded-2xl bg-[#14221a] border border-emerald-500/20 flex items-center justify-center p-2 shadow-md">
-                            <AnimatedAssistantBot size={36} glow={false} />
-                          </div>
-                        </div>
-                        <div className="bg-[#182229]/95 border border-white/10 rounded-2xl p-3.5 max-w-[280px] shadow-lg text-center space-y-1.5">
-                          <p className="text-xs font-black uppercase tracking-tight flex items-center justify-center gap-1.5 text-emerald-400">
-                            <Sparkles size={13} />
-                            <span>Assistant Prêt</span>
-                          </p>
-                          <p className="text-[11px] text-[#8696a0] leading-snug">
-                            Bonjour ! Je suis votre conseiller <strong className="text-white font-bold">{form.businessName || "Vendeur IA"}</strong>. Posez-moi une question sur vos produits ou demandez un conseil !
-                          </p>
-                        </div>
-                      </motion.div>
-                    )}
                     {history.map((msg, i) => (
                       <MemoizedWhatsAppBubble key={i} role={msg.role} text={msg.text} time={msg.time} />
                     ))}
@@ -837,10 +820,8 @@ function LandingHero({
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         className="my-3 p-4 rounded-2xl bg-gradient-to-b from-[#182229] to-[#111b21] border border-emerald-500/25 text-white shadow-xl space-y-2.5 text-center"
                       >
-                        <div className="relative w-11 h-11 mx-auto flex items-center justify-center">
-                          <div className="relative w-11 h-11 rounded-xl bg-[#101b20] border border-emerald-500/25 flex items-center justify-center p-1.5 shadow-sm">
-                            <AnimatedAssistantBot size={28} glow={false} />
-                          </div>
+                        <div className="w-10 h-10 mx-auto rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 shadow-sm">
+                          <CheckCircle2 size={22} />
                         </div>
                         <div>
                           <p className="text-xs font-black uppercase tracking-wider text-emerald-400">Démonstration terminée ({MAX_DEMO_REPLIES}/{MAX_DEMO_REPLIES})</p>

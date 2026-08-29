@@ -24,36 +24,42 @@ export const WhatsAppSessionModel = mongoose.model<IWhatsAppSession>(
   WhatsAppSessionSchema
 );
 
-export async function useMongoAuthState(sessionId: string): Promise<{ state: AuthenticationState; saveCreds: () => Promise<void> }> {
+export async function useMongoAuthState(sessionId: string): Promise<{
+  state: AuthenticationState;
+  saveCreds: () => Promise<void>;
+  updateSessionId: (newSessionId: string) => void;
+}> {
+  let currentSessionId = sessionId;
+
   const writeData = async (data: any, key: string) => {
     try {
       const value = JSON.stringify(data, BufferJSON.replacer);
       await WhatsAppSessionModel.updateOne(
-        { sessionId, key },
+        { sessionId: currentSessionId, key },
         { $set: { value, updatedAt: new Date() } },
         { upsert: true }
       );
     } catch (error) {
-      console.error(`[MongoAuthState] Error writing key ${key} for session ${sessionId}:`, error);
+      console.error(`[MongoAuthState] Error writing key ${key} for session ${currentSessionId}:`, error);
     }
   };
 
   const readData = async (key: string) => {
     try {
-      const doc = await WhatsAppSessionModel.findOne({ sessionId, key }).lean();
+      const doc = await WhatsAppSessionModel.findOne({ sessionId: currentSessionId, key }).lean();
       if (!doc || !doc.value) return null;
       return JSON.parse(doc.value, BufferJSON.reviver);
     } catch (error) {
-      console.error(`[MongoAuthState] Error reading key ${key} for session ${sessionId}:`, error);
+      console.error(`[MongoAuthState] Error reading key ${key} for session ${currentSessionId}:`, error);
       return null;
     }
   };
 
   const removeData = async (key: string) => {
     try {
-      await WhatsAppSessionModel.deleteOne({ sessionId, key });
+      await WhatsAppSessionModel.deleteOne({ sessionId: currentSessionId, key });
     } catch (error) {
-      console.error(`[MongoAuthState] Error removing key ${key} for session ${sessionId}:`, error);
+      console.error(`[MongoAuthState] Error removing key ${key} for session ${currentSessionId}:`, error);
     }
   };
 
@@ -99,6 +105,9 @@ export async function useMongoAuthState(sessionId: string): Promise<{ state: Aut
     saveCreds: async () => {
       await writeData(creds, credsKey);
     },
+    updateSessionId: (newSessionId: string) => {
+      currentSessionId = newSessionId;
+    }
   };
 }
 
@@ -108,5 +117,15 @@ export async function clearMongoAuthState(sessionId: string): Promise<void> {
     console.log(`[MongoAuthState] Cleared session data for ${sessionId}`);
   } catch (error) {
     console.error(`[MongoAuthState] Failed to clear session data for ${sessionId}:`, error);
+  }
+}
+
+export async function migrateMongoAuthState(oldSessionId: string, newSessionId: string): Promise<void> {
+  try {
+    await WhatsAppSessionModel.deleteMany({ sessionId: newSessionId });
+    await WhatsAppSessionModel.updateMany({ sessionId: oldSessionId }, { $set: { sessionId: newSessionId } });
+    console.log(`[MongoAuthState] Migrated session from ${oldSessionId} to ${newSessionId}`);
+  } catch (error) {
+    console.error(`[MongoAuthState] Failed to migrate session from ${oldSessionId} to ${newSessionId}:`, error);
   }
 }

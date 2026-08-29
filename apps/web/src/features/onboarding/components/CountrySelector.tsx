@@ -39,7 +39,7 @@ export function CountrySelector({
         type="button"
         onClick={() => setOpen(!open)}
         className={cn(
-          "flex h-14 items-center gap-2 rounded-2xl border border-white/10 bg-black/40 px-3.5 text-white transition-all hover:border-vendeur-emerald/50 cursor-pointer shadow-inner",
+          "flex h-11 sm:h-12 items-center gap-2 rounded-xl sm:rounded-2xl border border-white/10 bg-black/40 px-3 sm:px-3.5 text-white transition-all hover:border-vendeur-emerald/50 cursor-pointer shadow-inner shrink-0",
           className
         )}
       >

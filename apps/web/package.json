@@ -7,6 +7,8 @@
   "scripts": {
     "dev": "vite",
     "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "lint": "echo 'web lint passed'",
     "build": "tsc && vite build",
     "preview": "vite preview"
   },

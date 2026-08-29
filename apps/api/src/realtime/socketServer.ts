@@ -78,6 +78,14 @@ export function emitToSession(sessionId: string, event: string, data: any) {
   }
 }
 
+export function emitToAuth(room: string, event: string, data: any) {
+  if (io && room) {
+    const clean = room.replace(/[\s\-\+\(\)]/g, "");
+    io.to(`auth:${clean}`).emit(event, data);
+    io.to(`auth:${room}`).emit(event, data);
+  }
+}
+
 export function isSessionOnline(sessionId: string): boolean {
   return onlineSessions.has(sessionId);
 }

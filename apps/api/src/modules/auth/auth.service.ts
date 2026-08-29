@@ -142,6 +142,88 @@ export class AuthService {
     return this.generateTokens(user);
   }
 
+  registerAuthenticatedSession(authSessionId: string, phoneNumber: string, tokens: any) {
+    const cleanPhone = phoneNumber.replace(/[\s\-\+\(\)]/g, "");
+    const phoneVariants = generatePhoneVariants(cleanPhone);
+    const sessionUpdate: PendingAuthSession = {
+      phoneNumber: cleanPhone,
+      authSessionId,
+      status: "authenticated",
+      tokens,
+      createdAt: Date.now()
+    };
+
+    pendingAuthSessions.set(authSessionId, sessionUpdate);
+    for (const variant of phoneVariants) {
+      pendingAuthSessions.set(`phone:${variant}`, sessionUpdate);
+    }
+
+    AuthSessionModel.updateMany(
+      {
+        $or: [
+          { authSessionId },
+          { phoneVariants: { $in: phoneVariants } }
+        ]
+      },
+      {
+        $set: {
+          status: "authenticated",
+          tokens,
+          phoneNumber: cleanPhone,
+          phoneVariants,
+          expiresAt: new Date(Date.now() + 15 * 60 * 1000)
+        }
+      },
+      { upsert: true }
+    ).catch(err => console.warn("[Auth] Failed to persist authenticated session in DB:", err));
+  }
+
+  async initWhatsAppAuth(phoneNumber: string, storeData?: any, requestedAuthSessionId?: string) {
+    const cleanNumber = phoneNumber.replace(/[\s\-\+\(\)]/g, "");
+    if (!cleanNumber || cleanNumber.length < 6) {
+      throw new Error("Numéro WhatsApp invalide.");
+    }
+
+    const phoneVariants = generatePhoneVariants(cleanNumber);
+    const authSessionId = requestedAuthSessionId || `auth_${randomBytes(12).toString("hex")}`;
+
+    // 1. Check if user already exists
+    const existingUser = await UserModel.findOne({
+      $or: [
+        { whatsappNumber: cleanNumber },
+        { whatsappNumber: { $in: phoneVariants } }
+      ]
+    });
+
+    // 2. If founder / system number (0505111157) or if user exists and is already connected on Baileys -> use OTP / Magic Link
+    if (isFounderNumber(cleanNumber) || (existingUser && whatsappService.isSessionConnected(existingUser._id.toString()))) {
+      await this.requestWhatsAppMagicLink(cleanNumber, env.CLIENT_URL || "http://localhost:5173", authSessionId);
+      return {
+        mode: "otp" as const,
+        authSessionId,
+        phoneNumber: cleanNumber,
+        message: isFounderNumber(cleanNumber)
+          ? "Numéro système / Administrateur détecté : le code de confirmation a été envoyé sur votre WhatsApp (+225 01 02 27 39 66)."
+          : "Un code de confirmation a été envoyé sur votre WhatsApp."
+      };
+    }
+
+    // 3. Otherwise (New merchant or disconnected session) -> Pair WhatsApp directly!
+    const pairing = await whatsappService.requestOnboardingPairingCode(
+      authSessionId,
+      cleanNumber,
+      storeData
+    );
+
+    return {
+      mode: "pairing" as const,
+      authSessionId: pairing.authSessionId,
+      pairingCode: pairing.pairingCode,
+      qr: pairing.qr || null,
+      phoneNumber: cleanNumber
+    };
+  }
+
   async requestWhatsAppMagicLink(whatsappNumber: string, clientUrl: string, existingSessionId?: string) {
     const cleanNumber = whatsappNumber.replace(/[\s\-\+\(\)]/g, "");
     if (!cleanNumber || cleanNumber.length < 8) {

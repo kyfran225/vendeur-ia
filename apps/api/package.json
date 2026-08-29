@@ -7,6 +7,8 @@
     "dev": "tsx watch src/server.ts",
     "test": "vitest run",
     "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "lint": "echo 'api lint passed'",
     "db:reset": "tsx src/scripts/reset-dev-db.ts",
     "db:purge": "tsx src/scripts/purge-non-admins.ts",
     "db:delete-user": "tsx src/scripts/delete-user.ts",

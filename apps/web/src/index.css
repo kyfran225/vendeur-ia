@@ -7,18 +7,19 @@
     @apply bg-[#07100d] text-white;
     margin: 0;
     padding: 0;
-    overflow-x: hidden;
     width: 100%;
-    overscroll-behavior-y: none;
+    min-height: 100%;
+    overflow-x: hidden;
+    overflow-y: auto;
     -webkit-overflow-scrolling: touch;
   }
 
-  /* Universal Button Resilience & Anti-Squash System */
+  /* Universal Button & Input Resilience & Anti-Squash System */
   button,
   [role="button"],
-  input[type="button"],
-  input[type="submit"],
-  input[type="reset"],
+  input,
+  select,
+  textarea,
   a[role="button"] {
     flex-shrink: 0 !important;
     box-sizing: border-box;
@@ -55,7 +56,9 @@
 
   #root {
     width: 100%;
-    overflow-x: hidden;
+    min-height: 100%;
+    display: flex;
+    flex-direction: column;
   }
 
   .no-scrollbar::-webkit-scrollbar {
@@ -68,42 +71,42 @@
 }
 
 @layer utilities {
-  /* Anti-Squash Height Locks: Guarantee that any button with a defined height never collapses below its target */
-  button.h-8, [role="button"].h-8, a.h-8 { min-height: 2rem !important; }
-  button.h-9, [role="button"].h-9, a.h-9 { min-height: 2.25rem !important; }
-  button.h-10, [role="button"].h-10, a.h-10 { min-height: 2.5rem !important; }
-  button.h-11, [role="button"].h-11, a.h-11 { min-height: 2.75rem !important; }
-  button.h-12, [role="button"].h-12, a.h-12 { min-height: 3rem !important; }
-  button.h-13, [role="button"].h-13, a.h-13 { min-height: 3.25rem !important; }
-  button.h-14, [role="button"].h-14, a.h-14 { min-height: 3.5rem !important; }
-  button.h-16, [role="button"].h-16, a.h-16 { min-height: 4rem !important; }
+  /* Anti-Squash Height Locks: Guarantee that any button, input, or control never collapses below its target height */
+  button.h-8, [role="button"].h-8, a.h-8, input.h-8, select.h-8 { min-height: 2rem !important; }
+  button.h-9, [role="button"].h-9, a.h-9, input.h-9, select.h-9 { min-height: 2.25rem !important; }
+  button.h-10, [role="button"].h-10, a.h-10, input.h-10, select.h-10 { min-height: 2.5rem !important; }
+  button.h-11, [role="button"].h-11, a.h-11, input.h-11, select.h-11 { min-height: 2.75rem !important; }
+  button.h-12, [role="button"].h-12, a.h-12, input.h-12, select.h-12 { min-height: 3rem !important; }
+  button.h-13, [role="button"].h-13, a.h-13, input.h-13, select.h-13 { min-height: 3.25rem !important; }
+  button.h-14, [role="button"].h-14, a.h-14, input.h-14, select.h-14 { min-height: 3.5rem !important; }
+  button.h-16, [role="button"].h-16, a.h-16, input.h-16, select.h-16 { min-height: 4rem !important; }
 
   @media (min-width: 640px) {
-    button.sm\:h-9, [role="button"].sm\:h-9 { min-height: 2.25rem !important; }
-    button.sm\:h-10, [role="button"].sm\:h-10 { min-height: 2.5rem !important; }
-    button.sm\:h-11, [role="button"].sm\:h-11 { min-height: 2.75rem !important; }
-    button.sm\:h-12, [role="button"].sm\:h-12 { min-height: 3rem !important; }
-    button.sm\:h-13, [role="button"].sm\:h-13 { min-height: 3.25rem !important; }
-    button.sm\:h-14, [role="button"].sm\:h-14 { min-height: 3.5rem !important; }
-    button.sm\:h-16, [role="button"].sm\:h-16 { min-height: 4rem !important; }
+    button.sm\:h-9, [role="button"].sm\:h-9, input.sm\:h-9, select.sm\:h-9 { min-height: 2.25rem !important; }
+    button.sm\:h-10, [role="button"].sm\:h-10, input.sm\:h-10, select.sm\:h-10 { min-height: 2.5rem !important; }
+    button.sm\:h-11, [role="button"].sm\:h-11, input.sm\:h-11, select.sm\:h-11 { min-height: 2.75rem !important; }
+    button.sm\:h-12, [role="button"].sm\:h-12, input.sm\:h-12, select.sm\:h-12 { min-height: 3rem !important; }
+    button.sm\:h-13, [role="button"].sm\:h-13, input.sm\:h-13, select.sm\:h-13 { min-height: 3.25rem !important; }
+    button.sm\:h-14, [role="button"].sm\:h-14, input.sm\:h-14, select.sm\:h-14 { min-height: 3.5rem !important; }
+    button.sm\:h-16, [role="button"].sm\:h-16, input.sm\:h-16, select.sm\:h-16 { min-height: 4rem !important; }
   }
 
   @media (min-width: 768px) {
-    button.md\:h-9, [role="button"].md\:h-9 { min-height: 2.25rem !important; }
-    button.md\:h-10, [role="button"].md\:h-10 { min-height: 2.5rem !important; }
-    button.md\:h-11, [role="button"].md\:h-11 { min-height: 2.75rem !important; }
-    button.md\:h-12, [role="button"].md\:h-12 { min-height: 3rem !important; }
-    button.md\:h-13, [role="button"].md\:h-13 { min-height: 3.25rem !important; }
-    button.md\:h-14, [role="button"].md\:h-14 { min-height: 3.5rem !important; }
-    button.md\:h-16, [role="button"].md\:h-16 { min-height: 4rem !important; }
+    button.md\:h-9, [role="button"].md\:h-9, input.md\:h-9, select.md\:h-9 { min-height: 2.25rem !important; }
+    button.md\:h-10, [role="button"].md\:h-10, input.md\:h-10, select.md\:h-10 { min-height: 2.5rem !important; }
+    button.md\:h-11, [role="button"].md\:h-11, input.md\:h-11, select.md\:h-11 { min-height: 2.75rem !important; }
+    button.md\:h-12, [role="button"].md\:h-12, input.md\:h-12, select.md\:h-12 { min-height: 3rem !important; }
+    button.md\:h-13, [role="button"].md\:h-13, input.md\:h-13, select.md\:h-13 { min-height: 3.25rem !important; }
+    button.md\:h-14, [role="button"].md\:h-14, input.md\:h-14, select.md\:h-14 { min-height: 3.5rem !important; }
+    button.md\:h-16, [role="button"].md\:h-16, input.md\:h-16, select.md\:h-16 { min-height: 4rem !important; }
   }
 
   @media (min-width: 1024px) {
-    button.lg\:h-10, [role="button"].lg\:h-10 { min-height: 2.5rem !important; }
-    button.lg\:h-11, [role="button"].lg\:h-11 { min-height: 2.75rem !important; }
-    button.lg\:h-12, [role="button"].lg\:h-12 { min-height: 3rem !important; }
-    button.lg\:h-14, [role="button"].lg\:h-14 { min-height: 3.5rem !important; }
-    button.lg\:h-16, [role="button"].lg\:h-16 { min-height: 4rem !important; }
+    button.lg\:h-10, [role="button"].lg\:h-10, input.lg\:h-10, select.lg\:h-10 { min-height: 2.5rem !important; }
+    button.lg\:h-11, [role="button"].lg\:h-11, input.lg\:h-11, select.lg\:h-11 { min-height: 2.75rem !important; }
+    button.lg\:h-12, [role="button"].lg\:h-12, input.lg\:h-12, select.lg\:h-12 { min-height: 3rem !important; }
+    button.lg\:h-14, [role="button"].lg\:h-14, input.lg\:h-14, select.lg\:h-14 { min-height: 3.5rem !important; }
+    button.lg\:h-16, [role="button"].lg\:h-16, input.lg\:h-16, select.lg\:h-16 { min-height: 4rem !important; }
   }
 }
 

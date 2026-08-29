@@ -19,6 +19,7 @@ import { aiProvider } from "../../services/ai-provider.js";
 import { smsService } from "../../services/sms.service.js";
 import { SystemSettingsModel } from "../commerce/admin.model.js";
 import { generatePhoneVariants, isFounderNumber } from "../auth/auth.service.js";
+import { parsePhoneNumber } from "@vendeur-ia/core";
 
 class WhatsAppService {
   private activeSessions: Map<string, any> = new Map();
@@ -572,7 +573,9 @@ class WhatsAppService {
 
           // 1. Extract physical connected WhatsApp phone number
           const rawJid = sock.user?.id || "";
-          const pairedPhone = rawJid.split("@")[0].split(":")[0].replace(/\D/g, "") || cleanNumber;
+          const rawPhone = rawJid.split("@")[0].split(":")[0].replace(/\D/g, "") || cleanNumber;
+          const parsedPaired = parsePhoneNumber(rawPhone, "CI");
+          const pairedPhone = parsedPaired.e164 ? parsedPaired.e164.replace(/\D/g, "") : rawPhone;
 
           // 2. Create or login the merchant user
           const sessionData = await authService.loginOrRegisterWithWhatsApp(

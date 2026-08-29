@@ -100,24 +100,33 @@ export class AuthService {
   }
 
   async loginOrRegisterWithWhatsApp(whatsappNumber: string, displayName?: string) {
-    const cleanNumber = whatsappNumber.replace(/[\s\-\(\)\+]/g, "");
-    if (!cleanNumber || cleanNumber.length < 8) {
+    const rawClean = whatsappNumber.replace(/[\s\-\(\)\+]/g, "");
+    if (!rawClean || rawClean.length < 8) {
       throw new Error("Numéro WhatsApp invalide.");
     }
 
-    const isFounder = isFounderNumber(cleanNumber);
+    const parsed = parsePhoneNumber(rawClean, "CI");
+    const canonicalPhone = parsed.e164 ? parsed.e164.replace(/\D/g, "") : rawClean;
+    const phoneVariants = generatePhoneVariants(rawClean);
+
+    const isFounder = isFounderNumber(canonicalPhone) || isFounderNumber(rawClean);
     const founderDisplayName = "Franck (Co-Fondateur & Lead)";
 
-    let user = await UserModel.findOne({ whatsappNumber: cleanNumber });
+    let user = await UserModel.findOne({
+      $or: [
+        { whatsappNumber: canonicalPhone },
+        { whatsappNumber: { $in: phoneVariants } }
+      ]
+    });
 
     if (!user) {
       // Auto-create user with WhatsApp identity
-      const fallbackEmail = `${cleanNumber.replace(/[^0-9]/g, "")}@whatsapp.vendeur-ia.com`;
+      const fallbackEmail = `${canonicalPhone}@whatsapp.vendeur-ia.com`;
       user = await UserModel.create({
-        whatsappNumber: cleanNumber,
+        whatsappNumber: canonicalPhone,
         email: fallbackEmail,
         authProvider: "whatsapp",
-        displayName: isFounder ? founderDisplayName : (displayName?.trim() || `Commerçant WhatsApp (${cleanNumber.slice(-4)})`),
+        displayName: isFounder ? founderDisplayName : (displayName?.trim() || `Commerçant WhatsApp (${canonicalPhone.slice(-4)})`),
         roles: isFounder ? ["user", "admin", "creator"] : ["user"],
         onboardingCompleted: isFounder ? true : Boolean(displayName && displayName !== "Votre boutique" && !displayName.startsWith("Commerçant WhatsApp"))
       });
@@ -130,7 +139,7 @@ export class AuthService {
         }
       } else {
         if (user.displayName === founderDisplayName) {
-          user.displayName = displayName?.trim() || `Commerçant WhatsApp (${cleanNumber.slice(-4)})`;
+          user.displayName = displayName?.trim() || `Commerçant WhatsApp (${canonicalPhone.slice(-4)})`;
           user.roles = ["user"];
         } else if (displayName && user.displayName.startsWith("Commerçant WhatsApp")) {
           user.displayName = displayName.trim();

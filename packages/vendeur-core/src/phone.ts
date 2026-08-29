@@ -112,7 +112,7 @@ export function parsePhoneNumber(phoneStr?: string, defaultCountryCode = "CI"): 
 
   return {
     country: matchedCountry,
-    local: localDigits,
+    local: normalizedLocal,
     normalizedLocal,
     e164,
     formatted,

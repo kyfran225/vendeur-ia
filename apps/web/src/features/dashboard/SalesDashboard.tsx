@@ -31,7 +31,6 @@ import { SmartAssistantCard } from "./components/SmartAssistantCard";
 import { VendeurIAPlaygroundModal } from "./components/VendeurIAPlaygroundModal";
 import { SetupCompletionModal } from "./components/SetupCompletionModal";
 import { StepSuccessModal } from "./components/StepSuccessModal";
-import { QuickWhatsAppConnectModal } from "./components/QuickWhatsAppConnectModal";
 import { OffersModal } from "@/features/settings/components/OffersModal";
 import { PauseConfirmationModal } from "@/components/modals/PauseConfirmationModal";
 import { ShareShopModal } from "@/features/shop/components/ShareShopModal";
@@ -53,7 +52,8 @@ function formatAmount(value: number) {
 }
 
 export function SalesDashboard() {
-  const { accessToken } = useAuthStore();
+  const navigate = useNavigate();
+  const { accessToken, user } = useAuthStore();
   const { isFounder } = useFounderRole();
   const socket = useSocket();
   const queryClient = useQueryClient();
@@ -62,7 +62,6 @@ export function SalesDashboard() {
   const [isCompletionModalOpen, setIsCompletionModalOpen] = useState(false);
   const [confirmedPaymentData, setConfirmedPaymentData] = useState<any>(null);
   const [isOffersModalOpen, setIsOffersModalOpen] = useState(false);
-  const [isQuickConnectOpen, setIsQuickConnectOpen] = useState(false);
   const [isWhatsAppMilestoneOpen, setIsWhatsAppMilestoneOpen] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
 
@@ -93,21 +92,6 @@ export function SalesDashboard() {
     },
     enabled: !!accessToken
   });
-
-  // Check if first-time user: PRIORITIZE WhatsApp Quick Connect BEFORE Offers
-  useEffect(() => {
-    if (!dashboard?.merchant?._id || isFounder) return;
-    const isWhatsAppConnected = dashboard?.whatsappConnection?.status === "CONNECTED" || dashboard?.merchant?.whatsappConfig?.status === "connected" || Boolean(dashboard?.merchant?.whatsappConfig?.meta?.phoneNumberId);
-    const waStorageKey = `vendeur_wa_quick_connect_prompt_${dashboard.merchant._id}`;
-    const waAlreadyPrompted = localStorage.getItem(waStorageKey);
-
-    // 1. SI WHATSAPP N'EST PAS CONNECTÉ : Proposer immédiatement la liaison WhatsApp en 1er (une seule fois à l'inscription)
-    if (!isWhatsAppConnected && !waAlreadyPrompted) {
-      setIsQuickConnectOpen(true);
-      localStorage.setItem(waStorageKey, "true");
-      return;
-    }
-  }, [dashboard?.merchant?._id, dashboard?.whatsappConnection?.status, dashboard?.merchant?.whatsappConfig?.status, isFounder]);
 
   // Check if all setup steps are completed to auto-trigger celebration modal once
   useEffect(() => {
@@ -179,7 +163,6 @@ export function SalesDashboard() {
       socket.on("whatsapp:connected", () => {
         toast.success("WhatsApp connecté avec succès !");
         queryClient.invalidateQueries({ queryKey: ["dashboard"] });
-        setIsQuickConnectOpen(false);
         setIsOffersModalOpen(true);
       });
       socket.on("payment:confirmed", (data: any) => {
@@ -207,8 +190,20 @@ export function SalesDashboard() {
     );
   }
 
-  const activeWhatsApp = dashboard?.merchant?.whatsappNumber || dashboard?.merchant?.phone || dashboard?.whatsappConnection?.phoneNumber || "";
-  const isWhatsAppConnected = dashboard?.whatsappConnection?.status === "CONNECTED" || dashboard?.merchant?.whatsappConfig?.status === "connected" || Boolean(dashboard?.merchant?.whatsappConfig?.meta?.phoneNumberId);
+  const activeWhatsApp = dashboard?.merchant?.whatsappNumber || dashboard?.merchant?.phone || dashboard?.whatsappConnection?.phoneNumber || user?.whatsappNumber || "";
+  const isWhatsAppExplicitlyDisconnected =
+    dashboard?.merchant?.whatsappConfig?.status === "disconnected" ||
+    dashboard?.whatsappConnection?.status === "DISCONNECTED" ||
+    dashboard?.whatsappConnection?.status === "disconnected";
+
+  const isWhatsAppConnected =
+    !isWhatsAppExplicitlyDisconnected &&
+    (dashboard?.whatsappConnection?.status === "CONNECTED" ||
+     dashboard?.whatsappConnection?.status === "connected" ||
+     dashboard?.merchant?.whatsappConfig?.status === "connected" ||
+     (dashboard?.merchant?.whatsappConfig?.provider === "meta" &&
+      dashboard?.merchant?.whatsappConfig?.status === "connected" &&
+      Boolean(dashboard?.merchant?.whatsappConfig?.meta?.phoneNumberId)));
   const isPaidActive = dashboard?.merchant?.subscription?.status === "active";
   const productsCount = dashboard?.products?.length || 0;
   const hasProducts = productsCount > 0 || Boolean(dashboard?.setupStatus?.steps?.find((s: any) => s.id === "products")?.completed);
@@ -232,9 +227,9 @@ export function SalesDashboard() {
             <div className="pt-1 w-full sm:w-auto">
               <button
                 type="button"
-                onClick={() => setIsQuickConnectOpen(true)}
+                onClick={() => navigate("/settings?tab=connexions#whatsapp")}
                 className="w-full sm:w-auto inline-flex items-center justify-between sm:justify-start gap-3 px-4 py-2.5 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-vendeur-emerald/30 text-white transition-all group shadow-sm text-left cursor-pointer"
-                title="Lier ou gérer votre ligne WhatsApp"
+                title="Gérer votre ligne WhatsApp dans les paramètres"
               >
                 <div className="flex items-center gap-2.5 min-w-0">
                   <span className={cn("h-2.5 w-2.5 rounded-full shrink-0", isWhatsAppConnected ? "bg-vendeur-emerald animate-pulse" : "bg-amber-400")} />
@@ -252,7 +247,7 @@ export function SalesDashboard() {
                     ? "bg-vendeur-emerald/15 text-vendeur-emerald border-vendeur-emerald/30" 
                     : "bg-amber-500/15 text-amber-300 border-amber-500/30"
                 )}>
-                  {isWhatsAppConnected ? "Live" : "Lier la ligne"}
+                  {isWhatsAppConnected ? "Live" : "Paramètres"}
                 </span>
               </button>
             </div>
@@ -279,7 +274,7 @@ export function SalesDashboard() {
         onOpenTestIA={() => setIsTestIAOpen(true)}
         onOpenOffers={() => setIsOffersModalOpen(true)}
         onOpenShare={() => setIsShareModalOpen(true)}
-        onConnectWhatsApp={() => setIsQuickConnectOpen(true)}
+        onConnectWhatsApp={() => navigate("/settings?tab=connexions#whatsapp")}
       />
 
       <VendeurIAPlaygroundModal
@@ -336,17 +331,6 @@ export function SalesDashboard() {
         }}
         dashboardActionLabel="Voir mon Tableau de Bord"
         onDashboardClick={() => setIsWhatsAppMilestoneOpen(false)}
-      />
-
-      <QuickWhatsAppConnectModal
-        isOpen={isQuickConnectOpen}
-        onClose={() => setIsQuickConnectOpen(false)}
-        merchant={dashboard?.merchant}
-        onSuccess={() => {
-          queryClient.invalidateQueries({ queryKey: ["dashboard"] });
-          setIsQuickConnectOpen(false);
-          setIsOffersModalOpen(true);
-        }}
       />
 
       <OffersModal

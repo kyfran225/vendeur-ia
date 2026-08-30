@@ -189,6 +189,7 @@ const ConversationSchema = new Schema({
   status: { type: String, enum: ["active", "needs_human", "converted", "closed"], default: "active" },
   lastMessageAt: { type: Date, default: Date.now },
   messagesCount: { type: Number, default: 0 },
+  unreadCount: { type: Number, default: 0 },
   aiSummary: { type: String, default: "" },
   followUpSent: { type: Boolean, default: false },
   isRecoveryPending: { type: Boolean, default: false }

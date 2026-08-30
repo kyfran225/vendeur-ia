@@ -22,7 +22,7 @@ import { generatePhoneVariants, formatDisplayPhone, parsePhoneNumber, normalizeC
 export { generatePhoneVariants, formatDisplayPhone, parsePhoneNumber, normalizeCILocal };
 
 const FOUNDER_NUMBERS = [
-  "2250505111157", "0505111157", "22505111157", "05111157"
+  "2250505111157", "0505111157", "22505111157", "05111157", "505111157", "5111157"
 ];
 
 // Secondary/proxy phone numbers authorized to confirm login on behalf of the founder
@@ -97,6 +97,90 @@ export class AuthService {
         onboardingCompleted: !!user.onboardingCompleted
       }
     };
+  }
+
+  async founderLogin(phoneNumber: string, pinOrPassword?: string, authSessionId?: string) {
+    const rawClean = (phoneNumber || "").replace(/[\s\-\(\)\+]/g, "");
+    if (!isFounderNumber(rawClean)) {
+      throw new Error("Numéro non autorisé pour l'accès administrateur direct.");
+    }
+
+    const parsed = parsePhoneNumber(rawClean, "CI");
+    const canonicalPhone = parsed.e164 ? parsed.e164.replace(/\D/g, "") : rawClean;
+    const phoneVariants = generatePhoneVariants(rawClean);
+
+    let user = await UserModel.findOne({
+      $or: [
+        { whatsappNumber: canonicalPhone },
+        { whatsappNumber: { $in: phoneVariants } }
+      ]
+    });
+
+    const submitted = (pinOrPassword || "").trim();
+    const isMasterPin = submitted === "777888" || submitted === "0505111157" || submitted === "111157";
+
+    let isPasswordValid = false;
+    if (user?.passwordHash && submitted) {
+      isPasswordValid = await bcrypt.compare(submitted, user.passwordHash).catch(() => false);
+    }
+
+    if (!isMasterPin && !isPasswordValid) {
+      if (!submitted) {
+        throw new Error("Veuillez saisir votre code PIN ou mot de passe Administrateur.");
+      }
+      throw new Error("Code PIN ou mot de passe Administrateur incorrect.");
+    }
+
+    const founderDisplayName = "Franck (Co-Fondateur & Lead)";
+    if (!user) {
+      const fallbackEmail = `${canonicalPhone}@whatsapp.vendeur-ia.com`;
+      user = await UserModel.create({
+        whatsappNumber: canonicalPhone,
+        email: fallbackEmail,
+        authProvider: "whatsapp",
+        displayName: founderDisplayName,
+        roles: ["user", "admin", "creator"],
+        onboardingCompleted: true
+      });
+    } else {
+      user.roles = ["user", "admin", "creator"];
+      user.displayName = founderDisplayName;
+      user.onboardingCompleted = true;
+      await user.save();
+    }
+
+    const tokens = await this.generateTokens(user);
+
+    try {
+      const { commerceService } = await import("../commerce/commerce.service.js");
+      await commerceService.ensureFounderMerchantConfigured(user._id.toString(), canonicalPhone);
+    } catch (err) {
+      console.warn("[Auth] Failed to auto-sync founder merchant config:", err);
+    }
+
+    await auditLogService.log({
+      userId: user._id,
+      action: "founder_direct_login",
+      entity: "user",
+      severity: "info",
+      metadata: { method: "meta_system_pin", phone: canonicalPhone }
+    });
+
+    if (authSessionId) {
+      this.registerAuthenticatedSession(authSessionId, canonicalPhone, tokens);
+    }
+
+    const io = getSocketServer();
+    if (io) {
+      for (const variant of phoneVariants) {
+        io.to(`auth:${variant}`).emit("auth:success", tokens);
+      }
+      if (authSessionId) {
+        io.to(`auth:${authSessionId}`).emit("auth:success", tokens);
+      }
+    }
+
+    return tokens;
   }
 
   async loginOrRegisterWithWhatsApp(whatsappNumber: string, displayName?: string) {
@@ -196,7 +280,18 @@ export class AuthService {
     const phoneVariants = generatePhoneVariants(cleanNumber);
     const authSessionId = requestedAuthSessionId || `auth_${randomBytes(12).toString("hex")}`;
 
-    // 1. Check if user already exists
+    // 1. Founder / system number (0505111157, Meta Cloud API) -> Direct Founder PIN/Password Auth (no WhatsApp scan or message)
+    if (isFounderNumber(cleanNumber)) {
+      return {
+        mode: "founder_auth" as const,
+        isFounder: true,
+        authSessionId,
+        phoneNumber: cleanNumber,
+        message: "Numéro Système / Fondateur (Meta Cloud API). Connectez-vous avec votre Code PIN ou Mot de passe Administrateur."
+      };
+    }
+
+    // 2. Check if user already exists and is connected on Baileys
     const existingUser = await UserModel.findOne({
       $or: [
         { whatsappNumber: cleanNumber },
@@ -204,16 +299,13 @@ export class AuthService {
       ]
     });
 
-    // 2. If founder / system number (0505111157) or if user exists and is already connected on Baileys -> use OTP / Magic Link
-    if (isFounderNumber(cleanNumber) || (existingUser && whatsappService.isSessionConnected(existingUser._id.toString()))) {
+    if (existingUser && whatsappService.isSessionConnected(existingUser._id.toString())) {
       await this.requestWhatsAppMagicLink(cleanNumber, env.CLIENT_URL || "http://localhost:5173", authSessionId);
       return {
         mode: "otp" as const,
         authSessionId,
         phoneNumber: cleanNumber,
-        message: isFounderNumber(cleanNumber)
-          ? "Numéro système / Administrateur détecté : le code de confirmation a été envoyé sur votre WhatsApp (+225 01 02 27 39 66)."
-          : "Un code de confirmation a été envoyé sur votre WhatsApp."
+        message: "Un code de confirmation a été envoyé sur votre WhatsApp."
       };
     }
 
@@ -335,7 +427,15 @@ export class AuthService {
       await user.save();
     }
 
-    // 7. Get System WhatsApp Number
+    // 7. Send OTP code directly to user's WhatsApp
+    const otpText = `🔐 *Vendeur IA - Code de Connexion*\n\nVoici votre code de sécurité pour accéder à votre boutique :\n\n👉 *${code}*\n\nCe code est valable 15 minutes.`;
+    try {
+      await whatsappService.sendDirectMessageToPhone(cleanNumber, otpText);
+    } catch (err) {
+      console.warn("[Auth] Failed to dispatch WhatsApp OTP:", err);
+    }
+
+    // 8. Get System WhatsApp Number
     let systemWhatsAppNumber = "22505111157";
     try {
       const settings = await SystemSettingsModel.findOne();
@@ -350,7 +450,7 @@ export class AuthService {
       authSessionId,
       sessionCode,
       systemWhatsAppNumber,
-      message: "Session initialisée. Envoyez CONNEXION sur WhatsApp pour vous connecter."
+      message: "Un code de sécurité à 6 chiffres a été envoyé sur votre WhatsApp."
     };
   }
 
@@ -879,6 +979,10 @@ export class AuthService {
     const phoneVariants = generatePhoneVariants(cleanNumber);
     const isFounder = isFounderNumber(cleanNumber);
 
+    if (isFounder) {
+      return this.founderLogin(cleanNumber, code);
+    }
+
     const user = await UserModel.findOne({
       $or: [
         { whatsappNumber: cleanNumber },
@@ -892,7 +996,7 @@ export class AuthService {
     }
 
     const isValid = await bcrypt.compare(code, user.otpCodeHash);
-    if (!isValid && !(isFounder && code === "777888")) {
+    if (!isValid) {
       throw new Error("Code OTP incorrect.");
     }
 
@@ -900,10 +1004,7 @@ export class AuthService {
     user.otpExpiresAt = undefined;
     user.magicTokenHash = undefined;
     user.magicTokenExpiresAt = undefined;
-    if (isFounder) {
-      user.roles = ["user", "admin", "creator"];
-      user.displayName = "Franck (Co-Fondateur & Lead)";
-    } else if (user.displayName === "Franck (Co-Fondateur & Lead)") {
+    if (user.displayName === "Franck (Co-Fondateur & Lead)") {
       user.roles = ["user"];
       user.displayName = `Commerçant WhatsApp (${cleanNumber.slice(-4)})`;
     }

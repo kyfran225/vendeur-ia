@@ -1,4 +1,5 @@
 import express, { Router } from "express";
+import mongoose from "mongoose";
 import { commerceService } from "./commerce.service.js";
 import { whatsappService } from "../whatsapp/whatsapp.service.js";
 import { messagingService } from "../../services/messaging.service.js";
@@ -30,6 +31,8 @@ import { aiProvider } from "../../services/ai-provider.js";
 import axios from "axios";
 import multer from "multer";
 import { emitToUser } from "../../realtime/socketServer.js";
+import { UserModel } from "../auth/user.model.js";
+import { isFounderNumber } from "../auth/auth.service.js";
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage() });
@@ -394,14 +397,65 @@ router.get("/storefront/:slugOrId/feed.xml", async (req, res) => {
 
 router.get("/conversations", authenticate, async (req, res) => {
   try {
-    const ownerId = (req as any).user.id;
-    const merchant = await CommerceMerchantModel.findOne({ ownerId });
-    if (!merchant) return res.json([]);
+    const user = (req as any).user;
+    const ownerId = user?.id || user?._id?.toString();
+    const userDoc = await UserModel.findById(ownerId);
 
-    const conversations = await CommerceConversationModel.find({ merchantId: merchant._id })
+    const isFounder = (userDoc?.whatsappNumber && isFounderNumber(userDoc.whatsappNumber)) ||
+                      (userDoc?.email && isFounderNumber(userDoc.email)) ||
+                      (userDoc?.roles && (userDoc.roles.includes("admin") || userDoc.roles.includes("creator")));
+
+    const merchantIds: any[] = [];
+
+    // 1. Direct merchants for this ownerId
+    const ownMerchants = await CommerceMerchantModel.find({
+      $or: [
+        { ownerId },
+        ...(ownerId && mongoose.isValidObjectId(ownerId) ? [{ ownerId: new mongoose.Types.ObjectId(ownerId) }] : [])
+      ]
+    }).select("_id").lean();
+
+    ownMerchants.forEach(m => merchantIds.push(m._id));
+
+    // 2. If founder / admin, also include Vendeur IA system merchant conversations
+    if (isFounder) {
+      const founderMerchants = await CommerceMerchantModel.find({
+        $or: [
+          { businessName: "Vendeur IA" },
+          { whatsappNumber: { $regex: '5111157' } },
+          { phone: { $regex: '5111157' } },
+          { "whatsappConfig.phoneNumberId": env.WHATSAPP_PHONE_ID }
+        ]
+      }).select("_id").lean();
+
+      founderMerchants.forEach(m => {
+        if (!merchantIds.some(id => id.toString() === m._id.toString())) {
+          merchantIds.push(m._id);
+        }
+      });
+    }
+
+    if (merchantIds.length === 0) return res.json([]);
+
+    const conversations = await CommerceConversationModel.find({ merchantId: { $in: merchantIds } })
       .populate("customerId")
-      .sort({ lastMessageAt: -1 });
-    res.json(conversations);
+      .sort({ lastMessageAt: -1, updatedAt: -1 });
+
+    const populatedConversations = await Promise.all(conversations.map(async (conv) => {
+      const lastMsg = await CommerceMessageModel.findOne({ conversationId: conv._id })
+        .sort({ timestamp: -1 });
+      return {
+        ...conv.toObject(),
+        lastMessage: lastMsg ? {
+          content: lastMsg.content,
+          sender: lastMsg.sender,
+          type: lastMsg.type,
+          timestamp: lastMsg.timestamp
+        } : null
+      };
+    }));
+
+    res.json(populatedConversations);
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
@@ -411,26 +465,23 @@ router.get("/conversations/:id/messages", authenticate, async (req, res) => {
   try {
     const messages = await CommerceMessageModel.find({ conversationId: req.params.id })
       .sort({ timestamp: 1 });
+
+    // Mark conversation as read
+    await CommerceConversationModel.findByIdAndUpdate(req.params.id, {
+      $set: { unreadCount: 0 }
+    }).catch(() => {});
+
     res.json(messages);
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
 });
 
-router.patch("/conversations/:id/status", authenticate, async (req, res) => {
+router.patch("/conversations/:id/read", authenticate, async (req, res) => {
   try {
-    const ownerId = (req as any).user.id;
-    const merchant = await CommerceMerchantModel.findOne({ ownerId });
-    if (!merchant) return res.status(404).json({ error: "Merchant not found" });
-
-    const { status } = req.body;
-    if (!["active", "needs_human", "converted", "closed"].includes(status)) {
-      return res.status(400).json({ error: "Invalid status" });
-    }
-
-    const conversation = await CommerceConversationModel.findOneAndUpdate(
-      { _id: req.params.id, merchantId: merchant._id },
-      { $set: { status } },
+    const conversation = await CommerceConversationModel.findByIdAndUpdate(
+      req.params.id,
+      { $set: { unreadCount: 0 } },
       { new: true }
     );
     res.json(conversation);
@@ -439,12 +490,35 @@ router.patch("/conversations/:id/status", authenticate, async (req, res) => {
   }
 });
 
-router.post("/conversations/:id/generate-followup", authenticate, async (req, res) => {
+router.patch("/conversations/:id/status", authenticate, async (req, res) => {
   try {
     const ownerId = (req as any).user.id;
-    const merchant = await CommerceMerchantModel.findOne({ ownerId });
-    if (!merchant) return res.status(404).json({ error: "Merchant not found" });
+    const { status } = req.body;
+    if (!["active", "needs_human", "converted", "closed"].includes(status)) {
+      return res.status(400).json({ error: "Invalid status" });
+    }
 
+    const conversation = await CommerceConversationModel.findByIdAndUpdate(
+      req.params.id,
+      { $set: { status } },
+      { new: true }
+    );
+
+    if (!conversation) return res.status(404).json({ error: "Conversation not found" });
+
+    emitToUser(ownerId, "conversation:update", {
+      conversationId: conversation._id,
+      status: conversation.status
+    });
+
+    res.json(conversation);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.post("/conversations/:id/generate-followup", authenticate, async (req, res) => {
+  try {
     const result = await commerceService.generateFollowUp(req.params.id);
     res.json(result);
   } catch (error: any) {
@@ -455,37 +529,67 @@ router.post("/conversations/:id/generate-followup", authenticate, async (req, re
 router.post("/conversations/:id/messages", authenticate, async (req, res) => {
   try {
     const ownerId = (req as any).user.id;
-    const merchant = await CommerceMerchantModel.findOne({ ownerId });
-    if (!merchant) return res.status(404).json({ error: "Merchant not found" });
-
     const { content } = req.body;
-    const conversation = await CommerceConversationModel.findOne({
-      _id: req.params.id,
-      merchantId: merchant._id
-    }).populate("customerId");
+    if (!content || !content.trim()) {
+      return res.status(400).json({ error: "Le contenu du message est requis" });
+    }
+
+    const conversation = await CommerceConversationModel.findById(req.params.id)
+      .populate("customerId");
 
     if (!conversation) return res.status(404).json({ error: "Conversation not found" });
+
+    let merchant = await CommerceMerchantModel.findById(conversation.merchantId);
+    if (!merchant) {
+      merchant = await CommerceMerchantModel.findOne({
+        $or: [
+          { ownerId },
+          { businessName: "Vendeur IA" },
+          { whatsappNumber: { $regex: '5111157' } }
+        ]
+      });
+    }
+
+    if (!merchant) return res.status(404).json({ error: "Marchand non trouvé" });
 
     // 1. Save message to DB
     const message = await CommerceMessageModel.create({
       conversationId: conversation._id,
       sender: "human",
-      content
+      type: "text",
+      content: content.trim(),
+      timestamp: new Date()
     });
 
-    // 2. Send via Platform Messaging
+    // 2. Update conversation
+    conversation.lastMessageAt = new Date();
+    conversation.status = "needs_human";
+    conversation.unreadCount = 0;
+    await conversation.save();
+
+    // 3. Emit real-time sync to all user & merchant tabs
+    const targetUserIds = new Set<string>([ownerId.toString()]);
+    if (merchant.ownerId) targetUserIds.add(merchant.ownerId.toString());
+
+    targetUserIds.forEach(tId => {
+      emitToUser(tId, "conversation:update", {
+        conversationId: conversation._id,
+        message,
+        status: "needs_human",
+        unreadCount: 0
+      });
+    });
+
+    // 4. Send via Platform Messaging
     const customer = conversation.customerId as any;
     const platform = conversation.platform || "whatsapp";
     const remoteId = platform === "web" ? (customer.platformId || "WEB_VISITOR") : customer.phone;
 
     try {
-      await messagingService.sendMessage(merchant, platform, remoteId, content);
+      await messagingService.sendMessage(merchant, platform, remoteId, content.trim());
     } catch (sendError: any) {
       console.error(`[Messaging] Failed to send to ${platform}:`, sendError.message);
-      // Continue even if external send fails, as we saved it to DB
     }
-
-    // 3. Force "needs_human" status to stop AI from intervening
 
     res.status(201).json(message);
   } catch (error: any) {
@@ -677,7 +781,17 @@ router.post("/conversations/:id/voice", authenticate, upload.single("audio"), as
     });
 
     conversation.lastMessageAt = new Date();
+    conversation.status = "needs_human";
+    conversation.unreadCount = 0;
     await conversation.save();
+
+    // Emit live update to socket
+    emitToUser(ownerId, "conversation:update", {
+      conversationId: conversation._id,
+      message,
+      status: "needs_human",
+      unreadCount: 0
+    });
 
     // 4. Dispatch to WhatsApp / Platform
     const customer = conversation.customerId as any;
@@ -1298,6 +1412,19 @@ router.post("/webhooks/paystack", async (req, res) => {
   }
 
   res.status(200).send('OK');
+});
+
+router.get("/merchant", authenticate, async (req, res) => {
+  const ownerId = (req as any).user.id;
+  try {
+    const merchant = await CommerceMerchantModel.findOne({ ownerId });
+    if (!merchant) {
+      return res.json({ merchant: null, onboardingCompleted: false });
+    }
+    res.json(merchant);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
 router.post("/merchant", authenticate, async (req, res) => {

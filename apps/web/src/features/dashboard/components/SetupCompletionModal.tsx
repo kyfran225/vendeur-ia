@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, Trophy, CreditCard, Truck, LayoutDashboard, Play, Package, X, ArrowRight, CheckCircle2, ShieldCheck, Zap } from "lucide-react";
+import { Sparkles, Trophy, LayoutDashboard, Play, Package, X, CheckCircle2, ShieldCheck } from "lucide-react";
 import { Link } from "react-router-dom";
 import { playPaymentNotificationChime } from "@/lib/audioUtils";
 
@@ -40,184 +40,126 @@ export function SetupCompletionModal({
 
   return createPortal(
     <AnimatePresence>
-      <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+      <div className="fixed inset-0 z-[250] flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md overflow-y-auto">
         <motion.div
-          initial={{ opacity: 0, scale: 0.9, y: 20 }}
+          initial={{ opacity: 0, scale: 0.92, y: 15 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.9, y: 20 }}
-          className="relative w-full max-w-lg bg-vendeur-coal border border-vendeur-emerald/40 rounded-[2.5rem] p-6 md:p-8 shadow-[0_0_60px_rgba(16,185,129,0.3)] overflow-hidden"
+          exit={{ opacity: 0, scale: 0.92, y: 15 }}
+          className="relative w-full max-w-md bg-vendeur-coal border border-vendeur-emerald/40 rounded-3xl p-5 sm:p-6 shadow-[0_0_50px_rgba(16,185,129,0.25)] overflow-hidden my-auto max-h-[90vh] flex flex-col"
         >
           {/* Background Glows */}
-          <div className="absolute -top-24 -right-24 w-48 h-48 bg-vendeur-emerald/25 rounded-full blur-3xl pointer-events-none" />
-          <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-vendeur-emerald/20 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute -top-20 -right-20 w-40 h-40 bg-vendeur-emerald/20 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute -bottom-20 -left-20 w-40 h-40 bg-vendeur-emerald/15 rounded-full blur-3xl pointer-events-none" />
 
           {/* Close Button */}
           <button
             onClick={onClose}
-            className="absolute top-5 right-5 p-2 rounded-full bg-white/5 border border-white/10 text-white/60 hover:text-white hover:bg-white/10 transition-all cursor-pointer"
+            className="absolute top-4 right-4 p-1.5 rounded-full bg-white/5 border border-white/10 text-white/60 hover:text-white hover:bg-white/10 transition-all cursor-pointer z-20"
+            title="Fermer"
           >
-            <X size={18} />
+            <X size={16} />
           </button>
 
-          <div className="text-center space-y-5 relative z-10">
-            {/* Trophy & Sparkles Icon */}
-            <div className="relative inline-flex items-center justify-center">
+          <div className="text-center space-y-4 relative z-10 overflow-y-auto pr-0.5">
+            {/* Trophy Icon Compact */}
+            <div className="relative inline-flex items-center justify-center pt-1">
               <motion.div
-                animate={{ rotate: [0, -8, 8, -8, 0], scale: [1, 1.06, 1] }}
+                animate={{ rotate: [0, -6, 6, -6, 0], scale: [1, 1.05, 1] }}
                 transition={{ duration: 2.5, repeat: Infinity, repeatDelay: 0.5 }}
-                className="h-20 w-20 md:h-24 md:w-24 rounded-3xl bg-vendeur-emerald flex items-center justify-center text-vendeur-coal shadow-xl shadow-vendeur-emerald/40 relative"
+                className="h-14 w-14 sm:h-16 sm:w-16 rounded-2xl bg-vendeur-emerald flex items-center justify-center text-vendeur-coal shadow-lg shadow-vendeur-emerald/30 relative"
               >
-                <Trophy size={48} />
-                <div className="absolute -top-2 -right-2 bg-amber-400 text-black p-1.5 rounded-full shadow-md animate-pulse">
-                  <Sparkles size={16} />
+                <Trophy size={30} />
+                <div className="absolute -top-1.5 -right-1.5 bg-amber-400 text-black p-1 rounded-full shadow-md animate-pulse">
+                  <Sparkles size={12} />
                 </div>
               </motion.div>
             </div>
 
-            {/* Header Text & Celebration Badge */}
-            <div className="space-y-2">
-              <span className="inline-flex items-center gap-1.5 text-xs font-black uppercase text-vendeur-emerald tracking-[0.15em] bg-vendeur-emerald/15 border border-vendeur-emerald/40 px-3.5 py-1 rounded-full shadow-sm">
-                <CheckCircle2 size={13} />
-                {hasPaidInfo ? "Paiement Validé & Configuration 100% Active" : "Configuration 100% Terminée"}
+            {/* Header Text & Badge */}
+            <div className="space-y-1.5">
+              <span className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase text-vendeur-emerald tracking-wider bg-vendeur-emerald/15 border border-vendeur-emerald/40 px-3 py-0.5 rounded-full shadow-sm">
+                <CheckCircle2 size={11} />
+                {hasPaidInfo ? "Paiement Validé & 100% Opérationnel" : "Configuration 100% Terminée"}
               </span>
 
-              <h2 className="text-2xl md:text-3xl font-black text-white uppercase tracking-tight">
+              <h2 className="text-xl sm:text-2xl font-black text-white uppercase tracking-tight truncate">
                 Félicitations {businessName} ! 🎉
               </h2>
 
-              <p className="text-xs md:text-sm text-white/70 leading-relaxed max-w-md mx-auto">
-                Votre boutique est désormais <strong className="text-vendeur-emerald">100% opérationnelle</strong>. Votre Vendeur IA autonome est prêt à répondre et convertir vos clients 24/7 sur WhatsApp !
+              <p className="text-xs text-white/70 leading-relaxed max-w-sm mx-auto">
+                Votre boutique est <strong className="text-vendeur-emerald">100% active</strong>. Votre Vendeur IA autonome est prêt à convertir vos clients 24/7 sur WhatsApp !
               </p>
             </div>
 
-            {/* Dedicated Payment Confirmation Card (Highlighted) */}
+            {/* Payment Confirmation Card (Compact) */}
             {hasPaidInfo && (
-              <div className="p-4 rounded-2xl bg-gradient-to-r from-emerald-950/60 via-[#0d1f16] to-emerald-950/60 border border-vendeur-emerald/30 space-y-2 text-left shadow-lg">
+              <div className="p-3 sm:p-3.5 rounded-xl bg-gradient-to-r from-emerald-950/60 via-[#0d1f16] to-emerald-950/60 border border-vendeur-emerald/30 space-y-1.5 text-left shadow-md">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <ShieldCheck size={18} className="text-vendeur-emerald" />
-                    <span className="text-xs font-black uppercase tracking-wider text-white">
+                  <div className="flex items-center gap-1.5">
+                    <ShieldCheck size={15} className="text-vendeur-emerald" />
+                    <span className="text-[11px] font-black uppercase tracking-wider text-white">
                       Règlement Confirmé
                     </span>
                   </div>
-                  <span className="px-2.5 py-0.5 rounded-full bg-vendeur-emerald/20 border border-vendeur-emerald/40 text-[10px] font-black uppercase text-vendeur-emerald">
+                  <span className="px-2 py-0.5 rounded-full bg-vendeur-emerald/20 border border-vendeur-emerald/40 text-[9px] font-black uppercase text-vendeur-emerald">
                     ✓ Actif
                   </span>
                 </div>
 
-                <div className="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-white/5 text-xs">
-                  <div className="space-y-0.5">
-                    <span className="text-[10px] text-white/40 uppercase font-black tracking-wider block">Formule Activée</span>
-                    <span className="font-bold text-white">
-                      {paymentDetails?.planName || "Formule Vendeur IA"} ({intervalText})
-                    </span>
-                  </div>
+                <div className="flex items-center justify-between gap-2 pt-1 border-t border-white/5 text-[11px]">
+                  <span className="font-bold text-white/90 truncate">
+                    {paymentDetails?.planName || "Formule Vendeur IA"} ({intervalText})
+                  </span>
 
                   {paymentDetails?.amount && (
-                    <div className="space-y-0.5 text-right">
-                      <span className="text-[10px] text-white/40 uppercase font-black tracking-wider block">Montant Validé</span>
-                      <span className="font-mono font-black text-vendeur-emerald">
-                        {paymentDetails.amount.toLocaleString()} {paymentDetails.currency || "XOF"}
-                      </span>
-                    </div>
+                    <span className="font-mono font-black text-vendeur-emerald shrink-0">
+                      {paymentDetails.amount.toLocaleString()} {paymentDetails.currency || "XOF"}
+                    </span>
                   )}
                 </div>
               </div>
             )}
 
-            {/* Suggestions Box */}
-            <div className="space-y-3 pt-2 text-left">
-              <p className="text-[10px] font-black uppercase text-white/40 tracking-widest px-1">
-                Que souhaitez-vous faire ensuite ?
-              </p>
+            {/* Quick Actions Grid */}
+            <div className="grid grid-cols-2 gap-2 pt-1">
+              <Link
+                to="/dashboard?test_ia=true"
+                onClick={onClose}
+                className="flex flex-col items-center justify-center gap-1 p-3 rounded-2xl bg-vendeur-emerald/10 border border-vendeur-emerald/30 hover:border-vendeur-emerald transition-all group cursor-pointer text-center"
+              >
+                <div className="h-8 w-8 rounded-xl bg-vendeur-emerald flex items-center justify-center text-vendeur-coal font-bold shrink-0 shadow-sm">
+                  <Play size={14} className="fill-current" />
+                </div>
+                <div className="text-[11px] font-black text-white uppercase group-hover:text-vendeur-emerald transition-colors">
+                  Tester le Simulateur
+                </div>
+                <span className="text-[9px] text-white/50">Essai en direct</span>
+              </Link>
 
-              <div className="grid grid-cols-1 gap-2.5 max-h-[260px] overflow-y-auto pr-1">
-                <Link
-                  to="/dashboard?test_ia=true"
-                  onClick={onClose}
-                  className="flex items-center gap-3.5 p-3 rounded-2xl bg-vendeur-emerald/10 border border-vendeur-emerald/30 hover:border-vendeur-emerald transition-all group"
-                >
-                  <div className="h-9 w-9 rounded-xl bg-vendeur-emerald flex items-center justify-center text-vendeur-coal font-bold shrink-0">
-                    <Play size={16} className="fill-current" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-xs font-black text-white uppercase group-hover:text-vendeur-emerald transition-colors">
-                      Tester mon Vendeur IA
-                    </div>
-                    <div className="text-[10px] text-white/60 truncate">
-                      Simulez des réponses clients en direct
-                    </div>
-                  </div>
-                  <ArrowRight size={16} className="text-vendeur-emerald group-hover:translate-x-1 transition-transform shrink-0" />
-                </Link>
-
-                <Link
-                  to="/products"
-                  onClick={onClose}
-                  className="flex items-center gap-3.5 p-3 rounded-2xl bg-white/5 border border-white/10 hover:border-white/20 transition-all group"
-                >
-                  <div className="h-9 w-9 rounded-xl bg-purple-500/10 text-purple-400 flex items-center justify-center shrink-0">
-                    <Package size={18} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-xs font-black text-white uppercase group-hover:text-purple-400 transition-colors">
-                      Ajouter d'autres produits ou services
-                    </div>
-                    <div className="text-[10px] text-white/60 truncate">
-                      Enrichir votre catalogue et augmenter vos offres
-                    </div>
-                  </div>
-                  <ArrowRight size={16} className="text-white/40 group-hover:translate-x-1 transition-transform shrink-0" />
-                </Link>
-
-                <Link
-                  to="/settings?tab=boutique#payments"
-                  onClick={onClose}
-                  className="flex items-center gap-3.5 p-3 rounded-2xl bg-white/5 border border-white/10 hover:border-white/20 transition-all group"
-                >
-                  <div className="h-9 w-9 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center shrink-0">
-                    <CreditCard size={18} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-xs font-black text-white uppercase group-hover:text-amber-400 transition-colors">
-                      Enrichir mes moyens de paiement
-                    </div>
-                    <div className="text-[10px] text-white/60 truncate">
-                      Ajouter d'autres numéros Mobile Money ou RIB
-                    </div>
-                  </div>
-                  <ArrowRight size={16} className="text-white/40 group-hover:translate-x-1 transition-transform shrink-0" />
-                </Link>
-
-                <Link
-                  to="/settings?tab=boutique#delivery"
-                  onClick={onClose}
-                  className="flex items-center gap-3.5 p-3 rounded-2xl bg-white/5 border border-white/10 hover:border-white/20 transition-all group"
-                >
-                  <div className="h-9 w-9 rounded-xl bg-blue-500/10 text-blue-400 flex items-center justify-center shrink-0">
-                    <Truck size={18} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-xs font-black text-white uppercase group-hover:text-blue-400 transition-colors">
-                      Ajuster mes zones & tarifs de livraison
-                    </div>
-                    <div className="text-[10px] text-white/60 truncate">
-                      Définir des tarifs personnalisés par ville/quartier
-                    </div>
-                  </div>
-                  <ArrowRight size={16} className="text-white/40 group-hover:translate-x-1 transition-transform shrink-0" />
-                </Link>
-              </div>
+              <Link
+                to="/products"
+                onClick={onClose}
+                className="flex flex-col items-center justify-center gap-1 p-3 rounded-2xl bg-white/5 border border-white/10 hover:border-white/20 transition-all group cursor-pointer text-center"
+              >
+                <div className="h-8 w-8 rounded-xl bg-purple-500/10 text-purple-400 flex items-center justify-center shrink-0">
+                  <Package size={16} />
+                </div>
+                <div className="text-[11px] font-black text-white uppercase group-hover:text-purple-400 transition-colors">
+                  Ajouter des Produits
+                </div>
+                <span className="text-[9px] text-white/50">Gérer mon stock</span>
+              </Link>
             </div>
 
-            {/* Back to Dashboard CTA */}
-            <div className="pt-2">
+            {/* Back to Dashboard Primary CTA */}
+            <div className="pt-1">
               <button
+                type="button"
                 onClick={onClose}
-                className="w-full h-12 rounded-2xl bg-vendeur-emerald text-vendeur-coal text-xs font-black uppercase tracking-widest hover:scale-102 active:scale-95 transition-all shadow-lg shadow-vendeur-emerald/20 flex items-center justify-center gap-2"
+                className="w-full h-11 sm:h-12 rounded-xl sm:rounded-2xl bg-vendeur-emerald hover:bg-emerald-400 text-vendeur-coal text-xs font-black uppercase tracking-wider active:scale-95 transition-all shadow-lg shadow-vendeur-emerald/20 flex items-center justify-center gap-2 cursor-pointer"
               >
-                <LayoutDashboard size={18} />
-                <span>Accéder à mon Tableau de Bord</span>
+                <LayoutDashboard size={16} />
+                <span>Voir mon Tableau de Bord</span>
               </button>
             </div>
           </div>

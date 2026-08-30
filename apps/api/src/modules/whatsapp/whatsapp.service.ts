@@ -3,9 +3,11 @@ import { useMongoAuthState, clearMongoAuthState, migrateMongoAuthState, WhatsApp
 import { Boom } from "@hapi/boom";
 import fs from "fs";
 import path from "path";
+import mongoose from "mongoose";
 import { env } from "../../config/env.js";
 import { commerceService } from "../commerce/commerce.service.js";
 import { CommerceMerchantModel, CommerceConversationModel, CommerceMessageModel, CommerceCustomerModel, CommerceProductModel, CommerceKnowledgeModel } from "../commerce/commerce.model.js";
+import { UserModel } from "../auth/user.model.js";
 import { SubscriptionModel } from "../commerce/subscription.model.js";
 import { WhatsAppConnectionModel } from "../commerce/whatsapp-connection.model.js";
 import { emitToUser, emitToSession, emitToAuth, getSocketServer } from "../../realtime/socketServer.js";
@@ -14,6 +16,7 @@ import { addAIJob } from "../../services/ai-queue.service.js";
 import { scheduleRecovery } from "../../services/marketing-queue.service.js";
 import { marketingService } from "../../services/marketing.service.js";
 import { pushService } from "../../services/push.service.js";
+import { notificationsService } from "../notifications/notifications.service.js";
 import { whatsappMediaService } from "./whatsapp-media.service.js";
 import { aiProvider } from "../../services/ai-provider.js";
 import { smsService } from "../../services/sms.service.js";
@@ -41,6 +44,23 @@ class WhatsAppService {
       console.log("[WhatsApp Heartbeat] Checking session health...");
       await this.checkSessionsHealth();
     }, 30 * 60 * 1000);
+  }
+
+  async sendDirectMessageToPhone(phone: string, text: string): Promise<boolean> {
+    const cleanNumber = phone.replace(/\D/g, "");
+    const jid = `${cleanNumber}@s.whatsapp.net`;
+
+    for (const [_, sock] of this.activeSessions.entries()) {
+      if (sock && sock.user?.id) {
+        try {
+          await sock.sendMessage(jid, { text });
+          return true;
+        } catch (err) {
+          console.warn("[WhatsApp] Failed sending direct message via active socket:", err);
+        }
+      }
+    }
+    return false;
   }
 
   async checkSessionsHealth() {
@@ -292,6 +312,8 @@ class WhatsAppService {
             for (const msg of m.messages) {
               if (!msg.key.fromMe) {
                 await this.handleIncomingMessage(userId, msg);
+              } else {
+                await this.handleOutgoingMessage(userId, msg);
               }
             }
           }
@@ -392,6 +414,8 @@ class WhatsAppService {
         for (const msg of m.messages) {
           if (!msg.key.fromMe) {
             await this.handleIncomingMessage(userId, msg);
+          } else {
+            await this.handleOutgoingMessage(userId, msg);
           }
         }
       }
@@ -503,6 +527,8 @@ class WhatsAppService {
           for (const msg of m.messages) {
             if (!msg.key.fromMe) {
               await this.handleIncomingMessage(userId, msg);
+            } else {
+              await this.handleOutgoingMessage(userId, msg);
             }
           }
         }
@@ -651,6 +677,8 @@ class WhatsAppService {
               for (const msg of m.messages) {
                 if (!msg.key.fromMe) {
                   await this.handleIncomingMessage(userId, msg);
+                } else {
+                  await this.handleOutgoingMessage(userId, msg);
                 }
               }
             }
@@ -847,20 +875,28 @@ class WhatsAppService {
     }
 
     // WhatsApp Service: handleIncomingMessage
-    const merchant = await CommerceMerchantModel.findOne({ ownerId: userId });
-    if (!merchant) return;
-
-    // --- HUMAN TAKEOVER LOGIC ---
-    let conversation = await CommerceConversationModel.findOne({
-      merchantId: merchant._id,
-      customerId: (await CommerceCustomerModel.findOne({ phone: from, merchantId: merchant._id }))?._id
+    let merchant = await CommerceMerchantModel.findOne({
+      $or: [
+        { ownerId: userId },
+        ...(userId && mongoose.isValidObjectId(userId) ? [{ ownerId: new mongoose.Types.ObjectId(userId) }] : [])
+      ]
     });
 
-    if (conversation?.status === 'needs_human') {
-      console.log(`[WhatsApp] Human takeover active for conversation ${conversation._id}. AI skipped.`);
+    if (!merchant) {
+      merchant = await CommerceMerchantModel.findOne({
+        $or: [
+          { whatsappNumber: { $regex: '5111157' } },
+          { phone: { $regex: '5111157' } },
+          { businessName: "Vendeur IA" },
+          { "whatsappConfig.phoneNumberId": env.WHATSAPP_PHONE_ID }
+        ]
+      });
+    }
+
+    if (!merchant) {
+      console.warn(`[WhatsApp] No merchant found for incoming message (userId: ${userId}, from: ${from})`);
       return;
     }
-    // ----------------------------
 
     const isAudioMsg = !text && (msg.message?.audioMessage || msg.message?.videoMessage);
 
@@ -888,8 +924,6 @@ class WhatsAppService {
 
     if (!text && !imageMsg) return;
 
-    if (!merchant) return;
-
     // Find or create customer
     const pushName = msg.pushName || undefined;
     let customer = await CommerceCustomerModel.findOne({ merchantId: merchant._id, phone: from });
@@ -906,16 +940,24 @@ class WhatsAppService {
     }
 
     // Find or create conversation
-    conversation = await CommerceConversationModel.findOne({ merchantId: merchant._id, customerId: customer._id, status: "active" });
+    let conversation = await CommerceConversationModel.findOne({ merchantId: merchant._id, customerId: customer._id });
     if (!conversation) {
-      conversation = await CommerceConversationModel.create({ merchantId: merchant._id, customerId: customer._id });
-    } else if (conversation.followUpSent) {
-      // Reset followUpSent when customer replies to allow new follow-ups later
-      // and to track recovery correctly in reporting
-      conversation.followUpSent = false;
-      conversation.isRecoveryPending = true; // Mark that the next order from this conv is a recovery
+      conversation = await CommerceConversationModel.create({
+        merchantId: merchant._id,
+        customerId: customer._id,
+        platform: "whatsapp",
+        status: "active",
+        unreadCount: 1,
+        lastMessageAt: new Date()
+      });
+    } else {
+      conversation.unreadCount = (conversation.unreadCount || 0) + 1;
+      conversation.lastMessageAt = new Date();
+      if (conversation.followUpSent) {
+        conversation.followUpSent = false;
+        conversation.isRecoveryPending = true;
+      }
       await conversation.save();
-      console.log(`[WhatsApp] Follow-up reset and recovery pending for conversation ${conversation._id}`);
     }
 
     // Handle Image / Payment Proof
@@ -985,12 +1027,76 @@ class WhatsAppService {
       conversationId: conversation._id,
       sender: "customer",
       type: isAudioMsg ? "audio" : imageMsg ? "image" : "text",
-      content: text
+      content: text,
+      timestamp: new Date()
     });
 
     // Update conversation metadata
     conversation.lastMessageAt = new Date();
     await conversation.save();
+
+    // --- REALTIME NOTIFICATIONS & LIVE SYNC FOR ADMIN ---
+    const customerDisplay = customer.name ? `${customer.name} (${customer.phone})` : customer.phone;
+
+    // Collect all recipient user IDs (session user, merchant owner, and all system admins)
+    const targetUserIds = new Set<string>();
+    if (userId) targetUserIds.add(userId.toString());
+    if (merchant.ownerId) targetUserIds.add(merchant.ownerId.toString());
+
+    const isSystemMerchant = merchant.businessName === "Vendeur IA" || 
+      (merchant.whatsappNumber && isFounderNumber(merchant.whatsappNumber)) ||
+      (merchant.phone && isFounderNumber(merchant.phone));
+
+    if (isSystemMerchant) {
+      try {
+        const adminUsers = await UserModel.find({
+          $or: [
+            { roles: { $in: ["admin", "creator"] } },
+            { whatsappNumber: { $regex: "5111157" } },
+            { email: { $regex: "5111157" } }
+          ]
+        }).select("_id").lean();
+
+        adminUsers.forEach(u => targetUserIds.add(u._id.toString()));
+      } catch (adminFetchErr) {}
+    }
+
+    for (const targetId of targetUserIds) {
+      emitToUser(targetId, "conversation:update", {
+        conversationId: conversation._id,
+        message: customerMsg,
+        customer: {
+          _id: customer._id,
+          name: customer.name,
+          phone: customer.phone,
+          loyaltyPoints: customer.loyaltyPoints
+        },
+        unreadCount: conversation.unreadCount
+      });
+
+      emitToUser(targetId, "notification:new", {
+        title: `💬 ${customerDisplay}`,
+        body: text.length > 120 ? text.substring(0, 117) + "..." : text,
+        data: {
+          conversationId: conversation._id.toString(),
+          customerId: customer._id.toString(),
+          phone: customer.phone,
+          senderName: customer.name || customer.phone,
+          messageId: customerMsg._id.toString()
+        }
+      });
+
+      pushService.sendNotification(targetId, {
+        title: `💬 ${customerDisplay}`,
+        body: text.length > 120 ? text.substring(0, 117) + "..." : text,
+        data: {
+          conversationId: conversation._id.toString(),
+          customerId: customer._id.toString(),
+          phone: customer.phone,
+          url: `/inbox?chat=${conversation._id}`
+        }
+      }).catch(err => console.warn("[WhatsApp Push Error]", err?.message || err));
+    }
 
     // --- SCHEDULE MARKETING RELANCE (2h) ---
     scheduleRecovery(conversation._id.toString(), merchant._id.toString(), customer._id.toString()).catch(err =>
@@ -1009,25 +1115,9 @@ class WhatsAppService {
       );
     }
 
-    // Fetch conversation history
-    const historyMessages = await CommerceMessageModel.find({ conversationId: conversation._id })
-      .sort({ timestamp: -1 })
-      .limit(10);
-
-    const history = historyMessages.reverse().map(m => ({
-      sender: m.sender,
-      content: m.content
-    }));
-
-    // Emit to frontend
-    emitToUser(userId, "conversation:update", {
-      conversationId: conversation._id,
-      message: customerMsg
-    });
-
     // --- 1. CHECK HUMAN TAKEOVER ---
     if (conversation.status === "needs_human") {
-      console.log(`[WhatsApp] Skipping AI for conversation ${conversation._id} (Status: needs_human)`);
+      console.log(`[WhatsApp] Human takeover active for conversation ${conversation._id}. AI skipped, admin notified.`);
       return;
     }
 
@@ -1051,6 +1141,16 @@ class WhatsAppService {
       console.log(`[WhatsApp] Mode Pause: AI autoReply is disabled for merchant "${merchant.businessName}". Manual handling.`);
       return;
     }
+
+    // Fetch conversation history
+    const historyMessages = await CommerceMessageModel.find({ conversationId: conversation._id })
+      .sort({ timestamp: -1 })
+      .limit(10);
+
+    const history = historyMessages.reverse().map(m => ({
+      sender: m.sender,
+      content: m.content
+    }));
 
     const products = await CommerceProductModel.find({ merchantId: merchant._id });
     const knowledge = await CommerceKnowledgeModel.findOne({ merchantId: merchant._id });
@@ -1078,6 +1178,140 @@ class WhatsAppService {
       } : undefined,
       aiSummary: (conversation as any).aiSummary || "",
       platform: "whatsapp"
+    });
+  }
+
+  async handleOutgoingMessage(userId: string, msg: any) {
+    if (!msg?.key) return;
+
+    let rawTo = msg.key.remoteJid || "";
+    let to = rawTo;
+
+    // Ignore status broadcast messages & newsletter/channels & groups
+    if (to.includes("@broadcast") || rawTo.includes("@broadcast") || to.includes("@newsletter") || to.endsWith("@g.us") || rawTo.endsWith("@g.us")) {
+      return;
+    }
+
+    // Ignore historical messages (> 2 min)
+    const msgTimestamp = typeof msg.messageTimestamp === "number"
+      ? msg.messageTimestamp
+      : (typeof msg.messageTimestamp?.low === "number" ? msg.messageTimestamp.low : Number(msg.messageTimestamp || 0));
+
+    if (msgTimestamp > 0 && (Date.now() / 1000 - msgTimestamp) > 120) {
+      return;
+    }
+
+    if (msg.key?.remoteJidAlt && msg.key.remoteJidAlt.includes('@s.whatsapp.net')) {
+      to = msg.key.remoteJidAlt;
+    } else if (msg.key?.sender_pn) {
+      to = msg.key.sender_pn;
+    }
+
+    let text = msg.message?.conversation || msg.message?.extendedTextMessage?.text || msg.message?.imageMessage?.caption || "";
+    const isAudioMsg = !text && (msg.message?.audioMessage || msg.message?.videoMessage);
+    const isImageMsg = !text && msg.message?.imageMessage;
+
+    if (!text && !isAudioMsg && !isImageMsg) return;
+
+    let merchant = await CommerceMerchantModel.findOne({
+      $or: [
+        { ownerId: userId },
+        ...(userId && mongoose.isValidObjectId(userId) ? [{ ownerId: new mongoose.Types.ObjectId(userId) }] : [])
+      ]
+    });
+
+    if (!merchant) {
+      merchant = await CommerceMerchantModel.findOne({
+        $or: [
+          { whatsappNumber: { $regex: '5111157' } },
+          { phone: { $regex: '5111157' } },
+          { businessName: "Vendeur IA" },
+          { "whatsappConfig.phoneNumberId": env.WHATSAPP_PHONE_ID }
+        ]
+      });
+    }
+
+    if (!merchant) return;
+
+    // Find or create customer
+    let customer = await CommerceCustomerModel.findOne({ merchantId: merchant._id, phone: to });
+    if (!customer && rawTo !== to) {
+      customer = await CommerceCustomerModel.findOne({ merchantId: merchant._id, phone: rawTo });
+    }
+    if (!customer) {
+      customer = await CommerceCustomerModel.create({ merchantId: merchant._id, phone: to, name: msg.pushName || undefined });
+    }
+
+    // Find or create conversation
+    let conversation = await CommerceConversationModel.findOne({ merchantId: merchant._id, customerId: customer._id });
+    if (!conversation) {
+      conversation = await CommerceConversationModel.create({
+        merchantId: merchant._id,
+        customerId: customer._id,
+        platform: "whatsapp",
+        status: "needs_human",
+        unreadCount: 0,
+        lastMessageAt: new Date()
+      });
+    }
+
+    // Check if we already recorded this exact message within the last 10 seconds (e.g. sent via API / Web)
+    const existingMsg = await CommerceMessageModel.findOne({
+      conversationId: conversation._id,
+      timestamp: { $gte: new Date(Date.now() - 10000) },
+      $or: [
+        { content: text || "[Message]" },
+        { content: text }
+      ]
+    });
+
+    if (existingMsg) {
+      return;
+    }
+
+    // Save outgoing human message
+    const merchantMsg = await CommerceMessageModel.create({
+      conversationId: conversation._id,
+      sender: "human",
+      type: isAudioMsg ? "audio" : isImageMsg ? "image" : "text",
+      content: text || (isAudioMsg ? "🎤 [Note vocale]" : "📷 [Photo]"),
+      timestamp: new Date()
+    });
+
+    conversation.lastMessageAt = new Date();
+    conversation.status = "needs_human";
+    conversation.unreadCount = 0;
+    await conversation.save();
+
+    const targetUserIds = new Set<string>();
+    if (userId) targetUserIds.add(userId.toString());
+    if (merchant.ownerId) targetUserIds.add(merchant.ownerId.toString());
+
+    const isSystemMerchant = merchant.businessName === "Vendeur IA" || 
+      (merchant.whatsappNumber && isFounderNumber(merchant.whatsappNumber)) ||
+      (merchant.phone && isFounderNumber(merchant.phone));
+
+    if (isSystemMerchant) {
+      try {
+        const adminUsers = await UserModel.find({
+          $or: [
+            { roles: { $in: ["admin", "creator"] } },
+            { whatsappNumber: { $regex: "5111157" } },
+            { email: { $regex: "5111157" } }
+          ]
+        }).select("_id").lean();
+
+        adminUsers.forEach(u => targetUserIds.add(u._id.toString()));
+      } catch (adminFetchErr) {}
+    }
+
+    targetUserIds.forEach(tId => {
+      emitToUser(tId, "conversation:update", {
+        conversationId: conversation._id,
+        message: merchantMsg,
+        status: "needs_human",
+        unreadCount: 0
+      });
     });
   }
 
@@ -1287,17 +1521,39 @@ class WhatsAppService {
     }
 
     // 1. Find the merchant associated with this Phone ID (Dedicated number) or phone/whatsappNumber
-    const phoneVariants = phoneId ? generatePhoneVariants(phoneId) : [];
-    let merchant = await CommerceMerchantModel.findOne({
-      $or: [
-        { "whatsappConfig.meta.phoneNumberId": phoneId },
-        { "whatsappConfig.phoneNumberId": phoneId },
-        { whatsappNumber: phoneId },
-        { phone: phoneId },
-        { whatsappNumber: `+${phoneId}` },
-        ...(phoneVariants.length > 0 ? [{ whatsappNumber: { $in: phoneVariants } }, { phone: { $in: phoneVariants } }] : [])
-      ]
-    });
+    const systemPhoneId = env.WHATSAPP_PHONE_ID || "1283754474826620";
+    let merchant: any = null;
+
+    if (phoneId === systemPhoneId || !phoneId) {
+      // Direct system Meta number -> ALWAYS route to Vendeur IA founder merchant!
+      merchant = await CommerceMerchantModel.findOne({
+        $or: [
+          { whatsappNumber: { $regex: "5111157" } },
+          { phone: { $regex: "5111157" } },
+          { "whatsappConfig.phoneNumberId": systemPhoneId },
+          { "whatsappConfig.meta.phoneNumberId": systemPhoneId },
+          { businessName: "Vendeur IA" }
+        ]
+      });
+      if (merchant) {
+        console.log(`[Meta WhatsApp] Matched system PhoneID ${phoneId} directly to official business: ${merchant.businessName}`);
+      }
+    }
+
+    if (!merchant) {
+      const phoneVariants = phoneId ? generatePhoneVariants(phoneId) : [];
+      merchant = await CommerceMerchantModel.findOne({
+        $or: [
+          { "whatsappConfig.meta.phoneNumberId": phoneId },
+          { "whatsappConfig.phoneNumberId": phoneId },
+          { whatsappNumber: phoneId },
+          { phone: phoneId },
+          { whatsappNumber: `+${phoneId}` },
+          ...(phoneVariants.length > 0 ? [{ whatsappNumber: { $in: phoneVariants } }, { phone: { $in: phoneVariants } }] : [])
+        ]
+      });
+    }
+
     let latestConversation: any = null;
 
     // 2. If not found, it might be a shared system number
@@ -1522,20 +1778,53 @@ class WhatsAppService {
   }
 
   async getSessionStatus(userId: string): Promise<string> {
-    const merchant = await CommerceMerchantModel.findOne({ ownerId: userId });
-    const connection = await WhatsAppConnectionModel.findOne({ userId });
+    let merchant = await CommerceMerchantModel.findOne({
+      $or: [
+        { ownerId: userId },
+        ...(userId && mongoose.isValidObjectId(userId) ? [{ ownerId: new mongoose.Types.ObjectId(userId) }] : [])
+      ]
+    });
 
-    const isConnected =
-      merchant?.whatsappConfig?.status === "connected" ||
-      connection?.status === "CONNECTED" ||
-      (merchant?.whatsappConfig?.provider === "meta" && Boolean(merchant?.whatsappConfig?.meta?.phoneNumberId));
+    const userDoc = await UserModel.findById(userId);
+    const isFounder = (userDoc?.whatsappNumber && isFounderNumber(userDoc.whatsappNumber)) ||
+                      (userDoc?.email && isFounderNumber(userDoc.email)) ||
+                      (userDoc?.roles && (userDoc.roles.includes("admin") || userDoc.roles.includes("creator")));
 
-    if (isConnected) {
+    if (!merchant && isFounder) {
+      merchant = await CommerceMerchantModel.findOne({
+        $or: [
+          { businessName: "Vendeur IA" },
+          { whatsappNumber: { $regex: '5111157' } },
+          { phone: { $regex: '5111157' } }
+        ]
+      });
+    }
+
+    const connection = await WhatsAppConnectionModel.findOne({
+      $or: [
+        { userId },
+        ...(merchant?.ownerId ? [{ userId: merchant.ownerId.toString() }] : [])
+      ]
+    });
+
+    // 1. Verify active Baileys socket in memory
+    const activeSock = this.activeSessions.get(userId) || (merchant?.ownerId ? this.activeSessions.get(merchant.ownerId.toString()) : null);
+    if (activeSock && activeSock.user && (activeSock.user.id || (activeSock.user as any).lid)) {
       return "connected";
     }
 
-    const session = this.activeSessions.get(userId);
-    if (session && session.user) {
+    // 2. If status is explicitly disconnected
+    if (merchant?.whatsappConfig?.status === "disconnected" || connection?.status === "DISCONNECTED") {
+      return "disconnected";
+    }
+
+    // 3. Check Meta Cloud API provider
+    if (merchant?.whatsappConfig?.provider === "meta" && merchant?.whatsappConfig?.status === "connected") {
+      return "connected";
+    }
+
+    // 4. Check Baileys connection status in DB
+    if (merchant?.whatsappConfig?.status === "connected" && connection?.status === "CONNECTED") {
       return "connected";
     }
 
@@ -1543,33 +1832,110 @@ class WhatsAppService {
       return "connecting";
     }
 
-    return merchant?.whatsappConfig?.status || "disconnected";
+    return "disconnected";
   }
 
   async disconnectSession(userId: string) {
-    const sock = this.activeSessions.get(userId);
-    if (sock) {
-      try {
-        await sock.logout();
-      } catch (e) {}
-      this.activeSessions.delete(userId);
+    const userDoc = await UserModel.findById(userId);
+    const isFounder = (userDoc?.whatsappNumber && isFounderNumber(userDoc.whatsappNumber)) ||
+                      (userDoc?.email && isFounderNumber(userDoc.email)) ||
+                      (userDoc?.roles && (userDoc.roles.includes("admin") || userDoc.roles.includes("creator")));
+
+    let merchant = await CommerceMerchantModel.findOne({
+      $or: [
+        { ownerId: userId },
+        ...(userId && mongoose.isValidObjectId(userId) ? [{ ownerId: new mongoose.Types.ObjectId(userId) }] : [])
+      ]
+    });
+
+    if (!merchant && isFounder) {
+      merchant = await CommerceMerchantModel.findOne({
+        $or: [
+          { businessName: "Vendeur IA" },
+          { whatsappNumber: { $regex: '5111157' } },
+          { phone: { $regex: '5111157' } }
+        ]
+      });
     }
-    this.pendingInitializations.delete(userId);
-    this.lastPairingCodeMap.delete(userId);
-    this.lastQrMap.delete(userId);
 
-    await clearMongoAuthState(userId);
+    const userIdsToClean = new Set<string>([userId.toString()]);
+    if (merchant?.ownerId) userIdsToClean.add(merchant.ownerId.toString());
 
-    await CommerceMerchantModel.findOneAndUpdate(
-      { ownerId: userId },
-      { $set: { "whatsappConfig.status": "disconnected" } }
+    // 1. Terminate all matching Baileys sockets in memory
+    for (const id of userIdsToClean) {
+      const sock = this.activeSessions.get(id);
+      if (sock) {
+        try {
+          await sock.logout().catch(() => {});
+        } catch (e) {}
+        try {
+          sock.end(undefined);
+        } catch (e) {}
+        this.activeSessions.delete(id);
+      }
+      this.pendingInitializations.delete(id);
+      this.lastPairingCodeMap.delete(id);
+      this.lastQrMap.delete(id);
+
+      // Clear Mongo Auth State
+      await clearMongoAuthState(id);
+    }
+
+    // 2. Update CommerceMerchantModel to disconnected
+    const merchantQuery: any = {
+      $or: [
+        { ownerId: { $in: Array.from(userIdsToClean) } },
+        ...(isFounder ? [
+          { businessName: "Vendeur IA" },
+          { whatsappNumber: { $regex: '5111157' } },
+          { phone: { $regex: '5111157' } }
+        ] : [])
+      ]
+    };
+
+    await CommerceMerchantModel.updateMany(
+      merchantQuery,
+      {
+        $set: {
+          "whatsappConfig.status": "disconnected",
+          "whatsappConfig.reconnectAttempts": 0
+        }
+      }
     );
 
-    await WhatsAppConnectionModel.findOneAndUpdate(
-      { userId },
-      { $set: { status: "DISCONNECTED", disconnectedAt: new Date() } },
+    // 3. Update WhatsAppConnectionModel to DISCONNECTED
+    await WhatsAppConnectionModel.updateMany(
+      {
+        $or: [
+          { userId: { $in: Array.from(userIdsToClean) } },
+          ...(isFounder ? [{ phoneNumber: { $regex: '5111157' } }] : [])
+        ]
+      },
+      {
+        $set: {
+          status: "DISCONNECTED",
+          disconnectedAt: new Date()
+        }
+      },
       { upsert: true }
     );
+
+    // 4. Emit real-time disconnect event
+    const io = getSocketServer();
+    if (io) {
+      for (const id of userIdsToClean) {
+        io.to(`user:${id}`).emit("whatsapp:disconnected", {
+          reason: "user_action",
+          shouldReconnect: false
+        });
+        io.to(`session:${id}`).emit("whatsapp:disconnected", {
+          reason: "user_action",
+          shouldReconnect: false
+        });
+      }
+    }
+
+    console.log(`[WhatsApp] Disconnected successfully for user ${userId} (cleaned ${userIdsToClean.size} sessions)`);
   }
 }
 

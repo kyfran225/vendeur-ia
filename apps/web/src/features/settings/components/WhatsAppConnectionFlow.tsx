@@ -73,11 +73,42 @@ export function WhatsAppConnectionFlow() {
     }
   });
 
+  const { data: liveStatusData } = useQuery({
+    queryKey: ["whatsapp-status"],
+    queryFn: async () => {
+      try {
+        const res = await apiClient.get("/api/whatsapp/status");
+        return res.data;
+      } catch {
+        return { status: "disconnected" };
+      }
+    },
+    refetchInterval: 5000
+  });
+
   const merchant = dashboard?.merchant;
   const whatsapp = dashboard?.whatsappConnection;
-  const activeNumber = merchant?.whatsappNumber || merchant?.phone || whatsapp?.phoneNumber || "";
-  const isBaileysConnected = whatsapp?.status === "CONNECTED" || merchant?.whatsappConfig?.status === "connected";
-  const isMetaConnected = merchant?.whatsappConfig?.provider === "meta" && Boolean(merchant?.whatsappConfig?.meta?.phoneNumberId || merchant?.whatsappConfig?.phoneNumberId);
+  const activeNumber = merchant?.whatsappNumber || merchant?.phone || whatsapp?.phoneNumber || user?.whatsappNumber || "";
+
+  const isExplicitlyDisconnected =
+    liveStatusData?.status === "disconnected" ||
+    merchant?.whatsappConfig?.status === "disconnected" ||
+    whatsapp?.status === "DISCONNECTED" ||
+    whatsapp?.status === "disconnected";
+
+  const isBaileysConnected =
+    !isExplicitlyDisconnected &&
+    (liveStatusData?.status === "connected" ||
+     whatsapp?.status === "CONNECTED" ||
+     whatsapp?.status === "connected" ||
+     merchant?.whatsappConfig?.status === "connected");
+
+  const isMetaConnected =
+    !isExplicitlyDisconnected &&
+    merchant?.whatsappConfig?.provider === "meta" &&
+    merchant?.whatsappConfig?.status === "connected" &&
+    Boolean(merchant?.whatsappConfig?.meta?.phoneNumberId || merchant?.whatsappConfig?.phoneNumberId);
+
   const isConnectedLive = isBaileysConnected || isMetaConnected;
 
   const isPaidActive = merchant?.subscription?.status === "active";
@@ -248,11 +279,15 @@ export function WhatsAppConnectionFlow() {
     setIsDisconnecting(true);
     try {
       await apiClient.post("/api/whatsapp/disconnect");
-      toast.success("WhatsApp déconnecté.");
+      toast.success("WhatsApp déconnecté avec succès.");
       setPairingCode(null);
       setQrCodeData(null);
-      refetch();
-      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["dashboard"] }),
+        queryClient.invalidateQueries({ queryKey: ["whatsapp-status"] }),
+        queryClient.invalidateQueries({ queryKey: ["merchant"] })
+      ]);
+      await refetch();
     } catch (err: any) {
       toast.error(err.response?.data?.error || "Erreur lors de la déconnexion.");
     } finally {
@@ -322,7 +357,7 @@ export function WhatsAppConnectionFlow() {
   return (
     <div className="space-y-6 w-full max-w-full overflow-hidden box-border">
       {/* 1. Header Statut WhatsApp */}
-      <div className="bg-vendeur-coal border border-white/10 rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-8 space-y-5 text-left shadow-2xl w-full max-w-full overflow-hidden box-border">
+      <div id="whatsapp" className="scroll-mt-28 bg-vendeur-coal border border-white/10 rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-8 space-y-5 text-left shadow-2xl w-full max-w-full overflow-hidden box-border">
         <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 border-b border-white/5 pb-5 w-full">
           <div className="flex items-start sm:items-center gap-3.5 min-w-0 flex-1 w-full">
             <div className={cn(
@@ -352,16 +387,22 @@ export function WhatsAppConnectionFlow() {
                 )}>
                   <span className={cn(
                     "h-1.5 w-1.5 rounded-full shrink-0",
-                    isConnectedLive ? "bg-vendeur-emerald animate-pulse" : "bg-white/30"
+                    isConnectedLive && isPaidActive && !isPaused
+                      ? "bg-vendeur-emerald animate-pulse"
+                      : isConnectedLive && isPaused
+                        ? "bg-sky-400"
+                        : isConnectedLive
+                          ? "bg-amber-400"
+                          : "bg-white/30"
                   )} />
                   <span>
                     {isConnectedLive
                       ? isPaidActive && !isPaused
-                        ? "🟢 En Vente 24h/24"
+                        ? "En Vente 24h/24"
                         : isPaused
-                          ? "⏸️ Mode Pause (Manuel)"
-                          : "🟡 Ligne Connectée (En attente d'activation)"
-                      : "🔴 Ligne Non Connectée"}
+                          ? "Mode Pause (Manuel)"
+                          : "Ligne Connectée (Mode Découverte)"
+                      : "Ligne Non Connectée"}
                   </span>
                 </span>
                 <h3 className="text-base sm:text-lg md:text-xl font-black text-white uppercase tracking-tight">
@@ -414,8 +455,8 @@ export function WhatsAppConnectionFlow() {
         {/* 2. Onglets de Connexion & Jumelage */}
         {!isConnectedLive ? (
           <div className="space-y-5 pt-2">
-            {/* Tab Selector (Ergonomique 48px) */}
-            <div className="grid grid-cols-2 sm:flex sm:items-center gap-2 p-1 bg-black/40 border border-white/10 rounded-2xl">
+            {/* Tab Selector (Ergonomique Mobile-First) */}
+            <div className="grid grid-cols-2 gap-1.5 p-1 bg-black/60 border border-white/10 rounded-2xl w-full">
               <button
                 type="button"
                 onClick={() => {
@@ -423,14 +464,14 @@ export function WhatsAppConnectionFlow() {
                   if (!pairingCode) handleRequestPairingCode();
                 }}
                 className={cn(
-                  "h-12 px-4 rounded-xl font-black uppercase tracking-wider text-xs flex items-center justify-center gap-2 transition-all cursor-pointer",
+                  "min-h-[46px] sm:min-h-[48px] px-2.5 sm:px-4 rounded-xl font-black uppercase tracking-wider text-[11px] sm:text-xs flex items-center justify-center gap-1.5 sm:gap-2 transition-all cursor-pointer text-center",
                   activeTab === "pairing_code"
-                    ? "bg-vendeur-emerald text-vendeur-coal shadow-md"
-                    : "text-white/60 hover:text-white"
+                    ? "bg-vendeur-emerald text-vendeur-coal shadow-lg shadow-emerald-500/20 font-black"
+                    : "text-white/60 hover:text-white hover:bg-white/5"
                 )}
               >
-                <Smartphone size={16} className="shrink-0" />
-                <span>Sur ce Téléphone (Code)</span>
+                <Smartphone size={15} className="shrink-0" />
+                <span className="truncate">Code Mobile</span>
               </button>
 
               <button
@@ -440,14 +481,14 @@ export function WhatsAppConnectionFlow() {
                   if (!qrCodeData) handleRequestQrCode();
                 }}
                 className={cn(
-                  "h-12 px-4 rounded-xl font-black uppercase tracking-wider text-xs flex items-center justify-center gap-2 transition-all cursor-pointer",
+                  "min-h-[46px] sm:min-h-[48px] px-2.5 sm:px-4 rounded-xl font-black uppercase tracking-wider text-[11px] sm:text-xs flex items-center justify-center gap-1.5 sm:gap-2 transition-all cursor-pointer text-center",
                   activeTab === "qr_code"
-                    ? "bg-vendeur-emerald text-vendeur-coal shadow-md"
-                    : "text-white/60 hover:text-white"
+                    ? "bg-vendeur-emerald text-vendeur-coal shadow-lg shadow-emerald-500/20 font-black"
+                    : "text-white/60 hover:text-white hover:bg-white/5"
                 )}
               >
-                <QrCode size={16} className="shrink-0" />
-                <span>Scanner un QR Code</span>
+                <QrCode size={15} className="shrink-0" />
+                <span className="truncate">Scanner QR</span>
               </button>
             </div>
 
@@ -673,69 +714,143 @@ export function WhatsAppConnectionFlow() {
           </div>
         )}
 
-        {/* 3. Section Meta Cloud API Développeur (Collapsible) */}
-        <div className="border-t border-white/5 pt-3">
+        {/* 3. Section Meta Cloud API Développeur (Collapsible Mobile-Optimized) */}
+        <div className="border-t border-white/5 pt-4">
           <button
             type="button"
             onClick={() => setShowAdvancedMeta(!showAdvancedMeta)}
-            className="flex items-center justify-between w-full text-left py-2 text-xs font-bold text-white/50 hover:text-white transition-colors cursor-pointer"
+            className={cn(
+              "flex items-center justify-between w-full text-left p-3 sm:p-3.5 rounded-2xl border transition-all cursor-pointer",
+              showAdvancedMeta
+                ? "bg-black/60 border-white/15 shadow-inner"
+                : "bg-white/[0.02] hover:bg-white/[0.04] border-white/5 hover:border-white/10"
+            )}
           >
-            <div className="flex items-center gap-2">
-              <Settings2 size={14} className="text-white/40 shrink-0" />
-              <span className="text-[11px] sm:text-xs">Option Entreprise : Meta WhatsApp Cloud API (Optionnel)</span>
+            <div className="flex items-center gap-2.5 min-w-0 flex-1">
+              <div className="h-8 w-8 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400 flex items-center justify-center shrink-0">
+                <Settings2 size={16} />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className="text-xs sm:text-sm font-black text-white tracking-tight">
+                    Option Entreprise
+                  </span>
+                  <span className="px-1.5 py-0.2 rounded bg-blue-500/15 border border-blue-500/30 text-[9px] font-black text-blue-300 uppercase tracking-wider">
+                    Meta Cloud
+                  </span>
+                </div>
+                <p className="text-[11px] text-white/40 truncate mt-0.5">
+                  WhatsApp Business Cloud API (Optionnel)
+                </p>
+              </div>
             </div>
-            {showAdvancedMeta ? <ChevronUp size={14} className="shrink-0" /> : <ChevronDown size={14} className="shrink-0" />}
+
+            <div className={cn(
+              "h-7 w-7 rounded-lg bg-white/5 flex items-center justify-center text-white/50 transition-transform duration-200 shrink-0 ml-2",
+              showAdvancedMeta && "rotate-180 text-white bg-white/10"
+            )}>
+              <ChevronDown size={14} />
+            </div>
           </button>
 
           {showAdvancedMeta && (
-            <div className="space-y-4 pt-3 mt-1 border-t border-white/5 animate-in fade-in duration-300 w-full max-w-full">
-              <p className="text-[10px] sm:text-[11px] text-white/40 leading-relaxed">
-                Réservé aux comptes WhatsApp Business API vérifiés sur Meta Business Suite.
-              </p>
+            <div className="space-y-4 p-3.5 sm:p-5 mt-2 bg-black/40 border border-white/10 rounded-2xl animate-in fade-in duration-300 w-full max-w-full box-border">
+              <div className="p-3 rounded-xl bg-blue-500/5 border border-blue-500/15 text-[11px] text-blue-300/80 leading-relaxed">
+                ℹ️ Réservé aux comptes vérifiés sur <strong>Meta Business Suite</strong> avec un accès WhatsApp Cloud API officiel.
+              </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full">
-                <div className="space-y-1 min-w-0">
-                  <label className="text-[9px] font-black uppercase tracking-widest text-white/40">Phone Number ID</label>
-                  <input
-                    type="text"
-                    placeholder="Ex: 1048593849502"
-                    value={metaForm.phoneNumberId}
-                    onChange={(e) => setMetaForm({ ...metaForm, phoneNumberId: e.target.value })}
-                    className="w-full h-11 bg-black/40 border border-white/10 rounded-xl px-3 text-xs font-mono text-white focus:border-vendeur-emerald outline-none transition-all box-border"
-                  />
+              {/* Bouton d'activation 1-Click Ligne Officielle Système */}
+              <div className="p-3.5 rounded-xl bg-white/[0.02] border border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-xs font-bold text-white">Ligne Système Vendeur IA</p>
+                  <p className="text-[10px] text-white/40 font-mono">+225 05 05 11 11 57 (Meta PhoneID: 1283754474826620)</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    setSavingMeta(true);
+                    try {
+                      await apiClient.patch("/api/whatsapp/config", {
+                        provider: "meta",
+                        whatsappNumber: "+2250505111157"
+                      });
+                      toast.success("Ligne Officielle Meta Cloud activée ! 🚀");
+                      await Promise.all([
+                        queryClient.invalidateQueries({ queryKey: ["dashboard"] }),
+                        queryClient.invalidateQueries({ queryKey: ["whatsapp-status"] }),
+                        queryClient.invalidateQueries({ queryKey: ["merchant"] })
+                      ]);
+                      await refetch();
+                    } catch (err: any) {
+                      toast.error(err.response?.data?.error || "Erreur lors de l'activation Meta.");
+                    } finally {
+                      setSavingMeta(false);
+                    }
+                  }}
+                  disabled={savingMeta}
+                  className="h-10 px-3.5 rounded-xl bg-blue-500/15 hover:bg-blue-500/25 border border-blue-500/30 text-blue-300 font-bold uppercase tracking-wider text-[10px] sm:text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer active:scale-95 disabled:opacity-50 shrink-0"
+                >
+                  {savingMeta ? <Loader2 size={13} className="animate-spin shrink-0" /> : <Zap size={13} fill="currentColor" className="shrink-0" />}
+                  <span>Activer la Ligne Officielle</span>
+                </button>
+              </div>
+
+              {/* Formulaire Clés Personnalisées */}
+              <div className="space-y-3 pt-1">
+                <p className="text-[11px] font-bold text-white/60 uppercase tracking-wider">
+                  Ou saisissez vos propres clés Meta :
+                </p>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full">
+                  <div className="space-y-1 min-w-0">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-white/50 ml-0.5">
+                      Phone Number ID
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Ex: 1283754474826620"
+                      value={metaForm.phoneNumberId}
+                      onChange={(e) => setMetaForm({ ...metaForm, phoneNumberId: e.target.value })}
+                      className="w-full h-11 sm:h-12 bg-black/60 border border-white/10 rounded-xl px-3.5 text-xs sm:text-sm font-mono text-white placeholder:text-white/20 focus:border-vendeur-emerald outline-none transition-all box-border"
+                    />
+                  </div>
+
+                  <div className="space-y-1 min-w-0">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-white/50 ml-0.5">
+                      WABA ID
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Ex: 2049583920194"
+                      value={metaForm.wabaId}
+                      onChange={(e) => setMetaForm({ ...metaForm, wabaId: e.target.value })}
+                      className="w-full h-11 sm:h-12 bg-black/60 border border-white/10 rounded-xl px-3.5 text-xs sm:text-sm font-mono text-white placeholder:text-white/20 focus:border-vendeur-emerald outline-none transition-all box-border"
+                    />
+                  </div>
                 </div>
 
                 <div className="space-y-1 min-w-0">
-                  <label className="text-[9px] font-black uppercase tracking-widest text-white/40">WABA ID</label>
-                  <input
-                    type="text"
-                    placeholder="Ex: 2049583920194"
-                    value={metaForm.wabaId}
-                    onChange={(e) => setMetaForm({ ...metaForm, wabaId: e.target.value })}
-                    className="w-full h-11 bg-black/40 border border-white/10 rounded-xl px-3 text-xs font-mono text-white focus:border-vendeur-emerald outline-none transition-all box-border"
+                  <label className="text-[10px] font-black uppercase tracking-widest text-white/50 ml-0.5">
+                    Access Token Permanent (EAAG...)
+                  </label>
+                  <textarea
+                    placeholder="Collez votre jeton d'accès Meta (EAAG...)"
+                    value={metaForm.accessToken}
+                    onChange={(e) => setMetaForm({ ...metaForm, accessToken: e.target.value })}
+                    className="w-full h-20 sm:h-24 bg-black/60 border border-white/10 rounded-xl p-3 text-xs font-mono text-white placeholder:text-white/20 focus:border-vendeur-emerald outline-none transition-all resize-none box-border"
                   />
                 </div>
-              </div>
 
-              <div className="space-y-1 min-w-0">
-                <label className="text-[9px] font-black uppercase tracking-widest text-white/40">Access Token EAAG</label>
-                <textarea
-                  placeholder="Ex: EAAG..."
-                  value={metaForm.accessToken}
-                  onChange={(e) => setMetaForm({ ...metaForm, accessToken: e.target.value })}
-                  className="w-full h-20 bg-black/40 border border-white/10 rounded-xl p-3 text-[10px] font-mono text-white focus:border-vendeur-emerald outline-none transition-all resize-none box-border"
-                />
+                <button
+                  type="button"
+                  onClick={handleSaveMetaConfig}
+                  disabled={savingMeta}
+                  className="w-full sm:w-auto min-h-[48px] px-6 bg-vendeur-emerald text-vendeur-coal font-black uppercase tracking-wider text-xs sm:text-sm rounded-xl flex items-center justify-center gap-2 hover:bg-emerald-400 active:scale-95 transition-all shadow-lg shadow-emerald-500/20 disabled:opacity-50 cursor-pointer"
+                >
+                  {savingMeta ? <Loader2 className="animate-spin shrink-0" size={16} /> : <Check size={16} className="shrink-0" />}
+                  <span>Enregistrer mes clés Meta</span>
+                </button>
               </div>
-
-              <button
-                type="button"
-                onClick={handleSaveMetaConfig}
-                disabled={savingMeta}
-                className="h-11 px-5 bg-vendeur-emerald text-vendeur-coal font-black uppercase tracking-wider text-xs rounded-xl flex items-center justify-center gap-2 hover:scale-[1.01] active:scale-95 transition-all shadow-md disabled:opacity-50 cursor-pointer"
-              >
-                {savingMeta ? <Loader2 className="animate-spin shrink-0" size={14} /> : <Check size={14} className="shrink-0" />}
-                <span>Enregistrer mes clés Meta</span>
-              </button>
             </div>
           )}
         </div>

@@ -37,7 +37,7 @@ import {
   PauseCircle
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useSearchParams, Link } from "react-router-dom";
+import { useSearchParams, Link, useLocation } from "react-router-dom";
 import { useAuthStore } from "@/stores/authStore";
 import { apiClient } from "@/lib/apiClient";
 import { toast } from "sonner";
@@ -149,13 +149,17 @@ export function SettingsPage() {
     }
   }, [activeTab]);
 
+  const location = useLocation();
+  const [highlightedSection, setHighlightedSection] = useState<string | null>(null);
+
   useEffect(() => {
-    const hashTarget = window.location.hash.replace("#", "");
+    const hashTarget = location.hash.replace("#", "");
     const sectionTarget = searchParams.get("section") || hashTarget;
 
     if (sectionTarget) {
+      setHighlightedSection(sectionTarget);
       let attempts = 0;
-      const maxAttempts = 15;
+      const maxAttempts = 20;
 
       const triggerHighlight = () => {
         const el = document.getElementById(sectionTarget);
@@ -183,7 +187,7 @@ export function SettingsPage() {
 
           setTimeout(() => {
             el.classList.remove("highlight-target-glow");
-          }, 3800);
+          }, 5000);
           return true;
         }
         return false;
@@ -199,8 +203,13 @@ export function SettingsPage() {
         }, 100);
         return () => clearInterval(interval);
       }
+
+      const timer = setTimeout(() => {
+        setHighlightedSection(null);
+      }, 7000);
+      return () => clearTimeout(timer);
     }
-  }, [activeTab, searchParams]);
+  }, [activeTab, searchParams, location.hash, location.search]);
 
   const { data: dashboard, isLoading: isDashboardLoading } = useQuery({
     queryKey: ["dashboard"],
@@ -427,7 +436,15 @@ export function SettingsPage() {
       </div>
 
       <div className="pt-2">
-        {activeTab === "boutique" && <BoutiqueTab merchant={merchant} dashboard={dashboard} initialKnowledge={knowledge} accessToken={accessToken || ""} />}
+        {activeTab === "boutique" && (
+          <BoutiqueTab
+            merchant={merchant}
+            dashboard={dashboard}
+            initialKnowledge={knowledge}
+            accessToken={accessToken || ""}
+            highlightedSection={highlightedSection}
+          />
+        )}
         {activeTab === "apparence" && <StorefrontBrandingTab merchant={merchant} />}
         {activeTab === "savoir" && <SavoirTab initialKnowledge={knowledge} />}
         {activeTab === "personnalite" && <PersonnaliteTab merchant={merchant} />}
@@ -461,7 +478,19 @@ export function SettingsPage() {
 }
 
 // --- ONGLET 1 : BOUTIQUE (PROFIL, LIVRAISON, PAIEMENTS) ---
-function BoutiqueTab({ merchant, dashboard, initialKnowledge, accessToken }: { merchant: any; dashboard?: any; initialKnowledge: any; accessToken: string }) {
+function BoutiqueTab({
+  merchant,
+  dashboard,
+  initialKnowledge,
+  accessToken,
+  highlightedSection: externalHighlighted
+}: {
+  merchant: any;
+  dashboard?: any;
+  initialKnowledge: any;
+  accessToken: string;
+  highlightedSection?: string | null;
+}) {
   const queryClient = useQueryClient();
   const [localMerchant, setLocalMerchant] = useState<any>(merchant);
   const [payments, setPayments] = useState<any[]>(initialKnowledge?.businessRules?.paymentMethods || []);
@@ -471,6 +500,32 @@ function BoutiqueTab({ merchant, dashboard, initialKnowledge, accessToken }: { m
   const [isDirty, setIsDirty] = useState(false);
   const [categoryChangeWarning, setCategoryChangeWarning] = useState<{ newCategory: string; oldCategory: string } | null>(null);
   const [currencyChangeWarning, setCurrencyChangeWarning] = useState<{ newCurrency: string; oldCurrency: string } | null>(null);
+  const [localHighlighted, setLocalHighlighted] = useState<string | null>(null);
+  const highlightedSection = externalHighlighted || localHighlighted;
+
+  useEffect(() => {
+    const handleHash = () => {
+      const hash = window.location.hash.replace("#", "");
+      if (hash) {
+        setLocalHighlighted(hash);
+        setTimeout(() => {
+          const el = document.getElementById(hash);
+          if (el) {
+            el.scrollIntoView({ behavior: "smooth", block: "center" });
+          }
+        }, 200);
+
+        const timer = setTimeout(() => {
+          setLocalHighlighted(null);
+        }, 7000);
+        return () => clearTimeout(timer);
+      }
+    };
+
+    handleHash();
+    window.addEventListener("hashchange", handleHash);
+    return () => window.removeEventListener("hashchange", handleHash);
+  }, []);
 
   useEffect(() => {
     if (merchant) {
@@ -600,12 +655,25 @@ function BoutiqueTab({ merchant, dashboard, initialKnowledge, accessToken }: { m
 
   return (
     <div className="space-y-6 sm:space-y-8 animate-in slide-in-from-bottom-2 duration-500 w-full max-w-full overflow-hidden box-border">
-      <section id="identity" className="bg-vendeur-coal/50 backdrop-blur-md border border-white/10 p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl md:rounded-[2.5rem] space-y-6 sm:space-y-8 shadow-2xl scroll-mt-28 w-full max-w-full overflow-hidden box-border">
+      <section
+        id="identity"
+        className={cn(
+          "bg-vendeur-coal/50 backdrop-blur-md border p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl md:rounded-[2.5rem] space-y-6 sm:space-y-8 shadow-2xl scroll-mt-28 w-full max-w-full overflow-hidden box-border transition-all duration-500",
+          highlightedSection === "identity"
+            ? "border-vendeur-emerald ring-4 ring-vendeur-emerald/30 shadow-[0_0_50px_rgba(16,185,129,0.3)] bg-emerald-950/20 scale-[1.01]"
+            : "border-white/10"
+        )}
+      >
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="space-y-1 min-w-0 flex-1">
             <h2 className="text-lg sm:text-xl md:text-2xl font-black text-white flex items-center gap-2.5 sm:gap-3 flex-wrap min-w-0">
               <Store size={22} className="text-vendeur-emerald shrink-0" />
               <span>Profil de la Boutique</span>
+              {highlightedSection === "identity" && (
+                <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-vendeur-emerald/20 text-vendeur-emerald border border-vendeur-emerald/40 animate-pulse">
+                  Étape en cours 👉
+                </span>
+              )}
             </h2>
             <p className="text-[10px] md:text-xs text-white/40 font-medium">Vendeur IA utilise ces infos pour présenter votre business.</p>
           </div>
@@ -911,15 +979,43 @@ function BoutiqueTab({ merchant, dashboard, initialKnowledge, accessToken }: { m
       </section>
 
       {/* Grille de Livraison */}
-      <section id="delivery" className="bg-vendeur-coal border border-white/10 p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl md:rounded-[2.5rem] space-y-6 sm:space-y-8 shadow-2xl scroll-mt-28 w-full max-w-full overflow-hidden box-border">
-        <div className="flex items-center gap-3 md:gap-4 px-1">
-          <div className="h-11 w-11 sm:h-12 sm:w-12 md:h-14 md:w-14 bg-sky-500/10 rounded-2xl flex items-center justify-center text-sky-400 border border-sky-500/20 shrink-0">
-            <Truck size={22} className="md:w-7 md:h-7" />
+      <section
+        id="delivery"
+        className={cn(
+          "bg-vendeur-coal border p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl md:rounded-[2.5rem] space-y-6 sm:space-y-8 shadow-2xl scroll-mt-28 w-full max-w-full overflow-hidden box-border transition-all duration-500",
+          highlightedSection === "delivery"
+            ? "border-vendeur-emerald ring-4 ring-vendeur-emerald/40 shadow-[0_0_60px_rgba(16,185,129,0.4)] bg-gradient-to-b from-emerald-950/40 to-vendeur-coal scale-[1.01]"
+            : "border-white/10"
+        )}
+      >
+        <div className="flex items-center justify-between gap-3 md:gap-4 px-1">
+          <div className="flex items-center gap-3 md:gap-4 min-w-0">
+            <div className={cn(
+              "h-11 w-11 sm:h-12 sm:w-12 md:h-14 md:w-14 rounded-2xl flex items-center justify-center border shrink-0 transition-all",
+              highlightedSection === "delivery"
+                ? "bg-vendeur-emerald/20 border-vendeur-emerald text-vendeur-emerald shadow-lg shadow-vendeur-emerald/20"
+                : "bg-sky-500/10 border-sky-500/20 text-sky-400"
+            )}>
+              <Truck size={22} className="md:w-7 md:h-7" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <h2 className="text-lg sm:text-xl md:text-2xl font-black uppercase text-white leading-tight flex items-center gap-2">
+                <span>Frais de Livraison</span>
+                {highlightedSection === "delivery" && (
+                  <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-vendeur-emerald/20 text-vendeur-emerald border border-vendeur-emerald/40 animate-pulse hidden sm:inline-block">
+                    Étape en cours 👉
+                  </span>
+                )}
+              </h2>
+              <p className="text-[9px] md:text-[10px] font-black uppercase tracking-wider text-white/30">Ces tarifs seront communiqués aux clients.</p>
+            </div>
           </div>
-          <div className="min-w-0 flex-1">
-            <h2 className="text-lg sm:text-xl md:text-2xl font-black uppercase text-white leading-tight">Frais de Livraison</h2>
-            <p className="text-[9px] md:text-[10px] font-black uppercase tracking-wider text-white/30">Ces tarifs seront communiqués aux clients.</p>
-          </div>
+
+          {highlightedSection === "delivery" && (
+            <span className="sm:hidden text-[9px] font-black uppercase px-2.5 py-1 rounded-full bg-vendeur-emerald/20 text-vendeur-emerald border border-vendeur-emerald/40 animate-pulse shrink-0">
+              À configurer
+            </span>
+          )}
         </div>
 
         <div className="space-y-3 sm:space-y-4 w-full max-w-full">
@@ -956,7 +1052,7 @@ function BoutiqueTab({ merchant, dashboard, initialKnowledge, accessToken }: { m
                         setIsDirty(true);
                       }}
                   />
-                  <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[8px] font-black text-white/20 pointer-events-none uppercase hidden sm:inline">
+                  <span className="absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 text-[9px] sm:text-[10px] font-black text-white/30 pointer-events-none font-mono">
                     {localMerchant?.currency || "XOF"}
                   </span>
                 </div>
@@ -976,23 +1072,24 @@ function BoutiqueTab({ merchant, dashboard, initialKnowledge, accessToken }: { m
            ))}
 
            {deliveryFees.length === 0 && localMerchant?.city && (
-             <div className="p-6 rounded-3xl bg-white/5 border border-dashed border-white/10 space-y-4">
-                <p className="text-[10px] font-black uppercase tracking-widest text-white/40 text-center">Suggestions pour {localMerchant.city}</p>
-                <div className="flex flex-wrap gap-2 justify-center">
-                   {getZonesForCity(localMerchant.city).map((suggestion, i) => (
+              <div className="p-3 sm:p-4 rounded-2xl bg-white/[0.02] border border-dashed border-white/10 space-y-2">
+                 <p className="text-[10px] sm:text-xs text-white/50">Suggestions rapides pour votre ville ({localMerchant?.city}) :</p>
+                 <div className="flex flex-wrap gap-1.5 sm:gap-2">
+                    {getZonesForCity(localMerchant.city).slice(0, 4).map((suggestion: any, sIdx: number) => (
                       <button
-                        key={i}
-                        onClick={() => {
-                          setDeliveryFees((prev: any[]) => [...prev, { zone: suggestion.name, price: suggestion.suggestedPrice }]);
-                          setIsDirty(true);
-                        }}
-                        className="px-4 py-2 rounded-xl bg-sky-500/10 border border-sky-500/20 text-sky-400 text-[10px] font-bold hover:bg-sky-500 hover:text-white transition-all"
+                          key={sIdx}
+                          type="button"
+                          onClick={() => {
+                            setDeliveryFees((prev: any[]) => [...prev, { zone: suggestion.name, price: suggestion.suggestedPrice }]);
+                            setIsDirty(true);
+                          }}
+                          className="px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/20 text-sky-300 text-[10px] sm:text-xs font-bold transition-all"
                       >
-                         + {suggestion.name} ({suggestion.suggestedPrice} {localMerchant.currency || "XOF"})
+                        + {suggestion.name} ({suggestion.suggestedPrice} {localMerchant?.currency || "XOF"})
                       </button>
-                   ))}
-                </div>
-             </div>
+                    ))}
+                 </div>
+              </div>
            )}
 
            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-2">
@@ -1002,9 +1099,9 @@ function BoutiqueTab({ merchant, dashboard, initialKnowledge, accessToken }: { m
                   setDeliveryFees((prev: any[]) => [...prev, { zone: "", price: 1000 }]);
                   setIsDirty(true);
                 }}
-                className="flex items-center gap-2 text-sky-400 text-xs font-black uppercase tracking-widest hover:underline px-2 py-1 cursor-pointer"
+                className="flex items-center gap-2 text-sky-400 text-[10px] font-black uppercase tracking-[0.2em] hover:underline px-1 py-1 cursor-pointer"
              >
-                <Plus size={16} /> Ajouter une zone
+                <Plus size={16} /> Ajouter une zone de livraison
              </button>
 
               <button
@@ -1012,7 +1109,7 @@ function BoutiqueTab({ merchant, dashboard, initialKnowledge, accessToken }: { m
                 onClick={() => {
                   const validDelivery = deliveryFees.filter((f: any) => f && f.zone && f.zone.trim() !== "");
                   if (validDelivery.length === 0) {
-                    toast.error("Veuillez renseigner le nom de votre zone de livraison (ex: Cocody, Plateau, Yopougon...).");
+                    toast.error("Veuillez renseigner au moins une zone de livraison valide.");
                     return;
                   }
                   setSavedSectionType("delivery");
@@ -1023,13 +1120,13 @@ function BoutiqueTab({ merchant, dashboard, initialKnowledge, accessToken }: { m
                   "h-12 px-6 rounded-2xl font-black uppercase text-xs tracking-wider flex items-center justify-center gap-2 transition-all shadow-lg shrink-0",
                   !isDeliveryModified && deliveryFees.length > 0
                     ? "bg-white/10 text-white/50 border border-white/10 cursor-default"
-                    : "bg-sky-500 hover:bg-sky-400 text-vendeur-coal hover:scale-105 active:scale-95 shadow-sky-500/20 cursor-pointer disabled:opacity-50"
+                    : "bg-sky-400 hover:bg-sky-300 text-vendeur-coal hover:scale-105 active:scale-95 shadow-sky-400/20 cursor-pointer disabled:opacity-50"
                 )}
               >
                 {updateMutation.isPending && savedSectionType === "delivery" ? (
                   <Loader2 size={16} className="animate-spin" />
                 ) : !isDeliveryModified && deliveryFees.length > 0 ? (
-                  <Check size={16} className="text-sky-400" />
+                  <Check size={16} className="text-white" />
                 ) : (
                   <Check size={16} />
                 )}
@@ -1044,14 +1141,35 @@ function BoutiqueTab({ merchant, dashboard, initialKnowledge, accessToken }: { m
       </section>
 
       {/* Canal de paiement */}
-      <section id="payments" className="bg-vendeur-coal border border-white/10 p-5 sm:p-7 md:p-8 rounded-2xl sm:rounded-3xl md:rounded-[2.5rem] space-y-6 sm:space-y-8 shadow-2xl scroll-mt-28">
-         <div className="space-y-1 px-2">
+      <section
+        id="payments"
+        className={cn(
+          "bg-vendeur-coal border p-5 sm:p-7 md:p-8 rounded-2xl sm:rounded-3xl md:rounded-[2.5rem] space-y-6 sm:space-y-8 shadow-2xl scroll-mt-28 transition-all duration-500",
+          highlightedSection === "payments"
+            ? "border-emerald-400 ring-4 ring-emerald-400/30 shadow-[0_0_50px_rgba(16,185,129,0.3)] bg-gradient-to-b from-emerald-950/30 to-vendeur-coal scale-[1.01]"
+            : "border-white/10"
+        )}
+      >
+        <div className="flex items-center justify-between gap-3 px-2">
+          <div className="space-y-1">
             <h2 className="text-xl md:text-2xl font-black text-white flex items-center gap-3">
               <Banknote size={22} className="text-emerald-400 shrink-0" />
               <span className="whitespace-nowrap">Canal de paiement</span>
+              {highlightedSection === "payments" && (
+                <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 animate-pulse hidden sm:inline-block">
+                  Étape en cours 👉
+                </span>
+              )}
             </h2>
             <p className="text-[10px] md:text-xs text-white/40">Coordonnées pour les transferts d'argent.</p>
-         </div>
+          </div>
+
+          {highlightedSection === "payments" && (
+            <span className="sm:hidden text-[9px] font-black uppercase px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 animate-pulse shrink-0">
+              À configurer
+            </span>
+          )}
+        </div>
 
          <div className="space-y-4">
             {payments.map((p: any, idx: number) => {
@@ -1738,9 +1856,7 @@ function ConnexionsTab({ merchant, systemSettings }: { merchant: any; systemSett
 
   return (
     <div className="space-y-8 animate-in slide-in-from-bottom-2 duration-500 w-full max-w-full overflow-hidden box-border">
-      <div id="whatsapp" className="scroll-mt-28 w-full max-w-full">
-        <WhatsAppConnectionFlow />
-      </div>
+      <WhatsAppConnectionFlow />
 
       <section className="space-y-4 sm:space-y-5 w-full max-w-full">
         <div className="flex items-center gap-3.5 px-1">

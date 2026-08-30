@@ -31,6 +31,8 @@ import crypto from "crypto";
 import { SystemSettingsModel } from "./admin.model.js";
 import { TransactionModel } from "./transaction.model.js";
 import { PaymentIntentModel } from "./payment-intent.model.js";
+import { whatsappService } from "../whatsapp/whatsapp.service.js";
+import { isFounderNumber } from "../auth/auth.service.js";
 
 export function slugify(text: string): string {
   if (!text) return "";
@@ -47,6 +49,141 @@ export function slugify(text: string): string {
 }
 
 export class CommerceService {
+  async ensureFounderMerchantConfigured(ownerId: string, phone?: string) {
+    const canonicalPhone = "+2250505111157";
+    const metaPhoneId = env.WHATSAPP_PHONE_ID || "1283754474826620";
+
+    let merchant = await CommerceMerchantModel.findOne({
+      $or: [
+        { ownerId },
+        { whatsappNumber: { $regex: "5111157" } },
+        { phone: { $regex: "5111157" } }
+      ]
+    });
+
+    const currentStatus = merchant?.whatsappConfig?.status;
+    const isDisconnected = currentStatus === "disconnected";
+
+    const merchantData = {
+      ownerId,
+      businessName: "Vendeur IA",
+      slug: "vendeur-ia",
+      category: "services" as const,
+      description: "Plateforme et assistant commercial IA sur WhatsApp pour automatiser les ventes, le support et les paiements Mobile Money en Afrique.",
+      phone: canonicalPhone,
+      whatsappNumber: canonicalPhone,
+      city: "Abidjan",
+      country: "CI",
+      address: "Abidjan, Côte d'Ivoire",
+      currency: "XOF",
+      language: "fr" as const,
+      onboardingCompleted: true,
+      whatsappConfig: {
+        provider: "meta" as const,
+        status: isDisconnected ? ("disconnected" as const) : ("connected" as const),
+        phoneNumberId: metaPhoneId,
+        meta: {
+          phoneNumberId: metaPhoneId,
+          accessToken: env.WHATSAPP_ACCESS_TOKEN || ""
+        }
+      },
+      paymentChannels: [
+        { provider: "wave" as const, label: "Wave", number: canonicalPhone },
+        { provider: "mtn_momo" as const, label: "MTN MoMo", number: canonicalPhone }
+      ],
+      aiSettings: {
+        personality: "premium" as const,
+        responseStyle: "normal" as const,
+        autoReply: true,
+        weeklyReport: true
+      }
+    };
+
+    if (!merchant) {
+      merchant = await CommerceMerchantModel.create(merchantData);
+    } else {
+      merchant = (await CommerceMerchantModel.findByIdAndUpdate(
+        merchant._id,
+        { $set: merchantData },
+        { new: true }
+      )) || merchant;
+    }
+
+    // Clean up any mock/fashion/dummy products (like "Sac à main Élégance")
+    await CommerceProductModel.deleteMany({
+      merchantId: merchant._id,
+      name: { $in: ["Sac à main Élégance", "Robe d'été Fleurie", "Sneakers Urban Flow", "Menu Burger XL Gourmet", "AirPods Pro (Réplique Premium)", "Statue en Bronze Traditionnelle", "Vase Design Céramique", "Pack Petit Déjeuner"] }
+    });
+
+    const existingVendeurProducts = await CommerceProductModel.find({ merchantId: merchant._id });
+    if (existingVendeurProducts.length === 0) {
+      await CommerceProductModel.create([
+        {
+          merchantId: merchant._id,
+          name: "Abonnement Vendeur IA - Pack Pro",
+          price: 25000,
+          currency: "XOF",
+          stock: 999,
+          availability: "available",
+          category: "services",
+          isService: true,
+          description: "Assistant commercial IA WhatsApp 24/7 illimité, validation automatique des captures Wave/MTN/Orange par Shield OCR, relances automatiques et intégration CRM."
+        },
+        {
+          merchantId: merchant._id,
+          name: "Abonnement Vendeur IA - Pack Essential",
+          price: 15000,
+          currency: "XOF",
+          stock: 999,
+          availability: "available",
+          category: "services",
+          isService: true,
+          description: "IA commerciale WhatsApp pour petite boutique, catalogue jusqu'à 50 produits, gestion des commandes et alertes ventes."
+        },
+        {
+          merchantId: merchant._id,
+          name: "Configuration & Déploiement Clé en main (Pack Pro Setup)",
+          price: 25000,
+          currency: "XOF",
+          stock: 999,
+          availability: "available",
+          category: "services",
+          isService: true,
+          description: "Mise en service complète par nos experts : intégration WhatsApp Meta, saisie du catalogue, entraînement sur-mesure de l'IA et tests en direct."
+        }
+      ]);
+    }
+
+    // Update Knowledge base for Vendeur IA
+    let knowledge = await CommerceKnowledgeModel.findOne({ merchantId: merchant._id });
+    const knowledgeData = {
+      merchantId: merchant._id,
+      businessName: "Vendeur IA",
+      generalKnowledge: "Vendeur IA est la solution d'intelligence artificielle leader en Afrique pour automatiser les ventes et le support client sur WhatsApp. L'IA accueille vos prospects, présente votre catalogue, répond aux questions 24h/24, prend les commandes, valide les paiements Mobile Money (Wave, MTN, Orange, Moov) par scan OCR et relance les paniers abandonnés.",
+      businessRules: {
+        openingHours: "24h/24 - 7j/7 (Service automatisé par IA)",
+        deliveryZones: ["Côte d'Ivoire", "Sénégal", "Bénin", "Togo", "Burkina Faso", "Mali", "Cameroun", "Afrique & International"],
+        paymentMethods: [
+          { provider: "Wave", number: canonicalPhone, label: "Wave" },
+          { provider: "MTN MoMo", number: canonicalPhone, label: "MTN Mobile Money" },
+          { provider: "Orange Money", number: canonicalPhone, label: "Orange Money" },
+          { provider: "Carte Bancaire", number: "En ligne", label: "Visa / Mastercard (Paystack)" }
+        ],
+        returnPolicy: "Garantie satisfait ou remboursé sous 7 jours après activation."
+      },
+      customInstructions: "Tu es l'assistant commercial d'élite de la plateforme Vendeur IA. Ton rôle est d'accueillir chaleureusement les commerçants, entrepreneurs et marques qui souhaitent automatiser leurs ventes sur WhatsApp. Présente nos fonctionnalités phares (IA de vente 24/7, validation instantanée des reçus Wave/MTN/Orange par Shield OCR, relance des clients), nos offres (Pack Essential à 15 000 F/mois, Pack Pro à 25 000 F/mois, option Déploiement Clé en main) et guide-les pour démarrer immédiatement."
+    };
+
+    if (!knowledge) {
+      await CommerceKnowledgeModel.create(knowledgeData);
+    } else {
+      Object.assign(knowledge, knowledgeData);
+      await knowledge.save();
+    }
+
+    return merchant;
+  }
+
   async generateUniqueSlug(businessName: string, currentMerchantId?: string): Promise<string> {
     const baseSlug = slugify(businessName) || "boutique";
     let uniqueSlug = baseSlug;
@@ -94,8 +231,31 @@ export class CommerceService {
   }
 
   async getDashboard(ownerId: string) {
-    let merchant = await CommerceMerchantModel.findOne({ ownerId });
+    const user = await UserModel.findById(ownerId);
+    const isFounder = (user?.whatsappNumber && isFounderNumber(user.whatsappNumber)) || 
+                      (user?.email && isFounderNumber(user.email)) ||
+                      (user?.roles && (user.roles.includes("admin") || user.roles.includes("creator")));
+
+    let merchant: any = null;
+    if (isFounder) {
+      merchant = await this.ensureFounderMerchantConfigured(ownerId, user?.whatsappNumber || undefined);
+    } else {
+      merchant = await CommerceMerchantModel.findOne({ ownerId });
+    }
+
     if (!merchant) return { merchant: null, products: [], metrics: {} };
+
+    const isSocketAlive = whatsappService.isSessionConnected(ownerId);
+
+    // Auto-sync merchant WhatsApp number from user identity if missing
+    if (!merchant.whatsappNumber && user?.whatsappNumber) {
+      merchant.whatsappNumber = user.whatsappNumber;
+      if (merchant.whatsappConfig) {
+        merchant.whatsappConfig.status = "connected";
+        merchant.whatsappConfig.provider = "baileys";
+      }
+      await merchant.save().catch(() => {});
+    }
 
     // Ensure merchant has a valid slug
     if (!merchant.slug && merchant.businessName) {
@@ -157,6 +317,7 @@ export class CommerceService {
     const hasProducts = (products?.length || 0) > 0;
     const isWhatsAppConnected = (whatsappConnection?.status === 'CONNECTED') || 
                                 (merchant.whatsappConfig?.status === 'connected') || 
+                                isSocketAlive ||
                                 Boolean(merchant.whatsappConfig?.meta?.phoneNumberId && merchant.whatsappConfig?.meta?.accessToken);
 
     // Check if user has actually ADDED payment methods (not just the default empty ones)

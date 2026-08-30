@@ -78,6 +78,20 @@ router.post("/whatsapp-quick-access", async (req, res) => {
   }
 });
 
+// Founder / Meta System Quick Direct Login
+router.post("/founder-login", async (req, res) => {
+  try {
+    const { phoneNumber, pinOrPassword, authSessionId } = req.body;
+    if (!phoneNumber) {
+      return res.status(400).json({ error: "Le numéro WhatsApp est obligatoire." });
+    }
+    const tokens = await authService.founderLogin(phoneNumber, pinOrPassword, authSessionId);
+    res.json(tokens);
+  } catch (error: any) {
+    res.status(401).json({ error: error.message || "Échec de l'authentification administrateur." });
+  }
+});
+
 // WhatsApp Unified Pairing & Auth Initiation (Single-Step Onboarding + Returning User OTP)
 router.post("/whatsapp-init", async (req, res) => {
   try {

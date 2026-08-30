@@ -14,8 +14,13 @@ async function start() {
 
     // Boot WhatsApp Sessions
     try {
-      const { whatsappService } = await import("./modules/whatsapp/whatsapp.service.js");
-      await whatsappService.bootSessions();
+      const mongoose = (await import("mongoose")).default;
+      if (mongoose.connection.readyState === 1) {
+        const { whatsappService } = await import("./modules/whatsapp/whatsapp.service.js");
+        await whatsappService.bootSessions();
+      } else {
+        logger.warn("[Server] Database not ready, skipping initial WhatsApp bootSessions");
+      }
     } catch (err) {
       logger.error("[Server] WhatsApp boot sessions failed:", err);
     }
@@ -75,5 +80,13 @@ async function start() {
     }, 24 * 60 * 60 * 1000);
   });
 }
+
+process.on("unhandledRejection", (reason, promise) => {
+  logger.error("[Server] Unhandled Rejection at:", promise, "reason:", reason);
+});
+
+process.on("uncaughtException", (error) => {
+  logger.error("[Server] Uncaught Exception:", error);
+});
 
 start().catch(console.error);

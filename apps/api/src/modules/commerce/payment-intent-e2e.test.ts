@@ -39,6 +39,7 @@ vi.mock('../whatsapp/whatsapp.service.js', () => ({
   whatsappService: {
     sendMessage: vi.fn().mockResolvedValue(true),
     sendMetaMessage: vi.fn().mockResolvedValue(true),
+    isSessionConnected: vi.fn().mockReturnValue(false),
     activeSessions: { get: vi.fn() }
   }
 }));

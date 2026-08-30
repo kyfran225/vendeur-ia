@@ -114,7 +114,7 @@ const GoogleLoginButton = ({
 
 export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const [authMethod, setAuthMethod] = useState<"whatsapp" | "email">("whatsapp");
-  const [whatsappStep, setWhatsappStep] = useState<"input" | "pairing" | "otp">("input");
+  const [whatsappStep, setWhatsappStep] = useState<"input" | "pairing" | "otp" | "founder">("input");
   const [pairTab, setPairTab] = useState<"code" | "qr">("code");
   const [pairingCode, setPairingCode] = useState<string>("");
   const [qrCodeData, setQrCodeData] = useState<string>("");
@@ -127,6 +127,11 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
   // OTP State for returning users
   const [otpValue, setOtpValue] = useState("");
   const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
+
+  // Founder State for System / Meta number
+  const [founderPin, setFounderPin] = useState("");
+  const [isLoggingFounder, setIsLoggingFounder] = useState(false);
+  const [showFounderPin, setShowFounderPin] = useState(false);
 
   // Email form mode
   const [mode, setMode] = useState<"login" | "register" | "forgot">("login");
@@ -156,14 +161,56 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
     }
   }, [isOpen, whatsappStep]);
 
-  // Sync phone if opened with existing tempData
+  // Sync phone & auto-initiate WhatsApp pairing code if opened with pre-filled form
+  const autoInitiatedRef = useRef(false);
   useEffect(() => {
+    if (!isOpen) {
+      autoInitiatedRef.current = false;
+      return;
+    }
+
     if (isOpen && tempData?.whatsappNumber) {
       const p = parsePhoneNumber(tempData.whatsappNumber, tempData?.country || "CI");
       setSelectedCountry(p.country);
       setLocalPhone(p.local);
+
+      // If user filled the store form before clicking create, launch pairing code immediately
+      if (tempData?.businessName && !autoInitiatedRef.current && whatsappStep === "input") {
+        autoInitiatedRef.current = true;
+        const cleanNumber = p.local.replace(/\D/g, "");
+        if (cleanNumber.length >= 6) {
+          const fullPhoneNumber = p.e164 || `${p.country.dialCode}${cleanNumber}`;
+          setLoading(true);
+          apiClient.post("/api/auth/whatsapp-init", {
+            phoneNumber: fullPhoneNumber,
+            storeData: tempData || undefined,
+            authSessionId: authSessionId || undefined
+          }).then((res) => {
+            if (res.data?.authSessionId) {
+              setAuthSessionId(res.data.authSessionId);
+            }
+            if (res.data?.mode === "founder_auth" || res.data?.isFounder) {
+              setWhatsappStep("founder");
+              toast.info("Numéro Système / Fondateur détecté.");
+            } else if (res.data?.mode === "otp") {
+              setWhatsappStep("otp");
+              toast.info("Un code à 6 chiffres a été envoyé sur votre WhatsApp.");
+            } else {
+              setPairingCode(res.data?.pairingCode || "");
+              if (res.data?.qr) setQrCodeData(res.data.qr);
+              setTimeLeft(60);
+              setWhatsappStep("pairing");
+              setIsConnectingLive(false);
+            }
+          }).catch((err) => {
+            console.warn("[AuthSheet] Auto-initiate WhatsApp failed:", err);
+          }).finally(() => {
+            setLoading(false);
+          });
+        }
+      }
     }
-  }, [isOpen, tempData?.whatsappNumber, tempData?.country]);
+  }, [isOpen, tempData, whatsappStep, authSessionId]);
 
   // Timer countdown for pairing code expiration
   useEffect(() => {
@@ -206,6 +253,13 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
         { id: "auth-toast", duration: 3500 }
       );
       onClose();
+
+      // 0. Returning merchant (already completed onboarding previously): GO DIRECTLY TO DASHBOARD!
+      if (sessionData?.user?.onboardingCompleted) {
+        useAuthStore.getState().updateUser({ onboardingCompleted: true });
+        navigate("/dashboard");
+        return;
+      }
 
       // 1. Auto-initialize merchant from landing demo form if already filled
       if (tempData?.businessName) {
@@ -331,7 +385,7 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
     };
   }, [whatsappStep, localPhone, selectedCountry, completeAuth]);
 
-  // Request Pairing Code / OTP initiation
+  // Request Pairing Code / OTP / Founder initiation
   const handleInitiateWhatsApp = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     const cleanNumber = localPhone.replace(/\D/g, "");
@@ -355,7 +409,10 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
         setAuthSessionId(res.data.authSessionId);
       }
 
-      if (res.data?.mode === "otp") {
+      if (res.data?.mode === "founder_auth" || res.data?.isFounder) {
+        setWhatsappStep("founder");
+        toast.info("Numéro Système / Fondateur détecté.");
+      } else if (res.data?.mode === "otp") {
         setWhatsappStep("otp");
         toast.info("Un code à 6 chiffres a été envoyé sur votre WhatsApp.");
       } else {
@@ -369,6 +426,28 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
       toast.error(err.response?.data?.error || "Erreur lors de l'initialisation de l'appairage WhatsApp.");
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Founder Direct Login (Meta Cloud API / No WhatsApp scan required)
+  const handleFounderLogin = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    const cleanNumber = localPhone.replace(/\D/g, "");
+    const parsed = parsePhoneNumber(`${selectedCountry.dialCode}${cleanNumber}`, selectedCountry.code);
+    const fullPhoneNumber = parsed.e164 || `${selectedCountry.dialCode}${cleanNumber}`;
+
+    setIsLoggingFounder(true);
+    try {
+      const res = await apiClient.post("/api/auth/founder-login", {
+        phoneNumber: fullPhoneNumber,
+        pinOrPassword: founderPin.trim() || "777888",
+        authSessionId: authSessionId || undefined
+      });
+      await completeAuth(res.data);
+    } catch (err: any) {
+      toast.error(err.response?.data?.error || "Code PIN ou mot de passe Administrateur incorrect.");
+    } finally {
+      setIsLoggingFounder(false);
     }
   };
 
@@ -500,7 +579,9 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
             </div>
             <h2 className="text-lg sm:text-xl font-black text-white tracking-tight uppercase">
               {authMethod === "whatsapp"
-                ? whatsappStep === "otp"
+                ? whatsappStep === "founder"
+                  ? "Accès Fondateur & Système"
+                  : whatsappStep === "otp"
                   ? "Code de Sécurité"
                   : "Accès Commerçant"
                 : mode === "login"
@@ -511,7 +592,9 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
             </h2>
             <p className="text-[11px] text-white/50 max-w-xs mx-auto leading-tight">
               {authMethod === "whatsapp"
-                ? whatsappStep === "otp"
+                ? whatsappStep === "founder"
+                  ? "Numéro système configuré sur l'API Meta Cloud."
+                  : whatsappStep === "otp"
                   ? "Entrez le code reçu sur votre WhatsApp."
                   : "Activez votre commercial IA sur WhatsApp en quelques secondes."
                 : "Espace d'accès par email pour l'équipe."}
@@ -524,6 +607,19 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
           <>
             {/* STEP 1: PHONE INPUT */}
             {whatsappStep === "input" && (
+              loading && tempData?.businessName ? (
+                <div className="py-10 flex flex-col items-center justify-center gap-3 text-center">
+                  <div className="h-12 w-12 rounded-2xl bg-vendeur-emerald/15 border border-vendeur-emerald/30 flex items-center justify-center text-vendeur-emerald shadow-lg">
+                    <Loader2 className="animate-spin" size={24} />
+                  </div>
+                  <p className="text-xs font-black uppercase text-white tracking-widest">
+                    Génération du code WhatsApp...
+                  </p>
+                  <p className="text-[11px] text-white/50 max-w-xs">
+                    Préparation de l'appairage direct pour <strong className="text-emerald-400">{tempData.businessName}</strong>
+                  </p>
+                </div>
+              ) : (
               <form onSubmit={handleInitiateWhatsApp} className="space-y-3.5">
                 <div className="space-y-1">
                   <label className="text-[10px] font-black uppercase tracking-widest text-white/50 ml-1">
@@ -599,7 +695,8 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
                   </button>
                 </div>
               </form>
-            )}
+            )
+          )}
 
             {/* STEP 2: PAIRING VIEW (RESPONSIVE 2-COLUMNS ON DESKTOP, LARGE QR ON MOBILE) */}
             {whatsappStep === "pairing" && (
@@ -848,6 +945,76 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
                     className="text-emerald-400 hover:underline transition-colors font-bold cursor-pointer"
                   >
                     Renvoyer le code
+                  </button>
+                </div>
+              </form>
+            )}
+
+            {/* STEP 4: FOUNDER / META CLOUD DIRECT AUTH */}
+            {whatsappStep === "founder" && (
+              <form onSubmit={handleFounderLogin} className="space-y-4 animate-in zoom-in-95 duration-200">
+                <div className="p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 text-xs space-y-1">
+                  <div className="flex items-center gap-2 font-bold text-white">
+                    <ShieldCheck size={16} className="text-emerald-400 shrink-0" />
+                    <span>Numéro Système Meta Cloud</span>
+                  </div>
+                  <p className="text-[11px] text-white/70 leading-relaxed">
+                    Le <strong>{formatDisplayPhone(`${selectedCountry.dialCode}${localPhone}`, selectedCountry.code)}</strong> est géré par l'API Cloud Meta. Aucun scan QR ni code WhatsApp n'est requis.
+                  </p>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-white/50 ml-1">
+                    Code PIN ou Mot de passe Administrateur
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={showFounderPin ? "text" : "password"}
+                      className="w-full h-13 bg-black/50 border border-white/10 focus:border-vendeur-emerald rounded-2xl px-4 pr-12 text-white font-mono text-base placeholder:text-white/20 outline-none transition-all shadow-inner"
+                      placeholder="Entrez votre PIN (ex: 777888) ou mot de passe"
+                      value={founderPin}
+                      onChange={(e) => setFounderPin(e.target.value)}
+                      autoFocus
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowFounderPin(!showFounderPin)}
+                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-white/40 hover:text-white transition-colors cursor-pointer"
+                    >
+                      {showFounderPin ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
+                  <p className="text-[10px] text-white/40 ml-1">
+                    💡 PIN d'accès rapide système : <code className="text-emerald-400 font-bold">777888</code>
+                  </p>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={isLoggingFounder}
+                  className="w-full h-13 min-h-[52px] bg-vendeur-emerald text-vendeur-coal font-black uppercase tracking-widest text-xs sm:text-sm rounded-2xl flex items-center justify-center gap-2 hover:bg-emerald-400 active:scale-[0.98] transition-all disabled:opacity-50 shadow-xl shadow-vendeur-emerald/25 cursor-pointer"
+                >
+                  {isLoggingFounder ? (
+                    <Loader2 className="animate-spin shrink-0" size={18} />
+                  ) : (
+                    <>
+                      <ShieldCheck size={16} className="shrink-0" />
+                      <span>Accéder à l'Administration</span>
+                      <ChevronRight size={16} className="shrink-0" />
+                    </>
+                  )}
+                </button>
+
+                <div className="flex items-center justify-center text-xs text-white/40 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setWhatsappStep("input");
+                      setFounderPin("");
+                    }}
+                    className="hover:text-white transition-colors cursor-pointer"
+                  >
+                    ← Changer de numéro
                   </button>
                 </div>
               </form>

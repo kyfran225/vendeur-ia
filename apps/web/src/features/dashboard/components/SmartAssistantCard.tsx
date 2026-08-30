@@ -247,6 +247,14 @@ export function SmartAssistantCard({ dashboard, onOpenTestIA, onOpenShare, onCon
                     <>
                       Génial, WhatsApp est relié à <span className="text-amber-400 font-bold not-italic">{businessName}</span> ! 🛍️ Ajoutez vos articles : votre vitrine publique sera automatiquement générée et vous pourrez me tester librement dans le simulateur.
                     </>
+                  ) : nextStep?.id === "delivery" ? (
+                    <>
+                      Votre catalogue est prêt ! 🛵 Définissez vos zones et tarifs de livraison pour que je calcule automatiquement les frais d'expédition lors des commandes clients.
+                    </>
+                  ) : nextStep?.id === "payments" ? (
+                    <>
+                      Votre catalogue est en place ! 💰 Configurez vos canaux d'encaissement (Wave, Orange Money, MoMo) pour transmettre vos coordonnées de paiement aux clients.
+                    </>
                   ) : (
                     <>
                       Bienvenue chez <span className="text-amber-400 font-bold not-italic">{businessName}</span> ! {hasProducts ? `Votre catalogue (${productsCount} article${productsCount > 1 ? 's' : ''}) et votre vitrine sont prêts.` : "Ajoutez vos articles pour activer votre vitrine."} Le Vendeur IA ne répondra pas sur WhatsApp tant que le forfait n'est pas activé.
@@ -264,6 +272,10 @@ export function SmartAssistantCard({ dashboard, onOpenTestIA, onOpenShare, onCon
                   ) : nextStep?.id === "products" ? (
                     <>
                       Votre ligne est prête ! 🛍️ Ajoutez vos articles et leurs prix pour activer votre vitrine publique et me permettre de vendre à vos clients.
+                    </>
+                  ) : nextStep?.id === "delivery" ? (
+                    <>
+                      Votre catalogue est prêt ({productsCount} article{productsCount > 1 ? 's' : ''}) ! 🛵 Configurez vos zones et frais de livraison pour le calcul automatique sur WhatsApp.
                     </>
                   ) : nextStep?.id === "payments" ? (
                     <>

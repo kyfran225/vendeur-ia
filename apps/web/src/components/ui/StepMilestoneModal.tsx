@@ -120,7 +120,7 @@ export function StepMilestoneModal({
   return (
     <AnimatePresence>
       <div
-        className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md"
+        className="fixed inset-0 z-[250] flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md overflow-y-auto"
         onMouseEnter={() => setIsPaused(true)}
         onMouseLeave={() => setIsPaused(false)}
       >
@@ -129,19 +129,19 @@ export function StepMilestoneModal({
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.92, y: 15 }}
           transition={{ type: "spring", damping: 25, stiffness: 350 }}
-          className="relative w-full max-w-lg bg-[#0c0f0d] border border-vendeur-emerald/30 rounded-[2.5rem] p-6 md:p-8 shadow-[0_0_60px_rgba(16,185,129,0.25)] overflow-hidden"
+          className="relative w-full max-w-md bg-[#0c0f0d] border border-vendeur-emerald/30 rounded-3xl p-5 sm:p-6 shadow-[0_0_50px_rgba(16,185,129,0.25)] overflow-hidden my-auto max-h-[90vh] flex flex-col"
         >
           {/* Subtle Ambient Glows */}
-          <div className="absolute -top-20 -right-20 w-44 h-44 bg-vendeur-emerald/20 rounded-full blur-3xl pointer-events-none" />
-          <div className="absolute -bottom-20 -left-20 w-44 h-44 bg-vendeur-emerald/10 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute -top-20 -right-20 w-40 h-40 bg-vendeur-emerald/20 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute -bottom-20 -left-20 w-40 h-40 bg-vendeur-emerald/10 rounded-full blur-3xl pointer-events-none" />
 
           {/* Close button */}
           <button
             onClick={onClose}
-            className="absolute top-5 right-5 p-2 rounded-xl bg-white/5 border border-white/10 text-white/50 hover:text-white hover:bg-white/10 transition-all cursor-pointer z-20"
+            className="absolute top-4 right-4 p-1.5 rounded-full bg-white/5 border border-white/10 text-white/50 hover:text-white hover:bg-white/10 transition-all cursor-pointer z-20"
             title="Fermer"
           >
-            <X size={18} />
+            <X size={16} />
           </button>
 
           <div className="space-y-6 relative z-10 text-center">

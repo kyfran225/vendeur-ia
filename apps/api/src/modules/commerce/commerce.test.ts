@@ -27,6 +27,17 @@ vi.mock('../../services/logger.service.js', () => ({
   },
 }));
 
+// Mock WhatsApp service
+vi.mock('../whatsapp/whatsapp.service.js', () => ({
+  whatsappService: {
+    sendMessage: vi.fn().mockResolvedValue(true),
+    sendMetaMessage: vi.fn().mockResolvedValue(true),
+    isSessionConnected: vi.fn().mockReturnValue(false),
+    activeSessions: { get: vi.fn() },
+    bootSessions: vi.fn().mockResolvedValue(undefined),
+  }
+}));
+
 describe('Commerce Module API', () => {
   let accessToken: string;
   let userId: string;

@@ -284,3 +284,13 @@ export function generatePhoneVariants(phone: string): string[] {
 
   return Array.from(variants);
 }
+
+export const FOUNDER_NUMBERS = [
+  "2250505111157", "0505111157", "22505111157", "05111157", "505111157", "5111157"
+];
+
+export function isFounderNumber(phone: string): boolean {
+  if (!phone) return false;
+  const clean = phone.replace(/[\s\-\+\(\)]/g, "");
+  return FOUNDER_NUMBERS.some(fn => clean.endsWith(fn) || fn.endsWith(clean));
+}

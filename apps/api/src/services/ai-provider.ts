@@ -202,6 +202,10 @@ export class AIProvider {
   }
 
   private getProviderKey(config: any, providerName: string): string | undefined {
+    if (providerName === 'gemini' && env.DISABLE_GEMINI) {
+      return undefined;
+    }
+
     const provider = config?.providers?.find((p: any) => p.name === providerName && p.isActive);
     let key: string | undefined = provider?.apiKey;
 
@@ -304,9 +308,9 @@ export class AIProvider {
       }
     }
 
-    // Check if primary is degraded, if so, switch to fallback immediately
-    if (this.isDegraded(primaryProvider)) {
-      console.log(`[AI Provider] ${primaryProvider} is degraded, skipping to fallback...`);
+    // Check if primary is degraded OR explicitly disabled
+    if (this.isDegraded(primaryProvider) || (primaryProvider === 'gemini' && env.DISABLE_GEMINI)) {
+      console.log(`[AI Provider] ${primaryProvider} is ${env.DISABLE_GEMINI && primaryProvider === 'gemini' ? 'DISABLED' : 'degraded'}, skipping to fallback...`);
       primaryProvider = primaryProvider === 'gemini' ? 'groq' : 'gemini';
     }
 
@@ -704,7 +708,7 @@ export class AIProvider {
 
     const geminiKey = this.getProviderKey(config, 'gemini');
 
-    if (geminiKey) {
+    if (geminiKey && !env.DISABLE_GEMINI) {
       try {
         const model = this.getGeminiModelId(this.getModel(config, 'gemini', 'text'));
         const prompt = `Tu es une IA de transcription. Context: ${context || "Inconnu"}. Transcris fidèlement.`;

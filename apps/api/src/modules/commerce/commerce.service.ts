@@ -704,6 +704,10 @@ Réponds UNIQUEMENT avec le JSON strict. Si 1 seul produit est présent, renvoie
     for (const provider of providersToTry) {
       try {
         if (provider === 'gemini') {
+          if (env.DISABLE_GEMINI) {
+            logger.info("[Product Vision] Gemini is disabled, skipping...");
+            continue;
+          }
           const apiKey = settings?.aiConfig?.providers?.find(p => p.name === 'gemini')?.apiKey || env.GEMINI_API_KEY;
           if (!apiKey) continue;
 

@@ -119,7 +119,7 @@ Réponds UNIQUEMENT avec le JSON strict.`;
 
     // Attempt Gemini first
     const geminiKey = settings?.aiConfig?.providers?.find((p: any) => p.name === 'gemini' && p.isActive)?.apiKey || env.GEMINI_API_KEY;
-    if (primaryProvider === 'gemini' && geminiKey) {
+    if (primaryProvider === 'gemini' && geminiKey && !env.DISABLE_GEMINI) {
       try {
         const response = await axios.post(
           `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_DEFAULT_VISION_MODEL}:generateContent?key=${geminiKey}`,

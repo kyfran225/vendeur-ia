@@ -331,7 +331,7 @@ async function run() {
     console.log('║               ✅  RESET & SETUP TERMINÉ                  ║');
     console.log('╚══════════════════════════════════════════════════════════╝');
     console.log('\n📊 Clés API IA vérifiées depuis .env :');
-    console.log(`  🤖 Gemini        : ${process.env.GEMINI_API_KEY ? '✅ active' : '❌ manquante'}`);
+    console.log(`  🤖 Gemini        : ${process.env.DISABLE_GEMINI === 'true' ? '🚫 bloqué' : (process.env.GEMINI_API_KEY ? '✅ active' : '❌ manquante')}`);
     console.log(`  🤖 Groq          : ${process.env.GROQ_API_KEY ? '✅ active' : '❌ manquante'}`);
     console.log(`  🤖 OpenAI        : ${process.env.OPENAI_API_KEY ? '✅ active' : '❌ manquante'}`);
     console.log(`  🤖 OpenRouter    : ${process.env.OPENROUTER_API_KEY ? '✅ active' : '❌ manquante'}`);

@@ -300,16 +300,18 @@ export class AuthService {
     });
 
     if (existingUser && whatsappService.isSessionConnected(existingUser._id.toString())) {
-      await this.requestWhatsAppMagicLink(cleanNumber, env.CLIENT_URL || "http://localhost:5173", authSessionId);
-      return {
-        mode: "otp" as const,
-        authSessionId,
-        phoneNumber: cleanNumber,
-        message: "Un code de confirmation a été envoyé sur votre WhatsApp."
-      };
+      const magicResult = await this.requestWhatsAppMagicLink(cleanNumber, env.CLIENT_URL || "http://localhost:5173", authSessionId);
+      if (magicResult.dispatched) {
+        return {
+          mode: "otp" as const,
+          authSessionId,
+          phoneNumber: cleanNumber,
+          message: "Un code de confirmation a été envoyé sur votre WhatsApp."
+        };
+      }
     }
 
-    // 3. Otherwise (New merchant or disconnected session) -> Pair WhatsApp directly!
+    // 3. Otherwise (New merchant, disconnected session, or OTP dispatch unavailable) -> Pair WhatsApp directly!
     const pairing = await whatsappService.requestOnboardingPairingCode(
       authSessionId,
       cleanNumber,
@@ -429,8 +431,9 @@ export class AuthService {
 
     // 7. Send OTP code directly to user's WhatsApp
     const otpText = `🔐 *Vendeur IA - Code de Connexion*\n\nVoici votre code de sécurité pour accéder à votre boutique :\n\n👉 *${code}*\n\nCe code est valable 15 minutes.`;
+    let dispatched = false;
     try {
-      await whatsappService.sendDirectMessageToPhone(cleanNumber, otpText);
+      dispatched = await whatsappService.sendDirectMessageToPhone(cleanNumber, otpText);
     } catch (err) {
       console.warn("[Auth] Failed to dispatch WhatsApp OTP:", err);
     }
@@ -447,10 +450,13 @@ export class AuthService {
 
     return { 
       success: true, 
+      dispatched,
       authSessionId,
       sessionCode,
       systemWhatsAppNumber,
-      message: "Un code de sécurité à 6 chiffres a été envoyé sur votre WhatsApp."
+      message: dispatched 
+        ? "Un code de sécurité à 6 chiffres a été envoyé sur votre WhatsApp."
+        : "Impossible d'expédier le code sur WhatsApp. Utilisez le jumelage direct."
     };
   }
 
@@ -970,8 +976,22 @@ export class AuthService {
       await user.save();
     }
 
-    console.log(`[WhatsApp Auth] Code OTP pour ${cleanNumber}: ${code}`);
-    return { success: true, message: "Code OTP envoyé", code: (isFounder || process.env.NODE_ENV !== "production") ? code : undefined };
+    // Send OTP message directly via official Meta Cloud API or socket
+    const otpText = `🔐 *Vendeur IA - Code de Connexion*\n\nVoici votre code de sécurité pour accéder à votre boutique :\n\n👉 *${code}*\n\nCe code est valable 10 minutes.`;
+    let dispatched = false;
+    try {
+      dispatched = await whatsappService.sendDirectMessageToPhone(cleanNumber, otpText);
+    } catch (err) {
+      console.warn("[WhatsApp Auth] Failed to dispatch OTP in requestWhatsAppOtp:", err);
+    }
+
+    console.log(`[WhatsApp Auth] Code OTP pour ${cleanNumber}: ${code} (dispatched: ${dispatched})`);
+    return { 
+      success: true, 
+      dispatched,
+      message: dispatched ? "Code OTP envoyé sur votre WhatsApp" : "Code généré", 
+      code: (isFounder || process.env.NODE_ENV !== "production") ? code : undefined 
+    };
   }
 
   async verifyWhatsAppOtp(whatsappNumber: string, code: string) {

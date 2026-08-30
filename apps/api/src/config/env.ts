@@ -39,6 +39,7 @@ const envSchema = z.object({
   VAPID_PRIVATE_KEY: z.string().optional(),
   PREVIEW_MONGODB_URI: z.string().optional(),
   PROD_MONGODB_URI: z.string().optional(),
+  DISABLE_GEMINI: z.preprocess((val) => val === "true" || val === "1", z.boolean()).default(false),
   AI_MOCK_MODE: z.preprocess((val) => {
     if (val === undefined) {
       return process.env.NODE_ENV === "production" ? false : true;

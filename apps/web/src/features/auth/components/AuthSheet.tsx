@@ -947,6 +947,17 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
                     Renvoyer le code
                   </button>
                 </div>
+
+                <div className="pt-2 text-center border-t border-white/5">
+                  <button
+                    type="button"
+                    onClick={handleRegenerateCode}
+                    className="text-[11px] text-white/50 hover:text-emerald-400 transition-colors font-medium cursor-pointer flex items-center justify-center gap-1.5 mx-auto"
+                  >
+                    <QrCode size={13} />
+                    <span>Se connecter plutôt par QR Code / Jumelage</span>
+                  </button>
+                </div>
               </form>
             )}
 

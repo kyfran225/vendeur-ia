@@ -48,12 +48,45 @@ class WhatsAppService {
 
   async sendDirectMessageToPhone(phone: string, text: string): Promise<boolean> {
     const cleanNumber = phone.replace(/\D/g, "");
-    const jid = `${cleanNumber}@s.whatsapp.net`;
 
+    // 1. Try sending via Meta Cloud API (Official System Channel)
+    try {
+      const settings = await SystemSettingsModel.findOne();
+      const config = settings?.metaConfig?.whatsappDefaults;
+      const phoneNumberId = config?.phoneNumberId || env.WHATSAPP_PHONE_ID;
+      const accessToken = config?.accessToken || env.WHATSAPP_ACCESS_TOKEN;
+
+      if (phoneNumberId && accessToken) {
+        await axios.post(
+          `https://graph.facebook.com/v20.0/${phoneNumberId}/messages`,
+          {
+            messaging_product: "whatsapp",
+            recipient_type: "individual",
+            to: cleanNumber,
+            type: "text",
+            text: { body: text },
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+        console.log(`[WhatsApp Auth] Direct message successfully sent via Meta Cloud to ${cleanNumber}`);
+        return true;
+      }
+    } catch (err: any) {
+      console.warn("[WhatsApp Auth] Failed to send via Meta Cloud API:", err.response?.data || err.message);
+    }
+
+    // 2. Try sending via active Baileys socket if available
+    const jid = `${cleanNumber}@s.whatsapp.net`;
     for (const [_, sock] of this.activeSessions.entries()) {
       if (sock && sock.user?.id) {
         try {
           await sock.sendMessage(jid, { text });
+          console.log(`[WhatsApp Auth] Direct message sent via Baileys socket to ${cleanNumber}`);
           return true;
         } catch (err) {
           console.warn("[WhatsApp] Failed sending direct message via active socket:", err);

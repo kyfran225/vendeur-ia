@@ -16,6 +16,7 @@ const TikTokIcon = ({ size = 16, className = "" }: { size?: number; className?: 
 );
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useSearchParams } from "react-router-dom";
 import { useAuthStore } from "@/stores/authStore";
 import { useSocket } from "@/hooks/useSocket";
 import { useMerchantCurrency } from "@/hooks/useMerchantCurrency";
@@ -96,8 +97,10 @@ export function SalesInbox() {
   const { accessToken } = useAuthStore();
   const socket = useSocket();
   const queryClient = useQueryClient();
-  const [selectedChat, setSelectedChat] = useState<string | null>(null);
-  const [showMobileChat, setShowMobileChat] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const chatFromUrl = searchParams.get("chat");
+  const [selectedChat, setSelectedChat] = useState<string | null>(chatFromUrl || null);
+  const [showMobileChat, setShowMobileChat] = useState(Boolean(chatFromUrl));
   const [typingChats, setTypingChats] = useState<Record<string, boolean>>({});
   const [manualMessage, setManualMessage] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
@@ -162,12 +165,44 @@ export function SalesInbox() {
       toast.success("Notifications de bureau autorisées ! Vous recevrez des alertes pour chaque message.");
       sendDesktopNotification({
         title: "✅ Vendeur IA Notifications Activées",
-        body: "Vous serez alerté en direct pour chaque message client comme sur WhatsApp !"
+        body: "Vous serez alerté en direct pour chaque message client comme sur WhatsApp !",
+        tag: "vendeur-ia-welcome"
       });
     } else {
       toast.error("Notifications bloquées par le navigateur. Veuillez les autoriser dans les paramètres du site.");
     }
   };
+
+  // Synchronize URL search params with active chat
+  useEffect(() => {
+    if (chatFromUrl && chatFromUrl !== selectedChat) {
+      setSelectedChat(chatFromUrl);
+      setShowMobileChat(true);
+      markReadMutation.mutate(chatFromUrl);
+    }
+  }, [chatFromUrl]);
+
+  // Handle messages from Service Worker for instant navigation
+  useEffect(() => {
+    if (typeof navigator === "undefined" || !("serviceWorker" in navigator)) return;
+    const handleSwMessage = (event: MessageEvent) => {
+      if (event.data?.type === "NAVIGATE_TO" && event.data.url) {
+        try {
+          const parsed = new URL(event.data.url, window.location.origin);
+          const chatId = parsed.searchParams.get("chat");
+          if (chatId) {
+            handleChatSelect(chatId);
+          }
+        } catch (err) {
+          console.warn("[Inbox] SW navigation URL parse failed:", err);
+        }
+      }
+    };
+    navigator.serviceWorker.addEventListener("message", handleSwMessage);
+    return () => {
+      navigator.serviceWorker.removeEventListener("message", handleSwMessage);
+    };
+  }, []);
 
   // Real-time socket events
   useEffect(() => {
@@ -181,35 +216,43 @@ export function SalesInbox() {
         queryClient.invalidateQueries({ queryKey: ["messages", selectedChat] });
       }
 
-      // If message is from customer, alert the admin with sound & desktop push
+      // If message is from customer, alert the admin with sound & crisp desktop notification if in background
       if (data.message?.sender === "customer") {
         playWhatsAppIncomingChime();
 
-        const senderName = data.customer?.name || data.customer?.phone || "Client WhatsApp";
-        sendDesktopNotification({
-          title: `💬 ${senderName}`,
-          body: data.message?.content || "Nouveau message reçu",
-          onClick: () => {
-            if (data.conversationId) {
-              setSelectedChat(data.conversationId);
-              setShowMobileChat(true);
+        // Only show a local browser notification popup if the tab is hidden / in background
+        if (typeof document !== "undefined" && document.hidden) {
+          const senderName = data.customer?.name || data.customer?.phone || "Client WhatsApp";
+          sendDesktopNotification({
+            title: `💬 ${senderName}`,
+            body: data.message?.content || "Nouveau message reçu",
+            tag: `chat-${data.conversationId}`,
+            onClick: () => {
+              window.focus();
+              if (data.conversationId) {
+                handleChatSelect(data.conversationId);
+              }
             }
-          }
-        });
+          });
+        }
       }
     };
 
-    // Generic notification event
+    // Generic notification event (ignoring duplicate conversation messages)
     const handleNotificationNew = (data: any) => {
+      // If this is a conversation message, skip duplicate alert since handleConvUpdate already handled it
+      if (data.data?.conversationId) return;
+
       playWhatsAppIncomingChime();
-      if (data.title) {
+      if (data.title && typeof document !== "undefined" && document.hidden) {
         sendDesktopNotification({
           title: data.title,
           body: data.body || "",
+          tag: data.data?.reference ? `payment-${data.data.reference}` : "vendeur-ia-system",
           onClick: () => {
-            if (data.data?.conversationId) {
-              setSelectedChat(data.data.conversationId);
-              setShowMobileChat(true);
+            window.focus();
+            if (data.data?.url) {
+              window.location.href = data.data.url;
             }
           }
         });
@@ -346,6 +389,11 @@ export function SalesInbox() {
   const handleChatSelect = (id: string) => {
     setSelectedChat(id);
     setShowMobileChat(true);
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.set("chat", id);
+      return next;
+    }, { replace: true });
     markReadMutation.mutate(id);
   };
 
@@ -395,7 +443,15 @@ export function SalesInbox() {
   };
 
   return (
-    <div id="tour-inbox-channels" className="flex h-[calc(100dvh-110px)] md:h-[calc(100vh-140px)] md:max-h-[960px] bg-[#111b21] md:rounded-[2.5rem] overflow-hidden border border-white/10 shadow-2xl animate-in fade-in duration-500 md:my-4">
+    <div
+      id="tour-inbox-channels"
+      className={cn(
+        "flex bg-[#111b21] transition-all duration-300 animate-in fade-in",
+        showMobileChat
+          ? "fixed inset-0 z-[60] h-[100dvh] w-full rounded-none border-0 m-0 overflow-hidden md:relative md:inset-auto md:z-auto md:h-[calc(100vh-140px)] md:max-h-[960px] md:rounded-[2.5rem] md:border md:border-white/10 md:shadow-2xl md:my-4"
+          : "h-[calc(100dvh-120px)] md:h-[calc(100vh-140px)] md:max-h-[960px] rounded-2xl md:rounded-[2.5rem] overflow-hidden border border-white/10 shadow-2xl my-2 md:my-4"
+      )}
+    >
       {/* ========================================================================= */}
       {/* SIDEBAR: CONVERSATIONS LIST (WhatsApp Web Pro Style) */}
       {/* ========================================================================= */}
@@ -676,7 +732,7 @@ export function SalesInbox() {
         {selectedChat ? (
           <div className="flex-1 flex flex-col h-full w-full bg-[#0b141a] relative min-w-0 overflow-x-hidden">
             {/* WhatsApp Chat Header */}
-            <header className="px-3 py-2.5 md:px-5 md:py-3 bg-[#202c33] border-b border-white/10 flex items-center justify-between sticky top-0 z-30 gap-2">
+            <header className="px-3 py-2.5 md:px-5 md:py-3 bg-[#202c33] border-b border-white/10 flex items-center justify-between sticky top-0 z-30 gap-2 pt-[calc(0.625rem+env(safe-area-inset-top,0px))] md:pt-3">
               <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
                 <button
                   onClick={() => setShowMobileChat(false)}
@@ -875,7 +931,7 @@ export function SalesInbox() {
             )}
 
             {/* WhatsApp Chat Footer Input */}
-            <footer className="p-2.5 md:p-3.5 bg-[#202c33] border-t border-white/10 space-y-2">
+            <footer className="p-2.5 md:p-3.5 bg-[#202c33] border-t border-white/10 space-y-2 shrink-0 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] md:pb-3.5">
               {/* Quick Template Chips */}
               <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1">
                 <button
@@ -967,7 +1023,7 @@ export function SalesInbox() {
       {previewImage && (
         <div
           onClick={() => setPreviewImage(null)}
-          className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-4 cursor-pointer animate-in fade-in"
+          className="fixed inset-0 z-[80] bg-black/90 backdrop-blur-md flex items-center justify-center p-4 cursor-pointer animate-in fade-in"
         >
           <button
             onClick={() => setPreviewImage(null)}

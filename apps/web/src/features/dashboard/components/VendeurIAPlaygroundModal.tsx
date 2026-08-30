@@ -154,15 +154,18 @@ export function VendeurIAPlaygroundModal({ isOpen, onClose, merchant }: VendeurI
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-300">
+      <div className="fixed inset-0 z-[75] flex items-center justify-center p-0 sm:p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-300">
         <motion.div
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
-          className="relative w-full max-w-2xl bg-vendeur-coal border-white/10 sm:border-vendeur-emerald/30 rounded-none sm:rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col h-full sm:h-[90vh] sm:max-h-[750px]"
+          className="relative w-full max-w-2xl bg-vendeur-coal border-0 sm:border sm:border-vendeur-emerald/30 rounded-none sm:rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col h-[100dvh] sm:h-[90vh] sm:max-h-[750px]"
         >
+          {/* Mobile Sheet Indicator */}
+          <div className="w-12 h-1 bg-white/20 rounded-full mx-auto mt-2 sm:hidden shrink-0" />
+
           {/* Top Header */}
-          <div className="p-4 sm:p-5 md:p-6 bg-vendeur-bg border-b border-white/10 flex items-center justify-between shrink-0 gap-3">
+          <div className="p-3.5 sm:p-5 md:p-6 bg-vendeur-bg border-b border-white/10 flex items-center justify-between shrink-0 gap-3">
             <div className="flex items-center gap-3 min-w-0 flex-1">
               <div className="h-10 w-10 sm:h-12 sm:w-12 shrink-0 flex items-center justify-center">
                 <AssistantIcon size="100%" color="#10B981" withBackground={false} className="drop-shadow-[0_0_8px_rgba(16,185,129,0.3)]" />
@@ -307,7 +310,7 @@ export function VendeurIAPlaygroundModal({ isOpen, onClose, merchant }: VendeurI
           </div>
 
           {/* Chat Input Field */}
-          <div className="p-4 bg-vendeur-bg border-t border-white/10 shrink-0">
+          <div className="p-3 sm:p-4 bg-vendeur-bg border-t border-white/10 shrink-0 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))]">
             <form
               onSubmit={(e) => {
                 e.preventDefault();

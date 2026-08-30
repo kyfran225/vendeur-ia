@@ -15,7 +15,8 @@ import {
   Plus,
   Store,
   Globe,
-  Copy
+  Copy,
+  Check
 } from "lucide-react";
 
 import { useSocket } from "@/hooks/useSocket";
@@ -366,6 +367,7 @@ function HomePanel({
   onConnectWhatsApp?: () => void;
 }) {
   const [isPauseModalOpen, setIsPauseModalOpen] = useState(false);
+  const [hasCopiedShopUrl, setHasCopiedShopUrl] = useState(false);
   const tips = dashboard?.aiGrowthAdvice?.tips || [];
   const status = dashboard?.merchant?.whatsappConfig?.status || 'disconnected';
   const isFullyOperational = dashboard?.setupStatus?.isFullyOperational;
@@ -411,19 +413,19 @@ function HomePanel({
         Affiché lorsque la boutique est 100% opérationnelle pour propulser les ventes du quotidien
       */}
       {isFullyOperational && !isPaused && !isExpired && (
-        <section className="relative overflow-hidden bg-vendeur-emerald/10 border border-vendeur-emerald/20 p-5 sm:p-7 md:p-10 rounded-3xl sm:rounded-[2.5rem] md:rounded-[3.5rem] group shadow-2xl space-y-6">
+        <section className="relative overflow-hidden bg-vendeur-emerald/10 border border-vendeur-emerald/20 p-4 sm:p-6 md:p-7 rounded-3xl sm:rounded-[2.5rem] group shadow-2xl space-y-6">
           <div className="absolute top-0 right-0 p-8 md:p-12 opacity-10 group-hover:scale-110 transition-transform duration-700 pointer-events-none">
              <Sparkles size={160} className="text-vendeur-emerald" />
           </div>
 
           <div className="relative z-10 space-y-6">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-5">
-              <div className="flex items-center gap-3.5 md:gap-5">
+            <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 sm:gap-5">
+              <div className="flex items-center gap-3 sm:gap-4 md:gap-5 min-w-0">
                 <div className="h-10 w-10 sm:h-12 sm:w-12 flex items-center justify-center group-hover:rotate-3 transition-transform shrink-0">
                   <AssistantIcon size="100%" color="#10B981" withBackground={false} className="drop-shadow-[0_0_8px_rgba(16,185,129,0.3)]" />
                 </div>
                 <div className="min-w-0">
-                  <h2 className="text-base sm:text-xl md:text-3xl font-black text-white uppercase tracking-tight leading-tight truncate">
+                  <h2 className="text-base sm:text-xl md:text-2xl lg:text-3xl font-black text-white uppercase tracking-tight leading-tight truncate">
                     Conseiller de Croissance IA
                   </h2>
                   <div className="flex items-center gap-2 mt-1">
@@ -435,23 +437,23 @@ function HomePanel({
                 </div>
               </div>
 
-              <div className="flex flex-wrap sm:flex-nowrap items-center gap-2.5 w-full md:w-auto">
+              <div className="flex flex-wrap items-center gap-2.5 w-full xl:w-auto">
 
                 <button
                   type="button"
                   onClick={() => setIsPauseModalOpen(true)}
-                  className="flex items-center justify-center gap-2 min-h-[48px] h-12 px-4 py-3 rounded-2xl bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/30 text-sky-300 text-xs font-black uppercase tracking-wider transition-all w-full sm:w-auto cursor-pointer active:scale-95 shrink-0"
+                  className="flex-1 sm:flex-initial flex items-center justify-center gap-2 min-h-[44px] sm:min-h-[48px] h-11 sm:h-12 px-3.5 sm:px-4 py-2.5 sm:py-3 rounded-2xl bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/30 text-sky-300 text-[11px] sm:text-xs font-black uppercase tracking-wider transition-all cursor-pointer active:scale-95 whitespace-nowrap"
                   title="Mettre le Vendeur IA en pause pour répondre manuellement"
                 >
-                  <PauseCircle size={15} />
+                  <PauseCircle size={15} className="shrink-0" />
                   <span>Mettre en pause</span>
                 </button>
 
                 <button
                   onClick={onOpenTestIA}
-                  className="flex items-center justify-center gap-2 min-h-[48px] h-12 px-4 py-3 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 text-white text-xs font-black uppercase tracking-wider transition-all w-full sm:w-auto cursor-pointer active:scale-95 shrink-0"
+                  className="flex-1 sm:flex-initial flex items-center justify-center gap-2 min-h-[44px] sm:min-h-[48px] h-11 sm:h-12 px-3.5 sm:px-4 py-2.5 sm:py-3 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 text-white text-[11px] sm:text-xs font-black uppercase tracking-wider transition-all cursor-pointer active:scale-95 whitespace-nowrap"
                 >
-                  <Play size={14} fill="currentColor" />
+                  <Play size={14} fill="currentColor" className="shrink-0" />
                   <span>Tester</span>
                 </button>
 
@@ -467,9 +469,9 @@ function HomePanel({
                       toast.error(err.response?.data?.error || "Erreur lors de l'envoi des statuts");
                     }
                   }}
-                  className="flex items-center justify-center gap-2.5 min-h-[48px] h-12 px-5 py-3 rounded-2xl bg-vendeur-emerald text-vendeur-coal hover:bg-emerald-400 text-xs font-black uppercase tracking-wider transition-all w-full sm:w-auto shadow-lg shadow-vendeur-emerald/20 cursor-pointer active:scale-95 shrink-0"
+                  className="w-full sm:w-auto flex-initial flex items-center justify-center gap-2 min-h-[44px] sm:min-h-[48px] h-11 sm:h-12 px-4 sm:px-5 py-2.5 sm:py-3 rounded-2xl bg-vendeur-emerald text-vendeur-coal hover:bg-emerald-400 text-[11px] sm:text-xs font-black uppercase tracking-wider transition-all shadow-lg shadow-vendeur-emerald/20 cursor-pointer active:scale-95 whitespace-nowrap"
                 >
-                  <Sparkles size={16} />
+                  <Sparkles size={16} className="shrink-0" />
                   <span>Recevoir mes Statuts du Jour</span>
                 </button>
               </div>
@@ -498,15 +500,16 @@ function HomePanel({
         Affiché lorsque la configuration initiale est terminée pour un accès direct permanent
       */}
       {!showAssistant && (
-        <section className="relative overflow-hidden bg-vendeur-coal/90 border border-white/10 p-5 sm:p-7 md:p-8 rounded-2xl sm:rounded-3xl md:rounded-[2.5rem] shadow-2xl group space-y-5">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-5">
-            <div className="flex items-center gap-3.5 sm:gap-4 min-w-0">
-              <div className="h-12 w-12 sm:h-14 sm:w-14 rounded-2xl bg-vendeur-emerald/10 border border-vendeur-emerald/20 flex items-center justify-center text-vendeur-emerald shrink-0 group-hover:scale-105 transition-transform">
-                <Store size={26} />
+        <section className="relative overflow-hidden bg-vendeur-coal/90 border border-white/10 p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl md:rounded-[2.5rem] shadow-2xl group space-y-4 sm:space-y-5">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 sm:gap-5">
+            <div className="flex items-start sm:items-center gap-3.5 sm:gap-4 min-w-0">
+              <div className="h-11 w-11 sm:h-14 sm:w-14 rounded-2xl bg-vendeur-emerald/10 border border-vendeur-emerald/20 flex items-center justify-center text-vendeur-emerald shrink-0 group-hover:scale-105 transition-transform mt-0.5 sm:mt-0">
+                <Store size={22} className="sm:hidden" />
+                <Store size={26} className="hidden sm:block" />
               </div>
-              <div className="min-w-0">
-                <div className="flex items-center gap-2.5 flex-wrap">
-                  <h2 className="text-lg sm:text-xl md:text-2xl font-black text-white uppercase tracking-tight truncate">
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2 sm:gap-2.5 flex-wrap">
+                  <h2 className="text-base sm:text-xl md:text-2xl font-black text-white uppercase tracking-tight">
                     Votre Vitrine en Ligne
                   </h2>
                   <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-vendeur-emerald/10 border border-vendeur-emerald/30 text-vendeur-emerald text-[10px] font-black uppercase tracking-wider shrink-0">
@@ -514,40 +517,41 @@ function HomePanel({
                     {hasProducts ? `${productsCount} article${productsCount > 1 ? "s" : ""} en ligne` : "Vitrine active"}
                   </span>
                 </div>
-                <p className="text-xs sm:text-sm text-white/50 font-medium mt-0.5 line-clamp-1">
+                <p className="text-xs sm:text-sm text-white/50 font-medium mt-1 leading-snug">
                   Partagez ce lien à vos clients sur WhatsApp, Instagram ou TikTok pour commander en 1 clic.
                 </p>
               </div>
             </div>
 
-            <div className="flex flex-wrap sm:flex-nowrap items-center gap-2.5 w-full md:w-auto shrink-0">
+            <div className="grid grid-cols-2 sm:flex sm:items-center gap-2 sm:gap-2.5 w-full lg:w-auto shrink-0">
               <button
                 type="button"
                 onClick={onOpenShare}
-                className="flex-1 sm:flex-none flex items-center justify-center gap-2 min-h-[46px] h-12 px-5 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 text-white text-xs font-black uppercase tracking-wider transition-all cursor-pointer active:scale-95 group shadow-sm"
+                className="flex items-center justify-center gap-2 min-h-[44px] sm:min-h-[48px] h-11 sm:h-12 px-3 sm:px-5 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 text-white text-[11px] sm:text-xs font-black uppercase tracking-wider transition-all cursor-pointer active:scale-95 group shadow-sm whitespace-nowrap"
                 title="Propulser & Obtenir le QR Code"
               >
-                <Share2 size={16} className="text-vendeur-emerald group-hover:scale-110 transition-transform" />
-                <span>Propulser / QR Code</span>
+                <Share2 size={15} className="text-vendeur-emerald group-hover:scale-110 transition-transform shrink-0" />
+                <span className="hidden xs:inline sm:inline">Propulser / QR Code</span>
+                <span className="xs:hidden sm:hidden">Partager</span>
               </button>
 
               <Link
                 to={getMerchantShopPath(dashboard?.merchant)}
                 target="_blank"
-                className="flex-1 sm:flex-none flex items-center justify-center gap-2 min-h-[46px] h-12 px-6 rounded-2xl bg-vendeur-emerald hover:bg-emerald-400 text-vendeur-coal text-xs font-black uppercase tracking-wider transition-all shadow-lg shadow-vendeur-emerald/20 cursor-pointer active:scale-95 group hover:scale-[1.02]"
+                className="flex items-center justify-center gap-1.5 sm:gap-2 min-h-[44px] sm:min-h-[48px] h-11 sm:h-12 px-3 sm:px-6 rounded-2xl bg-vendeur-emerald hover:bg-emerald-400 text-vendeur-coal text-[11px] sm:text-xs font-black uppercase tracking-wider transition-all shadow-lg shadow-vendeur-emerald/20 cursor-pointer active:scale-95 group hover:scale-[1.02] whitespace-nowrap"
                 title="Ouvrir la vitrine publique"
               >
                 <span>Voir ma Vitrine</span>
-                <ExternalLink size={16} className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                <ExternalLink size={15} className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform shrink-0" />
               </Link>
             </div>
           </div>
 
           {/* Storefront Link Bar */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 p-2 bg-black/40 border border-white/10 rounded-2xl">
-            <div className="flex-1 flex items-center gap-2 px-3 min-w-0 overflow-hidden">
-              <Globe size={15} className="text-vendeur-emerald shrink-0" />
-              <span className="text-xs font-mono font-bold text-white/90 truncate">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 p-1.5 sm:p-2 bg-black/50 border border-white/10 rounded-2xl">
+            <div className="flex-1 flex items-center gap-2 px-2.5 sm:px-3 py-1 sm:py-0 min-w-0 overflow-hidden">
+              <Globe size={14} className="text-vendeur-emerald shrink-0" />
+              <span className="text-[11px] sm:text-xs font-mono font-bold text-white/90 truncate select-all">
                 {getMerchantShopUrl(dashboard?.merchant)}
               </span>
             </div>
@@ -557,12 +561,28 @@ function HomePanel({
               onClick={() => {
                 const url = getMerchantShopUrl(dashboard?.merchant);
                 navigator.clipboard.writeText(url);
+                setHasCopiedShopUrl(true);
                 toast.success("Lien de votre vitrine copié ! 🚀");
+                setTimeout(() => setHasCopiedShopUrl(false), 2000);
               }}
-              className="min-h-[40px] px-5 rounded-xl bg-white/10 hover:bg-white/15 active:scale-95 text-white text-xs font-black uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all cursor-pointer shrink-0"
+              className={cn(
+                "min-h-[38px] sm:min-h-[40px] px-4 sm:px-5 rounded-xl text-[11px] sm:text-xs font-black uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all cursor-pointer shrink-0 active:scale-95",
+                hasCopiedShopUrl
+                  ? "bg-vendeur-emerald text-vendeur-coal"
+                  : "bg-white/10 hover:bg-white/15 text-white"
+              )}
             >
-              <Copy size={14} className="text-vendeur-emerald" />
-              <span>Copier le lien</span>
+              {hasCopiedShopUrl ? (
+                <>
+                  <Check size={13} className="shrink-0" />
+                  <span>Copié !</span>
+                </>
+              ) : (
+                <>
+                  <Copy size={13} className="text-vendeur-emerald shrink-0" />
+                  <span>Copier le lien</span>
+                </>
+              )}
             </button>
           </div>
         </section>

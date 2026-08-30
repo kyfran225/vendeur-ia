@@ -26,6 +26,27 @@
     -webkit-tap-highlight-color: transparent;
   }
 
+  /* Anti-Caret & Clean Cursor Rules: Prevents blinking text cursor on non-editable elements */
+  * {
+    caret-color: transparent;
+  }
+
+  input,
+  textarea,
+  [contenteditable="true"] {
+    caret-color: #10B981;
+  }
+
+  button,
+  [role="button"],
+  a,
+  label,
+  nav,
+  header {
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
   /* Custom Emerald Scrollbar */
   ::-webkit-scrollbar {
     width: 8px;

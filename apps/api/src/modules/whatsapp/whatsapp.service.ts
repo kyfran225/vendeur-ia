@@ -47,9 +47,15 @@ class WhatsAppService {
   }
 
   async sendDirectMessageToPhone(phone: string, text: string): Promise<boolean> {
-    const cleanNumber = phone.replace(/\D/g, "");
+    const rawDigits = phone.replace(/\D/g, "");
+    let recipient = rawDigits;
+    if (recipient.length === 10) {
+      recipient = `225${recipient}`;
+    } else if (recipient.length === 8) {
+      recipient = `22501${recipient}`;
+    }
 
-    // 1. Try sending via Meta Cloud API (Official System Channel)
+    // 1. Try sending via Meta Cloud API (Official System Channel from 0505111157)
     try {
       const settings = await SystemSettingsModel.findOne();
       const config = settings?.metaConfig?.whatsappDefaults;
@@ -62,7 +68,7 @@ class WhatsAppService {
           {
             messaging_product: "whatsapp",
             recipient_type: "individual",
-            to: cleanNumber,
+            to: recipient,
             type: "text",
             text: { body: text },
           },
@@ -73,7 +79,7 @@ class WhatsAppService {
             },
           }
         );
-        console.log(`[WhatsApp Auth] Direct message successfully sent via Meta Cloud to ${cleanNumber}`);
+        console.log(`[WhatsApp Auth] Direct message sent via Meta Cloud to Merchant (${recipient})`);
         return true;
       }
     } catch (err: any) {
@@ -81,12 +87,12 @@ class WhatsAppService {
     }
 
     // 2. Try sending via active Baileys socket if available
-    const jid = `${cleanNumber}@s.whatsapp.net`;
+    const jid = `${recipient}@s.whatsapp.net`;
     for (const [_, sock] of this.activeSessions.entries()) {
       if (sock && sock.user?.id) {
         try {
           await sock.sendMessage(jid, { text });
-          console.log(`[WhatsApp Auth] Direct message sent via Baileys socket to ${cleanNumber}`);
+          console.log(`[WhatsApp Auth] Direct message sent via Baileys socket to Merchant (${recipient})`);
           return true;
         } catch (err) {
           console.warn("[WhatsApp] Failed sending direct message via active socket:", err);
@@ -1016,7 +1022,8 @@ class WhatsAppService {
             pushService.sendNotification(userId, {
               title: "💰 Paiement Validé par Shield OCR !",
               body: `Reçu authentifié (${auditResult.confidenceScore}%). ${customer.phone} a payé ${auditResult.amount} XOF via ${auditResult.platform}.`,
-              data: { conversationId: conversation._id.toString(), orderId: auditResult.orderId?.toString() }
+              tag: `payment-${auditResult.orderId || conversation._id}`,
+              data: { conversationId: conversation._id.toString(), orderId: auditResult.orderId?.toString(), url: `/inbox?chat=${conversation._id}` }
             }).catch((err: any) => console.error("[WhatsApp] Push notification error:", err));
 
             text = `[PAIEMENT SHIELD VALIDÉ AUTOMATIQUEMENT: ${auditResult.platform} - ${auditResult.amount} XOF (Score: ${auditResult.confidenceScore}%)]`;
@@ -1033,7 +1040,8 @@ class WhatsAppService {
             pushService.sendNotification(userId, {
               title: "⚠️ Preuve Suspecte à Vérifier",
               body: `Capture de ${auditResult.amount} XOF reçue mais nécessite votre confirmation manuelle (Score: ${auditResult.confidenceScore}%).`,
-              data: { conversationId: conversation._id.toString() }
+              tag: `payment-${conversation._id}`,
+              data: { conversationId: conversation._id.toString(), url: `/inbox?chat=${conversation._id}` }
             }).catch((err: any) => console.error("[WhatsApp] Push notification error:", err));
 
             text = `[PREUVE SUSPECTE - VÉRIFICATION MANUELLE REQUISE: ${auditResult.platform} ${auditResult.amount} XOF (Alertes: ${auditResult.flags.join(", ")})]`;
@@ -1041,7 +1049,8 @@ class WhatsAppService {
             pushService.sendNotification(userId, {
               title: "🚨 Alerte Fraude / Fausse Preuve",
               body: `Tentative de fausse capture d'écran détectée pour ${customer.phone} (${auditResult.flags.join(", ")}).`,
-              data: { conversationId: conversation._id.toString() }
+              tag: `payment-${conversation._id}`,
+              data: { conversationId: conversation._id.toString(), url: `/inbox?chat=${conversation._id}` }
             }).catch((err: any) => console.error("[WhatsApp] Push notification error:", err));
 
             text = `[ALERTE SHIELD FRAUDE DÉTECTÉE: Reçu rejeté (${auditResult.flags.join(", ")})]`;
@@ -1122,11 +1131,15 @@ class WhatsAppService {
       pushService.sendNotification(targetId, {
         title: `💬 ${customerDisplay}`,
         body: text.length > 120 ? text.substring(0, 117) + "..." : text,
+        tag: `chat-${conversation._id.toString()}`,
+        actions: [
+          { action: "open_chat", title: "💬 Ouvrir la discussion" }
+        ],
         data: {
           conversationId: conversation._id.toString(),
           customerId: customer._id.toString(),
           phone: customer.phone,
-          url: `/inbox?chat=${conversation._id}`
+          url: `/inbox?chat=${conversation._id.toString()}`
         }
       }).catch(err => console.warn("[WhatsApp Push Error]", err?.message || err));
     }
@@ -1664,7 +1677,8 @@ class WhatsAppService {
               pushService.sendNotification(merchant.ownerId, {
                 title: "💰 Paiement Validé par Shield OCR ! (API)",
                 body: `Reçu authentifié (${auditResult.confidenceScore}%). ${customer.phone} a payé ${auditResult.amount} XOF via ${auditResult.platform}.`,
-                data: { conversationId: latestConversation?._id?.toString(), orderId: auditResult.orderId?.toString() }
+                tag: `payment-${auditResult.orderId || latestConversation?._id}`,
+                data: { conversationId: latestConversation?._id?.toString(), orderId: auditResult.orderId?.toString(), url: `/inbox?chat=${latestConversation?._id}` }
               }).catch((err: any) => console.error("[WhatsApp Meta] Push notification error:", err));
 
               text = `[PAIEMENT SHIELD VALIDÉ AUTOMATIQUEMENT: ${auditResult.platform} - ${auditResult.amount} XOF (Score: ${auditResult.confidenceScore}%)]`;
@@ -1678,7 +1692,8 @@ class WhatsAppService {
               pushService.sendNotification(merchant.ownerId, {
                 title: "⚠️ Preuve Suspecte à Vérifier (API)",
                 body: `Capture de ${auditResult.amount} XOF reçue mais nécessite votre confirmation manuelle (Score: ${auditResult.confidenceScore}%).`,
-                data: { conversationId: latestConversation?._id?.toString() }
+                tag: `payment-${latestConversation?._id}`,
+                data: { conversationId: latestConversation?._id?.toString(), url: `/inbox?chat=${latestConversation?._id}` }
               }).catch((err: any) => console.error("[WhatsApp Meta] Push notification error:", err));
 
               text = `[PREUVE SUSPECTE - VÉRIFICATION MANUELLE REQUISE: ${auditResult.platform} ${auditResult.amount} XOF (Alertes: ${auditResult.flags.join(", ")})]`;
@@ -1686,7 +1701,8 @@ class WhatsAppService {
               pushService.sendNotification(merchant.ownerId, {
                 title: "🚨 Alerte Fraude / Fausse Preuve (API)",
                 body: `Tentative de fausse capture d'écran détectée pour ${customer.phone} (${auditResult.flags.join(", ")}).`,
-                data: { conversationId: latestConversation?._id?.toString() }
+                tag: `payment-${latestConversation?._id}`,
+                data: { conversationId: latestConversation?._id?.toString(), url: `/inbox?chat=${latestConversation?._id}` }
               }).catch((err: any) => console.error("[WhatsApp Meta] Push notification error:", err));
 
               text = `[ALERTE SHIELD FRAUDE DÉTECTÉE: Reçu rejeté (${auditResult.flags.join(", ")})]`;

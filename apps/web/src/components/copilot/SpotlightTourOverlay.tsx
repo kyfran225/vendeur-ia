@@ -84,7 +84,10 @@ export function SpotlightTourOverlay() {
     endTour
   } = useCopilotStore();
 
-  const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
+  const [targetInfo, setTargetInfo] = useState<{
+    rect: DOMRect;
+    borderRadius: string;
+  } | null>(null);
 
   const currentStep = TOUR_STEPS[tourStepIndex];
   const isLastStep = tourStepIndex === TOUR_STEPS.length - 1;
@@ -98,19 +101,22 @@ export function SpotlightTourOverlay() {
     }
   }, [isTourActive, tourStepIndex, currentStep, location.pathname, navigate]);
 
-  // Track target element coordinates
+  // Track target element coordinates and exact computed curvature
   useEffect(() => {
     if (!isTourActive || !currentStep) {
-      setTargetRect(null);
+      setTargetInfo(null);
       return;
     }
 
     const updateRect = () => {
       const el = document.querySelector(currentStep.selector);
       if (el) {
-        setTargetRect(el.getBoundingClientRect());
+        const rect = el.getBoundingClientRect();
+        const style = window.getComputedStyle(el);
+        const borderRadius = style.borderRadius || "1.5rem";
+        setTargetInfo({ rect, borderRadius });
       } else {
-        setTargetRect(null);
+        setTargetInfo(null);
       }
     };
 
@@ -134,16 +140,19 @@ export function SpotlightTourOverlay() {
       {/* Dark backdrop with cutout effect if target found, or uniform high-contrast overlay */}
       <div className="absolute inset-0 bg-black/75 backdrop-blur-sm pointer-events-auto" />
 
-      {/* Target Spotlight Highlight Ring */}
-      {targetRect && (
+      {/* Target Spotlight Highlight Ring - perfectly matching the card border radius and refined thickness */}
+      {targetInfo && (
         <div
-          className="absolute rounded-3xl border-2 border-emerald-400 shadow-[0_0_40px_rgba(16,185,129,0.6)] transition-all duration-500 pointer-events-none animate-pulse"
+          className="absolute border border-emerald-400/90 transition-all duration-300 pointer-events-none"
           style={{
-            top: Math.max(8, targetRect.top - 8),
-            left: Math.max(8, targetRect.left - 8),
-            width: targetRect.width + 16,
-            height: targetRect.height + 16,
-            boxShadow: "0 0 0 9999px rgba(0, 0, 0, 0.75), 0 0 30px rgba(16, 185, 129, 0.8)"
+            top: Math.max(4, targetInfo.rect.top - 3),
+            left: Math.max(4, targetInfo.rect.left - 3),
+            width: targetInfo.rect.width + 6,
+            height: targetInfo.rect.height + 6,
+            borderRadius: targetInfo.borderRadius && targetInfo.borderRadius !== "0px"
+              ? `calc(${targetInfo.borderRadius} + 3px)`
+              : "1.5rem",
+            boxShadow: "0 0 0 9999px rgba(0, 0, 0, 0.72), 0 0 16px rgba(16, 185, 129, 0.35), inset 0 0 6px rgba(16, 185, 129, 0.12)"
           }}
         />
       )}

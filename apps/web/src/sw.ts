@@ -8,58 +8,67 @@ precacheAndRoute(self.__WB_MANIFEST || []);
 
 // Web Push Notification Event Handler
 self.addEventListener('push', (event: PushEvent) => {
-  if (!event.data) return;
+  const showPush = async () => {
+    try {
+      if (!event.data) {
+        return await self.registration.showNotification("Vendeur IA OS 🚀", {
+          body: "Nouveau message reçu sur votre boutique.",
+          icon: "/android-chrome-192x192.png",
+          badge: "/favicon-32x32.png",
+          data: { url: "/inbox" },
+          tag: "vendeur-ia-chat"
+        });
+      }
 
-  try {
-    const payload = event.data.json();
-    const title = payload.title || "Vendeur IA OS";
-    
-    // Determine accurate destination URL
-    const targetUrl = payload.data?.url || (payload.data?.conversationId ? `/inbox?chat=${payload.data.conversationId}` : '/inbox');
-    
-    // Contextual Actions based on payload type
-    let actions: Array<{ action: string; title: string }> = [];
-    if (payload.actions && Array.isArray(payload.actions)) {
-      actions = payload.actions;
-    } else if (payload.data?.conversationId) {
-      actions = [
-        { action: "open_chat", title: "💬 Ouvrir la discussion" }
-      ];
-    } else if (payload.data?.reference) {
-      actions = [
-        { action: "inspect", title: "🔍 Inspecter" },
-        { action: "open", title: "⚡ Ouvrir Admin" }
-      ];
-    }
+      let payload: any = {};
+      try {
+        payload = event.data.json();
+      } catch {
+        payload = { title: "Vendeur IA OS 🚀", body: event.data.text() };
+      }
 
-    const options: any = {
-      body: payload.body || "Nouvelle notification reçue sur Vendeur IA.",
-      icon: payload.icon || "/android-chrome-192x192.png",
-      badge: "/favicon-32x32.png",
-      data: {
-        ...(payload.data || {}),
-        url: targetUrl
-      },
-      vibrate: [250, 100, 250, 100, 400],
-      tag: payload.tag || (payload.data?.conversationId ? `chat-${payload.data.conversationId}` : (payload.data?.reference ? `payment-${payload.data.reference}` : 'vendeur-ia-general')),
-      renotify: true,
-      requireInteraction: true,
-      actions
-    };
+      const title = payload.title || "Vendeur IA OS 🚀";
+      const targetUrl = payload.data?.url || (payload.data?.conversationId ? `/inbox?chat=${payload.data.conversationId}` : '/inbox');
 
-    event.waitUntil(self.registration.showNotification(title, options));
-  } catch (err) {
-    const rawText = event.data.text();
-    event.waitUntil(
-      self.registration.showNotification("Vendeur IA OS", {
-        body: rawText,
+      let actions: Array<{ action: string; title: string }> = [];
+      if (payload.actions && Array.isArray(payload.actions)) {
+        actions = payload.actions;
+      } else if (payload.data?.conversationId) {
+        actions = [
+          { action: "open_chat", title: "💬 Ouvrir la discussion" }
+        ];
+      }
+
+      const tag = payload.tag || (payload.data?.conversationId ? `chat-${payload.data.conversationId}` : 'vendeur-ia-chat');
+
+      const options: any = {
+        body: payload.body || "Nouveau message client reçu sur WhatsApp.",
+        icon: payload.icon || "/android-chrome-192x192.png",
+        badge: "/favicon-32x32.png",
+        data: {
+          ...(payload.data || {}),
+          url: targetUrl
+        },
+        vibrate: [200, 100, 200],
+        tag,
+        renotify: true,
+        actions
+      };
+
+      await self.registration.showNotification(title, options);
+    } catch (err) {
+      console.warn("[SW Push Error]", err);
+      await self.registration.showNotification("Vendeur IA OS", {
+        body: "Nouveau message client reçu.",
         icon: "/android-chrome-192x192.png",
         badge: "/favicon-32x32.png",
         data: { url: "/inbox" },
-        tag: "vendeur-ia-fallback"
-      })
-    );
-  }
+        tag: "vendeur-ia-chat"
+      });
+    }
+  };
+
+  event.waitUntil(showPush());
 });
 
 // Notification Click Event Handler

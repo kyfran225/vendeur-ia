@@ -30,7 +30,47 @@ export interface AIResponse {
 }
 
 /**
- * Strips internal thinking processes, chain-of-thought tags, and leaked system instructions
+ * Patterns that indicate the text contains system prompt rules, analytical meta-commentary,
+ * or instructions intended for the model rather than customer-facing dialog.
+ */
+export const PROMPT_LEAK_PATTERNS: RegExp[] = [
+  /règles?\s*d['’]action/i,
+  /gardes-fous\s*(&|et)?\s*sécurité/i,
+  /interdictions?\s*strictes?\s*de\s*vocabulaire/i,
+  /stratégie\s*de\s*vente\s*(&|et)?\s*psychologie/i,
+  /tunnel\s*d['’]encaissement/i,
+  /détection\s*de\s*commande\s*ferme/i,
+  /détection\s*de\s*paiement/i,
+  /intentions?\s*multimodales?/i,
+  /règles?\s*d['’]or/i,
+  /confidentialité\s*absolue/i,
+  /zéro\s*leak/i,
+  /zéro\s*pavé/i,
+  /zéro\s*formule\s*robotique/i,
+  /analyze\s*user\s*input/i,
+  /check\s*constraints/i,
+  /identify\s*key\s*constraints/i,
+  /draft\s*construction\s*\(mental\)/i,
+  /here'?s\s*a\s*thinking\s*process/i,
+  /system\s*instructions/i,
+  /system\s*prompt/i,
+  /consignes?\s*système/i,
+  /instructions?\s*système/i,
+  /directives?\s*système/i,
+  /tu\s*es\s*l['’]expert\s*principal\s*de\s*vente/i,
+  /voici\s*mes\s*règles\s*(système|de\s*vente|de\s*fonctionnement)?/i,
+  /mes\s*règles\s*(sont|de\s*fonctionnement|commerciales\s*sont)/i,
+  /en\s*tant\s*qu['’]ia,?\s*(voici|mes\s*consignes|je\s*dois\s*suivre)/i,
+  /règles\s*que\s*je\s*dois\s*suivre/i
+];
+
+export function isPromptLeak(text: string): boolean {
+  if (!text || typeof text !== "string") return false;
+  return PROMPT_LEAK_PATTERNS.some((pattern) => pattern.test(text));
+}
+
+/**
+ * Strips internal thinking processes, chain-of-thought tags, analytical steps, and leaked system instructions
  * so that end customers never see internal reasoning or prompt rules.
  */
 export function sanitizeAIText(rawText: string): string {
@@ -44,39 +84,57 @@ export function sanitizeAIText(rawText: string): string {
   cleaned = cleaned.replace(/<reasoning[\s\S]*?<\/reasoning>/gi, "");
   cleaned = cleaned.replace(/<internal[\s\S]*?<\/internal>/gi, "");
   cleaned = cleaned.replace(/<reflection[\s\S]*?<\/reflection>/gi, "");
+  cleaned = cleaned.replace(/<cot[\s\S]*?<\/cot>/gi, "");
   cleaned = cleaned.replace(/\[THINKING\][\s\S]*?\[\/THINKING\]/gi, "");
   cleaned = cleaned.replace(/\[REASONING\][\s\S]*?\[\/REASONING\]/gi, "");
+  cleaned = cleaned.replace(/\[THOUGHT\][\s\S]*?\[\/THOUGHT\]/gi, "");
 
   // 2. If an unclosed <think> or <thought> tag exists, extract the final response or strip it entirely
-  if (/<(?:think|thought|reasoning|internal|reflection)|\[(?:THINKING|REASONING)\]/i.test(cleaned)) {
+  if (/<(?:think|thought|reasoning|internal|reflection|cot)|\[(?:THINKING|REASONING|THOUGHT)\]/i.test(cleaned)) {
     const draftMatch = cleaned.match(/(?:Draft Construction(?:\s*\(Mental\))?|Final (?:Response|Answer|Draft)|Réponse(?:\s*finale)?|Message(?:\s*final)?|Output)\s*:\s*\*?\s*([\s\S]+)$/i);
     if (draftMatch && draftMatch[1]) {
       cleaned = draftMatch[1];
     } else {
       // Strip unclosed thought blocks completely
-      cleaned = cleaned.replace(/<(?:think|thought|reasoning|internal|reflection)[\s\S]*$/gi, "");
-      cleaned = cleaned.replace(/\[(?:THINKING|REASONING)\][\s\S]*$/gi, "");
+      cleaned = cleaned.replace(/<(?:think|thought|reasoning|internal|reflection|cot)[\s\S]*$/gi, "");
+      cleaned = cleaned.replace(/\[(?:THINKING|REASONING|THOUGHT)\][\s\S]*$/gi, "");
     }
   }
 
-  // 3. Extract final draft if present in structured reasoning
-  const draftMatch = cleaned.match(/(?:Draft Construction(?:\s*\(Mental\))?|Final (?:Response|Answer|Draft)|Réponse(?:\s*finale)?|Message(?:\s*final)?)\s*:\s*\*?\s*([\s\S]+)$/i);
+  // 3. Extract final draft if present in structured reasoning (even without XML tags)
+  const draftMatch = cleaned.match(/(?:(?:^|\n)(?:\d+\.\s*)?\*?(?:Draft Construction(?:\s*\(Mental\))?|Final (?:Response|Answer|Draft)|Réponse(?:\s*finale)?|Message(?:\s*final)?|Réponse au client|Draft)\*?\s*:\s*\*?\s*)([\s\S]+)$/i);
   if (draftMatch && draftMatch[1]) {
     const preText = cleaned.substring(0, draftMatch.index || 0);
-    if (/think>|thinking process|analyze user input|check constraints/i.test(preText)) {
+    if (/think>|thought>|thinking process|analyze user input|check constraints|identify key constraints|reasoning/i.test(preText)) {
       cleaned = draftMatch[1];
     }
   }
 
-  // 4. Strip prefix thinking process indicators and chain-of-thought blocks
-  cleaned = cleaned.replace(/^(?:think>|thought>|thinking\s*:|reasoning\s*:|here'?s a thinking process\s*:|chain of thought\s*:)[\s\S]*?(?=(?:\r?\n){2,}[A-ZÀ-ÖØ-ß0-9"«'#*]|$)/i, "");
+  // 4. Strip prefix thinking process indicators, analysis blocks, and chain-of-thought blocks
+  cleaned = cleaned.replace(/^(?:think>|thought>|thinking\s*:|reasoning\s*:|here'?s a thinking process\s*:|chain of thought\s*:|thought process\s*:|internal reasoning\s*:)[\s\S]*?(?=(?:\r?\n){2,}[A-ZÀ-ÖØ-ß0-9"«'#*]|$)/i, "");
 
-  // 5. Strip stray prefixes & tags
+  // 5. Strip structured analytical numbered steps (e.g. 1. *Analyze User Input:*, 2. *Check Constraints:*)
+  if (/^(?:\s*\d+\.\s*\*?(?:Analyze User Input|Identify Key Constraints|Check Constraints|Plan|Règles à suivre|Analyse de la demande)\*?:?[\s\S]*?){1,3}/i.test(cleaned)) {
+    const subDraft = cleaned.match(/(?:(?:\d+\.\s*)?\*?(?:Draft Construction(?:\s*\(Mental\))?|Final Response|Message final|Réponse finale|Réponse)\*?\s*:\s*\*?\s*)([\s\S]+)$/i);
+    if (subDraft && subDraft[1]) {
+      cleaned = subDraft[1];
+    } else {
+      cleaned = cleaned.replace(/^(?:\s*\d+\.\s*\*?(?:Analyze User Input|Identify Key Constraints|Check Constraints|Plan|Règles à suivre|Analyse de la demande)\*?:?[\s\S]*?(?=(?:\r?\n){2,}[A-ZÀ-ÖØ-ß0-9"«'#*]|$))/i, "");
+    }
+  }
+
+  // 6. Strip stray prefixes & tags
   cleaned = cleaned.replace(/^(?:think>|thought>|<\/?think>|<\/?thought>)\s*/gi, "");
   cleaned = cleaned.replace(/<\/?think>|<\/?thought>/gi, "");
 
-  // 6. Strip any accidental leakage of system instructions header
-  cleaned = cleaned.replace(/^(?:SYSTEM INSTRUCTIONS|SYSTEM PROMPT|Consignes système)\s*:[\s\S]*?(?=(?:\r?\n){2,}|$)/gi, "");
+  // 7. Strip markdown thinking headers (e.g. ### Thinking Process)
+  cleaned = cleaned.replace(/###\s*(?:Thinking Process|Thought Process|Reasoning|Analysis|Plan)[\s\S]*?(?=(?:\r?\n){2,}[A-ZÀ-ÖØ-ß0-9"«'#*]|$)/gi, "");
+
+  // 8. Strip any accidental leakage of system instructions headers
+  cleaned = cleaned.replace(/^(?:SYSTEM INSTRUCTIONS|SYSTEM PROMPT|Consignes système|Instructions système|Directives système)\s*:[\s\S]*?(?=(?:\r?\n){2,}|$)/gi, "");
+
+  // 9. Strip leaked internal section headers if regurgitated at beginning of response
+  cleaned = cleaned.replace(/^(?:RÈGLES D'ACTION ET ENGAGEMENT|GARDES-FOUS & SÉCURITÉ|RÈGLES D'OR|STRATÉGIE DE VENTE|FORMAT DE CONVERSATION|TON ET PERSONA|INTERDICTIONS STRICTES DE VOCABULAIRE)\s*:[\s\S]*?(?=(?:\r?\n){2,}[A-ZÀ-ÖØ-ß0-9"«'#*]|$)/gi, "");
 
   return cleaned.trim();
 }

@@ -405,7 +405,7 @@ function HomePanel({
           </div>
 
           <div className="relative z-10 space-y-6">
-            <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 sm:gap-5">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 sm:gap-5">
               <div className="flex items-center gap-3 sm:gap-4 md:gap-5 min-w-0">
                 <div className="h-10 w-10 sm:h-12 sm:w-12 flex items-center justify-center group-hover:rotate-3 transition-transform shrink-0">
                   <AssistantIcon size="100%" color="#10B981" withBackground={false} className="drop-shadow-[0_0_8px_rgba(16,185,129,0.3)]" />
@@ -423,7 +423,7 @@ function HomePanel({
                 </div>
               </div>
 
-              <div className="flex flex-wrap items-center gap-2.5 w-full xl:w-auto">
+              <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 sm:gap-2.5 w-full lg:w-auto">
 
                 <button
                   type="button"
@@ -455,7 +455,7 @@ function HomePanel({
                       toast.error(err.response?.data?.error || "Erreur lors de l'envoi des statuts");
                     }
                   }}
-                  className="w-full sm:w-auto flex-initial flex items-center justify-center gap-2 min-h-[44px] sm:min-h-[48px] h-11 sm:h-12 px-4 sm:px-5 py-2.5 sm:py-3 rounded-2xl bg-vendeur-emerald text-vendeur-coal hover:bg-emerald-400 text-[11px] sm:text-xs font-black uppercase tracking-wider transition-all shadow-lg shadow-vendeur-emerald/20 cursor-pointer active:scale-95 whitespace-nowrap"
+                  className="flex-1 sm:flex-initial flex items-center justify-center gap-2 min-h-[44px] sm:min-h-[48px] h-11 sm:h-12 px-3.5 sm:px-4 py-2.5 sm:py-3 rounded-2xl bg-vendeur-emerald text-vendeur-coal hover:bg-emerald-400 text-[11px] sm:text-xs font-black uppercase tracking-wider transition-all shadow-lg shadow-vendeur-emerald/20 cursor-pointer active:scale-95 whitespace-nowrap"
                 >
                   <Sparkles size={16} className="shrink-0" />
                   <span>Mes Statuts du Jour</span>

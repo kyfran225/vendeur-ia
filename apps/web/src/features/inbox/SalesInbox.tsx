@@ -33,6 +33,7 @@ import { OrderCreationModal } from "@/features/orders/OrderCreationModal";
 import { FastPayModal } from "./FastPayModal";
 import { VoiceRecorder } from "./components/VoiceRecorder";
 import { PauseConfirmationModal } from "@/components/modals/PauseConfirmationModal";
+import { formatDisplayPhone } from "@/features/onboarding/components/CountrySelector";
 import {
   playWhatsAppIncomingChime,
   playMessageSentPop,
@@ -56,8 +57,10 @@ function formatCustomerDisplayName(
   const rawName = customer.name?.trim() || "";
   const phone = customer.phone || "";
 
-  // Check if name was mistakenly set to the merchant's / current user's name
+  // Check if name is a numeric fragment like "25", "2", "225" or was mistakenly set to merchant's / user's name
+  const isNumericFragment = /^\d{1,4}$/.test(rawName);
   const isCorrupted = rawName && (
+    isNumericFragment ||
     (merchantName && rawName.toLowerCase() === merchantName.trim().toLowerCase()) ||
     (userDisplayName && rawName.toLowerCase() === userDisplayName.trim().toLowerCase()) ||
     rawName.includes("Co-Fondateur") ||
@@ -73,19 +76,9 @@ function formatCustomerDisplayName(
     return `Client #${shortId}`;
   }
 
-  // Format international African phone numbers nicely: +225 07 12 34 56 78
-  const clean = phone.replace(/@s\.whatsapp\.net/, "").replace(/\D/g, "");
-  if (clean.length === 13 && clean.startsWith("225")) {
-    return `+225 ${clean.slice(3, 5)} ${clean.slice(5, 7)} ${clean.slice(7, 9)} ${clean.slice(9, 11)} ${clean.slice(11)}`;
-  }
-  if (clean.length === 12 && clean.startsWith("225")) {
-    return `+225 ${clean.slice(3, 5)} ${clean.slice(5, 7)} ${clean.slice(7, 9)} ${clean.slice(9)}`;
-  }
-  if (clean.length === 10) {
-    return `${clean.slice(0, 2)} ${clean.slice(2, 4)} ${clean.slice(4, 6)} ${clean.slice(6, 8)} ${clean.slice(8)}`;
-  }
-
-  return phone ? `+${clean}` : "Client";
+  // Format international African phone numbers nicely with automatic CI 8-to-10 digit operator restoration (01/05/07)
+  const formatted = formatDisplayPhone(phone, "CI");
+  return formatted || "Client";
 }
 
 function formatMessageTime(dateStr?: string | Date): string {
@@ -253,25 +246,9 @@ export function SalesInbox() {
         queryClient.invalidateQueries({ queryKey: ["messages", selectedChat] });
       }
 
-      // If message is from customer, alert the admin with sound & crisp desktop notification if in background
+      // If message is from customer, alert the admin with the WhatsApp incoming sound chime
       if (data.message?.sender === "customer") {
         playWhatsAppIncomingChime();
-
-        // Only show a local browser notification popup if the tab is hidden / in background
-        if (typeof document !== "undefined" && document.hidden) {
-          const senderName = data.customer?.name || data.customer?.phone || "Client WhatsApp";
-          sendDesktopNotification({
-            title: `💬 ${senderName}`,
-            body: data.message?.content || "Nouveau message reçu",
-            tag: `chat-${data.conversationId}`,
-            onClick: () => {
-              window.focus();
-              if (data.conversationId) {
-                handleChatSelect(data.conversationId);
-              }
-            }
-          });
-        }
       }
     };
 
@@ -818,7 +795,7 @@ export function SalesInbox() {
                       {activeChatData?.status === "needs_human" ? "Manuel" : "IA 24/7"}
                     </span>
                     <span className="text-white/20">•</span>
-                    <span className="truncate">{activeChatData?.customerId?.phone || "WhatsApp Direct"}</span>
+                    <span className="truncate">{formatDisplayPhone(activeChatData?.customerId?.phone, "CI") || "WhatsApp Direct"}</span>
                   </p>
                 </div>
               </div>
@@ -994,7 +971,7 @@ export function SalesInbox() {
                         <Copy size={15} className="shrink-0 text-emerald-400" />
                         <div className="min-w-0 flex-1">
                           <p className="font-bold">Copier le numéro</p>
-                          <p className="text-[9px] text-white/40 font-normal">{activeChatData.customerId.phone}</p>
+                          <p className="text-[9px] text-white/40 font-normal">{formatDisplayPhone(activeChatData.customerId.phone, "CI")}</p>
                         </div>
                       </button>
                     )}

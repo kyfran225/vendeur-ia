@@ -450,7 +450,9 @@ router.get("/conversations", authenticate, async (req, res) => {
       if (cust && cust.name) {
         const ownerName = userDoc?.displayName;
         const rawName = cust.name.trim();
+        const isNumericFragment = /^\d{1,4}$/.test(rawName);
         const isCorrupted =
+          isNumericFragment ||
           (ownerName && rawName.toLowerCase() === ownerName.trim().toLowerCase()) ||
           rawName.includes("Co-Fondateur") ||
           (rawName.toLowerCase().includes("franck") && !cust.phone?.includes("5111157")) ||

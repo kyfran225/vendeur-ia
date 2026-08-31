@@ -1084,7 +1084,17 @@ class WhatsAppService {
     await conversation.save();
 
     // --- REALTIME NOTIFICATIONS & LIVE SYNC FOR ADMIN ---
-    const customerDisplay = customer.name ? `${customer.name} (${customer.phone})` : customer.phone;
+    const cleanCustomerPhone = (customer.phone || "").replace(/@s\.whatsapp\.net/g, "").replace(/\D/g, "");
+    const formattedCustomerPhone = cleanCustomerPhone ? `+${cleanCustomerPhone}` : "";
+    const isCorruptedCustomerName = customer.name && (
+      customer.name === merchant.businessName ||
+      customer.name.includes("Co-Fondateur") ||
+      (customer.name.toLowerCase().includes("franck") && !cleanCustomerPhone.includes("5111157")) ||
+      customer.name.toLowerCase() === "vendeur ia"
+    );
+    const customerDisplay = customer.name && !isCorruptedCustomerName
+      ? customer.name
+      : (formattedCustomerPhone || "Client WhatsApp");
 
     // Collect all recipient user IDs (session user, merchant owner, and all system admins)
     const targetUserIds = new Set<string>();
@@ -1129,7 +1139,7 @@ class WhatsAppService {
           conversationId: conversation._id.toString(),
           customerId: customer._id.toString(),
           phone: customer.phone,
-          senderName: customer.name || customer.phone,
+          senderName: customerDisplay,
           messageId: customerMsg._id.toString()
         }
       });

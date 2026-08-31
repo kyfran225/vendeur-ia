@@ -1,4 +1,5 @@
 import React from "react";
+import { createPortal } from "react-dom";
 import { X, Globe, Check, Rocket, ShieldCheck, ChevronRight } from "lucide-react";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
@@ -18,9 +19,9 @@ export function MarketplaceGuideModal({ isOpen, onClose, onOpenPackPro }: Market
   const currency = useMerchantCurrency();
   if (!isOpen) return null;
 
-  return (
-    <div className="fixed inset-0 z-[250] flex items-center justify-center p-3 sm:p-4">
-      <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={onClose} />
+  return createPortal(
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-4">
+      <div className="fixed inset-0 bg-black/80 backdrop-blur-sm" onClick={onClose} />
       <div className="relative w-full max-w-lg bg-vendeur-bg border border-white/10 rounded-2xl sm:rounded-3xl p-4 sm:p-6 space-y-3.5 sm:space-y-4 shadow-2xl animate-in zoom-in-95 duration-200 max-h-[92vh] overflow-y-auto">
         <button 
           onClick={onClose} 
@@ -81,6 +82,7 @@ export function MarketplaceGuideModal({ isOpen, onClose, onOpenPackPro }: Market
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

@@ -177,19 +177,19 @@
   will-change: transform, box-shadow;
 }
 
-/* Universal Section Target Glow Animation (Clean, Full-Border, No-Clipping) */
+/* Universal Section Target Glow Animation (Strictly Rounded to Card Corners) */
 @keyframes targetHighlightPulse {
   0% {
-    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.8), 0 0 45px rgba(16, 185, 129, 0.45);
-    border-color: rgba(16, 185, 129, 1);
-  }
-  50% {
-    box-shadow: 0 0 0 6px rgba(16, 185, 129, 0.5), 0 0 65px rgba(16, 185, 129, 0.65);
+    box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.9), 0 0 25px rgba(16, 185, 129, 0.35);
     border-color: #10B981;
   }
+  50% {
+    box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.5), 0 0 45px rgba(16, 185, 129, 0.55);
+    border-color: #34D399;
+  }
   100% {
-    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.8), 0 0 45px rgba(16, 185, 129, 0.45);
-    border-color: rgba(16, 185, 129, 1);
+    box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.9), 0 0 25px rgba(16, 185, 129, 0.35);
+    border-color: #10B981;
   }
 }
 
@@ -198,7 +198,7 @@
   border-color: #10B981 !important;
   position: relative !important;
   z-index: 25 !important;
-  transition: all 0.3s ease-in-out !important;
+  transition: border-color 0.3s ease-in-out, box-shadow 0.3s ease-in-out !important;
 }
 
 /* Vendeur IA Brand Loader Animation (GPU-Accelerated & Ultra-Lightweight) */

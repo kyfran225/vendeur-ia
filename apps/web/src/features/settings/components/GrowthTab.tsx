@@ -78,13 +78,13 @@ export function GrowthTab({ merchant }: { merchant: any }) {
   const currency = merchant?.currency || "XOF";
 
   return (
-    <div id="growth" className="space-y-6 sm:space-y-8 animate-in slide-in-from-bottom-2 duration-500 pb-16">
+    <div className="space-y-6 sm:space-y-8 animate-in slide-in-from-bottom-2 duration-500 pb-16">
       
       {/* 1. PROGRAMME DE FIDELITE & RECOMPENSES VIP */}
       <section
         id="loyalty"
         className={cn(
-          "bg-vendeur-coal border p-5 sm:p-7 md:p-8 rounded-2xl sm:rounded-3xl shadow-2xl transition-all space-y-6 scroll-mt-24",
+          "bg-vendeur-coal border p-5 sm:p-7 md:p-8 rounded-2xl sm:rounded-3xl md:rounded-[2.5rem] shadow-2xl transition-all space-y-6 scroll-mt-24",
           localSettings.enabled ? "border-vendeur-emerald/40 bg-vendeur-emerald/[0.015]" : "border-white/10"
         )}
       >
@@ -210,7 +210,7 @@ export function GrowthTab({ merchant }: { merchant: any }) {
       {/* 2. CANAUX META & FACEBOOK / INSTAGRAM SHOP */}
       <section
         id="facebook"
-        className="bg-vendeur-coal border border-white/10 p-5 sm:p-7 md:p-8 rounded-2xl sm:rounded-3xl shadow-2xl space-y-5 scroll-mt-24"
+        className="bg-vendeur-coal border border-white/10 p-5 sm:p-7 md:p-8 rounded-2xl sm:rounded-3xl md:rounded-[2.5rem] shadow-2xl space-y-5 scroll-mt-24"
       >
         <div className="flex items-start gap-3.5">
           <div className="h-12 w-12 sm:h-14 sm:w-14 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 shrink-0 shadow-lg">

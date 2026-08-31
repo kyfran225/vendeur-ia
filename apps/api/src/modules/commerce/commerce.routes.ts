@@ -1655,9 +1655,13 @@ router.post("/products/:id/caption", authenticate, async (req, res) => {
 router.patch("/ai-settings", authenticate, async (req, res) => {
   try {
     const ownerId = (req as any).user.id;
+    const updates: Record<string, any> = {};
+    for (const [key, value] of Object.entries(req.body || {})) {
+      updates[`aiSettings.${key}`] = value;
+    }
     const merchant = await CommerceMerchantModel.findOneAndUpdate(
       { ownerId },
-      { $set: { aiSettings: req.body } },
+      { $set: updates },
       { new: true }
     );
     res.json(merchant);

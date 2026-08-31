@@ -1,4 +1,5 @@
 import React from "react";
+import { createPortal } from "react-dom";
 import { X, Sparkles, Check, Rocket, ShieldCheck, Loader2 } from "lucide-react";
 import { apiClient } from "@/lib/apiClient";
 import { toast } from "sonner";
@@ -33,9 +34,9 @@ export function PackProModal({ isOpen, onClose }: PackProModalProps) {
     navigate("/checkout?offer=pro&setup=EXPERT");
   };
 
-  return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center p-3 sm:p-4">
-      <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={onClose} />
+  return createPortal(
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-4">
+      <div className="fixed inset-0 bg-black/80 backdrop-blur-sm" onClick={onClose} />
       <div className="relative w-full max-w-lg bg-vendeur-bg border border-vendeur-emerald/20 rounded-2xl sm:rounded-3xl p-4 sm:p-6 space-y-3.5 sm:space-y-4 shadow-2xl animate-in zoom-in-95 duration-200 max-h-[92vh] overflow-y-auto">
         <button 
           onClick={onClose} 
@@ -89,6 +90,7 @@ export function PackProModal({ isOpen, onClose }: PackProModalProps) {
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

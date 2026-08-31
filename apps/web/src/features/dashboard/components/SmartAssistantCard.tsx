@@ -84,15 +84,53 @@ export function SmartAssistantCard({ dashboard, onOpenTestIA, onOpenShare, onCon
   // 1-Click Resume Mutation for Pause Mode
   const resumeSalesMutation = useMutation({
     mutationFn: async () => {
-      await apiClient.patch("/api/commerce/ai-settings", {
+      const res = await apiClient.patch("/api/commerce/ai-settings", {
         autoReply: true
       });
+      return res.data;
     },
-    onSuccess: () => {
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey: ["dashboard"] });
+      const previousDashboard = queryClient.getQueryData(["dashboard"]);
+      queryClient.setQueryData(["dashboard"], (old: any) => {
+        if (!old) return old;
+        return {
+          ...old,
+          merchant: {
+            ...old.merchant,
+            aiSettings: {
+              ...old.merchant?.aiSettings,
+              autoReply: true
+            }
+          }
+        };
+      });
+      return { previousDashboard };
+    },
+    onSuccess: (data) => {
       toast.success("Vendeur IA réactivé ! Les ventes automatiques 24h/24 reprennent immédiatement. 🚀");
+      queryClient.setQueryData(["dashboard"], (old: any) => {
+        if (!old) return old;
+        return {
+          ...old,
+          merchant: {
+            ...old.merchant,
+            ...(data || {}),
+            aiSettings: {
+              ...old.merchant?.aiSettings,
+              ...(data?.aiSettings || {}),
+              autoReply: true
+            }
+          }
+        };
+      });
       queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+      queryClient.invalidateQueries({ queryKey: ["conversations"] });
     },
-    onError: () => {
+    onError: (_err, _variables, context) => {
+      if (context?.previousDashboard) {
+        queryClient.setQueryData(["dashboard"], context.previousDashboard);
+      }
       toast.error("Impossible de réactiver le Vendeur IA. Veuillez réessayer.");
     }
   });

@@ -29,17 +29,54 @@ export function PauseConfirmationModal({ isOpen, onClose }: PauseConfirmationMod
 
   const pauseMutation = useMutation({
     mutationFn: async () => {
-      await apiClient.patch("/api/commerce/ai-settings", {
+      const res = await apiClient.patch("/api/commerce/ai-settings", {
         autoReply: false
       });
+      return res.data;
     },
-    onSuccess: () => {
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey: ["dashboard"] });
+      const previousDashboard = queryClient.getQueryData(["dashboard"]);
+      queryClient.setQueryData(["dashboard"], (old: any) => {
+        if (!old) return old;
+        return {
+          ...old,
+          merchant: {
+            ...old.merchant,
+            aiSettings: {
+              ...old.merchant?.aiSettings,
+              autoReply: false
+            }
+          }
+        };
+      });
+      return { previousDashboard };
+    },
+    onSuccess: (data) => {
       toast.info("Vendeur IA mis en pause. Vous gérez désormais manuellement vos discussions WhatsApp.");
+      queryClient.setQueryData(["dashboard"], (old: any) => {
+        if (!old) return old;
+        return {
+          ...old,
+          merchant: {
+            ...old.merchant,
+            ...(data || {}),
+            aiSettings: {
+              ...old.merchant?.aiSettings,
+              ...(data?.aiSettings || {}),
+              autoReply: false
+            }
+          }
+        };
+      });
       queryClient.invalidateQueries({ queryKey: ["dashboard"] });
       queryClient.invalidateQueries({ queryKey: ["conversations"] });
       onClose();
     },
-    onError: () => {
+    onError: (_err, _variables, context) => {
+      if (context?.previousDashboard) {
+        queryClient.setQueryData(["dashboard"], context.previousDashboard);
+      }
       toast.error("Impossible de mettre l'IA en pause. Veuillez réessayer.");
     }
   });

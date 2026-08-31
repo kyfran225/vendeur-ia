@@ -358,14 +358,51 @@ export function SalesInbox() {
 
   const resumeGlobalSalesMutation = useMutation({
     mutationFn: async () => {
-      await apiClient.patch("/api/commerce/ai-settings", { autoReply: true });
+      const res = await apiClient.patch("/api/commerce/ai-settings", { autoReply: true });
+      return res.data;
     },
-    onSuccess: () => {
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey: ["dashboard"] });
+      const previousDashboard = queryClient.getQueryData(["dashboard"]);
+      queryClient.setQueryData(["dashboard"], (old: any) => {
+        if (!old) return old;
+        return {
+          ...old,
+          merchant: {
+            ...old.merchant,
+            aiSettings: {
+              ...old.merchant?.aiSettings,
+              autoReply: true
+            }
+          }
+        };
+      });
+      return { previousDashboard };
+    },
+    onSuccess: (data) => {
       toast.success("Vendeur IA réactivé ! Ventes 24h/24 en cours. 🚀");
+      queryClient.setQueryData(["dashboard"], (old: any) => {
+        if (!old) return old;
+        return {
+          ...old,
+          merchant: {
+            ...old.merchant,
+            ...(data || {}),
+            aiSettings: {
+              ...old.merchant?.aiSettings,
+              ...(data?.aiSettings || {}),
+              autoReply: true
+            }
+          }
+        };
+      });
       queryClient.invalidateQueries({ queryKey: ["dashboard"] });
       queryClient.invalidateQueries({ queryKey: ["conversations"] });
     },
-    onError: () => {
+    onError: (_err, _variables, context) => {
+      if (context?.previousDashboard) {
+        queryClient.setQueryData(["dashboard"], context.previousDashboard);
+      }
       toast.error("Impossible de réactiver le Vendeur IA.");
     }
   });

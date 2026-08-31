@@ -114,7 +114,7 @@ export function BillingTab({ merchant }: { merchant: any }) {
   const isCurrentlyMonthly = isPlanActive && currentInterval === 'monthly';
 
   return (
-    <div id="billing" className="space-y-6 sm:space-y-8 animate-in slide-in-from-bottom-2 duration-500 pb-16">
+    <div className="space-y-6 sm:space-y-8 animate-in slide-in-from-bottom-2 duration-500 pb-16">
       {/* 0. Carte Dédiée : Paiement / Virement en cours d'approbation */}
       {isUnderVerification && latestPaymentIntent && (
         <section className="bg-gradient-to-br from-emerald-950/40 via-[#0c1611] to-black border border-emerald-500/40 p-5 sm:p-7 md:p-8 rounded-2xl sm:rounded-3xl md:rounded-[2.5rem] relative overflow-hidden shadow-2xl space-y-5 animate-in fade-in zoom-in-95 duration-300">
@@ -143,39 +143,35 @@ export function BillingTab({ merchant }: { merchant: any }) {
                   <div className="text-[10px] font-black uppercase tracking-widest text-white/40">
                     Référence
                   </div>
-                  <div className="text-sm font-mono font-black text-white truncate pr-8">
+                  <div className="text-sm font-mono font-bold text-white truncate">
                     {latestPaymentIntent.reference}
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => copyToClipboard(latestPaymentIntent.reference, "ref_tab")}
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1.5 rounded-lg bg-white/10 hover:bg-emerald-500 hover:text-black text-white text-xs transition-all cursor-pointer"
-                    title="Copier la référence"
-                  >
-                    {copiedField === "ref_tab" ? <Check size={13} /> : <Copy size={13} />}
-                  </button>
                 </div>
 
                 <div className="p-3.5 rounded-2xl bg-black/40 border border-white/5 space-y-0.5">
                   <div className="text-[10px] font-black uppercase tracking-widest text-white/40">
-                    Montant Déclaré
+                    Montant & Moyen
                   </div>
-                  <div className="text-sm font-mono font-black text-emerald-400">
+                  <div className="text-sm font-bold text-emerald-400">
                     {latestPaymentIntent.amount?.toLocaleString()} {latestPaymentIntent.currency || "XOF"}
+                    <span className="text-xs font-normal text-white/50 ml-1.5 capitalize">
+                      ({latestPaymentIntent.paymentMethod || "Mobile Money"})
+                    </span>
                   </div>
                 </div>
 
                 <div className="p-3.5 rounded-2xl bg-black/40 border border-white/5 space-y-0.5">
                   <div className="text-[10px] font-black uppercase tracking-widest text-white/40">
-                    Moyen / Émetteur
+                    Forfait Choisi
                   </div>
-                  <div className="text-sm font-bold text-white/90 truncate capitalize">
-                    {latestPaymentIntent.paymentMethod || "Mobile Money"} {latestPaymentIntent.senderPhoneNumber ? `(${latestPaymentIntent.senderPhoneNumber})` : ""}
+                  <div className="text-sm font-bold text-white">
+                    {latestPaymentIntent.planName || "Vendeur IA"}
                   </div>
                 </div>
               </div>
             </div>
 
+            {/* Support Direct Action */}
             <div className="w-full md:w-auto flex flex-col gap-2 shrink-0 pt-2 md:pt-0">
               <a
                 href={`https://wa.me/2250505111157?text=${encodeURIComponent(
@@ -196,7 +192,7 @@ export function BillingTab({ merchant }: { merchant: any }) {
 
       {/* 1. Plan Actuel (si actif) */}
       {isPlanActive && (
-        <section className="bg-vendeur-coal border border-white/10 p-5 sm:p-8 md:p-10 rounded-2xl sm:rounded-3xl md:rounded-[2.5rem] relative overflow-hidden shadow-2xl space-y-6">
+        <section id="billing" className="bg-vendeur-coal border border-white/10 p-5 sm:p-8 md:p-10 rounded-2xl sm:rounded-3xl md:rounded-[2.5rem] relative overflow-hidden shadow-2xl space-y-6 scroll-mt-28">
           <div className="relative z-10 flex flex-col lg:flex-row justify-between gap-6 sm:gap-8">
             <div className="space-y-5 sm:space-y-6 flex-1">
               <div className="flex items-center gap-3.5 sm:gap-4">

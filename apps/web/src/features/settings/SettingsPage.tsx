@@ -660,7 +660,7 @@ function BoutiqueTab({
         className={cn(
           "bg-vendeur-coal/50 backdrop-blur-md border p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl md:rounded-[2.5rem] space-y-6 sm:space-y-8 shadow-2xl scroll-mt-28 w-full max-w-full overflow-hidden box-border transition-all duration-500",
           highlightedSection === "identity"
-            ? "border-vendeur-emerald ring-4 ring-vendeur-emerald/30 shadow-[0_0_50px_rgba(16,185,129,0.3)] bg-emerald-950/20 scale-[1.01]"
+            ? "border-vendeur-emerald bg-emerald-950/20"
             : "border-white/10"
         )}
       >
@@ -984,7 +984,7 @@ function BoutiqueTab({
         className={cn(
           "bg-vendeur-coal border p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl md:rounded-[2.5rem] space-y-6 sm:space-y-8 shadow-2xl scroll-mt-28 w-full max-w-full overflow-hidden box-border transition-all duration-500",
           highlightedSection === "delivery"
-            ? "border-vendeur-emerald ring-4 ring-vendeur-emerald/40 shadow-[0_0_60px_rgba(16,185,129,0.4)] bg-gradient-to-b from-emerald-950/40 to-vendeur-coal scale-[1.01]"
+            ? "border-vendeur-emerald bg-gradient-to-b from-emerald-950/40 to-vendeur-coal"
             : "border-white/10"
         )}
       >
@@ -1146,7 +1146,7 @@ function BoutiqueTab({
         className={cn(
           "bg-vendeur-coal border p-5 sm:p-7 md:p-8 rounded-2xl sm:rounded-3xl md:rounded-[2.5rem] space-y-6 sm:space-y-8 shadow-2xl scroll-mt-28 transition-all duration-500",
           highlightedSection === "payments"
-            ? "border-emerald-400 ring-4 ring-emerald-400/30 shadow-[0_0_50px_rgba(16,185,129,0.3)] bg-gradient-to-b from-emerald-950/30 to-vendeur-coal scale-[1.01]"
+            ? "border-emerald-400 bg-gradient-to-b from-emerald-950/30 to-vendeur-coal"
             : "border-white/10"
         )}
       >

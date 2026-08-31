@@ -97,6 +97,18 @@ interface StorefrontBrandingTabProps {
 export function StorefrontBrandingTab({ merchant }: StorefrontBrandingTabProps) {
   const queryClient = useQueryClient();
 
+  const [savedBranding, setSavedBranding] = useState({
+    accentColor: merchant?.branding?.accentColor || "emerald",
+    logoUrl: merchant?.branding?.logoUrl || "",
+    coverUrl: merchant?.branding?.coverUrl || "",
+    announcementEnabled: merchant?.branding?.announcement?.enabled || false,
+    announcementText: merchant?.branding?.announcement?.text || "🚚 Livraison offerte à Abidjan dès 25 000 FCFA d'achats !",
+    instagram: merchant?.branding?.socialLinks?.instagram || "",
+    tiktok: merchant?.branding?.socialLinks?.tiktok || "",
+    facebook: merchant?.branding?.socialLinks?.facebook || "",
+    openingHours: merchant?.branding?.openingHours || "08:30 - 20:00 (Lun - Sam)"
+  });
+
   const [accentColor, setAccentColor] = useState(
     merchant?.branding?.accentColor || "emerald"
   );
@@ -123,42 +135,45 @@ export function StorefrontBrandingTab({ merchant }: StorefrontBrandingTabProps) 
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
   const [isUploadingCover, setIsUploadingCover] = useState(false);
 
-  // Sync state if merchant changes
+  // Sync state if merchant changes from parent query
   useEffect(() => {
     if (merchant?.branding) {
-      setAccentColor(merchant.branding.accentColor || "emerald");
-      setLogoUrl(merchant.branding.logoUrl || "");
-      setCoverUrl(merchant.branding.coverUrl || "");
-      setAnnouncementEnabled(merchant.branding.announcement?.enabled || false);
-      setAnnouncementText(merchant.branding.announcement?.text || "🚚 Livraison offerte à Abidjan dès 25 000 FCFA d'achats !");
-      setInstagram(merchant.branding.socialLinks?.instagram || "");
-      setTiktok(merchant.branding.socialLinks?.tiktok || "");
-      setFacebook(merchant.branding.socialLinks?.facebook || "");
-      setOpeningHours(merchant.branding.openingHours || "08:30 - 20:00 (Lun - Sam)");
+      const b = merchant.branding;
+      const initial = {
+        accentColor: b.accentColor || "emerald",
+        logoUrl: b.logoUrl || "",
+        coverUrl: b.coverUrl || "",
+        announcementEnabled: b.announcement?.enabled || false,
+        announcementText: b.announcement?.text || "🚚 Livraison offerte à Abidjan dès 25 000 FCFA d'achats !",
+        instagram: b.socialLinks?.instagram || "",
+        tiktok: b.socialLinks?.tiktok || "",
+        facebook: b.socialLinks?.facebook || "",
+        openingHours: b.openingHours || "08:30 - 20:00 (Lun - Sam)"
+      };
+      setSavedBranding(initial);
+      setAccentColor(initial.accentColor);
+      setLogoUrl(initial.logoUrl);
+      setCoverUrl(initial.coverUrl);
+      setAnnouncementEnabled(initial.announcementEnabled);
+      setAnnouncementText(initial.announcementText);
+      setInstagram(initial.instagram);
+      setTiktok(initial.tiktok);
+      setFacebook(initial.facebook);
+      setOpeningHours(initial.openingHours);
     }
   }, [merchant]);
 
-  // Dirty State Checker (only shows save button when modified)
-  const initialAccentColor = merchant?.branding?.accentColor || "emerald";
-  const initialLogoUrl = merchant?.branding?.logoUrl || "";
-  const initialCoverUrl = merchant?.branding?.coverUrl || "";
-  const initialAnnouncementEnabled = merchant?.branding?.announcement?.enabled || false;
-  const initialAnnouncementText = merchant?.branding?.announcement?.text || "🚚 Livraison offerte à Abidjan dès 25 000 FCFA d'achats !";
-  const initialInstagram = merchant?.branding?.socialLinks?.instagram || "";
-  const initialTiktok = merchant?.branding?.socialLinks?.tiktok || "";
-  const initialFacebook = merchant?.branding?.socialLinks?.facebook || "";
-  const initialOpeningHours = merchant?.branding?.openingHours || "08:30 - 20:00 (Lun - Sam)";
-
+  // Dirty State Checker against currently saved branding
   const isDirty =
-    accentColor !== initialAccentColor ||
-    logoUrl !== initialLogoUrl ||
-    coverUrl !== initialCoverUrl ||
-    announcementEnabled !== initialAnnouncementEnabled ||
-    (announcementEnabled && announcementText !== initialAnnouncementText) ||
-    instagram !== initialInstagram ||
-    tiktok !== initialTiktok ||
-    facebook !== initialFacebook ||
-    openingHours !== initialOpeningHours;
+    accentColor !== savedBranding.accentColor ||
+    logoUrl !== savedBranding.logoUrl ||
+    coverUrl !== savedBranding.coverUrl ||
+    announcementEnabled !== savedBranding.announcementEnabled ||
+    (announcementEnabled && announcementText !== savedBranding.announcementText) ||
+    instagram !== savedBranding.instagram ||
+    tiktok !== savedBranding.tiktok ||
+    facebook !== savedBranding.facebook ||
+    openingHours !== savedBranding.openingHours;
 
   const saveMutation = useMutation({
     mutationFn: async () => {
@@ -183,15 +198,31 @@ export function StorefrontBrandingTab({ merchant }: StorefrontBrandingTabProps) 
       return res.data;
     },
     onSuccess: (updatedMerchant) => {
-      queryClient.invalidateQueries({ queryKey: ["merchant-dashboard"] });
-      queryClient.invalidateQueries({ queryKey: ["merchant-settings"] });
-      queryClient.setQueryData(["merchant-dashboard"], (old: any) => {
+      const newSaved = {
+        accentColor,
+        logoUrl,
+        coverUrl,
+        announcementEnabled,
+        announcementText,
+        instagram,
+        tiktok,
+        facebook,
+        openingHours
+      };
+      setSavedBranding(newSaved);
+
+      // Invalidate queries so all tabs and the public shop receive updated merchant branding
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+      queryClient.invalidateQueries({ queryKey: ["merchant"] });
+      queryClient.invalidateQueries({ queryKey: ["public-shop"] });
+      queryClient.setQueryData(["dashboard"], (old: any) => {
         if (!old) return old;
         return {
           ...old,
           merchant: {
             ...old.merchant,
-            branding: updatedMerchant.branding
+            ...(updatedMerchant || {}),
+            branding: updatedMerchant?.branding || newSaved
           }
         };
       });
@@ -232,15 +263,15 @@ export function StorefrontBrandingTab({ merchant }: StorefrontBrandingTabProps) 
   };
 
   const handleReset = () => {
-    setAccentColor(initialAccentColor);
-    setLogoUrl(initialLogoUrl);
-    setCoverUrl(initialCoverUrl);
-    setAnnouncementEnabled(initialAnnouncementEnabled);
-    setAnnouncementText(initialAnnouncementText);
-    setInstagram(initialInstagram);
-    setTiktok(initialTiktok);
-    setFacebook(initialFacebook);
-    setOpeningHours(initialOpeningHours);
+    setAccentColor(savedBranding.accentColor);
+    setLogoUrl(savedBranding.logoUrl);
+    setCoverUrl(savedBranding.coverUrl);
+    setAnnouncementEnabled(savedBranding.announcementEnabled);
+    setAnnouncementText(savedBranding.announcementText);
+    setInstagram(savedBranding.instagram);
+    setTiktok(savedBranding.tiktok);
+    setFacebook(savedBranding.facebook);
+    setOpeningHours(savedBranding.openingHours);
     toast.info("Modifications annulées.");
   };
 
@@ -279,7 +310,7 @@ export function StorefrontBrandingTab({ merchant }: StorefrontBrandingTabProps) 
       </div>
 
       {/* 1. Palette de Couleurs & Thème de Marque */}
-      <div id="theme" className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-vendeur-coal border border-white/10 space-y-4 sm:space-y-6 scroll-mt-28">
+      <div id="theme" className="p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl md:rounded-[2.5rem] bg-vendeur-coal border border-white/10 space-y-4 sm:space-y-6 scroll-mt-28">
         <div className="flex items-start gap-2.5">
           <div className="h-8 w-8 rounded-lg bg-white/5 flex items-center justify-center shrink-0 mt-0.5">
             <Sparkles size={16} className={`${currentPalette.textClass} shrink-0`} />
@@ -330,7 +361,7 @@ export function StorefrontBrandingTab({ merchant }: StorefrontBrandingTabProps) 
       </div>
 
       {/* 2. Logo & Image de Couverture */}
-      <div id="logo" className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-vendeur-coal border border-white/10 space-y-4 sm:space-y-6 scroll-mt-28">
+      <div id="logo" className="p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl md:rounded-[2.5rem] bg-vendeur-coal border border-white/10 space-y-4 sm:space-y-6 scroll-mt-28">
         <div className="flex items-start gap-2.5">
           <div className="h-8 w-8 rounded-lg bg-white/5 flex items-center justify-center shrink-0 mt-0.5">
             <ImageIcon size={16} className="text-vendeur-emerald shrink-0" />
@@ -425,7 +456,7 @@ export function StorefrontBrandingTab({ merchant }: StorefrontBrandingTabProps) 
       </div>
 
       {/* 3. Bandeau d'Annonce Défilant Promo */}
-      <div id="announcement" className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-vendeur-coal border border-white/10 space-y-4 sm:space-y-6 scroll-mt-28">
+      <div id="announcement" className="p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl md:rounded-[2.5rem] bg-vendeur-coal border border-white/10 space-y-4 sm:space-y-6 scroll-mt-28">
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-start gap-2.5 min-w-0 flex-1">
             <div className="h-8 w-8 rounded-lg bg-white/5 flex items-center justify-center shrink-0 mt-0.5">
@@ -472,7 +503,7 @@ export function StorefrontBrandingTab({ merchant }: StorefrontBrandingTabProps) 
       </div>
 
       {/* 4. Réseaux Sociaux & Horaires d'Ouverture */}
-      <div id="socials" className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-vendeur-coal border border-white/10 space-y-4 sm:space-y-6 scroll-mt-28">
+      <div id="socials" className="p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl md:rounded-[2.5rem] bg-vendeur-coal border border-white/10 space-y-4 sm:space-y-6 scroll-mt-28">
         <div className="flex items-start gap-2.5">
           <div className="h-8 w-8 rounded-lg bg-white/5 flex items-center justify-center shrink-0 mt-0.5">
             <Clock size={16} className="text-sky-400 shrink-0" />

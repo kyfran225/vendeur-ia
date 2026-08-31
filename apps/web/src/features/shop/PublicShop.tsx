@@ -33,6 +33,13 @@ import {
   Instagram,
   Facebook
 } from "lucide-react";
+import { getShopTheme, type ShopTheme } from "./lib/theme";
+
+const TikTokIcon = ({ size = 16, className = "" }: { size?: number; className?: string }) => (
+  <svg width={size} height={size} fill="currentColor" viewBox="0 0 16 16" className={`shrink-0 ${className}`}>
+    <path d="M9 0h1.98c.144.715.54 1.617 1.235 2.512C12.895 3.38 13.797 4 15 4v2c-1.753 0-3.07-.814-4-1.829V11a5 5 0 1 1-5-5v2a3 3 0 1 0 3 3z"/>
+  </svg>
+);
 import { WebChatWidget } from "./components/WebChatWidget";
 import { CartDrawer, type CartItem } from "./components/CartDrawer";
 import { StoryViewerModal } from "./components/StoryViewerModal";
@@ -353,9 +360,10 @@ export function PublicShop() {
   const totalCartCount = cartItems.reduce((acc, item) => acc + item.quantity, 0);
   const merchantSlug = merchant?.slug || (merchant?.businessName ? slugify(merchant.businessName) : merchantId);
   const shopUrl = `${window.location.origin}/shop/${merchantSlug}`;
+  const theme = getShopTheme(merchant?.branding?.accentColor);
 
   return (
-    <div className="min-h-[100dvh] bg-vendeur-bg text-white selection:bg-vendeur-emerald selection:text-vendeur-coal pb-24">
+    <div className="min-h-[100dvh] bg-vendeur-bg text-white pb-24">
       <MetaHead
         title={`${merchant.businessName} | Boutique Officielle WhatsApp Vendeur IA`}
         description={`Achetez directement chez ${merchant.businessName} (${merchant.category}). Commandes instantanées et réponses 24/7 via WhatsApp sur Vendeur IA.`}
@@ -383,7 +391,10 @@ export function PublicShop() {
 
       {/* Top Flash Announcement Banner */}
       {merchant?.branding?.announcement?.enabled && merchant?.branding?.announcement?.text && (
-        <div className="bg-gradient-to-r from-amber-500 via-rose-500 to-vendeur-emerald text-vendeur-coal px-4 py-2 text-center text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 shadow-md">
+        <div
+          className="text-vendeur-coal px-4 py-2 text-center text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 shadow-md animate-in slide-in-from-top-4 duration-300"
+          style={{ background: `linear-gradient(90deg, #F59E0B, #EC4899, ${theme.primary})` }}
+        >
           <span>{merchant.branding.announcement.text}</span>
         </div>
       )}
@@ -392,7 +403,7 @@ export function PublicShop() {
       <header className="sticky top-0 z-50 bg-vendeur-bg/80 backdrop-blur-xl border-b border-white/5">
         <div className="max-w-7xl mx-auto px-4 md:px-6 h-20 flex items-center justify-between">
           <div className="flex items-center gap-3 md:gap-4">
-            <div className="h-10 w-10 md:h-12 md:w-12 rounded-xl bg-vendeur-emerald flex items-center justify-center text-vendeur-coal shadow-lg shadow-vendeur-emerald/20 overflow-hidden shrink-0">
+            <div className={cn("h-10 w-10 md:h-12 md:w-12 rounded-xl flex items-center justify-center text-vendeur-coal shadow-lg overflow-hidden shrink-0", theme.bgClass, theme.shadowClass)}>
               {merchant?.branding?.logoUrl ? (
                 <img src={merchant.branding.logoUrl} alt={merchant.businessName} className="w-full h-full object-cover" />
               ) : (
@@ -402,7 +413,7 @@ export function PublicShop() {
             <div>
               <h1 className="text-lg md:text-xl font-black uppercase tracking-tighter leading-none">{merchant.businessName}</h1>
               <div className="flex items-center gap-2 mt-1">
-                <p className="text-[9px] md:text-[10px] font-black text-vendeur-emerald uppercase tracking-widest">
+                <p className={cn("text-[9px] md:text-[10px] font-black uppercase tracking-widest", theme.textClass)}>
                   {merchant?.branding?.openingHours ? `Ouvert • ${merchant.branding.openingHours.split("(")[0]}` : "Propulsé par Vendeur IA"}
                 </p>
                 {merchant?.branding?.socialLinks?.instagram && (
@@ -414,6 +425,17 @@ export function PublicShop() {
                     title="Instagram"
                   >
                     <Instagram size={13} />
+                  </a>
+                )}
+                {merchant?.branding?.socialLinks?.tiktok && (
+                  <a
+                    href={merchant.branding.socialLinks.tiktok.startsWith("http") ? merchant.branding.socialLinks.tiktok : `https://tiktok.com/@${merchant.branding.socialLinks.tiktok.replace("@", "")}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-white/40 hover:text-cyan-400 transition-colors"
+                    title="TikTok"
+                  >
+                    <TikTokIcon size={13} />
                   </a>
                 )}
                 {merchant?.branding?.socialLinks?.facebook && (
@@ -434,7 +456,7 @@ export function PublicShop() {
           <div className="flex items-center gap-3 md:gap-4">
             <button
               onClick={() => setIsShareModalOpen(true)}
-              className="h-10 md:h-12 px-3 md:px-4 rounded-2xl bg-white/5 border border-white/10 text-white/70 hover:text-white flex items-center gap-2 text-xs font-black uppercase tracking-wider hover:bg-white/10 transition-all"
+              className="h-10 md:h-12 px-3 md:px-4 rounded-2xl bg-white/5 border border-white/10 text-white/70 hover:text-white flex items-center gap-2 text-xs font-black uppercase tracking-wider hover:bg-white/10 transition-all cursor-pointer"
               title="Partager le lien & QR Code"
             >
               <Share2 size={16} />
@@ -444,12 +466,12 @@ export function PublicShop() {
             {/* Floating Cart Trigger in Header */}
             <button
               onClick={() => setIsCartOpen(true)}
-              className="relative h-10 md:h-12 px-4 md:px-5 rounded-2xl bg-white text-vendeur-coal font-black uppercase text-xs tracking-wider flex items-center gap-2.5 hover:scale-105 active:scale-95 transition-all shadow-xl"
+              className="relative h-10 md:h-12 px-4 md:px-5 rounded-2xl bg-white text-vendeur-coal font-black uppercase text-xs tracking-wider flex items-center gap-2.5 hover:scale-105 active:scale-95 transition-all shadow-xl cursor-pointer"
             >
               <ShoppingCart size={18} />
               <span className="hidden sm:inline">Panier</span>
               {totalCartCount > 0 && (
-                <span className="h-5 w-5 rounded-full bg-vendeur-emerald text-vendeur-coal text-[10px] font-black flex items-center justify-center shadow">
+                <span className={cn("h-5 w-5 rounded-full text-vendeur-coal text-[10px] font-black flex items-center justify-center shadow", theme.bgClass)}>
                   {totalCartCount}
                 </span>
               )}
@@ -457,7 +479,7 @@ export function PublicShop() {
 
             <button
               onClick={() => window.open(`https://wa.me/${merchant.whatsappNumber?.replace(/\+/g, "")}`, "_blank")}
-              className="hidden md:flex h-12 px-6 bg-vendeur-emerald text-vendeur-coal rounded-2xl font-black uppercase text-[10px] tracking-widest items-center gap-2 hover:scale-105 active:scale-95 transition-all shadow-xl shadow-vendeur-emerald/10"
+              className={cn("hidden md:flex h-12 px-6 text-vendeur-coal rounded-2xl font-black uppercase text-[10px] tracking-widest items-center gap-2 hover:scale-105 active:scale-95 transition-all shadow-xl cursor-pointer", theme.bgClass, theme.hoverBgClass, theme.shadowClass)}
             >
               <MessageCircle size={18} />
               Contact Direct
@@ -523,15 +545,27 @@ export function PublicShop() {
           </section>
         )}
 
-        {/* Hero Section — Category Adaptive */}
-        <section className="relative overflow-hidden rounded-3xl md:rounded-[3rem] bg-vendeur-coal border border-white/5 p-5 sm:p-8 md:p-12 lg:p-14 flex flex-col lg:flex-row items-center justify-between gap-8 lg:gap-12 group">
+        {/* Hero Section — Category Adaptive & Cover Image */}
+        <section className="relative overflow-hidden rounded-3xl md:rounded-[3rem] bg-vendeur-coal border border-white/5 p-5 sm:p-8 md:p-12 lg:p-14 flex flex-col lg:flex-row items-center justify-between gap-8 lg:gap-12 group min-h-[380px]">
+          {merchant?.branding?.coverUrl && (
+            <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
+              <img
+                src={merchant.branding.coverUrl}
+                alt="Bannière de couverture"
+                className="w-full h-full object-cover opacity-25 scale-105 group-hover:scale-100 transition-transform duration-1000"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-vendeur-coal via-vendeur-coal/80 to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-r from-vendeur-coal via-vendeur-coal/90 to-transparent" />
+            </div>
+          )}
+
           <div className="relative z-10 space-y-4 md:space-y-6 text-center md:text-left max-w-xl">
-            <span className="px-4 py-2 bg-vendeur-emerald/10 border border-vendeur-emerald/20 rounded-full text-[10px] font-black uppercase tracking-widest text-vendeur-emerald">
+            <span className={cn("px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest border", theme.badgeBgClass, theme.badgeBorderClass, theme.textClass)}>
               Boutique Officielle Certifiée
             </span>
             <h2 className="text-3xl md:text-6xl font-black uppercase tracking-tighter leading-[0.95]">
               {shopCfg.heroLine1}<br />
-              <span className="text-vendeur-emerald">{shopCfg.heroLine2}</span>
+              <span className={theme.textClass}>{shopCfg.heroLine2}</span>
             </h2>
             <p className="text-white/40 text-sm md:text-base font-medium leading-relaxed">
               {merchant.description || shopCfg.heroSub}
@@ -539,14 +573,14 @@ export function PublicShop() {
             <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 pt-2">
               <button
                 onClick={() => window.open(`https://wa.me/${merchant.whatsappNumber?.replace(/\+/g, "")}`, "_blank")}
-                className="inline-flex items-center gap-2 h-14 px-6 bg-vendeur-emerald text-vendeur-coal rounded-2xl font-black uppercase text-xs tracking-widest hover:scale-105 active:scale-95 transition-all shadow-xl shadow-vendeur-emerald/20"
+                className={cn("inline-flex items-center gap-2 h-14 px-6 text-vendeur-coal rounded-2xl font-black uppercase text-xs tracking-widest hover:scale-105 active:scale-95 transition-all shadow-xl cursor-pointer", theme.bgClass, theme.hoverBgClass, theme.shadowClass)}
               >
                 <MessageCircle size={18} />
                 WhatsApp Direct
               </button>
               <button
                 onClick={() => setIsCartOpen(true)}
-                className="inline-flex items-center gap-2 h-14 px-6 bg-white/10 border border-white/15 text-white rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-white/20 transition-all"
+                className="inline-flex items-center gap-2 h-14 px-6 bg-white/10 border border-white/15 text-white rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-white/20 transition-all cursor-pointer"
               >
                 <ShoppingCart size={18} />
                 Voir le Panier ({totalCartCount})
@@ -559,11 +593,12 @@ export function PublicShop() {
             products={products}
             currency={merchant.currency || "XOF"}
             merchant={merchant}
+            theme={theme}
             onSelectProduct={(p) => setSelectedProduct(p)}
             onAddToCart={(p) => handleAddToCart(p)}
           />
 
-          <div className="absolute -top-24 -right-24 h-96 w-96 bg-vendeur-emerald/5 blur-[120px] rounded-full pointer-events-none" />
+          <div className={cn("absolute -top-24 -right-24 h-96 w-96 blur-[120px] rounded-full pointer-events-none opacity-20", theme.bgClass)} />
           <div className="absolute -bottom-24 -left-24 h-96 w-96 bg-blue-500/5 blur-[120px] rounded-full pointer-events-none" />
         </section>
 
@@ -579,7 +614,7 @@ export function PublicShop() {
                   key={cat}
                   onClick={() => setSelectedCategory(cat)}
                   className={cn(
-                    "px-5 h-11 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap border",
+                    "px-5 h-11 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap border cursor-pointer",
                     selectedCategory === cat
                       ? "bg-white text-vendeur-coal border-white shadow-xl"
                       : "bg-white/5 text-white/40 border-white/5 hover:bg-white/10 hover:text-white"
@@ -594,7 +629,7 @@ export function PublicShop() {
               <div className="relative flex-1">
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" size={18} />
                 <input
-                  className="w-full h-12 bg-white/5 border border-white/5 rounded-2xl pl-12 pr-4 text-xs text-white outline-none focus:border-vendeur-emerald transition-all"
+                  className={cn("w-full h-12 bg-white/5 border border-white/5 rounded-2xl pl-12 pr-4 text-xs text-white outline-none transition-all", theme.ringClass)}
                   placeholder="Rechercher un article..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
@@ -612,7 +647,7 @@ export function PublicShop() {
               return (
                 <div
                   key={p._id}
-                  className="group bg-vendeur-coal border border-white/5 rounded-3xl overflow-hidden hover:border-vendeur-emerald/30 transition-all flex flex-col shadow-lg"
+                  className="group bg-vendeur-coal border border-white/5 rounded-3xl overflow-hidden hover:border-white/20 transition-all flex flex-col shadow-lg"
                 >
                   <div className="relative aspect-square overflow-hidden bg-black/40">
                     {p.images?.[0] || p.imageUrl ? (
@@ -636,14 +671,14 @@ export function PublicShop() {
                     <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
                       <button
                         onClick={() => setSelectedProduct(p)}
-                        className="h-11 w-11 rounded-2xl bg-white text-vendeur-coal flex items-center justify-center hover:scale-110 active:scale-95 transition-all shadow-lg"
+                        className="h-11 w-11 rounded-2xl bg-white text-vendeur-coal flex items-center justify-center hover:scale-110 active:scale-95 transition-all shadow-lg cursor-pointer"
                         title="Voir le détail"
                       >
                         <Search size={18} />
                       </button>
                       <button
                         onClick={() => handleAddToCart(p)}
-                        className="h-11 w-11 rounded-2xl bg-vendeur-emerald text-vendeur-coal flex items-center justify-center hover:scale-110 active:scale-95 transition-all shadow-lg shadow-vendeur-emerald/20"
+                        className={cn("h-11 w-11 rounded-2xl text-vendeur-coal flex items-center justify-center hover:scale-110 active:scale-95 transition-all shadow-lg cursor-pointer", theme.bgClass, theme.shadowClass)}
                         title="Ajouter au panier"
                       >
                         <ShoppingCart size={18} />
@@ -653,7 +688,7 @@ export function PublicShop() {
 
                   <div className="p-4 md:p-5 space-y-3 flex-1 flex flex-col justify-between">
                     <div>
-                      <p className="text-[9px] font-black text-vendeur-emerald uppercase tracking-[0.2em] mb-1">
+                      <p className={cn("text-[9px] font-black uppercase tracking-[0.2em] mb-1", theme.textClass)}>
                         {p.category || "Article"}
                       </p>
                       <h3 className="text-base font-black uppercase tracking-tight line-clamp-1">{p.name}</h3>
@@ -686,15 +721,15 @@ export function PublicShop() {
                       <div className="grid grid-cols-2 gap-2">
                         <button
                           onClick={() => handleAddToCart(p)}
-                          className="h-11 bg-white/5 hover:bg-white/10 border border-white/10 text-white font-black uppercase text-[9px] tracking-wider rounded-xl flex items-center justify-center gap-1.5 transition-all"
+                          className="h-11 bg-white/5 hover:bg-white/10 border border-white/10 text-white font-black uppercase text-[9px] tracking-wider rounded-xl flex items-center justify-center gap-1.5 transition-all cursor-pointer"
                         >
-                          <Plus size={14} className="text-vendeur-emerald" />
+                          <Plus size={14} className={theme.textClass} />
                           <span>Panier</span>
                         </button>
 
                         <button
                           onClick={() => handleWhatsAppCTA(p)}
-                          className="h-11 bg-vendeur-emerald text-vendeur-coal font-black uppercase text-[9px] tracking-wider rounded-xl flex items-center justify-center gap-1.5 hover:scale-[1.02] active:scale-95 transition-all shadow-md shadow-vendeur-emerald/20"
+                          className={cn("h-11 text-vendeur-coal font-black uppercase text-[9px] tracking-wider rounded-xl flex items-center justify-center gap-1.5 hover:scale-[1.02] active:scale-95 transition-all shadow-md cursor-pointer", theme.bgClass, theme.shadowClass)}
                         >
                           <MessageCircle size={14} />
                           <span>WhatsApp</span>
@@ -721,10 +756,10 @@ export function PublicShop() {
         <div className="fixed bottom-6 left-4 right-4 md:left-auto md:right-6 md:w-96 z-40 animate-in slide-in-from-bottom-6 duration-300">
           <button
             onClick={() => setIsCartOpen(true)}
-            className="w-full h-14 bg-vendeur-emerald text-vendeur-coal rounded-2xl p-4 flex items-center justify-between font-black uppercase text-xs tracking-widest shadow-2xl shadow-vendeur-emerald/30 hover:scale-[1.02] active:scale-95 transition-all"
+            className={cn("w-full h-14 text-vendeur-coal rounded-2xl p-4 flex items-center justify-between font-black uppercase text-xs tracking-widest shadow-2xl hover:scale-[1.02] active:scale-95 transition-all cursor-pointer", theme.bgClass, theme.shadowClass)}
           >
             <div className="flex items-center gap-2.5">
-              <div className="h-7 w-7 rounded-lg bg-vendeur-coal text-vendeur-emerald flex items-center justify-center text-xs">
+              <div className={cn("h-7 w-7 rounded-lg bg-vendeur-coal flex items-center justify-center text-xs", theme.textClass)}>
                 {totalCartCount}
               </div>
               <span>Voir mon panier</span>
@@ -743,7 +778,7 @@ export function PublicShop() {
           </div>
 
           <div className="flex flex-col items-center gap-3">
-            <div className="flex items-center gap-2 text-vendeur-emerald">
+            <div className={cn("flex items-center gap-2", theme.textClass)}>
               <ShieldCheck size={18} />
               <span className="text-[9px] font-black uppercase tracking-widest">Paiements Sécurisés</span>
             </div>
@@ -762,9 +797,9 @@ export function PublicShop() {
           <div className="flex flex-col items-center md:items-end gap-4">
             <button
               onClick={() => window.open(`https://wa.me/${merchant.whatsappNumber?.replace(/\+/g, "")}`, "_blank")}
-              className="h-12 px-6 bg-white/5 border border-white/10 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest flex items-center gap-2.5 hover:bg-white/10 transition-all"
+              className="h-12 px-6 bg-white/5 border border-white/10 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest flex items-center gap-2.5 hover:bg-white/10 transition-all cursor-pointer"
             >
-              <MessageCircle size={18} className="text-vendeur-emerald" />
+              <MessageCircle size={18} className={theme.textClass} />
               Discuter sur WhatsApp
             </button>
           </div>
@@ -786,6 +821,7 @@ export function PublicShop() {
         onRemoveItem={handleRemoveItem}
         onClearCart={handleClearCart}
         merchant={merchant}
+        theme={theme}
       />
 
       {/* Full-Screen Stories / Reels Modal */}
@@ -813,7 +849,7 @@ export function PublicShop() {
           <div className="relative w-full max-w-4xl bg-vendeur-coal border border-white/10 rounded-3xl md:rounded-[3rem] overflow-hidden shadow-2xl flex flex-col md:flex-row animate-in zoom-in-95 duration-300">
             <button
               onClick={() => setSelectedProduct(null)}
-              className="absolute top-4 right-4 md:top-6 md:right-6 z-20 h-10 w-10 bg-black/40 text-white/40 hover:text-white rounded-full flex items-center justify-center backdrop-blur-xl border border-white/10 transition-colors"
+              className="absolute top-4 right-4 md:top-6 md:right-6 z-20 h-10 w-10 bg-black/40 text-white/40 hover:text-white rounded-full flex items-center justify-center backdrop-blur-xl border border-white/10 transition-colors cursor-pointer"
             >
               <X size={20} />
             </button>
@@ -837,7 +873,7 @@ export function PublicShop() {
             <div className="flex-1 p-5 md:p-8 space-y-5 flex flex-col justify-between overflow-y-auto">
               <div className="space-y-4">
                 <div className="space-y-1.5">
-                  <span className="text-[10px] font-black text-vendeur-emerald uppercase tracking-[0.3em]">
+                  <span className={cn("text-[10px] font-black uppercase tracking-[0.3em]", theme.textClass)}>
                     {selectedProduct.category}
                   </span>
                   <h2 className="text-2xl md:text-3xl font-black uppercase tracking-tighter leading-none">
@@ -866,8 +902,8 @@ export function PublicShop() {
                       <p className="text-[9px] font-black text-white/20 uppercase tracking-widest mb-0.5">Disponibilité</p>
                       {selectedProduct.stock > 0 ? (
                         <div className="flex items-center gap-2">
-                          <div className="h-2 w-2 rounded-full bg-vendeur-emerald animate-pulse" />
-                          <p className="text-xs font-black uppercase text-vendeur-emerald">En Stock ({selectedProduct.stock})</p>
+                          <div className={cn("h-2 w-2 rounded-full animate-pulse", theme.bgClass)} />
+                          <p className={cn("text-xs font-black uppercase", theme.textClass)}>En Stock ({selectedProduct.stock})</p>
                         </div>
                       ) : (
                         <p className="text-xs font-black uppercase text-rose-500">Rupture de stock</p>
@@ -927,7 +963,7 @@ export function PublicShop() {
                     handleAddToCart(selectedProduct);
                     setSelectedProduct(null);
                   }}
-                  className="h-14 md:h-16 rounded-2xl bg-white/10 hover:bg-white/15 border border-white/10 text-white font-black uppercase text-xs md:text-sm tracking-wider flex items-center justify-center gap-2.5 transition-all shadow-md active:scale-95"
+                  className="h-14 md:h-16 rounded-2xl bg-white/10 hover:bg-white/15 border border-white/10 text-white font-black uppercase text-xs md:text-sm tracking-wider flex items-center justify-center gap-2.5 transition-all shadow-md active:scale-95 cursor-pointer"
                 >
                   <ShoppingCart size={20} className="text-white" />
                   <span>+ Panier</span>
@@ -935,7 +971,7 @@ export function PublicShop() {
                 <button
                   type="button"
                   onClick={() => handleWhatsAppCTA(selectedProduct)}
-                  className="h-14 md:h-16 rounded-2xl bg-vendeur-emerald hover:bg-emerald-400 text-vendeur-coal font-black uppercase text-xs md:text-sm tracking-wider flex items-center justify-center gap-2.5 shadow-xl shadow-vendeur-emerald/20 hover:scale-[1.02] active:scale-95 transition-all"
+                  className={cn("h-14 md:h-16 text-vendeur-coal font-black uppercase text-xs md:text-sm tracking-wider flex items-center justify-center gap-2.5 shadow-xl hover:scale-[1.02] active:scale-95 transition-all cursor-pointer", theme.bgClass, theme.hoverBgClass, theme.shadowClass)}
                 >
                   {getCtaIcon(merchant.category)}
                   <span>WhatsApp</span>

@@ -4,9 +4,11 @@ Allow: /
 Allow: /offers
 Allow: /privacy
 Allow: /terms
+Allow: /data-deletion
 Allow: /shop/
 
-# Protection des données privées & pages de tableau de bord
+# Exclusion authentification & interfaces privées
+Disallow: /auth/
 Disallow: /dashboard
 Disallow: /admin
 Disallow: /inbox

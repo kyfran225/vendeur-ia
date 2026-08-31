@@ -6,5 +6,6 @@ export const SITE_CONFIG = {
   },
   appName: "Vendeur IA",
   companyName: "Vendeur IA",
-  defaultOgImage: "/android-chrome-512x512.png"
+  defaultOgImage: "/og-banner.png"
 };
+

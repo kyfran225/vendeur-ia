@@ -1,10 +1,19 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { Shield, Lock, FileText, CheckCircle2, ArrowLeft } from "lucide-react";
+import { MetaHead } from "@/components/seo/MetaHead";
+import { SITE_CONFIG } from "@/lib/seoConfig";
 
 export const PrivacyPolicyPage: React.FC = () => {
   return (
     <div className="min-h-[100dvh] bg-vendeur-coal text-slate-100 flex flex-col selection:bg-vendeur-emerald selection:text-black">
+      <MetaHead
+        title="Politique de Confidentialité | Vendeur IA"
+        description="Politique de confidentialité et protection des données personnelles de la plateforme Vendeur IA. Conformité RGPD et respect du secret commercial."
+        canonicalUrl={`${SITE_CONFIG.baseUrl}/privacy`}
+        keywords={['politique de confidentialité vendeur ia', 'rgpd vendeuria', 'protection données meta whatsapp']}
+      />
+
       {/* Top Header */}
       <header className="border-b border-white/10 bg-vendeur-coal/80 backdrop-blur-md sticky top-0 z-50">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">

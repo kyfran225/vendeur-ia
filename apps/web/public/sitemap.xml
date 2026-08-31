@@ -1,12 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
-        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1"
-        xmlns:xhtml="http://www.w3.org/1999/xhtml">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   
   <!-- Page d'accueil Principale -->
   <url>
     <loc>https://vendeuria.maatfeed.com/</loc>
-    <lastmod>2026-08-14</lastmod>
+    <lastmod>2026-08-31</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
@@ -14,7 +12,7 @@
   <!-- Tarifs & Offres -->
   <url>
     <loc>https://vendeuria.maatfeed.com/offers</loc>
-    <lastmod>2026-08-14</lastmod>
+    <lastmod>2026-08-31</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
@@ -22,7 +20,7 @@
   <!-- Conditions Générales -->
   <url>
     <loc>https://vendeuria.maatfeed.com/terms</loc>
-    <lastmod>2026-08-14</lastmod>
+    <lastmod>2026-08-31</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
@@ -30,8 +28,17 @@
   <!-- Politique de Confidentialité -->
   <url>
     <loc>https://vendeuria.maatfeed.com/privacy</loc>
-    <lastmod>2026-08-14</lastmod>
+    <lastmod>2026-08-31</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
+
+  <!-- Suppression des Données (Meta & Droit à l'oubli) -->
+  <url>
+    <loc>https://vendeuria.maatfeed.com/data-deletion</loc>
+    <lastmod>2026-08-31</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.4</priority>
+  </url>
 </urlset>
+

@@ -1,10 +1,19 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { FileCheck, Shield, ArrowLeft } from "lucide-react";
+import { MetaHead } from "@/components/seo/MetaHead";
+import { SITE_CONFIG } from "@/lib/seoConfig";
 
 export const TermsOfServicePage: React.FC = () => {
   return (
     <div className="min-h-[100dvh] bg-vendeur-coal text-slate-100 flex flex-col selection:bg-vendeur-emerald selection:text-black">
+      <MetaHead
+        title="Conditions Générales d'Utilisation | Vendeur IA"
+        description="Conditions générales d'utilisation des services Vendeur IA : droits, responsabilités, conformité WhatsApp Business API et protection des données."
+        canonicalUrl={`${SITE_CONFIG.baseUrl}/terms`}
+        keywords={['conditions générales vendeur ia', 'cgu vendeuria', 'termes de service whatsapp bot']}
+      />
+
       {/* Top Header */}
       <header className="border-b border-white/10 bg-vendeur-coal/80 backdrop-blur-md sticky top-0 z-50">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">

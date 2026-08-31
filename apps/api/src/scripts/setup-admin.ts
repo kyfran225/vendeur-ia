@@ -109,36 +109,36 @@ async function configureDatabase(uri: string, envName: string) {
     const products = await CommerceProductModel.create([
       {
         merchantId: merchant._id,
+        name: "Abonnement Vendeur IA - Pack Essentiel",
+        price: 5000,
+        currency: "XOF",
+        stock: 999,
+        availability: "available",
+        category: "services",
+        isService: true,
+        description: "IA commerciale WhatsApp 24h/24 & 7j/7, catalogue produits complet, détection automatique des reçus Mobile Money (Wave, MTN, Orange, Moov) et prise de commandes automatique."
+      },
+      {
+        merchantId: merchant._id,
         name: "Abonnement Vendeur IA - Pack Pro",
+        price: 20000,
+        currency: "XOF",
+        stock: 999,
+        availability: "available",
+        category: "services",
+        isService: true,
+        description: "Tout ce qui est inclus dans Essentiel + Numéro Officiel Meta Cloud API, Multi-Canal (WhatsApp + Instagram), Broadcast IA marketing, PaymentShield Forensic, Vocaux IA et Support VIP 7j/7."
+      },
+      {
+        merchantId: merchant._id,
+        name: "Configuration & Déploiement Clé en main (Pack Pro Expert Setup)",
         price: 25000,
         currency: "XOF",
         stock: 999,
         availability: "available",
         category: "services",
         isService: true,
-        description: "Assistant commercial IA WhatsApp 24/7 illimité, validation automatique des captures Wave/MTN/Orange par Shield OCR, relances automatiques et intégration CRM."
-      },
-      {
-        merchantId: merchant._id,
-        name: "Abonnement Vendeur IA - Pack Essential",
-        price: 15000,
-        currency: "XOF",
-        stock: 999,
-        availability: "available",
-        category: "services",
-        isService: true,
-        description: "IA commerciale WhatsApp pour petite boutique, catalogue jusqu'à 50 produits, gestion des commandes et alertes ventes."
-      },
-      {
-        merchantId: merchant._id,
-        name: "Configuration & Déploiement Clé en main (Pack Pro Setup)",
-        price: 25000,
-        currency: "XOF",
-        stock: 999,
-        availability: "available",
-        category: "services",
-        isService: true,
-        description: "Mise en service complète par nos experts : intégration WhatsApp Meta, saisie du catalogue, entraînement sur-mesure de l'IA et tests en direct."
+        description: "Mise en service complète et clé en main par nos experts : intégration WhatsApp Meta Cloud API, saisie du catalogue, entraînement personnalisé de votre IA et tests en direct."
       }
     ]);
     console.log(`[${envName}] Created ${products.length} Vendeur IA services & products.`);
@@ -148,7 +148,7 @@ async function configureDatabase(uri: string, envName: string) {
     const knowledgeData = {
       merchantId: merchant._id,
       businessName: 'Vendeur IA',
-      generalKnowledge: "Vendeur IA est la solution d'intelligence artificielle leader en Afrique pour automatiser les ventes et le support client sur WhatsApp. L'IA accueille vos prospects, présente votre catalogue, répond aux questions 24h/24, prend les commandes, valide les paiements Mobile Money (Wave, MTN, Orange, Moov) par scan OCR et relance les paniers abandonnés.",
+      generalKnowledge: "Vendeur IA est la solution d'intelligence artificielle leader en Afrique pour automatiser les ventes et le support client sur WhatsApp et Instagram. L'IA accueille vos prospects, présente votre catalogue, répond aux questions 24h/24, prend les commandes, valide les paiements Mobile Money (Wave, MTN, Orange, Moov) par scan OCR et relance les paniers abandonnés.",
       businessRules: {
         openingHours: "24h/24 - 7j/7 (Service automatisé par IA)",
         deliveryZones: ["Côte d'Ivoire", "Sénégal", "Bénin", "Togo", "Burkina Faso", "Mali", "Cameroun", "Afrique & International"],
@@ -160,8 +160,9 @@ async function configureDatabase(uri: string, envName: string) {
         ],
         returnPolicy: "Garantie satisfait ou remboursé sous 7 jours après activation."
       },
-      customInstructions: "Tu es l'assistant commercial d'élite de la plateforme Vendeur IA. Ton rôle est d'accueillir chaleureusement les commerçants, entrepreneurs et marques qui souhaitent automatiser leurs ventes sur WhatsApp. Présente nos fonctionnalités phares (IA de vente 24/7, validation instantanée des reçus Wave/MTN/Orange par Shield OCR, relance des clients), nos offres (Pack Essential à 15 000 F/mois, Pack Pro à 25 000 F/mois, option Déploiement Clé en main) et guide-les pour démarrer immédiatement."
+      customInstructions: "Tu es l'assistant commercial d'élite de la plateforme Vendeur IA — tu ES l'exemple vivant de ce que tu vends.\n\nTon rôle : accueillir chaleureusement les commerçants, entrepreneurs et marques qui souhaitent automatiser leurs ventes sur WhatsApp, présenter nos fonctionnalités phares (IA de vente 24/7, validation instantanée des reçus Wave/MTN/Orange/Moov par PaymentShield OCR, relance des clients), nos offres réelles :\n- 🟢 Pack Essentiel : 5 000 F CFA / mois (ou 50 000 F CFA / an — 2 mois offerts)\n- 🔵 Pack Pro : 20 000 F CFA / mois (ou 200 000 F CFA / an — 2 mois offerts)\n- 🚀 Option Pack Pro Expert (Installation clé en main) : 25 000 F CFA (paiement unique)\n\nGuide les prospects pour choisir leur formule et démarrer immédiatement."
     };
+
 
     if (!knowledge) {
       await CommerceKnowledgeModel.create(knowledgeData);

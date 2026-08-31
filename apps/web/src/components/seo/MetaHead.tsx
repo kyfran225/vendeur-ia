@@ -77,9 +77,10 @@ export const MetaHead: React.FC<MetaHeadProps> = ({
     },
     'offers': {
       '@type': 'AggregateOffer',
-      'priceCurrency': 'EUR',
-      'lowPrice': '29.00',
-      'offerCount': '3'
+      'priceCurrency': 'XOF',
+      'lowPrice': '5000',
+      'highPrice': '20000',
+      'offerCount': '2'
     }
   };
 
@@ -109,6 +110,8 @@ export const MetaHead: React.FC<MetaHeadProps> = ({
       <meta property="og:type" content={ogType} />
       <meta property="og:url" content={canonicalUrl} />
       <meta property="og:image" content={ogImage} />
+      <meta property="og:image:width" content="1200" />
+      <meta property="og:image:height" content="630" />
       <meta property="og:locale" content="fr_FR" />
 
       {/* Twitter Cards */}
@@ -126,3 +129,4 @@ export const MetaHead: React.FC<MetaHeadProps> = ({
     </Helmet>
   );
 };
+

@@ -12,17 +12,17 @@ const ROUTES = [
   {
     path: 'offers',
     title: 'Offres & Tarifs | Vendeur IA - Commercial Virtuel WhatsApp & Instagram',
-    description: 'Découvrez nos forfaits flexibles adaptés à votre activité commerciale. Automatisez vos ventes sur WhatsApp à partir de 15 000 FCFA / mois.',
+    description: 'Découvrez nos forfaits flexibles adaptés à votre activité commerciale. Automatisez vos ventes sur WhatsApp à partir de 5 000 FCFA / mois.',
     canonicalUrl: `${BASE_URL}/offers`,
     noscriptContent: `
       <div style="font-family: sans-serif; max-width: 800px; margin: 0 auto; padding: 2rem; color: #111;">
         <h1>Offres & Tarifs - Vendeur IA</h1>
         <p>Automatisez vos ventes sur WhatsApp et Instagram avec un commercial virtuel intelligent disponible 24h/24.</p>
-        <h2>Nos forfaits :</h2>
+        <h2>Nos formules :</h2>
         <ul>
-          <li><strong>Starter (15 000 FCFA / mois)</strong> : Idéal pour démarrer. Catalogue jusqu'à 50 produits, réponses automatiques et encaissements Mobile Money.</li>
-          <li><strong>Pro & Croissance (35 000 FCFA / mois)</strong> : Pour les boutiques actives. Produits illimités, relances intelligentes de paniers, intégrations avancées et support prioritaire.</li>
-          <li><strong>Entreprise & Sur Mesure</strong> : Volume élevé, formation personnalisée de l'IA et intégration CRM sur mesure.</li>
+          <li><strong>Pack Essentiel (5 000 FCFA / mois ou 50 000 FCFA / an)</strong> : IA autonome 24/7, catalogue produits complet, scan OCR des reçus Mobile Money (Wave, MTN, Orange, Moov), commandes automatiques et Studio Créatif.</li>
+          <li><strong>Pack Pro (20 000 FCFA / mois ou 200 000 FCFA / an)</strong> : Numéro officiel Meta Cloud API, multi-canal (WhatsApp + Instagram), campagnes marketing Broadcast IA, vocaux IA et support VIP 7j/7.</li>
+          <li><strong>Pack Pro Expert (25 000 FCFA unique)</strong> : Installation clé en main sur-mesure par notre équipe d'experts.</li>
         </ul>
         <p><a href="/">Retour à l'accueil</a> | <a href="/terms">Conditions Générales</a> | <a href="/privacy">Politique de Confidentialité</a></p>
       </div>

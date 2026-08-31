@@ -19,6 +19,8 @@ import {
 } from "lucide-react";
 import { apiClient } from "@/lib/apiClient";
 import { toast } from "sonner";
+import { getShopTheme, type ShopTheme } from "../lib/theme";
+import { cn } from "@/lib/utils";
 
 export interface CartItem {
   product: any;
@@ -33,6 +35,7 @@ interface CartDrawerProps {
   onRemoveItem: (productId: string) => void;
   onClearCart: () => void;
   merchant: any;
+  theme?: ShopTheme;
 }
 
 const DELIVERY_ZONES: Record<string, { label: string; fee: number; eta: string }> = {
@@ -53,8 +56,10 @@ export function CartDrawer({
   items,
   onUpdateQuantity,
   onRemoveItem,
-  merchant
+  merchant,
+  theme: customTheme
 }: CartDrawerProps) {
+  const theme = customTheme || getShopTheme(merchant?.branding?.accentColor);
   const [step, setStep] = useState<"cart" | "checkout" | "confirmed">("cart");
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
@@ -214,7 +219,7 @@ export function CartDrawer({
 
                     <div className="flex-1 min-w-0">
                       <h4 className="text-sm font-black uppercase tracking-tight truncate">{product.name}</h4>
-                      <p className="text-xs font-bold text-vendeur-emerald mt-0.5">
+                      <p className={cn("text-xs font-bold mt-0.5", theme.textClass)}>
                         {product.price.toLocaleString()} {currency}
                       </p>
                       <div className="flex items-center gap-3 mt-2">
@@ -255,13 +260,13 @@ export function CartDrawer({
               {/* Delivery Zone Pre-selector */}
               <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/5 space-y-3">
                 <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-white/70">
-                  <MapPin size={14} className="text-vendeur-emerald" />
+                  <MapPin size={14} className={theme.textClass} />
                   <span>Zone de livraison</span>
                 </div>
                 <select
                   value={selectedZone}
                   onChange={(e) => setSelectedZone(e.target.value)}
-                  className="w-full h-11 bg-white/5 border border-white/10 rounded-xl px-3 text-xs text-white outline-none focus:border-vendeur-emerald transition-all"
+                  className="w-full h-11 bg-white/5 border border-white/10 rounded-xl px-3 text-xs text-white outline-none focus:border-white/30 transition-all"
                 >
                   {Object.entries(DELIVERY_ZONES).map(([key, zone]) => (
                     <option key={key} value={key} className="bg-vendeur-coal text-white">
@@ -290,7 +295,7 @@ export function CartDrawer({
                       placeholder="Ex: Kouamé Jean"
                       value={customerName}
                       onChange={(e) => setCustomerName(e.target.value)}
-                      className="w-full h-11 bg-white/5 border border-white/10 rounded-xl pl-10 pr-3 text-xs text-white outline-none focus:border-vendeur-emerald transition-all"
+                      className="w-full h-11 bg-white/5 border border-white/10 rounded-xl pl-10 pr-3 text-xs text-white outline-none focus:border-white/30 transition-all"
                     />
                   </div>
                 </div>
@@ -307,7 +312,7 @@ export function CartDrawer({
                       placeholder="Ex: +225 07 00 00 00 00"
                       value={customerPhone}
                       onChange={(e) => setCustomerPhone(e.target.value)}
-                      className="w-full h-11 bg-white/5 border border-white/10 rounded-xl pl-10 pr-3 text-xs text-white outline-none focus:border-vendeur-emerald transition-all"
+                      className="w-full h-11 bg-white/5 border border-white/10 rounded-xl pl-10 pr-3 text-xs text-white outline-none focus:border-white/30 transition-all"
                     />
                   </div>
                 </div>
@@ -321,7 +326,7 @@ export function CartDrawer({
                     placeholder="Ex: Cocody Angré 8ème tranche, Pharmacie des Grâces"
                     value={customAddress}
                     onChange={(e) => setCustomAddress(e.target.value)}
-                    className="w-full h-11 bg-white/5 border border-white/10 rounded-xl px-3 text-xs text-white outline-none focus:border-vendeur-emerald transition-all"
+                    className="w-full h-11 bg-white/5 border border-white/10 rounded-xl px-3 text-xs text-white outline-none focus:border-white/30 transition-all"
                   />
                 </div>
 
@@ -334,13 +339,14 @@ export function CartDrawer({
                     <button
                       type="button"
                       onClick={() => setPaymentMethod("cash_on_delivery")}
-                      className={`p-3 rounded-xl border text-left flex items-center gap-2.5 transition-all ${
+                      className={cn(
+                        "p-3 rounded-xl border text-left flex items-center gap-2.5 transition-all",
                         paymentMethod === "cash_on_delivery"
-                          ? "bg-vendeur-emerald/10 border-vendeur-emerald text-white"
+                          ? cn(theme.badgeBgClass, theme.badgeBorderClass, "text-white")
                           : "bg-white/5 border-white/10 text-white/40 hover:text-white"
-                      }`}
+                      )}
                     >
-                      <Banknote size={16} className={paymentMethod === "cash_on_delivery" ? "text-vendeur-emerald" : ""} />
+                      <Banknote size={16} className={paymentMethod === "cash_on_delivery" ? theme.textClass : ""} />
                       <div>
                         <p className="text-[10px] font-black uppercase">À la livraison</p>
                         <p className="text-[8px] text-white/40 font-bold">Espèces au livreur</p>
@@ -350,13 +356,14 @@ export function CartDrawer({
                     <button
                       type="button"
                       onClick={() => setPaymentMethod("mobile_money")}
-                      className={`p-3 rounded-xl border text-left flex items-center gap-2.5 transition-all ${
+                      className={cn(
+                        "p-3 rounded-xl border text-left flex items-center gap-2.5 transition-all",
                         paymentMethod === "mobile_money"
-                          ? "bg-vendeur-emerald/10 border-vendeur-emerald text-white"
+                          ? cn(theme.badgeBgClass, theme.badgeBorderClass, "text-white")
                           : "bg-white/5 border-white/10 text-white/40 hover:text-white"
-                      }`}
+                      )}
                     >
-                      <CreditCard size={16} className={paymentMethod === "mobile_money" ? "text-vendeur-emerald" : ""} />
+                      <CreditCard size={16} className={paymentMethod === "mobile_money" ? theme.textClass : ""} />
                       <div>
                         <p className="text-[10px] font-black uppercase">Mobile Money / Envois</p>
                         <p className="text-[8px] text-white/40 font-bold">Wave, OM, MoMo / Diaspora</p>
@@ -374,7 +381,7 @@ export function CartDrawer({
                     placeholder="Ex: Livrer avant 14h, appeler à l'arrivée..."
                     value={deliveryNotes}
                     onChange={(e) => setDeliveryNotes(e.target.value)}
-                    className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-xs text-white outline-none focus:border-vendeur-emerald transition-all resize-none"
+                    className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-xs text-white outline-none focus:border-white/30 transition-all resize-none"
                   />
                 </div>
               </div>
@@ -382,7 +389,7 @@ export function CartDrawer({
           ) : (
             /* Step Confirmed */
             <div className="py-8 text-center space-y-6 animate-in zoom-in-95 duration-300">
-              <div className="h-20 w-20 mx-auto rounded-3xl bg-vendeur-emerald/20 text-vendeur-emerald flex items-center justify-center shadow-xl shadow-vendeur-emerald/20">
+              <div className={cn("h-20 w-20 mx-auto rounded-3xl flex items-center justify-center shadow-xl", theme.badgeBgClass, theme.textClass, theme.shadowClass)}>
                 <CheckCircle2 size={40} />
               </div>
               <div>
@@ -406,15 +413,15 @@ export function CartDrawer({
                   <span>Livraison ({deliveryInfo.label.split("/")[0]})</span>
                   <span>{deliveryFee.toLocaleString()} {currency}</span>
                 </div>
-                <div className="pt-2 border-t border-white/10 flex justify-between font-black text-sm text-vendeur-emerald">
+                <div className={cn("pt-2 border-t border-white/10 flex justify-between font-black text-sm", theme.textClass)}>
                   <span>Total</span>
                   <span>{total.toLocaleString()} {currency}</span>
                 </div>
               </div>
 
               {paymentMethod === "mobile_money" && (
-                <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-left space-y-2">
-                  <div className="flex items-center gap-2 text-vendeur-emerald text-xs font-black uppercase">
+                <div className={cn("p-4 rounded-2xl border text-left space-y-2", theme.badgeBgClass, theme.badgeBorderClass)}>
+                  <div className={cn("flex items-center gap-2 text-xs font-black uppercase", theme.textClass)}>
                     <QrCode size={16} />
                     <span>Paiement Mobile Money Direct</span>
                   </div>
@@ -426,7 +433,7 @@ export function CartDrawer({
 
               <button
                 onClick={handleOpenWhatsApp}
-                className="w-full h-14 bg-vendeur-emerald text-vendeur-coal font-black uppercase text-xs tracking-widest rounded-2xl flex items-center justify-center gap-3 hover:scale-[1.02] active:scale-95 transition-all shadow-xl shadow-vendeur-emerald/20"
+                className={cn("w-full h-14 text-vendeur-coal font-black uppercase text-xs tracking-widest rounded-2xl flex items-center justify-center gap-3 hover:scale-[1.02] active:scale-95 transition-all shadow-xl", theme.bgClass, theme.hoverBgClass, theme.shadowClass)}
               >
                 <MessageCircle size={18} />
                 <span>Ouvrir WhatsApp pour confirmer</span>
@@ -449,14 +456,14 @@ export function CartDrawer({
               </div>
               <div className="flex justify-between text-base font-black pt-2 border-t border-white/5">
                 <span className="uppercase tracking-tight">Total</span>
-                <span className="text-vendeur-emerald">{total.toLocaleString()} {currency}</span>
+                <span className={theme.textClass}>{total.toLocaleString()} {currency}</span>
               </div>
             </div>
 
             {step === "cart" ? (
               <button
                 onClick={() => setStep("checkout")}
-                className="w-full h-14 bg-vendeur-emerald text-vendeur-coal font-black uppercase text-xs tracking-widest rounded-2xl flex items-center justify-center gap-3 hover:scale-[1.02] active:scale-95 transition-all shadow-xl shadow-vendeur-emerald/20"
+                className={cn("w-full h-14 text-vendeur-coal font-black uppercase text-xs tracking-widest rounded-2xl flex items-center justify-center gap-3 hover:scale-[1.02] active:scale-95 transition-all shadow-xl", theme.bgClass, theme.hoverBgClass, theme.shadowClass)}
               >
                 <span>Passer à la livraison</span>
                 <ArrowRight size={16} />
@@ -474,7 +481,7 @@ export function CartDrawer({
                   type="button"
                   onClick={handleCheckoutSubmit}
                   disabled={isSubmitting}
-                  className="col-span-2 h-14 bg-vendeur-emerald text-vendeur-coal font-black uppercase text-xs tracking-widest rounded-2xl flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all shadow-xl shadow-vendeur-emerald/20 disabled:opacity-50"
+                  className={cn("col-span-2 h-14 text-vendeur-coal font-black uppercase text-xs tracking-widest rounded-2xl flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all shadow-xl disabled:opacity-50", theme.bgClass, theme.hoverBgClass, theme.shadowClass)}
                 >
                   {isSubmitting ? (
                     <Sparkles className="animate-spin" size={16} />
@@ -489,7 +496,7 @@ export function CartDrawer({
             )}
 
             <div className="flex items-center justify-center gap-2 text-[9px] font-black uppercase tracking-widest text-white/30">
-              <ShieldCheck size={12} className="text-vendeur-emerald" />
+              <ShieldCheck size={12} className={theme.textClass} />
               <span>Commande sécurisée &bull; Vendeur certifié Vendeur IA</span>
             </div>
           </div>

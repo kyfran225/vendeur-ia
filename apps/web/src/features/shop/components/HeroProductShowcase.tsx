@@ -7,11 +7,14 @@ import {
   ShoppingBag,
   ArrowUpRight
 } from "lucide-react";
+import { getShopTheme, type ShopTheme } from "../lib/theme";
+import { cn } from "@/lib/utils";
 
 interface HeroProductShowcaseProps {
   products: any[];
   currency?: string;
   merchant: any;
+  theme?: ShopTheme;
   onSelectProduct: (product: any) => void;
   onAddToCart: (product: any) => void;
 }
@@ -20,9 +23,12 @@ export function HeroProductShowcase({
   products,
   currency = "XOF",
   merchant,
+  theme: customTheme,
   onSelectProduct,
   onAddToCart
 }: HeroProductShowcaseProps) {
+  const theme = customTheme || getShopTheme(merchant?.branding?.accentColor);
+
   // Filter products that have images first, prioritizing manually pinned 'isFeatured' articles
   const displayProducts = [...(products || [])]
     .filter((p) => p.images?.[0] || p.imageUrl || p.image)
@@ -51,7 +57,7 @@ export function HeroProductShowcase({
   if (activeList.length === 0) {
     return (
       <div className="relative w-full md:w-[440px] lg:w-[480px] h-[340px] md:h-[440px] bg-white/[0.03] rounded-[2.5rem] md:rounded-[3.5rem] border border-white/10 flex flex-col items-center justify-center p-6 text-center overflow-hidden shrink-0 shadow-2xl">
-        <div className="h-20 w-20 rounded-3xl bg-vendeur-emerald/10 border border-vendeur-emerald/20 flex items-center justify-center text-vendeur-emerald mb-4 animate-pulse">
+        <div className={cn("h-20 w-20 rounded-3xl border flex items-center justify-center mb-4 animate-pulse", theme.badgeBgClass, theme.badgeBorderClass, theme.textClass)}>
           <ShoppingBag size={40} />
         </div>
         <p className="text-sm font-black uppercase tracking-wider text-white">Vitrine en Direct</p>
@@ -149,7 +155,7 @@ export function HeroProductShowcase({
       {/* Bottom Ultra-Sleek Info Bar (Direct overlay, airy & uncluttered) */}
       <div className="absolute bottom-5 left-5 right-5 flex items-end justify-between gap-4 z-10">
         <div className="min-w-0 flex-1 space-y-1">
-          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-vendeur-emerald block drop-shadow-md">
+          <span className={cn("text-[10px] font-black uppercase tracking-[0.2em] block drop-shadow-md", theme.textClass)}>
             {currentProduct.category || merchant.category || "Catalogue"}
           </span>
           <h4 className="text-lg md:text-xl font-black text-white uppercase tracking-tight line-clamp-1 leading-tight drop-shadow-md">
@@ -157,7 +163,7 @@ export function HeroProductShowcase({
           </h4>
           <div className="inline-flex items-center gap-1 text-base md:text-lg font-black text-white bg-black/40 backdrop-blur-md px-3 py-1 rounded-xl border border-white/10 shadow-lg">
             <span>{currentProduct.price?.toLocaleString()}</span>
-            <span className="text-xs text-vendeur-emerald font-bold ml-1">
+            <span className={cn("text-xs font-bold ml-1", theme.textClass)}>
               {currentProduct.currency || currency}
             </span>
           </div>
@@ -171,7 +177,7 @@ export function HeroProductShowcase({
               e.stopPropagation();
               onAddToCart(currentProduct);
             }}
-            className="h-12 w-12 rounded-2xl bg-vendeur-emerald hover:bg-emerald-400 text-vendeur-coal flex items-center justify-center shadow-2xl shadow-vendeur-emerald/40 hover:scale-110 active:scale-95 transition-all"
+            className={cn("h-12 w-12 rounded-2xl text-vendeur-coal flex items-center justify-center shadow-2xl hover:scale-110 active:scale-95 transition-all", theme.bgClass, theme.hoverBgClass, theme.shadowClass)}
             title="Ajouter au panier"
           >
             <ShoppingCart size={20} />
@@ -197,7 +203,7 @@ export function HeroProductShowcase({
           <button
             type="button"
             onClick={handlePrev}
-            className="absolute left-4 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full bg-black/50 backdrop-blur-md border border-white/15 text-white flex items-center justify-center hover:bg-vendeur-emerald hover:text-vendeur-coal transition-all opacity-0 group-hover:opacity-100 shadow-2xl z-20"
+            className={cn("absolute left-4 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full bg-black/50 backdrop-blur-md border border-white/15 text-white flex items-center justify-center transition-all opacity-0 group-hover:opacity-100 shadow-2xl z-20 hover:text-vendeur-coal", `hover:${theme.bgClass}`)}
             aria-label="Article précédent"
           >
             <ChevronLeft size={20} />
@@ -206,7 +212,7 @@ export function HeroProductShowcase({
           <button
             type="button"
             onClick={handleNext}
-            className="absolute right-4 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full bg-black/50 backdrop-blur-md border border-white/15 text-white flex items-center justify-center hover:bg-vendeur-emerald hover:text-vendeur-coal transition-all opacity-0 group-hover:opacity-100 shadow-2xl z-20"
+            className={cn("absolute right-4 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full bg-black/50 backdrop-blur-md border border-white/15 text-white flex items-center justify-center transition-all opacity-0 group-hover:opacity-100 shadow-2xl z-20 hover:text-vendeur-coal", `hover:${theme.bgClass}`)}
             aria-label="Article suivant"
           >
             <ChevronRight size={20} />
@@ -217,11 +223,7 @@ export function HeroProductShowcase({
             {activeList.slice(0, 8).map((_, idx) => (
               <div
                 key={idx}
-                className={`h-1 rounded-full transition-all duration-300 ${
-                  currentIndex === idx
-                    ? "w-6 bg-vendeur-emerald"
-                    : "w-1.5 bg-white/30"
-                }`}
+                className={cn("h-1 rounded-full transition-all duration-300", currentIndex === idx ? cn("w-6", theme.bgClass) : "w-1.5 bg-white/30")}
               />
             ))}
           </div>

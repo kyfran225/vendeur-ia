@@ -36,6 +36,7 @@ import { OffersModal } from "@/features/settings/components/OffersModal";
 import { PauseConfirmationModal } from "@/components/modals/PauseConfirmationModal";
 import { ShareShopModal } from "@/features/shop/components/ShareShopModal";
 import { StepMilestoneModal } from "@/components/ui/StepMilestoneModal";
+import { DailyStatusModal } from "./components/DailyStatusModal";
 import { AssistantIcon } from "@/components/ui/AssistantIcon";
 import { getMerchantShopUrl, getMerchantShopPath } from "@/lib/slugify";
 import { formatDisplayPhone } from "@/features/onboarding/components/CountrySelector";
@@ -353,6 +354,7 @@ function HomePanel({
   onConnectWhatsApp?: () => void;
 }) {
   const [isPauseModalOpen, setIsPauseModalOpen] = useState(false);
+  const [isDailyStatusModalOpen, setIsDailyStatusModalOpen] = useState(false);
   const [hasCopiedShopUrl, setHasCopiedShopUrl] = useState(false);
   const tips = dashboard?.aiGrowthAdvice?.tips || [];
   const status = dashboard?.merchant?.whatsappConfig?.status || 'disconnected';
@@ -444,17 +446,7 @@ function HomePanel({
                 </button>
 
                 <button
-                  onClick={async () => {
-                    try {
-                      toast.loading("Génération de vos 3 statuts WhatsApp...");
-                      await apiClient.post("/api/commerce/whatsapp-status/send-to-me");
-                      toast.dismiss();
-                      toast.success("Pack de 3 Statuts WhatsApp envoyé sur votre WhatsApp !");
-                    } catch (err: any) {
-                      toast.dismiss();
-                      toast.error(err.response?.data?.error || "Erreur lors de l'envoi des statuts");
-                    }
-                  }}
+                  onClick={() => setIsDailyStatusModalOpen(true)}
                   className="flex-1 sm:flex-initial flex items-center justify-center gap-2 min-h-[44px] sm:min-h-[48px] h-11 sm:h-12 px-3.5 sm:px-4 py-2.5 sm:py-3 rounded-2xl bg-vendeur-emerald text-vendeur-coal hover:bg-emerald-400 text-[11px] sm:text-xs font-black uppercase tracking-wider transition-all shadow-lg shadow-vendeur-emerald/20 cursor-pointer active:scale-95 whitespace-nowrap"
                 >
                   <Sparkles size={16} className="shrink-0" />
@@ -578,6 +570,12 @@ function HomePanel({
       <PauseConfirmationModal
         isOpen={isPauseModalOpen}
         onClose={() => setIsPauseModalOpen(false)}
+      />
+
+      {/* Modal des Statuts du Jour */}
+      <DailyStatusModal
+        isOpen={isDailyStatusModalOpen}
+        onClose={() => setIsDailyStatusModalOpen(false)}
       />
 
       <div id="tour-dashboard-stats" className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4 md:gap-6">

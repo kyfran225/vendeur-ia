@@ -110,7 +110,19 @@ Réponds UNIQUEMENT au format JSON strict suivant :
    */
   async sendDailyStatusPackToMerchant(merchantId: string) {
     const merchant = await CommerceMerchantModel.findById(merchantId);
-    if (!merchant || !merchant.whatsappNumber) return;
+    if (!merchant) throw new Error("Marchand introuvable");
+
+    let targetPhone = merchant.whatsappNumber || merchant.phone;
+    if (!targetPhone && merchant.whatsappConfig?.provider === 'baileys') {
+      const sock = (whatsappService as any).activeSessions?.get(merchant.ownerId);
+      if (sock?.user?.id) {
+        targetPhone = sock.user.id.split(':')[0].split('@')[0];
+      }
+    }
+
+    if (!targetPhone) {
+      throw new Error("Numéro WhatsApp manquant. Veuillez renseigner votre numéro WhatsApp dans vos paramètres.");
+    }
 
     const statuses = await this.generateStatusPack(merchantId);
 
@@ -128,10 +140,12 @@ Réponds UNIQUEMENT au format JSON strict suivant :
     message += `_Propulsé par Vendeur IA Omnicanal_ ✨`;
 
     try {
-      await messagingService.sendMessage(merchant, "whatsapp", merchant.whatsappNumber, message);
-      logger.info(`[Daily Status Pack] Sent successfully to ${merchant.businessName} (${merchant.whatsappNumber})`);
+      await messagingService.sendMessage(merchant, "whatsapp", targetPhone, message);
+      logger.info(`[Daily Status Pack] Sent successfully to ${merchant.businessName} (${targetPhone})`);
+      return { success: true, statuses, targetPhone };
     } catch (err: any) {
       logger.error(`[Daily Status Pack] Failed to send to ${merchant.businessName}:`, err.message);
+      throw new Error(err.message || "Erreur lors de l'envoi du message WhatsApp");
     }
   }
 

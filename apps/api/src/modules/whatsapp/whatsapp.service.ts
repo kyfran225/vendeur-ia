@@ -1798,23 +1798,29 @@ class WhatsAppService {
       }
 
       if (sock && sock.user) {
+        let jid = to;
+        if (!jid.includes('@')) {
+          const cleaned = to.replace(/[^0-9]/g, '');
+          jid = `${cleaned}@s.whatsapp.net`;
+        }
+
         if (useAudio) {
           try {
             const audioBuffer = await aiProvider.generateSpeech(text);
             // Baileys audio message: we need to handle the conversion if needed or send as PTT
-            return await sock.sendMessage(to, {
+            return await sock.sendMessage(jid, {
               audio: audioBuffer,
               mimetype: 'audio/mp4',
               ptt: true
             });
           } catch (err) {
             console.warn("[WhatsApp Baileys] Failed to generate speech, falling back to text:", err);
-            return await sock.sendMessage(to, { text });
+            return await sock.sendMessage(jid, { text });
           }
         }
-        return await sock.sendMessage(to, { text });
+        return await sock.sendMessage(jid, { text });
       } else {
-        throw new Error("WhatsApp session not active or authenticated");
+        throw new Error("WhatsApp n'est pas connecté. Veuillez scanner le QR Code dans les Paramètres WhatsApp.");
       }
     }
   }

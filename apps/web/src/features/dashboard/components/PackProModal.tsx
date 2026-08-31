@@ -7,6 +7,12 @@ import { useAuthStore } from "@/stores/authStore";
 import { useQueryClient } from "@tanstack/react-query";
 import { useBillingCurrency } from "@/hooks/useBillingCurrency";
 import { convertCurrencyAmount } from "@vendeur-ia/core";
+import { clsx, type ClassValue } from "clsx";
+import { twMerge } from "tailwind-merge";
+
+function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs));
+}
 
 interface PackProModalProps {
   isOpen: boolean;
@@ -28,51 +34,57 @@ export function PackProModal({ isOpen, onClose }: PackProModalProps) {
   };
 
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/90 backdrop-blur-md" onClick={onClose} />
-      <div className="relative w-full max-w-xl bg-vendeur-bg border border-vendeur-emerald/20 rounded-[3rem] p-8 md:p-12 space-y-8 shadow-2xl animate-in zoom-in-95 duration-300">
-        <button onClick={onClose} className="absolute top-8 right-8 text-white/20 hover:text-white transition-colors">
-          <X size={24} />
+    <div className="fixed inset-0 z-[200] flex items-center justify-center p-3 sm:p-4">
+      <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative w-full max-w-lg bg-vendeur-bg border border-vendeur-emerald/20 rounded-2xl sm:rounded-3xl p-4 sm:p-6 space-y-3.5 sm:space-y-4 shadow-2xl animate-in zoom-in-95 duration-200 max-h-[92vh] overflow-y-auto">
+        <button 
+          onClick={onClose} 
+          className="absolute top-3.5 right-3.5 sm:top-5 sm:right-5 p-1 rounded-lg text-white/30 hover:text-white hover:bg-white/5 transition-colors"
+          aria-label="Fermer"
+        >
+          <X size={20} />
         </button>
 
-        <div className="text-center space-y-4">
-          <div className="h-20 w-20 bg-vendeur-emerald/10 border border-vendeur-emerald/20 rounded-[2rem] flex items-center justify-center mx-auto">
-            <Rocket className="text-vendeur-emerald" size={40} />
+        <div className="text-center space-y-1.5 pt-1">
+          <div className="h-12 w-12 bg-vendeur-emerald/10 border border-vendeur-emerald/20 rounded-2xl flex items-center justify-center mx-auto">
+            <Rocket className="text-vendeur-emerald" size={24} />
           </div>
-          <h2 className="text-3xl font-black text-white uppercase tracking-tighter">Pack Pro Clé en Main</h2>
-          <p className="text-white/50 text-lg">On s'occupe de TOUT pour vous.</p>
+          <h2 className="text-xl sm:text-2xl font-black text-white uppercase tracking-tight">Pack Pro Clé en Main</h2>
+          <p className="text-white/50 text-xs">On s'occupe de TOUT pour vous.</p>
         </div>
 
-        <div className="grid gap-4">
-          {[
-            "Abonnement Vendeur IA Pro Inclus",
-            "Configuration de l'API WhatsApp Cloud officielle",
-            "Importation de votre catalogue produits",
-            "Paramétrage IA sur-mesure",
-            "Support prioritaire 24h/7 sur WhatsApp"
-          ].map((text, i) => (
-            <div key={i} className="flex items-center gap-4 p-4 bg-white/5 rounded-2xl border border-white/5">
-              <div className="h-6 w-6 rounded-full bg-vendeur-emerald flex items-center justify-center shrink-0">
-                <Check size={14} className="text-vendeur-coal" />
+        <div className="space-y-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {[
+              "Abonnement Vendeur IA Pro Inclus",
+              "Configuration API WhatsApp Meta",
+              "Importation de votre catalogue",
+              "Paramétrage IA sur-mesure",
+              "Support VIP prioritaire 24h/7"
+            ].map((text, i) => (
+              <div key={i} className={cn("flex items-center gap-2.5 p-2.5 bg-white/[0.03] rounded-xl border border-white/5", i === 4 && "sm:col-span-2")}>
+                <div className="h-5 w-5 rounded-full bg-vendeur-emerald flex items-center justify-center shrink-0">
+                  <Check size={12} className="text-vendeur-coal font-bold" />
+                </div>
+                <span className="text-[11px] font-medium text-white/80">{text}</span>
               </div>
-              <span className="text-sm font-medium text-white/80">{text}</span>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
 
-        <div className="pt-4 space-y-6">
-          <div className="flex items-center justify-between">
-            <p className="text-xs font-black uppercase tracking-[0.2em] text-white/40">Premier paiement (Installation + Pro)</p>
-            <p className="text-3xl font-black text-vendeur-emerald">
+        <div className="pt-2 border-t border-white/5 space-y-3">
+          <div className="flex items-center justify-between px-1">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-white/40">Installation Clé en Main + Pro</p>
+            <p className="text-lg sm:text-xl font-black text-vendeur-emerald">
               45 000 {currency}
             </p>
           </div>
 
           <button
             onClick={handleBuy}
-            className="w-full h-18 bg-vendeur-emerald text-vendeur-coal font-black uppercase tracking-widest text-sm rounded-[2rem] flex items-center justify-center gap-3 hover:scale-[1.02] active:scale-95 transition-all shadow-xl shadow-vendeur-emerald/20"
+            className="w-full h-11 sm:h-12 bg-vendeur-emerald text-vendeur-coal font-black uppercase tracking-wider text-xs rounded-xl flex items-center justify-center gap-2 hover:brightness-110 active:scale-[0.98] transition-all shadow-lg shadow-vendeur-emerald/20"
           >
-            <Rocket size={24} />
+            <Rocket size={16} />
             Activer mon Pack Pro
           </button>
         </div>

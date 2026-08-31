@@ -37,13 +37,15 @@ export class MessagingService {
     const config = merchant.whatsappConfig;
     const userId = merchant.ownerId;
 
+    const jid = remoteId.includes('@') ? remoteId : `${remoteId.replace(/[^0-9]/g, '')}@s.whatsapp.net`;
+
     if (options.audioBuffer) {
       if (config?.provider === 'meta') {
         return (whatsappService as any).sendMetaAudio(merchant, remoteId, options.audioBuffer);
       } else {
         const sock = (whatsappService as any).activeSessions?.get(userId);
         if (sock) {
-          return sock.sendMessage(remoteId, { audio: options.audioBuffer, mimetype: 'audio/mp4', ptt: true });
+          return sock.sendMessage(jid, { audio: options.audioBuffer, mimetype: 'audio/mp4', ptt: true });
         }
       }
     } else if (options.mediaUrl && options.type === 'image') {
@@ -53,7 +55,7 @@ export class MessagingService {
       } else {
         const sock = (whatsappService as any).activeSessions?.get(userId);
         if (sock) {
-          return sock.sendMessage(remoteId, { image: { url: options.mediaUrl }, caption: content });
+          return sock.sendMessage(jid, { image: { url: options.mediaUrl }, caption: content });
         }
       }
     } else {

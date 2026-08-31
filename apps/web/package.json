@@ -9,7 +9,7 @@
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "lint": "echo 'web lint passed'",
-    "build": "tsc && vite build",
+    "build": "tsc && vite build && node scripts/prerender.js",
     "preview": "vite preview"
   },
   "dependencies": {

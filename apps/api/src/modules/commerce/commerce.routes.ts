@@ -2054,11 +2054,16 @@ router.post("/whatsapp-status/send-to-me", authenticate, async (req, res) => {
     const merchant = await CommerceMerchantModel.findOne({ ownerId });
     if (!merchant) return res.status(404).json({ error: "Merchant not found" });
 
-    await whatsappStatusService.sendDailyStatusPackToMerchant(merchant._id.toString());
-    res.json({ success: true, message: "Pack statuts envoyé avec succès sur votre WhatsApp !" });
+    const result = await whatsappStatusService.sendDailyStatusPackToMerchant(merchant._id.toString());
+    res.json({
+      success: true,
+      message: "Pack statuts envoyé avec succès sur votre WhatsApp !",
+      targetPhone: result.targetPhone,
+      pack: result.statuses
+    });
   } catch (error: any) {
     logger.error(`[WhatsApp Status Send] Error: ${error.message}`);
-    res.status(500).json({ error: error.message });
+    res.status(400).json({ error: error.message || "Erreur lors de l'envoi des statuts" });
   }
 });
 

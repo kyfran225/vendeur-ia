@@ -973,9 +973,15 @@ class WhatsAppService {
 
     if (!customer) {
       customer = await CommerceCustomerModel.create({ merchantId: merchant._id, phone: from, name: pushName });
-    } else if (pushName && !customer.name) {
-      customer.name = pushName;
-      await customer.save();
+    } else if (pushName) {
+      const isCorrupted = customer.name === merchant.businessName || 
+                          customer.name?.toLowerCase().includes("vendeur ia") ||
+                          customer.name?.includes("Co-Fondateur") ||
+                          (customer.name?.toLowerCase().includes("franck") && !from.includes("5111157"));
+      if (!customer.name || isCorrupted || customer.name !== pushName) {
+        customer.name = pushName;
+        await customer.save();
+      }
     }
 
     // Find or create conversation
@@ -1285,7 +1291,7 @@ class WhatsAppService {
       customer = await CommerceCustomerModel.findOne({ merchantId: merchant._id, phone: rawTo });
     }
     if (!customer) {
-      customer = await CommerceCustomerModel.create({ merchantId: merchant._id, phone: to, name: msg.pushName || undefined });
+      customer = await CommerceCustomerModel.create({ merchantId: merchant._id, phone: to });
     }
 
     // Find or create conversation
@@ -1507,7 +1513,7 @@ class WhatsAppService {
     }
   }
 
-  async handleMetaIncomingMessage(from: string, text: string, phoneId: string, media?: { mediaId: string, mediaType: string }, messageId?: string) {
+  async handleMetaIncomingMessage(from: string, text: string, phoneId: string, media?: { mediaId: string, mediaType: string }, messageId?: string, pushName?: string) {
     // 0. Deduplication to prevent processing retries or duplicate webhook events
     const cleanPhone = from ? from.replace(/[\s\-\+\(\)]/g, "") : "";
     const dedupKey = messageId ? `wamid:${messageId}` : `${cleanPhone}:${phoneId || ""}:${text || ""}:${Math.floor(Date.now() / 3000)}`;
@@ -1641,7 +1647,8 @@ class WhatsAppService {
     // 2. Prepare message object for handleIncomingMessage
     const msg: any = {
       key: { remoteJid: from, fromMe: false },
-      message: { conversation: text }
+      message: { conversation: text },
+      pushName: pushName || undefined
     };
 
     // 3. Handle Media if present

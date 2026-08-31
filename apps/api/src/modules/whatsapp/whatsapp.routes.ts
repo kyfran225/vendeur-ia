@@ -222,9 +222,12 @@ router.post("/webhook", async (req, res) => {
               }
 
               if ((text || mediaId) && from) {
-                console.log(`[Webhook] New ${msg.type || 'message'} from ${from} to PhoneID ${phoneId} (MsgID: ${msg.id})`);
+                const contact = value.contacts?.find((c: any) => c.wa_id === from || c.wa_id === msg.from);
+                const contactName = contact?.profile?.name || undefined;
+
+                console.log(`[Webhook] New ${msg.type || 'message'} from ${from} (${contactName || 'sans nom'}) to PhoneID ${phoneId} (MsgID: ${msg.id})`);
                 // Handle the incoming message asynchronously with deduplication
-                whatsappService.handleMetaIncomingMessage(from, text || "", phoneId, { mediaId, mediaType: mediaType as any }, msg.id).catch(err => {
+                whatsappService.handleMetaIncomingMessage(from, text || "", phoneId, { mediaId, mediaType: mediaType as any }, msg.id, contactName).catch(err => {
                   console.error("[Webhook] Error in async handleMetaIncomingMessage:", err);
                 });
               }

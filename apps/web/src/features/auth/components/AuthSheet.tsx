@@ -432,6 +432,10 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
   // Founder Direct Login (Meta Cloud API / No WhatsApp scan required)
   const handleFounderLogin = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
+    if (!founderPin.trim()) {
+      toast.error("Veuillez saisir votre code PIN ou mot de passe.");
+      return;
+    }
     const cleanNumber = localPhone.replace(/\D/g, "");
     const parsed = parsePhoneNumber(`${selectedCountry.dialCode}${cleanNumber}`, selectedCountry.code);
     const fullPhoneNumber = parsed.e164 || `${selectedCountry.dialCode}${cleanNumber}`;
@@ -440,7 +444,7 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
     try {
       const res = await apiClient.post("/api/auth/founder-login", {
         phoneNumber: fullPhoneNumber,
-        pinOrPassword: founderPin.trim() || "777888",
+        pinOrPassword: founderPin.trim(),
         authSessionId: authSessionId || undefined
       });
       await completeAuth(res.data);
@@ -980,9 +984,10 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
                   </label>
                   <div className="relative">
                     <input
+                      required
                       type={showFounderPin ? "text" : "password"}
                       className="w-full h-13 bg-black/50 border border-white/10 focus:border-vendeur-emerald rounded-2xl px-4 pr-12 text-white font-mono text-base placeholder:text-white/20 outline-none transition-all shadow-inner"
-                      placeholder="Entrez votre PIN (ex: 777888) ou mot de passe"
+                      placeholder="Entrez votre PIN ou mot de passe"
                       value={founderPin}
                       onChange={(e) => setFounderPin(e.target.value)}
                       autoFocus
@@ -995,14 +1000,11 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
                       {showFounderPin ? <EyeOff size={18} /> : <Eye size={18} />}
                     </button>
                   </div>
-                  <p className="text-[10px] text-white/40 ml-1">
-                    💡 PIN d'accès rapide système : <code className="text-emerald-400 font-bold">777888</code>
-                  </p>
                 </div>
 
                 <button
                   type="submit"
-                  disabled={isLoggingFounder}
+                  disabled={isLoggingFounder || !founderPin.trim()}
                   className="w-full h-13 min-h-[52px] bg-vendeur-emerald text-vendeur-coal font-black uppercase tracking-widest text-xs sm:text-sm rounded-2xl flex items-center justify-center gap-2 hover:bg-emerald-400 active:scale-[0.98] transition-all disabled:opacity-50 shadow-xl shadow-vendeur-emerald/25 cursor-pointer"
                 >
                   {isLoggingFounder ? (

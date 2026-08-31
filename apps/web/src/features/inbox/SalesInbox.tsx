@@ -46,11 +46,27 @@ function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-function formatCustomerDisplayName(customer?: { name?: string; phone?: string }): string {
+function formatCustomerDisplayName(
+  customer?: { name?: string; phone?: string },
+  merchantName?: string,
+  userDisplayName?: string
+): string {
   if (!customer) return "Client";
-  if (customer.name && customer.name.trim()) return customer.name.trim();
 
+  const rawName = customer.name?.trim() || "";
   const phone = customer.phone || "";
+
+  // Check if name was mistakenly set to the merchant's / current user's name
+  const isCorrupted = rawName && (
+    (merchantName && rawName.toLowerCase() === merchantName.trim().toLowerCase()) ||
+    (userDisplayName && rawName.toLowerCase() === userDisplayName.trim().toLowerCase()) ||
+    rawName.includes("Co-Fondateur") ||
+    (rawName.toLowerCase().includes("franck") && !phone.includes("5111157")) ||
+    rawName.toLowerCase() === "vendeur ia"
+  );
+
+  if (rawName && !isCorrupted) return rawName;
+
   if (phone.includes("@lid")) {
     const rawDigits = phone.replace(/@lid/g, "").replace(/\D/g, "");
     const shortId = rawDigits.length > 6 ? rawDigits.slice(-6) : rawDigits;
@@ -94,7 +110,7 @@ function formatMessageTime(dateStr?: string | Date): string {
 }
 
 export function SalesInbox() {
-  const { accessToken } = useAuthStore();
+  const { accessToken, user } = useAuthStore();
   const socket = useSocket();
   const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -116,8 +132,29 @@ export function SalesInbox() {
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [onlineSessions, setOnlineSessions] = useState<Set<string>>(new Set());
   const [hasCopiedPhone, setHasCopiedPhone] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const mobileMenuRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  // Close mobile dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (mobileMenuRef.current && !mobileMenuRef.current.contains(e.target as Node)) {
+        setIsMobileMenuOpen(false);
+      }
+    }
+    if (isMobileMenuOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isMobileMenuOpen]);
+
+  useEffect(() => {
+    setIsMobileMenuOpen(false);
+  }, [selectedChat]);
 
   // Fetch Conversations
   const { data: conversations, isLoading: loadingChats, refetch: refetchConvs } = useQuery({
@@ -618,7 +655,7 @@ export function SalesInbox() {
             </div>
           ) : (
             filteredConversations.map((chat: any) => {
-              const displayName = formatCustomerDisplayName(chat.customerId);
+              const displayName = formatCustomerDisplayName(chat.customerId, merchant?.businessName, user?.displayName);
               const isActive = selectedChat === chat._id;
               const hasUnread = (chat.unreadCount || 0) > 0;
               const isTyping = typingChats[chat._id];
@@ -732,55 +769,63 @@ export function SalesInbox() {
         {selectedChat ? (
           <div className="flex-1 flex flex-col h-full w-full bg-[#0b141a] relative min-w-0 overflow-x-hidden">
             {/* WhatsApp Chat Header */}
-            <header className="px-3 py-2.5 md:px-5 md:py-3 bg-[#202c33] border-b border-white/10 flex items-center justify-between sticky top-0 z-30 gap-2 pt-[calc(0.625rem+env(safe-area-inset-top,0px))] md:pt-3">
-              <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
+            <header className="px-2.5 py-2 sm:px-4 sm:py-3 bg-[#202c33] border-b border-white/10 flex items-center justify-between sticky top-0 z-30 gap-2 pt-[calc(0.5rem+env(safe-area-inset-top,0px))] md:pt-3">
+              {/* Left Column: Back Button + Avatar + Customer Name & Status */}
+              <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
                 <button
                   onClick={() => setShowMobileChat(false)}
-                  className="md:hidden p-1 -ml-1 text-white/60 hover:text-white shrink-0 cursor-pointer"
+                  className="md:hidden p-1 -ml-1 text-white/70 hover:text-white shrink-0 cursor-pointer rounded-lg hover:bg-white/5 active:scale-95 transition-all"
                   aria-label="Retour"
                 >
                   <ChevronLeft size={22} />
                 </button>
 
-                <div className="h-10 w-10 rounded-full bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center font-black text-emerald-400 text-sm shrink-0">
-                  {formatCustomerDisplayName(activeChatData?.customerId).charAt(0).toUpperCase()}
+                <div className="h-9 w-9 sm:h-10 sm:w-10 rounded-full bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center font-black text-emerald-400 text-xs sm:text-sm shrink-0 shadow-inner">
+                  {formatCustomerDisplayName(activeChatData?.customerId, merchant?.businessName, user?.displayName).charAt(0).toUpperCase()}
                 </div>
 
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <p className="font-black text-sm text-white truncate">
-                      {formatCustomerDisplayName(activeChatData?.customerId)}
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <p className="font-bold sm:font-black text-xs sm:text-sm text-white truncate max-w-[125px] xs:max-w-[180px] sm:max-w-none">
+                      {formatCustomerDisplayName(activeChatData?.customerId, merchant?.businessName, user?.displayName)}
                     </p>
                     {activeChatData?.customerId?.phone && (
                       <button
                         type="button"
                         onClick={() => handleCopyPhone(activeChatData.customerId.phone)}
-                        className="text-white/40 hover:text-emerald-400 transition-colors shrink-0"
+                        className="text-white/40 hover:text-emerald-400 transition-colors shrink-0 hidden sm:inline-flex"
                         title="Copier le numéro"
                       >
                         {hasCopiedPhone ? <Check size={13} className="text-emerald-400" /> : <Copy size={13} />}
                       </button>
                     )}
                     {activeChatData?.customerId?.loyaltyPoints >= vipThreshold && (
-                      <span className="text-[9px] font-black bg-emerald-500 text-black px-1.5 py-0.2 rounded uppercase shrink-0">
+                      <span className="text-[8px] sm:text-[9px] font-black bg-emerald-500 text-black px-1.5 py-0.2 rounded uppercase shrink-0">
                         VIP
                       </span>
                     )}
                   </div>
 
-                  <p className="text-[10px] text-white/50 truncate flex items-center gap-1.5 font-medium">
-                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                    <span>{activeChatData?.customerId?.phone || "WhatsApp Direct"}</span>
-                    <span>•</span>
-                    <span className="text-emerald-400 font-bold uppercase tracking-wider">
-                      {activeChatData?.status === "needs_human" ? "Contrôle Admin Actif" : "IA 24/7 Active"}
+                  <p className="text-[10px] text-white/50 truncate flex items-center gap-1 sm:gap-1.5 font-medium">
+                    <span className={cn(
+                      "h-1.5 w-1.5 rounded-full shrink-0",
+                      activeChatData?.status === "needs_human" ? "bg-rose-400 animate-pulse" : "bg-emerald-400"
+                    )} />
+                    <span className={cn(
+                      "font-bold uppercase tracking-wider text-[9px] sm:text-[10px]",
+                      activeChatData?.status === "needs_human" ? "text-rose-300" : "text-emerald-400"
+                    )}>
+                      {activeChatData?.status === "needs_human" ? "Manuel" : "IA 24/7"}
                     </span>
+                    <span className="text-white/20">•</span>
+                    <span className="truncate">{activeChatData?.customerId?.phone || "WhatsApp Direct"}</span>
                   </p>
                 </div>
               </div>
 
-              {/* Action Toolbar */}
-              <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+              {/* Right Column: Actions */}
+              {/* Desktop Action Toolbar (sm and up) */}
+              <div className="hidden sm:flex items-center gap-1.5 sm:gap-2 shrink-0">
                 {/* AI Follow-up Relance */}
                 <button
                   onClick={() => selectedChat && generateFollowupMutation.mutate(selectedChat)}
@@ -793,7 +838,7 @@ export function SalesInbox() {
                   ) : (
                     <Sparkles size={14} />
                   )}
-                  <span className="hidden sm:inline ml-1.5 text-[11px] font-bold">Relance IA</span>
+                  <span className="ml-1.5 text-[11px] font-bold">Relance IA</span>
                 </button>
 
                 {/* Fast Pay Payment Link */}
@@ -803,7 +848,7 @@ export function SalesInbox() {
                   title="Générer et envoyer un lien de paiement Mobile Money"
                 >
                   <CreditCard size={14} />
-                  <span className="hidden sm:inline ml-1.5">Fast Pay</span>
+                  <span className="ml-1.5">Fast Pay</span>
                 </button>
 
                 {/* Create Order */}
@@ -813,7 +858,7 @@ export function SalesInbox() {
                   title="Créer une commande pour ce client"
                 >
                   <ShoppingCart size={14} />
-                  <span className="hidden sm:inline ml-1.5">Vendre</span>
+                  <span className="ml-1.5">Vendre</span>
                 </button>
 
                 {/* IA vs Human Mode Switch */}
@@ -831,15 +876,130 @@ export function SalesInbox() {
                   {activeChatData?.status === "needs_human" ? (
                     <>
                       <User size={14} />
-                      <span className="hidden sm:inline ml-1.5">Manuel (Pris)</span>
+                      <span className="ml-1.5">Manuel (Pris)</span>
                     </>
                   ) : (
                     <>
                       <ShieldCheck size={14} />
-                      <span className="hidden sm:inline ml-1.5">IA 24/7 (Auto)</span>
+                      <span className="ml-1.5">IA 24/7 (Auto)</span>
                     </>
                   )}
                 </button>
+              </div>
+
+              {/* Mobile Action Bar (< sm): Compact, Spacious & Fast */}
+              <div className="flex sm:hidden items-center gap-1.5 shrink-0 relative" ref={mobileMenuRef}>
+                {/* Compact Mode Switcher Pill */}
+                <button
+                  type="button"
+                  onClick={toggleTakeover}
+                  disabled={updateStatusMutation.isPending}
+                  className={cn(
+                    "h-8 px-2 rounded-xl border flex items-center gap-1 text-[10px] font-black uppercase tracking-tight transition-all active:scale-95 cursor-pointer",
+                    activeChatData?.status === "needs_human"
+                      ? "bg-rose-500/20 border-rose-500/40 text-rose-300 hover:bg-rose-500/30"
+                      : "bg-emerald-500/20 border-emerald-500/40 text-emerald-300 hover:bg-emerald-500/30"
+                  )}
+                  title="Basculer Mode IA / Manuel"
+                >
+                  {activeChatData?.status === "needs_human" ? (
+                    <>
+                      <User size={13} />
+                      <span>Manuel</span>
+                    </>
+                  ) : (
+                    <>
+                      <ShieldCheck size={13} />
+                      <span>IA</span>
+                    </>
+                  )}
+                </button>
+
+                {/* Primary Action Button: Vendre */}
+                <button
+                  type="button"
+                  onClick={() => setIsOrderModalOpen(true)}
+                  className="h-8 px-2.5 bg-emerald-500 text-black font-black text-[10px] uppercase rounded-xl flex items-center gap-1 shadow-md shadow-emerald-500/20 active:scale-95 transition-all cursor-pointer"
+                  title="Créer une commande"
+                >
+                  <ShoppingCart size={13} />
+                  <span>Vendre</span>
+                </button>
+
+                {/* 3-Dots More Menu */}
+                <button
+                  type="button"
+                  onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                  className={cn(
+                    "h-8 w-8 rounded-xl border flex items-center justify-center transition-all active:scale-95 cursor-pointer",
+                    isMobileMenuOpen
+                      ? "bg-white/20 border-white/30 text-white"
+                      : "bg-white/5 border-white/10 text-white/70 hover:text-white hover:bg-white/10"
+                  )}
+                  aria-label="Plus d'actions"
+                >
+                  <MoreVertical size={16} />
+                </button>
+
+                {/* Mobile Dropdown Menu */}
+                {isMobileMenuOpen && (
+                  <div className="absolute right-0 top-10 w-56 bg-[#182229] border border-white/10 rounded-2xl shadow-2xl p-1.5 z-50 animate-in fade-in zoom-in-95 duration-150 backdrop-blur-xl">
+                    {/* Relance IA */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsMobileMenuOpen(false);
+                        if (selectedChat) generateFollowupMutation.mutate(selectedChat);
+                      }}
+                      disabled={generateFollowupMutation.isPending}
+                      className="w-full px-3 py-2.5 rounded-xl flex items-center gap-2.5 text-xs font-bold text-sky-400 hover:bg-sky-500/10 transition-colors text-left cursor-pointer"
+                    >
+                      {generateFollowupMutation.isPending ? (
+                        <Loader2 size={15} className="animate-spin shrink-0" />
+                      ) : (
+                        <Sparkles size={15} className="shrink-0" />
+                      )}
+                      <div className="min-w-0 flex-1">
+                        <p className="font-bold">Relance IA</p>
+                        <p className="text-[9px] text-white/40 font-normal">Générer un message persuasif</p>
+                      </div>
+                    </button>
+
+                    {/* Fast Pay */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsMobileMenuOpen(false);
+                        setIsFastPayModalOpen(true);
+                      }}
+                      className="w-full px-3 py-2.5 rounded-xl flex items-center gap-2.5 text-xs font-bold text-amber-400 hover:bg-amber-500/10 transition-colors text-left cursor-pointer"
+                    >
+                      <CreditCard size={15} className="shrink-0" />
+                      <div className="min-w-0 flex-1">
+                        <p className="font-bold">Lien Fast Pay</p>
+                        <p className="text-[9px] text-white/40 font-normal">Paiement Mobile Money direct</p>
+                      </div>
+                    </button>
+
+                    {/* Copy Phone */}
+                    {activeChatData?.customerId?.phone && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsMobileMenuOpen(false);
+                          handleCopyPhone(activeChatData.customerId.phone);
+                        }}
+                        className="w-full px-3 py-2.5 rounded-xl flex items-center gap-2.5 text-xs font-bold text-white/80 hover:bg-white/5 transition-colors text-left cursor-pointer border-t border-white/5 mt-1 pt-2"
+                      >
+                        <Copy size={15} className="shrink-0 text-emerald-400" />
+                        <div className="min-w-0 flex-1">
+                          <p className="font-bold">Copier le numéro</p>
+                          <p className="text-[9px] text-white/40 font-normal">{activeChatData.customerId.phone}</p>
+                        </div>
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
             </header>
 

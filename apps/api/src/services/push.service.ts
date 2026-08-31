@@ -95,17 +95,24 @@ export class PushService {
   }
 
   async subscribe(userId: string, subscription: any) {
+    const existing = await PushSubscriptionModel.findOne({
+      userId,
+      'subscription.endpoint': subscription.endpoint
+    });
+
     await PushSubscriptionModel.findOneAndUpdate(
       { userId, 'subscription.endpoint': subscription.endpoint },
       { userId, subscription },
       { upsert: true, new: true }
     );
 
-    // Send Welcome Notification
-    this.sendNotification(userId, {
-      title: "Vendeur IA OS 🚀",
-      body: "Alertes activées ! Vous recevrez désormais vos notifications ici.",
-    }).catch(err => console.error("[Push Service] Welcome notification failed:", err));
+    // Send Welcome Notification only when first registering this subscription endpoint
+    if (!existing) {
+      this.sendNotification(userId, {
+        title: "Vendeur IA OS 🚀",
+        body: "Alertes activées ! Vous recevrez désormais vos notifications ici.",
+      }).catch(err => console.error("[Push Service] Welcome notification failed:", err));
+    }
   }
 
   async sendNotification(userId: string, payload: {

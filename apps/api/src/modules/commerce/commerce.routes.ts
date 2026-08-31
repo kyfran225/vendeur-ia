@@ -444,8 +444,26 @@ router.get("/conversations", authenticate, async (req, res) => {
     const populatedConversations = await Promise.all(conversations.map(async (conv) => {
       const lastMsg = await CommerceMessageModel.findOne({ conversationId: conv._id })
         .sort({ timestamp: -1 });
+
+      const convObj = conv.toObject();
+      const cust = convObj.customerId as any;
+      if (cust && cust.name) {
+        const ownerName = userDoc?.displayName;
+        const rawName = cust.name.trim();
+        const isCorrupted =
+          (ownerName && rawName.toLowerCase() === ownerName.trim().toLowerCase()) ||
+          rawName.includes("Co-Fondateur") ||
+          (rawName.toLowerCase().includes("franck") && !cust.phone?.includes("5111157")) ||
+          rawName.toLowerCase() === "vendeur ia";
+
+        if (isCorrupted) {
+          cust.name = undefined;
+        }
+      }
+
       return {
-        ...conv.toObject(),
+        ...convObj,
+        customerId: cust,
         lastMessage: lastMsg ? {
           content: lastMsg.content,
           sender: lastMsg.sender,

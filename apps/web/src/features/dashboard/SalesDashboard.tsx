@@ -94,20 +94,6 @@ export function SalesDashboard() {
     enabled: !!accessToken
   });
 
-  // Check if all setup steps are completed to auto-trigger celebration modal once
-  useEffect(() => {
-    if (!dashboard?.setupStatus || !dashboard?.merchant?._id || isFounder) return;
-    
-    const { isFullyOperational } = dashboard.setupStatus;
-    const storageKey = `vendeur_ia_setup_celebrated_${dashboard.merchant._id}`;
-    const alreadyCelebrated = localStorage.getItem(storageKey);
-
-    if (isFullyOperational && !alreadyCelebrated) {
-      setIsCompletionModalOpen(true);
-      localStorage.setItem(storageKey, "true");
-    }
-  }, [dashboard?.setupStatus, dashboard?.merchant?._id, isFounder]);
-
   // Détecte quand une étape passe à "complétée" pour afficher le pop-up de succès intermédiaire
   useEffect(() => {
     const steps: Array<{ id: string; label: string; completed: boolean }> = dashboard?.setupStatus?.steps || [];
@@ -472,7 +458,7 @@ function HomePanel({
                   className="w-full sm:w-auto flex-initial flex items-center justify-center gap-2 min-h-[44px] sm:min-h-[48px] h-11 sm:h-12 px-4 sm:px-5 py-2.5 sm:py-3 rounded-2xl bg-vendeur-emerald text-vendeur-coal hover:bg-emerald-400 text-[11px] sm:text-xs font-black uppercase tracking-wider transition-all shadow-lg shadow-vendeur-emerald/20 cursor-pointer active:scale-95 whitespace-nowrap"
                 >
                   <Sparkles size={16} className="shrink-0" />
-                  <span>Recevoir mes Statuts du Jour</span>
+                  <span>Mes Statuts du Jour</span>
                 </button>
               </div>
             </div>

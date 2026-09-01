@@ -984,6 +984,9 @@ class WhatsAppService {
       }
     }
 
+    // Trigger WhatsApp Profile Picture synchronization in the background
+    this.syncCustomerAvatar(userId, customer).catch(() => {});
+
     // Find or create conversation
     let conversation = await CommerceConversationModel.findOne({ merchantId: merchant._id, customerId: customer._id });
     if (!conversation) {
@@ -2008,6 +2011,81 @@ class WhatsAppService {
     }
 
     console.log(`[WhatsApp] Disconnected successfully for user ${userId} (cleaned ${userIdsToClean.size} sessions)`);
+  }
+
+  /**
+   * Fetches high quality WhatsApp profile picture URL from Baileys.
+   * Gracefully handles privacy restrictions, missing avatars, and network timeouts.
+   */
+  async fetchCustomerAvatarUrl(userId: string, jidOrPhone: string): Promise<string | null> {
+    try {
+      // Find active socket for this merchant/owner
+      let sock = this.activeSessions.get(userId);
+      if (!sock) {
+        // Check if there's any active session belonging to this merchant
+        for (const [id, s] of this.activeSessions.entries()) {
+          if (id === userId || id.includes(userId)) {
+            sock = s;
+            break;
+          }
+        }
+      }
+      if (!sock) return null;
+
+      let jid = jidOrPhone.trim();
+      if (!jid.includes("@")) {
+        const clean = jid.replace(/\D/g, "");
+        if (!clean) return null;
+        jid = `${clean}@s.whatsapp.net`;
+      }
+
+      // Try fetching high-res image first
+      try {
+        const url = await sock.profilePictureUrl(jid, "image", 4000);
+        if (url) return url;
+      } catch (highResErr: any) {
+        // If high-res fails, attempt low-res preview fallback
+        try {
+          const previewUrl = await sock.profilePictureUrl(jid, "preview", 3000);
+          if (previewUrl) return previewUrl;
+        } catch (previewErr) {
+          // Contact has privacy enabled or no avatar set
+          return null;
+        }
+      }
+      return null;
+    } catch (err) {
+      return null;
+    }
+  }
+
+  /**
+   * Asynchronously updates customer avatar if missing or older than 7 days
+   */
+  async syncCustomerAvatar(userId: string, customer: any): Promise<string | null> {
+    if (!customer?.phone) return null;
+
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    const shouldRefresh = !customer.avatarUrl || !customer.avatarUpdatedAt || new Date(customer.avatarUpdatedAt) < sevenDaysAgo;
+
+    if (!shouldRefresh) return customer.avatarUrl;
+
+    try {
+      const avatarUrl = await this.fetchCustomerAvatarUrl(userId, customer.phone);
+      if (avatarUrl && avatarUrl !== customer.avatarUrl) {
+        customer.avatarUrl = avatarUrl;
+        customer.avatarUpdatedAt = new Date();
+        await customer.save();
+        return avatarUrl;
+      } else {
+        // Mark as checked to prevent hammering WhatsApp servers on every single message
+        customer.avatarUpdatedAt = new Date();
+        await customer.save();
+      }
+    } catch (e) {
+      console.warn(`[WhatsApp] Avatar sync failed for ${customer.phone}:`, e);
+    }
+    return customer.avatarUrl || null;
   }
 }
 

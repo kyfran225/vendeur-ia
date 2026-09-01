@@ -10,6 +10,8 @@ import { OrderCreationModal } from "@/features/orders/OrderCreationModal";
 import { OrderReceiptModal } from "@/features/orders/OrderReceiptModal";
 import { DeliveryDispatchModal } from "@/features/orders/DeliveryDispatchModal";
 import { PaymentProofAuditorModal } from "@/features/orders/PaymentProofAuditorModal";
+import { CustomerAvatar } from "@/features/inbox/components/CustomerAvatar";
+import { formatDisplayPhone } from "@/features/onboarding/components/CountrySelector";
 import { VendeurIALoader } from "@/components/ui/VendeurIALoader";
 import { toast } from "sonner";
 import { clsx, type ClassValue } from "clsx";
@@ -356,11 +358,30 @@ export function OrderManager() {
                 
                 {/* 1. Client & Delivery Meta Info */}
                 <div className="flex items-start gap-3.5 lg:w-72 xl:w-80 shrink-0">
-                  <div className="h-11 w-11 lg:h-12 lg:w-12 rounded-2xl bg-white/5 flex items-center justify-center text-white/20 shrink-0 border border-white/5">
-                    <User size={22} className="shrink-0" />
-                  </div>
+                  <CustomerAvatar
+                    name={order.customerId?.name}
+                    phone={order.customerId?.phone}
+                    avatarUrl={order.customerId?.avatarUrl}
+                    platform={order.customerId?.platform || "whatsapp"}
+                    size="lg"
+                    showPlatformBadge={true}
+                  />
                   <div className="min-w-0 flex-1">
-                    <h3 className="font-black text-base lg:text-lg text-white truncate">{order.customerId?.phone || "Client inconnu"}</h3>
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <h3 className="font-black text-base lg:text-lg text-white truncate">
+                        {order.customerId?.name || formatDisplayPhone(order.customerId?.phone, "CI") || "Client"}
+                      </h3>
+                      {(order.customerId?.loyaltyPoints || 0) >= 50 && (
+                        <span className="text-[8px] font-black bg-emerald-500 text-black px-1.5 py-0.2 rounded uppercase shrink-0">
+                          VIP
+                        </span>
+                      )}
+                    </div>
+                    {order.customerId?.name && order.customerId?.phone && (
+                      <p className="text-[11px] text-white/50 font-mono mt-0.5 truncate">
+                        {formatDisplayPhone(order.customerId?.phone, "CI")}
+                      </p>
+                    )}
                     <div className="flex flex-wrap items-center gap-2 mt-1.5">
                       <div className="flex items-center gap-1.5 text-white/40">
                         <Calendar size={12} className="shrink-0" />

@@ -546,6 +546,38 @@ router.post("/conversations/:id/generate-followup", authenticate, async (req, re
   }
 });
 
+router.post("/conversations/:id/refresh-avatar", authenticate, async (req, res) => {
+  try {
+    const user = (req as any).user;
+    const ownerId = user?.id || user?._id?.toString();
+    const conversation = await CommerceConversationModel.findById(req.params.id).populate("customerId");
+    if (!conversation) return res.status(404).json({ error: "Conversation non trouvée" });
+
+    const customer = conversation.customerId as any;
+    if (!customer?.phone) return res.status(400).json({ error: "Client sans numéro" });
+
+    const avatarUrl = await whatsappService.fetchCustomerAvatarUrl(ownerId, customer.phone);
+    if (avatarUrl) {
+      customer.avatarUrl = avatarUrl;
+      customer.avatarUpdatedAt = new Date();
+      await customer.save();
+    } else {
+      customer.avatarUpdatedAt = new Date();
+      await customer.save();
+    }
+
+    emitToUser(ownerId, "conversation:update", {
+      conversationId: conversation._id,
+      customerId: customer._id,
+      avatarUrl: customer.avatarUrl || null
+    });
+
+    res.json({ success: true, avatarUrl: customer.avatarUrl || null });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 router.post("/conversations/:id/messages", authenticate, async (req, res) => {
   try {
     const ownerId = (req as any).user.id;

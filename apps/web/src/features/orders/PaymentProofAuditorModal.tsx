@@ -19,6 +19,8 @@ import {
   X
 } from "lucide-react";
 import { toast } from "sonner";
+import { CustomerAvatar } from "@/features/inbox/components/CustomerAvatar";
+import { formatDisplayPhone } from "@/features/onboarding/components/CountrySelector";
 
 interface PaymentProofAuditorModalProps {
   isOpen: boolean;
@@ -235,11 +237,20 @@ export function PaymentProofAuditorModal({ isOpen, onClose }: PaymentProofAudito
                               </span>
                             )}
 
-                            {proof.customerId?.phone && (
-                              <span className="flex items-center gap-1 text-white/60 text-[11px] shrink-0">
-                                <Smartphone size={12} className="shrink-0 text-white/40" />
-                                {proof.customerId.phone}
-                              </span>
+                            {proof.customerId && (
+                              <div className="flex items-center gap-1.5 shrink-0 bg-white/5 px-2 py-1 rounded-lg">
+                                <CustomerAvatar
+                                  name={proof.customerId.name}
+                                  phone={proof.customerId.phone}
+                                  avatarUrl={proof.customerId.avatarUrl}
+                                  platform={proof.platform || "whatsapp"}
+                                  size="sm"
+                                  showPlatformBadge={false}
+                                />
+                                <span className="text-white/80 font-bold text-[11px] truncate max-w-[150px]">
+                                  {proof.customerId.name || formatDisplayPhone(proof.customerId.phone, "CI") || "Client"}
+                                </span>
+                              </div>
                             )}
 
                             <span className="flex items-center gap-1 text-white/40 text-[10px] shrink-0">

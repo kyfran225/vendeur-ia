@@ -16,12 +16,17 @@ import {
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/apiClient";
 import { toast } from "sonner";
+import { CustomerAvatar } from "./components/CustomerAvatar";
+import { formatDisplayPhone } from "@/features/onboarding/components/CountrySelector";
 
 interface FastPayModalProps {
   isOpen: boolean;
   onClose: () => void;
   conversationId: string;
   customerName?: string;
+  customerPhone?: string;
+  customerAvatarUrl?: string | null;
+  customerPlatform?: string;
   currency?: string;
 }
 
@@ -39,6 +44,9 @@ export function FastPayModal({
   onClose,
   conversationId,
   customerName = "Client",
+  customerPhone,
+  customerAvatarUrl,
+  customerPlatform = "whatsapp",
   currency = "XOF"
 }: FastPayModalProps) {
   const queryClient = useQueryClient();
@@ -102,18 +110,25 @@ export function FastPayModal({
         
         {/* Header */}
         <div className="flex items-center justify-between border-b border-white/10 pb-4">
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-2xl bg-vendeur-emerald/20 text-vendeur-emerald flex items-center justify-center shadow-lg shadow-vendeur-emerald/20">
-              <CreditCard size={20} />
-            </div>
-            <div>
-              <h3 className="text-lg font-black uppercase tracking-tight">Fast Pay Mobile Money</h3>
-              <p className="text-xs text-white/40 font-medium">Demande de paiement express pour {customerName}</p>
+          <div className="flex items-center gap-3 min-w-0 flex-1">
+            <CustomerAvatar
+              name={customerName}
+              phone={customerPhone}
+              avatarUrl={customerAvatarUrl}
+              platform={customerPlatform}
+              size="md"
+              showPlatformBadge={true}
+            />
+            <div className="min-w-0 flex-1">
+              <h3 className="text-lg font-black uppercase tracking-tight truncate">Fast Pay Mobile Money</h3>
+              <p className="text-xs text-white/50 font-medium truncate">
+                Destinataire : <strong className="text-emerald-400 font-bold">{customerName}</strong> {customerPhone && `(${formatDisplayPhone(customerPhone, "CI")})`}
+              </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="h-9 w-9 bg-white/5 hover:bg-white/10 rounded-full flex items-center justify-center text-white/40 hover:text-white transition-colors"
+            className="h-9 w-9 bg-white/5 hover:bg-white/10 rounded-full flex items-center justify-center text-white/40 hover:text-white transition-colors shrink-0 ml-2"
           >
             <X size={16} />
           </button>

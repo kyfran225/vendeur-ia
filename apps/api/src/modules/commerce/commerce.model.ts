@@ -176,6 +176,8 @@ const CustomerSchema = new Schema({
   platform: { type: String, enum: ["whatsapp", "instagram", "tiktok", "facebook", "web"], default: "whatsapp" },
   platformId: { type: String, index: true }, // For non-phone IDs like Instagram Scoped ID or Web Session
   name: String,
+  avatarUrl: { type: String, default: "" },
+  avatarUpdatedAt: { type: Date, default: null },
   location: String,
   leadScore: { type: Number, default: 0 },
   loyaltyPoints: { type: Number, default: 0 }

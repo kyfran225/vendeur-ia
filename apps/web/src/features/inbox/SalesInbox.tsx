@@ -32,6 +32,8 @@ import { VendeurIALoader } from "@/components/ui/VendeurIALoader";
 import { OrderCreationModal } from "@/features/orders/OrderCreationModal";
 import { FastPayModal } from "./FastPayModal";
 import { VoiceRecorder } from "./components/VoiceRecorder";
+import { CustomerAvatar } from "./components/CustomerAvatar";
+import { CustomerProfileModal } from "./components/CustomerProfileModal";
 import { PauseConfirmationModal } from "@/components/modals/PauseConfirmationModal";
 import { formatDisplayPhone } from "@/features/onboarding/components/CountrySelector";
 import {
@@ -122,32 +124,12 @@ export function SalesInbox() {
   const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
   const [isFastPayModalOpen, setIsFastPayModalOpen] = useState(false);
   const [isPauseModalOpen, setIsPauseModalOpen] = useState(false);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [onlineSessions, setOnlineSessions] = useState<Set<string>>(new Set());
   const [hasCopiedPhone, setHasCopiedPhone] = useState(false);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const mobileMenuRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
-
-  // Close mobile dropdown when clicking outside
-  useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (mobileMenuRef.current && !mobileMenuRef.current.contains(e.target as Node)) {
-        setIsMobileMenuOpen(false);
-      }
-    }
-    if (isMobileMenuOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
-    }
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [isMobileMenuOpen]);
-
-  useEffect(() => {
-    setIsMobileMenuOpen(false);
-  }, [selectedChat]);
 
   // Fetch Conversations
   const { data: conversations, isLoading: loadingChats, refetch: refetchConvs } = useQuery({
@@ -689,21 +671,15 @@ export function SalesInbox() {
                       : "border-transparent hover:bg-[#202c33]/70"
                   )}
                 >
-                  {/* Contact Avatar */}
-                  <div className="relative shrink-0">
-                    <div className="h-12 w-12 rounded-full bg-[#202c33] border border-white/10 flex items-center justify-center text-emerald-400 font-black text-sm uppercase">
-                      {displayName.charAt(0).toUpperCase()}
-                    </div>
-
-                    {/* Platform Badge Icon */}
-                    <div className="absolute -bottom-1 -right-1 bg-[#111b21] rounded-full p-0.5 border border-white/10 shadow-sm">
-                      {chat.platform === "instagram" && <Instagram size={11} className="text-pink-500" />}
-                      {chat.platform === "facebook" && <Facebook size={11} className="text-blue-500" />}
-                      {chat.platform === "tiktok" && <TikTokIcon size={11} className="text-white" />}
-                      {chat.platform === "web" && <Globe size={11} className="text-sky-400" />}
-                      {(!chat.platform || chat.platform === "whatsapp") && <MessageCircle size={11} className="text-emerald-400" />}
-                    </div>
-                  </div>
+                  {/* Contact Avatar with WhatsApp Profile Picture */}
+                  <CustomerAvatar
+                    name={displayName}
+                    phone={chat.customerId?.phone}
+                    avatarUrl={chat.customerId?.avatarUrl}
+                    platform={chat.platform || "whatsapp"}
+                    size="lg"
+                    showPlatformBadge={true}
+                  />
 
                   {/* Details */}
                   <div className="flex-1 min-w-0">
@@ -782,240 +758,148 @@ export function SalesInbox() {
       )}>
         {selectedChat ? (
           <div className="flex-1 flex flex-col h-full w-full bg-[#0b141a] relative min-w-0 overflow-x-hidden">
-            {/* WhatsApp Chat Header */}
-            <header className="px-2.5 py-2 sm:px-4 sm:py-3 bg-[#202c33] border-b border-white/10 flex items-center justify-between sticky top-0 z-30 gap-2 pt-[calc(0.5rem+env(safe-area-inset-top,0px))] md:pt-3">
-              {/* Left Column: Back Button + Avatar + Customer Name & Status */}
-              <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+            {/* WhatsApp Chat Header: Tier 1 - Customer Info & Live Mode Indicator */}
+            <header className="px-3 py-2.5 sm:px-5 sm:py-3 bg-[#202c33] border-b border-white/10 flex items-center justify-between sticky top-0 z-30 gap-3 pt-[calc(0.5rem+env(safe-area-inset-top,0px))] md:pt-3">
+              {/* Left Column: Back Button + Avatar + Customer Name & Phone */}
+              <div className="flex items-center gap-2.5 sm:gap-3.5 min-w-0 flex-1">
                 <button
                   onClick={() => setShowMobileChat(false)}
-                  className="md:hidden p-1 -ml-1 text-white/70 hover:text-white shrink-0 cursor-pointer rounded-lg hover:bg-white/5 active:scale-95 transition-all"
+                  className="md:hidden p-1.5 -ml-1 text-white/70 hover:text-white shrink-0 cursor-pointer rounded-lg hover:bg-white/5 active:scale-95 transition-all"
                   aria-label="Retour"
                 >
                   <ChevronLeft size={22} />
                 </button>
 
-                <div className="h-9 w-9 sm:h-10 sm:w-10 rounded-full bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center font-black text-emerald-400 text-xs sm:text-sm shrink-0 shadow-inner">
-                  {formatCustomerDisplayName(activeChatData?.customerId, merchant?.businessName, user?.displayName).charAt(0).toUpperCase()}
-                </div>
+                <CustomerAvatar
+                  name={formatCustomerDisplayName(activeChatData?.customerId, merchant?.businessName, user?.displayName)}
+                  phone={activeChatData?.customerId?.phone}
+                  avatarUrl={activeChatData?.customerId?.avatarUrl}
+                  platform={activeChatData?.platform || "whatsapp"}
+                  size="md"
+                  showPlatformBadge={false}
+                  onClick={() => setIsProfileModalOpen(true)}
+                  className="cursor-pointer shadow-inner hover:ring-2 hover:ring-emerald-400/50 rounded-full transition-all"
+                />
 
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-1.5 min-w-0">
-                    <p className="font-bold sm:font-black text-xs sm:text-sm text-white truncate max-w-[125px] xs:max-w-[180px] sm:max-w-none">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <p className="font-bold sm:font-black text-sm sm:text-base text-white truncate">
                       {formatCustomerDisplayName(activeChatData?.customerId, merchant?.businessName, user?.displayName)}
                     </p>
-                    {activeChatData?.customerId?.phone && (
-                      <button
-                        type="button"
-                        onClick={() => handleCopyPhone(activeChatData.customerId.phone)}
-                        className="text-white/40 hover:text-emerald-400 transition-colors shrink-0 hidden sm:inline-flex"
-                        title="Copier le numéro"
-                      >
-                        {hasCopiedPhone ? <Check size={13} className="text-emerald-400" /> : <Copy size={13} />}
-                      </button>
-                    )}
                     {activeChatData?.customerId?.loyaltyPoints >= vipThreshold && (
-                      <span className="text-[8px] sm:text-[9px] font-black bg-emerald-500 text-black px-1.5 py-0.2 rounded uppercase shrink-0">
+                      <span className="text-[8px] sm:text-[9px] font-black bg-emerald-500 text-black px-1.5 py-0.5 rounded uppercase shrink-0">
                         VIP
                       </span>
                     )}
                   </div>
 
-                  <p className="text-[10px] text-white/50 truncate flex items-center gap-1 sm:gap-1.5 font-medium">
-                    <span className={cn(
-                      "h-1.5 w-1.5 rounded-full shrink-0",
-                      activeChatData?.status === "needs_human" ? "bg-rose-400 animate-pulse" : "bg-emerald-400"
-                    )} />
-                    <span className={cn(
-                      "font-bold uppercase tracking-wider text-[9px] sm:text-[10px]",
-                      activeChatData?.status === "needs_human" ? "text-rose-300" : "text-emerald-400"
-                    )}>
-                      {activeChatData?.status === "needs_human" ? "Manuel" : "IA 24/7"}
-                    </span>
-                    <span className="text-white/20">•</span>
+                  <div className="text-[11px] sm:text-xs text-white/60 flex items-center gap-1.5 font-medium mt-0.5">
+                    <Phone size={11} className="text-emerald-400 shrink-0" />
                     <span className="truncate">{formatDisplayPhone(activeChatData?.customerId?.phone, "CI") || "WhatsApp Direct"}</span>
-                  </p>
+                    {activeChatData?.customerId?.phone && (
+                      <button
+                        type="button"
+                        onClick={() => handleCopyPhone(activeChatData.customerId.phone)}
+                        className="text-white/40 hover:text-emerald-400 p-0.5 rounded hover:bg-white/5 transition-colors shrink-0"
+                        title="Copier le numéro"
+                      >
+                        {hasCopiedPhone ? <Check size={12} className="text-emerald-400" /> : <Copy size={12} />}
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
 
-              {/* Right Column: Actions */}
-              {/* Desktop Action Toolbar (sm and up) */}
-              <div className="hidden sm:flex items-center gap-1.5 sm:gap-2 shrink-0">
+              {/* Right Column: Active Status Badge Indicator */}
+              <div className="shrink-0 flex items-center gap-2">
+                <div className={cn(
+                  "px-2.5 py-1 rounded-full border flex items-center gap-1.5 text-[10px] sm:text-[11px] font-bold tracking-tight shadow-sm",
+                  activeChatData?.status === "needs_human"
+                    ? "bg-rose-500/15 border-rose-500/30 text-rose-300"
+                    : "bg-emerald-500/15 border-emerald-500/30 text-emerald-300"
+                )}>
+                  <span className={cn(
+                    "h-2 w-2 rounded-full shrink-0",
+                    activeChatData?.status === "needs_human" ? "bg-rose-400 animate-pulse" : "bg-emerald-400 animate-pulse"
+                  )} />
+                  <span className="hidden xs:inline">
+                    {activeChatData?.status === "needs_human" ? "Mode Manuel" : "IA 24/7 Active"}
+                  </span>
+                  <span className="xs:hidden">
+                    {activeChatData?.status === "needs_human" ? "Manuel" : "IA 24/7"}
+                  </span>
+                </div>
+              </div>
+            </header>
+
+            {/* Chat Action Toolbar: Tier 2 - Action Buttons Sub-bar */}
+            <div className="bg-[#182229] border-b border-white/10 px-3 py-2 sm:px-4 sm:py-2 flex items-center justify-between sm:justify-start gap-2 overflow-x-auto no-scrollbar sticky top-[57px] sm:top-[65px] z-20">
+              <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
                 {/* AI Follow-up Relance */}
                 <button
+                  type="button"
                   onClick={() => selectedChat && generateFollowupMutation.mutate(selectedChat)}
                   disabled={generateFollowupMutation.isPending}
-                  className="flex items-center justify-center h-8 sm:h-9 px-2.5 sm:px-3 bg-sky-500/10 border border-sky-500/30 text-sky-400 rounded-xl hover:bg-sky-500/20 transition-all active:scale-95 cursor-pointer"
+                  className="flex items-center justify-center h-8 sm:h-8.5 px-2.5 sm:px-3 bg-sky-500/15 border border-sky-500/30 text-sky-300 rounded-xl hover:bg-sky-500/25 hover:text-white transition-all active:scale-95 cursor-pointer font-bold text-[11px] sm:text-xs shrink-0"
                   title="Générer une relance intelligente par l'IA"
                 >
                   {generateFollowupMutation.isPending ? (
-                    <Loader2 size={14} className="animate-spin" />
+                    <Loader2 size={13} className="animate-spin" />
                   ) : (
-                    <Sparkles size={14} />
+                    <Sparkles size={13} />
                   )}
-                  <span className="ml-1.5 text-[11px] font-bold">Relance IA</span>
+                  <span className="ml-1.5">Relance IA</span>
                 </button>
 
                 {/* Fast Pay Payment Link */}
                 <button
+                  type="button"
                   onClick={() => setIsFastPayModalOpen(true)}
-                  className="flex items-center justify-center h-8 sm:h-9 px-2.5 sm:px-3 bg-amber-500/15 border border-amber-500/30 text-amber-400 rounded-xl hover:bg-amber-500/25 transition-all active:scale-95 cursor-pointer font-bold text-[11px]"
+                  className="flex items-center justify-center h-8 sm:h-8.5 px-2.5 sm:px-3 bg-amber-500/15 border border-amber-500/30 text-amber-300 rounded-xl hover:bg-amber-500/25 hover:text-white transition-all active:scale-95 cursor-pointer font-bold text-[11px] sm:text-xs shrink-0"
                   title="Générer et envoyer un lien de paiement Mobile Money"
                 >
-                  <CreditCard size={14} />
+                  <CreditCard size={13} />
                   <span className="ml-1.5">Fast Pay</span>
                 </button>
 
                 {/* Create Order */}
                 <button
+                  type="button"
                   onClick={() => setIsOrderModalOpen(true)}
-                  className="flex items-center justify-center h-8 sm:h-9 px-2.5 sm:px-3 bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 rounded-xl hover:bg-emerald-500/25 transition-all active:scale-95 cursor-pointer font-bold text-[11px]"
+                  className="flex items-center justify-center h-8 sm:h-8.5 px-3 sm:px-3.5 bg-emerald-500 hover:bg-emerald-400 text-black font-black rounded-xl transition-all active:scale-95 cursor-pointer text-[11px] sm:text-xs shadow-md shadow-emerald-500/20 shrink-0"
                   title="Créer une commande pour ce client"
                 >
-                  <ShoppingCart size={14} />
+                  <ShoppingCart size={13} />
                   <span className="ml-1.5">Vendre</span>
                 </button>
-
-                {/* IA vs Human Mode Switch */}
-                <button
-                  onClick={toggleTakeover}
-                  disabled={updateStatusMutation.isPending}
-                  className={cn(
-                    "flex items-center justify-center h-8 sm:h-9 px-2.5 sm:px-3.5 rounded-xl border font-bold text-[11px] transition-all active:scale-95 cursor-pointer",
-                    activeChatData?.status === "needs_human"
-                      ? "bg-rose-500/20 border-rose-500/40 text-rose-300 hover:bg-rose-500/30"
-                      : "bg-emerald-500/20 border-emerald-500/40 text-emerald-300 hover:bg-emerald-500/30"
-                  )}
-                  title={activeChatData?.status === "needs_human" ? "Mode Manuel actif (Cliquer pour réactiver l'IA)" : "IA 24/7 active (Cliquer pour prendre la main manuellement)"}
-                >
-                  {activeChatData?.status === "needs_human" ? (
-                    <>
-                      <User size={14} />
-                      <span className="ml-1.5">Manuel (Pris)</span>
-                    </>
-                  ) : (
-                    <>
-                      <ShieldCheck size={14} />
-                      <span className="ml-1.5">IA 24/7 (Auto)</span>
-                    </>
-                  )}
-                </button>
               </div>
 
-              {/* Mobile Action Bar (< sm): Compact, Spacious & Fast */}
-              <div className="flex sm:hidden items-center gap-1.5 shrink-0 relative" ref={mobileMenuRef}>
-                {/* Compact Mode Switcher Pill */}
-                <button
-                  type="button"
-                  onClick={toggleTakeover}
-                  disabled={updateStatusMutation.isPending}
-                  className={cn(
-                    "h-8 px-2 rounded-xl border flex items-center gap-1 text-[10px] font-black uppercase tracking-tight transition-all active:scale-95 cursor-pointer",
-                    activeChatData?.status === "needs_human"
-                      ? "bg-rose-500/20 border-rose-500/40 text-rose-300 hover:bg-rose-500/30"
-                      : "bg-emerald-500/20 border-emerald-500/40 text-emerald-300 hover:bg-emerald-500/30"
-                  )}
-                  title="Basculer Mode IA / Manuel"
-                >
-                  {activeChatData?.status === "needs_human" ? (
-                    <>
-                      <User size={13} />
-                      <span>Manuel</span>
-                    </>
-                  ) : (
-                    <>
-                      <ShieldCheck size={13} />
-                      <span>IA</span>
-                    </>
-                  )}
-                </button>
-
-                {/* Primary Action Button: Vendre */}
-                <button
-                  type="button"
-                  onClick={() => setIsOrderModalOpen(true)}
-                  className="h-8 px-2.5 bg-emerald-500 text-black font-black text-[10px] uppercase rounded-xl flex items-center gap-1 shadow-md shadow-emerald-500/20 active:scale-95 transition-all cursor-pointer"
-                  title="Créer une commande"
-                >
-                  <ShoppingCart size={13} />
-                  <span>Vendre</span>
-                </button>
-
-                {/* 3-Dots More Menu */}
-                <button
-                  type="button"
-                  onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                  className={cn(
-                    "h-8 w-8 rounded-xl border flex items-center justify-center transition-all active:scale-95 cursor-pointer",
-                    isMobileMenuOpen
-                      ? "bg-white/20 border-white/30 text-white"
-                      : "bg-white/5 border-white/10 text-white/70 hover:text-white hover:bg-white/10"
-                  )}
-                  aria-label="Plus d'actions"
-                >
-                  <MoreVertical size={16} />
-                </button>
-
-                {/* Mobile Dropdown Menu */}
-                {isMobileMenuOpen && (
-                  <div className="absolute right-0 top-10 w-56 bg-[#182229] border border-white/10 rounded-2xl shadow-2xl p-1.5 z-50 animate-in fade-in zoom-in-95 duration-150 backdrop-blur-xl">
-                    {/* Relance IA */}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsMobileMenuOpen(false);
-                        if (selectedChat) generateFollowupMutation.mutate(selectedChat);
-                      }}
-                      disabled={generateFollowupMutation.isPending}
-                      className="w-full px-3 py-2.5 rounded-xl flex items-center gap-2.5 text-xs font-bold text-sky-400 hover:bg-sky-500/10 transition-colors text-left cursor-pointer"
-                    >
-                      {generateFollowupMutation.isPending ? (
-                        <Loader2 size={15} className="animate-spin shrink-0" />
-                      ) : (
-                        <Sparkles size={15} className="shrink-0" />
-                      )}
-                      <div className="min-w-0 flex-1">
-                        <p className="font-bold">Relance IA</p>
-                        <p className="text-[9px] text-white/40 font-normal">Générer un message persuasif</p>
-                      </div>
-                    </button>
-
-                    {/* Fast Pay */}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsMobileMenuOpen(false);
-                        setIsFastPayModalOpen(true);
-                      }}
-                      className="w-full px-3 py-2.5 rounded-xl flex items-center gap-2.5 text-xs font-bold text-amber-400 hover:bg-amber-500/10 transition-colors text-left cursor-pointer"
-                    >
-                      <CreditCard size={15} className="shrink-0" />
-                      <div className="min-w-0 flex-1">
-                        <p className="font-bold">Lien Fast Pay</p>
-                        <p className="text-[9px] text-white/40 font-normal">Paiement Mobile Money direct</p>
-                      </div>
-                    </button>
-
-                    {/* Copy Phone */}
-                    {activeChatData?.customerId?.phone && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setIsMobileMenuOpen(false);
-                          handleCopyPhone(activeChatData.customerId.phone);
-                        }}
-                        className="w-full px-3 py-2.5 rounded-xl flex items-center gap-2.5 text-xs font-bold text-white/80 hover:bg-white/5 transition-colors text-left cursor-pointer border-t border-white/5 mt-1 pt-2"
-                      >
-                        <Copy size={15} className="shrink-0 text-emerald-400" />
-                        <div className="min-w-0 flex-1">
-                          <p className="font-bold">Copier le numéro</p>
-                          <p className="text-[9px] text-white/40 font-normal">{formatDisplayPhone(activeChatData.customerId.phone, "CI")}</p>
-                        </div>
-                      </button>
-                    )}
-                  </div>
+              {/* IA vs Human Takeover Button */}
+              <button
+                type="button"
+                onClick={toggleTakeover}
+                disabled={updateStatusMutation.isPending}
+                className={cn(
+                  "flex items-center justify-center h-8 sm:h-8.5 px-2.5 sm:px-3 rounded-xl border font-bold text-[11px] sm:text-xs transition-all active:scale-95 cursor-pointer shrink-0 ml-auto sm:ml-auto",
+                  activeChatData?.status === "needs_human"
+                    ? "bg-rose-500/20 border-rose-500/40 text-rose-300 hover:bg-rose-500/30"
+                    : "bg-white/5 border-white/10 text-white/70 hover:bg-white/10 hover:text-white"
                 )}
-              </div>
-            </header>
+                title={activeChatData?.status === "needs_human" ? "Mode Manuel actif (Cliquer pour réactiver l'IA)" : "IA 24/7 active (Cliquer pour prendre la main manuellement)"}
+              >
+                {activeChatData?.status === "needs_human" ? (
+                  <>
+                    <User size={13} />
+                    <span className="ml-1.5">Réactiver IA</span>
+                  </>
+                ) : (
+                  <>
+                    <ShieldCheck size={13} />
+                    <span className="ml-1.5">Prendre la main</span>
+                  </>
+                )}
+              </button>
+            </div>
 
             {/* Global Pause Notification Banner */}
             {merchant?.aiSettings?.autoReply === false && (
@@ -1231,7 +1115,10 @@ export function SalesInbox() {
           isOpen={isFastPayModalOpen}
           onClose={() => setIsFastPayModalOpen(false)}
           conversationId={selectedChat}
-          customerName={activeChatData?.customerId?.name || "Client"}
+          customerName={formatCustomerDisplayName(activeChatData?.customerId, merchant?.businessName, user?.displayName)}
+          customerPhone={activeChatData?.customerId?.phone}
+          customerAvatarUrl={activeChatData?.customerId?.avatarUrl}
+          customerPlatform={activeChatData?.platform || "whatsapp"}
         />
       )}
 
@@ -1239,6 +1126,18 @@ export function SalesInbox() {
       <PauseConfirmationModal
         isOpen={isPauseModalOpen}
         onClose={() => setIsPauseModalOpen(false)}
+      />
+
+      {/* Customer Profile & Avatar Lightbox Modal */}
+      <CustomerProfileModal
+        isOpen={isProfileModalOpen}
+        onClose={() => setIsProfileModalOpen(false)}
+        conversationId={selectedChat || undefined}
+        customer={activeChatData?.customerId}
+        merchantName={merchant?.businessName}
+        onOpenOrderModal={() => setIsOrderModalOpen(true)}
+        onOpenFastPayModal={() => setIsFastPayModalOpen(true)}
+        onTriggerFollowup={() => selectedChat && generateFollowupMutation.mutate(selectedChat)}
       />
     </div>
   );

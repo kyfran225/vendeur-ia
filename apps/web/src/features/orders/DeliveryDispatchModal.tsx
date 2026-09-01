@@ -4,6 +4,8 @@ import { X, Truck, Send, Phone, User, MapPin, Loader2, CheckCircle2 } from "luci
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/apiClient";
 import { toast } from "sonner";
+import { CustomerAvatar } from "@/features/inbox/components/CustomerAvatar";
+import { formatDisplayPhone } from "@/features/onboarding/components/CountrySelector";
 
 interface DeliveryDispatchModalProps {
   isOpen: boolean;
@@ -58,11 +60,27 @@ export function DeliveryDispatchModal({ isOpen, onClose, order }: DeliveryDispat
         </header>
 
         <div className="p-6 space-y-4">
-          {/* Order Summary Reminder */}
-          <div className="p-4 rounded-2xl bg-white/5 border border-white/5 space-y-1.5 text-xs">
-            <div className="flex justify-between">
-              <span className="text-white/40 font-medium">Client :</span>
-              <span className="text-white font-bold">{order.customerId?.phone || "Client"}</span>
+          {/* Order Summary Reminder with Customer Avatar */}
+          <div className="p-4 rounded-2xl bg-white/5 border border-white/5 space-y-2.5 text-xs">
+            <div className="flex items-center gap-2.5 pb-2 border-b border-white/5">
+              <CustomerAvatar
+                name={order.customerId?.name}
+                phone={order.customerId?.phone}
+                avatarUrl={order.customerId?.avatarUrl}
+                platform={order.customerId?.platform || "whatsapp"}
+                size="sm"
+                showPlatformBadge={false}
+              />
+              <div className="min-w-0 flex-1">
+                <div className="text-white font-bold truncate">
+                  {order.customerId?.name || formatDisplayPhone(order.customerId?.phone, "CI") || "Client"}
+                </div>
+                {order.customerId?.name && order.customerId?.phone && (
+                  <div className="text-[10px] text-white/50 font-mono">
+                    {formatDisplayPhone(order.customerId?.phone, "CI")}
+                  </div>
+                )}
+              </div>
             </div>
             <div className="flex justify-between">
               <span className="text-white/40 font-medium">Lieu :</span>

@@ -358,7 +358,7 @@ export function WhatsAppConnectionFlow() {
     <div className="space-y-6 w-full max-w-full overflow-hidden box-border">
       {/* 1. Header Statut WhatsApp */}
       <div id="whatsapp" className="scroll-mt-28 bg-vendeur-coal border border-white/10 rounded-2xl sm:rounded-3xl md:rounded-[2.5rem] p-4 sm:p-6 md:p-8 space-y-5 text-left shadow-2xl w-full max-w-full overflow-hidden box-border">
-        <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 border-b border-white/5 pb-5 w-full">
+        <div className="flex flex-col gap-4 border-b border-white/5 pb-5 w-full">
           <div className="flex items-start sm:items-center gap-3.5 min-w-0 flex-1 w-full">
             <div className={cn(
               "h-12 w-12 sm:h-14 sm:w-14 rounded-2xl flex items-center justify-center font-black shrink-0 border",
@@ -427,14 +427,14 @@ export function WhatsAppConnectionFlow() {
             </div>
           </div>
 
-          {/* Quick Actions Header */}
-          <div className="flex flex-row items-center gap-2 shrink-0 pt-1 lg:pt-0">
+          {/* Quick Actions Header - Perfectly Centered in the card */}
+          <div className="flex flex-row items-center justify-center gap-3 w-full pt-1">
             {isConnectedLive && (
               <button
                 type="button"
                 onClick={handleDisconnect}
                 disabled={isDisconnecting}
-                className="h-9 px-3 rounded-xl bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 font-black uppercase tracking-wider text-[10px] sm:text-[11px] flex items-center justify-center gap-1.5 transition-all cursor-pointer active:scale-95 disabled:opacity-50 shrink-0 whitespace-nowrap"
+                className="h-9 px-3.5 rounded-xl bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 font-black uppercase tracking-wider text-[10px] sm:text-[11px] flex items-center justify-center gap-1.5 transition-all cursor-pointer active:scale-95 disabled:opacity-50 shrink-0 whitespace-nowrap shadow-sm"
               >
                 {isDisconnecting ? <Loader2 size={13} className="animate-spin shrink-0" /> : <LogOut size={13} className="shrink-0" />}
                 <span>Déconnecter</span>
@@ -444,7 +444,7 @@ export function WhatsAppConnectionFlow() {
             <button
               type="button"
               onClick={() => navigate("/dashboard?test_ia=true")}
-              className="h-9 px-3 rounded-xl bg-white/5 border border-white/10 text-white font-black uppercase tracking-wider text-[10px] sm:text-[11px] hover:bg-white/10 transition-all flex items-center justify-center gap-1.5 cursor-pointer active:scale-[0.98] shrink-0 whitespace-nowrap"
+              className="h-9 px-3.5 rounded-xl bg-white/5 border border-white/10 text-white font-black uppercase tracking-wider text-[10px] sm:text-[11px] hover:bg-white/10 transition-all flex items-center justify-center gap-1.5 cursor-pointer active:scale-[0.98] shrink-0 whitespace-nowrap shadow-sm"
             >
               <AssistantIcon size={14} color="#10B981" />
               <span>Simulateur IA</span>

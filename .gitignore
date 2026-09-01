@@ -42,7 +42,9 @@ pnpm-debug.log*
 # Vendeur IA specific
 **/Capture d'écran *.png
 **/*.png
+!apps/web/public/*.png
 **/*.ogg
+
 apps/api/storage/
 apps/api/uploads/audio/
 apps/web/e2e/

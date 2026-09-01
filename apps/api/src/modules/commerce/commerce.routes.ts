@@ -1702,6 +1702,67 @@ router.patch("/ai-settings", authenticate, async (req, res) => {
   }
 });
 
+router.get("/customers", authenticate, async (req, res) => {
+  try {
+    const ownerId = (req as any).user.id;
+    const merchant = await CommerceMerchantModel.findOne({ ownerId });
+    if (!merchant) return res.json([]);
+
+    const customers = await CommerceCustomerModel.find({ merchantId: merchant._id })
+      .sort({ updatedAt: -1 })
+      .limit(100);
+    res.json(customers);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.post("/customers/lookup-or-create", authenticate, async (req, res) => {
+  try {
+    const ownerId = (req as any).user.id;
+    const merchant = await CommerceMerchantModel.findOne({ ownerId });
+    if (!merchant) return res.status(404).json({ error: "Merchant not found" });
+
+    const { phone, location, name } = req.body;
+    if (!phone) {
+      return res.status(400).json({ error: "Le numéro de téléphone est obligatoire." });
+    }
+
+    const cleanPhone = phone.trim();
+    let customer = await CommerceCustomerModel.findOne({
+      merchantId: merchant._id,
+      phone: cleanPhone
+    });
+
+    if (!customer) {
+      customer = await CommerceCustomerModel.create({
+        merchantId: merchant._id,
+        phone: cleanPhone,
+        name: name?.trim() || "Nouveau Client",
+        location: location?.trim() || "",
+        platform: "whatsapp"
+      });
+    } else {
+      let modified = false;
+      if (location?.trim() && (!customer.location || customer.location !== location.trim())) {
+        customer.location = location.trim();
+        modified = true;
+      }
+      if (name?.trim() && (!customer.name || customer.name === "Nouveau Client")) {
+        customer.name = name.trim();
+        modified = true;
+      }
+      if (modified) {
+        await customer.save();
+      }
+    }
+
+    res.json(customer);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 router.get("/orders", authenticate, async (req, res) => {
   try {
     const ownerId = (req as any).user.id;

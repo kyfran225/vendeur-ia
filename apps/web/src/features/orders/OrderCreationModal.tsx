@@ -1,9 +1,11 @@
 import React, { useState } from "react";
 import { createPortal } from "react-dom";
-import { ShoppingCart, Package, Plus, Minus, X, CheckCheck, Loader2, User, Phone, MapPin, Search } from "lucide-react";
+import { ShoppingCart, Package, Plus, Minus, X, CheckCheck, Loader2, User, Phone, MapPin, Search, ChevronDown, Check, UserPlus } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/apiClient";
 import { useMerchantCurrency } from "@/hooks/useMerchantCurrency";
+import { CustomerAvatar } from "@/features/inbox/components/CustomerAvatar";
+import { formatDisplayPhone } from "@/features/onboarding/components/CountrySelector";
 import { toast } from "sonner";
 
 interface OrderCreationModalProps {
@@ -28,6 +30,9 @@ export function OrderCreationModal({
   const [shippingAddress, setShippingAddress] = useState(initialDeliveryAddress);
   const [isCreatingCustomer, setIsCreatingCustomer] = useState(false);
   const [searchProduct, setSearchProduct] = useState("");
+  const [searchCustomer, setSearchCustomer] = useState("");
+  const [isCustomerDropdownOpen, setIsCustomerDropdownOpen] = useState(false);
+  const [isManualPhoneMode, setIsManualPhoneMode] = useState(!initialCustomerId && !initialCustomerPhone);
   const [mobileTab, setMobileTab] = useState<"catalog" | "cart">("catalog");
 
   const queryClient = useQueryClient();
@@ -54,6 +59,17 @@ export function OrderCreationModal({
   });
 
   const [selectedCustomerId, setSelectedCustomerId] = useState<string>(initialCustomerId || "");
+
+  const selectedCustomer = customers.find((c: any) => c._id === selectedCustomerId);
+
+  const filteredCustomers = customers.filter((c: any) => {
+    const query = searchCustomer.toLowerCase().trim();
+    if (!query) return true;
+    const nameMatch = c.name && c.name.toLowerCase().includes(query);
+    const phoneMatch = c.phone && c.phone.includes(query);
+    const locationMatch = c.location && c.location.toLowerCase().includes(query);
+    return nameMatch || phoneMatch || locationMatch;
+  });
 
   const totalAmount = selectedItems.reduce((acc, item) => acc + (item.price * item.quantity), 0);
   const totalItemCount = selectedItems.reduce((acc, item) => acc + item.quantity, 0);
@@ -192,32 +208,151 @@ export function OrderCreationModal({
 
         {/* Customer & Delivery Form for Direct Order */}
         {!initialCustomerId && (
-          <div className="p-4 sm:px-6 sm:py-3.5 bg-white/[0.01] border-b border-white/5 grid grid-cols-1 sm:grid-cols-2 gap-3 shrink-0">
+          <div className="p-4 sm:px-6 sm:py-3.5 bg-white/[0.01] border-b border-white/5 grid grid-cols-1 sm:grid-cols-2 gap-3 shrink-0 relative">
             <div>
-              <label className="text-[10px] font-black uppercase tracking-widest text-white/50 flex items-center gap-1.5 mb-1.5">
-                <User size={12} className="text-emerald-400 shrink-0" />
-                Client
-              </label>
-              {customers.length > 0 ? (
-                <select
-                  value={selectedCustomerId}
-                  onChange={(e) => {
-                    setSelectedCustomerId(e.target.value);
-                    const matched = customers.find((c: any) => c._id === e.target.value);
-                    if (matched) {
-                      setPhone(matched.phone || "");
-                      if (matched.location) setShippingAddress(matched.location);
-                    }
-                  }}
-                  className="w-full h-11 bg-vendeur-coal border border-white/10 rounded-xl px-3 text-xs text-white outline-none focus:border-emerald-500"
-                >
-                  <option value="">-- Choisir un client existant --</option>
-                  {customers.map((c: any) => (
-                    <option key={c._id} value={c._id}>
-                      {c.name ? `${c.name} (${c.phone})` : c.phone}
-                    </option>
-                  ))}
-                </select>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-[10px] font-black uppercase tracking-widest text-white/50 flex items-center gap-1.5">
+                  <User size={12} className="text-emerald-400 shrink-0" />
+                  Client
+                </label>
+                {customers.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsManualPhoneMode(!isManualPhoneMode);
+                      if (!isManualPhoneMode) {
+                        setSelectedCustomerId("");
+                      }
+                    }}
+                    className="text-[10px] text-emerald-400/80 hover:text-emerald-300 font-bold flex items-center gap-1 transition-colors"
+                  >
+                    {isManualPhoneMode ? (
+                      <>
+                        <User size={10} /> Choisir existant
+                      </>
+                    ) : (
+                      <>
+                        <UserPlus size={10} /> + Nouveau numéro
+                      </>
+                    )}
+                  </button>
+                )}
+              </div>
+
+              {!isManualPhoneMode && customers.length > 0 ? (
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setIsCustomerDropdownOpen(!isCustomerDropdownOpen)}
+                    className="w-full h-11 bg-vendeur-coal border border-white/10 rounded-xl px-3 text-xs text-white flex items-center justify-between gap-2 hover:border-white/20 transition-colors text-left"
+                  >
+                    {selectedCustomer ? (
+                      <div className="flex items-center gap-2 min-w-0 flex-1">
+                        <CustomerAvatar
+                          name={selectedCustomer.name}
+                          phone={selectedCustomer.phone}
+                          avatarUrl={selectedCustomer.avatarUrl}
+                          platform={selectedCustomer.platform || "whatsapp"}
+                          size="sm"
+                          showPlatformBadge={false}
+                        />
+                        <div className="min-w-0 flex-1 truncate">
+                          <span className="font-bold text-white truncate block">
+                            {selectedCustomer.name || formatDisplayPhone(selectedCustomer.phone, "CI")}
+                          </span>
+                          {selectedCustomer.name && (
+                            <span className="text-[10px] text-white/40 font-mono block truncate">
+                              {formatDisplayPhone(selectedCustomer.phone, "CI")}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    ) : (
+                      <span className="text-white/40 flex items-center gap-2">
+                        <Search size={14} className="text-white/20" />
+                        Choisir un client...
+                      </span>
+                    )}
+                    <ChevronDown size={14} className={`text-white/40 shrink-0 transition-transform ${isCustomerDropdownOpen ? "rotate-180" : ""}`} />
+                  </button>
+
+                  {isCustomerDropdownOpen && (
+                    <>
+                      <div
+                        className="fixed inset-0 z-40"
+                        onClick={() => setIsCustomerDropdownOpen(false)}
+                      />
+                      <div className="absolute left-0 right-0 top-full mt-1.5 z-50 bg-[#0c1613] border border-white/15 rounded-2xl shadow-2xl overflow-hidden max-h-64 flex flex-col animate-in fade-in zoom-in-95 duration-150">
+                        <div className="p-2 border-b border-white/5 bg-white/[0.02]">
+                          <div className="relative">
+                            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30" />
+                            <input
+                              type="text"
+                              value={searchCustomer}
+                              onChange={(e) => setSearchCustomer(e.target.value)}
+                              placeholder="Rechercher nom, numéro..."
+                              className="w-full h-8 bg-black/40 border border-white/10 rounded-lg pl-8 pr-3 text-xs text-white outline-none focus:border-emerald-500 placeholder:text-white/20"
+                              autoFocus
+                            />
+                          </div>
+                        </div>
+
+                        <div className="overflow-y-auto max-h-48 divide-y divide-white/5 p-1">
+                          {filteredCustomers.length === 0 ? (
+                            <div className="p-4 text-center text-xs text-white/30">
+                              Aucun client trouvé.
+                            </div>
+                          ) : (
+                            filteredCustomers.map((c: any) => {
+                              const isSelected = selectedCustomerId === c._id;
+                              const cleanPhone = (c.phone || "").replace(/@s\.whatsapp\.net|@c\.us/g, "");
+                              return (
+                                <button
+                                  key={c._id}
+                                  type="button"
+                                  onClick={() => {
+                                    setSelectedCustomerId(c._id);
+                                    setPhone(cleanPhone);
+                                    if (c.location) setShippingAddress(c.location);
+                                    setIsCustomerDropdownOpen(false);
+                                  }}
+                                  className={`w-full p-2.5 rounded-xl flex items-center justify-between gap-3 text-left transition-colors ${
+                                    isSelected ? "bg-emerald-500/15 border border-emerald-500/30 text-white" : "hover:bg-white/5 text-white/80"
+                                  }`}
+                                >
+                                  <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                                    <CustomerAvatar
+                                      name={c.name}
+                                      phone={c.phone}
+                                      avatarUrl={c.avatarUrl}
+                                      platform={c.platform || "whatsapp"}
+                                      size="sm"
+                                      showPlatformBadge={false}
+                                    />
+                                    <div className="min-w-0 flex-1">
+                                      <div className="text-xs font-bold text-white truncate">
+                                        {c.name || formatDisplayPhone(cleanPhone, "CI") || "Client"}
+                                      </div>
+                                      <div className="text-[10px] text-white/40 font-mono truncate flex items-center gap-1.5">
+                                        {c.name && <span>{formatDisplayPhone(cleanPhone, "CI")}</span>}
+                                        {c.location && (
+                                          <span className="text-emerald-400/80 flex items-center gap-0.5">
+                                            • <MapPin size={9} /> {c.location}
+                                          </span>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </div>
+                                  {isSelected && <Check size={14} className="text-emerald-400 shrink-0" />}
+                                </button>
+                              );
+                            })
+                          )}
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
               ) : (
                 <div className="relative">
                   <Phone size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30 shrink-0" />
@@ -225,8 +360,8 @@ export function OrderCreationModal({
                     type="text"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
-                    placeholder="Numéro WhatsApp (+225...)"
-                    className="w-full h-11 bg-vendeur-coal border border-white/10 rounded-xl pl-9 pr-3 text-xs text-white outline-none focus:border-emerald-500"
+                    placeholder="Numéro WhatsApp (+225 07...)"
+                    className="w-full h-11 bg-vendeur-coal border border-white/10 rounded-xl pl-9 pr-3 text-xs text-white outline-none focus:border-emerald-500 font-mono"
                   />
                 </div>
               )}

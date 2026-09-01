@@ -1711,7 +1711,16 @@ router.get("/customers", authenticate, async (req, res) => {
     const customers = await CommerceCustomerModel.find({ merchantId: merchant._id })
       .sort({ updatedAt: -1 })
       .limit(100);
-    res.json(customers);
+
+    const sanitized = customers.map(c => {
+      const obj = c.toObject();
+      if (obj.phone) {
+        obj.phone = obj.phone.replace(/@s\.whatsapp\.net|@c\.us/g, "").replace(/^\+/, "").trim();
+      }
+      return obj;
+    });
+
+    res.json(sanitized);
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
@@ -1865,6 +1874,21 @@ router.patch("/orders/:id", authenticate, async (req, res) => {
       return res.json(updatedOrder);
     }
 
+    const existingOrder = await CommerceOrderModel.findOne({ _id: orderId, merchantId: merchant._id });
+    if (!existingOrder) return res.status(404).json({ error: "Order not found" });
+
+    if (updateData.deliveryGuyPhone) {
+      let rawPhone = updateData.deliveryGuyPhone.replace(/[^0-9]/g, "");
+      if (rawPhone.startsWith("0") && rawPhone.length === 10) {
+        rawPhone = "225" + rawPhone;
+      }
+      updateData.deliveryGuyPhone = rawPhone;
+      updateData.dispatchedAt = new Date();
+      if (!updateData.status && (existingOrder.status === "pending" || existingOrder.status === "confirmed")) {
+        updateData.status = "dispatched";
+      }
+    }
+
     const order = await CommerceOrderModel.findOneAndUpdate(
       { _id: orderId, merchantId: merchant._id },
       { $set: updateData },
@@ -1894,10 +1918,11 @@ router.patch("/orders/:id", authenticate, async (req, res) => {
     // Handle delivery guy assignment & WhatsApp notification if provided
     if (order && updateData.deliveryGuyPhone && updateData.notifyDeliveryGuy) {
       const customer = await CommerceCustomerModel.findById(order.customerId);
+      const cleanCustomerPhone = customer?.phone?.replace(/@s\.whatsapp\.net|@c\.us/g, "") || "Client";
       const itemsList = order.items.map((i: any) => `• ${i.quantity}x ${i.name}`).join("\n");
       const deliveryMsg = `🛵 *NOUVELLE COURSE - ${merchant.businessName}*\n\n` +
         `📦 *Commande:* #${order._id.toString().slice(-6).toUpperCase()}\n` +
-        `👤 *Client à livrer:* ${customer?.phone || "Client"}\n` +
+        `👤 *Client à livrer:* ${cleanCustomerPhone}\n` +
         `📍 *Adresse / Quartier:* ${order.shippingAddress || customer?.location || "À convenir avec le client"}\n\n` +
         `📦 *Articles :*\n${itemsList}\n\n` +
         `💰 *Montant à encaisser :* ${order.status === "paid" ? "0 (Déjà payé ✅)" : `${order.totalAmount.toLocaleString()} ${order.currency || "XOF"} (À encaisser)`}\n` +

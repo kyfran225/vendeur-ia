@@ -14,11 +14,15 @@ const OrderSchema = new Schema({
   currency: { type: String, default: "XOF" },
   status: {
     type: String,
-    enum: ["pending", "confirmed", "paid", "delivered", "cancelled"],
+    enum: ["pending", "confirmed", "paid", "dispatched", "delivered", "cancelled"],
     default: "pending"
   },
   paymentMethod: String,
   shippingAddress: String,
+  deliveryGuyName: String,
+  deliveryGuyPhone: String,
+  deliveryNotes: String,
+  dispatchedAt: Date,
   paidAt: Date,
   deliveredAt: Date
 }, { timestamps: true });

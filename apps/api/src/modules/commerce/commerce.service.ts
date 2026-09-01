@@ -1462,16 +1462,36 @@ Résumé actuel :`;
       return null;
     }
 
-    const order = await CommerceOrderModel.create({
+    const recentThreshold = new Date(Date.now() - 30 * 60 * 1000);
+    let order = await CommerceOrderModel.findOne({
       merchantId,
       customerId,
       conversationId,
-      items: matchedItems,
-      totalAmount: calculatedTotal,
-      currency: merchant.currency || "XOF",
       status: "pending",
-      shippingAddress: orderData.deliveryAddress || undefined
-    });
+      createdAt: { $gte: recentThreshold }
+    }).sort({ createdAt: -1 });
+
+    if (order) {
+      order.items = matchedItems as any;
+      order.totalAmount = calculatedTotal;
+      if (orderData.deliveryAddress) {
+        order.shippingAddress = orderData.deliveryAddress;
+      }
+      await order.save();
+      console.log(`[AI Order] Automatically updated existing pending order ${order._id} for customer ${customerId} (${calculatedTotal} ${order.currency})`);
+    } else {
+      order = await CommerceOrderModel.create({
+        merchantId,
+        customerId,
+        conversationId,
+        items: matchedItems,
+        totalAmount: calculatedTotal,
+        currency: merchant.currency || "XOF",
+        status: "pending",
+        shippingAddress: orderData.deliveryAddress || undefined
+      });
+      console.log(`[AI Order] Automatically created order ${order._id} for customer ${customerId} (${calculatedTotal} ${order.currency})`);
+    }
 
     if (orderData.deliveryAddress) {
       await CommerceCustomerModel.findByIdAndUpdate(customerId, {
@@ -1479,7 +1499,6 @@ Résumé actuel :`;
       });
     }
 
-    console.log(`[AI Order] Automatically created order ${order._id} for customer ${customerId} (${calculatedTotal} ${order.currency})`);
     return order;
   }
 

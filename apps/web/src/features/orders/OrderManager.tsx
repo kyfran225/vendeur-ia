@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { ShoppingCart, Package, Clock, CheckCircle2, XCircle, Truck, Banknote, User, Calendar, Loader2, Search, Filter, MoreVertical, ExternalLink, Plus, MapPin, CreditCard, Receipt, Download, CalendarDays, Shield } from "lucide-react";
+import { ShoppingCart, Package, Clock, CheckCircle2, XCircle, Truck, Banknote, User, Calendar, Loader2, Search, Filter, MoreVertical, ExternalLink, Plus, MapPin, CreditCard, Receipt, Download, CalendarDays, Shield, MessageSquare, Phone, AlertCircle } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/apiClient";
 import { useAuthStore } from "@/stores/authStore";
@@ -24,14 +24,16 @@ function cn(...inputs: ClassValue[]) {
 const statusColors: Record<string, string> = {
   pending: "bg-amber-500/10 text-amber-500 border-amber-500/20",
   confirmed: "bg-blue-500/10 text-blue-500 border-blue-500/20",
+  dispatched: "bg-purple-500/10 text-purple-400 border-purple-500/20",
   paid: "bg-emerald-500/10 text-emerald-500 border-emerald-500/20",
-  delivered: "bg-purple-500/10 text-purple-500 border-purple-500/20",
+  delivered: "bg-teal-500/10 text-teal-400 border-teal-500/20",
   cancelled: "bg-rose-500/10 text-rose-500 border-rose-500/20",
 };
 
 const statusLabels: Record<string, string> = {
   pending: "En attente",
   confirmed: "Confirmée",
+  dispatched: "En livraison",
   paid: "Payée",
   delivered: "Livrée",
   cancelled: "Annulée",
@@ -40,8 +42,9 @@ const statusLabels: Record<string, string> = {
 const statusIcons: Record<string, React.ReactNode> = {
   pending: <Clock size={12} className="shrink-0" />,
   confirmed: <Package size={12} className="shrink-0" />,
+  dispatched: <Truck size={12} className="shrink-0 text-purple-400" />,
   paid: <Banknote size={12} className="shrink-0" />,
-  delivered: <Truck size={12} className="shrink-0" />,
+  delivered: <CheckCircle2 size={12} className="shrink-0" />,
   cancelled: <XCircle size={12} className="shrink-0" />,
 };
 
@@ -73,6 +76,7 @@ export function OrderManager() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [selectedReceiptOrder, setSelectedReceiptOrder] = useState<any>(null);
   const [selectedDispatchOrder, setSelectedDispatchOrder] = useState<any>(null);
+  const [orderToCancel, setOrderToCancel] = useState<any>(null);
   const [isShieldModalOpen, setIsShieldModalOpen] = useState(false);
   const merchant = useMerchant();
   const tabsRef = React.useRef<HTMLDivElement>(null);
@@ -133,11 +137,37 @@ export function OrderManager() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["orders"] });
       toast.success("Statut mis à jour avec succès !");
+      setOrderToCancel(null);
     },
     onError: () => {
       toast.error("Erreur lors de la mise à jour.");
     }
   });
+
+  const stats = useMemo(() => {
+    let totalPaid = 0;
+    let totalPending = 0;
+    let dispatchedCount = 0;
+
+    for (const o of orders) {
+      if (o.status === "paid" || o.status === "delivered") {
+        totalPaid += (o.totalAmount || 0);
+      }
+      if (o.status === "pending" || o.status === "confirmed" || o.status === "dispatched") {
+        totalPending += (o.totalAmount || 0);
+      }
+      if (o.status === "dispatched" || (o.deliveryGuyPhone && o.status !== "delivered" && o.status !== "cancelled")) {
+        dispatchedCount++;
+      }
+    }
+
+    return {
+      totalPaid,
+      totalPending,
+      dispatchedCount,
+      totalOrders: orders.length
+    };
+  }, [orders]);
 
   const filteredOrders = useMemo(() => {
     const now = new Date();
@@ -156,6 +186,8 @@ export function OrderManager() {
 
       const matchesSearch = !search ||
         o.customerId?.phone?.includes(search) ||
+        o.customerId?.name?.toLowerCase().includes(search.toLowerCase()) ||
+        o.deliveryGuyName?.toLowerCase().includes(search.toLowerCase()) ||
         o.shippingAddress?.toLowerCase().includes(search.toLowerCase()) ||
         o.items?.some((i: any) => i.name.toLowerCase().includes(search.toLowerCase()));
 
@@ -195,7 +227,7 @@ export function OrderManager() {
   };
 
   return (
-    <div className="p-4 md:p-10 space-y-8 md:space-y-10 max-w-6xl mx-auto animate-in fade-in duration-700 pb-24 md:pb-12">
+    <div className="p-4 md:p-10 space-y-6 md:space-y-8 max-w-6xl mx-auto animate-in fade-in duration-700 pb-24 md:pb-12">
       <header id="tour-orders-management" className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div className="space-y-2">
           <h1 className="text-3xl md:text-5xl font-black tracking-tighter uppercase text-white flex items-center gap-4">
@@ -223,37 +255,54 @@ export function OrderManager() {
             <Plus size={18} />
             <span>Nouvelle {config.orderLabel}</span>
           </button>
-
-          {/* Desktop Filter Menu */}
-          <div className="hidden md:flex gap-2 p-1.5 bg-vendeur-coal/80 backdrop-blur-md rounded-3xl border border-white/10 w-fit shadow-2xl overflow-hidden">
-            {[
-              { id: "all", label: "Tous", icon: <Package size={18} /> },
-              { id: "pending", label: "En attente", icon: <Clock size={18} /> },
-              { id: "paid", label: "Payée", icon: <Banknote size={18} /> },
-              { id: "delivered", label: "Livrée", icon: <Truck size={18} /> },
-              { id: "cancelled", label: "Annulée", icon: <XCircle size={18} /> }
-            ].map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setFilter(tab.id)}
-                data-active={filter === tab.id}
-                className={cn(
-                  "flex items-center justify-center gap-2 px-4 h-11 rounded-2xl text-[10px] font-black uppercase tracking-tight transition-all shrink-0 whitespace-nowrap",
-                  filter === tab.id
-                    ? "bg-vendeur-emerald text-vendeur-coal shadow-lg"
-                    : "text-white/40 hover:bg-white/5 hover:text-white"
-                )}
-              >
-                <div className="shrink-0">{tab.icon}</div>
-                <span className="leading-none">{tab.label}</span>
-              </button>
-            ))}
-          </div>
         </div>
       </header>
 
-      {/* Mobile Navigation Onglets (Only on Mobile) */}
-      <div className="md:hidden sticky top-0 z-30 -mx-4 px-4 py-3 bg-vendeur-bg/95 backdrop-blur-xl">
+      {/* Top KPI Statistics Bar */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+        <div className="p-4 md:p-5 rounded-2xl bg-white/[0.02] border border-white/5 flex flex-col justify-between">
+          <div className="flex items-center justify-between text-emerald-400 mb-2">
+            <span className="text-[10px] md:text-xs font-black uppercase tracking-wider text-white/40">Encaissé</span>
+            <Banknote size={18} />
+          </div>
+          <div className="text-xl md:text-2xl font-black text-emerald-400">
+            {stats.totalPaid.toLocaleString()} <span className="text-xs font-normal text-white/50">{merchantCurrency}</span>
+          </div>
+        </div>
+
+        <div className="p-4 md:p-5 rounded-2xl bg-white/[0.02] border border-white/5 flex flex-col justify-between">
+          <div className="flex items-center justify-between text-amber-400 mb-2">
+            <span className="text-[10px] md:text-xs font-black uppercase tracking-wider text-white/40">À Encaisser</span>
+            <Clock size={18} />
+          </div>
+          <div className="text-xl md:text-2xl font-black text-amber-400">
+            {stats.totalPending.toLocaleString()} <span className="text-xs font-normal text-white/50">{merchantCurrency}</span>
+          </div>
+        </div>
+
+        <div className="p-4 md:p-5 rounded-2xl bg-white/[0.02] border border-white/5 flex flex-col justify-between">
+          <div className="flex items-center justify-between text-purple-400 mb-2">
+            <span className="text-[10px] md:text-xs font-black uppercase tracking-wider text-white/40">En Course</span>
+            <Truck size={18} />
+          </div>
+          <div className="text-xl md:text-2xl font-black text-purple-400">
+            {stats.dispatchedCount} <span className="text-xs font-normal text-white/50">colis</span>
+          </div>
+        </div>
+
+        <div className="p-4 md:p-5 rounded-2xl bg-white/[0.02] border border-white/5 flex flex-col justify-between">
+          <div className="flex items-center justify-between text-blue-400 mb-2">
+            <span className="text-[10px] md:text-xs font-black uppercase tracking-wider text-white/40">Total Ventes</span>
+            <Package size={18} />
+          </div>
+          <div className="text-xl md:text-2xl font-black text-white">
+            {stats.totalOrders} <span className="text-xs font-normal text-white/50">{config.ordersLabel.toLowerCase()}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Navigation Filter Tabs */}
+      <div className="sticky top-0 z-30 -mx-4 px-4 py-2 bg-vendeur-bg/95 backdrop-blur-xl">
         <div className="relative max-w-full w-full group">
           <div className={cn(
             "absolute left-0 top-0 bottom-0 w-12 z-10 bg-gradient-to-r from-vendeur-coal to-transparent pointer-events-none rounded-l-2xl transition-opacity duration-300",
@@ -269,18 +318,19 @@ export function OrderManager() {
             className="flex gap-2 p-1.5 bg-vendeur-coal/80 backdrop-blur-md rounded-2xl border border-white/10 w-fit shadow-2xl overflow-x-auto no-scrollbar max-w-full relative"
           >
             {[
-              { id: "all", label: "Tous", icon: <Package size={18} /> },
-              { id: "pending", label: "En attente", icon: <Clock size={18} /> },
-              { id: "paid", label: "Payée", icon: <Banknote size={18} /> },
-              { id: "delivered", label: "Livrée", icon: <Truck size={18} /> },
-              { id: "cancelled", label: "Annulée", icon: <XCircle size={18} /> }
+              { id: "all", label: "Tous", icon: <Package size={16} /> },
+              { id: "pending", label: "En attente", icon: <Clock size={16} /> },
+              { id: "dispatched", label: "En livraison", icon: <Truck size={16} /> },
+              { id: "paid", label: "Payée", icon: <Banknote size={16} /> },
+              { id: "delivered", label: "Livrée", icon: <CheckCircle2 size={16} /> },
+              { id: "cancelled", label: "Annulée", icon: <XCircle size={16} /> }
             ].map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setFilter(tab.id)}
                 data-active={filter === tab.id}
                 className={cn(
-                  "flex items-center justify-center gap-2 px-4 h-12 rounded-xl text-[10px] font-black uppercase tracking-tight transition-all shrink-0 whitespace-nowrap",
+                  "flex items-center justify-center gap-2 px-3.5 h-10 rounded-xl text-[10px] font-black uppercase tracking-tight transition-all shrink-0 whitespace-nowrap",
                   filter === tab.id
                     ? "bg-vendeur-emerald text-vendeur-coal shadow-lg"
                     : "text-white/40 hover:bg-white/5 hover:text-white"
@@ -299,7 +349,7 @@ export function OrderManager() {
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" size={18} />
           <input
             className="w-full bg-vendeur-coal/50 border border-white/10 rounded-2xl py-3.5 pl-12 pr-4 text-sm text-white outline-none focus:border-vendeur-emerald/50 transition-all shadow-xl"
-            placeholder="Rechercher par client, article ou lieu..."
+            placeholder="Rechercher par client, livreur, article ou lieu..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
@@ -428,45 +478,57 @@ export function OrderManager() {
                   <div className="flex items-center justify-between lg:justify-start gap-3">
                     <div className={cn(
                       "px-3.5 py-1.5 lg:py-2 rounded-xl border text-[10px] font-black uppercase tracking-wider flex items-center justify-center gap-2 shrink-0",
-                      statusColors[order.status]
+                      statusColors[order.status] || statusColors.pending
                     )}>
-                      {statusIcons[order.status]}
-                      <span>{statusLabels[order.status]}</span>
+                      {statusIcons[order.status] || statusIcons.pending}
+                      <span>{statusLabels[order.status] || order.status}</span>
                     </div>
                   </div>
 
-                  {/* Action Buttons: 3 on same line on mobile, flex row on desktop */}
+                  {/* Action Buttons */}
                   <div className="space-y-2 w-full lg:w-auto">
-                    
-                    {/* Primary Action Buttons */}
                     <div className="flex flex-wrap items-center gap-2 w-full">
                       {/* 1. Reçu */}
                       <button
                         onClick={() => setSelectedReceiptOrder(order)}
-                        className="flex-1 sm:flex-none min-w-[80px] h-10 min-h-[40px] px-3 rounded-xl bg-white/5 text-white/85 border border-white/10 hover:bg-white/10 hover:text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-all active:scale-95 shadow-sm"
+                        className="flex-1 sm:flex-none min-w-[75px] h-10 min-h-[40px] px-3 rounded-xl bg-white/5 text-white/85 border border-white/10 hover:bg-white/10 hover:text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-all active:scale-95 shadow-sm"
                         title="Imprimer ou partager le Bon de commande"
                       >
                         <Receipt size={14} className="text-white/60 shrink-0" />
                         <span className="truncate">Reçu</span>
                       </button>
 
-                      {/* 2. Livreur */}
+                      {/* 2. Chat / WhatsApp Client */}
+                      {order.customerId?.phone && (
+                        <a
+                          href={`https://wa.me/${(order.customerId.phone || "").replace(/[^0-9]/g, "")}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex-1 sm:flex-none min-w-[75px] h-10 min-h-[40px] px-3 rounded-xl bg-blue-500/10 text-blue-300 border border-blue-500/25 hover:bg-blue-500/20 font-bold text-xs flex items-center justify-center gap-1.5 transition-all active:scale-95 shadow-sm"
+                          title="Contacter le client sur WhatsApp"
+                        >
+                          <MessageSquare size={14} className="shrink-0" />
+                          <span className="truncate">Chat</span>
+                        </a>
+                      )}
+
+                      {/* 3. Livreur */}
                       {order.status !== "delivered" && order.status !== "cancelled" && (
                         <button
                           onClick={() => setSelectedDispatchOrder(order)}
-                          className="flex-1 sm:flex-none min-w-[80px] h-10 min-h-[40px] px-3 rounded-xl bg-purple-500/10 text-purple-300 border border-purple-500/25 hover:bg-purple-500 hover:text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-all active:scale-95 shadow-sm"
+                          className="flex-1 sm:flex-none min-w-[75px] h-10 min-h-[40px] px-3 rounded-xl bg-purple-500/10 text-purple-300 border border-purple-500/25 hover:bg-purple-500 hover:text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-all active:scale-95 shadow-sm"
                           title="Assigner un livreur (WhatsApp)"
                         >
                           <Truck size={14} className="shrink-0" />
-                          <span className="truncate">Livreur</span>
+                          <span className="truncate">{order.deliveryGuyPhone ? "Livreur 🛵" : "Livreur"}</span>
                         </button>
                       )}
 
-                      {/* 3. Action de Validation (Encaissé ou Livré) */}
-                      {order.status === "pending" ? (
+                      {/* 4. Action de Validation (Encaissé ou Livré) */}
+                      {order.status === "pending" || order.status === "confirmed" || order.status === "dispatched" ? (
                         <button
                           onClick={() => updateStatusMutation.mutate({ id: order._id, status: "paid" })}
-                          className="flex-1 sm:flex-none min-w-[80px] h-10 min-h-[40px] px-3 rounded-xl bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500 hover:text-black font-bold text-xs flex items-center justify-center gap-1.5 transition-all active:scale-95 shadow-sm"
+                          className="flex-1 sm:flex-none min-w-[75px] h-10 min-h-[40px] px-3 rounded-xl bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500 hover:text-black font-bold text-xs flex items-center justify-center gap-1.5 transition-all active:scale-95 shadow-sm"
                           title="Marquer comme payée / Encaissée"
                         >
                           <Banknote size={14} className="shrink-0" />
@@ -475,7 +537,7 @@ export function OrderManager() {
                       ) : order.status === "paid" ? (
                         <button
                           onClick={() => updateStatusMutation.mutate({ id: order._id, status: "delivered" })}
-                          className="flex-1 sm:flex-none min-w-[80px] h-10 min-h-[40px] px-3 rounded-xl bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 hover:bg-emerald-500 hover:text-black font-bold text-xs flex items-center justify-center gap-1.5 transition-all active:scale-95 shadow-sm"
+                          className="flex-1 sm:flex-none min-w-[75px] h-10 min-h-[40px] px-3 rounded-xl bg-teal-500/15 text-teal-300 border border-teal-500/30 hover:bg-teal-500 hover:text-black font-bold text-xs flex items-center justify-center gap-1.5 transition-all active:scale-95 shadow-sm"
                           title="Marquer comme livrée"
                         >
                           <CheckCircle2 size={14} className="shrink-0" />
@@ -484,25 +546,105 @@ export function OrderManager() {
                       ) : null}
                     </div>
 
-                    {/* Dedicated Cancel Row at the Bottom */}
+                    {/* Dedicated Cancel Row */}
                     {order.status !== "cancelled" && order.status !== "delivered" && (
                       <button
-                        onClick={() => updateStatusMutation.mutate({ id: order._id, status: "cancelled" })}
-                        className="w-full h-9 px-3 rounded-xl bg-rose-500/10 text-rose-400 border border-rose-500/20 hover:bg-rose-500 hover:text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-all active:scale-95"
+                        onClick={() => setOrderToCancel(order)}
+                        className="w-full h-8 px-3 rounded-xl bg-rose-500/5 hover:bg-rose-500/15 text-rose-400/80 hover:text-rose-300 border border-rose-500/15 font-bold text-[11px] flex items-center justify-center gap-1.5 transition-all active:scale-95"
                         title="Annuler la commande"
                       >
-                        <XCircle size={14} className="shrink-0" />
+                        <XCircle size={13} className="shrink-0" />
                         <span>Annuler la commande</span>
                       </button>
                     )}
-
                   </div>
                 </div>
               </div>
+
+              {/* Courier Visual Card if Assigned */}
+              {order.deliveryGuyPhone && (
+                <div className="mt-4 pt-3 border-t border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-purple-500/[0.04] -mx-4 lg:-mx-6 -mb-4 lg:-mb-6 p-4 rounded-b-2xl lg:rounded-b-[2rem] border-t border-purple-500/15">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="h-9 w-9 rounded-xl bg-purple-500/20 text-purple-300 flex items-center justify-center shrink-0 border border-purple-500/30">
+                      <Truck size={18} />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-bold text-white truncate">
+                          🛵 Livreur : {order.deliveryGuyName || "Assigné"}
+                        </span>
+                        {order.dispatchedAt && (
+                          <span className="text-[10px] text-purple-300/70 font-mono">
+                            • Assigné à {new Date(order.dispatchedAt).toLocaleTimeString("fr-FR", { hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-[11px] text-purple-300/80 font-mono flex items-center gap-2">
+                        <span>{formatDisplayPhone(order.deliveryGuyPhone, "CI")}</span>
+                        {order.deliveryNotes && (
+                          <span className="text-white/40 font-sans italic truncate text-[10px]">
+                            • « {order.deliveryNotes} »
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
+                    <a
+                      href={`https://wa.me/${order.deliveryGuyPhone.replace(/[^0-9]/g, "")}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="h-8 px-3 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 border border-emerald-500/30 font-bold text-xs flex items-center gap-1.5 transition-colors shadow-sm"
+                    >
+                      <Phone size={12} />
+                      <span>WhatsApp Livreur</span>
+                    </a>
+                    <button
+                      onClick={() => setSelectedDispatchOrder(order)}
+                      className="h-8 px-2.5 rounded-lg bg-white/5 hover:bg-white/10 text-white/60 hover:text-white text-xs font-medium transition-colors"
+                      title="Changer de coursier"
+                    >
+                      Modifier
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           ))
         )}
       </div>
+
+      {/* Cancel Confirmation Modal */}
+      {orderToCancel && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in duration-200">
+          <div className="bg-[#0B1512] border border-white/10 w-full max-w-sm rounded-[2rem] p-6 shadow-2xl space-y-4">
+            <div className="h-12 w-12 rounded-2xl bg-rose-500/10 text-rose-400 flex items-center justify-center border border-rose-500/20 mx-auto">
+              <AlertCircle size={24} />
+            </div>
+            <div className="text-center space-y-1">
+              <h3 className="text-base font-bold text-white">Annuler cette commande ?</h3>
+              <p className="text-xs text-white/50">
+                La commande #{orderToCancel._id.toString().slice(-6).toUpperCase()} sera marquée comme annulée.
+              </p>
+            </div>
+            <div className="flex items-center gap-2 pt-2">
+              <button
+                onClick={() => setOrderToCancel(null)}
+                className="flex-1 h-11 bg-white/5 hover:bg-white/10 text-white/80 font-bold text-xs rounded-xl transition-colors"
+              >
+                Retour
+              </button>
+              <button
+                onClick={() => updateStatusMutation.mutate({ id: orderToCancel._id, status: "cancelled" })}
+                className="flex-1 h-11 bg-rose-500 hover:bg-rose-600 text-white font-bold text-xs rounded-xl transition-colors shadow-lg shadow-rose-500/20"
+              >
+                Confirmer l'annulation
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {isCreateOpen && (
         <OrderCreationModal

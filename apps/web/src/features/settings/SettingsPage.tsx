@@ -253,7 +253,7 @@ export function SettingsPage() {
   ];
 
   return (
-    <div className="p-3.5 sm:p-6 md:p-10 max-w-6xl mx-auto space-y-6 md:space-y-8 animate-in fade-in duration-700 pb-24 relative w-full max-w-full overflow-x-hidden box-border">
+    <div className="p-3.5 sm:p-6 md:p-10 max-w-6xl mx-auto space-y-6 md:space-y-8 animate-in fade-in duration-700 pb-24 relative w-full max-w-full box-border">
       <header id="tour-settings-branding" className="space-y-1.5">
         <h1 className="text-2xl md:text-5xl font-black tracking-tighter uppercase text-white flex items-center gap-3 md:gap-4">
           <Settings className="text-vendeur-emerald shrink-0" size={32} />

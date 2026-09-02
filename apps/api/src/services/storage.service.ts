@@ -5,6 +5,7 @@ import { env } from "../config/env.js";
 
 const UPLOADS_DIR = path.resolve(process.cwd(), "uploads");
 await fs.mkdir(UPLOADS_DIR, { recursive: true }).catch(() => {});
+await fs.mkdir(path.join(UPLOADS_DIR, "temp"), { recursive: true }).catch(() => {});
 
 export interface StorageResult {
   url: string;
@@ -34,6 +35,7 @@ export class StorageService {
           folder,
           resource_type: "auto"
         });
+        await fs.unlink(file.path).catch(() => {});
         return {
           url: result.secure_url,
           provider: "cloudinary",
@@ -47,12 +49,15 @@ export class StorageService {
 
     const folderPath = path.join(UPLOADS_DIR, folder);
     await fs.mkdir(folderPath, { recursive: true });
-    const filename = `${Date.now()}-${file.originalname}`;
+    const cleanOrigName = (file.originalname || "image.jpg").replace(/[^a-zA-Z0-9._-]/g, "_");
+    const filename = `${Date.now()}-${cleanOrigName}`;
     const filePath = path.join(folderPath, filename);
     await fs.copyFile(file.path, filePath);
+    await fs.unlink(file.path).catch(() => {});
 
+    const baseUrl = env.API_URL || (env.CLIENT_URL ? env.CLIENT_URL.replace(/:\d+$/, `:${env.PORT || 3001}`) : `http://localhost:${env.PORT || 3001}`);
     return {
-      url: `${env.API_URL || "http://localhost:" + env.PORT}/uploads/${folder}/${filename}`,
+      url: `${baseUrl}/uploads/${folder}/${filename}`,
       provider: "local",
       providerId: filename,
       bytes: file.size

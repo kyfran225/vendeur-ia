@@ -8,6 +8,7 @@ import {
   Check,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   LayoutDashboard,
   Megaphone,
   MessageCircle,
@@ -28,7 +29,17 @@ import {
   Play,
   CheckCircle2,
   MousePointer2,
-  Phone
+  Phone,
+  Eye,
+  Code2,
+  Cpu,
+  Menu,
+  X,
+  Layers,
+  Flame,
+  Layers3,
+  CreditCard,
+  RotateCw
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -39,6 +50,7 @@ import {
 import { CategorySelector } from "./components/CategorySelector";
 import { AddressAutocomplete } from "./components/AddressAutocomplete";
 import { AuthSheet } from "../auth/components/AuthSheet";
+import { ProductShowcaseModal, type ProductTab } from "./components/ProductShowcaseModal";
 import { useAuthStore } from "@/stores/authStore";
 import { AudioRecorder } from "@/lib/audioUtils";
 import { apiClient } from "@/lib/apiClient";
@@ -47,7 +59,7 @@ import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { useOnboardingStore } from "@/stores/onboardingStore";
 import { Logo } from "@/components/ui/Logo";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import { WhatsAppTypingIndicator } from "@/components/ui/WhatsAppTypingIndicator";
 import { MetaHead } from "@/components/seo/MetaHead";
 import { stripActionTags } from "@/lib/utils";
@@ -115,26 +127,34 @@ function WhatsAppBubble({ role, text, time }: { role: string; text: string; time
 
 const MemoizedWhatsAppBubble = memo(WhatsAppBubble);
 
-function BentoFeatures() {
+function BentoFeatures({ onOpenProduct }: { onOpenProduct?: (tab: ProductTab) => void }) {
   const secondaryFeatures = [
     {
+      id: "api" as ProductTab,
       title: "Paiements & Abonnements",
       desc: "Activez votre Vendeur IA instantanément via Mobile Money, Wave ou Google Play pour une gestion sans friction.",
       icon: <ShieldCheck className="text-sky-400" size={24} />,
-      color: "bg-sky-500/10 border-sky-500/20",
+      color: "bg-sky-500/10 border-sky-500/20 hover:border-sky-500/40",
+      badge: "API Cloud & Sécurisé",
       isPayment: true
     },
     {
-      title: "Notes Vocales IA",
-      desc: "Vendeur IA communique par notes vocales ultra-réalistes pour créer un lien de confiance immédiat avec vos acheteurs.",
+      id: "vision" as ProductTab,
+      title: "Notes Vocales & IA Vision",
+      desc: "Vendeur IA communique par notes vocales ultra-réalistes et comprend instantanément les photos de vos clients.",
       icon: <Mic className="text-purple-400" size={24} />,
-      color: "bg-purple-500/10 border-purple-500/20"
+      color: "bg-purple-500/10 border-purple-500/20 hover:border-purple-500/40",
+      badge: "Gemini 1.5 Multimodal",
+      isPayment: false
     },
     {
+      id: "marketing" as ProductTab,
       title: "Marketing Prédictif",
       desc: "Relances intelligentes et automatiques des prospects indécis au moment optimal pour maximiser vos encaissements.",
       icon: <Megaphone className="text-amber-400" size={24} />,
-      color: "bg-amber-500/10 border-amber-500/20"
+      color: "bg-amber-500/10 border-amber-500/20 hover:border-amber-500/40",
+      badge: "Hub de Relances",
+      isPayment: false
     }
   ];
 
@@ -167,10 +187,17 @@ function BentoFeatures() {
 
           <div className="relative z-10 space-y-6">
             {/* Top clean badge */}
-            <div className="flex items-center">
+            <div className="flex items-center justify-between flex-wrap gap-2">
               <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 text-[11px] font-black uppercase tracking-wider">
                 <span>Commercial Virtuel Intelligent</span>
               </div>
+              <button
+                onClick={() => onOpenProduct?.("vision")}
+                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/5 border border-white/10 hover:border-emerald-500/40 hover:bg-emerald-500/10 text-white/70 hover:text-emerald-400 text-xs font-bold transition-all cursor-pointer"
+              >
+                <span>Découvrir nos 4 technologies clés</span>
+                <ArrowRight size={13} />
+              </button>
             </div>
 
             <div>
@@ -193,42 +220,62 @@ function BentoFeatures() {
 
               {/* 4 Commercial Pillars Grid - 4 columns on lg, 2 on sm, 1 on xs */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 w-full flex-1 min-w-0">
-                <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 hover:border-emerald-500/40 hover:bg-emerald-500/10 transition-all flex items-start gap-3">
-                  <div className="h-8 w-8 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 shrink-0">
+                <div
+                  onClick={() => onOpenProduct?.("simulator")}
+                  className="p-3.5 rounded-2xl bg-white/5 border border-white/10 hover:border-emerald-500/40 hover:bg-emerald-500/10 transition-all flex items-start gap-3 cursor-pointer group/pillar"
+                >
+                  <div className="h-8 w-8 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 shrink-0 group-hover/pillar:scale-110 transition-transform">
                     <Zap size={16} />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-xs font-black uppercase tracking-wider text-white">Réponse en 3s</p>
+                    <p className="text-xs font-black uppercase tracking-wider text-white flex items-center gap-1">
+                      Réponse en 3s <ArrowRight size={10} className="opacity-0 group-hover/pillar:opacity-100 transition-opacity text-emerald-400" />
+                    </p>
                     <p className="text-[11px] text-white/50 leading-snug mt-0.5">Zéro prospect perdu par attente</p>
                   </div>
                 </div>
 
-                <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 hover:border-emerald-500/40 hover:bg-emerald-500/10 transition-all flex items-start gap-3">
-                  <div className="h-8 w-8 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 shrink-0">
+                <div
+                  onClick={() => onOpenProduct?.("vision")}
+                  className="p-3.5 rounded-2xl bg-white/5 border border-white/10 hover:border-emerald-500/40 hover:bg-emerald-500/10 transition-all flex items-start gap-3 cursor-pointer group/pillar"
+                >
+                  <div className="h-8 w-8 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 shrink-0 group-hover/pillar:scale-110 transition-transform">
                     <Camera size={16} />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-xs font-black uppercase tracking-wider text-white">IA Vision™</p>
+                    <p className="text-xs font-black uppercase tracking-wider text-white flex items-center gap-1">
+                      IA Vision™ <ArrowRight size={10} className="opacity-0 group-hover/pillar:opacity-100 transition-opacity text-emerald-400" />
+                    </p>
                     <p className="text-[11px] text-white/50 leading-snug mt-0.5">Scan photo & fiche produit</p>
                   </div>
                 </div>
 
-                <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 hover:border-emerald-500/40 hover:bg-emerald-500/10 transition-all flex items-start gap-3">
-                  <div className="h-8 w-8 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 shrink-0">
+                <div
+                  onClick={() => onOpenProduct?.("marketing")}
+                  className="p-3.5 rounded-2xl bg-white/5 border border-white/10 hover:border-emerald-500/40 hover:bg-emerald-500/10 transition-all flex items-start gap-3 cursor-pointer group/pillar"
+                >
+                  <div className="h-8 w-8 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 shrink-0 group-hover/pillar:scale-110 transition-transform">
                     <Mic size={16} />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-xs font-black uppercase tracking-wider text-white">Voix WhatsApp</p>
+                    <p className="text-xs font-black uppercase tracking-wider text-white flex items-center gap-1">
+                      Voix WhatsApp <ArrowRight size={10} className="opacity-0 group-hover/pillar:opacity-100 transition-opacity text-emerald-400" />
+                    </p>
                     <p className="text-[11px] text-white/50 leading-snug mt-0.5">Notes vocales réalistes</p>
                   </div>
                 </div>
 
-                <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 hover:border-emerald-500/40 hover:bg-emerald-500/10 transition-all flex items-start gap-3">
-                  <div className="h-8 w-8 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 shrink-0">
+                <div
+                  onClick={() => onOpenProduct?.("api")}
+                  className="p-3.5 rounded-2xl bg-white/5 border border-white/10 hover:border-emerald-500/40 hover:bg-emerald-500/10 transition-all flex items-start gap-3 cursor-pointer group/pillar"
+                >
+                  <div className="h-8 w-8 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 shrink-0 group-hover/pillar:scale-110 transition-transform">
                     <ShieldCheck size={16} />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-xs font-black uppercase tracking-wider text-white">Closing 24/7</p>
+                    <p className="text-xs font-black uppercase tracking-wider text-white flex items-center gap-1">
+                      Closing 24/7 <ArrowRight size={10} className="opacity-0 group-hover/pillar:opacity-100 transition-opacity text-emerald-400" />
+                    </p>
                     <p className="text-[11px] text-white/50 leading-snug mt-0.5">Négociation & encaissement</p>
                   </div>
                 </div>
@@ -238,9 +285,12 @@ function BentoFeatures() {
 
           <div className="relative z-10 pt-5 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-white/40 text-center sm:text-left">
             <span className="font-medium">Compatible avec votre numéro WhatsApp existant</span>
-            <span className="text-emerald-400 font-bold flex items-center gap-1">
-              Configuration en 2 min <ArrowRight size={14} />
-            </span>
+            <button
+              onClick={() => onOpenProduct?.("vision")}
+              className="text-emerald-400 font-bold flex items-center gap-1 hover:underline cursor-pointer"
+            >
+              Explorer les fonctionnalités en détail <ArrowRight size={14} />
+            </button>
           </div>
         </motion.div>
 
@@ -249,16 +299,22 @@ function BentoFeatures() {
           <motion.div
             key={i}
             whileHover={{ y: -4 }}
+            onClick={() => onOpenProduct?.(f.id)}
             className={cn(
-              "relative overflow-hidden rounded-[2rem] sm:rounded-[2.5rem] border p-7 sm:p-8 flex flex-col justify-between transition-all group col-span-1 shadow-lg",
+              "relative overflow-hidden rounded-[2rem] sm:rounded-[2.5rem] border p-7 sm:p-8 flex flex-col justify-between transition-all group col-span-1 shadow-lg cursor-pointer",
               f.color
             )}
           >
             <div className="relative z-10">
-              <div className="mb-6 h-12 w-12 rounded-2xl bg-white/5 flex items-center justify-center border border-white/10 group-hover:scale-105 transition-transform shadow-md">
-                {f.icon}
+              <div className="flex items-center justify-between mb-6">
+                <div className="h-12 w-12 rounded-2xl bg-white/5 flex items-center justify-center border border-white/10 group-hover:scale-105 transition-transform shadow-md">
+                  {f.icon}
+                </div>
+                <span className="text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full bg-white/5 border border-white/10 text-white/60 group-hover:text-white transition-colors">
+                  {f.badge}
+                </span>
               </div>
-              <h3 className="text-xl font-black text-white mb-2 tracking-tight uppercase">{f.title}</h3>
+              <h3 className="text-xl font-black text-white mb-2 tracking-tight uppercase group-hover:text-emerald-300 transition-colors">{f.title}</h3>
               <p className="text-white/50 leading-relaxed text-xs sm:text-sm font-medium">{f.desc}</p>
 
               {f.isPayment && (
@@ -294,6 +350,11 @@ function BentoFeatures() {
                   </div>
                 </div>
               )}
+            </div>
+
+            <div className="pt-4 mt-4 border-t border-white/5 flex items-center justify-between text-[11px] font-bold text-white/40 group-hover:text-emerald-400 transition-colors">
+              <span>Voir la démo interactive</span>
+              <ArrowRight size={12} className="group-hover:translate-x-1 transition-transform" />
             </div>
 
             {/* Decorative background glow */}
@@ -915,8 +976,18 @@ function LandingHero({
 
 export function LandingPage() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [dynamicTitle, setDynamicTitle] = useState("Vendeur IA");
   const [isAuthOpen, setIsAuthOpen] = useState(false);
+  const [productModalOpen, setProductModalOpen] = useState(false);
+  const [selectedProductTab, setSelectedProductTab] = useState<ProductTab>("vision");
+  const [productsDropdownOpen, setProductsDropdownOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [newsletterEmail, setNewsletterEmail] = useState("");
+  const [isSubscribingNewsletter, setIsSubscribingNewsletter] = useState(false);
+  const [newsletterSuccess, setNewsletterSuccess] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
   const { user } = useAuthStore();
 
   const handleLaunchDemo = () => {
@@ -928,6 +999,75 @@ export function LandingPage() {
       }, 500);
     }
   };
+
+  const handleSubscribeNewsletter = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const cleanEmail = newsletterEmail.trim().toLowerCase();
+    if (!cleanEmail) {
+      toast.error("Veuillez saisir votre adresse email.");
+      return;
+    }
+
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    if (!emailRegex.test(cleanEmail)) {
+      toast.error("Format d'adresse email invalide.");
+      return;
+    }
+
+    setIsSubscribingNewsletter(true);
+    try {
+      const response = await axios.post(`${API_URL}/api/commerce/newsletter/subscribe`, {
+        email: cleanEmail
+      });
+
+      if (response.data.success) {
+        toast.success(response.data.message || "Inscription réussie !");
+        setNewsletterSuccess(true);
+        setNewsletterEmail("");
+        setTimeout(() => setNewsletterSuccess(false), 6000);
+      } else {
+        toast.info(response.data.message || "Information enregistrée.");
+      }
+    } catch (error: any) {
+      const msg = error.response?.data?.error || "Erreur lors de l'inscription à la newsletter.";
+      toast.error(msg);
+    } finally {
+      setIsSubscribingNewsletter(false);
+    }
+  };
+
+  const openProduct = (tab: ProductTab) => {
+    setSelectedProductTab(tab);
+    setProductModalOpen(true);
+    setProductsDropdownOpen(false);
+    setMobileMenuOpen(false);
+  };
+
+  // Synchronize URL query or hash with product modal
+  useEffect(() => {
+    const productParam = searchParams.get("product") as ProductTab | null;
+    const hashParam = location.hash.replace("#", "") as ProductTab;
+
+    const validTabs: ProductTab[] = ["vision", "marketing", "api", "simulator"];
+    if (productParam && validTabs.includes(productParam)) {
+      setSelectedProductTab(productParam);
+      setProductModalOpen(true);
+    } else if (hashParam && validTabs.includes(hashParam)) {
+      setSelectedProductTab(hashParam);
+      setProductModalOpen(true);
+    }
+  }, [searchParams, location.hash]);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setProductsDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   useEffect(() => {
     if (user) {
@@ -952,22 +1092,160 @@ export function LandingPage() {
         description="Vendeur IA : votre commercial virtuel sur WhatsApp & Instagram. Répondez, conseillez et vendez 24h/24, 7j/7."
       />
 
-      {/* Modern Header */}
-      <header className="fixed top-0 left-0 right-0 z-[100] border-b border-white/5 bg-[#07100d]/80 backdrop-blur-2xl w-full h-14 md:h-16">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 h-full gap-4">
-          <div className="flex items-center gap-4 flex-1 min-w-0">
-            <div className="flex h-9 w-9 md:h-10 md:w-10 shrink-0 items-center justify-center bg-white/5 rounded-xl md:rounded-2xl border border-white/10 shadow-xl text-vendeur-emerald transition-transform hover:rotate-6">
-              <Logo size={22} />
-            </div>
+      {/* Modern Header / Glassmorphism Giant-Tech Nav */}
+      <header className="fixed top-0 left-0 right-0 z-[100] border-b border-white/5 bg-[#07100d]/90 backdrop-blur-2xl w-full h-16 md:h-20 transition-all">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 sm:px-6 md:px-8 h-full gap-4">
+          
+          {/* Logo & Dynamic Brand Name */}
+          <div className="flex items-center gap-3 md:gap-4 shrink-0">
+            <Link to="/" className="flex h-10 w-10 md:h-11 md:w-11 shrink-0 items-center justify-center bg-white/5 rounded-2xl border border-white/10 shadow-xl text-vendeur-emerald transition-all hover:scale-105 hover:border-emerald-500/40">
+              <Logo size={24} />
+            </Link>
             <div className="min-w-0">
-              <p className="truncate text-sm md:text-lg font-black text-white uppercase leading-tight tracking-tighter">{dynamicTitle}</p>
+              <p className="truncate text-base md:text-lg font-black text-white uppercase leading-tight tracking-tight">{dynamicTitle}</p>
               <div className="flex items-center gap-1.5">
-                 <p className="truncate text-[7px] md:text-[8px] uppercase tracking-[0.2em] text-white/40 font-black">AI Sales Machine</p>
+                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                 <p className="truncate text-[8px] md:text-[9px] uppercase tracking-[0.2em] text-white/50 font-black">AI Sales Machine</p>
               </div>
             </div>
           </div>
 
-          <div className="flex items-center gap-3 shrink-0">
+          {/* Desktop Center Navigation Menu */}
+          <nav className="hidden lg:flex items-center gap-1 text-xs font-bold uppercase tracking-wider text-white/70">
+            
+            {/* Mega Dropdown: Produit */}
+            <div className="relative" ref={dropdownRef}>
+              <button
+                onClick={() => setProductsDropdownOpen(prev => !prev)}
+                onMouseEnter={() => setProductsDropdownOpen(true)}
+                className={cn(
+                  "flex items-center gap-1.5 px-4 py-2 rounded-xl transition-all hover:text-white hover:bg-white/5 cursor-pointer",
+                  productsDropdownOpen && "text-emerald-400 bg-white/5"
+                )}
+              >
+                <span>Produits</span>
+                <ChevronDown size={14} className={cn("transition-transform duration-200", productsDropdownOpen && "rotate-180 text-emerald-400")} />
+              </button>
+
+              <AnimatePresence>
+                {productsDropdownOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                    transition={{ duration: 0.15 }}
+                    onMouseLeave={() => setProductsDropdownOpen(false)}
+                    className="absolute top-full left-0 mt-2 w-80 p-3 rounded-2xl bg-[#09140f] border border-emerald-500/20 shadow-[0_20px_50px_rgba(0,0,0,0.8)] backdrop-blur-2xl grid gap-1.5 z-50"
+                  >
+                    <button
+                      onClick={() => openProduct("vision")}
+                      className="w-full p-2.5 rounded-xl hover:bg-white/5 transition-all text-left flex items-start gap-3 group cursor-pointer"
+                    >
+                      <div className="h-9 w-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 shrink-0 group-hover:scale-110 transition-transform">
+                        <Eye size={17} />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <p className="text-xs font-black uppercase tracking-wider text-white group-hover:text-emerald-400 transition-colors">Vendeur IA Vision</p>
+                          <span className="text-[8px] font-black uppercase px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">OCR</span>
+                        </div>
+                        <p className="text-[10px] text-white/40 leading-snug mt-0.5">Scan photo de rayon, fiches produits & OCR de reçus Mobile Money.</p>
+                      </div>
+                    </button>
+
+                    <button
+                      onClick={() => openProduct("marketing")}
+                      className="w-full p-2.5 rounded-xl hover:bg-white/5 transition-all text-left flex items-start gap-3 group cursor-pointer"
+                    >
+                      <div className="h-9 w-9 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 shrink-0 group-hover:scale-110 transition-transform">
+                        <Megaphone size={17} />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <p className="text-xs font-black uppercase tracking-wider text-white group-hover:text-amber-400 transition-colors">Marketing Hub</p>
+                          <span className="text-[8px] font-black uppercase px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20">+340%</span>
+                        </div>
+                        <p className="text-[10px] text-white/40 leading-snug mt-0.5">Relances prédictives WhatsApp, affiches IA & récupération paniers.</p>
+                      </div>
+                    </button>
+
+                    <button
+                      onClick={() => openProduct("api")}
+                      className="w-full p-2.5 rounded-xl hover:bg-white/5 transition-all text-left flex items-start gap-3 group cursor-pointer"
+                    >
+                      <div className="h-9 w-9 rounded-xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-400 shrink-0 group-hover:scale-110 transition-transform">
+                        <Code2 size={17} />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <p className="text-xs font-black uppercase tracking-wider text-white group-hover:text-sky-400 transition-colors">API WhatsApp</p>
+                          <span className="text-[8px] font-black uppercase px-1.5 py-0.5 rounded bg-sky-500/10 text-sky-400 border border-sky-500/20">Cloud</span>
+                        </div>
+                        <p className="text-[10px] text-white/40 leading-snug mt-0.5">Passerelle développeur, webhooks instantanés & multi-numéros.</p>
+                      </div>
+                    </button>
+
+                    <button
+                      onClick={() => openProduct("simulator")}
+                      className="w-full p-2.5 rounded-xl hover:bg-white/5 transition-all text-left flex items-start gap-3 group cursor-pointer"
+                    >
+                      <div className="h-9 w-9 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400 shrink-0 group-hover:scale-110 transition-transform">
+                        <Cpu size={17} />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <p className="text-xs font-black uppercase tracking-wider text-white group-hover:text-purple-400 transition-colors">Simulateur Commercial</p>
+                          <span className="text-[8px] font-black uppercase px-1.5 py-0.5 rounded bg-purple-500/10 text-purple-400 border border-purple-500/20">Live</span>
+                        </div>
+                        <p className="text-[10px] text-white/40 leading-snug mt-0.5">Laboratoire interactif pour tester les négociations et closing en direct.</p>
+                      </div>
+                    </button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
+            {/* Direct Links */}
+            <button
+              onClick={() => openProduct("vision")}
+              className="px-3.5 py-2 rounded-xl transition-all hover:text-white hover:bg-white/5 cursor-pointer"
+            >
+              IA Vision™
+            </button>
+
+            <button
+              onClick={() => openProduct("marketing")}
+              className="px-3.5 py-2 rounded-xl transition-all hover:text-white hover:bg-white/5 cursor-pointer"
+            >
+              Marketing Hub
+            </button>
+
+            <Link
+              to="/offers"
+              className="px-3.5 py-2 rounded-xl transition-all hover:text-white hover:bg-white/5 cursor-pointer"
+            >
+              Tarifs & Offres
+            </Link>
+
+            <button
+              onClick={handleLaunchDemo}
+              className="px-3.5 py-2 rounded-xl transition-all text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10 cursor-pointer flex items-center gap-1.5 font-black"
+            >
+              <Zap size={13} />
+              <span>Simulateur Live</span>
+            </button>
+          </nav>
+
+          {/* Right Action Buttons */}
+          <div className="flex items-center gap-2.5 shrink-0">
+            <button
+              onClick={handleLaunchDemo}
+              className="hidden sm:flex h-9 md:h-10 px-4 md:px-5 rounded-xl md:rounded-2xl bg-vendeur-emerald text-vendeur-coal text-[9px] md:text-[10px] font-black uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-[0_4px_20px_rgba(16,185,129,0.3)] items-center gap-2 cursor-pointer"
+            >
+              <Play size={13} fill="currentColor" />
+              <span>Tester la Démo</span>
+            </button>
+
             <button
               onClick={() => {
                 if (user && !user.onboardingCompleted) {
@@ -976,12 +1254,85 @@ export function LandingPage() {
                   setIsAuthOpen(true);
                 }
               }}
-              className="h-9 md:h-10 px-5 md:px-8 rounded-xl md:rounded-2xl bg-white/5 border border-white/10 hover:border-emerald-500/50 hover:bg-emerald-500/5 text-white text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all active:scale-95"
+              className="h-9 md:h-10 px-4 md:px-6 rounded-xl md:rounded-2xl bg-white/5 border border-white/10 hover:border-emerald-500/50 hover:bg-emerald-500/5 text-white text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 cursor-pointer"
             >
               {user && !user.onboardingCompleted ? "Créer ma Boutique" : "Connexion"}
             </button>
+
+            {/* Mobile Menu Hamburger */}
+            <button
+              onClick={() => setMobileMenuOpen(prev => !prev)}
+              className="lg:hidden h-9 w-9 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-white/70 hover:text-white transition-all cursor-pointer"
+            >
+              {mobileMenuOpen ? <X size={18} /> : <Menu size={18} />}
+            </button>
           </div>
         </div>
+
+        {/* Mobile Dropdown Drawer */}
+        <AnimatePresence>
+          {mobileMenuOpen && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              className="lg:hidden border-b border-white/10 bg-[#07100d]/95 backdrop-blur-2xl px-5 py-4 space-y-3"
+            >
+              <div className="space-y-1">
+                <p className="text-[10px] font-black uppercase tracking-widest text-white/40 px-2">Nos Produits</p>
+                <button
+                  onClick={() => openProduct("vision")}
+                  className="w-full flex items-center gap-2.5 p-2.5 rounded-xl hover:bg-white/5 text-left text-xs font-bold text-white uppercase tracking-wider"
+                >
+                  <Eye size={16} className="text-emerald-400" />
+                  <span>Vendeur IA Vision™</span>
+                </button>
+                <button
+                  onClick={() => openProduct("marketing")}
+                  className="w-full flex items-center gap-2.5 p-2.5 rounded-xl hover:bg-white/5 text-left text-xs font-bold text-white uppercase tracking-wider"
+                >
+                  <Megaphone size={16} className="text-amber-400" />
+                  <span>Marketing Hub™</span>
+                </button>
+                <button
+                  onClick={() => openProduct("api")}
+                  className="w-full flex items-center gap-2.5 p-2.5 rounded-xl hover:bg-white/5 text-left text-xs font-bold text-white uppercase tracking-wider"
+                >
+                  <Code2 size={16} className="text-sky-400" />
+                  <span>API WhatsApp & Cloud</span>
+                </button>
+                <button
+                  onClick={() => openProduct("simulator")}
+                  className="w-full flex items-center gap-2.5 p-2.5 rounded-xl hover:bg-white/5 text-left text-xs font-bold text-white uppercase tracking-wider"
+                >
+                  <Cpu size={16} className="text-purple-400" />
+                  <span>Simulateur Commercial IA</span>
+                </button>
+              </div>
+
+              <div className="pt-2 border-t border-white/10 flex flex-col gap-2">
+                <Link
+                  to="/offers"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center gap-2 p-2.5 rounded-xl hover:bg-white/5 text-xs font-bold text-white uppercase tracking-wider"
+                >
+                  <CreditCard size={16} className="text-emerald-400" />
+                  <span>Offres & Tarifs</span>
+                </Link>
+                <button
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    handleLaunchDemo();
+                  }}
+                  className="w-full h-11 rounded-xl bg-vendeur-emerald text-vendeur-coal text-xs font-black uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg"
+                >
+                  <Play size={14} fill="currentColor" />
+                  <span>Lancer le Simulateur</span>
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </header>
 
       <main>
@@ -1035,8 +1386,8 @@ export function LandingPage() {
            </div>
         </div>
 
-        {/* BENTO FEATURES */}
-        <BentoFeatures />
+        {/* BENTO FEATURES WITH INTERACTIVE MODAL CALLBACKS */}
+        <BentoFeatures onOpenProduct={openProduct} />
 
         {/* CTA FINAL SECTION */}
         <section className="py-24 md:py-32 px-4 md:px-6">
@@ -1058,7 +1409,7 @@ export function LandingPage() {
                 </p>
                 <button
                   onClick={handleLaunchDemo}
-                  className="w-full sm:w-auto h-16 px-10 rounded-2xl bg-vendeur-emerald text-vendeur-coal font-black uppercase tracking-widest text-xs sm:text-sm hover:scale-105 active:scale-95 transition-all shadow-[0_20px_60px_rgba(16,185,129,0.4)] border-t border-white/30 flex items-center justify-center gap-3 mx-auto"
+                  className="w-full sm:w-auto h-16 px-10 rounded-2xl bg-vendeur-emerald text-vendeur-coal font-black uppercase tracking-widest text-xs sm:text-sm hover:scale-105 active:scale-95 transition-all shadow-[0_20px_60px_rgba(16,185,129,0.4)] border-t border-white/30 flex items-center justify-center gap-3 mx-auto cursor-pointer"
                 >
                   Configurer mon Vendeur IA
                 </button>
@@ -1066,7 +1417,7 @@ export function LandingPage() {
            </div>
         </section>
 
-        {/* FOOTER */}
+        {/* FOOTER WITH INTERACTIVE PRODUCT LINKS */}
         <footer className="py-20 border-t border-white/5 bg-black/20">
           <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
             <div className="space-y-6">
@@ -1081,11 +1432,43 @@ export function LandingPage() {
 
             <div className="space-y-4">
               <p className="text-xs font-black uppercase tracking-widest text-white">Produit</p>
-              <ul className="space-y-2 text-sm text-white/40">
-                <li className="hover:text-emerald-400 transition-colors cursor-pointer">Vendeur IA Vision</li>
-                <li className="hover:text-emerald-400 transition-colors cursor-pointer">Marketing Hub</li>
-                <li className="hover:text-emerald-400 transition-colors cursor-pointer">API WhatsApp</li>
-                <li className="hover:text-emerald-400 transition-colors cursor-pointer">Simulateur</li>
+              <ul className="space-y-2.5 text-sm text-white/40">
+                <li>
+                  <button
+                    onClick={() => openProduct("vision")}
+                    className="hover:text-emerald-400 transition-colors cursor-pointer text-left flex items-center gap-1.5 group"
+                  >
+                    <span>Vendeur IA Vision</span>
+                    <ArrowRight size={12} className="opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all text-emerald-400" />
+                  </button>
+                </li>
+                <li>
+                  <button
+                    onClick={() => openProduct("marketing")}
+                    className="hover:text-amber-400 transition-colors cursor-pointer text-left flex items-center gap-1.5 group"
+                  >
+                    <span>Marketing Hub</span>
+                    <ArrowRight size={12} className="opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all text-amber-400" />
+                  </button>
+                </li>
+                <li>
+                  <button
+                    onClick={() => openProduct("api")}
+                    className="hover:text-sky-400 transition-colors cursor-pointer text-left flex items-center gap-1.5 group"
+                  >
+                    <span>API WhatsApp</span>
+                    <ArrowRight size={12} className="opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all text-sky-400" />
+                  </button>
+                </li>
+                <li>
+                  <button
+                    onClick={() => openProduct("simulator")}
+                    className="hover:text-purple-400 transition-colors cursor-pointer text-left flex items-center gap-1.5 group"
+                  >
+                    <span>Simulateur</span>
+                    <ArrowRight size={12} className="opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all text-purple-400" />
+                  </button>
+                </li>
               </ul>
             </div>
 
@@ -1098,14 +1481,50 @@ export function LandingPage() {
               </ul>
             </div>
 
-            <div className="space-y-6">
-              <p className="text-xs font-black uppercase tracking-widest text-white">Newsletter</p>
-              <div className="flex gap-2">
-                 <input className="h-12 flex-1 bg-white/5 border border-white/25 rounded-xl px-4 text-xs text-white outline-none focus:border-emerald-400" placeholder="Votre email" />
-                 <button className="h-12 w-12 rounded-xl bg-vendeur-emerald text-vendeur-coal flex items-center justify-center shrink-0">
-                    <Send size={18} />
-                 </button>
+            <div className="space-y-4">
+              <div>
+                <p className="text-xs font-black uppercase tracking-widest text-white">Newsletter Stratégique</p>
+                <p className="text-[11px] text-white/40 leading-snug mt-1">
+                  Recevez nos analyses e-commerce et secrets d'automatisation WhatsApp.
+                </p>
               </div>
+
+              <form onSubmit={handleSubscribeNewsletter} className="space-y-2">
+                <div className="flex gap-2">
+                   <input
+                     type="email"
+                     value={newsletterEmail}
+                     onChange={(e) => setNewsletterEmail(e.target.value)}
+                     disabled={isSubscribingNewsletter}
+                     className="h-12 flex-1 bg-white/5 border border-white/20 focus:border-emerald-400 rounded-xl px-4 text-xs text-white outline-none transition-all placeholder:text-white/30 disabled:opacity-50"
+                     placeholder="Votre adresse email"
+                   />
+                   <button
+                     type="submit"
+                     disabled={isSubscribingNewsletter || !newsletterEmail.trim()}
+                     className={cn(
+                       "h-12 w-12 rounded-xl flex items-center justify-center shrink-0 transition-all cursor-pointer font-black",
+                       newsletterSuccess
+                         ? "bg-emerald-500 text-black shadow-[0_0_20px_rgba(16,185,129,0.4)]"
+                         : "bg-vendeur-emerald text-vendeur-coal hover:scale-105 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
+                     )}
+                   >
+                     {isSubscribingNewsletter ? (
+                       <RotateCw size={16} className="animate-spin" />
+                     ) : newsletterSuccess ? (
+                       <Check size={18} />
+                     ) : (
+                       <Send size={16} />
+                     )}
+                   </button>
+                </div>
+                {newsletterSuccess && (
+                  <p className="text-[10px] font-bold text-emerald-400 flex items-center gap-1 animate-fadeIn">
+                    <CheckCircle2 size={12} />
+                    <span>Inscrit avec succès ! Bienvenue dans la communauté.</span>
+                  </p>
+                )}
+              </form>
             </div>
           </div>
 
@@ -1113,14 +1532,49 @@ export function LandingPage() {
             <p className="text-[10px] font-black uppercase tracking-widest text-white/20">
               © 2026 Franck Corp. Built with ❤️ for Commerce.
             </p>
-            <div className="flex gap-6 grayscale opacity-50">
-               <WhatsAppIcon size={18} />
-               <Globe size={18} />
-               <ShieldCheck size={18} />
+            <div className="flex items-center gap-3">
+               {/* WhatsApp Support Direct Button (Numéro Système Officiel) */}
+               <a
+                 href="https://wa.me/2250505111157?text=Bonjour%20Vendeur%20IA%2C%20je%20souhaite%20d%C3%A9couvrir%20la%20plateforme%20et%20lancer%20mon%20commercial%20virtuel."
+                 target="_blank"
+                 rel="noopener noreferrer"
+                 title="Contacter le numéro système officiel Vendeur IA sur WhatsApp"
+                 className="p-2.5 rounded-xl bg-white/5 border border-white/10 hover:border-emerald-500/50 hover:bg-emerald-500/10 text-white/60 hover:text-[#25D366] transition-all cursor-pointer shadow-sm hover:scale-110 active:scale-95 flex items-center justify-center"
+               >
+                 <WhatsAppIcon size={18} />
+               </a>
+
+               {/* Web / Currency info Button */}
+               <button
+                 onClick={() => {
+                   toast.info("Vendeur IA est disponible dans toute la zone UEMOA / CEMAC (XOF, XAF, GNF, NGN, EUR, USD).");
+                 }}
+                 title="Disponibilité multi-pays & devises"
+                 className="p-2.5 rounded-xl bg-white/5 border border-white/10 hover:border-sky-500/50 hover:bg-sky-500/10 text-white/60 hover:text-sky-400 transition-all cursor-pointer shadow-sm hover:scale-110 active:scale-95 flex items-center justify-center"
+               >
+                 <Globe size={18} />
+               </button>
+
+               {/* Security & Shield Privacy Link */}
+               <Link
+                 to="/privacy"
+                 title="Sécurité des données & Chiffrement RGPD"
+                 className="p-2.5 rounded-xl bg-white/5 border border-white/10 hover:border-emerald-500/50 hover:bg-emerald-500/10 text-white/60 hover:text-emerald-400 transition-all cursor-pointer shadow-sm hover:scale-110 active:scale-95 flex items-center justify-center"
+               >
+                 <ShieldCheck size={18} />
+               </Link>
             </div>
           </div>
         </footer>
       </main>
+
+      {/* PRODUCT SHOWCASE DEEP-DIVE MODAL */}
+      <ProductShowcaseModal
+        isOpen={productModalOpen}
+        onClose={() => setProductModalOpen(false)}
+        initialTab={selectedProductTab}
+        onLaunchDemo={handleLaunchDemo}
+      />
 
       <AnimatePresence>
         {isAuthOpen && (

@@ -14,6 +14,7 @@ import {
   ShieldCheck,
   ChevronRight,
   Sparkles,
+  HelpCircle,
   LogOut
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -36,6 +37,7 @@ export function Sidebar() {
     { to: "/products", icon: Package, label: "Catalogue", desc: "Gestion des stocks & articles" },
     { to: "/marketing", icon: Megaphone, label: "Marketing", desc: "Affiches & Campagnes" },
     { to: "/settings", icon: Settings, label: "Réglages", desc: "Boutique, Savoir IA & Canaux" },
+    { to: "/help", icon: HelpCircle, label: "Aide", desc: "FAQ & Base de connaissances" },
   ];
 
   const bottomLinks = isFounder

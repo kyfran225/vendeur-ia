@@ -479,17 +479,17 @@ export function SalesInbox() {
     <div
       id="tour-inbox-channels"
       className={cn(
-        "flex bg-[#111b21] transition-all duration-300 animate-in fade-in",
+        "flex bg-[#111b21] transition-all duration-300 animate-in fade-in h-full w-full min-h-0 flex-1 overflow-hidden",
         showMobileChat
-          ? "fixed inset-0 z-[60] h-[100dvh] w-full rounded-none border-0 m-0 overflow-hidden md:relative md:inset-auto md:z-auto md:h-[calc(100vh-140px)] md:max-h-[960px] md:rounded-[2.5rem] md:border md:border-white/10 md:shadow-2xl md:my-4"
-          : "h-[calc(100dvh-120px)] md:h-[calc(100vh-140px)] md:max-h-[960px] rounded-2xl md:rounded-[2.5rem] overflow-hidden border border-white/10 shadow-2xl my-2 md:my-4"
+          ? "fixed inset-0 z-[60] h-[100dvh] w-full rounded-none border-0 m-0 overflow-hidden md:relative md:inset-auto md:z-auto md:h-full md:rounded-2xl md:border md:border-white/10 md:shadow-2xl"
+          : "rounded-2xl border border-white/10 shadow-2xl"
       )}
     >
       {/* ========================================================================= */}
       {/* SIDEBAR: CONVERSATIONS LIST (WhatsApp Web Pro Style) */}
       {/* ========================================================================= */}
       <aside className={cn(
-        "w-full md:w-[380px] lg:w-[420px] border-r border-white/10 flex flex-col bg-[#111b21] transition-all shrink-0",
+        "w-full md:w-[380px] lg:w-[420px] border-r border-white/10 flex flex-col bg-[#111b21] transition-all shrink-0 h-full min-h-0 overflow-hidden",
         showMobileChat ? "hidden md:flex" : "flex"
       )}>
         {/* Sidebar Header */}

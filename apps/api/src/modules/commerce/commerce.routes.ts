@@ -19,6 +19,7 @@ import { TransactionModel } from "./transaction.model.js";
 import { SystemSettingsModel } from "./admin.model.js";
 import { PaymentProofLogModel } from "./payment-proof.model.js";
 import { PaymentIntentModel } from "./payment-intent.model.js";
+import { NewsletterSubscriberModel } from "./newsletter.model.js";
 import { paymentService } from "../../services/payment.service.js";
 import { CATEGORY_MOCKS } from "./demo.data.js";
 import { billingReceiptService } from "../../services/billing-receipt.service.js";
@@ -33,6 +34,7 @@ import multer from "multer";
 import { emitToUser } from "../../realtime/socketServer.js";
 import { UserModel } from "../auth/user.model.js";
 import { isFounderNumber } from "../auth/auth.service.js";
+import { storageService } from "../../services/storage.service.js";
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage() });
@@ -2303,6 +2305,72 @@ router.get("/payments/history", authenticate, async (req, res) => {
     res.json(intents);
   } catch (error: any) {
     res.status(500).json({ error: error.message });
+  }
+});
+
+// POST /api/commerce/upload - Upload route alias (supports logo, cover, products)
+const commerceMediaUpload = multer({ dest: "uploads/temp/" });
+router.post("/upload", authenticate, commerceMediaUpload.single("file"), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: "Aucun fichier fourni" });
+    }
+    const folder = req.body.folder || "branding";
+    const result = await storageService.uploadFile(req.file, folder);
+    res.json(result);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// POST /api/commerce/newsletter/subscribe - Public newsletter subscription with validation & idempotency
+router.post("/newsletter/subscribe", async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email || typeof email !== "string") {
+      return res.status(400).json({ error: "Adresse email obligatoire." });
+    }
+
+    const cleanEmail = email.trim().toLowerCase();
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    if (!emailRegex.test(cleanEmail)) {
+      return res.status(400).json({ error: "Format d'adresse email invalide." });
+    }
+
+    const ipAddress = (req.headers["x-forwarded-for"] as string) || req.socket?.remoteAddress || "";
+    const userAgent = req.headers["user-agent"] || "";
+
+    const existing = await NewsletterSubscriberModel.findOne({ email: cleanEmail });
+    if (existing) {
+      if (!existing.active) {
+        existing.active = true;
+        await existing.save();
+      }
+      return res.json({
+        success: true,
+        isNew: false,
+        message: "Vous êtes déjà inscrit ! Nous vous tiendrons informé de nos prochaines actualités."
+      });
+    }
+
+    await NewsletterSubscriberModel.create({
+      email: cleanEmail,
+      ipAddress: typeof ipAddress === "string" ? ipAddress.split(",")[0].trim() : "",
+      userAgent,
+      source: "landing_footer",
+      active: true
+    });
+
+    console.log(`[Newsletter] Nouvel abonné inscrit : ${cleanEmail}`);
+
+    res.json({
+      success: true,
+      isNew: true,
+      message: "Merci pour votre inscription ! Vous recevrez nos meilleures analyses et stratégies de vente WhatsApp."
+    });
+  } catch (error: any) {
+    console.error("[Newsletter Error]:", error);
+    res.status(500).json({ error: "Une erreur est survenue lors de l'inscription à la newsletter." });
   }
 });
 

@@ -91,7 +91,7 @@ interface CopilotState {
   currentSpeechText: string | null;
 
   // Actions
-  openCopilot: () => void;
+  openCopilot: (initialPrompt?: string) => void;
   closeCopilot: () => void;
   toggleCopilot: () => void;
   setMinimized: (minimized: boolean) => void;
@@ -149,8 +149,11 @@ export const useCopilotStore = create<CopilotState>((set, get) => ({
   isSpeaking: false,
   currentSpeechText: null,
 
-  openCopilot: () => {
+  openCopilot: (initialPrompt?: string) => {
     set({ isOpen: true, isMinimized: false });
+    if (initialPrompt && initialPrompt.trim()) {
+      get().sendMessage(initialPrompt.trim());
+    }
   },
 
   closeCopilot: () => {

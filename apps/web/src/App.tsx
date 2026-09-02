@@ -18,6 +18,7 @@ import { PrivacyPolicyPage } from "./features/legal/PrivacyPolicyPage";
 import { DataDeletionPage } from "./features/legal/DataDeletionPage";
 import { TermsOfServicePage } from "./features/legal/TermsOfServicePage";
 import { MagicLoginPage } from "./features/auth/MagicLoginPage";
+import { HelpCenterPage } from "./features/help/HelpCenterPage";
 import { AppLayout } from "./components/layout/AppLayout";
 import { useAuthStore } from "./stores/authStore";
 import { useOnboardingStore } from "./stores/onboardingStore";
@@ -71,8 +72,10 @@ function App() {
           <Route path="/inbox" element={<SalesInbox />} />
           <Route path="/marketing" element={<MarketingHub />} />
           <Route path="/settings" element={<SettingsPage />} />
+          <Route path="/help" element={<HelpCenterPage />} />
         </Route>
 
+        <Route path="/help" element={<HelpCenterPage />} />
         <Route path="/privacy" element={<PrivacyPolicyPage />} />
         <Route path="/data-deletion" element={<DataDeletionPage />} />
         <Route path="/terms" element={<TermsOfServicePage />} />

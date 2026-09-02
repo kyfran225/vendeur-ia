@@ -1,4 +1,5 @@
 import React, { useState, useRef } from "react";
+import { Link } from "react-router-dom";
 import {
   User as UserIcon,
   Mail,
@@ -17,7 +18,8 @@ import {
   ShieldCheck,
   KeyRound,
   LogOut,
-  Store
+  Store,
+  Palette
 } from "lucide-react";
 import { useAuthStore } from "@/stores/authStore";
 import { apiClient } from "@/lib/apiClient";
@@ -462,6 +464,24 @@ export function ProfileTab({ merchant }: { merchant?: any }) {
                 </button>
               )}
             </div>
+          </div>
+        </div>
+
+        {/* Tip Box: Distinguish Profile Photo vs Storefront Logo */}
+        <div className="mt-5 p-3.5 sm:p-4 rounded-2xl bg-white/[0.03] border border-white/5 flex items-start gap-3">
+          <div className="h-8 w-8 rounded-xl bg-vendeur-emerald/10 text-vendeur-emerald flex items-center justify-center shrink-0 mt-0.5 border border-vendeur-emerald/20">
+            <Palette size={16} />
+          </div>
+          <div className="min-w-0 flex-1 space-y-1">
+            <p className="text-xs font-bold text-white leading-tight">
+              Photo de Profil Personnel vs Logo de la Boutique
+            </p>
+            <p className="text-[11px] text-white/50 leading-relaxed">
+              Cette photo est votre <strong className="text-white">avatar personnel</strong> (visible dans le bouton profil en haut à droite). Pour configurer le <strong className="text-white">logo officiel</strong> et la <strong className="text-white">bannière de votre vitrine</strong>, rendez-vous dans l'onglet{" "}
+              <Link to="/settings?tab=apparence" className="text-vendeur-emerald underline font-black hover:text-emerald-300">
+                Apparence &amp; Vitrine 👉
+              </Link>
+            </p>
           </div>
         </div>
       </section>

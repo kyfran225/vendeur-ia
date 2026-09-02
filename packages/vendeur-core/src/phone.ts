@@ -294,3 +294,39 @@ export function isFounderNumber(phone: string): boolean {
   const clean = phone.replace(/[\s\-\+\(\)]/g, "");
   return FOUNDER_NUMBERS.some(fn => clean.endsWith(fn) || fn.endsWith(clean));
 }
+
+/**
+ * Convertit un numéro ou un identifiant en JID WhatsApp valide (ex: '2250141033935@s.whatsapp.net')
+ * et en numéro de destinataire internationalisé pour Meta API (ex: '2250141033935').
+ */
+export function formatToWhatsAppRecipient(phoneOrJid: string, defaultCountry = "CI"): { jid: string; cleanPhone: string } {
+  if (!phoneOrJid) return { jid: "", cleanPhone: "" };
+
+  const trimmed = phoneOrJid.trim();
+
+  // 1. Groupes / Diffusions / Chaînes WhatsApp
+  if (trimmed.includes("@g.us") || trimmed.includes("@broadcast") || trimmed.includes("@newsletter")) {
+    return { jid: trimmed, cleanPhone: trimmed.split("@")[0] };
+  }
+
+  // 2. WhatsApp LID (Linked Devices)
+  if (trimmed.includes("@lid")) {
+    return { jid: trimmed, cleanPhone: trimmed.split("@")[0] };
+  }
+
+  // 3. Extraction du préfixe utilisateur (avant le @s.whatsapp.net éventuel)
+  const userPart = trimmed.includes("@") ? trimmed.split("@")[0] : trimmed;
+  const digits = userPart.replace(/\D/g, "");
+
+  if (!digits) {
+    return { jid: trimmed, cleanPhone: trimmed };
+  }
+
+  const parsed = parsePhoneNumber(digits, defaultCountry);
+  const internationalDigits = parsed.e164 ? parsed.e164.replace(/\D/g, "") : digits;
+
+  return {
+    jid: `${internationalDigits}@s.whatsapp.net`,
+    cleanPhone: internationalDigits
+  };
+}

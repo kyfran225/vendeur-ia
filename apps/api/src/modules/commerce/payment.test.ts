@@ -41,7 +41,7 @@ vi.mock('../whatsapp/whatsapp.service.js', () => ({
 // Mock messaging
 vi.mock('../../services/messaging.service.js', () => ({
   messagingService: {
-    sendMessage: vi.fn()
+    sendMessage: vi.fn().mockResolvedValue({ success: true })
   }
 }));
 

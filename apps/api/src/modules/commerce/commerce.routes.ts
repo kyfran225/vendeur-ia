@@ -1863,12 +1863,11 @@ router.patch("/orders/:id", authenticate, async (req, res) => {
         const customer = updatedOrder.customerId as any;
         const merchantObj = await CommerceMerchantModel.findById(merchant._id);
 
-        if (merchantObj?.whatsappConfig?.provider === 'meta') {
-          await whatsappService.sendMetaMessage(merchantObj, customer.phone, receipt);
-        } else {
-          const sock = (whatsappService as any).activeSessions?.get(ownerId);
-          if (sock) {
-            await sock.sendMessage(customer.phone, { text: receipt });
+        if (merchantObj && customer?.phone) {
+          try {
+            await messagingService.sendMessage(merchantObj, 'whatsapp', customer.phone, receipt);
+          } catch (err: any) {
+            console.error("[Order Receipt] Failed to send receipt WhatsApp:", err?.message || err);
           }
         }
       }

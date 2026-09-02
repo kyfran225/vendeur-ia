@@ -95,11 +95,11 @@ router.post("/founder-login", async (req, res) => {
 // WhatsApp Unified Pairing & Auth Initiation (Single-Step Onboarding + Returning User OTP)
 router.post("/whatsapp-init", async (req, res) => {
   try {
-    const { phoneNumber, storeData, authSessionId } = req.body;
+    const { phoneNumber, storeData, authSessionId, forcePairing } = req.body;
     if (!phoneNumber) {
       return res.status(400).json({ error: "Le numéro WhatsApp est obligatoire." });
     }
-    const result = await authService.initWhatsAppAuth(phoneNumber, storeData, authSessionId);
+    const result = await authService.initWhatsAppAuth(phoneNumber, storeData, authSessionId, !!forcePairing);
     res.json(result);
   } catch (error: any) {
     res.status(400).json({ error: error.message || "Impossible d'initialiser l'appairage WhatsApp." });
@@ -112,7 +112,7 @@ router.post("/whatsapp-regenerate-pairing", async (req, res) => {
     if (!phoneNumber) {
       return res.status(400).json({ error: "Le numéro WhatsApp est obligatoire." });
     }
-    const result = await authService.initWhatsAppAuth(phoneNumber, storeData, authSessionId);
+    const result = await authService.initWhatsAppAuth(phoneNumber, storeData, authSessionId, true);
     res.json(result);
   } catch (error: any) {
     res.status(400).json({ error: error.message || "Erreur lors de la régénération du code." });

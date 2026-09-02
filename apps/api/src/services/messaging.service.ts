@@ -1,6 +1,7 @@
 import { whatsappService } from '../modules/whatsapp/whatsapp.service.js';
 import { CommerceMerchantModel } from '../modules/commerce/commerce.model.js';
 import { emitToSession } from '../realtime/socketServer.js';
+import { formatToWhatsAppRecipient } from '@vendeur-ia/core';
 import axios from 'axios';
 
 export class MessagingService {
@@ -35,13 +36,12 @@ export class MessagingService {
 
   private async sendWhatsApp(merchant: any, remoteId: string, content: string, options: any) {
     const config = merchant.whatsappConfig;
-    const userId = merchant.ownerId;
-
-    const jid = remoteId.includes('@') ? remoteId : `${remoteId.replace(/[^0-9]/g, '')}@s.whatsapp.net`;
+    const userId = merchant.ownerId?.toString() || merchant.ownerId;
+    const { jid, cleanPhone } = formatToWhatsAppRecipient(remoteId);
 
     if (options.audioBuffer) {
       if (config?.provider === 'meta') {
-        return (whatsappService as any).sendMetaAudio(merchant, remoteId, options.audioBuffer);
+        return (whatsappService as any).sendMetaAudio(merchant, cleanPhone, options.audioBuffer);
       } else {
         const sock = (whatsappService as any).activeSessions?.get(userId);
         if (sock) {
@@ -51,7 +51,7 @@ export class MessagingService {
     } else if (options.mediaUrl && options.type === 'image') {
       if (config?.provider === 'meta') {
         // To implement for Meta: Upload by URL then send
-        return whatsappService.sendMetaMessage(merchant, remoteId, content); // Fallback for now
+        return whatsappService.sendMetaMessage(merchant, cleanPhone, content); // Fallback for now
       } else {
         const sock = (whatsappService as any).activeSessions?.get(userId);
         if (sock) {
@@ -59,7 +59,7 @@ export class MessagingService {
         }
       }
     } else {
-      return whatsappService.sendMessage(userId, remoteId, content);
+      return whatsappService.sendMessage(userId, jid, content);
     }
   }
 

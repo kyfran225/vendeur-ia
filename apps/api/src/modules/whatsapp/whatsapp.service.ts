@@ -22,7 +22,7 @@ import { aiProvider } from "../../services/ai-provider.js";
 import { smsService } from "../../services/sms.service.js";
 import { SystemSettingsModel } from "../commerce/admin.model.js";
 import { generatePhoneVariants, isFounderNumber } from "../auth/auth.service.js";
-import { parsePhoneNumber } from "@vendeur-ia/core";
+import { parsePhoneNumber, formatToWhatsAppRecipient } from "@vendeur-ia/core";
 
 class WhatsAppService {
   private activeSessions: Map<string, any> = new Map();
@@ -47,13 +47,8 @@ class WhatsAppService {
   }
 
   async sendDirectMessageToPhone(phone: string, text: string): Promise<boolean> {
-    const rawDigits = phone.replace(/\D/g, "");
-    let recipient = rawDigits;
-    if (recipient.length === 10) {
-      recipient = `225${recipient}`;
-    } else if (recipient.length === 8) {
-      recipient = `22501${recipient}`;
-    }
+    const { jid, cleanPhone } = formatToWhatsAppRecipient(phone);
+    const recipient = cleanPhone;
 
     // 1. Try sending via Meta Cloud API (Official System Channel from 0505111157)
     try {
@@ -87,7 +82,6 @@ class WhatsAppService {
     }
 
     // 2. Try sending via active Baileys socket if available
-    const jid = `${recipient}@s.whatsapp.net`;
     for (const [_, sock] of this.activeSessions.entries()) {
       if (sock && sock.user?.id) {
         try {
@@ -1380,17 +1374,19 @@ class WhatsAppService {
     });
   }
 
-  async sendMetaMessage(merchant: any, to: string, text: string) {
+  async sendMetaMessage(merchant: any, to: string, text: string): Promise<boolean> {
     if (env.AI_MOCK_MODE) {
       console.log(`[AI_MOCK_MODE] Skip Meta Message to ${to}: ${text.substring(0, 50)}...`);
-      return;
+      return true;
     }
     const config = await this.getMetaConfig(merchant);
 
     if (!config.phoneNumberId || !config.accessToken) {
-      console.warn(`[Meta WhatsApp] API Credentials missing for merchant ${merchant.businessName}`);
-      return;
+      console.warn(`[Meta WhatsApp] API Credentials missing for merchant ${merchant?.businessName}`);
+      return false;
     }
+
+    const { cleanPhone } = formatToWhatsAppRecipient(to);
 
     try {
       await axios.post(
@@ -1398,7 +1394,7 @@ class WhatsAppService {
         {
           messaging_product: "whatsapp",
           recipient_type: "individual",
-          to: to.replace(/\+/g, ""),
+          to: cleanPhone,
           type: "text",
           text: { body: text },
         },
@@ -1409,13 +1405,15 @@ class WhatsAppService {
           },
         }
       );
-      console.log(`[Meta WhatsApp] Message sent to ${to} (Merchant: ${merchant.businessName})`);
+      console.log(`[Meta WhatsApp] Message sent to ${cleanPhone} (Merchant: ${merchant.businessName})`);
+      return true;
     } catch (error: any) {
       const errData = error.response?.data || {};
       if (errData?.error?.code === 131030) {
-        console.warn(`[Meta WhatsApp Warning] Le numéro ${to} n'est pas dans la liste des destinataires autorisés du mode Sandbox Meta. Ajoutez-le sur developers.facebook.com ou passez l'app Meta en Production.`);
+        console.warn(`[Meta WhatsApp Warning] Le numéro ${cleanPhone} n'est pas dans la liste des destinataires autorisés du mode Sandbox Meta. Ajoutez-le sur developers.facebook.com ou passez l'app Meta en Production.`);
       }
       console.error("[Meta WhatsApp] Error sending message:", errData || error.message);
+      return false;
     }
   }
 
@@ -1483,6 +1481,8 @@ class WhatsAppService {
 
     if (!config.phoneNumberId || !config.accessToken) return;
 
+    const { cleanPhone } = formatToWhatsAppRecipient(to);
+
     try {
       // 1. Upload Media
       const formData = new FormData();
@@ -1509,7 +1509,7 @@ class WhatsAppService {
         {
           messaging_product: "whatsapp",
           recipient_type: "individual",
-          to,
+          to: cleanPhone,
           type: "audio",
           audio: { id: mediaId },
         },
@@ -1520,7 +1520,7 @@ class WhatsAppService {
           },
         }
       );
-      console.log(`[Meta WhatsApp] Audio sent to ${to}`);
+      console.log(`[Meta WhatsApp] Audio sent to ${cleanPhone}`);
     } catch (error: any) {
       console.error("[Meta WhatsApp] Error sending audio:", error.response?.data || error.message);
     }
@@ -1764,68 +1764,100 @@ class WhatsAppService {
   }
 
   async sendMessage(userId: string, to: string, text: string, options?: { type?: 'text' | 'audio' }) {
-    const merchant = await CommerceMerchantModel.findOne({ ownerId: userId });
+    let merchant = await CommerceMerchantModel.findOne({
+      $or: [
+        { ownerId: userId },
+        ...(userId && mongoose.isValidObjectId(userId) ? [{ ownerId: new mongoose.Types.ObjectId(userId) }] : []),
+        ...(userId && mongoose.isValidObjectId(userId) ? [{ _id: new mongoose.Types.ObjectId(userId) }] : []),
+        { whatsappNumber: { $regex: '5111157' } },
+        { phone: { $regex: '5111157' } },
+        { businessName: "Vendeur IA" }
+      ]
+    });
     if (!merchant) throw new Error("Merchant not found");
 
+    const { jid, cleanPhone } = formatToWhatsAppRecipient(to);
     const useAudio = options?.type === 'audio' || (merchant.aiSettings?.voiceMode && text.length < 300);
 
+    const merchantOwnerId = merchant.ownerId?.toString() || userId?.toString();
+    let sock = this.activeSessions.get(userId?.toString()) || this.activeSessions.get(merchantOwnerId);
+
+    if (!sock) {
+      for (const [sId, s] of this.activeSessions.entries()) {
+        if (s && s.user?.id) {
+          const userDigits = (s.user.id || '').replace(/\D/g, '');
+          if (userDigits.includes('5111157') || sId === userId || sId === merchantOwnerId) {
+            sock = s;
+            break;
+          }
+        }
+      }
+    }
+
+    // 1. If preferred provider is Meta Cloud API
     if (merchant.whatsappConfig?.provider === 'meta') {
+      let metaSuccess = false;
       if (useAudio) {
         try {
           const audioBuffer = await aiProvider.generateSpeech(text);
-          return this.sendMetaAudio(merchant, to, audioBuffer);
+          await this.sendMetaAudio(merchant, cleanPhone, audioBuffer);
+          metaSuccess = true;
         } catch (err) {
-          console.warn("[WhatsApp Meta] Failed to generate speech, falling back to text:", err);
-          return this.sendMetaMessage(merchant, to, text);
+          console.warn("[WhatsApp Meta] Failed audio send, falling back to text:", err);
         }
       }
-      return this.sendMetaMessage(merchant, to, text);
-    } else {
-      let sock = this.activeSessions.get(userId);
-
-      // Wait for pending initialization if any
-      const pending = this.pendingInitializations.get(userId);
-      if (pending) {
-        console.log(`[WhatsApp] Waiting for pending session init for ${userId}...`);
-        await Promise.race([
-          pending,
-          new Promise(resolve => setTimeout(resolve, 10000)) // 10s timeout
-        ]).catch(() => {});
-        sock = this.activeSessions.get(userId);
+      if (!metaSuccess) {
+        metaSuccess = await this.sendMetaMessage(merchant, cleanPhone, text);
       }
 
-      if (!sock && (merchant.whatsappConfig?.status === 'connected' || merchant.whatsappConfig?.status === 'error')) {
-        console.log(`[WhatsApp] On-demand session init for ${userId}`);
-        await this.initSession(userId);
-        sock = this.activeSessions.get(userId);
-      }
+      // If Meta succeeded, return result
+      if (metaSuccess) return { success: true, provider: 'meta' };
 
-      if (sock && sock.user) {
-        let jid = to;
-        if (!jid.includes('@')) {
-          const cleaned = to.replace(/[^0-9]/g, '');
-          jid = `${cleaned}@s.whatsapp.net`;
-        }
-
-        if (useAudio) {
-          try {
-            const audioBuffer = await aiProvider.generateSpeech(text);
-            // Baileys audio message: we need to handle the conversion if needed or send as PTT
-            return await sock.sendMessage(jid, {
-              audio: audioBuffer,
-              mimetype: 'audio/mp4',
-              ptt: true
-            });
-          } catch (err) {
-            console.warn("[WhatsApp Baileys] Failed to generate speech, falling back to text:", err);
-            return await sock.sendMessage(jid, { text });
-          }
-        }
-        return await sock.sendMessage(jid, { text });
-      } else {
-        throw new Error("WhatsApp n'est pas connecté. Veuillez scanner le QR Code dans les Paramètres WhatsApp.");
-      }
+      // Otherwise, fallback to active Baileys socket if available
+      console.log(`[WhatsApp] Meta send unsuccessful, attempting fallback to Baileys socket for ${cleanPhone}...`);
     }
+
+    // 2. Baileys Socket Delivery (Direct or Fallback from Meta)
+    const pending = this.pendingInitializations.get(userId?.toString()) || this.pendingInitializations.get(merchantOwnerId);
+    if (pending && !sock) {
+      console.log(`[WhatsApp] Waiting for pending session init for ${userId}...`);
+      await Promise.race([
+        pending,
+        new Promise(resolve => setTimeout(resolve, 10000))
+      ]).catch(() => {});
+      sock = this.activeSessions.get(userId?.toString()) || this.activeSessions.get(merchantOwnerId);
+    }
+
+    if (!sock && (merchant.whatsappConfig?.status === 'connected' || merchant.whatsappConfig?.status === 'error')) {
+      console.log(`[WhatsApp] On-demand session init for ${merchantOwnerId}`);
+      await this.initSession(merchantOwnerId);
+      sock = this.activeSessions.get(userId?.toString()) || this.activeSessions.get(merchantOwnerId);
+    }
+
+    if (sock && sock.user) {
+      if (useAudio) {
+        try {
+          const audioBuffer = await aiProvider.generateSpeech(text);
+          return await sock.sendMessage(jid, {
+            audio: audioBuffer,
+            mimetype: 'audio/mp4',
+            ptt: true
+          });
+        } catch (err) {
+          console.warn("[WhatsApp Baileys] Failed to generate speech, falling back to text:", err);
+          return await sock.sendMessage(jid, { text });
+        }
+      }
+      return await sock.sendMessage(jid, { text });
+    }
+
+    // 3. If Baileys is not connected but Meta wasn't tried yet, try Meta as ultimate fallback
+    if (merchant.whatsappConfig?.provider !== 'meta') {
+      const metaFallback = await this.sendMetaMessage(merchant, cleanPhone, text);
+      if (metaFallback) return { success: true, provider: 'meta_fallback' };
+    }
+
+    throw new Error("WhatsApp n'est pas connecté. Veuillez scanner le QR Code ou lier votre appareil dans les Paramètres WhatsApp.");
   }
 
   getActiveSocket(userId: string) {

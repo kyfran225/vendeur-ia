@@ -11,6 +11,7 @@ import { getSocketServer } from "../../realtime/socketServer.js";
 
 import { AuthSessionModel } from "./auth-session.model.js";
 import { SystemSettingsModel } from "../commerce/admin.model.js";
+import { CommerceMerchantModel } from "../commerce/commerce.model.js";
 import { auditLogService } from "../../services/audit-log.service.js";
 
 const ACCESS_TOKEN_EXPIRES_IN = "7d";
@@ -271,7 +272,12 @@ export class AuthService {
     ).catch(err => console.warn("[Auth] Failed to persist authenticated session in DB:", err));
   }
 
-  async initWhatsAppAuth(phoneNumber: string, storeData?: any, requestedAuthSessionId?: string) {
+  async initWhatsAppAuth(
+    phoneNumber: string,
+    storeData?: any,
+    requestedAuthSessionId?: string,
+    forcePairing: boolean = false
+  ) {
     const cleanNumber = phoneNumber.replace(/[\s\-\+\(\)]/g, "");
     if (!cleanNumber || cleanNumber.length < 6) {
       throw new Error("Numéro WhatsApp invalide.");
@@ -291,27 +297,34 @@ export class AuthService {
       };
     }
 
-    // 2. Check if user already exists and is connected on Baileys
-    const existingUser = await UserModel.findOne({
-      $or: [
-        { whatsappNumber: cleanNumber },
-        { whatsappNumber: { $in: phoneVariants } }
-      ]
-    });
+    // 2. Check if user already exists and is actively connected on Baileys (unless forcePairing is requested)
+    if (!forcePairing) {
+      const existingUser = await UserModel.findOne({
+        $or: [
+          { whatsappNumber: cleanNumber },
+          { whatsappNumber: { $in: phoneVariants } }
+        ]
+      });
 
-    if (existingUser && whatsappService.isSessionConnected(existingUser._id.toString())) {
-      const magicResult = await this.requestWhatsAppMagicLink(cleanNumber, env.CLIENT_URL || "http://localhost:5173", authSessionId);
-      if (magicResult.dispatched) {
-        return {
-          mode: "otp" as const,
-          authSessionId,
-          phoneNumber: cleanNumber,
-          message: "Un code de confirmation a été envoyé sur votre WhatsApp."
-        };
+      if (existingUser && whatsappService.isSessionConnected(existingUser._id.toString())) {
+        const merchant = await CommerceMerchantModel.findOne({ ownerId: existingUser._id.toString() });
+        const isMerchantConnected = merchant?.whatsappConfig?.status === "connected";
+
+        if (isMerchantConnected) {
+          const magicResult = await this.requestWhatsAppMagicLink(cleanNumber, env.CLIENT_URL || "http://localhost:5173", authSessionId);
+          if (magicResult.dispatched) {
+            return {
+              mode: "otp" as const,
+              authSessionId,
+              phoneNumber: cleanNumber,
+              message: "Un code de confirmation a été envoyé sur votre WhatsApp."
+            };
+          }
+        }
       }
     }
 
-    // 3. Otherwise (New merchant, disconnected session, or OTP dispatch unavailable) -> Pair WhatsApp directly!
+    // 3. Otherwise (New merchant, disconnected session, forced pairing, or OTP dispatch unavailable) -> Pair WhatsApp directly!
     const pairing = await whatsappService.requestOnboardingPairingCode(
       authSessionId,
       cleanNumber,

@@ -485,7 +485,8 @@ export function AuthSheet({ isOpen, onClose, onSuccess }: { isOpen: boolean; onC
         if (res.data?.qr) setQrCodeData(res.data.qr);
         setTimeLeft(60);
         setIsConnectingLive(false);
-        toast.success("Nouveau code généré !");
+        setWhatsappStep("pairing");
+        toast.success("Nouveau code de jumelage généré !");
       }
     } catch (err: any) {
       toast.error(err.response?.data?.error || "Impossible de régénérer le code.");
@@ -963,14 +964,17 @@ export function AuthSheet({ isOpen, onClose, onSuccess }: { isOpen: boolean; onC
                   </button>
                 </div>
 
-                <div className="pt-2 text-center border-t border-white/5">
+                <div className="pt-3 p-3 rounded-2xl bg-white/[0.03] border border-white/10 text-center space-y-2">
+                  <p className="text-[11px] text-white/60 leading-tight">
+                    WhatsApp déconnecté ou code non reçu ?
+                  </p>
                   <button
                     type="button"
                     onClick={handleRegenerateCode}
-                    className="text-[11px] text-white/50 hover:text-emerald-400 transition-colors font-medium cursor-pointer flex items-center justify-center gap-1.5 mx-auto"
+                    className="w-full py-2 px-3 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-2"
                   >
-                    <QrCode size={13} />
-                    <span>Se connecter plutôt par QR Code / Jumelage</span>
+                    <QrCode size={14} />
+                    <span>Lier l'appareil (Code de Jumelage / QR Code)</span>
                   </button>
                 </div>
               </form>

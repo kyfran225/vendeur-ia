@@ -34,33 +34,9 @@ export class MessagingService {
     return { success: true };
   }
 
-  private async sendWhatsApp(merchant: any, remoteId: string, content: string, options: any) {
-    const config = merchant.whatsappConfig;
+  private async sendWhatsApp(merchant: any, remoteId: string, content: string, options: any = {}) {
     const userId = merchant.ownerId?.toString() || merchant.ownerId;
-    const { jid, cleanPhone } = formatToWhatsAppRecipient(remoteId);
-
-    if (options.audioBuffer) {
-      if (config?.provider === 'meta') {
-        return (whatsappService as any).sendMetaAudio(merchant, cleanPhone, options.audioBuffer);
-      } else {
-        const sock = (whatsappService as any).activeSessions?.get(userId);
-        if (sock) {
-          return sock.sendMessage(jid, { audio: options.audioBuffer, mimetype: 'audio/mp4', ptt: true });
-        }
-      }
-    } else if (options.mediaUrl && options.type === 'image') {
-      if (config?.provider === 'meta') {
-        // To implement for Meta: Upload by URL then send
-        return whatsappService.sendMetaMessage(merchant, cleanPhone, content); // Fallback for now
-      } else {
-        const sock = (whatsappService as any).activeSessions?.get(userId);
-        if (sock) {
-          return sock.sendMessage(jid, { image: { url: options.mediaUrl }, caption: content });
-        }
-      }
-    } else {
-      return whatsappService.sendMessage(userId, jid, content);
-    }
+    return whatsappService.sendMessage(userId, remoteId, content, options);
   }
 
   private async sendInstagram(merchant: any, remoteId: string, content: string) {

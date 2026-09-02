@@ -252,6 +252,34 @@ class WhatsAppService {
     }, 2000);
   }
 
+  private createBaileysSocket(state: any, version: any) {
+    return makeWASocket({
+      version,
+      auth: state,
+      printQRInTerminal: false,
+      browser: Browsers.macOS("Desktop"),
+      syncFullHistory: false,
+      generateHighQualityLinkPreview: false,
+      markOnlineOnConnect: false,
+      connectTimeoutMs: 60000,
+      keepAliveIntervalMs: 25000,
+      retryRequestDelayMs: 350,
+      maxMsgRetryCount: 3,
+      shouldIgnoreJid: (jid: string) => jid.includes('@broadcast') || jid.includes('@newsletter') || jid.endsWith('@g.us'),
+      getMessage: async (key) => {
+        if (key.id) {
+          try {
+            const msg = await CommerceMessageModel.findOne({ 'metadata.messageId': key.id }).lean();
+            if (msg?.content) {
+              return { conversation: msg.content };
+            }
+          } catch (e) {}
+        }
+        return { conversation: "" };
+      }
+    });
+  }
+
   async initSession(userId: string, force: boolean = false): Promise<void> {
     if (force) {
       const existingSock = this.activeSessions.get(userId);
@@ -276,16 +304,7 @@ class WhatsAppService {
         const { state, saveCreds } = await useMongoAuthState(userId);
         const { version } = await fetchLatestBaileysVersion();
 
-        const sock = makeWASocket({
-          version,
-          auth: state,
-          printQRInTerminal: false,
-          browser: Browsers.ubuntu("Chrome"),
-          syncFullHistory: false,
-          markOnlineOnConnect: true,
-          connectTimeoutMs: 60000,
-          keepAliveIntervalMs: 25000,
-        });
+        const sock = this.createBaileysSocket(state, version);
 
         this.activeSessions.set(userId, sock);
 
@@ -381,16 +400,7 @@ class WhatsAppService {
     const { state, saveCreds } = await useMongoAuthState(userId);
     const { version } = await fetchLatestBaileysVersion();
 
-    const sock = makeWASocket({
-      version,
-      auth: state,
-      printQRInTerminal: false,
-      browser: Browsers.ubuntu("Chrome"),
-      syncFullHistory: false,
-      markOnlineOnConnect: true,
-      connectTimeoutMs: 60000,
-      keepAliveIntervalMs: 25000,
-    });
+    const sock = this.createBaileysSocket(state, version);
 
     this.activeSessions.set(userId, sock);
 
@@ -484,16 +494,7 @@ class WhatsAppService {
     const { state, saveCreds } = await useMongoAuthState(userId);
     const { version } = await fetchLatestBaileysVersion();
 
-    const sock = makeWASocket({
-      version,
-      auth: state,
-      printQRInTerminal: false,
-      browser: Browsers.ubuntu("Chrome"),
-      syncFullHistory: false,
-      markOnlineOnConnect: true,
-      connectTimeoutMs: 60000,
-      keepAliveIntervalMs: 25000,
-    });
+    const sock = this.createBaileysSocket(state, version);
 
     this.activeSessions.set(userId, sock);
 
@@ -592,16 +593,7 @@ class WhatsAppService {
 
     let currentOwnerId: string = authSessionId;
 
-    const sock = makeWASocket({
-      version,
-      auth: state,
-      printQRInTerminal: false,
-      browser: Browsers.ubuntu("Chrome"),
-      syncFullHistory: false,
-      markOnlineOnConnect: true,
-      connectTimeoutMs: 60000,
-      keepAliveIntervalMs: 25000,
-    });
+    const sock = this.createBaileysSocket(state, version);
 
     this.activeSessions.set(authSessionId, sock);
     sock.ev.on("creds.update", saveCreds);
@@ -978,8 +970,10 @@ class WhatsAppService {
       }
     }
 
-    // Trigger WhatsApp Profile Picture synchronization in the background
-    this.syncCustomerAvatar(userId, customer).catch(() => {});
+    // Trigger WhatsApp Profile Picture synchronization safely in the background (non-blocking)
+    setTimeout(() => {
+      this.syncCustomerAvatar(userId, customer).catch(() => {});
+    }, 5000);
 
     // Find or create conversation
     let conversation = await CommerceConversationModel.findOne({ merchantId: merchant._id, customerId: customer._id });
@@ -1751,10 +1745,12 @@ class WhatsAppService {
   }
 
   async sendPresence(userId: string, remoteJid: string, presence: 'composing' | 'available' | 'paused') {
+    const { jid } = formatToWhatsAppRecipient(remoteJid);
+    if (!jid) return;
     const sock = this.activeSessions.get(userId);
     if (sock && sock.user && (sock.user.id || (sock.user as any).lid)) {
       try {
-        await sock.sendPresenceUpdate(presence, remoteJid);
+        await sock.sendPresenceUpdate(presence, jid);
       } catch (err) {
         console.error(`[WhatsApp] Failed to send presence for user ${userId}:`, err);
       }
@@ -1763,7 +1759,7 @@ class WhatsAppService {
     }
   }
 
-  async sendMessage(userId: string, to: string, text: string, options?: { type?: 'text' | 'audio' }) {
+  async sendMessage(userId: string, to: string, text: string, options?: { type?: string; mediaUrl?: string; audioBuffer?: Buffer }) {
     let merchant = await CommerceMerchantModel.findOne({
       $or: [
         { ownerId: userId },
@@ -1774,10 +1770,13 @@ class WhatsAppService {
         { businessName: "Vendeur IA" }
       ]
     });
-    if (!merchant) throw new Error("Merchant not found");
+    if (!merchant) throw new Error("Marchand non trouvé");
 
     const { jid, cleanPhone } = formatToWhatsAppRecipient(to);
-    const useAudio = options?.type === 'audio' || (merchant.aiSettings?.voiceMode && text.length < 300);
+    if (!jid) throw new Error(`Destinataire WhatsApp invalide: ${to}`);
+
+    const useAudio = options?.type === 'audio' || !!options?.audioBuffer || (merchant.aiSettings?.voiceMode && text.length < 300);
+    const useImage = (options?.type === 'image' || !!options?.mediaUrl) && !!options?.mediaUrl;
 
     const merchantOwnerId = merchant.ownerId?.toString() || userId?.toString();
     let sock = this.activeSessions.get(userId?.toString()) || this.activeSessions.get(merchantOwnerId);
@@ -1794,12 +1793,34 @@ class WhatsAppService {
       }
     }
 
-    // 1. If preferred provider is Meta Cloud API
+    // 1. Direct active Baileys socket delivery
+    if (sock && sock.user) {
+      try {
+        if (useImage) {
+          return await sock.sendMessage(jid, { image: { url: options?.mediaUrl }, caption: text });
+        }
+        if (useAudio) {
+          const audioBuffer = options?.audioBuffer || await aiProvider.generateSpeech(text).catch(() => null);
+          if (audioBuffer) {
+            return await sock.sendMessage(jid, {
+              audio: audioBuffer,
+              mimetype: 'audio/mp4',
+              ptt: true
+            });
+          }
+        }
+        return await sock.sendMessage(jid, { text });
+      } catch (baileysErr: any) {
+        console.warn(`[WhatsApp Baileys] Failed to send via socket for ${userId}:`, baileysErr.message);
+      }
+    }
+
+    // 2. If provider is Meta Cloud API
     if (merchant.whatsappConfig?.provider === 'meta') {
       let metaSuccess = false;
       if (useAudio) {
         try {
-          const audioBuffer = await aiProvider.generateSpeech(text);
+          const audioBuffer = options?.audioBuffer || await aiProvider.generateSpeech(text);
           await this.sendMetaAudio(merchant, cleanPhone, audioBuffer);
           metaSuccess = true;
         } catch (err) {
@@ -1810,14 +1831,11 @@ class WhatsAppService {
         metaSuccess = await this.sendMetaMessage(merchant, cleanPhone, text);
       }
 
-      // If Meta succeeded, return result
       if (metaSuccess) return { success: true, provider: 'meta' };
-
-      // Otherwise, fallback to active Baileys socket if available
       console.log(`[WhatsApp] Meta send unsuccessful, attempting fallback to Baileys socket for ${cleanPhone}...`);
     }
 
-    // 2. Baileys Socket Delivery (Direct or Fallback from Meta)
+    // 3. Auto-recover pending or stored Baileys socket if needed
     const pending = this.pendingInitializations.get(userId?.toString()) || this.pendingInitializations.get(merchantOwnerId);
     if (pending && !sock) {
       console.log(`[WhatsApp] Waiting for pending session init for ${userId}...`);
@@ -1830,28 +1848,32 @@ class WhatsAppService {
 
     if (!sock && (merchant.whatsappConfig?.status === 'connected' || merchant.whatsappConfig?.status === 'error')) {
       console.log(`[WhatsApp] On-demand session init for ${merchantOwnerId}`);
-      await this.initSession(merchantOwnerId);
-      sock = this.activeSessions.get(userId?.toString()) || this.activeSessions.get(merchantOwnerId);
+      try {
+        await this.initSession(merchantOwnerId);
+        sock = this.activeSessions.get(userId?.toString()) || this.activeSessions.get(merchantOwnerId);
+      } catch (initErr) {
+        console.warn(`[WhatsApp] On-demand session init failed:`, initErr);
+      }
     }
 
     if (sock && sock.user) {
+      if (useImage) {
+        return await sock.sendMessage(jid, { image: { url: options?.mediaUrl }, caption: text });
+      }
       if (useAudio) {
-        try {
-          const audioBuffer = await aiProvider.generateSpeech(text);
+        const audioBuffer = options?.audioBuffer || await aiProvider.generateSpeech(text).catch(() => null);
+        if (audioBuffer) {
           return await sock.sendMessage(jid, {
             audio: audioBuffer,
             mimetype: 'audio/mp4',
             ptt: true
           });
-        } catch (err) {
-          console.warn("[WhatsApp Baileys] Failed to generate speech, falling back to text:", err);
-          return await sock.sendMessage(jid, { text });
         }
       }
       return await sock.sendMessage(jid, { text });
     }
 
-    // 3. If Baileys is not connected but Meta wasn't tried yet, try Meta as ultimate fallback
+    // 4. Meta fallback if not tried yet
     if (merchant.whatsappConfig?.provider !== 'meta') {
       const metaFallback = await this.sendMetaMessage(merchant, cleanPhone, text);
       if (metaFallback) return { success: true, provider: 'meta_fallback' };

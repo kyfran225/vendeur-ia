@@ -399,8 +399,12 @@ export function SalesInbox() {
       const res = await apiClient.post(`/api/commerce/conversations/${id}/messages`, { content: text });
       return res.data;
     },
-    onSuccess: () => {
-      playMessageSentPop();
+    onSuccess: (data: any) => {
+      if (data?.deliveryError) {
+        toast.error(`⚠️ Non remis sur WhatsApp : ${data.deliveryError}`);
+      } else {
+        playMessageSentPop();
+      }
       setManualMessage("");
       setFollowupData({ text: "", isOpen: false });
       queryClient.invalidateQueries({ queryKey: ["messages", selectedChat] });

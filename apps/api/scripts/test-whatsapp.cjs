@@ -7,12 +7,10 @@ dotenv.config({ path: path.join(__dirname, '../.env') });
 const phoneNumberId = process.env.WHATSAPP_PHONE_ID || "1283754474826620";
 const accessToken = process.env.WHATSAPP_ACCESS_TOKEN;
 const to = "2250102273966"; 
-const text = "Test Vendeur IA: Authentification réussie !";
+const text = "Test Vendeur IA: Service WhatsApp opérationnel";
 
 async function test() {
-  console.log('Using Phone ID:', phoneNumberId);
-  console.log('Sending to:', to);
-
+  console.log('Testing WhatsApp Cloud API connectivity...');
   try {
     const res = await axios.post(
       `https://graph.facebook.com/v20.0/${phoneNumberId}/messages`,
@@ -37,4 +35,5 @@ async function test() {
 }
 
 test();
+
 

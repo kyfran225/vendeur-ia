@@ -639,13 +639,21 @@ router.post("/conversations/:id/messages", authenticate, async (req, res) => {
     const platform = conversation.platform || "whatsapp";
     const remoteId = platform === "web" ? (customer.platformId || "WEB_VISITOR") : customer.phone;
 
+    let deliveryError: string | undefined;
     try {
       await messagingService.sendMessage(merchant, platform, remoteId, content.trim());
     } catch (sendError: any) {
+      deliveryError = sendError.message;
       console.error(`[Messaging] Failed to send to ${platform}:`, sendError.message);
+      targetUserIds.forEach(tId => {
+        emitToUser(tId, "whatsapp:error", {
+          message: sendError.message || "Échec de l'envoi du message",
+          conversationId: conversation._id
+        });
+      });
     }
 
-    res.status(201).json(message);
+    res.status(201).json({ ...message.toObject(), deliveryError });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }

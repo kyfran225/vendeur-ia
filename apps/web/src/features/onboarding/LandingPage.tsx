@@ -132,7 +132,7 @@ function BentoFeatures({ onOpenProduct }: { onOpenProduct?: (tab: ProductTab) =>
     {
       id: "api" as ProductTab,
       title: "Paiements & Abonnements",
-      desc: "Activez votre Vendeur IA instantanément via Mobile Money, Wave ou Google Play pour une gestion sans friction.",
+      desc: "Activez votre Vendeur IA instantanément via Wave, MTN MoMo, Orange Money ou Moov avec validation immédiate.",
       icon: <ShieldCheck className="text-sky-400" size={24} />,
       color: "bg-sky-500/10 border-sky-500/20 hover:border-sky-500/40",
       badge: "API Cloud & Sécurisé",
@@ -340,13 +340,13 @@ function BentoFeatures({ onOpenProduct }: { onOpenProduct?: (tab: ProductTab) =>
                       <path d="M125 85h25 l15 40 15-40 h25 v85 h-20 v-55 l-20 55 h-10 l-20-55 v55 h-20 V85z M225 85 h60 v20 h-20 v65 h-20 v-65 h-20 V85z M310 85 h20 l25 50 v-50 h20 v85 h-20 l-25-50 v50 h-20 V85z" />
                     </svg>
                   </div>
-                  {/* Google Play */}
-                  <div className="h-[26px] w-[90px] rounded-md bg-black border border-white/10 flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform overflow-hidden px-1">
-                    <img
-                      src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png"
-                      alt="Google Play"
-                      className="h-[42px] w-auto object-contain max-w-none"
-                    />
+                  {/* Moov Money */}
+                  <div className="h-6 px-2 rounded-md bg-[#005CA9] flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform text-white font-black text-[9px] tracking-tight">
+                    MOOV
+                  </div>
+                  {/* Paystack */}
+                  <div className="h-6 px-2 rounded-md bg-[#00C3F8]/15 border border-[#00C3F8]/30 flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform text-[#00C3F8] font-bold text-[9px] tracking-tight">
+                    PAYSTACK
                   </div>
                 </div>
               )}

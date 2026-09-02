@@ -215,11 +215,8 @@ Réponds UNIQUEMENT avec le texte final du message.`;
       return { status: 'skipped_mode_pause' };
     }
 
-    // Emit typing start
-    emitToUser(userId, 'ai:typing', { conversationId, isTyping: true });
-
     try {
-      // Native Typing Indicator (Only WhatsApp for now in this impl)
+      // Native Typing Indicator to recipient on WhatsApp
       if (platform === 'whatsapp') {
         await whatsappService.sendPresence(userId, remoteJid, 'composing');
       }
@@ -337,8 +334,6 @@ Réponds UNIQUEMENT avec le texte final du message.`;
 
       return reply;
     } finally {
-      // Emit typing stop in ALL cases (success, error, failure)
-      emitToUser(userId, 'ai:typing', { conversationId, isTyping: false });
       if (platform === 'whatsapp') {
         await whatsappService.sendPresence(userId, remoteJid, 'paused').catch(() => {});
       }

@@ -165,17 +165,22 @@ export function OffersPage() {
           <button
             type="button"
             onClick={async () => {
-              try {
-                await apiClient.post("/api/commerce/merchant", { onboardingCompleted: true });
-                useAuthStore.getState().updateUser({ onboardingCompleted: true });
-              } catch (err) {
-                console.warn("[Offers] Failed to set onboardingCompleted:", err);
+              const currentUser = useAuthStore.getState().user;
+              if (currentUser) {
+                try {
+                  await apiClient.post("/api/commerce/merchant", { onboardingCompleted: true });
+                  useAuthStore.getState().updateUser({ onboardingCompleted: true });
+                } catch (err) {
+                  console.warn("[Offers] Failed to set onboardingCompleted:", err);
+                }
+                navigate("/dashboard");
+              } else {
+                navigate("/");
               }
-              navigate("/dashboard");
             }}
             className="inline-flex items-center gap-2 text-sm sm:text-base font-bold text-white/60 hover:text-vendeur-emerald transition-colors py-2 px-3 sm:px-4 rounded-xl hover:bg-white/5 cursor-pointer"
           >
-            <span>{fromOnboarding ? "Accéder à mon tableau de bord d'abord" : "Accéder directement à mon tableau de bord"}</span>
+            <span>{fromOnboarding ? "Accéder à mon tableau de bord d'abord" : (useAuthStore.getState().user ? "Accéder directement à mon tableau de bord" : "Découvrir la plateforme")}</span>
             <ArrowRight size={16} />
           </button>
           <p className="text-xs text-white/40 font-medium">

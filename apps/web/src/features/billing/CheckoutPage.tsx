@@ -29,7 +29,8 @@ import {
   Image as ImageIcon,
   FileCheck2,
   Trash2,
-  Scan
+  Scan,
+  User
 } from "lucide-react";
 import { CountrySelector, COUNTRIES, Country, parsePhoneNumber, formatDisplayPhone } from "@/features/onboarding/components/CountrySelector";
 import { convertCurrencyAmount, CURRENCIES_DATA } from "@vendeur-ia/core";
@@ -38,6 +39,7 @@ import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { VendeurIALoader } from "@/components/ui/VendeurIALoader";
 import { WhatsAppIcon } from "@/components/ui/WhatsAppIcon";
+import { AuthSheet } from "@/features/auth/components/AuthSheet";
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -56,6 +58,7 @@ export function CheckoutPage() {
 
   // Guided Step state: 1 (Payment Method & Country), 2 (Transfer Details), 3 (Confirmation & Proof)
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1);
+  const [isAuthOpen, setIsAuthOpen] = useState(false);
 
   // Payment states
   const [selectedMethod, setSelectedMethod] = useState<string>("wave");
@@ -151,7 +154,6 @@ export function CheckoutPage() {
   // When payment config loads or userCountry changes, ensure selectedMethod is valid for that country
   useEffect(() => {
     if (!paymentConfig?.methods) return;
-    if (selectedMethod === "card" || selectedMethod === "google_play") return;
 
     const isAvailable = paymentConfig.methods.some((m: any) => m.id === selectedMethod);
     if (!isAvailable) {
@@ -164,8 +166,7 @@ export function CheckoutPage() {
   }, [paymentConfig, userCountry, selectedMethod]);
 
   const isMethodValid = Boolean(
-    selectedMethod &&
-    (selectedMethod === "card" || selectedMethod === "google_play" || paymentConfig?.methods?.some((m: any) => m.id === selectedMethod))
+    selectedMethod && paymentConfig?.methods?.some((m: any) => m.id === selectedMethod)
   );
   const isStep1Ready = Boolean(userCountry && isMethodValid);
 
@@ -173,11 +174,9 @@ export function CheckoutPage() {
 
   // Auto-create or refresh PaymentIntent when method or interval changes
   useEffect(() => {
-    if (selectedMethod === "card" || selectedMethod === "google_play") return;
-
     let isMounted = true;
     const createIntent = async () => {
-      if (!user) return;
+      if (!user || !selectedMethod) return;
       try {
         const res = await apiClient.post("/api/commerce/payments/intent", {
           offerSlug,
@@ -264,30 +263,13 @@ export function CheckoutPage() {
     setTimeout(() => setCopiedField(null), 2000);
   };
 
-  const handleCardPaystack = async () => {
-    setLoading(true);
-    try {
-      const res = await apiClient.post("/api/commerce/checkout", {
-        offerSlug,
-        email: user?.email,
-        setupOption,
-        billingInterval
-      });
-
-      if (res.data.authorization_url) {
-        window.location.href = res.data.authorization_url;
-      } else {
-        toast.error("Impossible de générer le lien de paiement.");
-      }
-    } catch (error: any) {
-      toast.error(error.response?.data?.error || "Erreur de paiement");
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleReceiptUploadAndScan = async (file: File) => {
     if (!file) return;
+    if (!user) {
+      toast.info("Veuillez vous connecter ou créer votre compte pour déposer un reçu.");
+      setIsAuthOpen(true);
+      return;
+    }
     if (!file.type.startsWith("image/")) {
       toast.error("Veuillez sélectionner une image (JPG, PNG, WebP).");
       return;
@@ -357,6 +339,11 @@ export function CheckoutPage() {
 
   const handleSubmitProof = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!user) {
+      toast.info("Veuillez vous connecter ou créer votre compte pour valider votre paiement.");
+      setIsAuthOpen(true);
+      return;
+    }
     if (!activeIntent?._id) {
       toast.error("Session de paiement invalide.");
       return;
@@ -385,23 +372,6 @@ export function CheckoutPage() {
       toast.error(err.response?.data?.error || "Erreur lors de la soumission");
     } finally {
       setSubmittingProof(false);
-    }
-  };
-
-  const handleGooglePlayPay = async () => {
-    setLoading(true);
-    try {
-      await apiClient.post("/api/commerce/payments/intent", {
-        offerSlug,
-        billingInterval,
-        paymentMethod: "google_play",
-        country: userCountry
-      });
-      toast.success("Veuillez finaliser l'achat sur la fenêtre Google Play.");
-    } catch (err) {
-      toast.error("Erreur d'initialisation Google Play");
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -435,34 +405,32 @@ export function CheckoutPage() {
           </button>
 
           {/* Clean Stepper Indicators */}
-          {selectedMethod !== "card" && selectedMethod !== "google_play" && (
-            <div className="flex items-center gap-2">
-              {steps.map((s, idx) => (
-                <React.Fragment key={s.num}>
-                  <div
-                    onClick={() => {
-                      // Allow going back to previous steps
-                      if (s.num < currentStep) setCurrentStep(s.num as any);
-                    }}
-                    className={cn(
-                      "flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider transition-all",
-                      currentStep === s.num
-                        ? "bg-vendeur-emerald text-vendeur-coal shadow-md shadow-vendeur-emerald/20"
-                        : currentStep > s.num
-                        ? "bg-white/10 text-white hover:bg-white/15 cursor-pointer"
-                        : "text-white/20"
-                    )}
-                  >
-                    <span>{s.num}</span>
-                    <span className="hidden sm:inline">{s.label}</span>
-                  </div>
-                  {idx < steps.length - 1 && (
-                    <div className={cn("w-3 h-px", currentStep > s.num ? "bg-vendeur-emerald" : "bg-white/10")} />
+          <div className="flex items-center gap-2">
+            {steps.map((s, idx) => (
+              <React.Fragment key={s.num}>
+                <div
+                  onClick={() => {
+                    // Allow going back to previous steps
+                    if (s.num < currentStep) setCurrentStep(s.num as any);
+                  }}
+                  className={cn(
+                    "flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider transition-all",
+                    currentStep === s.num
+                      ? "bg-vendeur-emerald text-vendeur-coal shadow-md shadow-vendeur-emerald/20"
+                      : currentStep > s.num
+                      ? "bg-white/10 text-white hover:bg-white/15 cursor-pointer"
+                      : "text-white/20"
                   )}
-                </React.Fragment>
-              ))}
-            </div>
-          )}
+                >
+                  <span>{s.num}</span>
+                  <span className="hidden sm:inline">{s.label}</span>
+                </div>
+                {idx < steps.length - 1 && (
+                  <div className={cn("w-3 h-px", currentStep > s.num ? "bg-vendeur-emerald" : "bg-white/10")} />
+                )}
+              </React.Fragment>
+            ))}
+          </div>
         </div>
 
         {/* Compact Plan Summary Banner (Mobile-Optimized & Reassuring) */}
@@ -495,6 +463,38 @@ export function CheckoutPage() {
             </div>
           </div>
         </div>
+
+        {/* Unauthenticated Visitor Identification Card */}
+        {!user && (
+          <div className="bg-gradient-to-r from-emerald-950/70 via-[#0c1611] to-emerald-950/70 border border-vendeur-emerald/40 rounded-2xl sm:rounded-3xl p-4 sm:p-6 text-left space-y-3.5 shadow-xl animate-in fade-in">
+            <div className="flex items-start sm:items-center gap-3.5">
+              <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-xl sm:rounded-2xl bg-vendeur-emerald/20 text-vendeur-emerald border border-vendeur-emerald/40 flex items-center justify-center shrink-0">
+                <User size={22} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="text-sm sm:text-base font-black uppercase text-white tracking-tight">
+                  Identifiez-vous pour lier votre Vendeur IA
+                </h3>
+                <p className="text-xs sm:text-sm text-white/70 mt-0.5 leading-relaxed">
+                  Créez votre compte ou connectez-vous en 30 secondes pour associer votre abonnement et votre numéro WhatsApp commercial.
+                </p>
+              </div>
+            </div>
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 pt-1">
+              <button
+                type="button"
+                onClick={() => setIsAuthOpen(true)}
+                className="h-11 sm:h-12 px-6 bg-vendeur-emerald hover:bg-emerald-400 text-vendeur-coal font-black uppercase tracking-wider text-xs sm:text-sm rounded-xl flex items-center justify-center gap-2 transition-all active:scale-95 shadow-lg shadow-vendeur-emerald/20 cursor-pointer shrink-0"
+              >
+                <Sparkles size={16} />
+                <span>Créer mon compte / Me connecter</span>
+              </button>
+              <span className="text-[11px] text-white/40 sm:ml-2">
+                ✓ Sans engagement · Configuration immédiate
+              </span>
+            </div>
+          </div>
+        )}
 
         {/* Progressive Guided Stepper Content */}
         <AnimatePresence mode="wait">
@@ -580,79 +580,45 @@ export function CheckoutPage() {
                     );
                   })}
 
-                  {/* Card Option */}
-                  <button
-                    type="button"
-                    onClick={() => setSelectedMethod("card")}
-                    className={cn(
-                      "p-3.5 sm:p-4 rounded-2xl border text-left flex flex-col justify-between gap-2.5 transition-all cursor-pointer",
-                      selectedMethod === "card"
-                        ? "bg-vendeur-emerald/10 border-vendeur-emerald ring-1 ring-vendeur-emerald/30 shadow-lg shadow-vendeur-emerald/10"
-                        : "bg-[#0b120f] border-white/10 hover:border-white/20"
-                    )}
+                  {/* Carte Bancaire (Bientôt disponible) */}
+                  <div
+                    onClick={() => {
+                      toast.info("💳 Le paiement par Carte Bancaire (Visa / Mastercard) sera bientôt disponible ! Pour une activation instantanée, choisissez Wave, MTN MoMo ou Orange Money. 🚀");
+                    }}
+                    className="p-3.5 sm:p-4 rounded-2xl border text-left flex flex-col justify-between gap-2.5 transition-all cursor-pointer bg-[#0b120f]/60 border-white/10 opacity-70 hover:opacity-100 hover:border-white/20 relative overflow-hidden group"
                   >
                     <div className="flex items-center justify-between w-full">
-                      <span className="text-xs sm:text-sm font-black uppercase tracking-tight text-white">Carte Bancaire</span>
-                      <CreditCard size={16} className="text-white/60" />
+                      <span className="text-xs sm:text-sm font-black uppercase tracking-tight text-white/80">Carte Bancaire</span>
+                      <CreditCard size={16} className="text-white/40 group-hover:text-white/70" />
                     </div>
-                    <span className="text-[10px] sm:text-[11px] text-white/50 font-medium">Visa, Mastercard</span>
-                  </button>
-
-                  {/* Google Play Option */}
-                  <button
-                    type="button"
-                    onClick={() => setSelectedMethod("google_play")}
-                    className={cn(
-                      "p-3.5 sm:p-4 rounded-2xl border text-left flex flex-col justify-between gap-2.5 transition-all cursor-pointer",
-                      selectedMethod === "google_play"
-                        ? "bg-vendeur-emerald/10 border-vendeur-emerald ring-1 ring-vendeur-emerald/30 shadow-lg shadow-vendeur-emerald/10"
-                        : "bg-[#0b120f] border-white/10 hover:border-white/20"
-                    )}
-                  >
-                    <div className="flex items-center justify-between w-full">
-                      <span className="text-xs sm:text-sm font-black uppercase tracking-tight text-white">Google Play</span>
-                      <QrCode size={16} className="text-[#4285F4]" />
+                    <div className="flex items-center justify-between gap-1">
+                      <span className="text-[10px] sm:text-[11px] text-white/40 font-medium">Visa, Mastercard</span>
+                      <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-400 border border-amber-500/30">
+                        Bientôt dispo
+                      </span>
                     </div>
-                    <span className="text-[10px] sm:text-[11px] text-white/50 font-medium">Cartes / In-App</span>
-                  </button>
+                  </div>
                 </div>
               </div>
 
-              {/* Bottom Step 1 Action - Always visible, disabled when incomplete */}
+              {/* Bottom Step 1 Action */}
               <div className="pt-3">
-                {selectedMethod === "card" ? (
-                  <button
-                    type="button"
-                    onClick={handleCardPaystack}
-                    disabled={!isStep1Ready || loading}
-                    className="w-full h-14 min-h-[56px] bg-white text-black hover:bg-white/90 font-black uppercase tracking-wider text-xs sm:text-sm rounded-2xl flex items-center justify-center gap-2.5 transition-all active:scale-98 shadow-xl cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white shrink-0"
-                  >
-                    {loading ? <Loader2 className="animate-spin shrink-0" size={18} /> : <Lock size={16} className="shrink-0" />}
-                    <span>Payer par Carte ({totalToday.toLocaleString()} {activeCurrencySymbol})</span>
-                    <ChevronRight size={18} className="shrink-0" />
-                  </button>
-                ) : selectedMethod === "google_play" ? (
-                  <button
-                    type="button"
-                    onClick={handleGooglePlayPay}
-                    disabled={!isStep1Ready || loading}
-                    className="w-full h-14 min-h-[56px] bg-[#4285F4] hover:bg-[#3367D6] text-white font-black uppercase tracking-wider text-xs sm:text-sm rounded-2xl flex items-center justify-center gap-2.5 transition-all active:scale-98 shadow-xl cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[#4285F4] shrink-0"
-                  >
-                    {loading ? <Loader2 className="animate-spin shrink-0" size={18} /> : <QrCode size={18} className="shrink-0" />}
-                    <span>Payer via Google Play</span>
-                    <ChevronRight size={18} className="shrink-0" />
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => isStep1Ready && setCurrentStep(2)}
-                    disabled={!isStep1Ready}
-                    className="w-full h-14 min-h-[56px] bg-vendeur-emerald hover:bg-emerald-400 text-vendeur-coal font-black uppercase tracking-wider text-xs sm:text-sm rounded-2xl flex items-center justify-center gap-2 transition-all active:scale-98 shadow-xl shadow-vendeur-emerald/20 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-vendeur-emerald disabled:shadow-none shrink-0"
-                  >
-                    <span>Continuer le paiement</span>
-                    <ChevronRight size={18} className="shrink-0" />
-                  </button>
-                )}
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!user) {
+                      toast.info("Veuillez vous identifier pour préparer votre accès Vendeur IA.");
+                      setIsAuthOpen(true);
+                      return;
+                    }
+                    if (isStep1Ready) setCurrentStep(2);
+                  }}
+                  disabled={!isStep1Ready}
+                  className="w-full h-14 min-h-[56px] bg-vendeur-emerald hover:bg-emerald-400 text-vendeur-coal font-black uppercase tracking-wider text-xs sm:text-sm rounded-2xl flex items-center justify-center gap-2 transition-all active:scale-98 shadow-xl shadow-vendeur-emerald/20 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-vendeur-emerald disabled:shadow-none shrink-0"
+                >
+                  <span>Continuer le paiement</span>
+                  <ChevronRight size={18} className="shrink-0" />
+                </button>
               </div>
             </motion.div>
           )}
@@ -917,6 +883,12 @@ export function CheckoutPage() {
           <ShieldCheck size={14} className="text-vendeur-emerald shrink-0" />
           <span>Paiement sécurisé et garanti. Support direct WhatsApp 7j/7.</span>
         </div>
+
+        {/* Global Auth Sheet for Unauthenticated Visitors */}
+        <AuthSheet
+          isOpen={isAuthOpen}
+          onClose={() => setIsAuthOpen(false)}
+        />
       </div>
     </div>
   );

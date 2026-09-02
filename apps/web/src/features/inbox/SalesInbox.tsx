@@ -27,7 +27,6 @@ import { twMerge } from "tailwind-merge";
 import { stripActionTags } from "@/lib/utils";
 
 import { useMerchant } from "@/hooks/useMerchant";
-import { WhatsAppTypingIndicator } from "@/components/ui/WhatsAppTypingIndicator";
 import { VendeurIALoader } from "@/components/ui/VendeurIALoader";
 import { OrderCreationModal } from "@/features/orders/OrderCreationModal";
 import { FastPayModal } from "./FastPayModal";
@@ -112,7 +111,6 @@ export function SalesInbox() {
   const chatFromUrl = searchParams.get("chat");
   const [selectedChat, setSelectedChat] = useState<string | null>(chatFromUrl || null);
   const [showMobileChat, setShowMobileChat] = useState(Boolean(chatFromUrl));
-  const [typingChats, setTypingChats] = useState<Record<string, boolean>>({});
   const [manualMessage, setManualMessage] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [filterTab, setFilterTab] = useState<"all" | "unread" | "ai" | "human">("all");
@@ -255,10 +253,6 @@ export function SalesInbox() {
       }
     };
 
-    const handleAiTyping = (data: { conversationId: string; isTyping: boolean }) => {
-      setTypingChats(prev => ({ ...prev, [data.conversationId]: data.isTyping }));
-    };
-
     const handlePaymentDetected = (data: any) => {
       playWhatsAppIncomingChime();
       toast.success(`💰 Paiement détecté (${data.amount} ${data.currency || merchantCurrency}) !`);
@@ -279,14 +273,12 @@ export function SalesInbox() {
 
     socket.on("conversation:update", handleConvUpdate);
     socket.on("notification:new", handleNotificationNew);
-    socket.on("ai:typing", handleAiTyping);
     socket.on("payment:detected", handlePaymentDetected);
     socket.on("session:status", handleSessionStatus);
 
     return () => {
       socket.off("conversation:update", handleConvUpdate);
       socket.off("notification:new", handleNotificationNew);
-      socket.off("ai:typing", handleAiTyping);
       socket.off("payment:detected", handlePaymentDetected);
       socket.off("session:status", handleSessionStatus);
     };
@@ -312,7 +304,7 @@ export function SalesInbox() {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [messages, typingChats]);
+  }, [messages]);
 
   // Mark conversation read mutation
   const markReadMutation = useMutation({
@@ -654,7 +646,6 @@ export function SalesInbox() {
               const displayName = formatCustomerDisplayName(chat.customerId, merchant?.businessName, user?.displayName);
               const isActive = selectedChat === chat._id;
               const hasUnread = (chat.unreadCount || 0) > 0;
-              const isTyping = typingChats[chat._id];
               const isHumanTakeover = chat.status === "needs_human";
               const lastSnippet = chat.lastMessage?.content || (chat.status === "needs_human" ? "Contrôle manuel" : "Discussion active");
 
@@ -707,24 +698,15 @@ export function SalesInbox() {
 
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-1 text-[11px] text-white/60 truncate min-w-0">
-                        {isTyping ? (
-                          <span className="text-emerald-400 font-bold animate-pulse flex items-center gap-1">
-                            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-ping" />
-                            En train d'écrire...
-                          </span>
-                        ) : (
-                          <>
-                            {chat.lastMessage?.sender === "human" && (
-                              <span className="text-sky-400 font-bold shrink-0">Admin: </span>
-                            )}
-                            {chat.lastMessage?.sender === "ai" && (
-                              <span className="text-emerald-400 font-bold shrink-0">IA: </span>
-                            )}
-                            {chat.lastMessage?.type === "audio" && <Mic size={11} className="text-sky-400 shrink-0" />}
-                            {chat.lastMessage?.type === "image" && <ImageIcon size={11} className="text-amber-400 shrink-0" />}
-                            <span className="truncate">{stripActionTags(lastSnippet)}</span>
-                          </>
+                        {chat.lastMessage?.sender === "human" && (
+                          <span className="text-sky-400 font-bold shrink-0">Admin: </span>
                         )}
+                        {chat.lastMessage?.sender === "ai" && (
+                          <span className="text-emerald-400 font-bold shrink-0">IA: </span>
+                        )}
+                        {chat.lastMessage?.type === "audio" && <Mic size={11} className="text-sky-400 shrink-0" />}
+                        {chat.lastMessage?.type === "image" && <ImageIcon size={11} className="text-amber-400 shrink-0" />}
+                        <span className="truncate">{stripActionTags(lastSnippet)}</span>
                       </div>
 
                       {/* Unread badge or Takeover Pill */}
@@ -948,8 +930,6 @@ export function SalesInbox() {
                   />
                 ))
               )}
-
-              {typingChats[selectedChat] && <WhatsAppTypingIndicator variant="bubble" />}
             </div>
 
             {/* AI Follow-up Preview Box */}
@@ -1256,12 +1236,9 @@ function WhatsAppBubble({ msg, onImageClick }: { msg: any; onImageClick?: (url: 
             : stripActionTags(msg.content)}
         </p>
 
-        {/* Bubble Timestamp and Read Status */}
-        <div className="flex items-center justify-end gap-1 mt-1 opacity-60">
+        {/* Bubble Timestamp */}
+        <div className="flex items-center justify-end mt-1 opacity-60">
           <span className="text-[9px] font-medium text-white/70">{time}</span>
-          {!isCustomer && (
-            <CheckCheck size={13} className="text-[#53bdeb]" />
-          )}
         </div>
       </div>
     </div>

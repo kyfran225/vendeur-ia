@@ -112,7 +112,7 @@ const GoogleLoginButton = ({
   );
 };
 
-export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
+export function AuthSheet({ isOpen, onClose, onSuccess }: { isOpen: boolean; onClose: () => void; onSuccess?: (sessionData: any) => void }) {
   const [authMethod, setAuthMethod] = useState<"whatsapp" | "email">("whatsapp");
   const [whatsappStep, setWhatsappStep] = useState<"input" | "pairing" | "otp" | "founder">("input");
   const [pairTab, setPairTab] = useState<"code" | "qr">("code");
@@ -253,6 +253,17 @@ export function AuthSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
         { id: "auth-toast", duration: 3500 }
       );
       onClose();
+
+      // Custom callback if provided
+      if (onSuccess) {
+        onSuccess(sessionData);
+        return;
+      }
+
+      // If user logged in while on checkout page, remain on checkout page to complete payment
+      if (typeof window !== "undefined" && window.location.pathname.startsWith("/checkout")) {
+        return;
+      }
 
       // 0. Returning merchant (already completed onboarding previously): GO DIRECTLY TO DASHBOARD!
       if (sessionData?.user?.onboardingCompleted) {

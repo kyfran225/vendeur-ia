@@ -28,6 +28,7 @@ class WhatsAppService {
   private activeSessions: Map<string, any> = new Map();
   private pendingInitializations: Map<string, Promise<void>> = new Map();
   private reconnectAttempts: Map<string, number> = new Map();
+  private onboardingAttempts: Map<string, number> = new Map();
   private heartbeatInterval: NodeJS.Timeout | null = null;
   private processedMessageIds: Set<string> = new Set();
   private lastQrMap: Map<string, string> = new Map();
@@ -306,15 +307,15 @@ class WhatsAppService {
       version,
       auth: state,
       printQRInTerminal: false,
-      browser: Browsers.ubuntu("Chrome"),
+      browser: Browsers.macOS("Desktop"),
       syncFullHistory: false,
       generateHighQualityLinkPreview: false,
       markOnlineOnConnect: false,
       connectTimeoutMs: 60000,
       defaultQueryTimeoutMs: 60000,
       keepAliveIntervalMs: 25000,
-      retryRequestDelayMs: 350,
-      maxMsgRetryCount: 3,
+      retryRequestDelayMs: 500,
+      maxMsgRetryCount: 2,
       shouldIgnoreJid: (jid: string) => jid.includes('@broadcast') || jid.includes('@newsletter') || jid.endsWith('@g.us'),
       getMessage: async (key) => {
         if (key.id) {
@@ -812,22 +813,32 @@ class WhatsAppService {
         const errMessage = (lastDisconnect?.error as Error)?.message || "";
         console.log(`[WhatsApp Onboarding Close] Session: ${currentOwnerId}, StatusCode: ${statusCode}, Error: ${errMessage}`);
 
-        const isConnectionError = errMessage.includes("Connection Failure") ||
-                                 errMessage.includes("Stream Errored") ||
-                                 errMessage.includes("QR refs") ||
-                                 statusCode === 408 ||
-                                 statusCode === 515;
-        const isExplicitLogout = statusCode === DisconnectReason.loggedOut && !isConnectionError;
-        const isBadSession = statusCode === DisconnectReason.badSession && !isConnectionError;
+        const isExplicitLogout = statusCode === DisconnectReason.loggedOut || statusCode === 401 || statusCode === 403;
+        const isBadSession = statusCode === DisconnectReason.badSession || (statusCode === 500 && errMessage.includes("Bad Session"));
 
         if (isExplicitLogout || isBadSession) {
-          console.log(`[WhatsApp Onboarding] Explicit logout/bad session for ${authSessionId}. Cleaning session.`);
+          console.log(`[WhatsApp Onboarding] Explicit logout / restricted / bad session for ${authSessionId} (Code ${statusCode}, Error: ${errMessage}). Cleaning session.`);
           this.activeSessions.delete(currentOwnerId);
           this.activeSessions.delete(authSessionId);
+          this.pendingInitializations.delete(authSessionId);
+          this.onboardingAttempts.delete(authSessionId);
+          this.lastPairingCodeMap.delete(authSessionId);
+          this.lastQrMap.delete(authSessionId);
+
           await clearMongoAuthState(authSessionId);
           if (currentOwnerId !== authSessionId) {
             await clearMongoAuthState(currentOwnerId);
           }
+
+          const errorPayload = {
+            status: "error",
+            code: statusCode,
+            error: isExplicitLogout
+              ? "Numéro déconnecté ou temporairement restreint par WhatsApp."
+              : "Session d'appairage expirée ou invalide."
+          };
+          emitToSession(authSessionId, "whatsapp:pairing_error", errorPayload);
+          emitToAuth(cleanNumber, "whatsapp:pairing_error", errorPayload);
           return;
         }
 
@@ -837,14 +848,35 @@ class WhatsAppService {
           return;
         }
 
-        // Transient disconnect during pairing handshake (e.g. 515 restart required, Connection Failure, etc.)
-        console.log(`[WhatsApp Onboarding] Restarting connection for ${authSessionId} to finalize pairing handshake (Code ${statusCode}, Error: ${errMessage})...`);
+        // Retry limit for transient onboarding handshake disconnects (e.g. 515 restart required)
+        const attempts = (this.onboardingAttempts.get(authSessionId) || 0) + 1;
+        this.onboardingAttempts.set(authSessionId, attempts);
+
+        if (attempts > 3) {
+          console.warn(`[WhatsApp Onboarding] Max onboarding retry attempts reached (3) for ${authSessionId}. Aborting loop.`);
+          this.activeSessions.delete(authSessionId);
+          this.pendingInitializations.delete(authSessionId);
+          this.onboardingAttempts.delete(authSessionId);
+          await clearMongoAuthState(authSessionId);
+
+          const errorPayload = {
+            status: "error",
+            code: statusCode,
+            error: "Délai d'appairage dépassé. Veuillez générer un nouveau code."
+          };
+          emitToSession(authSessionId, "whatsapp:pairing_error", errorPayload);
+          emitToAuth(cleanNumber, "whatsapp:pairing_error", errorPayload);
+          return;
+        }
+
+        const delay = attempts * 2500;
+        console.log(`[WhatsApp Onboarding] Restarting connection attempt ${attempts}/3 for ${authSessionId} in ${delay}ms (Code ${statusCode}, Error: ${errMessage})...`);
         this.activeSessions.delete(authSessionId);
         setTimeout(() => {
           this.startOnboardingSocket(authSessionId, cleanNumber, storeData).catch(err => {
             console.error(`[WhatsApp Onboarding] Reconnection failed for ${authSessionId}:`, err);
           });
-        }, 1500);
+        }, delay);
       }
     });
 
@@ -869,6 +901,7 @@ class WhatsAppService {
     }
     this.pendingInitializations.delete(authSessionId);
     this.lastPairingCodeMap.delete(authSessionId);
+    this.onboardingAttempts.delete(authSessionId);
 
     await clearMongoAuthState(authSessionId);
 
@@ -2066,11 +2099,23 @@ class WhatsAppService {
       }
     }
 
+    const sendWithPresence = async (socket: any, targetJid: string, payload: any) => {
+      try {
+        if (socket.sendPresenceUpdate) {
+          await socket.sendPresenceUpdate("composing", targetJid);
+          const typingDelay = Math.min(Math.max((text?.length || 20) * 15, 600), 1800);
+          await new Promise(r => setTimeout(r, typingDelay));
+          await socket.sendPresenceUpdate("paused", targetJid);
+        }
+      } catch (e) {}
+      return await socket.sendMessage(targetJid, payload);
+    };
+
     // 1. Direct active Baileys socket delivery
     if (sock && sock.user) {
       try {
         if (useImage) {
-          return await sock.sendMessage(jid, { image: { url: options?.mediaUrl }, caption: text });
+          return await sendWithPresence(sock, jid, { image: { url: options?.mediaUrl }, caption: text });
         }
         if (useAudio) {
           const audioBuffer = options?.audioBuffer || await aiProvider.generateSpeech(text).catch(() => null);
@@ -2082,7 +2127,7 @@ class WhatsAppService {
             });
           }
         }
-        return await sock.sendMessage(jid, { text });
+        return await sendWithPresence(sock, jid, { text });
       } catch (baileysErr: any) {
         console.warn(`[WhatsApp Baileys] Failed to send via socket for ${userId}:`, baileysErr.message);
       }
@@ -2131,7 +2176,7 @@ class WhatsAppService {
 
     if (sock && sock.user) {
       if (useImage) {
-        return await sock.sendMessage(jid, { image: { url: options?.mediaUrl }, caption: text });
+        return await sendWithPresence(sock, jid, { image: { url: options?.mediaUrl }, caption: text });
       }
       if (useAudio) {
         const audioBuffer = options?.audioBuffer || await aiProvider.generateSpeech(text).catch(() => null);
@@ -2143,7 +2188,7 @@ class WhatsAppService {
           });
         }
       }
-      return await sock.sendMessage(jid, { text });
+      return await sendWithPresence(sock, jid, { text });
     }
 
     // 4. Meta fallback if not tried yet

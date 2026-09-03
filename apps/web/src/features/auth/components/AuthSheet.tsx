@@ -104,7 +104,7 @@ const GoogleLoginButton = ({
       type="button"
       disabled={disabled || internalLoading}
       onClick={() => loginWithGoogle()}
-      className="w-full h-13 min-h-[52px] bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 text-white rounded-2xl flex items-center justify-center gap-3 transition-all active:scale-[0.98] disabled:opacity-50 font-bold text-xs sm:text-sm cursor-pointer shadow-sm shrink-0"
+      className="w-full h-13 min-h-[52px] bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 hover:bg-slate-100 dark:hover:bg-white/10 hover:border-slate-300 dark:hover:border-white/20 text-slate-700 dark:text-white rounded-2xl flex items-center justify-center gap-3 transition-all active:scale-[0.98] disabled:opacity-50 font-bold text-xs sm:text-sm cursor-pointer shadow-sm shrink-0"
     >
       {internalLoading ? <Loader2 className="animate-spin shrink-0" size={18} /> : <GoogleIcon />}
       <span>Continuer avec Google</span>
@@ -234,17 +234,17 @@ export function AuthSheet({ isOpen, onClose, onSuccess }: { isOpen: boolean; onC
       setSession(sessionData);
       toast.custom(
         () => (
-          <div className="flex items-center gap-3 bg-[#0b1410] border border-vendeur-emerald/40 text-white p-3.5 sm:p-4 rounded-2xl shadow-[0_10px_30px_rgba(16,185,129,0.25)] min-w-[300px] animate-in slide-in-from-top-2 duration-300">
-            <div className="h-9 w-9 rounded-xl bg-vendeur-emerald/15 border border-vendeur-emerald/30 flex items-center justify-center shrink-0">
+          <div className="flex items-center gap-3 bg-white dark:bg-[#0b1410] border border-emerald-500/40 text-slate-900 dark:text-white p-3.5 sm:p-4 rounded-2xl shadow-[0_10px_30px_rgba(16,185,129,0.25)] min-w-[300px] animate-in slide-in-from-top-2 duration-300">
+            <div className="h-9 w-9 rounded-xl bg-emerald-50 dark:bg-vendeur-emerald/15 border border-emerald-200 dark:border-vendeur-emerald/30 flex items-center justify-center shrink-0">
               <AssistantIcon size={22} color="#10B981" withBackground={false} />
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-1.5">
-                <span className="text-[10px] font-black uppercase text-vendeur-emerald tracking-wider">Vendeur IA</span>
-                <span className="text-white/40 text-[10px]">·</span>
-                <span className="text-[10px] text-white/50 font-bold uppercase">Connecté</span>
+                <span className="text-[10px] font-black uppercase text-emerald-600 dark:text-vendeur-emerald tracking-wider">Vendeur IA</span>
+                <span className="text-slate-400 dark:text-white/40 text-[10px]">·</span>
+                <span className="text-[10px] text-slate-500 dark:text-white/50 font-bold uppercase">Connecté</span>
               </div>
-              <p className="text-xs sm:text-sm font-black text-white truncate mt-0.5">
+              <p className="text-xs sm:text-sm font-black text-slate-900 dark:text-white truncate mt-0.5">
                 WhatsApp appairé avec succès ! 🎉
               </p>
             </div>
@@ -585,18 +585,18 @@ export function AuthSheet({ isOpen, onClose, onSuccess }: { isOpen: boolean; onC
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
       <div
         className={cn(
-          "relative w-full bg-[#0e1612] border border-white/10 rounded-[1.75rem] p-4 sm:p-6 shadow-2xl overflow-hidden transition-all duration-300",
+          "relative w-full bg-white dark:bg-[#0e1612] border border-slate-200 dark:border-white/10 rounded-[1.75rem] p-4 sm:p-6 shadow-2xl overflow-hidden transition-all duration-300 text-slate-900 dark:text-white",
           whatsappStep === "pairing" ? "max-w-[420px] md:max-w-[680px]" : "max-w-[410px]"
         )}
       >
         {/* Ambient Glow */}
-        <div className="absolute -top-20 -right-20 w-48 h-48 bg-vendeur-emerald/15 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute -bottom-20 -left-20 w-48 h-48 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -top-20 -right-20 w-48 h-48 bg-emerald-500/10 dark:bg-vendeur-emerald/15 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-20 -left-20 w-48 h-48 bg-emerald-500/5 dark:bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
 
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-3.5 right-3.5 w-7 h-7 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 flex items-center justify-center text-white/50 hover:text-white transition-colors cursor-pointer z-10"
+          className="absolute top-3.5 right-3.5 w-7 h-7 rounded-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 hover:bg-slate-200 dark:hover:bg-white/10 flex items-center justify-center text-slate-600 hover:text-slate-950 dark:text-white/50 dark:hover:text-white transition-colors cursor-pointer z-10"
         >
           <X size={15} />
         </button>
@@ -604,10 +604,10 @@ export function AuthSheet({ isOpen, onClose, onSuccess }: { isOpen: boolean; onC
         {/* HEADER (For Input & Email modes, or compact for Pairing) */}
         {whatsappStep !== "pairing" && (
           <div className="text-center space-y-1 mb-4">
-            <div className="inline-flex p-2 rounded-xl bg-vendeur-emerald/10 border border-vendeur-emerald/20 text-vendeur-emerald mb-0.5">
+            <div className="inline-flex p-2 rounded-xl bg-emerald-50 dark:bg-vendeur-emerald/10 border border-emerald-200 dark:border-vendeur-emerald/20 text-emerald-700 dark:text-vendeur-emerald mb-0.5">
               <Logo size={22} />
             </div>
-            <h2 className="text-lg sm:text-xl font-black text-white tracking-tight uppercase">
+            <h2 className="text-lg sm:text-xl font-black text-slate-900 dark:text-white tracking-tight uppercase">
               {authMethod === "whatsapp"
                 ? whatsappStep === "founder"
                   ? "Accès Fondateur & Système"
@@ -620,7 +620,7 @@ export function AuthSheet({ isOpen, onClose, onSuccess }: { isOpen: boolean; onC
                 ? "Nouveau Compte"
                 : "Mot de passe"}
             </h2>
-            <p className="text-[11px] text-white/50 max-w-xs mx-auto leading-tight">
+            <p className="text-[11px] text-slate-500 dark:text-white/50 max-w-xs mx-auto leading-tight">
               {authMethod === "whatsapp"
                 ? whatsappStep === "founder"
                   ? "Numéro système configuré sur l'API Meta Cloud."
@@ -639,20 +639,20 @@ export function AuthSheet({ isOpen, onClose, onSuccess }: { isOpen: boolean; onC
             {whatsappStep === "input" && (
               loading && tempData?.businessName ? (
                 <div className="py-10 flex flex-col items-center justify-center gap-3 text-center">
-                  <div className="h-12 w-12 rounded-2xl bg-vendeur-emerald/15 border border-vendeur-emerald/30 flex items-center justify-center text-vendeur-emerald shadow-lg">
+                  <div className="h-12 w-12 rounded-2xl bg-emerald-50 dark:bg-vendeur-emerald/15 border border-emerald-200 dark:border-vendeur-emerald/30 flex items-center justify-center text-emerald-700 dark:text-vendeur-emerald shadow-lg">
                     <Loader2 className="animate-spin" size={24} />
                   </div>
-                  <p className="text-xs font-black uppercase text-white tracking-widest">
+                  <p className="text-xs font-black uppercase text-slate-900 dark:text-white tracking-widest">
                     Génération du code WhatsApp...
                   </p>
-                  <p className="text-[11px] text-white/50 max-w-xs">
-                    Préparation de l'appairage direct pour <strong className="text-emerald-400">{tempData.businessName}</strong>
+                  <p className="text-[11px] text-slate-500 dark:text-white/50 max-w-xs">
+                    Préparation de l'appairage direct pour <strong className="text-emerald-700 dark:text-emerald-400">{tempData.businessName}</strong>
                   </p>
                 </div>
               ) : (
               <form onSubmit={handleInitiateWhatsApp} className="space-y-3.5">
                 <div className="space-y-1">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-white/50 ml-1">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-white/50 ml-1">
                     Votre Numéro WhatsApp
                   </label>
                   <div className="flex gap-2 items-center w-full">
@@ -667,7 +667,7 @@ export function AuthSheet({ isOpen, onClose, onSuccess }: { isOpen: boolean; onC
                         required
                         type="tel"
                         inputMode="tel"
-                        className="w-full h-12 bg-black/50 border border-white/10 focus:border-vendeur-emerald rounded-xl px-3.5 text-white font-mono text-sm placeholder:text-white/20 outline-none transition-all shadow-inner"
+                        className="w-full h-12 bg-slate-50 dark:bg-black/50 border border-slate-200 dark:border-white/10 focus:border-emerald-500 rounded-xl px-3.5 text-slate-900 dark:text-white font-mono text-sm placeholder:text-slate-400 dark:placeholder:text-white/20 outline-none transition-all shadow-inner"
                         placeholder="07 00 00 00 00"
                         value={localPhone}
                         onChange={(e) => setLocalPhone(e.target.value.replace(/\D/g, ""))}
@@ -680,7 +680,7 @@ export function AuthSheet({ isOpen, onClose, onSuccess }: { isOpen: boolean; onC
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full h-12 bg-vendeur-emerald text-vendeur-coal font-black uppercase tracking-widest text-xs rounded-xl flex items-center justify-center gap-2 hover:bg-emerald-400 active:scale-[0.98] transition-all disabled:opacity-50 shadow-xl shadow-vendeur-emerald/25 cursor-pointer mt-1"
+                  className="w-full h-12 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black uppercase tracking-widest text-xs rounded-xl flex items-center justify-center gap-2 active:scale-[0.98] transition-all disabled:opacity-50 shadow-xl shadow-emerald-500/20 cursor-pointer mt-1"
                 >
                   {loading ? (
                     <Loader2 className="animate-spin shrink-0" size={16} />
@@ -693,8 +693,8 @@ export function AuthSheet({ isOpen, onClose, onSuccess }: { isOpen: boolean; onC
                   )}
                 </button>
 
-                <div className="flex items-center justify-center gap-1.5 text-[10px] text-white/40 pt-0.5">
-                  <ShieldCheck size={13} className="text-vendeur-emerald shrink-0" />
+                <div className="flex items-center justify-center gap-1.5 text-[10px] text-slate-500 dark:text-white/40 pt-0.5">
+                  <ShieldCheck size={13} className="text-emerald-600 dark:text-vendeur-emerald shrink-0" />
                   <span>Appairage direct 100% sécurisé</span>
                 </div>
 
@@ -702,9 +702,9 @@ export function AuthSheet({ isOpen, onClose, onSuccess }: { isOpen: boolean; onC
                 {GOOGLE_CLIENT_ID && (
                   <div className="pt-1.5 space-y-2">
                     <div className="flex items-center gap-3">
-                      <div className="h-px flex-1 bg-white/5" />
-                      <span className="text-[9px] font-black text-white/20 uppercase tracking-widest">ou</span>
-                      <div className="h-px flex-1 bg-white/5" />
+                      <div className="h-px flex-1 bg-slate-200 dark:bg-white/5" />
+                      <span className="text-[9px] font-black text-slate-400 dark:text-white/20 uppercase tracking-widest">ou</span>
+                      <div className="h-px flex-1 bg-slate-200 dark:bg-white/5" />
                     </div>
                     <GoogleLoginButton
                       onSuccess={onClose}
@@ -715,11 +715,11 @@ export function AuthSheet({ isOpen, onClose, onSuccess }: { isOpen: boolean; onC
                 )}
 
                 {/* Discrete Email Fallback Link */}
-                <div className="pt-1 text-center border-t border-white/5">
+                <div className="pt-1 text-center border-t border-slate-200 dark:border-white/5">
                   <button
                     type="button"
                     onClick={() => setAuthMethod("email")}
-                    className="text-[10px] text-white/35 hover:text-white/70 transition-colors font-medium cursor-pointer"
+                    className="text-[10px] text-slate-500 hover:text-slate-800 dark:text-white/35 dark:hover:text-white/70 transition-colors font-medium cursor-pointer"
                   >
                     Connexion par Email / Mot de passe →
                   </button>
@@ -736,28 +736,28 @@ export function AuthSheet({ isOpen, onClose, onSuccess }: { isOpen: boolean; onC
                   <div className="md:col-span-6 space-y-3 text-left">
                     {/* Header */}
                     <div className="space-y-1">
-                      <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-lg bg-vendeur-emerald/10 border border-vendeur-emerald/20 text-vendeur-emerald text-[11px] font-black uppercase tracking-wider">
+                      <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-vendeur-emerald/10 border border-emerald-200 dark:border-vendeur-emerald/20 text-emerald-800 dark:text-emerald-400 text-[11px] font-black uppercase tracking-wider">
                         <WhatsAppIcon size={14} />
                         <span>Connexion Boutique</span>
                       </div>
-                      <h2 className="text-lg sm:text-xl font-black text-white tracking-tight uppercase">
+                      <h2 className="text-lg sm:text-xl font-black text-slate-900 dark:text-white tracking-tight uppercase">
                         Lier votre WhatsApp
                       </h2>
-                      <p className="text-[11px] text-white/50 leading-snug">
-                        Numéro : <strong className="text-white font-mono">{formatDisplayPhone(`${selectedCountry.dialCode}${localPhone}`, selectedCountry.code)}</strong>
+                      <p className="text-[11px] text-slate-500 dark:text-white/50 leading-snug">
+                        Numéro : <strong className="text-slate-950 dark:text-white font-mono">{formatDisplayPhone(`${selectedCountry.dialCode}${localPhone}`, selectedCountry.code)}</strong>
                       </p>
                     </div>
 
                     {/* Method Switcher Tabs */}
-                    <div className="grid grid-cols-2 gap-1 bg-black/60 p-1 rounded-xl border border-white/10">
+                    <div className="grid grid-cols-2 gap-1 bg-slate-100 dark:bg-black/60 p-1 rounded-xl border border-slate-200 dark:border-white/10">
                       <button
                         type="button"
                         onClick={() => setPairTab("qr")}
                         className={cn(
                           "py-1.5 px-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer",
                           pairTab === "qr"
-                            ? "bg-vendeur-emerald text-vendeur-coal shadow-md font-black"
-                            : "text-white/50 hover:text-white"
+                            ? "bg-white dark:bg-vendeur-emerald text-emerald-900 dark:text-vendeur-coal shadow-sm font-black"
+                            : "text-slate-600 hover:text-slate-900 dark:text-white/50 dark:hover:text-white"
                         )}
                       >
                         <QrCode size={13} />
@@ -769,8 +769,8 @@ export function AuthSheet({ isOpen, onClose, onSuccess }: { isOpen: boolean; onC
                         className={cn(
                           "py-1.5 px-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer",
                           pairTab === "code"
-                            ? "bg-vendeur-emerald text-vendeur-coal shadow-md font-black"
-                            : "text-white/50 hover:text-white"
+                            ? "bg-white dark:bg-vendeur-emerald text-emerald-900 dark:text-vendeur-coal shadow-sm font-black"
+                            : "text-slate-600 hover:text-slate-900 dark:text-white/50 dark:hover:text-white"
                         )}
                       >
                         <Smartphone size={13} />
@@ -779,25 +779,25 @@ export function AuthSheet({ isOpen, onClose, onSuccess }: { isOpen: boolean; onC
                     </div>
 
                     {/* Instructions Box */}
-                    <div className="bg-white/[0.03] border border-white/5 rounded-xl p-3 text-xs space-y-2">
-                      <p className="text-[10px] font-black uppercase tracking-wider text-emerald-400">
+                    <div className="bg-slate-50 dark:bg-white/[0.03] border border-slate-200 dark:border-white/5 rounded-xl p-3 text-xs space-y-2">
+                      <p className="text-[10px] font-black uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
                         {pairTab === "qr" ? "3 étapes pour scanner :" : "3 étapes pour lier :"}
                       </p>
-                      <div className="space-y-1.5 text-white/80 text-[11px] leading-tight">
+                      <div className="space-y-1.5 text-slate-700 dark:text-white/80 text-[11px] leading-tight">
                         <div className="flex items-start gap-2">
-                          <span className="h-4 w-4 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-[9px] shrink-0 mt-0.5">
+                          <span className="h-4 w-4 rounded-full bg-emerald-100 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-400 flex items-center justify-center font-bold text-[9px] shrink-0 mt-0.5">
                             1
                           </span>
                           <span>Ouvrez WhatsApp sur votre téléphone.</span>
                         </div>
                         <div className="flex items-start gap-2">
-                          <span className="h-4 w-4 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-[9px] shrink-0 mt-0.5">
+                          <span className="h-4 w-4 rounded-full bg-emerald-100 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-400 flex items-center justify-center font-bold text-[9px] shrink-0 mt-0.5">
                             2
                           </span>
                           <span>Allez dans <strong>Paramètres</strong> &gt; <strong>Appareils connectés</strong> &gt; <strong>Lier un appareil</strong>.</span>
                         </div>
                         <div className="flex items-start gap-2">
-                          <span className="h-4 w-4 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-[9px] shrink-0 mt-0.5">
+                          <span className="h-4 w-4 rounded-full bg-emerald-100 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-400 flex items-center justify-center font-bold text-[9px] shrink-0 mt-0.5">
                             3
                           </span>
                           <span>
@@ -812,15 +812,15 @@ export function AuthSheet({ isOpen, onClose, onSuccess }: { isOpen: boolean; onC
                     {/* Expiration and Regenerate for Mobile/Left */}
                     <div className="flex items-center justify-between px-1 text-xs">
                       {timeLeft > 0 ? (
-                        <span className="text-[10px] font-mono text-white/40">
-                          Expire dans : <strong className="text-white">{timeLeft}s</strong>
+                        <span className="text-[10px] font-mono text-slate-500 dark:text-white/40">
+                          Expire dans : <strong className="text-slate-900 dark:text-white">{timeLeft}s</strong>
                         </span>
                       ) : (
                         <button
                           type="button"
                           onClick={handleRegenerateCode}
                           disabled={isRegenerating}
-                          className="text-[11px] font-bold text-emerald-400 hover:text-emerald-300 flex items-center gap-1.5 cursor-pointer"
+                          className="text-[11px] font-bold text-emerald-700 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300 flex items-center gap-1.5 cursor-pointer"
                         >
                           <RefreshCw size={12} className={isRegenerating ? "animate-spin" : ""} />
                           <span>Régénérer le code</span>
@@ -828,11 +828,11 @@ export function AuthSheet({ isOpen, onClose, onSuccess }: { isOpen: boolean; onC
                       )}
 
                       {/* Live Indicator */}
-                      <div className="flex items-center gap-1.5 text-[10px] text-white/50">
+                      <div className="flex items-center gap-1.5 text-[10px] text-slate-600 dark:text-white/50">
                         <span
                           className={cn(
                             "w-2 h-2 rounded-full shrink-0",
-                            isConnectingLive ? "bg-emerald-400 animate-ping" : "bg-emerald-500/70 animate-pulse"
+                            isConnectingLive ? "bg-emerald-500 animate-ping" : "bg-emerald-500/70 animate-pulse"
                           )}
                         />
                         <span className="truncate max-w-[130px]">
@@ -849,7 +849,7 @@ export function AuthSheet({ isOpen, onClose, onSuccess }: { isOpen: boolean; onC
                           setWhatsappStep("input");
                           setPairingCode("");
                         }}
-                        className="text-[11px] text-white/40 hover:text-white transition-colors font-medium cursor-pointer"
+                        className="text-[11px] text-slate-500 hover:text-slate-900 dark:text-white/40 dark:hover:text-white transition-colors font-medium cursor-pointer"
                       >
                         ← Changer de numéro
                       </button>
@@ -860,13 +860,13 @@ export function AuthSheet({ isOpen, onClose, onSuccess }: { isOpen: boolean; onC
                   <div className="md:col-span-6 mt-4 md:mt-0 flex flex-col items-center justify-center">
                     {pairTab === "qr" ? (
                       /* Big, Crisp, Easy-to-Scan QR Code Card */
-                      <div className="w-full bg-black/60 border border-emerald-500/30 rounded-2xl p-4 sm:p-5 text-center relative overflow-hidden shadow-2xl flex flex-col items-center justify-center">
-                        <div className="text-[10px] font-black uppercase tracking-widest text-emerald-400 mb-3 flex items-center gap-1.5">
+                      <div className="w-full bg-slate-50 dark:bg-black/60 border border-slate-200 dark:border-emerald-500/30 rounded-2xl p-4 sm:p-5 text-center relative overflow-hidden shadow-xl flex flex-col items-center justify-center">
+                        <div className="text-[10px] font-black uppercase tracking-widest text-emerald-700 dark:text-emerald-400 mb-3 flex items-center gap-1.5">
                           <QrCode size={13} />
                           <span>Scannez avec WhatsApp</span>
                         </div>
 
-                        <div className="bg-white p-3.5 sm:p-4 rounded-2xl shadow-[0_10px_30px_rgba(0,0,0,0.5)] border border-white/20 inline-block transition-transform hover:scale-[1.02]">
+                        <div className="bg-white p-3.5 sm:p-4 rounded-2xl shadow-[0_10px_30px_rgba(0,0,0,0.1)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.5)] border border-slate-200 dark:border-white/20 inline-block transition-transform hover:scale-[1.02]">
                           {qrCodeData ? (
                             <QRCodeSVG
                               value={qrCodeData}
@@ -876,25 +876,25 @@ export function AuthSheet({ isOpen, onClose, onSuccess }: { isOpen: boolean; onC
                             />
                           ) : (
                             <div className="w-[190px] h-[190px] sm:w-[210px] sm:h-[210px] flex flex-col items-center justify-center gap-2 text-black/60">
-                              <Loader2 className="animate-spin text-vendeur-emerald" size={32} />
+                              <Loader2 className="animate-spin text-emerald-500" size={32} />
                               <span className="text-xs font-bold text-black/80">Génération du QR Code...</span>
                             </div>
                           )}
                         </div>
 
-                        <p className="text-[10px] text-white/40 mt-3 max-w-[200px] leading-tight">
+                        <p className="text-[10px] text-slate-500 dark:text-white/40 mt-3 max-w-[200px] leading-tight">
                           Pointez l'appareil photo WhatsApp directement sur le QR Code.
                         </p>
                       </div>
                     ) : (
                       /* 8-Digit Code Big Card */
-                      <div className="w-full bg-black/60 border border-emerald-500/30 rounded-2xl p-5 sm:p-6 text-center relative overflow-hidden shadow-2xl flex flex-col items-center justify-center space-y-3.5">
-                        <div className="text-[10px] font-black uppercase tracking-widest text-emerald-400 flex items-center gap-1.5">
+                      <div className="w-full bg-slate-50 dark:bg-black/60 border border-slate-200 dark:border-emerald-500/30 rounded-2xl p-5 sm:p-6 text-center relative overflow-hidden shadow-xl flex flex-col items-center justify-center space-y-3.5">
+                        <div className="text-[10px] font-black uppercase tracking-widest text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5">
                           <Smartphone size={13} />
                           <span>Code de Jumelage</span>
                         </div>
 
-                        <div className="font-mono text-3xl sm:text-4xl font-black text-white tracking-[0.25em] py-1 select-all">
+                        <div className="font-mono text-3xl sm:text-4xl font-black text-slate-950 dark:text-white tracking-[0.25em] py-1 select-all">
                           {pairingCode || "••••-••••"}
                         </div>
 
@@ -902,17 +902,17 @@ export function AuthSheet({ isOpen, onClose, onSuccess }: { isOpen: boolean; onC
                           type="button"
                           onClick={handleCopyCode}
                           className={cn(
-                            "w-full h-10 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer shadow-lg",
+                            "w-full h-10 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer shadow-sm",
                             copied
-                              ? "bg-emerald-500 text-black font-black shadow-emerald-500/20"
-                              : "bg-white/10 hover:bg-white/20 text-white"
+                              ? "bg-emerald-500 text-slate-950 font-black shadow-emerald-500/20"
+                              : "bg-slate-200 hover:bg-slate-300 dark:bg-white/10 dark:hover:bg-white/20 text-slate-800 dark:text-white"
                           )}
                         >
                           {copied ? <Check size={15} /> : <Copy size={15} />}
                           <span>{copied ? "Code copié !" : "Copier le code"}</span>
                         </button>
 
-                        <p className="text-[10px] text-white/40 leading-tight">
+                        <p className="text-[10px] text-slate-500 dark:text-white/40 leading-tight">
                           Collez ce code dans <em>« Lier avec un numéro »</em> sur votre WhatsApp.
                         </p>
                       </div>
@@ -925,23 +925,23 @@ export function AuthSheet({ isOpen, onClose, onSuccess }: { isOpen: boolean; onC
             {/* STEP 3: RETURNING USER OTP VIEW */}
             {whatsappStep === "otp" && (
               <form onSubmit={handleVerifyOtp} className="space-y-4 animate-in zoom-in-95 duration-200">
-                <div className="flex items-center justify-between p-3 rounded-2xl bg-white/[0.03] border border-white/10 shadow-inner">
+                <div className="flex items-center justify-between p-3 rounded-2xl bg-slate-50 dark:bg-white/[0.03] border border-slate-200 dark:border-white/10 shadow-inner">
                   <div className="flex items-center gap-2.5 min-w-0">
-                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse shrink-0" />
+                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
                     <div className="text-left min-w-0">
-                      <p className="text-[10px] text-white/40 uppercase font-black tracking-wider leading-none">Code envoyé au numéro</p>
-                      <p className="text-xs font-mono font-bold text-white truncate mt-1">
+                      <p className="text-[10px] text-slate-500 dark:text-white/40 uppercase font-black tracking-wider leading-none">Code envoyé au numéro</p>
+                      <p className="text-xs font-mono font-bold text-slate-900 dark:text-white truncate mt-1">
                         {formatDisplayPhone(`${selectedCountry.dialCode}${localPhone}`, selectedCountry.code)}
                       </p>
                     </div>
                   </div>
-                  <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-md bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 shrink-0">
+                  <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-md bg-emerald-100 dark:bg-emerald-500/15 text-emerald-800 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-500/30 shrink-0">
                     WhatsApp Live
                   </span>
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-white/50 ml-1">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-white/50 ml-1">
                     Code de confirmation (6 chiffres)
                   </label>
                   <input
@@ -949,7 +949,7 @@ export function AuthSheet({ isOpen, onClose, onSuccess }: { isOpen: boolean; onC
                     type="text"
                     inputMode="numeric"
                     maxLength={6}
-                    className="w-full h-13 bg-black/50 border border-white/10 focus:border-vendeur-emerald rounded-2xl text-center text-white font-mono text-2xl tracking-[0.35em] placeholder:text-white/20 outline-none transition-all shadow-inner"
+                    className="w-full h-13 bg-slate-50 dark:bg-black/50 border border-slate-200 dark:border-white/10 focus:border-emerald-500 rounded-2xl text-center text-slate-950 dark:text-white font-mono text-2xl tracking-[0.35em] placeholder:text-slate-400 dark:placeholder:text-white/20 outline-none transition-all shadow-inner"
                     placeholder="••••••"
                     value={otpValue}
                     onChange={(e) => setOtpValue(e.target.value.replace(/\D/g, ""))}
@@ -960,7 +960,7 @@ export function AuthSheet({ isOpen, onClose, onSuccess }: { isOpen: boolean; onC
                 <button
                   type="submit"
                   disabled={isVerifyingOtp || otpValue.length !== 6}
-                  className="w-full h-13 min-h-[52px] bg-vendeur-emerald text-vendeur-coal font-black uppercase tracking-widest text-xs sm:text-sm rounded-2xl flex items-center justify-center gap-2 hover:bg-emerald-400 active:scale-[0.98] transition-all disabled:opacity-50 shadow-xl shadow-vendeur-emerald/25 cursor-pointer"
+                  className="w-full h-13 min-h-[52px] bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black uppercase tracking-widest text-xs sm:text-sm rounded-2xl flex items-center justify-center gap-2 active:scale-[0.98] transition-all disabled:opacity-50 shadow-xl shadow-emerald-500/20 cursor-pointer"
                 >
                   {isVerifyingOtp ? (
                     <Loader2 className="animate-spin shrink-0" size={18} />
@@ -972,14 +972,14 @@ export function AuthSheet({ isOpen, onClose, onSuccess }: { isOpen: boolean; onC
                   )}
                 </button>
 
-                <div className="flex items-center justify-between text-xs text-white/40 pt-1">
+                <div className="flex items-center justify-between text-xs text-slate-500 dark:text-white/40 pt-1">
                   <button
                     type="button"
                     onClick={() => {
                       setWhatsappStep("input");
                       setOtpValue("");
                     }}
-                    className="hover:text-white transition-colors cursor-pointer"
+                    className="hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer"
                   >
                     ← Changer de numéro
                   </button>
@@ -987,20 +987,20 @@ export function AuthSheet({ isOpen, onClose, onSuccess }: { isOpen: boolean; onC
                   <button
                     type="button"
                     onClick={handleInitiateWhatsApp}
-                    className="text-emerald-400 hover:underline transition-colors font-bold cursor-pointer"
+                    className="text-emerald-700 dark:text-emerald-400 hover:underline transition-colors font-bold cursor-pointer"
                   >
                     Renvoyer le code
                   </button>
                 </div>
 
-                <div className="pt-3 p-3 rounded-2xl bg-white/[0.03] border border-white/10 text-center space-y-2">
-                  <p className="text-[11px] text-white/50 leading-tight">
+                <div className="pt-3 p-3 rounded-2xl bg-slate-50 dark:bg-white/[0.03] border border-slate-200 dark:border-white/10 text-center space-y-2">
+                  <p className="text-[11px] text-slate-500 dark:text-white/50 leading-tight">
                     Vous souhaitez connecter un autre téléphone ou réinitialiser ?
                   </p>
                   <button
                     type="button"
                     onClick={handleRegenerateCode}
-                    className="w-full py-2 px-3 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-2"
+                    className="w-full py-2 px-3 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 hover:bg-emerald-100 dark:hover:bg-emerald-500/20 border border-emerald-300 dark:border-emerald-500/30 text-emerald-800 dark:text-emerald-400 text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-2"
                   >
                     <QrCode size={14} />
                     <span>Ré-appairer un appareil (Code / QR)</span>
@@ -1012,25 +1012,25 @@ export function AuthSheet({ isOpen, onClose, onSuccess }: { isOpen: boolean; onC
             {/* STEP 4: FOUNDER / META CLOUD DIRECT AUTH */}
             {whatsappStep === "founder" && (
               <form onSubmit={handleFounderLogin} className="space-y-4 animate-in zoom-in-95 duration-200">
-                <div className="p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 text-xs space-y-1">
-                  <div className="flex items-center gap-2 font-bold text-white">
-                    <ShieldCheck size={16} className="text-emerald-400 shrink-0" />
+                <div className="p-3 rounded-2xl bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 text-emerald-900 dark:text-emerald-300 text-xs space-y-1">
+                  <div className="flex items-center gap-2 font-bold text-slate-900 dark:text-white">
+                    <ShieldCheck size={16} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
                     <span>Numéro Système Meta Cloud</span>
                   </div>
-                  <p className="text-[11px] text-white/70 leading-relaxed">
+                  <p className="text-[11px] text-slate-600 dark:text-white/70 leading-relaxed">
                     Le <strong>{formatDisplayPhone(`${selectedCountry.dialCode}${localPhone}`, selectedCountry.code)}</strong> est géré par l'API Cloud Meta. Aucun scan QR ni code WhatsApp n'est requis.
                   </p>
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-white/50 ml-1">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-white/50 ml-1">
                     Code PIN ou Mot de passe Administrateur
                   </label>
                   <div className="relative">
                     <input
                       required
                       type={showFounderPin ? "text" : "password"}
-                      className="w-full h-13 bg-black/50 border border-white/10 focus:border-vendeur-emerald rounded-2xl px-4 pr-12 text-white font-mono text-base placeholder:text-white/20 outline-none transition-all shadow-inner"
+                      className="w-full h-13 bg-slate-50 dark:bg-black/50 border border-slate-200 dark:border-white/10 focus:border-emerald-500 rounded-2xl px-4 pr-12 text-slate-900 dark:text-white font-mono text-base placeholder:text-slate-400 dark:placeholder:text-white/20 outline-none transition-all shadow-inner"
                       placeholder="Entrez votre PIN ou mot de passe"
                       value={founderPin}
                       onChange={(e) => setFounderPin(e.target.value)}
@@ -1039,7 +1039,7 @@ export function AuthSheet({ isOpen, onClose, onSuccess }: { isOpen: boolean; onC
                     <button
                       type="button"
                       onClick={() => setShowFounderPin(!showFounderPin)}
-                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-white/40 hover:text-white transition-colors cursor-pointer"
+                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-900 dark:text-white/40 dark:hover:text-white transition-colors cursor-pointer"
                     >
                       {showFounderPin ? <EyeOff size={18} /> : <Eye size={18} />}
                     </button>
@@ -1049,7 +1049,7 @@ export function AuthSheet({ isOpen, onClose, onSuccess }: { isOpen: boolean; onC
                 <button
                   type="submit"
                   disabled={isLoggingFounder || !founderPin.trim()}
-                  className="w-full h-13 min-h-[52px] bg-vendeur-emerald text-vendeur-coal font-black uppercase tracking-widest text-xs sm:text-sm rounded-2xl flex items-center justify-center gap-2 hover:bg-emerald-400 active:scale-[0.98] transition-all disabled:opacity-50 shadow-xl shadow-vendeur-emerald/25 cursor-pointer"
+                  className="w-full h-13 min-h-[52px] bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black uppercase tracking-widest text-xs sm:text-sm rounded-2xl flex items-center justify-center gap-2 active:scale-[0.98] transition-all disabled:opacity-50 shadow-xl shadow-emerald-500/20 cursor-pointer"
                 >
                   {isLoggingFounder ? (
                     <Loader2 className="animate-spin shrink-0" size={18} />
@@ -1062,14 +1062,14 @@ export function AuthSheet({ isOpen, onClose, onSuccess }: { isOpen: boolean; onC
                   )}
                 </button>
 
-                <div className="flex items-center justify-center text-xs text-white/40 pt-1">
+                <div className="flex items-center justify-center text-xs text-slate-500 dark:text-white/40 pt-1">
                   <button
                     type="button"
                     onClick={() => {
                       setWhatsappStep("input");
                       setFounderPin("");
                     }}
-                    className="hover:text-white transition-colors cursor-pointer"
+                    className="hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer"
                   >
                     ← Changer de numéro
                   </button>
@@ -1084,14 +1084,14 @@ export function AuthSheet({ isOpen, onClose, onSuccess }: { isOpen: boolean; onC
           <form onSubmit={handleEmailSubmit} className="space-y-3.5">
             {mode === "register" && (
               <div className="space-y-1">
-                <label className="text-[9px] font-black uppercase tracking-widest text-white/50 ml-1">
+                <label className="text-[9px] font-black uppercase tracking-widest text-slate-500 dark:text-white/50 ml-1">
                   Nom Complet
                 </label>
                 <div className="relative">
-                  <User className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/30" size={16} />
+                  <User className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-white/30" size={16} />
                   <input
                     required
-                    className="w-full h-13 bg-black/50 border border-white/10 focus:border-white rounded-2xl pl-10 pr-3 text-white text-sm outline-none transition-all shadow-inner"
+                    className="w-full h-13 bg-slate-50 dark:bg-black/50 border border-slate-200 dark:border-white/10 focus:border-emerald-500 rounded-2xl pl-10 pr-3 text-slate-900 dark:text-white text-sm outline-none transition-all shadow-inner"
                     placeholder="Jean Dupont"
                     value={form.displayName}
                     onChange={(e) => setForm({ ...form, displayName: e.target.value })}
@@ -1101,13 +1101,13 @@ export function AuthSheet({ isOpen, onClose, onSuccess }: { isOpen: boolean; onC
             )}
 
             <div className="space-y-1">
-              <label className="text-[9px] font-black uppercase tracking-widest text-white/50 ml-1">Email</label>
+              <label className="text-[9px] font-black uppercase tracking-widest text-slate-500 dark:text-white/50 ml-1">Email</label>
               <div className="relative">
-                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/30" size={16} />
+                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-white/30" size={16} />
                 <input
                   required
                   type="email"
-                  className="w-full h-13 bg-black/50 border border-white/10 focus:border-white rounded-2xl pl-10 pr-3 text-white text-sm outline-none transition-all shadow-inner"
+                  className="w-full h-13 bg-slate-50 dark:bg-black/50 border border-slate-200 dark:border-white/10 focus:border-emerald-500 rounded-2xl pl-10 pr-3 text-slate-900 dark:text-white text-sm outline-none transition-all shadow-inner"
                   placeholder="admin@vendeur-ia.com"
                   value={form.email}
                   onChange={(e) => setForm({ ...form, email: e.target.value })}
@@ -1118,25 +1118,25 @@ export function AuthSheet({ isOpen, onClose, onSuccess }: { isOpen: boolean; onC
             {mode !== "forgot" && (
               <div className="space-y-1">
                 <div className="flex items-center justify-between">
-                  <label className="text-[9px] font-black uppercase tracking-widest text-white/50 ml-1">
+                  <label className="text-[9px] font-black uppercase tracking-widest text-slate-500 dark:text-white/50 ml-1">
                     Mot de passe
                   </label>
                   {mode === "login" && (
                     <button
                       type="button"
                       onClick={() => setMode("forgot")}
-                      className="text-[9px] font-bold text-vendeur-emerald hover:underline cursor-pointer"
+                      className="text-[9px] font-bold text-emerald-600 dark:text-vendeur-emerald hover:underline cursor-pointer"
                     >
                       Oublié ?
                     </button>
                   )}
                 </div>
                 <div className="relative">
-                  <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/30" size={16} />
+                  <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-white/30" size={16} />
                   <input
                     required
                     type={showPassword ? "text" : "password"}
-                    className="w-full h-13 bg-black/50 border border-white/10 focus:border-white rounded-2xl pl-10 pr-10 text-white text-sm outline-none transition-all shadow-inner"
+                    className="w-full h-13 bg-slate-50 dark:bg-black/50 border border-slate-200 dark:border-white/10 focus:border-emerald-500 rounded-2xl pl-10 pr-10 text-slate-900 dark:text-white text-sm outline-none transition-all shadow-inner"
                     placeholder="••••••••"
                     value={form.password}
                     onChange={(e) => setForm({ ...form, password: e.target.value })}
@@ -1144,7 +1144,7 @@ export function AuthSheet({ isOpen, onClose, onSuccess }: { isOpen: boolean; onC
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-white/30 hover:text-white transition-colors cursor-pointer"
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-900 dark:text-white/30 dark:hover:text-white transition-colors cursor-pointer"
                     tabIndex={-1}
                   >
                     {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
@@ -1156,7 +1156,7 @@ export function AuthSheet({ isOpen, onClose, onSuccess }: { isOpen: boolean; onC
             <button
               type="submit"
               disabled={loading}
-              className="w-full h-13 bg-white text-black font-black uppercase tracking-widest text-xs rounded-2xl flex items-center justify-center gap-2 hover:bg-white/90 active:scale-[0.98] transition-all disabled:opacity-50 mt-3 cursor-pointer shadow-lg"
+              className="w-full h-13 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black uppercase tracking-widest text-xs rounded-2xl flex items-center justify-center gap-2 active:scale-[0.98] transition-all disabled:opacity-50 mt-3 cursor-pointer shadow-lg"
             >
               {loading ? (
                 <Loader2 className="animate-spin" size={16} />
@@ -1168,11 +1168,11 @@ export function AuthSheet({ isOpen, onClose, onSuccess }: { isOpen: boolean; onC
               )}
             </button>
 
-            <div className="pt-2 flex items-center justify-between text-[11px] text-white/40">
+            <div className="pt-2 flex items-center justify-between text-[11px] text-slate-500 dark:text-white/40">
               <button
                 type="button"
                 onClick={() => setAuthMethod("whatsapp")}
-                className="text-vendeur-emerald font-bold hover:underline cursor-pointer flex items-center gap-1"
+                className="text-emerald-600 dark:text-vendeur-emerald font-bold hover:underline cursor-pointer flex items-center gap-1"
               >
                 ← Retour à WhatsApp
               </button>
@@ -1180,7 +1180,7 @@ export function AuthSheet({ isOpen, onClose, onSuccess }: { isOpen: boolean; onC
               <button
                 type="button"
                 onClick={() => setMode(mode === "login" ? "register" : "login")}
-                className="text-white/60 hover:text-white transition-colors cursor-pointer"
+                className="text-slate-600 hover:text-slate-950 dark:text-white/60 dark:hover:text-white transition-colors cursor-pointer"
               >
                 {mode === "login" ? "Créer un compte" : "Se connecter"}
               </button>

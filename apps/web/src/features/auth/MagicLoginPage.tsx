@@ -101,9 +101,9 @@ export function MagicLoginPage() {
 
   if (status === "loading") {
     return (
-      <div className="min-h-screen bg-vendeur-coal flex flex-col items-center justify-center p-4">
+      <div className="min-h-screen bg-slate-50 dark:bg-vendeur-coal flex flex-col items-center justify-center p-4">
         <VendeurIALoader label="Connexion à votre boutique..." />
-        <p className="text-[10px] text-white/30 uppercase tracking-widest mt-8 font-black">
+        <p className="text-[10px] text-slate-400 dark:text-white/30 uppercase tracking-widest mt-8 font-black">
           Connexion Sécurisée Vendeur IA
         </p>
       </div>
@@ -112,15 +112,15 @@ export function MagicLoginPage() {
 
   if (status === "error") {
     return (
-      <div className="min-h-screen bg-vendeur-coal flex flex-col items-center justify-center p-4 text-center">
-        <div className="w-16 h-16 rounded-3xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400 mb-4">
+      <div className="min-h-screen bg-slate-50 dark:bg-vendeur-coal flex flex-col items-center justify-center p-4 text-center">
+        <div className="w-16 h-16 rounded-3xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-500 mb-4 shadow-sm">
           <Logo size={32} />
         </div>
-        <h2 className="text-xl font-bold text-white mb-2">Lien invalide ou expiré</h2>
-        <p className="text-sm text-white/50 max-w-sm mb-6">{errorMessage}</p>
+        <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Lien invalide ou expiré</h2>
+        <p className="text-sm text-slate-500 dark:text-white/50 max-w-sm mb-6">{errorMessage}</p>
         <button
           onClick={() => navigate("/")}
-          className="px-6 py-3 bg-white/10 hover:bg-white/20 text-white rounded-xl font-bold text-sm transition-all"
+          className="px-6 py-3 bg-slate-200 hover:bg-slate-300 dark:bg-white/10 dark:hover:bg-white/20 text-slate-900 dark:text-white rounded-xl font-bold text-sm transition-all cursor-pointer"
         >
           Retour à l'accueil
         </button>
@@ -129,31 +129,31 @@ export function MagicLoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-vendeur-coal flex flex-col items-center justify-center p-4 text-center">
-      <div className="w-full max-w-md bg-[#0b120f] border border-white/10 rounded-[2.5rem] p-6 sm:p-8 shadow-2xl relative overflow-hidden">
-        <div className="absolute -top-24 -left-24 w-48 h-48 bg-vendeur-emerald/20 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute -bottom-24 -right-24 w-48 h-48 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
+    <div className="min-h-screen bg-slate-50 dark:bg-vendeur-coal flex flex-col items-center justify-center p-4 text-center">
+      <div className="w-full max-w-md bg-white dark:bg-[#0b120f] border border-slate-200 dark:border-white/10 rounded-[2.5rem] p-6 sm:p-8 shadow-2xl relative overflow-hidden text-slate-900 dark:text-white">
+        <div className="absolute -top-24 -left-24 w-48 h-48 bg-emerald-500/10 dark:bg-vendeur-emerald/20 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-24 -right-24 w-48 h-48 bg-emerald-500/5 dark:bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
 
         {/* Success Icon */}
-        <div className="mx-auto w-16 h-16 rounded-3xl bg-vendeur-emerald/15 border border-vendeur-emerald/30 flex items-center justify-center text-vendeur-emerald mb-5 shadow-lg shadow-vendeur-emerald/10 animate-in zoom-in-50 duration-300">
+        <div className="mx-auto w-16 h-16 rounded-3xl bg-emerald-50 dark:bg-vendeur-emerald/15 border border-emerald-200 dark:border-vendeur-emerald/30 flex items-center justify-center text-emerald-600 dark:text-vendeur-emerald mb-5 shadow-lg shadow-emerald-500/10 animate-in zoom-in-50 duration-300">
           <CheckCircle2 size={36} />
         </div>
 
         {/* Title */}
-        <h2 className="text-2xl font-black text-white uppercase tracking-tight mb-2">
+        <h2 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight mb-2">
           Connexion Réussie !
         </h2>
-        <p className="text-xs text-white/60 leading-relaxed mb-6">
+        <p className="text-xs text-slate-500 dark:text-white/60 leading-relaxed mb-6">
           Votre compte Vendeur IA a été vérifié et activé avec succès.
         </p>
 
         {/* Helpful instructions for PWA users */}
-        <div className="bg-white/5 border border-white/10 rounded-2xl p-4 text-left mb-6 space-y-2">
-          <div className="flex items-center gap-2 text-vendeur-emerald font-bold text-xs">
+        <div className="bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl p-4 text-left mb-6 space-y-2">
+          <div className="flex items-center gap-2 text-emerald-700 dark:text-vendeur-emerald font-bold text-xs">
             <Smartphone size={16} />
             <span>Vous utilisez l'application installée ?</span>
           </div>
-          <p className="text-[11px] text-white/50 leading-relaxed">
+          <p className="text-[11px] text-slate-500 dark:text-white/50 leading-relaxed">
             Votre application sur l'écran d'accueil est déjà déverrouillée. Vous pouvez simplement la réouvrir ou cliquer ci-dessous.
           </p>
         </div>
@@ -162,7 +162,7 @@ export function MagicLoginPage() {
         <div className="space-y-3">
           <button
             onClick={handleOpenApp}
-            className="w-full h-13 sm:h-14 min-h-[52px] sm:min-h-[56px] bg-vendeur-emerald text-vendeur-coal font-black uppercase tracking-wider text-xs rounded-xl flex items-center justify-center gap-2 hover:scale-[1.01] active:scale-95 transition-all shadow-lg shadow-vendeur-emerald/25 cursor-pointer shrink-0"
+            className="w-full h-13 sm:h-14 min-h-[52px] sm:min-h-[56px] bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black uppercase tracking-wider text-xs rounded-xl flex items-center justify-center gap-2 hover:scale-[1.01] active:scale-95 transition-all shadow-lg shadow-emerald-500/25 cursor-pointer shrink-0"
           >
             <span>Accéder à mon espace</span>
             <ArrowRight size={18} />
@@ -170,7 +170,7 @@ export function MagicLoginPage() {
 
           <button
             onClick={() => navigate(destination)}
-            className="w-full h-12 min-h-[48px] bg-white/5 hover:bg-white/10 text-white/80 hover:text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all border border-white/5 cursor-pointer shrink-0"
+            className="w-full h-12 min-h-[48px] bg-slate-100 hover:bg-slate-200 dark:bg-white/5 dark:hover:bg-white/10 text-slate-700 hover:text-slate-950 dark:text-white/80 dark:hover:text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all border border-slate-200 dark:border-white/5 cursor-pointer shrink-0"
           >
             <Globe size={15} />
             <span>Continuer dans ce navigateur</span>

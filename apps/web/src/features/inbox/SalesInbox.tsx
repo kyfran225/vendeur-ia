@@ -5,7 +5,7 @@ import {
   ShoppingCart, Plus, Minus, Package, ChevronLeft, Globe, CreditCard,
   PauseCircle, PlayCircle, Volume2, VolumeX, Bell, BellOff,
   Copy, Check, Phone, RefreshCw, Zap, Image as ImageIcon,
-  Mic, Paperclip, Clock, AlertTriangle, ArrowDown
+  Mic, Paperclip, Clock, AlertTriangle, ArrowDown, ArrowLeft
 } from "lucide-react";
 
 // TikTok Icon component
@@ -16,7 +16,7 @@ const TikTokIcon = ({ size = 16, className = "" }: { size?: number; className?: 
 );
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, Link } from "react-router-dom";
 import { useAuthStore } from "@/stores/authStore";
 import { useSocket } from "@/hooks/useSocket";
 import { useMerchantCurrency } from "@/hooks/useMerchantCurrency";
@@ -587,8 +587,15 @@ export function SalesInbox() {
         {/* Sidebar Header */}
         <div className="p-4 bg-[#202c33] border-b border-white/5 space-y-3">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="relative">
+            <div className="flex items-center gap-3 min-w-0">
+              <Link
+                to="/dashboard"
+                className="hidden md:flex p-2 rounded-xl bg-white/5 border border-white/10 text-white/60 hover:text-white hover:bg-white/10 transition-all items-center justify-center shrink-0"
+                title="Quitter le plein écran et retourner au Tableau de bord"
+              >
+                <ArrowLeft size={16} />
+              </Link>
+              <div className="relative shrink-0">
                 <div className="h-10 w-10 rounded-full bg-vendeur-emerald/20 border border-vendeur-emerald/40 flex items-center justify-center font-black text-vendeur-emerald">
                   {merchant?.businessName ? merchant.businessName.charAt(0).toUpperCase() : "V"}
                 </div>

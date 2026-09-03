@@ -18,9 +18,9 @@ export function AppLayout() {
   return (
     <div className="flex h-screen overflow-hidden flex-col md:flex-row bg-vendeur-bg relative overscroll-none">
       <WifiOff />
-      <Sidebar />
+      <Sidebar hideDesktop={isInbox} />
       <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
-        <ShellHeader />
+        {!isInbox && <ShellHeader />}
         <main
           className={cn(
             "flex-1 overscroll-contain",
@@ -31,10 +31,10 @@ export function AppLayout() {
         >
           <div
             className={cn(
-              "max-w-[1600px] mx-auto w-full",
+              "w-full",
               isInbox
-                ? "flex-1 flex flex-col h-full min-h-0 p-1 md:p-3 overflow-hidden"
-                : "min-h-full"
+                ? "flex-1 flex flex-col h-full min-h-0 p-0 overflow-hidden"
+                : "max-w-[1600px] mx-auto min-h-full"
             )}
           >
             <Outlet />

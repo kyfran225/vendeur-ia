@@ -54,23 +54,55 @@ export function initSocketServer(httpServer: HttpServer) {
       });
     });
 
-    socket.on("typing:start", (payload: { conversationId: string; userId?: string; participant?: string }) => {
+    socket.on("typing:start", async (payload: { conversationId: string; userId?: string; participant?: string }) => {
       if (payload?.conversationId) {
         socket.broadcast.emit("conversation:typing", {
           conversationId: payload.conversationId,
           isTyping: true,
           participant: payload.participant || "human"
         });
+
+        // Propagate typing state directly to WhatsApp recipient's device
+        try {
+          const { CommerceConversationModel } = await import("../modules/commerce/commerce.model.js");
+          const { whatsappService } = await import("../modules/whatsapp/whatsapp.service.js");
+          const conv = await CommerceConversationModel.findById(payload.conversationId).populate("customerId");
+          if (conv && conv.platform === "whatsapp" && (conv.customerId as any)?.phone) {
+            const customerPhone = (conv.customerId as any).phone;
+            const ownerId = payload.userId || conv.merchantId?.toString();
+            if (ownerId && customerPhone) {
+              await whatsappService.sendPresence(ownerId, customerPhone, 'composing');
+            }
+          }
+        } catch (err) {
+          console.warn("[Socket typing:start] Failed to propagate presence to WhatsApp:", err);
+        }
       }
     });
 
-    socket.on("typing:stop", (payload: { conversationId: string; userId?: string; participant?: string }) => {
+    socket.on("typing:stop", async (payload: { conversationId: string; userId?: string; participant?: string }) => {
       if (payload?.conversationId) {
         socket.broadcast.emit("conversation:typing", {
           conversationId: payload.conversationId,
           isTyping: false,
           participant: payload.participant || "human"
         });
+
+        // Propagate pause state directly to WhatsApp recipient's device
+        try {
+          const { CommerceConversationModel } = await import("../modules/commerce/commerce.model.js");
+          const { whatsappService } = await import("../modules/whatsapp/whatsapp.service.js");
+          const conv = await CommerceConversationModel.findById(payload.conversationId).populate("customerId");
+          if (conv && conv.platform === "whatsapp" && (conv.customerId as any)?.phone) {
+            const customerPhone = (conv.customerId as any).phone;
+            const ownerId = payload.userId || conv.merchantId?.toString();
+            if (ownerId && customerPhone) {
+              await whatsappService.sendPresence(ownerId, customerPhone, 'paused');
+            }
+          }
+        } catch (err) {
+          console.warn("[Socket typing:stop] Failed to propagate presence to WhatsApp:", err);
+        }
       }
     });
 

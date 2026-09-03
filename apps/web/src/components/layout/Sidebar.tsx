@@ -22,7 +22,11 @@ import { useAuthStore } from "@/stores/authStore";
 import { useFounderRole } from "@/hooks/useFounderRole";
 import { ConfirmationModal } from "@/components/ui/ConfirmationModal";
 
-export function Sidebar() {
+interface SidebarProps {
+  hideDesktop?: boolean;
+}
+
+export function Sidebar({ hideDesktop = false }: SidebarProps = {}) {
   const [isOpen, setIsOpen] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const location = useLocation();
@@ -61,7 +65,10 @@ export function Sidebar() {
   return (
     <>
       {/* Desktop Sidebar */}
-      <aside className="hidden md:flex w-28 bg-vendeur-coal border-r border-white/5 flex-col items-center py-10 space-y-8 shrink-0">
+      <aside className={cn(
+        "hidden md:flex w-28 bg-vendeur-coal border-r border-white/5 flex-col items-center py-10 space-y-8 shrink-0",
+        hideDesktop && "md:hidden"
+      )}>
         <div className="h-16 w-16 flex items-center justify-center overflow-hidden bg-white/5 rounded-2xl p-3 border border-white/10 shadow-2xl shrink-0 text-vendeur-emerald hover:text-white transition-colors">
           <Logo size={36} />
         </div>

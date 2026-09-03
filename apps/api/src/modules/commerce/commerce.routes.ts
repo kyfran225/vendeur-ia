@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 import { commerceService } from "./commerce.service.js";
 import { whatsappService } from "../whatsapp/whatsapp.service.js";
 import { messagingService } from "../../services/messaging.service.js";
+import { formatToWhatsAppRecipient } from "@vendeur-ia/core";
 import { paystackService } from "../../services/paystack.service.js";
 import { env } from "../../config/env.js";
 import { authenticate } from "../../middleware/authenticate.js";
@@ -473,6 +474,19 @@ router.get("/conversations", authenticate, async (req, res) => {
         }
       }
 
+      if (cust && !cust.avatarUrl && cust.phone) {
+        const clean = cust.phone.replace(/\D/g, "");
+        if (clean.length >= 8) {
+          const match = await CommerceCustomerModel.findOne({
+            phone: { $regex: clean.slice(-8) },
+            avatarUrl: { $exists: true, $nin: ["", null] }
+          }).select("avatarUrl").lean();
+          if (match?.avatarUrl) {
+            cust.avatarUrl = match.avatarUrl;
+          }
+        }
+      }
+
       return {
         ...convObj,
         customerId: cust,
@@ -517,10 +531,34 @@ router.patch("/conversations/:id/read", authenticate, async (req, res) => {
     );
 
     if (conversation) {
+      const unreadCustomerMessages = await CommerceMessageModel.find({
+        conversationId: req.params.id,
+        sender: "customer",
+        whatsappMessageId: { $exists: true, $ne: null }
+      }).limit(50).lean();
+
       await CommerceMessageModel.updateMany(
         { conversationId: req.params.id, sender: "customer", status: { $ne: "read" } },
         { $set: { status: "read", readAt: new Date() } }
       );
+
+      // Send read receipt to WhatsApp network so the customer sees blue checkmarks
+      if (conversation.platform === "whatsapp" && unreadCustomerMessages.length > 0) {
+        try {
+          const customer = await CommerceCustomerModel.findById(conversation.customerId);
+          if (customer?.phone) {
+            const { jid } = formatToWhatsAppRecipient(customer.phone);
+            if (jid) {
+              const keys = unreadCustomerMessages.map(m => ({
+                remoteJid: jid,
+                id: m.whatsappMessageId,
+                fromMe: false
+              }));
+              whatsappService.markConversationAsRead(ownerId, customer.phone, keys).catch(() => {});
+            }
+          }
+        } catch (err) {}
+      }
 
       emitToUser(ownerId, "conversation:read", {
         conversationId: conversation._id,
@@ -580,11 +618,42 @@ router.post("/conversations/:id/refresh-avatar", authenticate, async (req, res) 
     const customer = conversation.customerId as any;
     if (!customer?.phone) return res.status(400).json({ error: "Client sans numéro" });
 
-    const avatarUrl = await whatsappService.fetchCustomerAvatarUrl(ownerId, customer.phone);
+    const cleanDigits = customer.phone.replace(/\D/g, "");
+
+    // 1. Check if another customer document for this phone already has an avatar
+    if (!customer.avatarUrl && cleanDigits && cleanDigits.length >= 8) {
+      const existing = await CommerceCustomerModel.findOne({
+        phone: { $regex: cleanDigits.slice(-8) },
+        avatarUrl: { $exists: true, $nin: ["", null] }
+      }).select("avatarUrl").lean();
+
+      if (existing?.avatarUrl) {
+        customer.avatarUrl = existing.avatarUrl;
+        customer.avatarUpdatedAt = new Date();
+        await customer.save();
+      }
+    }
+
+    // 2. Fetch fresh from WhatsApp using conversation merchant owner or active session fallback
+    const merchant = await CommerceMerchantModel.findById(conversation.merchantId).select("ownerId").lean();
+    const targetUserId = merchant?.ownerId?.toString() || ownerId;
+
+    const avatarUrl = await whatsappService.fetchCustomerAvatarUrl(targetUserId, customer.phone);
     if (avatarUrl) {
       customer.avatarUrl = avatarUrl;
       customer.avatarUpdatedAt = new Date();
       await customer.save();
+
+      // Propagate to all customer records with matching phone
+      if (cleanDigits && cleanDigits.length >= 8) {
+        await CommerceCustomerModel.updateMany(
+          {
+            phone: { $regex: cleanDigits.slice(-8) },
+            $or: [{ avatarUrl: "" }, { avatarUrl: null }, { avatarUrl: { $exists: false } }]
+          },
+          { $set: { avatarUrl, avatarUpdatedAt: new Date() } }
+        );
+      }
     } else {
       customer.avatarUpdatedAt = new Date();
       await customer.save();

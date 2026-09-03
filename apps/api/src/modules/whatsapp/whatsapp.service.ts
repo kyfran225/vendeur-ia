@@ -374,6 +374,10 @@ class WhatsAppService {
           await this.handleMessagesUpdate(userId, updates);
         });
 
+        sock.ev.on("message-receipt.update", async (receipts: any) => {
+          await this.handleMessageReceiptsUpdate(userId, receipts);
+        });
+
         sock.ev.on("messages.upsert", async (m) => {
           if (m.type === "notify") {
             for (const msg of m.messages) {
@@ -579,6 +583,10 @@ class WhatsAppService {
         await this.handleMessagesUpdate(userId, updates);
       });
 
+      sock.ev.on("message-receipt.update", async (receipts: any) => {
+        await this.handleMessageReceiptsUpdate(userId, receipts);
+      });
+
       sock.ev.on("messages.upsert", async (m) => {
         if (m.type === "notify") {
           for (const msg of m.messages) {
@@ -726,6 +734,10 @@ class WhatsAppService {
 
           sock.ev.on("messages.update", async (updates: any) => {
             await this.handleMessagesUpdate(userId, updates);
+          });
+
+          sock.ev.on("message-receipt.update", async (receipts: any) => {
+            await this.handleMessageReceiptsUpdate(userId, receipts);
           });
 
           sock.ev.on("messages.upsert", async (m: any) => {
@@ -1104,6 +1116,8 @@ class WhatsAppService {
       sender: "customer",
       type: isAudioMsg ? "audio" : imageMsg ? "image" : "text",
       content: text,
+      whatsappMessageId: msg.key?.id,
+      status: "delivered",
       timestamp: new Date()
     });
 
@@ -1356,6 +1370,11 @@ class WhatsAppService {
     });
 
     if (existingMsg) {
+      if (msg.key?.id && !existingMsg.whatsappMessageId) {
+        existingMsg.whatsappMessageId = msg.key.id;
+        existingMsg.status = "sent";
+        await existingMsg.save();
+      }
       return;
     }
 
@@ -1365,6 +1384,8 @@ class WhatsAppService {
       sender: "human",
       type: isAudioMsg ? "audio" : isImageMsg ? "image" : "text",
       content: text || (isAudioMsg ? "🎤 [Note vocale]" : "📷 [Photo]"),
+      whatsappMessageId: msg.key?.id,
+      status: "sent",
       timestamp: new Date()
     });
 
@@ -1897,6 +1918,59 @@ class WhatsAppService {
     }
   }
 
+  async handleMessageReceiptsUpdate(userId: string, receipts: any[]) {
+    try {
+      if (!Array.isArray(receipts)) return;
+
+      for (const item of receipts) {
+        const key = item.key;
+        const receipt = item.receipt;
+        if (!key?.id) continue;
+
+        let mappedStatus: "delivered" | "read" | null = null;
+        if (receipt?.readTimestamp || receipt?.playedTimestamp) {
+          mappedStatus = "read";
+        } else if (receipt?.receiptTimestamp) {
+          mappedStatus = "delivered";
+        }
+
+        if (!mappedStatus) continue;
+
+        const updateFields: any = { status: mappedStatus };
+        if (mappedStatus === "delivered") updateFields.deliveredAt = new Date();
+        if (mappedStatus === "read") updateFields.readAt = new Date();
+
+        const updatedMsg = await CommerceMessageModel.findOneAndUpdate(
+          { whatsappMessageId: key.id },
+          { $set: updateFields },
+          { new: true }
+        );
+
+        if (updatedMsg) {
+          const targetUserIds = new Set<string>([userId.toString()]);
+          const conv = await CommerceConversationModel.findById(updatedMsg.conversationId);
+          if (conv) {
+            const merchant = await CommerceMerchantModel.findById(conv.merchantId);
+            if (merchant?.ownerId) targetUserIds.add(merchant.ownerId.toString());
+          }
+
+          targetUserIds.forEach(tId => {
+            emitToUser(tId, "message:status_update", {
+              messageId: updatedMsg._id,
+              conversationId: updatedMsg.conversationId,
+              whatsappMessageId: key.id,
+              status: mappedStatus,
+              deliveredAt: updatedMsg.deliveredAt,
+              readAt: updatedMsg.readAt
+            });
+          });
+        }
+      }
+    } catch (err) {
+      console.warn("[WhatsApp Message Receipts Update] Error updating message receipts:", err);
+    }
+  }
+
   async markConversationAsRead(userId: string, remoteJid: string, messageKeys?: any[]) {
     const sock = this.activeSessions.get(userId);
     if (!sock || !sock.user) return;
@@ -2234,6 +2308,15 @@ class WhatsAppService {
           }
         }
       }
+      // Global Fallback: If no socket for this specific user/admin, use any connected socket available on the server
+      if (!sock && this.activeSessions.size > 0) {
+        for (const s of this.activeSessions.values()) {
+          if (s) {
+            sock = s;
+            break;
+          }
+        }
+      }
       if (!sock) return null;
 
       let jid = jidOrPhone.trim();
@@ -2241,6 +2324,12 @@ class WhatsAppService {
         const clean = jid.replace(/\D/g, "");
         if (!clean) return null;
         jid = `${clean}@s.whatsapp.net`;
+      } else if (jid.includes("@lid")) {
+        // If it's a @lid format, try to extract digits or use as is
+        const clean = jid.replace(/@.*$/, "").replace(/\D/g, "");
+        if (clean && clean.length >= 8) {
+          jid = `${clean}@s.whatsapp.net`;
+        }
       }
 
       // Try fetching high-res image first
@@ -2272,6 +2361,25 @@ class WhatsAppService {
     const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
     const shouldRefresh = !customer.avatarUrl || !customer.avatarUpdatedAt || new Date(customer.avatarUpdatedAt) < sevenDaysAgo;
 
+    const cleanDigits = customer.phone.replace(/\D/g, "");
+
+    // Quick cross-merchant check: if avatar is missing on this customer, check if another merchant already has it
+    if (!customer.avatarUrl && cleanDigits && cleanDigits.length >= 8) {
+      try {
+        const existingWithAvatar = await CommerceCustomerModel.findOne({
+          phone: { $regex: cleanDigits.slice(-8) },
+          avatarUrl: { $exists: true, $nin: ["", null] }
+        }).select("avatarUrl").lean();
+
+        if (existingWithAvatar?.avatarUrl) {
+          customer.avatarUrl = existingWithAvatar.avatarUrl;
+          customer.avatarUpdatedAt = new Date();
+          await customer.save();
+          return customer.avatarUrl;
+        }
+      } catch (e) {}
+    }
+
     if (!shouldRefresh) return customer.avatarUrl;
 
     try {
@@ -2280,6 +2388,17 @@ class WhatsAppService {
         customer.avatarUrl = avatarUrl;
         customer.avatarUpdatedAt = new Date();
         await customer.save();
+
+        // Propagate updated avatar to all customer documents with matching phone
+        if (cleanDigits && cleanDigits.length >= 8) {
+          await CommerceCustomerModel.updateMany(
+            {
+              phone: { $regex: cleanDigits.slice(-8) },
+              $or: [{ avatarUrl: "" }, { avatarUrl: null }, { avatarUrl: { $exists: false } }]
+            },
+            { $set: { avatarUrl, avatarUpdatedAt: new Date() } }
+          );
+        }
         return avatarUrl;
       } else {
         // Mark as checked to prevent hammering WhatsApp servers on every single message

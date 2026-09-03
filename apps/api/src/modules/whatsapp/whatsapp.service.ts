@@ -27,6 +27,7 @@ import { parsePhoneNumber, formatToWhatsAppRecipient } from "@vendeur-ia/core";
 class WhatsAppService {
   private activeSessions: Map<string, any> = new Map();
   private pendingInitializations: Map<string, Promise<void>> = new Map();
+  private reconnectAttempts: Map<string, number> = new Map();
   private heartbeatInterval: NodeJS.Timeout | null = null;
   private processedMessageIds: Set<string> = new Set();
   private lastQrMap: Map<string, string> = new Map();
@@ -188,29 +189,30 @@ class WhatsAppService {
 
     console.log(`[WhatsApp Connection Close] User: ${userId}, StatusCode: ${statusCode}, Error: ${errMessage}`);
 
-    const isConnectionError = errMessage.includes("Connection Failure") ||
-                             errMessage.includes("Stream Errored") ||
-                             errMessage.includes("QR refs") ||
-                             statusCode === 408 ||
-                             statusCode === 515;
+    // Codes that indicate an absolute unlinking / logged out / auth failure
+    const isLoggedOut = statusCode === DisconnectReason.loggedOut || statusCode === 401 || statusCode === 403;
+    const isBadSession = statusCode === DisconnectReason.badSession || (statusCode === 500 && errMessage.includes("Bad Session"));
+    const isReplaced = statusCode === DisconnectReason.connectionReplaced || statusCode === 440;
 
-    // ONLY permanent unlinking / logged out from phone or corrupt credentials
-    const isLoggedOut = statusCode === DisconnectReason.loggedOut && !isConnectionError;
-    const isBadSession = statusCode === DisconnectReason.badSession && !isConnectionError;
-    const isReplaced = statusCode === DisconnectReason.connectionReplaced;
-
-    if (isLoggedOut || isBadSession) {
-      console.log(`[WhatsApp] Session explicitement déconnectée/invalide pour ${userId}. Nettoyage.`);
+    if (isLoggedOut || isBadSession || isReplaced) {
+      console.log(`[WhatsApp] Session explicitement déconnectée/invalide pour ${userId} (Code ${statusCode}, Error: ${errMessage}). Nettoyage.`);
       this.activeSessions.delete(userId);
       this.pendingInitializations.delete(userId);
       this.lastPairingCodeMap.delete(userId);
       this.lastQrMap.delete(userId);
+      this.reconnectAttempts.delete(userId);
 
       await clearMongoAuthState(userId);
 
       await CommerceMerchantModel.findOneAndUpdate(
         { ownerId: userId },
-        { $set: { "whatsappConfig.status": "disconnected", "whatsappConfig.reconnectAttempts": 0 } }
+        { 
+          $set: { 
+            "whatsappConfig.status": "disconnected", 
+            "whatsappConfig.disconnectedAt": new Date(),
+            "whatsappConfig.reconnectAttempts": 0 
+          } 
+        }
       );
 
       await WhatsAppConnectionModel.findOneAndUpdate(
@@ -218,44 +220,85 @@ class WhatsAppService {
         {
           $set: {
             status: 'DISCONNECTED',
-            disconnectedAt: new Date()
+            disconnectedAt: new Date(),
+            lastError: isLoggedOut ? "Session déconnectée depuis le téléphone ou révoquée" : isReplaced ? "Session remplacée sur un autre appareil" : "Session expirée ou invalide"
           }
         },
         { upsert: true }
       );
 
-      emitToUser(userId, "whatsapp:disconnected", {
-        reason: isLoggedOut ? "logged_out" : "bad_session",
+      const payload = {
+        reason: isLoggedOut ? "logged_out" : isReplaced ? "connection_replaced" : "bad_session",
         statusCode,
+        message: isLoggedOut 
+          ? "Votre session WhatsApp a été déconnectée ou révoquée." 
+          : isReplaced 
+            ? "Session connectée sur un autre appareil." 
+            : "Session WhatsApp expirée.",
         shouldReconnect: false
-      });
+      };
+
+      emitToUser(userId, "whatsapp:disconnected", payload);
+      emitToSession(userId, "whatsapp:disconnected", payload);
       return;
     }
 
-    if (isReplaced) {
-      console.log(`[WhatsApp] Session remplacée sur un autre appareil pour ${userId}. Arrêt.`);
-      this.activeSessions.delete(userId);
-      this.pendingInitializations.delete(userId);
-      emitToUser(userId, "whatsapp:disconnected", {
-        reason: "connection_replaced",
-        statusCode,
-        shouldReconnect: false
-      });
-      return;
-    }
-
-    // For all transient network disconnects (connectionClosed, connectionLost, timedOut, restartRequired, etc.):
-    // The session credentials in MongoDB REMAIN VALID. Do NOT clear credentials or drop merchant to disconnected.
-    console.log(`[WhatsApp] Déconnexion transitoire pour ${userId} (Code ${statusCode}, Error: ${errMessage}). Reconnexion automatique en tâche de fond...`);
+    // For transient network disconnects (connectionClosed, connectionLost, timedOut, restartRequired, etc.):
+    const currentAttempts = (this.reconnectAttempts.get(userId) || 0) + 1;
+    this.reconnectAttempts.set(userId, currentAttempts);
     this.activeSessions.delete(userId);
     this.pendingInitializations.delete(userId);
 
-    // Exponential backoff or rapid auto-reconnect (2s)
+    // If transient reconnect failed more than 5 times consecutively, stop hammering and notify UI
+    if (currentAttempts > 5) {
+      console.warn(`[WhatsApp] Max auto-reconnect attempts reached (${currentAttempts}) for ${userId}. Passage en statut disconnected.`);
+      this.reconnectAttempts.delete(userId);
+
+      await CommerceMerchantModel.findOneAndUpdate(
+        { ownerId: userId },
+        { 
+          $set: { 
+            "whatsappConfig.status": "disconnected", 
+            "whatsappConfig.disconnectedAt": new Date(),
+            "whatsappConfig.reconnectAttempts": currentAttempts 
+          } 
+        }
+      );
+
+      await WhatsAppConnectionModel.findOneAndUpdate(
+        { userId },
+        {
+          $set: {
+            status: 'DISCONNECTED',
+            disconnectedAt: new Date(),
+            lastError: `Échec de reconnexion après ${currentAttempts} tentatives (${errMessage || "Délai réseau dépassé"})`
+          }
+        },
+        { upsert: true }
+      );
+
+      const payload = {
+        reason: "connection_lost",
+        statusCode,
+        message: "Impossible de rétablir la connexion WhatsApp après plusieurs tentatives.",
+        shouldReconnect: false
+      };
+
+      emitToUser(userId, "whatsapp:disconnected", payload);
+      emitToSession(userId, "whatsapp:disconnected", payload);
+      return;
+    }
+
+    const backoffDelay = Math.min(2000 * Math.pow(1.5, currentAttempts - 1), 15000);
+    console.log(`[WhatsApp] Déconnexion transitoire pour ${userId} (Code ${statusCode}, Error: ${errMessage}, Tentative ${currentAttempts}/5). Reconnexion dans ${backoffDelay}ms...`);
+    
+    emitToUser(userId, "whatsapp:connecting", { attempt: currentAttempts });
+
     setTimeout(() => {
       this.initSession(userId).catch(err => {
         console.warn(`[WhatsApp] Auto-reconnect attempt in background for ${userId}:`, err?.message || err);
       });
-    }, 2000);
+    }, backoffDelay);
   }
 
   private createBaileysSocket(state: any, version: any) {
@@ -330,6 +373,7 @@ class WhatsAppService {
           if (connection === "open") {
             this.lastPairingCodeMap.delete(userId);
             this.lastQrMap.delete(userId);
+            this.reconnectAttempts.delete(userId);
 
             await CommerceMerchantModel.findOneAndUpdate(
               { ownerId: userId },
@@ -435,6 +479,7 @@ class WhatsAppService {
       if (connection === "open") {
         this.lastPairingCodeMap.delete(userId);
         this.lastQrMap.delete(userId);
+        this.reconnectAttempts.delete(userId);
 
         await CommerceMerchantModel.findOneAndUpdate(
           { ownerId: userId },
@@ -541,6 +586,7 @@ class WhatsAppService {
         if (connection === "open") {
           this.lastPairingCodeMap.delete(userId);
           this.lastQrMap.delete(userId);
+          this.reconnectAttempts.delete(userId);
 
           await CommerceMerchantModel.findOneAndUpdate(
             { ownerId: userId },
@@ -603,7 +649,10 @@ class WhatsAppService {
 
   isSessionConnected(userId: string): boolean {
     const sock = this.activeSessions.get(userId);
-    return !!(sock && sock.authState?.creds?.registered);
+    if (!sock) return false;
+    const hasLiveUser = !!(sock.user && (sock.user.id || (sock.user as any).lid));
+    const isSocketOpen = sock.ws ? sock.ws.readyState === 1 : true;
+    return hasLiveUser && isSocketOpen;
   }
 
   getSessionPairingData(userId: string) {

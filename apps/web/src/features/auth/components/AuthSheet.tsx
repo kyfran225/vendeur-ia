@@ -612,7 +612,7 @@ export function AuthSheet({ isOpen, onClose, onSuccess }: { isOpen: boolean; onC
                 ? whatsappStep === "founder"
                   ? "Accès Fondateur & Système"
                   : whatsappStep === "otp"
-                  ? "Code de Sécurité"
+                  ? "Code de Sécurité WhatsApp"
                   : "Accès Commerçant"
                 : mode === "login"
                 ? "Connexion Équipe"
@@ -625,7 +625,7 @@ export function AuthSheet({ isOpen, onClose, onSuccess }: { isOpen: boolean; onC
                 ? whatsappStep === "founder"
                   ? "Numéro système configuré sur l'API Meta Cloud."
                   : whatsappStep === "otp"
-                  ? "Entrez le code reçu sur votre WhatsApp."
+                  ? "Saisissez le code de sécurité reçu sur votre WhatsApp."
                   : "Activez votre commercial IA sur WhatsApp en quelques secondes."
                 : "Espace d'accès par email pour l'équipe."}
             </p>
@@ -925,6 +925,21 @@ export function AuthSheet({ isOpen, onClose, onSuccess }: { isOpen: boolean; onC
             {/* STEP 3: RETURNING USER OTP VIEW */}
             {whatsappStep === "otp" && (
               <form onSubmit={handleVerifyOtp} className="space-y-4 animate-in zoom-in-95 duration-200">
+                <div className="flex items-center justify-between p-3 rounded-2xl bg-white/[0.03] border border-white/10 shadow-inner">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse shrink-0" />
+                    <div className="text-left min-w-0">
+                      <p className="text-[10px] text-white/40 uppercase font-black tracking-wider leading-none">Code envoyé au numéro</p>
+                      <p className="text-xs font-mono font-bold text-white truncate mt-1">
+                        {formatDisplayPhone(`${selectedCountry.dialCode}${localPhone}`, selectedCountry.code)}
+                      </p>
+                    </div>
+                  </div>
+                  <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-md bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 shrink-0">
+                    WhatsApp Live
+                  </span>
+                </div>
+
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-black uppercase tracking-widest text-white/50 ml-1">
                     Code de confirmation (6 chiffres)
@@ -934,7 +949,7 @@ export function AuthSheet({ isOpen, onClose, onSuccess }: { isOpen: boolean; onC
                     type="text"
                     inputMode="numeric"
                     maxLength={6}
-                    className="w-full h-13 bg-black/50 border border-white/10 focus:border-vendeur-emerald rounded-2xl text-center text-white font-mono text-xl tracking-[0.3em] placeholder:text-white/20 outline-none transition-all shadow-inner"
+                    className="w-full h-13 bg-black/50 border border-white/10 focus:border-vendeur-emerald rounded-2xl text-center text-white font-mono text-2xl tracking-[0.35em] placeholder:text-white/20 outline-none transition-all shadow-inner"
                     placeholder="••••••"
                     value={otpValue}
                     onChange={(e) => setOtpValue(e.target.value.replace(/\D/g, ""))}
@@ -979,8 +994,8 @@ export function AuthSheet({ isOpen, onClose, onSuccess }: { isOpen: boolean; onC
                 </div>
 
                 <div className="pt-3 p-3 rounded-2xl bg-white/[0.03] border border-white/10 text-center space-y-2">
-                  <p className="text-[11px] text-white/60 leading-tight">
-                    WhatsApp déconnecté ou code non reçu ?
+                  <p className="text-[11px] text-white/50 leading-tight">
+                    Vous souhaitez connecter un autre téléphone ou réinitialiser ?
                   </p>
                   <button
                     type="button"
@@ -988,7 +1003,7 @@ export function AuthSheet({ isOpen, onClose, onSuccess }: { isOpen: boolean; onC
                     className="w-full py-2 px-3 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-2"
                   >
                     <QrCode size={14} />
-                    <span>Lier l'appareil (Code de Jumelage / QR Code)</span>
+                    <span>Ré-appairer un appareil (Code / QR)</span>
                   </button>
                 </div>
               </form>

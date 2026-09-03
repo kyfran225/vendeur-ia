@@ -119,16 +119,17 @@ export function ShellHeader({ isVisible = true }: ShellHeaderProps) {
   // Détection des états de connexion
   const isConnexionsPage = location.pathname.includes('/settings') || location.pathname.includes('/connexions') || location.pathname.includes('/plus');
 
-  // Une déconnexion inopinée ne s'applique que si le marchand avait une session active qui est tombée en erreur ou explicitement déconnectée après avoir été connectée.
-  const hasEverConnected = Boolean(whatsapp?.connectedAt || merchant?.whatsappConfig?.connectedAt);
-  const isUnexpectedDisconnect = hasEverConnected && (
+  // Une déconnexion inopinée s'applique dès que le marchand a un numéro configuré ou a déjà été connecté, et que la ligne est déconnectée ou en erreur
+  const hasEverConnected = Boolean(whatsapp?.connectedAt || merchant?.whatsappConfig?.connectedAt || activePhone);
+  const isUnexpectedDisconnect = !isFounder && hasEverConnected && (
     merchant?.whatsappConfig?.status === 'error' || 
+    merchant?.whatsappConfig?.status === 'disconnected' ||
     whatsapp?.status === 'DISCONNECTED' ||
-    (merchant?.whatsappConfig?.status === 'disconnected' && Boolean(merchant?.whatsappConfig?.disconnectedAt))
+    whatsapp?.status === 'disconnected'
   );
 
-  // Ne JAMAIS afficher le bandeau si l'utilisateur est sur les réglages/connexions, si c'est un Pack Pro, ou s'il n'a encore jamais connecté son WhatsApp.
-  const showBanner = Boolean(isUnexpectedDisconnect && !isPackPro && !isConnexionsPage);
+  // Ne pas afficher le bandeau si l'utilisateur est déjà sur les réglages/connexions
+  const showBanner = Boolean(isUnexpectedDisconnect && !isConnexionsPage);
 
   return (
     <div className="sticky top-0 z-20 w-full flex flex-col shrink-0">

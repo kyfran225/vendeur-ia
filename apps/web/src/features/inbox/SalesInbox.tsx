@@ -5,7 +5,8 @@ import {
   ShoppingCart, Plus, Minus, Package, ChevronLeft, Globe, CreditCard,
   PauseCircle, PlayCircle, Volume2, VolumeX, Bell, BellOff,
   Copy, Check, Phone, RefreshCw, Zap, Image as ImageIcon,
-  Mic, Paperclip, Clock, AlertTriangle, ArrowDown, ArrowLeft
+  Mic, Paperclip, Clock, AlertTriangle, ArrowDown, ArrowLeft,
+  Smile, FileText, Reply
 } from "lucide-react";
 
 // TikTok Icon component
@@ -35,6 +36,11 @@ import { VoiceRecorder } from "./components/VoiceRecorder";
 import { CustomerAvatar } from "./components/CustomerAvatar";
 import { CustomerProfileModal } from "./components/CustomerProfileModal";
 import { PauseConfirmationModal } from "@/components/modals/PauseConfirmationModal";
+import { NewChatModal } from "./components/NewChatModal";
+import { EmojiPickerPopover } from "./components/EmojiPickerPopover";
+import { MediaUploaderModal } from "./components/MediaUploaderModal";
+import { MediaLightboxModal } from "./components/MediaLightboxModal";
+import { AudioVoicePlayer } from "./components/AudioVoicePlayer";
 import { formatDisplayPhone } from "@/features/onboarding/components/CountrySelector";
 import {
   playWhatsAppIncomingChime,
@@ -125,12 +131,21 @@ export function SalesInbox() {
   const [isPauseModalOpen, setIsPauseModalOpen] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [isNewChatModalOpen, setIsNewChatModalOpen] = useState(false);
+  const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
+  const [selectedFileForUpload, setSelectedFileForUpload] = useState<File | null>(null);
+  const [isMediaUploaderOpen, setIsMediaUploaderOpen] = useState(false);
+  const [lightboxMedia, setLightboxMedia] = useState<{ url: string; caption?: string; senderName?: string; timestamp?: string | Date } | null>(null);
+  const [quotedMessage, setQuotedMessage] = useState<{ id: string; content: string; sender: string; type?: string; mediaUrl?: string } | null>(null);
+  const [unreadCountBelow, setUnreadCountBelow] = useState<number>(0);
+  const [isNearBottom, setIsNearBottom] = useState<boolean>(true);
   const [onlineSessions, setOnlineSessions] = useState<Set<string>>(new Set());
   const [hasCopiedPhone, setHasCopiedPhone] = useState(false);
   const [typingMap, setTypingMap] = useState<Record<string, { isTyping: boolean; participant: "customer" | "ai" | "human"; lastUpdated: number }>>({});
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Auto-cleanup stale typing presence indicators
   useEffect(() => {
@@ -370,12 +385,49 @@ export function SalesInbox() {
     }
   }, [totalUnreadCount]);
 
-  // Auto-scroll to bottom when messages update
-  useEffect(() => {
+  // Smart Scroll Engine & distance calculation
+  const handleScroll = () => {
+    if (!scrollRef.current) return;
+    const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
+    const distanceToBottom = scrollHeight - scrollTop - clientHeight;
+    const nearBottom = distanceToBottom < 100;
+    setIsNearBottom(nearBottom);
+    if (nearBottom) {
+      setUnreadCountBelow(0);
+    }
+  };
+
+  const scrollToBottom = (smooth = true) => {
     if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+      if (smooth) {
+        scrollRef.current.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
+      } else {
+        scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+      }
+      setIsNearBottom(true);
+      setUnreadCountBelow(0);
+    }
+  };
+
+  // Auto-scroll when messages update based on scroll position
+  useEffect(() => {
+    if (!scrollRef.current) return;
+    if (isNearBottom) {
+      scrollToBottom(false);
+    } else {
+      setUnreadCountBelow(prev => prev + 1);
     }
   }, [messages]);
+
+  // Reset scroll and unread count on chat change
+  useEffect(() => {
+    if (selectedChat) {
+      setIsNearBottom(true);
+      setUnreadCountBelow(0);
+      setQuotedMessage(null);
+      setTimeout(() => scrollToBottom(false), 50);
+    }
+  }, [selectedChat]);
 
   // Mark conversation read mutation
   const markReadMutation = useMutation({
@@ -448,7 +500,7 @@ export function SalesInbox() {
       if (context?.previousDashboard) {
         queryClient.setQueryData(["dashboard"], context.previousDashboard);
       }
-      toast.error("Impossible de réactiver le Vendeur IA.");
+      toast.error("Échec de la réactivation de l'IA.");
     }
   });
 
@@ -466,8 +518,11 @@ export function SalesInbox() {
   });
 
   const sendManualMessageMutation = useMutation({
-    mutationFn: async ({ id, text }: { id: string; text: string }) => {
-      const res = await apiClient.post(`/api/commerce/conversations/${id}/messages`, { content: text });
+    mutationFn: async ({ id, text, quotedMessageId }: { id: string; text: string; quotedMessageId?: string }) => {
+      const res = await apiClient.post(`/api/commerce/conversations/${id}/messages`, {
+        content: text,
+        quotedMessageId
+      });
       return res.data;
     },
     onSuccess: (data: any) => {
@@ -477,9 +532,11 @@ export function SalesInbox() {
         playMessageSentPop();
       }
       setManualMessage("");
+      setQuotedMessage(null);
       setFollowupData({ text: "", isOpen: false });
       queryClient.invalidateQueries({ queryKey: ["messages", selectedChat] });
       queryClient.invalidateQueries({ queryKey: ["conversations"] });
+      scrollToBottom(true);
     },
     onError: () => {
       toast.error("Échec de l'envoi du message.");
@@ -533,7 +590,59 @@ export function SalesInbox() {
     if (socket && selectedChat) {
       socket.emit("typing:stop", { conversationId: selectedChat, participant: "human" });
     }
-    sendManualMessageMutation.mutate({ id: selectedChat, text: manualMessage.trim() });
+    sendManualMessageMutation.mutate({
+      id: selectedChat,
+      text: manualMessage.trim(),
+      quotedMessageId: quotedMessage?.id
+    });
+  };
+
+  const handleSelectEmoji = (emoji: string) => {
+    setManualMessage((prev) => prev + emoji);
+    setIsEmojiPickerOpen(false);
+    if (inputRef.current) {
+      inputRef.current.focus();
+    }
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setSelectedFileForUpload(e.target.files[0]);
+      setIsMediaUploaderOpen(true);
+      e.target.value = "";
+    }
+  };
+
+  const handlePaste = (e: React.ClipboardEvent) => {
+    if (e.clipboardData.files && e.clipboardData.files.length > 0) {
+      const file = e.clipboardData.files[0];
+      if (file.type.startsWith("image/") || file.type.startsWith("application/pdf")) {
+        e.preventDefault();
+        setSelectedFileForUpload(file);
+        setIsMediaUploaderOpen(true);
+      }
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      setSelectedFileForUpload(e.dataTransfer.files[0]);
+      setIsMediaUploaderOpen(true);
+    }
+  };
+
+  const handleReaction = async (messageId: string, emoji: string) => {
+    if (!selectedChat) return;
+    try {
+      await apiClient.post(`/api/commerce/conversations/${selectedChat}/reactions`, {
+        messageId,
+        emoji
+      });
+      queryClient.invalidateQueries({ queryKey: ["messages", selectedChat] });
+    } catch (err) {
+      console.warn("[Reaction Error]:", err);
+    }
   };
 
   const activeChatData = conversations?.find((c: any) => c._id === selectedChat);
@@ -641,6 +750,15 @@ export function SalesInbox() {
                   <Bell size={16} />
                 </button>
               )}
+
+              <button
+                type="button"
+                onClick={() => setIsNewChatModalOpen(true)}
+                className="p-2 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 hover:bg-emerald-500/30 hover:text-white transition-all cursor-pointer shadow-sm"
+                title="Nouvelle discussion (Démarrer avec un numéro WhatsApp)"
+              >
+                <Plus size={16} />
+              </button>
 
               <button
                 type="button"
@@ -1032,9 +1150,13 @@ export function SalesInbox() {
               </div>
             )}
 
-            {/* Chat Messages Body with WhatsApp Wallpaper */}
+            {/* Chat Messages Body with WhatsApp Wallpaper & Smart Scroll */}
             <div
               ref={scrollRef}
+              onScroll={handleScroll}
+              onPaste={handlePaste}
+              onDrop={handleDrop}
+              onDragOver={(e) => e.preventDefault()}
               className="flex-1 p-3 md:p-6 space-y-4 overflow-y-auto bg-[#0b141a] bg-repeat opacity-95 relative"
               style={{
                 backgroundImage: "url('https://static.whatsapp.net/rsrc.php/v3/y6/r/wa669ae5qee.png')",
@@ -1049,7 +1171,7 @@ export function SalesInbox() {
                 <div className="flex flex-col items-center justify-center py-16 text-center text-white/40 space-y-2">
                   <MessageCircle size={48} className="opacity-30" />
                   <p className="text-sm font-bold">Aucun message pour l'instant</p>
-                  <p className="text-xs text-white/30">Envoyez le premier message à ce client.</p>
+                  <p className="text-xs text-white/30">Envoyez le premier message à ce client ou déposez un fichier.</p>
                 </div>
               ) : (
                 <>
@@ -1057,7 +1179,23 @@ export function SalesInbox() {
                     <WhatsAppBubble
                       key={msg._id}
                       msg={msg}
-                      onImageClick={(url) => setPreviewImage(url)}
+                      onImageClick={(url, caption) => setLightboxMedia({
+                        url,
+                        caption,
+                        senderName: msg.sender === "customer" ? formatCustomerDisplayName(activeChatData?.customerId, merchant?.businessName, user?.displayName) : "Boutique",
+                        timestamp: msg.timestamp
+                      })}
+                      onReplyClick={(m) => {
+                        setQuotedMessage({
+                          id: m._id,
+                          content: m.content,
+                          sender: m.sender,
+                          type: m.type,
+                          mediaUrl: m.mediaUrl
+                        });
+                        if (inputRef.current) inputRef.current.focus();
+                      }}
+                      onReaction={(emoji) => handleReaction(msg._id, emoji)}
                     />
                   ))}
 
@@ -1075,6 +1213,27 @@ export function SalesInbox() {
                 </>
               )}
             </div>
+
+            {/* Smart Scroll Floating Pill Button (Nouveaux messages) */}
+            {(!isNearBottom || unreadCountBelow > 0) && (
+              <button
+                type="button"
+                onClick={() => scrollToBottom(true)}
+                className="absolute bottom-24 right-6 z-20 px-3.5 py-2 rounded-full bg-[#202c33] border border-[#00a884]/40 text-white text-xs font-bold shadow-2xl flex items-center gap-2 hover:bg-[#2a3942] active:scale-95 transition-all animate-in fade-in slide-in-from-bottom-2 cursor-pointer"
+              >
+                <ArrowDown size={14} className="text-[#00a884] animate-bounce" />
+                <span>
+                  {unreadCountBelow > 0
+                    ? `${unreadCountBelow} nouveau${unreadCountBelow > 1 ? "x" : ""} message${unreadCountBelow > 1 ? "s" : ""}`
+                    : "Descendre"}
+                </span>
+                {unreadCountBelow > 0 && (
+                  <span className="h-5 min-w-5 px-1.5 rounded-full bg-[#00a884] text-[#111b21] text-[10px] font-black flex items-center justify-center">
+                    {unreadCountBelow}
+                  </span>
+                )}
+              </button>
+            )}
 
             {/* AI Follow-up Preview Box */}
             {followupData.isOpen && (
@@ -1102,7 +1261,7 @@ export function SalesInbox() {
                     Annuler
                   </button>
                   <button
-                    onClick={() => selectedChat && sendManualMessageMutation.mutate({ id: selectedChat, text: followupData.text })}
+                    onClick={() => selectedChat && sendManualMessageMutation.mutate({ id: selectedChat, text: followupData.text, quotedMessageId: quotedMessage?.id })}
                     disabled={sendManualMessageMutation.isPending}
                     className="bg-sky-500 text-black px-4 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider hover:bg-sky-400 active:scale-95 transition-all cursor-pointer"
                   >
@@ -1112,8 +1271,33 @@ export function SalesInbox() {
               </div>
             )}
 
+            {/* Quoted Message Preview Banner (WhatsApp Style) */}
+            {quotedMessage && (
+              <div className="px-4 py-2 bg-[#202c33] border-t border-[#2a3942] flex items-center justify-between animate-in slide-in-from-bottom-2 duration-200">
+                <div className="flex items-center gap-3 overflow-hidden">
+                  <div className="w-1 self-stretch rounded-full bg-[#00a884]" />
+                  <div className="text-xs overflow-hidden">
+                    <div className="font-bold text-[#00a884] flex items-center gap-1">
+                      <Reply size={12} />
+                      <span>{quotedMessage.sender === "customer" ? "Répondre au client" : "Répondre à soi-même"}</span>
+                    </div>
+                    <div className="text-[#8696a0] truncate max-w-md">
+                      {stripActionTags(quotedMessage.content)}
+                    </div>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setQuotedMessage(null)}
+                  className="p-1 rounded-full text-[#8696a0] hover:text-white hover:bg-white/10"
+                >
+                  <X size={15} />
+                </button>
+              </div>
+            )}
+
             {/* WhatsApp Chat Footer Input */}
-            <footer className="p-2.5 md:p-3.5 bg-[#202c33] border-t border-white/10 space-y-2 shrink-0 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] md:pb-3.5">
+            <footer className="p-2.5 md:p-3.5 bg-[#202c33] border-t border-white/10 space-y-2 shrink-0 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] md:pb-3.5 relative">
               {/* Quick Template Chips */}
               <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1">
                 <button
@@ -1122,18 +1306,18 @@ export function SalesInbox() {
                   className="px-2.5 py-1 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-[10px] font-bold text-amber-300 flex items-center gap-1 shrink-0 cursor-pointer"
                 >
                   <CreditCard size={11} />
-                  <span>💰 Lien Paiement</span>
+                  <span>💰 FastPay Wave/OM</span>
                 </button>
                 <button
                   type="button"
-                  onClick={() => setManualMessage("Bonjour ! Merci de nous préciser votre adresse ou commune de livraison pour expédier votre commande.")}
+                  onClick={() => setManualMessage("Bonjour ! Merci de nous préciser votre commune ou quartier de livraison pour lancer l'expédition.")}
                   className="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-[10px] font-bold text-white/70 hover:text-white shrink-0 cursor-pointer"
                 >
                   📍 Demander Adresse
                 </button>
                 <button
                   type="button"
-                  onClick={() => setManualMessage("Votre commande est bien confirmée et en cours de préparation. Vous serez livré très vite ! ✨")}
+                  onClick={() => setManualMessage("Votre commande a bien été enregistrée et transmise à notre livreur. Vous serez contacté sous peu ! ✨")}
                   className="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-[10px] font-bold text-white/70 hover:text-white shrink-0 cursor-pointer"
                 >
                   📦 Confirmation Commande
@@ -1141,14 +1325,53 @@ export function SalesInbox() {
               </div>
 
               {/* Input Row */}
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 relative">
+                {/* Emoji Picker Button */}
+                <button
+                  type="button"
+                  onClick={() => setIsEmojiPickerOpen(!isEmojiPickerOpen)}
+                  className={cn(
+                    "p-2 rounded-xl border transition-all cursor-pointer shrink-0",
+                    isEmojiPickerOpen
+                      ? "bg-[#00a884]/20 border-[#00a884] text-[#00a884]"
+                      : "bg-[#2a3942] border-white/5 text-[#8696a0] hover:text-white"
+                  )}
+                  title="Insérer un émoji"
+                >
+                  <Smile size={18} />
+                </button>
+
+                {/* Emoji Popover */}
+                <EmojiPickerPopover
+                  isOpen={isEmojiPickerOpen}
+                  onClose={() => setIsEmojiPickerOpen(false)}
+                  onSelectEmoji={handleSelectEmoji}
+                />
+
+                {/* File Attachment Button (Hidden file input) */}
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleFileSelect}
+                  className="hidden"
+                  accept="image/*,video/*,audio/*,.pdf,.doc,.docx"
+                />
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="p-2 rounded-xl bg-[#2a3942] border border-white/5 text-[#8696a0] hover:text-white transition-all cursor-pointer shrink-0"
+                  title="Envoyer une photo ou document"
+                >
+                  <Paperclip size={18} />
+                </button>
+
                 {/* Voice Recorder button */}
                 {selectedChat && (
                   <VoiceRecorder conversationId={selectedChat} />
                 )}
 
                 {/* Textarea Input */}
-                <div className="flex-1 bg-[#2a3942] rounded-2xl px-3 py-2 border border-white/5 focus-within:border-emerald-500 transition-all flex items-center min-h-[42px]">
+                <div className="flex-1 bg-[#2a3942] rounded-2xl px-3 py-2 border border-white/5 focus-within:border-[#00a884] transition-all flex items-center min-h-[42px]">
                   <textarea
                     ref={inputRef}
                     className="w-full bg-transparent outline-none text-xs sm:text-sm text-white resize-none max-h-24 no-scrollbar placeholder:text-white/40 leading-relaxed"
@@ -1172,7 +1395,7 @@ export function SalesInbox() {
                   className={cn(
                     "h-10 w-10 rounded-full flex items-center justify-center transition-all shrink-0 cursor-pointer",
                     manualMessage.trim()
-                      ? "bg-emerald-500 text-black hover:scale-105 active:scale-95 shadow-lg shadow-emerald-500/25"
+                      ? "bg-[#00a884] text-[#111b21] hover:scale-105 active:scale-95 shadow-lg shadow-[#00a884]/25 font-bold"
                       : "bg-white/5 text-white/20 cursor-not-allowed"
                   )}
                   title="Envoyer le message"
@@ -1188,38 +1411,65 @@ export function SalesInbox() {
           </div>
         ) : (
           <div className="flex-1 flex flex-col items-center justify-center text-center p-8 space-y-4">
-            <div className="h-20 w-20 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+            <div className="h-20 w-20 rounded-full bg-[#00a884]/10 border border-[#00a884]/20 flex items-center justify-center text-[#00a884]">
               <MessageCircle size={40} />
             </div>
-            <div className="max-w-md space-y-1">
-              <h3 className="text-lg font-black text-white">WhatsApp Vendeur IA • Inbox Admin</h3>
+            <div className="max-w-md space-y-2">
+              <h3 className="text-lg font-black text-white">WhatsApp Vendeur IA • Inbox Pro</h3>
               <p className="text-xs text-white/50 leading-relaxed">
-                Sélectionnez une conversation dans la liste pour lire et répondre directement à vos clients avec synchronisation 100% instantanée.
+                Sélectionnez une discussion à gauche ou cliquez sur <span className="text-[#00a884] font-bold">+</span> pour démarrer une nouvelle conversation directe avec un numéro WhatsApp.
               </p>
+              <button
+                type="button"
+                onClick={() => setIsNewChatModalOpen(true)}
+                className="mt-2 px-4 py-2 rounded-xl bg-[#00a884] text-[#111b21] font-bold text-xs hover:bg-[#00a884]/90 transition-all inline-flex items-center gap-1.5 shadow-lg shadow-[#00a884]/20"
+              >
+                <Plus size={15} />
+                <span>Nouvelle discussion</span>
+              </button>
             </div>
           </div>
         )}
       </main>
 
-      {/* Image Lightbox Modal */}
-      {previewImage && (
-        <div
-          onClick={() => setPreviewImage(null)}
-          className="fixed inset-0 z-[80] bg-black/90 backdrop-blur-md flex items-center justify-center p-4 cursor-pointer animate-in fade-in"
-        >
-          <button
-            onClick={() => setPreviewImage(null)}
-            className="absolute top-4 right-4 p-2 rounded-full bg-white/10 text-white hover:bg-white/20"
-          >
-            <X size={20} />
-          </button>
-          <img
-            src={previewImage}
-            alt="Aperçu image"
-            className="max-w-full max-h-[85vh] rounded-2xl object-contain shadow-2xl"
-          />
-        </div>
+      {/* New Direct Chat Modal */}
+      <NewChatModal
+        isOpen={isNewChatModalOpen}
+        onClose={() => setIsNewChatModalOpen(false)}
+        onChatCreated={(newChatId) => {
+          queryClient.invalidateQueries({ queryKey: ["conversations"] });
+          handleChatSelect(newChatId);
+        }}
+      />
+
+      {/* Media Uploader Modal */}
+      {selectedFileForUpload && selectedChat && (
+        <MediaUploaderModal
+          isOpen={isMediaUploaderOpen}
+          onClose={() => {
+            setIsMediaUploaderOpen(false);
+            setSelectedFileForUpload(null);
+          }}
+          file={selectedFileForUpload}
+          conversationId={selectedChat}
+          quotedMessageId={quotedMessage?.id}
+          onMediaSent={() => {
+            queryClient.invalidateQueries({ queryKey: ["messages", selectedChat] });
+            queryClient.invalidateQueries({ queryKey: ["conversations"] });
+            scrollToBottom(true);
+          }}
+        />
       )}
+
+      {/* Media HD Lightbox Modal */}
+      <MediaLightboxModal
+        isOpen={Boolean(lightboxMedia)}
+        onClose={() => setLightboxMedia(null)}
+        imageUrl={lightboxMedia?.url || null}
+        caption={lightboxMedia?.caption}
+        senderName={lightboxMedia?.senderName}
+        timestamp={lightboxMedia?.timestamp}
+      />
 
       {/* Order Creation Modal */}
       {isOrderModalOpen && (
@@ -1268,9 +1518,19 @@ export function SalesInbox() {
 }
 
 // =========================================================================
-// WHATSAPP BUBBLE COMPONENT
+// WHATSAPP BUBBLE COMPONENT (With Quotes, Media, Vocals & Reactions)
 // =========================================================================
-function WhatsAppBubble({ msg, onImageClick }: { msg: any; onImageClick?: (url: string) => void }) {
+function WhatsAppBubble({
+  msg,
+  onImageClick,
+  onReplyClick,
+  onReaction
+}: {
+  msg: any;
+  onImageClick?: (url: string, caption?: string) => void;
+  onReplyClick?: (msg: any) => void;
+  onReaction?: (emoji: string) => void;
+}) {
   const isCustomer = msg.sender === "customer";
   const isHuman = msg.sender === "human";
   const isAI = msg.sender === "ai";
@@ -1279,9 +1539,11 @@ function WhatsAppBubble({ msg, onImageClick }: { msg: any; onImageClick?: (url: 
   const isPaymentFlagged = msg.content?.includes("[PREUVE SUSPECTE") || msg.content?.includes("[PREUVE DE PAIEMENT DÉTECTÉE]");
   const isFraudAlert = msg.content?.includes("[ALERTE SHIELD FRAUDE");
   const isVoiceMessage = msg.type === "audio" || msg.content?.includes("[Message Vocal]");
+  const isDocument = msg.type === "document" || msg.type === "file";
   const time = new Date(msg.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
   const [copied, setCopied] = useState(false);
+  const [showReactionMenu, setShowReactionMenu] = useState(false);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(stripActionTags(msg.content));
@@ -1290,11 +1552,38 @@ function WhatsAppBubble({ msg, onImageClick }: { msg: any; onImageClick?: (url: 
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const REACTION_EMOJIS = ["👍", "❤️", "😂", "😮", "😢", "🙏", "🔥"];
+
   return (
     <div className={cn(
-      "flex w-full animate-in slide-in-from-bottom-2 duration-200 group relative",
+      "flex w-full animate-in slide-in-from-bottom-2 duration-200 group relative select-text",
       isCustomer ? "justify-start" : "justify-end"
     )}>
+      {/* Mini Hover Reactions Toolbar */}
+      <div className={cn(
+        "absolute top-0 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 z-10 bg-[#202c33] border border-[#2a3942] rounded-full px-2 py-1 shadow-lg",
+        isCustomer ? "left-full ml-2" : "right-full mr-2"
+      )}>
+        {REACTION_EMOJIS.map((em) => (
+          <button
+            key={em}
+            type="button"
+            onClick={() => onReaction?.(em)}
+            className="hover:scale-125 transition-transform text-sm p-0.5 cursor-pointer"
+          >
+            {em}
+          </button>
+        ))}
+        <button
+          type="button"
+          onClick={() => onReplyClick?.(msg)}
+          className="text-[#8696a0] hover:text-white p-1 hover:bg-white/5 rounded-full ml-1"
+          title="Citer / Répondre"
+        >
+          <Reply size={13} />
+        </button>
+      </div>
+
       <div className={cn(
         "max-w-[85%] sm:max-w-[70%] p-3 rounded-2xl shadow-md relative break-words overflow-hidden min-w-[120px]",
         isCustomer
@@ -1317,13 +1606,34 @@ function WhatsAppBubble({ msg, onImageClick }: { msg: any; onImageClick?: (url: 
               {isHuman ? "Admin (Manuel)" : "Vendeur IA"}
             </span>
 
-            <button
-              onClick={handleCopy}
-              className="opacity-0 group-hover:opacity-100 hover:text-white transition-opacity cursor-pointer"
-              title="Copier le texte"
-            >
-              {copied ? <Check size={11} className="text-emerald-400" /> : <Copy size={11} />}
-            </button>
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={() => onReplyClick?.(msg)}
+                className="opacity-0 group-hover:opacity-100 hover:text-white transition-opacity cursor-pointer"
+                title="Citer"
+              >
+                <Reply size={11} />
+              </button>
+              <button
+                onClick={handleCopy}
+                className="opacity-0 group-hover:opacity-100 hover:text-white transition-opacity cursor-pointer"
+                title="Copier le texte"
+              >
+                {copied ? <Check size={11} className="text-emerald-400" /> : <Copy size={11} />}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Quoted Message Display Inside Bubble */}
+        {msg.quotedMessage && (
+          <div className="mb-2 p-2 rounded-xl bg-black/30 border-l-4 border-[#00a884] text-xs space-y-0.5">
+            <div className="font-bold text-[#00a884] text-[11px]">
+              {msg.quotedMessage.sender === "customer" ? "Client" : "Boutique"}
+            </div>
+            <div className="text-white/70 line-clamp-2 text-[11px]">
+              {stripActionTags(msg.quotedMessage.content)}
+            </div>
           </div>
         )}
 
@@ -1349,36 +1659,74 @@ function WhatsAppBubble({ msg, onImageClick }: { msg: any; onImageClick?: (url: 
           </div>
         )}
 
-        {/* Voice Note Player */}
+        {/* Audio / Voice Note Player */}
         {isVoiceMessage && (
-          <div className="space-y-1.5 mb-1.5">
-            <div className="flex items-center gap-1.5 px-2 py-0.5 bg-sky-500/20 border border-sky-500/30 text-sky-300 rounded-md text-[9px] font-black uppercase tracking-wider w-fit">
-              <Mic size={10} />
-              <span>Note Vocale</span>
-            </div>
-            {msg.mediaUrl && (
-              <audio src={msg.mediaUrl} controls className="h-8 max-w-full rounded-lg contrast-125" />
-            )}
+          <div className="mb-1.5">
+            <AudioVoicePlayer
+              audioUrl={msg.mediaUrl}
+              isSender={!isCustomer}
+            />
           </div>
         )}
 
         {/* Image Attachment with Lightbox */}
         {msg.type === "image" && msg.mediaUrl && (
-          <div className="mb-2 rounded-xl overflow-hidden cursor-pointer" onClick={() => onImageClick?.(msg.mediaUrl)}>
+          <div
+            className="mb-2 rounded-xl overflow-hidden cursor-pointer group/img relative"
+            onClick={() => onImageClick?.(msg.mediaUrl, msg.content !== "[Image]" ? msg.content : undefined)}
+          >
             <img
               src={msg.mediaUrl}
-              alt="Photo reçue"
-              className="max-h-60 rounded-xl object-cover hover:scale-105 transition-transform"
+              alt="Photo"
+              className="max-h-64 rounded-xl object-cover hover:scale-105 transition-transform"
             />
           </div>
         )}
 
+        {/* Document / PDF Attachment */}
+        {isDocument && msg.mediaUrl && (
+          <a
+            href={msg.mediaUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mb-2 p-3 rounded-xl bg-black/30 border border-white/10 flex items-center gap-3 hover:bg-black/40 transition-colors"
+          >
+            <div className="w-10 h-10 rounded-lg bg-[#00a884]/20 text-[#00a884] flex items-center justify-center shrink-0">
+              <FileText size={20} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="text-xs font-bold text-white truncate">
+                {msg.mediaMetadata?.fileName || "Document PDF"}
+              </div>
+              <div className="text-[10px] text-white/50">
+                {msg.mediaMetadata?.fileSize ? `${(msg.mediaMetadata.fileSize / 1024).toFixed(1)} KB` : "Télécharger"}
+              </div>
+            </div>
+          </a>
+        )}
+
         {/* Text Message Content */}
-        <p className="text-[13px] sm:text-[14px] leading-relaxed whitespace-pre-wrap break-words overflow-wrap-anywhere select-text">
-          {isVoiceMessage
-            ? msg.content?.replace(/^\[Message Vocal\]:\s*/, "")
-            : stripActionTags(msg.content)}
-        </p>
+        {msg.content && msg.content !== "[Image]" && (
+          <p className="text-[13px] sm:text-[14px] leading-relaxed whitespace-pre-wrap break-words overflow-wrap-anywhere select-text">
+            {isVoiceMessage
+              ? msg.content?.replace(/^\[Message Vocal\]:\s*/, "")
+              : stripActionTags(msg.content)}
+          </p>
+        )}
+
+        {/* Message Reactions Badges */}
+        {msg.reactions && msg.reactions.length > 0 && (
+          <div className="flex items-center gap-1 mt-1.5 flex-wrap">
+            {msg.reactions.map((r: any, idx: number) => (
+              <span
+                key={idx}
+                className="px-1.5 py-0.5 rounded-full bg-black/40 border border-white/10 text-xs flex items-center gap-1 shadow-sm"
+              >
+                <span>{r.emoji}</span>
+              </span>
+            ))}
+          </div>
+        )}
 
         {/* Bubble Timestamp & Read Receipt Status Coche */}
         <div className="flex items-center justify-end gap-1 mt-1 opacity-75 select-none">

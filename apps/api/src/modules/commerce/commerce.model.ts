@@ -201,9 +201,27 @@ const ConversationSchema = new Schema({
 const MessageSchema = new Schema({
   conversationId: { type: Schema.Types.ObjectId, ref: "CommerceConversation", required: true, index: true },
   sender: { type: String, enum: ["customer", "ai", "human"], required: true },
-  type: { type: String, enum: ["text", "audio", "image"], default: "text" },
+  type: { type: String, enum: ["text", "audio", "image", "video", "document", "file"], default: "text" },
   content: { type: String, required: true },
   mediaUrl: String,
+  mediaMetadata: {
+    fileName: String,
+    fileSize: Number,
+    mimeType: String,
+    duration: Number
+  },
+  quotedMessage: {
+    id: String,
+    content: String,
+    sender: String,
+    type: String,
+    mediaUrl: String
+  },
+  reactions: [{
+    emoji: { type: String, required: true },
+    sender: { type: String, default: "merchant" },
+    timestamp: { type: Date, default: Date.now }
+  }],
   status: { type: String, enum: ["pending", "sent", "delivered", "read"], default: "sent", index: true },
   whatsappMessageId: { type: String, index: true, sparse: true },
   deliveredAt: { type: Date, default: null },

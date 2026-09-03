@@ -63,6 +63,41 @@ export class StorageService {
       bytes: file.size
     };
   }
+
+  async uploadBuffer(buffer: Buffer, originalname = "file.jpg", mimeType = "image/jpeg", folder = "vendeur-ia"): Promise<StorageResult> {
+    if (this.useCloudinary) {
+      try {
+        const base64Data = `data:${mimeType};base64,${buffer.toString("base64")}`;
+        const result = await cloudinary.uploader.upload(base64Data, {
+          folder,
+          resource_type: "auto"
+        });
+        return {
+          url: result.secure_url,
+          provider: "cloudinary",
+          providerId: result.public_id,
+          bytes: result.bytes
+        };
+      } catch (error) {
+        console.error("Cloudinary buffer upload failed, falling back to local:", error);
+      }
+    }
+
+    const folderPath = path.join(UPLOADS_DIR, folder);
+    await fs.mkdir(folderPath, { recursive: true });
+    const cleanOrigName = (originalname || "file.jpg").replace(/[^a-zA-Z0-9._-]/g, "_");
+    const filename = `${Date.now()}-${cleanOrigName}`;
+    const filePath = path.join(folderPath, filename);
+    await fs.writeFile(filePath, buffer);
+
+    const baseUrl = env.API_URL || (env.CLIENT_URL ? env.CLIENT_URL.replace(/:\d+$/, `:${env.PORT || 3001}`) : `http://localhost:${env.PORT || 3001}`);
+    return {
+      url: `${baseUrl}/uploads/${folder}/${filename}`,
+      provider: "local",
+      providerId: filename,
+      bytes: buffer.length
+    };
+  }
 }
 
 export const storageService = new StorageService();

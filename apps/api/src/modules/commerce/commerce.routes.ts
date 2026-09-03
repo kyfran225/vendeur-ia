@@ -671,10 +671,286 @@ router.post("/conversations/:id/refresh-avatar", authenticate, async (req, res) 
   }
 });
 
+// START DIRECT CONVERSATION / NEW CONTACT CHAT
+router.post("/conversations/start", authenticate, async (req, res) => {
+  try {
+    const ownerId = (req as any).user.id;
+    const { phone, name, initialMessage, senderChannel = "merchant" } = req.body;
+
+    if (!phone || !phone.trim()) {
+      return res.status(400).json({ error: "Le numéro de téléphone est requis" });
+    }
+
+    const { cleanPhone, jid } = formatToWhatsAppRecipient(phone);
+    if (!cleanPhone || cleanPhone.length < 8) {
+      return res.status(400).json({ error: "Numéro de téléphone invalide" });
+    }
+
+    // Determine merchant (System Vendeur IA or Merchant's own store)
+    let merchant: any = null;
+    if (senderChannel === "system") {
+      merchant = await CommerceMerchantModel.findOne({
+        $or: [
+          { businessName: "Vendeur IA" },
+          { whatsappNumber: { $regex: '5111157' } },
+          { phone: { $regex: '5111157' } },
+          { "whatsappConfig.phoneNumberId": env.WHATSAPP_PHONE_ID }
+        ]
+      });
+    }
+
+    if (!merchant) {
+      merchant = await CommerceMerchantModel.findOne({ ownerId });
+    }
+
+    if (!merchant) {
+      merchant = await CommerceMerchantModel.findOne({
+        $or: [
+          { businessName: "Vendeur IA" },
+          { whatsappNumber: { $regex: '5111157' } }
+        ]
+      });
+    }
+
+    if (!merchant) return res.status(404).json({ error: "Aucun profil marchand configuré" });
+
+    // 1. Find or create Customer
+    let customer = await CommerceCustomerModel.findOne({
+      merchantId: merchant._id,
+      phone: cleanPhone
+    });
+
+    if (!customer) {
+      customer = await CommerceCustomerModel.create({
+        merchantId: merchant._id,
+        phone: cleanPhone,
+        name: name?.trim() || undefined
+      });
+    } else if (name && name.trim() && !customer.name) {
+      customer.name = name.trim();
+      await customer.save();
+    }
+
+    // 2. Find or create Conversation
+    let conversation = await CommerceConversationModel.findOne({
+      merchantId: merchant._id,
+      customerId: customer._id
+    });
+
+    if (!conversation) {
+      conversation = await CommerceConversationModel.create({
+        merchantId: merchant._id,
+        customerId: customer._id,
+        platform: "whatsapp",
+        status: "needs_human",
+        unreadCount: 0,
+        lastMessageAt: new Date()
+      });
+    }
+
+    let createdMessage: any = null;
+
+    // 3. Send initial message if provided
+    if (initialMessage && initialMessage.trim()) {
+      createdMessage = await CommerceMessageModel.create({
+        conversationId: conversation._id,
+        sender: "human",
+        type: "text",
+        content: initialMessage.trim(),
+        status: "sent",
+        timestamp: new Date()
+      });
+
+      conversation.lastMessageAt = new Date();
+      await conversation.save();
+
+      // Send via WhatsApp
+      try {
+        const sendRes: any = await messagingService.sendMessage(merchant, "whatsapp", cleanPhone, initialMessage.trim());
+        if (sendRes?.key?.id) {
+          createdMessage.whatsappMessageId = sendRes.key.id;
+          await createdMessage.save();
+        }
+      } catch (err: any) {
+        console.warn("[Start Chat] Initial message send failed:", err.message);
+      }
+    }
+
+    // Emit realtime socket event
+    emitToUser(ownerId, "conversation:update", {
+      conversationId: conversation._id,
+      message: createdMessage,
+      status: conversation.status,
+      unreadCount: 0
+    });
+
+    res.status(201).json({
+      success: true,
+      conversationId: conversation._id,
+      conversation: {
+        ...conversation.toObject(),
+        customerId: customer.toObject()
+      },
+      customer,
+      message: createdMessage
+    });
+  } catch (error: any) {
+    console.error("[Start Conversation Error]:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// MEDIA UPLOAD & DISPATCH (Images, Videos, Audio, Documents/PDF)
+router.post("/conversations/:id/media", authenticate, upload.single("file"), async (req, res) => {
+  try {
+    const ownerId = (req as any).user.id;
+    const conversationId = req.params.id;
+    const { caption = "", quotedMessageId } = req.body;
+
+    if (!req.file || !req.file.buffer) {
+      return res.status(400).json({ error: "Fichier média requis" });
+    }
+
+    const conversation = await CommerceConversationModel.findById(conversationId).populate("customerId");
+    if (!conversation) return res.status(404).json({ error: "Conversation non trouvée" });
+
+    let merchant = await CommerceMerchantModel.findById(conversation.merchantId);
+    if (!merchant) {
+      merchant = await CommerceMerchantModel.findOne({ ownerId });
+    }
+    if (!merchant) return res.status(404).json({ error: "Marchand non trouvé" });
+
+    // Determine type
+    const mime = req.file.mimetype || "";
+    let mediaType: "image" | "audio" | "video" | "document" = "document";
+    if (mime.startsWith("image/")) mediaType = "image";
+    else if (mime.startsWith("audio/")) mediaType = "audio";
+    else if (mime.startsWith("video/")) mediaType = "video";
+
+    // Upload to storage
+    const storageResult = await storageService.uploadBuffer(
+      req.file.buffer,
+      req.file.originalname,
+      req.file.mimetype,
+      "inbox-media"
+    );
+
+    // Optional Quoted message
+    let quotedMessage: any = undefined;
+    if (quotedMessageId) {
+      const qMsg = await CommerceMessageModel.findById(quotedMessageId);
+      if (qMsg) {
+        quotedMessage = {
+          id: qMsg._id.toString(),
+          content: qMsg.content,
+          sender: qMsg.sender,
+          type: qMsg.type,
+          mediaUrl: qMsg.mediaUrl
+        };
+      }
+    }
+
+    // Save message
+    const message = await CommerceMessageModel.create({
+      conversationId: conversation._id,
+      sender: "human",
+      type: mediaType,
+      content: caption.trim() || (mediaType === "image" ? "[Image]" : mediaType === "audio" ? "[Audio]" : `[${req.file.originalname || "Document"}]`),
+      mediaUrl: storageResult.url,
+      mediaMetadata: {
+        fileName: req.file.originalname,
+        fileSize: req.file.size,
+        mimeType: req.file.mimetype
+      },
+      quotedMessage,
+      status: "sent",
+      timestamp: new Date()
+    });
+
+    conversation.lastMessageAt = new Date();
+    conversation.status = "needs_human";
+    conversation.unreadCount = 0;
+    await conversation.save();
+
+    // Emit Realtime
+    const targetUserIds = new Set<string>([ownerId.toString()]);
+    if (merchant.ownerId) targetUserIds.add(merchant.ownerId.toString());
+
+    targetUserIds.forEach(tId => {
+      emitToUser(tId, "conversation:update", {
+        conversationId: conversation._id,
+        message,
+        status: "needs_human",
+        unreadCount: 0
+      });
+    });
+
+    // Send to WhatsApp / External platform
+    const customer = conversation.customerId as any;
+    const remoteId = customer?.phone;
+
+    let deliveryError: string | undefined;
+    try {
+      const sendRes: any = await messagingService.sendMessage(merchant, conversation.platform || "whatsapp", remoteId, caption.trim(), {
+        type: mediaType,
+        mediaUrl: storageResult.url,
+        audioBuffer: mediaType === "audio" ? req.file.buffer : undefined
+      });
+      if (sendRes?.key?.id) {
+        message.whatsappMessageId = sendRes.key.id;
+        await message.save();
+      }
+    } catch (sendError: any) {
+      deliveryError = sendError.message;
+      console.error("[Media Send Error]:", sendError.message);
+    }
+
+    res.status(201).json({ ...message.toObject(), deliveryError });
+  } catch (error: any) {
+    console.error("[Media Upload Route Error]:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ADD REACTION TO MESSAGE (👍❤️😂😮😢🙏🔥)
+router.post("/conversations/:id/reactions", authenticate, async (req, res) => {
+  try {
+    const ownerId = (req as any).user.id;
+    const { messageId, emoji } = req.body;
+
+    if (!messageId || !emoji) {
+      return res.status(400).json({ error: "messageId et emoji sont requis" });
+    }
+
+    const message = await CommerceMessageModel.findById(messageId);
+    if (!message) return res.status(404).json({ error: "Message non trouvé" });
+
+    // Add reaction
+    message.reactions = message.reactions || [];
+    message.reactions.push({
+      emoji,
+      sender: "merchant",
+      timestamp: new Date()
+    });
+    await message.save();
+
+    emitToUser(ownerId, "message:reaction", {
+      conversationId: req.params.id,
+      messageId: message._id,
+      emoji,
+      reactions: message.reactions
+    });
+
+    res.json({ success: true, message });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 router.post("/conversations/:id/messages", authenticate, async (req, res) => {
   try {
     const ownerId = (req as any).user.id;
-    const { content } = req.body;
+    const { content, quotedMessageId } = req.body;
     if (!content || !content.trim()) {
       return res.status(400).json({ error: "Le contenu du message est requis" });
     }
@@ -697,12 +973,28 @@ router.post("/conversations/:id/messages", authenticate, async (req, res) => {
 
     if (!merchant) return res.status(404).json({ error: "Marchand non trouvé" });
 
+    // Optional Quoted message lookup
+    let quotedMessage: any = undefined;
+    if (quotedMessageId) {
+      const qMsg = await CommerceMessageModel.findById(quotedMessageId);
+      if (qMsg) {
+        quotedMessage = {
+          id: qMsg._id.toString(),
+          content: qMsg.content,
+          sender: qMsg.sender,
+          type: qMsg.type,
+          mediaUrl: qMsg.mediaUrl
+        };
+      }
+    }
+
     // 1. Save message to DB
     const message = await CommerceMessageModel.create({
       conversationId: conversation._id,
       sender: "human",
       type: "text",
       content: content.trim(),
+      quotedMessage,
       status: "sent",
       timestamp: new Date()
     });

@@ -188,9 +188,15 @@ class WhatsAppService {
 
     console.log(`[WhatsApp Connection Close] User: ${userId}, StatusCode: ${statusCode}, Error: ${errMessage}`);
 
+    const isConnectionError = errMessage.includes("Connection Failure") ||
+                             errMessage.includes("Stream Errored") ||
+                             errMessage.includes("QR refs") ||
+                             statusCode === 408 ||
+                             statusCode === 515;
+
     // ONLY permanent unlinking / logged out from phone or corrupt credentials
-    const isLoggedOut = statusCode === DisconnectReason.loggedOut;
-    const isBadSession = statusCode === DisconnectReason.badSession;
+    const isLoggedOut = statusCode === DisconnectReason.loggedOut && !isConnectionError;
+    const isBadSession = statusCode === DisconnectReason.badSession && !isConnectionError;
     const isReplaced = statusCode === DisconnectReason.connectionReplaced;
 
     if (isLoggedOut || isBadSession) {
@@ -240,7 +246,7 @@ class WhatsAppService {
 
     // For all transient network disconnects (connectionClosed, connectionLost, timedOut, restartRequired, etc.):
     // The session credentials in MongoDB REMAIN VALID. Do NOT clear credentials or drop merchant to disconnected.
-    console.log(`[WhatsApp] Déconnexion transitoire pour ${userId} (Code ${statusCode}). Reconnexion automatique en tâche de fond...`);
+    console.log(`[WhatsApp] Déconnexion transitoire pour ${userId} (Code ${statusCode}, Error: ${errMessage}). Reconnexion automatique en tâche de fond...`);
     this.activeSessions.delete(userId);
     this.pendingInitializations.delete(userId);
 
@@ -257,11 +263,12 @@ class WhatsAppService {
       version,
       auth: state,
       printQRInTerminal: false,
-      browser: Browsers.macOS("Desktop"),
+      browser: Browsers.ubuntu("Chrome"),
       syncFullHistory: false,
       generateHighQualityLinkPreview: false,
       markOnlineOnConnect: false,
       connectTimeoutMs: 60000,
+      defaultQueryTimeoutMs: 60000,
       keepAliveIntervalMs: 25000,
       retryRequestDelayMs: 350,
       maxMsgRetryCount: 3,
@@ -720,10 +727,16 @@ class WhatsAppService {
         const errMessage = (lastDisconnect?.error as Error)?.message || "";
         console.log(`[WhatsApp Onboarding Close] Session: ${currentOwnerId}, StatusCode: ${statusCode}, Error: ${errMessage}`);
 
-        const isLoggedOut = statusCode === DisconnectReason.loggedOut;
-        const isBadSession = statusCode === DisconnectReason.badSession;
+        const isConnectionError = errMessage.includes("Connection Failure") ||
+                                 errMessage.includes("Stream Errored") ||
+                                 errMessage.includes("QR refs") ||
+                                 statusCode === 408 ||
+                                 statusCode === 515;
+        const isExplicitLogout = statusCode === DisconnectReason.loggedOut && !isConnectionError;
+        const isBadSession = statusCode === DisconnectReason.badSession && !isConnectionError;
 
-        if (isLoggedOut || isBadSession) {
+        if (isExplicitLogout || isBadSession) {
+          console.log(`[WhatsApp Onboarding] Explicit logout/bad session for ${authSessionId}. Cleaning session.`);
           this.activeSessions.delete(currentOwnerId);
           this.activeSessions.delete(authSessionId);
           await clearMongoAuthState(authSessionId);
@@ -739,8 +752,8 @@ class WhatsAppService {
           return;
         }
 
-        // Transient disconnect during pairing handshake (e.g. 515 restart required)
-        console.log(`[WhatsApp Onboarding] Restarting connection for ${authSessionId} to finalize pairing handshake (Code ${statusCode})...`);
+        // Transient disconnect during pairing handshake (e.g. 515 restart required, Connection Failure, etc.)
+        console.log(`[WhatsApp Onboarding] Restarting connection for ${authSessionId} to finalize pairing handshake (Code ${statusCode}, Error: ${errMessage})...`);
         this.activeSessions.delete(authSessionId);
         setTimeout(() => {
           this.startOnboardingSocket(authSessionId, cleanNumber, storeData).catch(err => {
@@ -996,8 +1009,8 @@ class WhatsAppService {
       await conversation.save();
     }
 
-    // Handle Image / Payment Proof
-    if (imageMsg) {
+    // Handle Image / Payment Proof (Baileys)
+    if (imageMsg && typeof imageMsg === 'object') {
       console.log("[WhatsApp] Image received, checking for payment proof...");
       try {
         const buffer = await whatsappMediaService.downloadBaileysMedia(msg, 'image');
@@ -1659,14 +1672,13 @@ class WhatsAppService {
     };
 
     // 3. Handle Media if present
-    if (media) {
+    if (media && media.mediaId && media.mediaId !== "null" && media.mediaId !== "undefined") {
       try {
         console.log(`[Meta WhatsApp] Downloading ${media.mediaType} ${media.mediaId}...`);
-        const buffer = await whatsappMediaService.downloadMetaMedia(media.mediaId);
+        const config = await this.getMetaConfig(merchant);
+        const buffer = await whatsappMediaService.downloadMetaMedia(media.mediaId, config.accessToken);
 
         if (media.mediaType === 'image') {
-          msg.message.imageMessage = true;
-
           // Find or create customer to get the ID for linking
           let customer = await CommerceCustomerModel.findOne({ merchantId: merchant._id, phone: from });
           if (!customer) {

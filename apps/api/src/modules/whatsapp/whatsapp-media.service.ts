@@ -8,8 +8,13 @@ export class WhatsAppMediaService {
    * @param mediaId The ID of the media provided by Meta
    * @returns Buffer of the downloaded media
    */
-  async downloadMetaMedia(mediaId: string): Promise<Buffer> {
-    if (!env.WHATSAPP_ACCESS_TOKEN) {
+  async downloadMetaMedia(mediaId: string, customToken?: string): Promise<Buffer> {
+    if (!mediaId || mediaId === "null" || mediaId === "undefined") {
+      throw new Error("Invalid mediaId provided for Meta media download");
+    }
+
+    const token = customToken || env.WHATSAPP_ACCESS_TOKEN;
+    if (!token) {
       throw new Error("WHATSAPP_ACCESS_TOKEN is not configured");
     }
 
@@ -17,16 +22,19 @@ export class WhatsAppMediaService {
       // 1. Get the media URL from Meta
       const mediaResponse = await axios.get(`https://graph.facebook.com/v20.0/${mediaId}`, {
         headers: {
-          Authorization: `Bearer ${env.WHATSAPP_ACCESS_TOKEN}`,
+          Authorization: `Bearer ${token}`,
         },
       });
 
-      const mediaUrl = mediaResponse.data.url;
+      const mediaUrl = mediaResponse.data?.url;
+      if (!mediaUrl) {
+        throw new Error(`No media URL returned for mediaId ${mediaId}`);
+      }
 
       // 2. Download the media content
       const contentResponse = await axios.get(mediaUrl, {
         headers: {
-          Authorization: `Bearer ${env.WHATSAPP_ACCESS_TOKEN}`,
+          Authorization: `Bearer ${token}`,
         },
         responseType: "arraybuffer",
       });

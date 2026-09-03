@@ -202,6 +202,14 @@ router.get("/public/shop/:merchantId", async (req, res) => {
     const merchant = await commerceService.findMerchantByIdOrSlug(req.params.merchantId);
     if (!merchant) return res.status(404).json({ error: "Boutique non trouvée" });
 
+    const isFounder = (merchant.whatsappNumber && isFounderNumber(merchant.whatsappNumber)) ||
+                      (merchant.phone && isFounderNumber(merchant.phone)) ||
+                      merchant.businessName === "Vendeur IA";
+
+    if (isFounder && merchant.ownerId) {
+      await commerceService.ensureFounderMerchantConfigured(merchant.ownerId);
+    }
+
     const products = await CommerceProductModel.find({
       merchantId: merchant._id,
       availability: { $ne: "hidden" }
@@ -1556,6 +1564,14 @@ router.get("/products", authenticate, async (req, res) => {
     const ownerId = (req as any).user.id;
     const merchant = await CommerceMerchantModel.findOne({ ownerId });
     if (!merchant) return res.json([]);
+
+    const isFounder = (merchant.whatsappNumber && isFounderNumber(merchant.whatsappNumber)) ||
+                      (merchant.phone && isFounderNumber(merchant.phone)) ||
+                      merchant.businessName === "Vendeur IA";
+
+    if (isFounder) {
+      await commerceService.ensureFounderMerchantConfigured(ownerId);
+    }
 
     const products = await CommerceProductModel.find({ merchantId: merchant._id });
     res.json(products);

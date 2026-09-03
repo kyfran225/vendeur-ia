@@ -109,49 +109,55 @@ export class CommerceService {
       )) || merchant;
     }
 
-    // Clean up any mock/fashion/dummy products or outdated pricing
+    // 3. Upsert & synchronize the 3 official canonical Vendeur IA products/services
+    const canonicalProducts = [
+      {
+        name: "Abonnement Vendeur IA - Pack Essentiel",
+        price: 5000,
+        currency: "XOF",
+        stock: 999,
+        availability: "available" as const,
+        category: "services",
+        isService: true,
+        featured: true,
+        description: "IA commerciale WhatsApp 24h/24 & 7j/7, catalogue produits complet & gestion des stocks, détection automatique des reçus Mobile Money (Wave, MTN, Orange, Moov), prise de commandes et Studio Créatif."
+      },
+      {
+        name: "Abonnement Vendeur IA - Pack Pro",
+        price: 20000,
+        currency: "XOF",
+        stock: 999,
+        availability: "available" as const,
+        category: "services",
+        isService: true,
+        featured: true,
+        description: "Tout ce qui est inclus dans Essentiel + Numéro Officiel Meta Cloud API, Multi-Canal (WhatsApp + Instagram), Campagnes marketing Broadcast IA, PaymentShield Forensic anti-fraude, Vocaux IA et Support VIP 7j/7."
+      },
+      {
+        name: "Configuration & Déploiement Clé en main (Pack Pro Expert)",
+        price: 25000,
+        currency: "XOF",
+        stock: 999,
+        availability: "available" as const,
+        category: "services",
+        isService: true,
+        featured: true,
+        description: "Mise en service complète et clé en main par nos experts : intégration WhatsApp Meta Cloud API, saisie et optimisation de votre catalogue, entraînement personnalisé de votre IA et tests de vente en direct."
+      }
+    ];
+
+    // Clean up any legacy, outdated or non-canonical services for Vendeur IA
     await CommerceProductModel.deleteMany({
       merchantId: merchant._id,
-      name: { $in: ["Sac à main Élégance", "Robe d'été Fleurie", "Sneakers Urban Flow", "Menu Burger XL Gourmet", "AirPods Pro (Réplique Premium)", "Statue en Bronze Traditionnelle", "Vase Design Céramique", "Pack Petit Déjeuner", "Abonnement Vendeur IA - Pack Essential"] }
+      name: { $nin: canonicalProducts.map(p => p.name) }
     });
 
-    const existingVendeurProducts = await CommerceProductModel.find({ merchantId: merchant._id });
-    if (existingVendeurProducts.length === 0) {
-      await CommerceProductModel.create([
-        {
-          merchantId: merchant._id,
-          name: "Abonnement Vendeur IA - Pack Essentiel",
-          price: 5000,
-          currency: "XOF",
-          stock: 999,
-          availability: "available",
-          category: "services",
-          isService: true,
-          description: "IA commerciale WhatsApp 24h/24 & 7j/7, catalogue produits complet & gestion des stocks, détection automatique des reçus Mobile Money (Wave, MTN, Orange, Moov), prise de commandes et Studio Créatif."
-        },
-        {
-          merchantId: merchant._id,
-          name: "Abonnement Vendeur IA - Pack Pro",
-          price: 20000,
-          currency: "XOF",
-          stock: 999,
-          availability: "available",
-          category: "services",
-          isService: true,
-          description: "Tout ce qui est inclus dans Essentiel + Numéro Officiel Meta Cloud API, Multi-Canal (WhatsApp + Instagram), Campagnes marketing Broadcast IA, PaymentShield Forensic anti-fraude, Vocaux IA et Support VIP 7j/7."
-        },
-        {
-          merchantId: merchant._id,
-          name: "Configuration & Déploiement Clé en main (Pack Pro Expert)",
-          price: 25000,
-          currency: "XOF",
-          stock: 999,
-          availability: "available",
-          category: "services",
-          isService: true,
-          description: "Mise en service complète et clé en main par nos experts : intégration WhatsApp Meta Cloud API, saisie et optimisation de votre catalogue, entraînement personnalisé de votre IA et tests de vente en direct."
-        }
-      ]);
+    for (const prod of canonicalProducts) {
+      await CommerceProductModel.findOneAndUpdate(
+        { merchantId: merchant._id, name: prod.name },
+        { $set: { ...prod, merchantId: merchant._id } },
+        { upsert: true, new: true }
+      );
     }
 
     // Update Knowledge base for Vendeur IA

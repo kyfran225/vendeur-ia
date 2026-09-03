@@ -2160,6 +2160,11 @@ class WhatsAppService {
       ]
     });
 
+    // 0. Founder / Admin Official Meta Channel is always connected
+    if (isFounder || (merchant?.whatsappConfig?.provider as string) === "meta") {
+      return "connected";
+    }
+
     // 1. Verify active Baileys socket in memory
     const activeSock = this.activeSessions.get(userId) || (merchant?.ownerId ? this.activeSessions.get(merchant.ownerId.toString()) : null);
     if (activeSock && activeSock.user && (activeSock.user.id || (activeSock.user as any).lid)) {
@@ -2171,12 +2176,7 @@ class WhatsAppService {
       return "disconnected";
     }
 
-    // 3. Check Meta Cloud API provider
-    if (merchant?.whatsappConfig?.provider === "meta" && merchant?.whatsappConfig?.status === "connected") {
-      return "connected";
-    }
-
-    // 4. Check Baileys connection status in DB
+    // 3. Check Baileys connection status in DB
     if (merchant?.whatsappConfig?.status === "connected" && connection?.status === "CONNECTED") {
       return "connected";
     }

@@ -27,6 +27,7 @@ import { formatDisplayPhone, parsePhoneNumber } from "@/features/onboarding/comp
 import { QRCodeSVG } from "qrcode.react";
 import { io, Socket } from "socket.io-client";
 import { useAuthStore } from "@/stores/authStore";
+import { useFounderRole } from "@/hooks/useFounderRole";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
@@ -40,6 +41,7 @@ export function WhatsAppConnectionFlow() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { user } = useAuthStore();
+  const { isFounder } = useFounderRole();
 
   const [activeTab, setActiveTab] = useState<"pairing_code" | "qr_code" | "meta">("pairing_code");
   const [storeWhatsApp, setStoreWhatsApp] = useState("");
@@ -91,10 +93,11 @@ export function WhatsAppConnectionFlow() {
   const activeNumber = merchant?.whatsappNumber || merchant?.phone || whatsapp?.phoneNumber || user?.whatsappNumber || "";
 
   const isExplicitlyDisconnected =
-    liveStatusData?.status === "disconnected" ||
-    merchant?.whatsappConfig?.status === "disconnected" ||
-    whatsapp?.status === "DISCONNECTED" ||
-    whatsapp?.status === "disconnected";
+    !isFounder &&
+    (liveStatusData?.status === "disconnected" ||
+     merchant?.whatsappConfig?.status === "disconnected" ||
+     whatsapp?.status === "DISCONNECTED" ||
+     whatsapp?.status === "disconnected");
 
   const isBaileysConnected =
     !isExplicitlyDisconnected &&
@@ -104,12 +107,12 @@ export function WhatsAppConnectionFlow() {
      merchant?.whatsappConfig?.status === "connected");
 
   const isMetaConnected =
-    !isExplicitlyDisconnected &&
-    merchant?.whatsappConfig?.provider === "meta" &&
-    merchant?.whatsappConfig?.status === "connected" &&
-    Boolean(merchant?.whatsappConfig?.meta?.phoneNumberId || merchant?.whatsappConfig?.phoneNumberId);
+    isFounder ||
+    (!isExplicitlyDisconnected &&
+     merchant?.whatsappConfig?.provider === "meta" &&
+     (merchant?.whatsappConfig?.status === "connected" || Boolean(merchant?.whatsappConfig?.meta?.phoneNumberId || merchant?.whatsappConfig?.phoneNumberId)));
 
-  const isConnectedLive = isBaileysConnected || isMetaConnected;
+  const isConnectedLive = isFounder || isBaileysConnected || isMetaConnected;
 
   const isPaidActive = merchant?.subscription?.status === "active";
   const isPaused = isPaidActive && merchant?.aiSettings?.autoReply === false;
@@ -397,16 +400,18 @@ export function WhatsAppConnectionFlow() {
                   )} />
                   <span>
                     {isConnectedLive
-                      ? isPaidActive && !isPaused
-                        ? "En Vente 24h/24"
-                        : isPaused
-                          ? "Mode Pause (Manuel)"
-                          : "Ligne Connectée (Mode Découverte)"
+                      ? isFounder
+                        ? "Ligne Officielle Meta Cloud (24h/24)"
+                        : isPaidActive && !isPaused
+                          ? "En Vente 24h/24"
+                          : isPaused
+                            ? "Mode Pause (Manuel)"
+                            : "Ligne Connectée (Mode Découverte)"
                       : "Ligne Non Connectée"}
                   </span>
                 </span>
                 <h3 className="text-base sm:text-lg md:text-xl font-black text-white uppercase tracking-tight">
-                  Ligne WhatsApp de Vente
+                  {isFounder ? "Ligne Officielle Vendeur IA" : "Ligne WhatsApp de Vente"}
                 </h3>
               </div>
 
@@ -416,7 +421,9 @@ export function WhatsAppConnectionFlow() {
                 </strong>
                 {isConnectedLive ? (
                   <span className="block text-[11px] text-vendeur-emerald font-semibold mt-0.5">
-                    ✅ Votre Vendeur IA intercepte et répond aux messages envoyés à ce numéro.
+                    {isFounder 
+                      ? "✅ Ligne officielle connectée via Meta Cloud API. Les clients sont servis 24h/24 sans interruption."
+                      : "✅ Votre Vendeur IA intercepte et répond aux messages envoyés à ce numéro."}
                   </span>
                 ) : (
                   <span className="block text-[11px] text-white/40 mt-0.5">
@@ -429,7 +436,7 @@ export function WhatsAppConnectionFlow() {
 
           {/* Quick Actions Header - Perfectly Centered in the card */}
           <div className="flex flex-row items-center justify-center gap-3 w-full pt-1">
-            {isConnectedLive && (
+            {isConnectedLive && !isFounder && (
               <button
                 type="button"
                 onClick={handleDisconnect}
@@ -694,14 +701,18 @@ export function WhatsAppConnectionFlow() {
                 <CheckCircle2 size={20} />
               </div>
               <div>
-                <h4 className="text-sm font-black text-white tracking-tight">Ligne WhatsApp Live Active</h4>
+                <h4 className="text-sm font-black text-white tracking-tight">
+                  {isFounder ? "Ligne Officielle Meta Cloud Active" : "Ligne WhatsApp Live Active"}
+                </h4>
                 <p className="text-xs text-white/60">
-                  Votre Vendeur IA répond aux messages entrants sur votre numéro en temps réel.
+                  {isFounder 
+                    ? "Connectée directement aux serveurs Meta Cloud API (ID: 1283754474826620). Votre IA répond 24h/24 sans nécessiter de jumelage QR."
+                    : "Votre Vendeur IA répond aux messages entrants sur votre numéro en temps réel."}
                 </p>
               </div>
             </div>
 
-            {isDiscoveryMode && (
+            {isDiscoveryMode && !isFounder && (
               <button
                 type="button"
                 onClick={() => navigate("/offers")}

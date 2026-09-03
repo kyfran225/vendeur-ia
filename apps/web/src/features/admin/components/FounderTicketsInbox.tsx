@@ -263,7 +263,9 @@ export function FounderTicketsInbox() {
 
       {/* 3. Ticket Cards List - Flattened */}
       {isLoading ? (
-        <div className="py-20 text-center uppercase font-black text-white/20 text-[10px]">Scanning Foundation Signals...</div>
+        <div className="py-20 flex items-center justify-center">
+          <VendeurIALoader size="md" label="Chargement des messages & tickets..." />
+        </div>
       ) : filteredTickets.length === 0 ? (
         <div className="p-12 text-center rounded-3xl bg-vendeur-coal/30 border border-white/5 space-y-2">
           <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/20">No active signals detected</p>

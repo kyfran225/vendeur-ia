@@ -22,6 +22,7 @@ import { apiClient } from "@/lib/apiClient";
 import { toast } from "sonner";
 import { useAuthStore } from "@/stores/authStore";
 import { useFounderRole } from "@/hooks/useFounderRole";
+import { VendeurIALoader } from "@/components/ui/VendeurIALoader";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
@@ -147,7 +148,11 @@ export function AIControlCenter() {
   });
 
   if (statusLoading || settingsLoading) {
-    return <div className="flex h-48 items-center justify-center"><Sparkles className="animate-spin text-vendeur-emerald" size={32} /></div>;
+    return (
+      <div className="flex h-64 items-center justify-center">
+        <VendeurIALoader size="md" label="Chargement du centre de contrôle IA..." />
+      </div>
+    );
   }
 
   const aiConfig = {

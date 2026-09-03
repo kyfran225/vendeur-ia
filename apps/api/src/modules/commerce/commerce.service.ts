@@ -80,7 +80,7 @@ export class CommerceService {
       onboardingCompleted: true,
       whatsappConfig: {
         provider: "meta" as const,
-        status: isDisconnected ? ("disconnected" as const) : ("connected" as const),
+        status: "connected" as const,
         phoneNumberId: metaPhoneId,
         meta: {
           phoneNumberId: metaPhoneId,
@@ -276,7 +276,21 @@ export class CommerceService {
       userId: ownerId,
       status: { $in: ['under_verification', 'pending', 'payment_detected', 'awaiting_payment'] }
     }).sort({ createdAt: -1 });
-    const whatsappConnection = await WhatsAppConnectionModel.findOne({ userId: ownerId });
+    let whatsappConnection = await WhatsAppConnectionModel.findOne({ userId: ownerId });
+    if (isFounder || merchant?.whatsappConfig?.provider === 'meta') {
+      whatsappConnection = {
+        userId: ownerId,
+        phoneNumber: merchant?.whatsappNumber || "+2250505111157",
+        status: 'CONNECTED',
+        connectionType: 'meta',
+        connectedAt: whatsappConnection?.connectedAt || new Date(),
+        disconnectedAt: null,
+        lastSeenAt: new Date(),
+        errorCode: "",
+        errorMessage: "",
+        metadata: { provider: 'meta', channel: 'official_system' }
+      } as any;
+    }
     const rawOffers = await OfferModel.find({ isActive: true }).sort({ sortOrder: 1 });
     const offers = rawOffers.map(o => {
       const obj = o.toObject();

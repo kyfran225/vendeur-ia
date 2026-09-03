@@ -553,284 +553,430 @@ export function ProductManager() {
         type="danger"
       />
 
-      {/* Edit / Add Form Modal */}
+      {/* Edit / Add Form Modal - Ultra-sleek 2-Column Desktop Experience */}
       {(editingProduct || isAddingManual) && (
-        <div className="fixed inset-0 z-[150] flex items-center justify-center p-3 sm:p-4 overflow-y-auto overscroll-contain">
-          <div className="fixed inset-0 bg-black/90 backdrop-blur-md" onClick={() => { setEditingProduct(null); setIsAddingManual(false); }} />
+        <div className="fixed inset-0 z-[150] flex items-center justify-center p-3 sm:p-6 overflow-y-auto overscroll-contain animate-in fade-in duration-200">
+          <div 
+            className="fixed inset-0 bg-black/85 backdrop-blur-xl transition-opacity" 
+            onClick={() => { setEditingProduct(null); setIsAddingManual(false); }} 
+          />
+          
           <form
             onSubmit={editingProduct ? handleUpdate : handleManualCreate}
-            className="relative w-full max-w-xl bg-[#0c0f0d] border border-white/10 rounded-2xl sm:rounded-[2.5rem] p-4 sm:p-6 md:p-8 space-y-4 sm:space-y-6 shadow-2xl animate-in zoom-in-95 duration-200 max-h-[88vh] overflow-y-auto overscroll-contain my-auto touch-pan-y"
+            className="relative w-full max-w-4xl bg-[#0b120e] border border-white/10 rounded-3xl sm:rounded-[2.5rem] shadow-[0_25px_80px_rgba(0,0,0,0.85)] flex flex-col max-h-[92vh] overflow-hidden my-auto animate-in zoom-in-95 duration-200"
           >
-            <div className="flex justify-between items-center mb-1">
-              <h2 className="text-xl sm:text-2xl font-black text-white uppercase tracking-tight">
-                {editingProduct ? "Modifier" : "Nouveau"} {config.itemLabel}
-              </h2>
-              <button onClick={() => { setEditingProduct(null); setIsAddingManual(false); }} type="button" className="text-white/40 hover:text-white p-1 rounded-lg hover:bg-white/5 transition-all"><X size={20} /></button>
+            {/* Modal Header */}
+            <div className="px-5 py-4 sm:px-8 sm:py-5 border-b border-white/5 bg-white/[0.02] flex items-center justify-between shrink-0">
+              <div className="flex items-center gap-3.5">
+                <div className="h-11 w-11 rounded-2xl bg-vendeur-emerald/10 border border-vendeur-emerald/20 flex items-center justify-center text-vendeur-emerald shrink-0">
+                  {editingProduct ? <Edit size={20} /> : <Plus size={20} />}
+                </div>
+                <div>
+                  <h2 className="text-lg sm:text-2xl font-black text-white uppercase tracking-tight flex items-center gap-2">
+                    <span>{editingProduct ? "Modifier" : "Ajouter"} {config.itemLabel}</span>
+                  </h2>
+                  <p className="text-[11px] text-white/40 font-medium">
+                    Configurez les détails et le visuel que le Vendeur IA présentera à vos clients sur WhatsApp.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => { setEditingProduct(null); setIsAddingManual(false); }}
+                className="h-9 w-9 rounded-xl bg-white/5 hover:bg-white/10 text-white/40 hover:text-white flex items-center justify-center transition-all cursor-pointer"
+                title="Fermer"
+              >
+                <X size={18} />
+              </button>
             </div>
 
-            <div className="space-y-3.5 sm:space-y-4">
-              {/* Unified Intelligent Photo Uploader */}
-              {businessCategory !== "digital" && (
-                <div className="flex flex-col items-center gap-2.5 pb-1">
-                  <div className="relative w-full">
-                    <label className={cn(
-                      "relative flex flex-col items-center justify-center w-full h-32 sm:h-36 rounded-2xl sm:rounded-3xl bg-white/5 border-2 border-dashed border-white/10 hover:border-emerald-400/50 transition-all cursor-pointer overflow-hidden p-3 sm:p-4 group text-center",
-                      analyzing && "opacity-75 cursor-wait border-sky-400/50"
-                    )}>
-                      {(editingProduct ? (editingProduct as any).imageUrl : newProduct.imageUrl) ? (
-                        <img
-                          src={editingProduct ? (editingProduct as any).imageUrl : newProduct.imageUrl}
-                          className="w-full h-full object-cover rounded-xl sm:rounded-2xl"
-                          alt="Preview"
-                        />
-                      ) : (
-                        <div className="flex flex-col items-center gap-2">
-                          {analyzing ? (
-                            <>
-                              <Loader2 size={24} className="animate-spin text-sky-400" />
-                              <span className="text-xs font-black uppercase text-sky-400 tracking-wider">Analyse de la photo par Vendeur IA...</span>
-                            </>
-                          ) : (
-                            <>
-                              <div className="p-2.5 sm:p-3 bg-white/5 rounded-xl sm:rounded-2xl text-white/40 group-hover:text-emerald-400 group-hover:bg-emerald-400/10 transition-all">
-                                <Camera size={22} />
-                              </div>
-                              <div>
-                                <p className="text-xs font-black uppercase text-white tracking-wider">Ajouter une photo</p>
-                                <p className="text-[10px] text-white/40 font-medium mt-0.5">Cliquez pour choisir une photo ou scanner</p>
-                              </div>
-                            </>
-                          )}
-                        </div>
-                      )}
-                      <input type="file" accept="image/*" className="hidden" onChange={handleUnifiedPhotoUpload} disabled={analyzing} />
-                    </label>
+            {/* Modal Body - 2 Columns on Desktop */}
+            <div className="flex-1 overflow-y-auto custom-scrollbar p-5 sm:p-8">
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
+                
+                {/* LEFT COLUMN: Media & Visual Presentation (5 cols) */}
+                <div className="lg:col-span-5 space-y-4">
+                  {businessCategory !== "digital" ? (
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-black uppercase tracking-wider text-white/70 flex items-center gap-1.5">
+                          <ImageIcon size={14} className="text-vendeur-emerald" />
+                          Visuel de l'article
+                        </span>
+                        {(editingProduct ? (editingProduct as any).imageUrl : newProduct.imageUrl) && (
+                          <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-vendeur-emerald/10 text-vendeur-emerald border border-vendeur-emerald/20">
+                            Photo Active
+                          </span>
+                        )}
+                      </div>
 
-                    {(editingProduct ? (editingProduct as any).imageUrl : newProduct.imageUrl) && (
-                      <button
-                        type="button"
-                        onClick={() => editingProduct
-                          ? setEditingProduct({ ...editingProduct, imageUrl: "" } as any)
-                          : setNewProduct(prev => ({ ...prev, imageUrl: "" }))
-                        }
-                        className="absolute top-2 right-2 h-7 w-7 rounded-full bg-rose-500 text-white flex items-center justify-center shadow-lg hover:bg-rose-600 transition-all z-10"
-                      >
-                        <X size={14} />
-                      </button>
+                      <div className="relative w-full">
+                        <label className={cn(
+                          "relative flex flex-col items-center justify-center w-full aspect-square max-h-72 lg:max-h-80 rounded-2xl sm:rounded-3xl bg-black/40 border-2 border-dashed border-white/10 hover:border-vendeur-emerald/50 transition-all cursor-pointer overflow-hidden p-3 group text-center select-none shadow-inner",
+                          analyzing && "opacity-75 cursor-wait border-sky-400/50"
+                        )}>
+                          {(editingProduct ? (editingProduct as any).imageUrl : newProduct.imageUrl) ? (
+                            <div className="relative w-full h-full">
+                              <img
+                                src={editingProduct ? (editingProduct as any).imageUrl : newProduct.imageUrl}
+                                className="w-full h-full object-cover rounded-xl sm:rounded-2xl"
+                                alt="Preview"
+                              />
+                              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-center pb-4">
+                                <span className="text-xs font-black uppercase tracking-wider text-white px-3 py-1.5 rounded-xl bg-black/60 backdrop-blur-md border border-white/10 flex items-center gap-1.5">
+                                  <Camera size={14} /> Changer la photo
+                                </span>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="flex flex-col items-center justify-center gap-3 p-4">
+                              {analyzing ? (
+                                <>
+                                  <div className="h-14 w-14 rounded-2xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-400 animate-pulse">
+                                    <Loader2 size={28} className="animate-spin" />
+                                  </div>
+                                  <div className="space-y-1">
+                                    <p className="text-xs font-black uppercase text-sky-400 tracking-wider">Analyse par Vendeur IA...</p>
+                                    <p className="text-[10px] text-white/40">Extraction du produit et des prix...</p>
+                                  </div>
+                                </>
+                              ) : (
+                                <>
+                                  <div className="h-14 w-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-white/40 group-hover:text-vendeur-emerald group-hover:bg-vendeur-emerald/10 group-hover:border-vendeur-emerald/30 group-hover:scale-110 transition-all">
+                                    <Camera size={26} />
+                                  </div>
+                                  <div className="space-y-1">
+                                    <p className="text-xs font-black uppercase text-white tracking-wider">Importer une photo</p>
+                                    <p className="text-[10px] text-white/40 font-medium">Glissez une image ou cliquez pour parcourir</p>
+                                  </div>
+                                  <span className="text-[9px] font-bold uppercase tracking-widest text-white/20 px-2.5 py-1 rounded-lg bg-white/[0.02]">
+                                    JPG, PNG, WebP
+                                  </span>
+                                </>
+                              )}
+                            </div>
+                          )}
+                          <input type="file" accept="image/*" className="hidden" onChange={handleUnifiedPhotoUpload} disabled={analyzing} />
+                        </label>
+
+                        {/* Delete photo button */}
+                        {(editingProduct ? (editingProduct as any).imageUrl : newProduct.imageUrl) && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              editingProduct
+                                ? setEditingProduct({ ...editingProduct, imageUrl: "" } as any)
+                                : setNewProduct(prev => ({ ...prev, imageUrl: "" }));
+                            }}
+                            className="absolute top-3 right-3 h-8 w-8 rounded-full bg-rose-500/90 hover:bg-rose-600 text-white flex items-center justify-center shadow-xl transition-all z-10 cursor-pointer"
+                            title="Supprimer cette photo"
+                          >
+                            <X size={15} />
+                          </button>
+                        )}
+                      </div>
+
+                      {/* AI Auto-fill Checkbox */}
+                      {config.showScanner && (
+                        <label className="flex items-start gap-3 p-3.5 rounded-2xl bg-white/[0.03] hover:bg-white/[0.05] border border-white/5 hover:border-vendeur-emerald/30 transition-all cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={autoAnalyzeWithIA}
+                            onChange={(e) => setAutoAnalyzeWithIA(e.target.checked)}
+                            className="w-4 h-4 mt-0.5 rounded border-white/20 text-vendeur-emerald focus:ring-vendeur-emerald accent-vendeur-emerald shrink-0 cursor-pointer"
+                          />
+                          <div className="space-y-0.5">
+                            <span className="text-[11px] font-black uppercase tracking-wider text-white flex items-center gap-1.5">
+                              <Sparkles size={12} className="text-vendeur-emerald" /> Auto-remplissage IA
+                            </span>
+                            <p className="text-[10px] text-white/40 leading-relaxed font-medium">
+                              Vendeur IA détecte le nom, l'estimation du prix et rédige la fiche à partir de la photo.
+                            </p>
+                          </div>
+                        </label>
+                      )}
+                    </div>
+                  ) : (
+                    /* Digital products banner */
+                    <div className="p-6 rounded-3xl bg-black/40 border border-white/5 space-y-3 text-center">
+                      <div className="h-12 w-12 rounded-2xl bg-purple-500/10 border border-purple-500/20 text-purple-400 flex items-center justify-center mx-auto">
+                        <Laptop size={24} />
+                      </div>
+                      <div className="space-y-1">
+                        <h4 className="text-xs font-black uppercase tracking-wider text-white">Produit Numérique</h4>
+                        <p className="text-[11px] text-white/40 leading-relaxed">
+                          La livraison s'effectue automatiquement via le lien d'accès sécurisé dès réception du paiement Mobile Money.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Customer Preview Note */}
+                  <div className="px-4 py-3 rounded-2xl bg-vendeur-emerald/[0.04] border border-vendeur-emerald/15 flex items-center gap-2.5">
+                    <Zap size={14} className="text-vendeur-emerald shrink-0" />
+                    <p className="text-[10px] text-vendeur-emerald/80 font-semibold leading-normal">
+                      Synchronisé en temps réel avec votre boutique WhatsApp et votre catalogue public.
+                    </p>
+                  </div>
+                </div>
+
+                {/* RIGHT COLUMN: Product Attributes & Data (7 cols) */}
+                <div className="lg:col-span-7 space-y-4">
+                  
+                  {/* Title / Name Field */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-black uppercase tracking-wider text-white/70 flex items-center justify-between">
+                      <span>
+                        {businessCategory === "digital" && "Titre du Contenu / E-Book / Formation"}
+                        {businessCategory === "services" && "Intitulé de la Prestation"}
+                        {businessCategory === "food" && "Nom du Plat ou Formule"}
+                        {businessCategory !== "digital" && businessCategory !== "services" && businessCategory !== "food" && "Nom de l'Article"}
+                      </span>
+                      <span className="text-[10px] text-rose-400 font-bold">* Requis</span>
+                    </label>
+                    <input
+                      className="w-full h-12 rounded-2xl bg-black/40 border border-white/10 px-4 text-sm font-semibold text-white outline-none focus:border-vendeur-emerald focus:ring-1 focus:ring-vendeur-emerald/30 transition-all placeholder:text-white/20 shadow-inner"
+                      value={editingProduct ? editingProduct.name : newProduct.name}
+                      onChange={e => editingProduct
+                        ? setEditingProduct({...editingProduct, name: e.target.value})
+                        : setNewProduct({...newProduct, name: e.target.value})
+                      }
+                      placeholder={
+                        businessCategory === "digital" ? "ex: E-Book Réussir sur WhatsApp" :
+                        businessCategory === "services" ? "ex: Consultation Coaching 1h" :
+                        businessCategory === "food" ? "ex: Menu Burger Gourmet + Frites" : "ex: Chaussure Sneakers Nike Air"
+                      }
+                      required
+                    />
+                  </div>
+
+                  {/* Price & Operational Specs Row */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                    {/* Price Input */}
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-black uppercase tracking-wider text-white/70 flex items-center justify-between">
+                        <span>Prix</span>
+                        <span className="text-[10px] text-vendeur-emerald font-black uppercase">{activeCurrency}</span>
+                      </label>
+                      <div className="relative flex items-center">
+                        <input
+                          type="number"
+                          className="w-full h-12 rounded-2xl bg-black/40 border border-white/10 pl-4 pr-16 text-sm font-black text-white outline-none focus:border-vendeur-emerald focus:ring-1 focus:ring-vendeur-emerald/30 transition-all placeholder:text-white/20 shadow-inner"
+                          value={editingProduct ? (isNaN(editingProduct.price) ? "" : editingProduct.price) : (isNaN(newProduct.price) ? "" : newProduct.price)}
+                          onChange={e => {
+                            const val = e.target.value === "" ? NaN : parseInt(e.target.value);
+                            editingProduct
+                              ? setEditingProduct({...editingProduct, price: val})
+                              : setNewProduct({...newProduct, price: val});
+                          }}
+                          placeholder="0"
+                          required
+                        />
+                        <span className="absolute right-3 px-2 py-1 rounded-lg bg-white/5 border border-white/10 text-[10px] font-black uppercase text-white/40 select-none">
+                          {activeCurrency}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Secondary Field by Domain */}
+                    {businessCategory === "digital" && (
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-black uppercase tracking-wider text-white/70">
+                          Format du Contenu
+                        </label>
+                        <select
+                          className="w-full h-12 rounded-2xl bg-[#121814] border border-white/10 px-4 text-sm font-medium text-white outline-none focus:border-vendeur-emerald transition-all"
+                          value={editingProduct ? (editingProduct.digitalFormat || "PDF / E-Book") : newProduct.digitalFormat}
+                          onChange={e => editingProduct
+                            ? setEditingProduct({...editingProduct, digitalFormat: e.target.value})
+                            : setNewProduct({...newProduct, digitalFormat: e.target.value})
+                          }
+                        >
+                          <option value="PDF / E-Book">PDF / E-Book</option>
+                          <option value="Formation Vidéo">Formation Vidéo</option>
+                          <option value="Fichier ZIP / Logiciel">Fichier ZIP / Logiciel</option>
+                          <option value="Lien VIP / Groupe">Lien VIP / Groupe</option>
+                        </select>
+                      </div>
+                    )}
+
+                    {businessCategory === "services" && (
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-black uppercase tracking-wider text-white/70">
+                          Durée Estimée
+                        </label>
+                        <input
+                          className="w-full h-12 rounded-2xl bg-black/40 border border-white/10 px-4 text-sm font-medium text-white outline-none focus:border-vendeur-emerald transition-all placeholder:text-white/20"
+                          value={editingProduct ? (editingProduct.serviceDuration || "1h") : newProduct.serviceDuration}
+                          onChange={e => editingProduct
+                            ? setEditingProduct({...editingProduct, serviceDuration: e.target.value})
+                            : setNewProduct({...newProduct, serviceDuration: e.target.value})
+                          }
+                          placeholder="ex: 45 min, 1h30"
+                        />
+                      </div>
+                    )}
+
+                    {businessCategory === "food" && (
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-black uppercase tracking-wider text-white/70">
+                          Temps de Préparation
+                        </label>
+                        <input
+                          className="w-full h-12 rounded-2xl bg-black/40 border border-white/10 px-4 text-sm font-medium text-white outline-none focus:border-vendeur-emerald transition-all placeholder:text-white/20"
+                          value={editingProduct ? (editingProduct.preparationTime || "15-20 min") : newProduct.preparationTime}
+                          onChange={e => editingProduct
+                            ? setEditingProduct({...editingProduct, preparationTime: e.target.value})
+                            : setNewProduct({...newProduct, preparationTime: e.target.value})
+                          }
+                          placeholder="ex: 15-20 min"
+                        />
+                      </div>
+                    )}
+
+                    {config.showStock && (
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-black uppercase tracking-wider text-white/70 flex items-center justify-between">
+                          <span>{config.stockLabel}</span>
+                          <span className="text-[10px] text-white/40">Unités</span>
+                        </label>
+                        <input
+                          type="number"
+                          className="w-full h-12 rounded-2xl bg-black/40 border border-white/10 px-4 text-sm font-bold text-white outline-none focus:border-vendeur-emerald transition-all placeholder:text-white/20"
+                          value={editingProduct ? (isNaN(editingProduct.stock) ? "" : editingProduct.stock) : (isNaN(newProduct.stock) ? "" : newProduct.stock)}
+                          onChange={e => {
+                            const val = e.target.value === "" ? NaN : parseInt(e.target.value);
+                            editingProduct
+                              ? setEditingProduct({...editingProduct, stock: val})
+                              : setNewProduct({...newProduct, stock: val});
+                          }}
+                          placeholder="1"
+                        />
+                      </div>
                     )}
                   </div>
 
-                  {/* AI Auto-fill Checkbox / Toggle */}
-                  {config.showScanner && (
-                    <label className="flex items-center gap-2.5 px-3 sm:px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-white/70 hover:text-white transition-all cursor-pointer w-full justify-center text-center">
+                  {/* Domain Specific Extensions */}
+                  {businessCategory === "food" && (
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-black uppercase tracking-wider text-white/70">
+                        Options & Formules d'accompagnement
+                      </label>
                       <input
-                        type="checkbox"
-                        checked={autoAnalyzeWithIA}
-                        onChange={(e) => setAutoAnalyzeWithIA(e.target.checked)}
-                        className="w-4 h-4 rounded border-white/20 text-emerald-400 focus:ring-emerald-400 accent-emerald-400 shrink-0"
+                        className="w-full h-12 rounded-2xl bg-black/40 border border-white/10 px-4 text-sm text-white outline-none focus:border-vendeur-emerald transition-all placeholder:text-white/20"
+                        value={editingProduct ? (editingProduct.foodOptions || "") : newProduct.foodOptions}
+                        onChange={e => editingProduct
+                          ? setEditingProduct({...editingProduct, foodOptions: e.target.value})
+                          : setNewProduct({...newProduct, foodOptions: e.target.value})
+                        }
+                        placeholder="ex: Sans sauce, Extra fromage, Frites incluses..."
                       />
-                      <span className="text-[10px] font-black uppercase tracking-wider">Pré-remplir automatiquement les infos avec Vendeur IA</span>
-                    </label>
+                      <p className="text-[10px] text-white/40">Le Vendeur IA proposera spontanément ces choix aux clients lors de leur commande.</p>
+                    </div>
                   )}
+
+                  {businessCategory === "digital" && (
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-black uppercase tracking-wider text-white/70">
+                        Lien d'Accès Sécurisé (Google Drive, Notion, etc.)
+                      </label>
+                      <input
+                        className="w-full h-12 rounded-2xl bg-black/40 border border-white/10 px-4 text-sm text-emerald-400 outline-none focus:border-vendeur-emerald transition-all placeholder:text-white/20"
+                        value={editingProduct ? (editingProduct.digitalUrl || "") : newProduct.digitalUrl}
+                        onChange={e => editingProduct
+                          ? setEditingProduct({...editingProduct, digitalUrl: e.target.value})
+                          : setNewProduct({...newProduct, digitalUrl: e.target.value})
+                        }
+                        placeholder="https://drive.google.com/file/d/..."
+                      />
+                      <p className="text-[10px] text-white/40">Ce lien est délivré de manière automatisée et privée au client après paiement.</p>
+                    </div>
+                  )}
+
+                  {businessCategory === "services" && (
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-black uppercase tracking-wider text-white/70">
+                        Mode de délivrance
+                      </label>
+                      <select
+                        className="w-full h-12 rounded-2xl bg-[#121814] border border-white/10 px-4 text-sm text-white outline-none focus:border-vendeur-emerald transition-all"
+                        value={editingProduct ? (editingProduct.serviceDeliveryType || "Présentiel") : newProduct.serviceDeliveryType}
+                        onChange={e => editingProduct
+                          ? setEditingProduct({...editingProduct, serviceDeliveryType: e.target.value})
+                          : setNewProduct({...newProduct, serviceDeliveryType: e.target.value})
+                        }
+                      >
+                        <option value="Présentiel (En cabinet/boutique)">Présentiel (En cabinet / boutique)</option>
+                        <option value="À domicile">À domicile</option>
+                        <option value="En Ligne (Google Meet/Zoom)">En Ligne (Google Meet / Zoom)</option>
+                      </select>
+                    </div>
+                  )}
+
+                  {/* Description Field */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-black uppercase tracking-wider text-white/70 flex items-center justify-between">
+                      <span>Description détaillée</span>
+                      <span className="text-[10px] text-white/40">Contexte pour l'IA</span>
+                    </label>
+                    <textarea
+                      rows={3}
+                      className="w-full rounded-2xl bg-black/40 border border-white/10 p-4 text-sm text-white outline-none focus:border-vendeur-emerald focus:ring-1 focus:ring-vendeur-emerald/30 transition-all resize-none placeholder:text-white/20 shadow-inner"
+                      value={editingProduct ? (editingProduct.description || "") : newProduct.description}
+                      onChange={e => editingProduct
+                        ? setEditingProduct({...editingProduct, description: e.target.value})
+                        : setNewProduct({...newProduct, description: e.target.value})
+                      }
+                      placeholder={
+                        businessCategory === "services" ? "Expliquez le déroulement de la séance ou prestation..." :
+                        businessCategory === "digital" ? "Décrivez ce que le client apprendra ou téléchargera..." :
+                        "Détails des tailles, caractéristiques, conseils d'utilisation..."
+                      }
+                    />
+                  </div>
+
                 </div>
-              )}
-
-              {/* Title / Name Field */}
-              <label className="grid gap-1.5 text-xs font-black uppercase tracking-wider text-white/60">
-                {businessCategory === "digital" && "Titre du Contenu / E-Book / Formation"}
-                {businessCategory === "services" && "Intitulé de la Prestation"}
-                {businessCategory === "food" && "Nom du Plat ou Formule"}
-                {businessCategory !== "digital" && businessCategory !== "services" && businessCategory !== "food" && "Nom de l'Article"}
-                <input
-                  className="h-11 sm:h-12 rounded-xl bg-white/5 border border-white/10 px-3.5 sm:px-4 text-sm font-medium text-white outline-none focus:border-emerald-300 transition-all placeholder:text-white/20"
-                  value={editingProduct ? editingProduct.name : newProduct.name}
-                  onChange={e => editingProduct
-                    ? setEditingProduct({...editingProduct, name: e.target.value})
-                    : setNewProduct({...newProduct, name: e.target.value})
-                  }
-                  placeholder={
-                    businessCategory === "digital" ? "ex: E-Book Réussir sur WhatsApp" :
-                    businessCategory === "services" ? "ex: Consultation Coaching 1h" :
-                    businessCategory === "food" ? "ex: Menu Burger Gourmet + Frites" : "ex: Chaussure Sneakers Nike"
-                  }
-                  required
-                />
-              </label>
-
-              {/* Price & Stock/Duration */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                <label className="grid gap-1.5 text-xs font-black uppercase tracking-wider text-white/60">
-                  Prix ({activeCurrency})
-                  <input
-                    type="number"
-                    className="h-11 sm:h-12 rounded-xl bg-white/5 border border-white/10 px-3.5 sm:px-4 text-sm font-bold text-white outline-none focus:border-emerald-300 transition-all"
-                    value={editingProduct ? (isNaN(editingProduct.price) ? "" : editingProduct.price) : (isNaN(newProduct.price) ? "" : newProduct.price)}
-                    onChange={e => {
-                      const val = e.target.value === "" ? NaN : parseInt(e.target.value);
-                      editingProduct
-                        ? setEditingProduct({...editingProduct, price: val})
-                        : setNewProduct({...newProduct, price: val});
-                    }}
-                    placeholder="0"
-                    required
-                  />
-                </label>
-
-                {/* DOMAIN SPECIFIC SECOND FIELD */}
-                {businessCategory === "digital" && (
-                  <label className="grid gap-1.5 text-xs font-black uppercase tracking-wider text-white/60">
-                    Format du Contenu
-                    <select
-                      className="h-11 sm:h-12 rounded-xl bg-[#141815] border border-white/10 px-3.5 sm:px-4 text-sm text-white outline-none focus:border-emerald-300 transition-all"
-                      value={editingProduct ? (editingProduct.digitalFormat || "PDF / E-Book") : newProduct.digitalFormat}
-                      onChange={e => editingProduct
-                        ? setEditingProduct({...editingProduct, digitalFormat: e.target.value})
-                        : setNewProduct({...newProduct, digitalFormat: e.target.value})
-                      }
-                    >
-                      <option value="PDF / E-Book">PDF / E-Book</option>
-                      <option value="Formation Vidéo">Formation Vidéo</option>
-                      <option value="Fichier ZIP / Logiciel">Fichier ZIP / Logiciel</option>
-                      <option value="Lien VIP / Groupe">Lien VIP / Groupe</option>
-                    </select>
-                  </label>
-                )}
-
-                {businessCategory === "services" && (
-                  <label className="grid gap-1.5 text-xs font-black uppercase tracking-wider text-white/60">
-                    Durée Estimée
-                    <input
-                      className="h-11 sm:h-12 rounded-xl bg-white/5 border border-white/10 px-3.5 sm:px-4 text-sm text-white outline-none focus:border-emerald-300 transition-all"
-                      value={editingProduct ? (editingProduct.serviceDuration || "1h") : newProduct.serviceDuration}
-                      onChange={e => editingProduct
-                        ? setEditingProduct({...editingProduct, serviceDuration: e.target.value})
-                        : setNewProduct({...newProduct, serviceDuration: e.target.value})
-                      }
-                      placeholder="ex: 45 min, 1h30"
-                    />
-                  </label>
-                )}
-
-                {businessCategory === "food" && (
-                  <label className="grid gap-1.5 text-xs font-black uppercase tracking-wider text-white/60">
-                    Temps de Préparation
-                    <input
-                      className="h-11 sm:h-12 rounded-xl bg-white/5 border border-white/10 px-3.5 sm:px-4 text-sm text-white outline-none focus:border-emerald-300 transition-all"
-                      value={editingProduct ? (editingProduct.preparationTime || "15-20 min") : newProduct.preparationTime}
-                      onChange={e => editingProduct
-                        ? setEditingProduct({...editingProduct, preparationTime: e.target.value})
-                        : setNewProduct({...newProduct, preparationTime: e.target.value})
-                      }
-                      placeholder="ex: 15-20 min"
-                    />
-                  </label>
-                )}
-
-                {config.showStock && (
-                  <label className="grid gap-1.5 text-xs font-black uppercase tracking-wider text-white/60">
-                    {config.stockLabel}
-                    <input
-                      type="number"
-                      className="h-11 sm:h-12 rounded-xl bg-white/5 border border-white/10 px-3.5 sm:px-4 text-sm text-white outline-none focus:border-emerald-300 transition-all"
-                      value={editingProduct ? (isNaN(editingProduct.stock) ? "" : editingProduct.stock) : (isNaN(newProduct.stock) ? "" : newProduct.stock)}
-                      onChange={e => {
-                        const val = e.target.value === "" ? NaN : parseInt(e.target.value);
-                        editingProduct
-                          ? setEditingProduct({...editingProduct, stock: val})
-                          : setNewProduct({...newProduct, stock: val});
-                      }}
-                      placeholder="1"
-                    />
-                  </label>
-                )}
               </div>
-
-              {/* SPECIFIC FIELD: FOOD OPTIONS */}
-              {businessCategory === "food" && (
-                <label className="grid gap-1.5 text-xs font-black uppercase tracking-wider text-white/60">
-                  Options / Formules disponibles
-                  <input
-                    className="h-11 sm:h-12 rounded-xl bg-white/5 border border-white/10 px-3.5 sm:px-4 text-sm text-white outline-none focus:border-emerald-300 transition-all placeholder:text-white/20"
-                    value={editingProduct ? (editingProduct.foodOptions || "") : newProduct.foodOptions}
-                    onChange={e => editingProduct
-                      ? setEditingProduct({...editingProduct, foodOptions: e.target.value})
-                      : setNewProduct({...newProduct, foodOptions: e.target.value})
-                    }
-                    placeholder="ex: Sans sauce, Extra fromage, Menu enfant..."
-                  />
-                  <span className="text-[10px] text-white/40 normal-case">Options séparées par des virgules. Le Vendeur IA les proposera automatiquement au client.</span>
-                </label>
-              )}
-
-              {/* SPECIFIC FIELD: DIGITAL LINK */}
-              {businessCategory === "digital" && (
-                <label className="grid gap-1.5 text-xs font-black uppercase tracking-wider text-white/60">
-                  Lien du Fichier / Accès (Google Drive, Notion, etc.)
-                  <input
-                    className="h-11 sm:h-12 rounded-xl bg-white/5 border border-white/10 px-3.5 sm:px-4 text-sm text-emerald-400 outline-none focus:border-emerald-300 transition-all placeholder:text-white/20"
-                    value={editingProduct ? (editingProduct.digitalUrl || "") : newProduct.digitalUrl}
-                    onChange={e => editingProduct
-                      ? setEditingProduct({...editingProduct, digitalUrl: e.target.value})
-                      : setNewProduct({...newProduct, digitalUrl: e.target.value})
-                    }
-                    placeholder="https://drive.google.com/file/d/..."
-                  />
-                  <span className="text-[10px] text-white/40 normal-case">Ce lien sera envoyé automatiquement par le Vendeur IA dès confirmation du paiement client.</span>
-                </label>
-              )}
-
-              {/* SPECIFIC FIELD: SERVICE DELIVERY */}
-              {businessCategory === "services" && (
-                <label className="grid gap-1.5 text-xs font-black uppercase tracking-wider text-white/60">
-                  Mode de délivrance
-                  <select
-                    className="h-11 sm:h-12 rounded-xl bg-[#141815] border border-white/10 px-3.5 sm:px-4 text-sm text-white outline-none focus:border-emerald-300 transition-all"
-                    value={editingProduct ? (editingProduct.serviceDeliveryType || "Présentiel") : newProduct.serviceDeliveryType}
-                    onChange={e => editingProduct
-                      ? setEditingProduct({...editingProduct, serviceDeliveryType: e.target.value})
-                      : setNewProduct({...newProduct, serviceDeliveryType: e.target.value})
-                    }
-                  >
-                    <option value="Présentiel (En cabinet/boutique)">Présentiel (En cabinet / boutique)</option>
-                    <option value="À domicile">À domicile</option>
-                    <option value="En Ligne (Google Meet/Zoom)">En Ligne (Google Meet / Zoom)</option>
-                  </select>
-                </label>
-              )}
-
-              {/* Description Field */}
-              <label className="grid gap-1.5 text-xs font-black uppercase tracking-wider text-white/60">
-                Description détaillée
-                <textarea
-                  className="min-h-[90px] rounded-xl bg-white/5 border border-white/10 p-3.5 sm:p-4 text-sm text-white outline-none focus:border-emerald-300 transition-all resize-none placeholder:text-white/20"
-                  value={editingProduct ? (editingProduct.description || "") : newProduct.description}
-                  onChange={e => editingProduct
-                    ? setEditingProduct({...editingProduct, description: e.target.value})
-                    : setNewProduct({...newProduct, description: e.target.value})
-                  }
-                  placeholder={
-                    businessCategory === "services" ? "Expliquez le contenu de la séance ou prestation..." :
-                    businessCategory === "digital" ? "Décrivez ce que le client apprendra ou téléchargera..." :
-                    "Détails, caractéristiques, ingrédients..."
-                  }
-                />
-              </label>
             </div>
 
-            <button
-              type="submit"
-              disabled={createMutation.isPending || updateMutation.isPending}
-              className="w-full h-12 sm:h-14 min-h-[48px] bg-emerald-400 hover:bg-emerald-500 text-vendeur-coal font-black uppercase text-xs sm:text-sm tracking-wider rounded-xl sm:rounded-2xl flex items-center justify-center gap-2 hover:scale-[1.01] active:scale-95 transition-all shadow-xl shadow-emerald-400/20 disabled:opacity-50 cursor-pointer"
-            >
-              {(createMutation.isPending || updateMutation.isPending) ? (
-                <Loader2 size={18} className="animate-spin" />
-              ) : editingProduct ? (
-                <Save size={18} />
-              ) : (
-                <Plus size={18} />
-              )}
-              <span>{editingProduct ? "Enregistrer les modifications" : "Enregistrer et Publier"}</span>
-            </button>
+            {/* Modal Footer Actions */}
+            <div className="px-5 py-4 sm:px-8 sm:py-5 border-t border-white/5 bg-black/40 flex items-center justify-between gap-4 shrink-0">
+              <button
+                type="button"
+                onClick={() => { setEditingProduct(null); setIsAddingManual(false); }}
+                className="px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider text-white/50 hover:text-white hover:bg-white/5 transition-all cursor-pointer"
+              >
+                Annuler
+              </button>
+
+              <button
+                type="submit"
+                disabled={createMutation.isPending || updateMutation.isPending}
+                className="h-12 px-5 sm:px-7 bg-vendeur-emerald hover:bg-emerald-400 text-vendeur-coal font-black uppercase text-xs tracking-wider rounded-2xl flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all shadow-xl shadow-vendeur-emerald/20 disabled:opacity-50 cursor-pointer"
+              >
+                {(createMutation.isPending || updateMutation.isPending) ? (
+                  <Loader2 size={18} className="animate-spin" />
+                ) : editingProduct ? (
+                  <Save size={18} />
+                ) : (
+                  <Plus size={18} />
+                )}
+                <span>
+                  {editingProduct ? (
+                    <>
+                      <span className="sm:hidden">Enregistrer</span>
+                      <span className="hidden sm:inline">Enregistrer les modifications</span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="sm:hidden">Publier</span>
+                      <span className="hidden sm:inline">Publier l'article</span>
+                    </>
+                  )}
+                </span>
+              </button>
+            </div>
           </form>
         </div>
       )}
@@ -931,77 +1077,85 @@ export function ProductManager() {
                   {config.showStock ? (
                     <div className="flex items-center gap-1.5 min-w-0">
                       <span className="text-xs font-bold text-white/60 shrink-0">{config.stockLabel}:</span>
-                      <div className="flex items-center bg-white/5 rounded-lg border border-white/10 px-1 py-0.5">
+                      <div className="flex items-center bg-white/5 rounded-xl border border-white/10 px-1 py-0.5">
                         <button
+                          type="button"
                           onClick={(e) => {
                             e.stopPropagation();
                             updateStockMutation.mutate({ id: p._id, stock: Math.max(0, p.stock - 1) });
                           }}
                           disabled={updateStockMutation.isPending}
-                          className="p-1 hover:text-rose-400 transition-colors disabled:opacity-30 cursor-pointer"
+                          className="h-7 w-7 flex items-center justify-center rounded-lg hover:bg-rose-500/10 hover:text-rose-400 transition-colors disabled:opacity-30 cursor-pointer"
+                          title="Diminuer stock"
                         >
-                          <Minus size={12} />
+                          <Minus size={13} />
                         </button>
-                        <span className="w-7 text-center text-xs font-black text-white">
+                        <span className="w-8 text-center text-xs font-black text-white">
                           {updateStockMutation.isPending && updateStockMutation.variables?.id === p._id
-                            ? <Loader2 size={10} className="animate-spin inline" />
+                            ? <Loader2 size={11} className="animate-spin inline" />
                             : p.stock
                           }
                         </span>
                         <button
+                          type="button"
                           onClick={(e) => {
                             e.stopPropagation();
                             updateStockMutation.mutate({ id: p._id, stock: p.stock + 1 });
                           }}
                           disabled={updateStockMutation.isPending}
-                          className="p-1 hover:text-emerald-400 transition-colors disabled:opacity-30 cursor-pointer"
+                          className="h-7 w-7 flex items-center justify-center rounded-lg hover:bg-emerald-500/10 hover:text-emerald-400 transition-colors disabled:opacity-30 cursor-pointer"
+                          title="Augmenter stock"
                         >
-                          <Plus size={12} />
+                          <Plus size={13} />
                         </button>
                       </div>
                     </div>
                   ) : (
-                    <span className={cn("text-[9px] font-black px-2 py-0.5 rounded-lg uppercase tracking-wider border truncate max-w-[150px]", config.badgeBg)}>
+                    <span className={cn("text-[10px] font-black px-2.5 py-1 rounded-xl uppercase tracking-wider border truncate max-w-[150px]", config.badgeBg)}>
                       {businessCategory === "digital" ? (p.digitalFormat || "Accès Digital") :
                        businessCategory === "services" ? (p.serviceDuration ? `⏳ ${p.serviceDuration}` : (p.serviceDeliveryType || "Sur RDV")) :
                        businessCategory === "food" ? (p.preparationTime ? `⏱ ${p.preparationTime}` : "Au menu") : "Disponible"}
                     </span>
                   )}
 
-                  {/* Action buttons */}
-                  <div className="flex items-center gap-1 shrink-0 ml-auto">
+                  {/* Action buttons with enlarged comfortable tap target */}
+                  <div className="flex items-center gap-1.5 shrink-0 ml-auto">
                     <button
+                      type="button"
                       onClick={() => setPosterProduct(p)}
-                      className="p-2 min-h-[34px] min-w-[34px] flex items-center justify-center bg-emerald-500/10 text-emerald-400 rounded-xl hover:bg-emerald-500/20 transition-all cursor-pointer"
+                      className="h-9 w-9 sm:h-9 sm:w-9 flex items-center justify-center bg-emerald-500/10 text-emerald-400 hover:text-emerald-300 rounded-xl hover:bg-emerald-500/20 active:scale-95 transition-all cursor-pointer shadow-sm"
                       title="Créer Affiche Statut WhatsApp / Story"
                     >
-                      <ImageIcon size={14} />
+                      <ImageIcon size={16} />
                     </button>
                     <button
+                      type="button"
                       onClick={() => generateCaptionMutation.mutate(p._id)}
                       disabled={generateCaptionMutation.isPending}
-                      className="p-2 min-h-[34px] min-w-[34px] flex items-center justify-center bg-sky-500/10 text-sky-400 rounded-xl hover:bg-sky-500/20 transition-all cursor-pointer disabled:opacity-50"
+                      className="h-9 w-9 sm:h-9 sm:w-9 flex items-center justify-center bg-sky-500/10 text-sky-400 hover:text-sky-300 rounded-xl hover:bg-sky-500/20 active:scale-95 transition-all cursor-pointer disabled:opacity-50 shadow-sm"
                       title="Générer Légende TikTok/Insta par IA"
                     >
                       {generateCaptionMutation.isPending && generateCaptionMutation.variables === p._id ? (
-                        <Loader2 size={14} className="animate-spin" />
+                        <Loader2 size={16} className="animate-spin" />
                       ) : (
-                        <MessageSquareText size={14} />
+                        <MessageSquareText size={16} />
                       )}
                     </button>
                     <button
+                      type="button"
                       onClick={() => setEditingProduct(p)}
-                      className="p-2 min-h-[34px] min-w-[34px] flex items-center justify-center bg-white/5 text-white/60 rounded-xl hover:bg-white/10 hover:text-white transition-all cursor-pointer"
+                      className="h-9 w-9 sm:h-9 sm:w-9 flex items-center justify-center bg-white/5 text-white/70 hover:text-white rounded-xl hover:bg-white/10 active:scale-95 transition-all cursor-pointer shadow-sm"
                       title="Modifier"
                     >
-                      <Edit size={14} />
+                      <Edit size={16} />
                     </button>
                     <button
+                      type="button"
                       onClick={() => setDeletingProduct(p)}
-                      className="p-2 min-h-[34px] min-w-[34px] flex items-center justify-center bg-rose-500/10 text-rose-400 rounded-xl hover:bg-rose-500/20 transition-all cursor-pointer"
+                      className="h-9 w-9 sm:h-9 sm:w-9 flex items-center justify-center bg-rose-500/10 text-rose-400 hover:text-rose-300 rounded-xl hover:bg-rose-500/20 active:scale-95 transition-all cursor-pointer shadow-sm"
                       title="Supprimer"
                     >
-                      <Trash2 size={14} />
+                      <Trash2 size={16} />
                     </button>
                   </div>
                 </div>

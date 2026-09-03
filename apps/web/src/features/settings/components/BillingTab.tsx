@@ -28,6 +28,9 @@ import { twMerge } from "tailwind-merge";
 import { useNavigate } from "react-router-dom";
 import { WhatsAppIcon } from "@/components/ui/WhatsAppIcon";
 
+import { useAuthStore } from "@/stores/authStore";
+import { useFounderRole } from "@/hooks/useFounderRole";
+
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
@@ -35,6 +38,7 @@ function cn(...inputs: ClassValue[]) {
 export function BillingTab({ merchant }: { merchant: any }) {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const { isFounder } = useFounderRole();
   const [isCancelConfirmOpen, setIsCancelConfirmOpen] = useState(false);
   const [billingInterval, setBillingInterval] = useState<"monthly" | "yearly">("yearly");
   const [copiedField, setCopiedField] = useState<string | null>(null);
@@ -112,6 +116,59 @@ export function BillingTab({ merchant }: { merchant: any }) {
 
   const isPlanActive = sub && sub.status === 'active' && sub.offerId;
   const isCurrentlyMonthly = isPlanActive && currentInterval === 'monthly';
+
+  if (isFounder) {
+    return (
+      <div className="space-y-6 sm:space-y-8 animate-in slide-in-from-bottom-2 duration-500 pb-16">
+        <section className="bg-gradient-to-br from-emerald-950/40 via-vendeur-coal to-black border border-vendeur-emerald/30 p-6 sm:p-8 md:p-10 rounded-2xl sm:rounded-3xl md:rounded-[2.5rem] relative overflow-hidden shadow-2xl space-y-6">
+          <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+            <div className="space-y-4">
+              <div className="flex flex-wrap items-center gap-2.5">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-vendeur-emerald/15 text-vendeur-emerald border border-vendeur-emerald/30">
+                  <span className="w-2.5 h-2.5 rounded-full bg-vendeur-emerald animate-pulse" />
+                  Accès Maître Fondateur
+                </span>
+                <span className="text-xs text-white/50 font-mono font-bold">
+                  Licence Illimitée Plateforme
+                </span>
+              </div>
+              <h2 className="text-2xl sm:text-3xl font-black uppercase tracking-tight text-white">
+                Compte Administrateur & Fondateur
+              </h2>
+              <p className="text-sm text-white/70 font-medium max-w-xl leading-relaxed">
+                Ce compte bénéficie d'un accès intégral et permanent à toutes les fonctionnalités système (Vendeur IA 24h/24, Meta Cloud API, PaymentShield OCR, Studio Créatif et Cockpit Administrateur).
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => navigate("/admin")}
+              className="h-12 px-6 rounded-2xl bg-vendeur-emerald hover:bg-emerald-400 text-vendeur-coal font-black uppercase tracking-wider text-xs flex items-center justify-center gap-2 transition-all shadow-lg shadow-emerald-500/20 active:scale-95 cursor-pointer shrink-0"
+            >
+              <ShieldCheck size={18} />
+              <span>Ouvrir le Cockpit Admin</span>
+            </button>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
+            <div className="p-4 rounded-2xl bg-black/40 border border-white/5 space-y-1">
+              <div className="text-[10px] font-black uppercase tracking-widest text-white/40">Statut Forfait</div>
+              <div className="text-sm font-bold text-vendeur-emerald flex items-center gap-1.5">
+                <CheckCircle2 size={16} />
+                <span>Illimité & Actif</span>
+              </div>
+            </div>
+            <div className="p-4 rounded-2xl bg-black/40 border border-white/5 space-y-1">
+              <div className="text-[10px] font-black uppercase tracking-widest text-white/40">Ligne Système</div>
+              <div className="text-sm font-mono font-bold text-white">+225 05 05 11 11 57</div>
+            </div>
+            <div className="p-4 rounded-2xl bg-black/40 border border-white/5 space-y-1">
+              <div className="text-[10px] font-black uppercase tracking-widest text-white/40">Canal WhatsApp</div>
+              <div className="text-sm font-bold text-sky-400">Meta Cloud API (Officiel)</div>
+            </div>
+          </div>
+        </section>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 sm:space-y-8 animate-in slide-in-from-bottom-2 duration-500 pb-16">

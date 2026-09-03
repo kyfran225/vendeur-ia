@@ -236,12 +236,6 @@ export function AdminDashboard() {
             ))}
           </nav>
         </div>
-
-        <div className="hidden lg:flex items-center shrink-0">
-            <div className="px-4 py-1.5 rounded-full bg-vendeur-emerald/10 border border-vendeur-emerald/20 text-[10px] font-black uppercase tracking-widest text-vendeur-emerald whitespace-nowrap">
-                MASTER CONTROL - FOUNDER OS v2.4
-            </div>
-        </div>
       </header>
 
       {/* Admin Mobile Sidebar Drawer */}
@@ -556,7 +550,9 @@ function MerchantsPanel({ merchants, loading }: { merchants: any[], loading: boo
       {/* MOBILE LIST VIEW (FLATTENED) */}
       <div className="md:hidden divide-y divide-white/5">
         {loading ? (
-           <div className="p-12 text-center text-white/20 uppercase font-black text-[10px]">Loading Ledger...</div>
+           <div className="py-16 flex items-center justify-center">
+             <VendeurIALoader size="md" label="Chargement du registre marchands..." />
+           </div>
         ) : filteredMerchants?.length === 0 ? (
            <div className="p-12 text-center text-white/20 uppercase font-black text-[10px]">No records found</div>
         ) : filteredMerchants?.map(m => (
@@ -616,7 +612,13 @@ function MerchantsPanel({ merchants, loading }: { merchants: any[], loading: boo
           </thead>
           <tbody className="divide-y divide-white/5">
             {loading ? (
-                <tr><td colSpan={5} className="p-12 text-center text-white/20 uppercase font-black tracking-widest">Loading Records...</td></tr>
+                <tr>
+                  <td colSpan={5} className="py-16 text-center">
+                    <div className="flex items-center justify-center">
+                      <VendeurIALoader size="md" label="Chargement du registre marchands..." />
+                    </div>
+                  </td>
+                </tr>
             ) : filteredMerchants?.length === 0 ? (
                 <tr><td colSpan={5} className="p-12 text-center text-white/20 uppercase font-black tracking-widest">No entries</td></tr>
             ) : filteredMerchants?.map((m) => (
@@ -1154,7 +1156,9 @@ function MerchantAuditModal({ merchant, onClose }: { merchant: any, onClose: () 
 
         <div className="flex-1 overflow-y-auto p-6 md:p-8 space-y-8 no-scrollbar">
            {isLoading ? (
-             <div className="py-20 text-center uppercase text-[10px] font-black tracking-widest text-white/20 animate-pulse">Chargement de l'audit...</div>
+             <div className="py-20 flex items-center justify-center">
+               <VendeurIALoader size="md" label="Chargement de l'audit marchand..." />
+             </div>
            ) : (
              <div className="space-y-6">
                 <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-vendeur-emerald/60">Dernières Réponses IA Brutes</h4>
@@ -1333,7 +1337,13 @@ function StatCard({ label, value, icon }: { label: string; value: number | strin
 }
 
 function BillingPanel({ data, loading }: { data: any, loading: boolean }) {
-  if (loading) return <div className="p-20 text-center"><Loader2 className="animate-spin inline-block mr-2" /> Loading Financial Core...</div>;
+  if (loading) {
+    return (
+      <div className="flex h-96 items-center justify-center">
+        <VendeurIALoader size="lg" label="Chargement des métriques financières..." />
+      </div>
+    );
+  }
 
   const handleExport = async () => {
     try {

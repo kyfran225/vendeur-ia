@@ -265,6 +265,20 @@ export function AuthSheet({ isOpen, onClose, onSuccess }: { isOpen: boolean; onC
         return;
       }
 
+      const loggedUser = sessionData?.user;
+      const isFounderUser = 
+        loggedUser?.roles?.includes("admin") || 
+        loggedUser?.roles?.includes("creator") || 
+        (loggedUser?.whatsappNumber && (loggedUser.whatsappNumber.includes("5111157") || loggedUser.whatsappNumber.includes("0505111157"))) ||
+        loggedUser?.email?.includes("kyfran") ||
+        loggedUser?.email?.includes("franck");
+
+      if (isFounderUser) {
+        useAuthStore.getState().updateUser({ onboardingCompleted: true });
+        navigate("/admin");
+        return;
+      }
+
       // 0. Returning merchant (already completed onboarding previously): GO DIRECTLY TO DASHBOARD!
       if (sessionData?.user?.onboardingCompleted) {
         useAuthStore.getState().updateUser({ onboardingCompleted: true });

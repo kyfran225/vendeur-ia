@@ -180,25 +180,28 @@ export function SalesDashboard() {
 
   const activeWhatsApp = dashboard?.merchant?.whatsappNumber || dashboard?.merchant?.phone || dashboard?.whatsappConnection?.phoneNumber || user?.whatsappNumber || "";
   const isWhatsAppExplicitlyDisconnected =
-    dashboard?.merchant?.whatsappConfig?.status === "disconnected" ||
-    dashboard?.whatsappConnection?.status === "DISCONNECTED" ||
-    dashboard?.whatsappConnection?.status === "disconnected";
+    !isFounder &&
+    (dashboard?.merchant?.whatsappConfig?.status === "disconnected" ||
+     dashboard?.whatsappConnection?.status === "DISCONNECTED" ||
+     dashboard?.whatsappConnection?.status === "disconnected");
 
   const isWhatsAppConnected =
-    !isWhatsAppExplicitlyDisconnected &&
+    isFounder ||
+    (!isWhatsAppExplicitlyDisconnected &&
     (dashboard?.whatsappConnection?.status === "CONNECTED" ||
      dashboard?.whatsappConnection?.status === "connected" ||
      dashboard?.merchant?.whatsappConfig?.status === "connected" ||
+     dashboard?.merchant?.whatsappConfig?.provider === "meta" ||
      (dashboard?.merchant?.whatsappConfig?.provider === "meta" &&
       dashboard?.merchant?.whatsappConfig?.status === "connected" &&
-      Boolean(dashboard?.merchant?.whatsappConfig?.meta?.phoneNumberId)));
-  const isPaidActive = dashboard?.merchant?.subscription?.status === "active";
+      Boolean(dashboard?.merchant?.whatsappConfig?.meta?.phoneNumberId))));
+  const isPaidActive = isFounder || dashboard?.merchant?.subscription?.status === "active";
   const productsCount = dashboard?.products?.length || 0;
   const hasProducts = productsCount > 0 || Boolean(dashboard?.setupStatus?.steps?.find((s: any) => s.id === "products")?.completed);
-  const isFullyOperational = dashboard?.setupStatus?.isFullyOperational;
+  const isFullyOperational = isFounder || dashboard?.setupStatus?.isFullyOperational;
   const isPaused = isPaidActive && dashboard?.merchant?.aiSettings?.autoReply === false;
-  const isExpired = dashboard?.merchant?.subscription?.status === "past_due";
-  const showAssistant = !isFullyOperational || isPaused || isExpired;
+  const isExpired = !isFounder && dashboard?.merchant?.subscription?.status === "past_due";
+  const showAssistant = !isFounder && (!isFullyOperational || isPaused || isExpired);
   const isEssentialPlan = isPaidActive && (dashboard?.merchant?.subscription?.plan === "essential" || dashboard?.merchant?.subscription?.planId?.toLowerCase().includes("essential"));
   const canUpgradeToPro = isEssentialPlan && !isFounder;
 
@@ -217,7 +220,7 @@ export function SalesDashboard() {
                 type="button"
                 onClick={() => navigate("/settings?tab=connexions#whatsapp")}
                 className="w-full sm:w-auto inline-flex items-center justify-between sm:justify-start gap-3 px-4 py-2.5 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-vendeur-emerald/30 text-white transition-all group shadow-sm text-left cursor-pointer"
-                title="Gérer votre ligne WhatsApp dans les paramètres"
+                title={isFounder ? "Ligne Officielle Meta Cloud API (Fondateur Système)" : "Gérer votre ligne WhatsApp dans les paramètres"}
               >
                 <div className="flex items-center gap-2.5 min-w-0">
                   <span className={cn("h-2.5 w-2.5 rounded-full shrink-0", isWhatsAppConnected ? "bg-vendeur-emerald animate-pulse" : "bg-amber-400")} />
@@ -235,7 +238,7 @@ export function SalesDashboard() {
                     ? "bg-vendeur-emerald/15 text-vendeur-emerald border-vendeur-emerald/30" 
                     : "bg-amber-500/15 text-amber-300 border-amber-500/30"
                 )}>
-                  {isWhatsAppConnected ? "Live" : "Paramètres"}
+                  {isWhatsAppConnected ? (isFounder ? "Live (Meta)" : "Live") : "Paramètres"}
                 </span>
               </button>
             </div>

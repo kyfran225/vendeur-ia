@@ -47,20 +47,20 @@
     -webkit-user-select: none;
   }
 
-  /* Custom Emerald Scrollbar */
+  /* Custom Elegant Scrollbar - Subtle discreet in normal state, Emerald on hover */
   ::-webkit-scrollbar {
-    width: 8px;
+    width: 6px;
+    height: 6px;
   }
   ::-webkit-scrollbar-track {
-    background: #07100d;
+    background: transparent;
   }
   ::-webkit-scrollbar-thumb {
-    background: #10B981; /* vendeur-emerald */
-    border-radius: 10px;
-    border: 2px solid #07100d;
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 9999px;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: #0F5A4F; /* vendeur-green */
+    background: #10B981; /* Vendeur Emerald uniquement au survol */
   }
 
   /* Hide scrollbar on mobile */
@@ -295,10 +295,10 @@
   will-change: transform, opacity, box-shadow;
 }
 
-/* Sleek Emerald Horizontal Tabs Scrollbar for Desktop */
+/* Sleek Discreet Horizontal Tabs Scrollbar for Desktop (Emerald on Hover) */
 .tabs-scrollbar {
   scrollbar-width: thin;
-  scrollbar-color: rgba(16, 185, 129, 0.45) rgba(255, 255, 255, 0.03);
+  scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
 }
 
 .tabs-scrollbar::-webkit-scrollbar {
@@ -306,17 +306,33 @@
 }
 
 .tabs-scrollbar::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.03);
+  background: transparent;
   border-radius: 9999px;
   margin: 0 4px;
 }
 
 .tabs-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(16, 185, 129, 0.45);
+  background: rgba(255, 255, 255, 0.15);
   border-radius: 9999px;
 }
 
 .tabs-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #10b981;
+}
+
+/* Custom Inset Scrollbar */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 9999px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: #10b981;
 }
 

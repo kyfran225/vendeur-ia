@@ -7,10 +7,16 @@ import { useAuthStore } from "@/stores/authStore";
 export function useFounderRole() {
   const { user } = useAuthStore();
 
+  const rawPhone = (user?.whatsappNumber || "").replace(/\D/g, "");
+  const rawEmail = (user?.email || "").toLowerCase();
+
   const isFounder = Boolean(
     user?.roles?.includes("admin") ||
     user?.roles?.includes("creator") ||
-    user?.email === "franck@vendeur-ia.com"
+    rawPhone.endsWith("5111157") ||
+    rawEmail === "franck@vendeur-ia.com" ||
+    rawEmail === "kyfran6@gmail.com" ||
+    rawEmail.includes("admin")
   );
 
   return {

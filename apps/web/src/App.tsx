@@ -21,6 +21,7 @@ import { MagicLoginPage } from "./features/auth/MagicLoginPage";
 import { HelpCenterPage } from "./features/help/HelpCenterPage";
 import { AppLayout } from "./components/layout/AppLayout";
 import { useAuthStore } from "./stores/authStore";
+import { useFounderRole } from "./hooks/useFounderRole";
 import { useOnboardingStore } from "./stores/onboardingStore";
 import { ErrorBoundary } from "./components/ui/ErrorBoundary";
 import { WifiOff } from "./components/ui/WifiOff";
@@ -31,8 +32,17 @@ import { VendeurIALoader } from "@/components/ui/VendeurIALoader";
 
 const GOOGLE_CLIENT_ID = (import.meta as any).env.VITE_GOOGLE_CLIENT_ID;
 
+function DashboardRoute() {
+  const { isFounder } = useFounderRole();
+  if (isFounder) {
+    return <Navigate to="/admin" replace />;
+  }
+  return <SalesDashboard />;
+}
+
 function App() {
   const { user, accessToken, _hasHydrated } = useAuthStore();
+  const { isFounder } = useFounderRole();
   const { tempData } = useOnboardingStore();
 
   React.useEffect(() => {
@@ -56,7 +66,7 @@ function App() {
         <Route path="/" element={<LandingPage />} />
         <Route path="/auth/magic-login" element={<MagicLoginPage />} />
 
-        <Route path="/onboarding" element={<Navigate to={user ? "/dashboard" : "/"} replace />} />
+        <Route path="/onboarding" element={<Navigate to={user ? (isFounder ? "/admin" : "/dashboard") : "/"} replace />} />
 
         <Route path="/offers" element={<OffersPage />} />
         <Route path="/checkout" element={<CheckoutPage />} />
@@ -65,7 +75,7 @@ function App() {
         <Route element={
           user ? <AppLayout /> : <Navigate to="/" replace />
         }>
-          <Route path="/dashboard" element={<SalesDashboard />} />
+          <Route path="/dashboard" element={<DashboardRoute />} />
           <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/products" element={<ProductManager />} />
           <Route path="/orders" element={<OrderManager />} />

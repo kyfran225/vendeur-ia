@@ -33,23 +33,32 @@ export function Sidebar({ hideDesktop = false }: SidebarProps = {}) {
   const { user, logout } = useAuthStore();
   const { isFounder } = useFounderRole();
 
-  const links = [
-    { to: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
-    ...(isFounder ? [{ to: "/admin", icon: ShieldCheck, label: "Founder", desc: "Master Control Cockpit" }] : []),
-    { to: "/inbox", icon: MessageCircle, label: "Inbox" },
-    { to: "/orders", icon: ShoppingCart, label: "Commandes" },
-    { to: "/products", icon: Package, label: "Catalogue", desc: "Gestion des stocks & articles" },
-    { to: "/marketing", icon: Megaphone, label: "Marketing", desc: "Affiches & Campagnes" },
-    { to: "/settings", icon: Settings, label: "Réglages", desc: "Boutique, Savoir IA & Canaux" },
-    { to: "/help", icon: HelpCircle, label: "Aide", desc: "FAQ & Base de connaissances" },
-  ];
+  const links = isFounder
+    ? [
+        { to: "/admin", icon: ShieldCheck, label: "Nexus", desc: "Master Control Cockpit" },
+        { to: "/inbox", icon: MessageCircle, label: "Inbox", desc: "Conversations & Support" },
+        { to: "/orders", icon: ShoppingCart, label: "Commandes", desc: "Flux de vente & Validations" },
+        { to: "/products", icon: Package, label: "Catalogue", desc: "Gestion des stocks & offres" },
+        { to: "/marketing", icon: Megaphone, label: "Marketing", desc: "Affiches & Campagnes" },
+        { to: "/settings", icon: Settings, label: "Réglages", desc: "Configuration Système & Canaux" },
+        { to: "/help", icon: HelpCircle, label: "Aide", desc: "FAQ & Base de connaissances" },
+      ]
+    : [
+        { to: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
+        { to: "/inbox", icon: MessageCircle, label: "Inbox" },
+        { to: "/orders", icon: ShoppingCart, label: "Commandes" },
+        { to: "/products", icon: Package, label: "Catalogue", desc: "Gestion des stocks & articles" },
+        { to: "/marketing", icon: Megaphone, label: "Marketing", desc: "Affiches & Campagnes" },
+        { to: "/settings", icon: Settings, label: "Réglages", desc: "Boutique, Savoir IA & Canaux" },
+        { to: "/help", icon: HelpCircle, label: "Aide", desc: "FAQ & Base de connaissances" },
+      ];
 
   const bottomLinks = isFounder
     ? [
-        { to: "/dashboard", icon: LayoutDashboard, label: "Nexus" },
-        { to: "/admin", icon: ShieldCheck, label: "Founder" },
+        { to: "/admin", icon: ShieldCheck, label: "Nexus" },
         { to: "/inbox", icon: MessageCircle, label: "Live" },
         { to: "/orders", icon: ShoppingCart, label: "Flux" },
+        { to: "/settings", icon: Settings, label: "Réglages" },
       ]
     : [
         { to: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
@@ -62,51 +71,107 @@ export function Sidebar({ hideDesktop = false }: SidebarProps = {}) {
   const moreLinks = links.filter(l => !bottomLinkPaths.includes(l.to));
   const isMoreActive = moreLinks.some((link) => location.pathname.startsWith(link.to));
 
+  const mainNavLinks = links.slice(0, 5); // Nexus/Dashboard, Inbox, Orders, Products, Marketing
+  const bottomUtilityLinks = links.slice(5); // Settings, Help
+
   return (
     <>
-      {/* Desktop Sidebar */}
+      {/* Desktop Sidebar (Compact, Ergonomic & Fully Responsive) */}
       <aside className={cn(
-        "hidden md:flex w-28 bg-vendeur-coal border-r border-white/5 flex-col items-center py-10 space-y-8 shrink-0",
+        "hidden md:flex w-24 h-screen sticky top-0 bg-vendeur-coal border-r border-white/5 flex-col items-center justify-between py-5 px-2 z-40 shrink-0 select-none overflow-hidden box-border",
         hideDesktop && "md:hidden"
       )}>
-        <div className="h-16 w-16 flex items-center justify-center overflow-hidden bg-white/5 rounded-2xl p-3 border border-white/10 shadow-2xl shrink-0 text-vendeur-emerald hover:text-white transition-colors">
-          <Logo size={36} />
+        {/* Top Logo Brand Tile */}
+        <div className="shrink-0 mb-3">
+          <NavLink
+            to={isFounder ? "/admin" : "/dashboard"}
+            className="h-12 w-12 flex items-center justify-center overflow-hidden bg-white/[0.04] hover:bg-white/[0.08] rounded-2xl p-2.5 border border-white/10 hover:border-vendeur-emerald/40 text-vendeur-emerald hover:text-white transition-all shadow-md active:scale-95 group cursor-pointer"
+            title="Vendeur IA Home"
+          >
+            <Logo size={28} className="group-hover:scale-105 transition-transform" />
+          </NavLink>
         </div>
 
-        <nav className="flex-1 w-full flex flex-col items-center gap-6">
-          {links.map((link) => (
+        {/* Middle Core Workflows Navigation (Scrollable if viewport is very short) */}
+        <nav className="flex-1 w-full flex flex-col items-center gap-1.5 overflow-y-auto overflow-x-hidden no-scrollbar py-1">
+          {mainNavLinks.map((link) => (
             <NavLink
               key={link.to}
               to={link.to}
               className={({ isActive }) =>
                 cn(
-                  "flex flex-col items-center gap-1 group transition-all",
-                  isActive ? "text-vendeur-emerald" : "text-white/30 hover:text-white"
+                  "w-full flex flex-col items-center justify-center py-1.5 px-1 rounded-xl transition-all group cursor-pointer",
+                  isActive
+                    ? "text-vendeur-emerald font-black"
+                    : "text-white/40 hover:text-white hover:bg-white/[0.04]"
                 )
               }
+              title={link.desc || link.label}
             >
-              <div className={cn(
-                "h-10 w-10 rounded-xl flex items-center justify-center transition-all",
-                "group-hover:bg-white/5"
-              )}>
-                <link.icon size={20} />
-              </div>
-              <span className="text-[9px] font-black uppercase tracking-widest">{link.label}</span>
+              {({ isActive }) => (
+                <>
+                  <div className={cn(
+                    "h-10 w-10 rounded-xl flex items-center justify-center transition-all shrink-0",
+                    isActive
+                      ? "bg-vendeur-emerald/15 text-vendeur-emerald border border-vendeur-emerald/30 shadow-sm"
+                      : "group-hover:bg-white/5 group-hover:scale-105"
+                  )}>
+                    <link.icon size={19} />
+                  </div>
+                  <span className="text-[9px] font-black uppercase tracking-wider text-center truncate max-w-full mt-1">
+                    {link.label}
+                  </span>
+                </>
+              )}
             </NavLink>
           ))}
         </nav>
 
-        {/* Desktop Logout Button */}
-        <div className="w-full px-4 pt-4 border-t border-white/5">
+        {/* Bottom Pinned Utilities Section (Settings, Help, Logout) */}
+        <div className="w-full shrink-0 border-t border-white/5 pt-2 mt-2 flex flex-col items-center gap-1">
+          {bottomUtilityLinks.map((link) => (
+            <NavLink
+              key={link.to}
+              to={link.to}
+              className={({ isActive }) =>
+                cn(
+                  "w-full flex flex-col items-center justify-center py-1.5 px-1 rounded-xl transition-all group cursor-pointer",
+                  isActive
+                    ? "text-vendeur-emerald font-black"
+                    : "text-white/40 hover:text-white hover:bg-white/[0.04]"
+                )
+              }
+              title={link.desc || link.label}
+            >
+              {({ isActive }) => (
+                <>
+                  <div className={cn(
+                    "h-9 w-9 rounded-xl flex items-center justify-center transition-all shrink-0",
+                    isActive
+                      ? "bg-vendeur-emerald/15 text-vendeur-emerald border border-vendeur-emerald/30 shadow-sm"
+                      : "group-hover:bg-white/5 group-hover:scale-105"
+                  )}>
+                    <link.icon size={18} />
+                  </div>
+                  <span className="text-[9px] font-black uppercase tracking-wider text-center truncate max-w-full mt-0.5">
+                    {link.label}
+                  </span>
+                </>
+              )}
+            </NavLink>
+          ))}
+
+          {/* Desktop Logout Button */}
           <button
+            type="button"
             onClick={() => setShowLogoutModal(true)}
-            className="w-full flex flex-col items-center gap-1 group text-white/30 hover:text-red-400 transition-all active:scale-95 py-2"
-            title="Se déconnecter"
+            className="w-full flex flex-col items-center justify-center py-1 px-1 rounded-xl text-white/30 hover:text-rose-400 hover:bg-rose-500/10 transition-all active:scale-95 group cursor-pointer mt-0.5"
+            title="Se déconnecter de la plateforme"
           >
-            <div className="h-10 w-10 rounded-xl flex items-center justify-center group-hover:bg-red-500/10 transition-all">
-              <LogOut size={20} />
+            <div className="h-8 w-8 rounded-lg flex items-center justify-center transition-all group-hover:scale-105">
+              <LogOut size={16} />
             </div>
-            <span className="text-[9px] font-black uppercase tracking-widest">Sortie</span>
+            <span className="text-[8px] font-black uppercase tracking-widest text-center">Sortie</span>
           </button>
         </div>
       </aside>

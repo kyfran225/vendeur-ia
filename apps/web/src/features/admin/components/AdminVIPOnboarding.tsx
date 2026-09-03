@@ -298,8 +298,8 @@ export function AdminVIPOnboarding() {
 
       {/* Main List - Flattened for mobile */}
       {isLoading ? (
-        <div className="py-24">
-          <VendeurIALoader size="lg" label="Scanning VIP Protocols..." />
+        <div className="py-24 flex items-center justify-center">
+          <VendeurIALoader size="lg" label="Chargement des installations VIP..." />
         </div>
       ) : filteredSetups.length === 0 ? (
         <div className="py-20 text-center bg-vendeur-coal/30 border border-white/5 rounded-3xl p-8">

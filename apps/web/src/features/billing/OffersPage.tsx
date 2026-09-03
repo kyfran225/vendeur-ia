@@ -86,14 +86,14 @@ export function OffersPage() {
 
           {/* Monthly / Yearly Billing Toggle */}
           <div className="pt-2 sm:pt-3 flex items-center justify-center">
-            <div className="inline-flex items-center p-1 sm:p-1.5 rounded-2xl bg-slate-200/80 dark:bg-vendeur-coal border border-slate-300/80 dark:border-white/10 shadow-lg">
+            <div className="inline-flex items-center p-1 sm:p-1.5 rounded-2xl bg-slate-200/80 dark:bg-vendeur-coal border border-slate-300/80 dark:border-white/10 shadow-md">
               <button
                 type="button"
                 onClick={() => setBillingInterval("monthly")}
                 className={cn(
                   "h-11 sm:h-12 min-h-[44px] sm:min-h-[48px] px-5 sm:px-7 rounded-xl text-xs sm:text-sm font-black uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center shrink-0",
                   billingInterval === "monthly"
-                    ? "bg-white text-slate-900 dark:text-vendeur-coal shadow-md"
+                    ? "bg-white text-slate-900 dark:bg-white dark:text-slate-950 shadow-md"
                     : "text-slate-600 dark:text-white/50 hover:text-slate-900 dark:hover:text-white"
                 )}
               >
@@ -138,18 +138,18 @@ export function OffersPage() {
         </div>
 
         {/* Setup Service Option */}
-        <div className="bg-slate-900 dark:bg-vendeur-coal border border-slate-800 dark:border-white/10 p-5 sm:p-8 md:p-12 rounded-2xl sm:rounded-3xl md:rounded-[2.5rem] flex flex-col md:flex-row items-start md:items-center justify-between gap-5 sm:gap-8 relative overflow-hidden group hover:border-emerald-500/30 transition-all shadow-2xl text-white">
+        <div className="bg-white dark:bg-vendeur-coal border border-slate-200 dark:border-white/10 p-5 sm:p-8 md:p-12 rounded-2xl sm:rounded-3xl md:rounded-[2.5rem] flex flex-col md:flex-row items-start md:items-center justify-between gap-5 sm:gap-8 relative overflow-hidden group hover:border-emerald-500/30 transition-all shadow-lg text-slate-900 dark:text-white">
           <div className="space-y-2.5 sm:space-y-4 relative z-10 text-left">
-            <h3 className="text-xl sm:text-2xl font-black uppercase tracking-tight text-white leading-tight">
+            <h3 className="text-xl sm:text-2xl font-black uppercase tracking-tight text-slate-900 dark:text-white leading-tight">
               Besoin que nous configurions tout pour vous ?
             </h3>
-            <p className="text-white/70 font-medium text-sm sm:text-base">
+            <p className="text-slate-600 dark:text-white/70 font-medium text-sm sm:text-base">
               Installation Pro Expert avec notre équipe dédiée (clé en main).
             </p>
             <div className="flex flex-wrap gap-2 pt-0.5">
-              <span className="text-xs sm:text-sm font-bold px-3 py-1 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">✓ WhatsApp</span>
-              <span className="text-xs sm:text-sm font-bold px-3 py-1 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">✓ Import Catalogue</span>
-              <span className="text-xs sm:text-sm font-bold px-3 py-1 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">✓ Personnalisation IA</span>
+              <span className="text-xs sm:text-sm font-bold px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/30">✓ WhatsApp</span>
+              <span className="text-xs sm:text-sm font-bold px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/30">✓ Import Catalogue</span>
+              <span className="text-xs sm:text-sm font-bold px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/30">✓ Personnalisation IA</span>
             </div>
           </div>
 
@@ -291,10 +291,10 @@ function OfferCard({
         <button
           onClick={onSelect}
           className={cn(
-            "w-full h-13 sm:h-14 min-h-[52px] sm:min-h-[56px] rounded-xl sm:rounded-2xl font-black uppercase tracking-wider text-xs sm:text-sm flex items-center justify-center gap-2 transition-all active:scale-95 shadow-lg cursor-pointer shrink-0",
+            "w-full h-13 sm:h-14 min-h-[52px] sm:min-h-[56px] rounded-xl sm:rounded-2xl uppercase tracking-wider text-xs sm:text-sm flex items-center justify-center gap-2 transition-all active:scale-95 shadow-md cursor-pointer shrink-0",
             isPro
-              ? "bg-emerald-500 text-slate-950 hover:bg-emerald-400 hover:scale-[1.02] shadow-emerald-500/25"
-              : "bg-slate-900 hover:bg-emerald-500 text-white hover:text-slate-950 dark:bg-white dark:hover:bg-emerald-400 dark:text-slate-950"
+              ? "bg-emerald-500 text-slate-950 hover:bg-emerald-400 hover:scale-[1.02] shadow-emerald-500/25 font-black"
+              : "bg-slate-100 hover:bg-slate-200 dark:bg-white/10 dark:hover:bg-white/20 text-slate-900 dark:text-white border border-slate-200 dark:border-white/10 font-bold"
           )}
         >
           <span>{isYearly ? `Souscrire à l'Annuel (${isPro ? 'Pro' : 'Essentiel'})` : (isPro ? 'Activer Forfait Pro' : 'Commencer avec ce Forfait')}</span>

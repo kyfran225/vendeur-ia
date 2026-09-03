@@ -761,7 +761,7 @@ function LandingHero({
             </AnimatePresence>
 
             {/* Phone Frame Mockup */}
-            <div className="relative w-full h-[640px] sm:h-[700px] md:h-[620px] lg:h-[640px] rounded-[2.8rem] border-[7px] border-[#1a1c1e] bg-black shadow-[0_40px_80px_rgba(0,0,0,0.8)] overflow-hidden ring-4 ring-white/5 transition-all duration-500">
+            <div className="relative w-full h-[640px] sm:h-[700px] md:h-[620px] lg:h-[640px] rounded-[2.8rem] border-[7px] border-[#1a1c1e] bg-black shadow-[0_25px_60px_rgba(0,0,0,0.35)] dark:shadow-[0_30px_70px_rgba(0,0,0,0.65)] overflow-hidden ring-4 ring-white/5 transition-all duration-500">
               {/* Camera Notch */}
               <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-6 bg-[#1a1c1e] rounded-b-2xl z-[5] flex items-center justify-center">
                 <div className="w-10 h-1 bg-white/10 rounded-full" />
@@ -1109,15 +1109,15 @@ export function LandingPage() {
 
       {/* Modern Header / Glassmorphism Giant-Tech Nav */}
       <header className="fixed top-0 left-0 right-0 z-[100] border-b border-slate-200/80 dark:border-white/5 bg-white/90 dark:bg-[#07100d]/90 backdrop-blur-2xl w-full h-16 md:h-20 transition-all text-slate-900 dark:text-white">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 sm:px-6 md:px-8 h-full gap-4">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-3.5 sm:px-6 md:px-8 h-full gap-2 sm:gap-4">
           
           {/* Logo & Dynamic Brand Name */}
-          <div className="flex items-center gap-3 md:gap-4 shrink-0">
-            <Link to="/" className="flex h-10 w-10 md:h-11 md:w-11 shrink-0 items-center justify-center rounded-2xl text-slate-900 dark:text-white transition-all hover:scale-105">
+          <div className="flex items-center gap-2 sm:gap-3 md:gap-4 shrink-0">
+            <Link to="/" className="flex shrink-0 items-center justify-center text-slate-900 dark:text-white transition-all hover:scale-105">
               <Logo size={26} />
             </Link>
             <div className="min-w-0">
-              <p className="truncate text-base md:text-lg font-black text-slate-900 dark:text-white uppercase leading-tight tracking-tight">{dynamicTitle}</p>
+              <p className="truncate text-sm sm:text-base md:text-lg font-black text-slate-900 dark:text-white uppercase leading-tight tracking-tight">{dynamicTitle}</p>
               <div className="flex items-center gap-1.5">
                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                  <p className="truncate text-[8px] md:text-[9px] uppercase tracking-[0.2em] text-slate-500 dark:text-white/50 font-black">AI Sales Machine</p>
@@ -1150,7 +1150,7 @@ export function LandingPage() {
                     exit={{ opacity: 0, y: 10, scale: 0.95 }}
                     transition={{ duration: 0.15 }}
                     onMouseLeave={() => setProductsDropdownOpen(false)}
-                    className="absolute top-full left-0 mt-2 w-80 p-3 rounded-2xl bg-white dark:bg-[#09140f] border border-slate-200 dark:border-emerald-500/20 shadow-[0_20px_50px_rgba(0,0,0,0.15)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.8)] backdrop-blur-2xl grid gap-1.5 z-50 text-slate-900 dark:text-white"
+                    className="absolute top-full left-0 mt-2 w-80 p-3 rounded-2xl bg-white dark:bg-[#09140f] border border-slate-200 dark:border-emerald-500/20 shadow-2xl grid gap-1.5 z-50 text-slate-900 dark:text-white"
                   >
                     <button
                       onClick={() => openProduct("vision")}
@@ -1261,9 +1261,6 @@ export function LandingPage() {
               <span>Tester la Démo</span>
             </button>
 
-            {/* ☀️/🌙 1-Click Direct Theme Switcher */}
-            <ThemeToggle />
-
             <button
               onClick={() => {
                 if (user && !user.onboardingCompleted) {
@@ -1276,6 +1273,11 @@ export function LandingPage() {
             >
               {user && !user.onboardingCompleted ? "Créer ma Boutique" : "Connexion"}
             </button>
+
+            {/* ☀️/🌙 1-Click Direct Theme Switcher (Desktop only) */}
+            <div className="hidden lg:block">
+              <ThemeToggle />
+            </div>
 
             {/* Mobile Menu Hamburger */}
             <button
@@ -1294,7 +1296,7 @@ export function LandingPage() {
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: "auto" }}
               exit={{ opacity: 0, height: 0 }}
-              className="lg:hidden border-b border-slate-200 dark:border-white/10 bg-white/95 dark:bg-[#07100d]/95 backdrop-blur-2xl px-5 py-4 space-y-3 text-slate-900 dark:text-white"
+              className="lg:hidden border-b border-slate-200 dark:border-white/10 bg-white dark:bg-[#07100d] shadow-2xl px-5 py-4 space-y-3 text-slate-900 dark:text-white"
             >
               <div className="space-y-1">
                 <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-white/40 px-2">Nos Produits</p>
@@ -1328,7 +1330,7 @@ export function LandingPage() {
                 </button>
               </div>
 
-              <div className="pt-2 border-t border-slate-200 dark:border-white/10 flex flex-col gap-2">
+              <div className="pt-2 border-t border-slate-200 dark:border-white/10 flex flex-col gap-2.5">
                 <Link
                   to="/offers"
                   onClick={() => setMobileMenuOpen(false)}
@@ -1337,16 +1339,12 @@ export function LandingPage() {
                   <CreditCard size={16} className="text-emerald-500" />
                   <span>Offres & Tarifs</span>
                 </Link>
-                <button
-                  onClick={() => {
-                    setMobileMenuOpen(false);
-                    handleLaunchDemo();
-                  }}
-                  className="w-full h-11 rounded-xl bg-emerald-500 text-slate-950 text-xs font-black uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg cursor-pointer"
-                >
-                  <Play size={14} fill="currentColor" />
-                  <span>Lancer le Simulateur</span>
-                </button>
+
+                {/* Theme Switcher inside Mobile Drawer */}
+                <div className="flex items-center justify-between p-2 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10">
+                  <span className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-white/80 px-1">Thème d'affichage</span>
+                  <ThemeToggle variant="segmented" />
+                </div>
               </div>
             </motion.div>
           )}

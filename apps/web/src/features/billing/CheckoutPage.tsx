@@ -942,43 +942,43 @@ function CheckoutSuccessModal({
 
   return (
     <div
-      className="fixed inset-0 z-[150] flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-xl animate-in fade-in duration-500"
+      className="fixed inset-0 z-[150] flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-xl animate-in fade-in duration-500"
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
     >
       <motion.div
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
-        className="w-full max-w-lg bg-[#0c1410] border border-vendeur-emerald/30 rounded-[2rem] sm:rounded-[2.5rem] p-5 sm:p-8 md:p-10 text-center space-y-6 sm:space-y-8 shadow-[0_0_100px_rgba(16,185,129,0.15)] relative overflow-hidden"
+        className="w-full max-w-lg bg-white dark:bg-[#0c1410] border border-slate-200 dark:border-emerald-500/30 rounded-[2rem] sm:rounded-[2.5rem] p-5 sm:p-8 md:p-10 text-center space-y-6 sm:space-y-8 shadow-2xl relative overflow-hidden text-slate-900 dark:text-white"
       >
         {/* Decorative Background */}
-        <div className="absolute -top-24 -right-24 w-48 h-48 bg-vendeur-emerald/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -top-24 -right-24 w-48 h-48 bg-emerald-500/10 dark:bg-vendeur-emerald/10 rounded-full blur-3xl pointer-events-none" />
 
         <div className="relative z-10 space-y-5 sm:space-y-6">
-          <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto rounded-2xl sm:rounded-3xl bg-vendeur-emerald/20 border border-vendeur-emerald/40 flex items-center justify-center text-vendeur-emerald shadow-inner">
+          <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto rounded-2xl sm:rounded-3xl bg-emerald-50 dark:bg-vendeur-emerald/20 border border-emerald-200 dark:border-vendeur-emerald/40 flex items-center justify-center text-emerald-600 dark:text-vendeur-emerald shadow-inner">
             <CheckCircle2 size={36} className="animate-bounce sm:w-10 sm:h-10" />
           </div>
 
           <div className="space-y-2 sm:space-y-3">
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-black uppercase tracking-tight text-white leading-tight">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-black uppercase tracking-tight text-slate-900 dark:text-white leading-tight">
               Félicitations ! 🎉
             </h2>
-            <p className="text-xs sm:text-sm md:text-base text-emerald-300/80 leading-relaxed font-medium max-w-sm mx-auto">
+            <p className="text-xs sm:text-sm md:text-base text-emerald-700 dark:text-emerald-300/80 leading-relaxed font-medium max-w-sm mx-auto">
               Votre demande de règlement a bien été transmise. Notre équipe valide votre accès sous 10 à 30 minutes.
             </p>
           </div>
 
           {/* Info Recap Card */}
-          <div className="bg-black/50 border border-white/10 rounded-2xl p-3.5 sm:p-4 grid grid-cols-2 gap-3 text-left">
+          <div className="bg-slate-50 dark:bg-black/50 border border-slate-200 dark:border-white/10 rounded-2xl p-3.5 sm:p-4 grid grid-cols-2 gap-3 text-left">
             <div className="space-y-0.5 min-w-0">
-              <p className="text-[10px] font-black uppercase text-white/40 tracking-wider">Référence</p>
-              <p className="text-xs sm:text-sm font-mono font-bold text-white truncate">
+              <p className="text-[10px] font-black uppercase text-slate-500 dark:text-white/40 tracking-wider">Référence</p>
+              <p className="text-xs sm:text-sm font-mono font-bold text-slate-900 dark:text-white truncate">
                 #{activeIntent?.reference?.slice(-8) || "TRX-OK"}
               </p>
             </div>
             <div className="space-y-0.5 min-w-0">
-              <p className="text-[10px] font-black uppercase text-white/40 tracking-wider">Montant</p>
-              <p className="text-xs sm:text-sm font-mono font-bold text-vendeur-emerald truncate">
+              <p className="text-[10px] font-black uppercase text-slate-500 dark:text-white/40 tracking-wider">Montant</p>
+              <p className="text-xs sm:text-sm font-mono font-bold text-emerald-600 dark:text-vendeur-emerald truncate">
                 {totalToday.toLocaleString()} {activeCurrencySymbol}
               </p>
             </div>
@@ -989,10 +989,10 @@ function CheckoutSuccessModal({
             <button
               type="button"
               onClick={onNavigateDashboard}
-              className="w-full h-12 sm:h-14 min-h-[48px] bg-vendeur-emerald hover:bg-emerald-400 text-vendeur-coal font-black uppercase tracking-wider text-xs sm:text-sm rounded-xl sm:rounded-2xl flex items-center justify-center gap-2 transition-all shadow-xl shadow-vendeur-emerald/20 active:scale-95 cursor-pointer px-3 sm:px-4"
+              className="w-full h-12 sm:h-14 min-h-[48px] bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black uppercase tracking-wider text-xs sm:text-sm rounded-xl sm:rounded-2xl flex items-center justify-center gap-2 transition-all shadow-lg shadow-emerald-500/20 active:scale-95 cursor-pointer px-3 sm:px-4"
             >
               <span className="truncate">Accéder au tableau de bord</span>
-              <span className="text-[10px] sm:text-[11px] font-bold bg-vendeur-coal/20 px-2 py-0.5 rounded-full text-vendeur-coal shrink-0">
+              <span className="text-[10px] sm:text-[11px] font-bold bg-slate-950/20 px-2 py-0.5 rounded-full text-slate-950 shrink-0">
                 {secondsRemaining}s
               </span>
               <ChevronRight size={16} className="shrink-0" />
@@ -1001,7 +1001,7 @@ function CheckoutSuccessModal({
             <button
               type="button"
               onClick={handleSupportWhatsApp}
-              className="w-full h-11 sm:h-12 text-white/70 hover:text-white text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 hover:bg-white/5 rounded-xl cursor-pointer"
+              className="w-full h-11 sm:h-12 text-slate-600 hover:text-slate-900 dark:text-white/70 dark:hover:text-white text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 hover:bg-slate-100 dark:hover:bg-white/5 rounded-xl cursor-pointer"
             >
               <WhatsAppIcon size={16} variant="brand" />
               <span>Assistance WhatsApp</span>

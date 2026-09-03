@@ -204,6 +204,10 @@ const MessageSchema = new Schema({
   type: { type: String, enum: ["text", "audio", "image"], default: "text" },
   content: { type: String, required: true },
   mediaUrl: String,
+  status: { type: String, enum: ["pending", "sent", "delivered", "read"], default: "sent", index: true },
+  whatsappMessageId: { type: String, index: true, sparse: true },
+  deliveredAt: { type: Date, default: null },
+  readAt: { type: Date, default: null },
   aiMetadata: {
     provider: { type: String, default: 'unknown' },
     tokensUsed: { type: Number, default: 0 },

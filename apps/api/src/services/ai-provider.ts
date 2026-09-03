@@ -263,6 +263,9 @@ export class AIProvider {
     if (providerName === 'gemini' && env.DISABLE_GEMINI) {
       return undefined;
     }
+    if (providerName === 'openai' && env.DISABLE_OPENAI) {
+      return undefined;
+    }
 
     const provider = config?.providers?.find((p: any) => p.name === providerName && p.isActive);
     let key: string | undefined = provider?.apiKey;
@@ -287,9 +290,9 @@ export class AIProvider {
     // Ultra-reliable Defaults
     switch (providerName) {
       case 'gemini': return GEMINI_DEFAULT_TEXT_MODEL;
-      case 'groq': return 'llama-3.3-70b-versatile';
+      case 'groq': return 'openai/gpt-oss-120b';
       case 'openai': return type === 'audio' ? 'whisper-1' : 'gpt-4o-mini';
-      case 'openrouter': return 'meta-llama/llama-3.3-70b-instruct';
+      case 'openrouter': return 'meta-llama/llama-3.3-70b-instruct:free';
       case 'elevenlabs': return 'eleven_multilingual_v2';
       default: return "";
     }
@@ -367,9 +370,10 @@ export class AIProvider {
     }
 
     // Check if primary is degraded OR explicitly disabled
-    if (this.isDegraded(primaryProvider) || (primaryProvider === 'gemini' && env.DISABLE_GEMINI)) {
-      console.log(`[AI Provider] ${primaryProvider} is ${env.DISABLE_GEMINI && primaryProvider === 'gemini' ? 'DISABLED' : 'degraded'}, skipping to fallback...`);
-      primaryProvider = primaryProvider === 'gemini' ? 'groq' : 'gemini';
+    const isPrimaryDisabled = (primaryProvider === 'gemini' && env.DISABLE_GEMINI) || (primaryProvider === 'openai' && env.DISABLE_OPENAI);
+    if (this.isDegraded(primaryProvider) || isPrimaryDisabled) {
+      console.log(`[AI Provider] ${primaryProvider} is ${isPrimaryDisabled ? 'DISABLED' : 'degraded'}, skipping to fallback...`);
+      primaryProvider = primaryProvider === 'gemini' || primaryProvider === 'openai' ? 'groq' : 'gemini';
     }
 
     // Check if primary provider has a key - if not, skip directly to fallbacks
@@ -572,8 +576,15 @@ export class AIProvider {
 
     const messages = normalizeMessagesForOpenAI(systemPrompt, request.history, request.userMessage);
 
-    const defaultGroqModel = model && model.trim() ? model : "llama-3.3-70b-versatile";
-    const modelsToTry = [defaultGroqModel, "llama-3.3-70b-versatile", "llama-3.1-8b-instant", "mixtral-8x7b-32768", "deepseek-r1-distill-llama-70b", "gemma2-9b-it"].filter((m, i, arr) => arr.indexOf(m) === i && !!m);
+    const defaultGroqModel = model && model.trim() ? model : "openai/gpt-oss-120b";
+    const modelsToTry = [
+      defaultGroqModel,
+      "openai/gpt-oss-120b",
+      "openai/gpt-oss-20b",
+      "qwen/qwen3.8-27b",
+      "qwen/qwen3.6-27b",
+      "groq/compound-mini"
+    ].filter((m, i, arr) => arr.indexOf(m) === i && !!m);
 
     let lastError: any;
     for (const currentModel of modelsToTry) {
@@ -794,6 +805,22 @@ export class AIProvider {
         return response.data.text;
       } catch (error: any) {
         console.error("[AI Provider] Whisper failed");
+      }
+    }
+
+    const groqKey = this.getProviderKey(config, 'groq');
+    if (groqKey) {
+      try {
+        const formData = new FormData();
+        const blob = new Blob([new Uint8Array(audioBuffer)], { type: "audio/ogg" });
+        formData.append("file", blob, "audio.ogg");
+        formData.append("model", "whisper-large-v3-turbo");
+        const response = await axios.post("https://api.groq.com/openai/v1/audio/transcriptions", formData, {
+          headers: { "Authorization": `Bearer ${groqKey}` }
+        });
+        return response.data.text;
+      } catch (error: any) {
+        console.warn("[AI Provider] Groq Whisper failed");
       }
     }
 

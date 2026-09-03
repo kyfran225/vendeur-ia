@@ -6,8 +6,11 @@ import {
   CommerceConversationModel,
   CommerceMerchantModel,
   CommerceCustomerModel,
+  CommerceProductModel,
+  CommerceOrderModel,
   MarketingCampaignModel
 } from '../modules/commerce/commerce.model.js';
+import mongoose from 'mongoose';
 import { emitToUser } from '../realtime/socketServer.js';
 import { whatsappService } from '../modules/whatsapp/whatsapp.service.js';
 import { pushService } from './push.service.js';
@@ -216,10 +219,15 @@ Réponds UNIQUEMENT avec le texte final du message.`;
     }
 
     try {
-      // Native Typing Indicator to recipient on WhatsApp
+      // Native Typing Indicator to recipient on WhatsApp & merchant inbox
       if (platform === 'whatsapp') {
         await whatsappService.sendPresence(userId, remoteJid, 'composing');
       }
+      emitToUser(userId, 'conversation:typing', {
+        conversationId,
+        isTyping: true,
+        participant: 'ai'
+      });
 
       // Generate AI response
       const aiResponse = await aiAgentService.generateResponse({ ...context, platform } as any);
@@ -238,45 +246,71 @@ Réponds UNIQUEMENT avec le texte final du message.`;
           const conv = await CommerceConversationModel.findById(conversationId);
           const customerId = conv?.customerId?.toString();
 
-          if (merchantId && customerId && orderPayload?.items?.length > 0) {
-            const createdOrder = await commerceService.createOrderByAiIntent(
+          if (merchantId && customerId && orderPayload.items && Array.isArray(orderPayload.items)) {
+            // Calculate total and match items
+            let totalAmount = 0;
+            const validItems: any[] = [];
+
+            for (const itm of orderPayload.items) {
+              const matchedProduct = await CommerceProductModel.findOne({
+                merchantId,
+                $or: [
+                  { name: { $regex: new RegExp(itm.name || '', 'i') } },
+                  { _id: mongoose.isValidObjectId(itm.productId) ? itm.productId : new mongoose.Types.ObjectId() }
+                ]
+              });
+
+              const itemPrice = matchedProduct?.price || itm.price || 0;
+              const itemQty = Math.max(1, parseInt(itm.quantity, 10) || 1);
+              totalAmount += itemPrice * itemQty;
+
+              validItems.push({
+                productId: matchedProduct?._id || undefined,
+                name: matchedProduct?.name || itm.name || "Produit",
+                price: itemPrice,
+                quantity: itemQty
+              });
+            }
+
+            const newOrder = await CommerceOrderModel.create({
               merchantId,
               customerId,
               conversationId,
-              orderPayload
-            );
+              items: validItems,
+              totalAmount,
+              currency: context.merchant.currency || 'XOF',
+              status: 'pending',
+              shippingAddress: orderPayload.shippingAddress || '',
+              recoveredByAi: true
+            });
 
-            if (createdOrder) {
-              // Notify Merchant in real-time via Socket.io
+            console.log(`[AI Auto-Order] Successfully generated Order #${newOrder._id} for customer ${customerId} (Total: ${totalAmount})`);
+            
+            // Notify merchant of auto-created order
+            if (userId) {
               emitToUser(userId, 'order:created', {
-                order: createdOrder,
-                source: 'ai_autonomous'
+                order: newOrder,
+                conversationId
               });
-
-              // Push Notification to merchant
-              pushService.sendNotification(userId, {
-                title: "🛍️ Nouvelle Commande IA !",
-                body: `Une commande de ${createdOrder.totalAmount} ${createdOrder.currency} vient d'être enregistrée automatiquement.`,
-                data: { orderId: createdOrder._id.toString(), url: "/orders" }
-              }).catch(() => {});
             }
           }
-        } catch (actionErr: any) {
-          console.warn("[AI Order Intent] Failed to parse or create automated order:", actionErr.message);
-          reply = reply.replace(/\[\[ACTION_CREATE_ORDER:[\s\S]*?\]\]/, '').trim();
+        } catch (orderErr) {
+          console.error("[AI Auto-Order] Failed to parse or create auto order:", orderErr);
         }
       }
 
-      const merchant = await CommerceMerchantModel.findById(context.merchant._id);
-      let voiceMode = merchant?.aiSettings?.voiceMode && platform === 'whatsapp';
-
-      let audioUrl = "";
+      // Voice Note / Audio Mode
+      let audioUrl: string | undefined = undefined;
       let audioBuffer: Buffer | null = null;
+      const merchantObj = await CommerceMerchantModel.findById(context.merchant._id);
+      const aiSettings = merchantObj?.aiSettings || context.merchant?.aiSettings;
+      let voiceMode = aiSettings?.voiceMode && (platform === 'whatsapp' || !platform) && reply.length < 300;
 
       if (voiceMode) {
         try {
           console.log(`[AI Queue] Voice mode active. Generating audio for user ${userId}`);
-          audioBuffer = await aiProvider.generateSpeech(reply);
+          const generatedAudio = await aiProvider.generateSpeech(reply);
+          audioBuffer = generatedAudio;
 
           // Save to local storage
           const fileName = `voice-${Date.now()}.ogg`;
@@ -301,6 +335,7 @@ Réponds UNIQUEMENT avec le texte final du message.`;
         type: voiceMode ? 'audio' : 'text',
         content: reply,
         mediaUrl: audioUrl,
+        status: 'sent',
         aiMetadata: {
           provider: aiResponse.provider,
           tokensUsed: aiResponse.usage?.totalTokens || 0,
@@ -328,12 +363,22 @@ Réponds UNIQUEMENT avec le texte final du message.`;
       }).catch(err => console.error("[AI Queue] Push notification error:", err));
 
       // SEND MESSAGE via Unified Messaging Service
-      await messagingService.sendMessage(merchant, platform, remoteJid, reply, {
+      const sendRes: any = await messagingService.sendMessage(context.merchant, platform, remoteJid, reply, {
         audioBuffer: audioBuffer || undefined
       });
 
+      if (sendRes?.key?.id) {
+        aiMsg.whatsappMessageId = sendRes.key.id;
+        await aiMsg.save();
+      }
+
       return reply;
     } finally {
+      emitToUser(userId, 'conversation:typing', {
+        conversationId,
+        isTyping: false,
+        participant: 'ai'
+      });
       if (platform === 'whatsapp') {
         await whatsappService.sendPresence(userId, remoteJid, 'paused').catch(() => {});
       }

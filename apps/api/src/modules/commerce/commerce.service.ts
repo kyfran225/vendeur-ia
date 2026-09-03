@@ -749,6 +749,10 @@ Réponds UNIQUEMENT avec le JSON strict. Si 1 seul produit est présent, renvoie
             }
           }
         } else if (provider === 'openai') {
+          if (env.DISABLE_OPENAI) {
+            logger.info("[Product Vision] OpenAI is disabled, skipping...");
+            continue;
+          }
           const apiKey = settings?.aiConfig?.providers?.find(p => p.name === 'openai')?.apiKey || env.OPENAI_API_KEY;
           if (!apiKey) continue;
 

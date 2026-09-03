@@ -6,7 +6,7 @@ import json
 
 # --- Configuration ---
 DEFAULT_PROVIDER = "groq"
-GROQ_MODEL = "llama-3.3-70b-versatile"
+GROQ_MODEL = "openai/gpt-oss-120b"
 GEMINI_MODEL = "gemini-1.5-flash"
 OPENROUTER_MODEL = "google/gemini-flash-1.5"
 

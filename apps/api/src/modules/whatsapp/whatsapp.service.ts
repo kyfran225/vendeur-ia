@@ -366,6 +366,14 @@ class WhatsAppService {
 
         sock.ev.on("creds.update", saveCreds);
 
+        sock.ev.on("presence.update", async (p: any) => {
+          await this.handlePresenceUpdate(userId, p);
+        });
+
+        sock.ev.on("messages.update", async (updates: any) => {
+          await this.handleMessagesUpdate(userId, updates);
+        });
+
         sock.ev.on("messages.upsert", async (m) => {
           if (m.type === "notify") {
             for (const msg of m.messages) {
@@ -563,6 +571,14 @@ class WhatsAppService {
         }
       });
 
+      sock.ev.on("presence.update", async (p: any) => {
+        await this.handlePresenceUpdate(userId, p);
+      });
+
+      sock.ev.on("messages.update", async (updates: any) => {
+        await this.handleMessagesUpdate(userId, updates);
+      });
+
       sock.ev.on("messages.upsert", async (m) => {
         if (m.type === "notify") {
           for (const msg of m.messages) {
@@ -704,6 +720,14 @@ class WhatsAppService {
           }
 
           // 8. Wire message processing for this newly connected user
+          sock.ev.on("presence.update", async (p: any) => {
+            await this.handlePresenceUpdate(userId, p);
+          });
+
+          sock.ev.on("messages.update", async (updates: any) => {
+            await this.handleMessagesUpdate(userId, updates);
+          });
+
           sock.ev.on("messages.upsert", async (m: any) => {
             if (m.type === "notify") {
               for (const msg of m.messages) {
@@ -1768,6 +1792,120 @@ class WhatsAppService {
       }
     } else {
       console.warn(`[WhatsApp] Skipping presence update for ${userId}: socket not fully authenticated`);
+    }
+  }
+
+  async handlePresenceUpdate(userId: string, presenceUpdate: any) {
+    try {
+      const remoteJid = presenceUpdate?.id;
+      if (!remoteJid || remoteJid.includes("@g.us") || remoteJid === "status@broadcast") return;
+
+      const { cleanPhone } = formatToWhatsAppRecipient(remoteJid);
+      const presences = presenceUpdate.presences || {};
+      const participantInfo = presences[remoteJid] || Object.values(presences)[0] as any;
+      const lastKnown = participantInfo?.lastKnownPresence;
+
+      const isTyping = lastKnown === "composing" || lastKnown === "recording";
+
+      let merchant = await CommerceMerchantModel.findOne({
+        $or: [
+          { ownerId: userId },
+          ...(userId && mongoose.isValidObjectId(userId) ? [{ ownerId: new mongoose.Types.ObjectId(userId) }] : []),
+          { whatsappNumber: { $regex: '5111157' } }
+        ]
+      });
+      if (!merchant) return;
+
+      const phoneVariants = generatePhoneVariants(cleanPhone);
+      const customer = await CommerceCustomerModel.findOne({
+        merchantId: merchant._id,
+        phone: { $in: phoneVariants }
+      });
+      if (!customer) return;
+
+      const conversation = await CommerceConversationModel.findOne({
+        merchantId: merchant._id,
+        customerId: customer._id
+      });
+      if (!conversation) return;
+
+      const targetUserIds = new Set<string>([userId.toString()]);
+      if (merchant.ownerId) targetUserIds.add(merchant.ownerId.toString());
+
+      targetUserIds.forEach(tId => {
+        emitToUser(tId, "conversation:typing", {
+          conversationId: conversation._id,
+          customerPhone: cleanPhone,
+          isTyping,
+          participant: "customer"
+        });
+      });
+    } catch (err) {
+      console.warn("[WhatsApp Presence] Error handling presence update:", err);
+    }
+  }
+
+  async handleMessagesUpdate(userId: string, updates: any[]) {
+    try {
+      if (!Array.isArray(updates)) return;
+
+      for (const item of updates) {
+        const key = item.key;
+        const statusNum = item.update?.status;
+        if (!key?.id || statusNum === undefined) continue;
+
+        // Baileys WAMessageStatus: 1=PENDING, 2=SERVER_ACK, 3=DELIVERY_ACK, 4=READ, 5=PLAYED
+        let mappedStatus: "pending" | "sent" | "delivered" | "read" | null = null;
+        if (statusNum === 2) mappedStatus = "sent";
+        else if (statusNum === 3) mappedStatus = "delivered";
+        else if (statusNum === 4 || statusNum === 5) mappedStatus = "read";
+
+        if (!mappedStatus) continue;
+
+        const updateFields: any = { status: mappedStatus };
+        if (mappedStatus === "delivered") updateFields.deliveredAt = new Date();
+        if (mappedStatus === "read") updateFields.readAt = new Date();
+
+        const updatedMsg = await CommerceMessageModel.findOneAndUpdate(
+          { whatsappMessageId: key.id },
+          { $set: updateFields },
+          { new: true }
+        );
+
+        if (updatedMsg) {
+          const targetUserIds = new Set<string>([userId.toString()]);
+          const conv = await CommerceConversationModel.findById(updatedMsg.conversationId);
+          if (conv) {
+            const merchant = await CommerceMerchantModel.findById(conv.merchantId);
+            if (merchant?.ownerId) targetUserIds.add(merchant.ownerId.toString());
+          }
+
+          targetUserIds.forEach(tId => {
+            emitToUser(tId, "message:status_update", {
+              messageId: updatedMsg._id,
+              conversationId: updatedMsg.conversationId,
+              whatsappMessageId: key.id,
+              status: mappedStatus,
+              deliveredAt: updatedMsg.deliveredAt,
+              readAt: updatedMsg.readAt
+            });
+          });
+        }
+      }
+    } catch (err) {
+      console.warn("[WhatsApp Messages Update] Error updating message status:", err);
+    }
+  }
+
+  async markConversationAsRead(userId: string, remoteJid: string, messageKeys?: any[]) {
+    const sock = this.activeSessions.get(userId);
+    if (!sock || !sock.user) return;
+    try {
+      if (messageKeys && messageKeys.length > 0 && typeof sock.readMessages === "function") {
+        await sock.readMessages(messageKeys);
+      }
+    } catch (err) {
+      console.warn("[WhatsApp Read] Failed to send read receipt to WhatsApp:", err);
     }
   }
 

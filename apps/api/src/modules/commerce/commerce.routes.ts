@@ -509,11 +509,25 @@ router.get("/conversations/:id/messages", authenticate, async (req, res) => {
 
 router.patch("/conversations/:id/read", authenticate, async (req, res) => {
   try {
+    const ownerId = (req as any).user.id;
     const conversation = await CommerceConversationModel.findByIdAndUpdate(
       req.params.id,
       { $set: { unreadCount: 0 } },
       { new: true }
     );
+
+    if (conversation) {
+      await CommerceMessageModel.updateMany(
+        { conversationId: req.params.id, sender: "customer", status: { $ne: "read" } },
+        { $set: { status: "read", readAt: new Date() } }
+      );
+
+      emitToUser(ownerId, "conversation:read", {
+        conversationId: conversation._id,
+        unreadCount: 0
+      });
+    }
+
     res.json(conversation);
   } catch (error: any) {
     res.status(500).json({ error: error.message });
@@ -620,6 +634,7 @@ router.post("/conversations/:id/messages", authenticate, async (req, res) => {
       sender: "human",
       type: "text",
       content: content.trim(),
+      status: "sent",
       timestamp: new Date()
     });
 
@@ -649,7 +664,11 @@ router.post("/conversations/:id/messages", authenticate, async (req, res) => {
 
     let deliveryError: string | undefined;
     try {
-      await messagingService.sendMessage(merchant, platform, remoteId, content.trim());
+      const sendRes: any = await messagingService.sendMessage(merchant, platform, remoteId, content.trim());
+      if (sendRes?.key?.id) {
+        message.whatsappMessageId = sendRes.key.id;
+        await message.save();
+      }
     } catch (sendError: any) {
       deliveryError = sendError.message;
       console.error(`[Messaging] Failed to send to ${platform}:`, sendError.message);

@@ -154,7 +154,7 @@ Réponds UNIQUEMENT avec le JSON strict.`;
 
     // Fallback: OpenAI GPT-4o Vision
     const openaiKey = settings?.aiConfig?.providers?.find((p: any) => p.name === 'openai' && p.isActive)?.apiKey || env.OPENAI_API_KEY;
-    if (openaiKey) {
+    if (openaiKey && !env.DISABLE_OPENAI) {
       try {
         const response = await axios.post(
           "https://api.openai.com/v1/chat/completions",

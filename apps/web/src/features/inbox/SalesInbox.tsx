@@ -28,6 +28,7 @@ import { stripActionTags } from "@/lib/utils";
 
 import { useMerchant } from "@/hooks/useMerchant";
 import { VendeurIALoader } from "@/components/ui/VendeurIALoader";
+import { WhatsAppTypingIndicator } from "@/components/ui/WhatsAppTypingIndicator";
 import { OrderCreationModal } from "@/features/orders/OrderCreationModal";
 import { FastPayModal } from "./FastPayModal";
 import { VoiceRecorder } from "./components/VoiceRecorder";
@@ -126,8 +127,29 @@ export function SalesInbox() {
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [onlineSessions, setOnlineSessions] = useState<Set<string>>(new Set());
   const [hasCopiedPhone, setHasCopiedPhone] = useState(false);
+  const [typingMap, setTypingMap] = useState<Record<string, { isTyping: boolean; participant: "customer" | "ai" | "human"; lastUpdated: number }>>({});
+  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  // Auto-cleanup stale typing presence indicators
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const now = Date.now();
+      setTypingMap(prev => {
+        let changed = false;
+        const next = { ...prev };
+        Object.keys(next).forEach(key => {
+          if (next[key].isTyping && now - next[key].lastUpdated > 5000) {
+            next[key] = { ...next[key], isTyping: false };
+            changed = true;
+          }
+        });
+        return changed ? next : prev;
+      });
+    }, 2000);
+    return () => clearInterval(interval);
+  }, []);
 
   // Fetch Conversations
   const { data: conversations, isLoading: loadingChats, refetch: refetchConvs } = useQuery({
@@ -271,16 +293,65 @@ export function SalesInbox() {
       });
     };
 
+    // Real-time typing presence listener
+    const handleTypingStatus = (data: { conversationId: string; isTyping: boolean; participant?: "customer" | "ai" | "human" }) => {
+      if (!data?.conversationId) return;
+      setTypingMap(prev => ({
+        ...prev,
+        [data.conversationId]: {
+          isTyping: data.isTyping,
+          participant: data.participant || "customer",
+          lastUpdated: Date.now()
+        }
+      }));
+    };
+
+    // Real-time message status updates (sent / delivered / read)
+    const handleMessageStatusUpdate = (data: {
+      messageId?: string;
+      conversationId: string;
+      whatsappMessageId?: string;
+      status: "pending" | "sent" | "delivered" | "read";
+      deliveredAt?: Date;
+      readAt?: Date;
+    }) => {
+      if (data.conversationId === selectedChat) {
+        queryClient.setQueryData(["messages", selectedChat], (old: any[] | undefined) => {
+          if (!old) return old;
+          return old.map(m => {
+            if ((data.messageId && m._id === data.messageId) || (data.whatsappMessageId && m.whatsappMessageId === data.whatsappMessageId)) {
+              return { ...m, status: data.status, deliveredAt: data.deliveredAt || m.deliveredAt, readAt: data.readAt || m.readAt };
+            }
+            return m;
+          });
+        });
+      }
+    };
+
+    // Real-time conversation read synchronization
+    const handleConversationRead = (data: { conversationId: string; unreadCount: number }) => {
+      queryClient.setQueryData(["conversations"], (old: any[] | undefined) => {
+        if (!old) return old;
+        return old.map(c => c._id === data.conversationId ? { ...c, unreadCount: 0 } : c);
+      });
+    };
+
     socket.on("conversation:update", handleConvUpdate);
     socket.on("notification:new", handleNotificationNew);
     socket.on("payment:detected", handlePaymentDetected);
     socket.on("session:status", handleSessionStatus);
+    socket.on("conversation:typing", handleTypingStatus);
+    socket.on("message:status_update", handleMessageStatusUpdate);
+    socket.on("conversation:read", handleConversationRead);
 
     return () => {
       socket.off("conversation:update", handleConvUpdate);
       socket.off("notification:new", handleNotificationNew);
       socket.off("payment:detected", handlePaymentDetected);
       socket.off("session:status", handleSessionStatus);
+      socket.off("conversation:typing", handleTypingStatus);
+      socket.off("message:status_update", handleMessageStatusUpdate);
+      socket.off("conversation:read", handleConversationRead);
     };
   }, [socket, selectedChat, queryClient, merchantCurrency]);
 
@@ -435,8 +506,33 @@ export function SalesInbox() {
     setTimeout(() => setHasCopiedPhone(false), 2000);
   };
 
+  const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setManualMessage(e.target.value);
+    if (!socket || !selectedChat) return;
+
+    if (!typingTimeoutRef.current) {
+      socket.emit("typing:start", { conversationId: selectedChat, participant: "human" });
+    } else {
+      clearTimeout(typingTimeoutRef.current);
+    }
+
+    typingTimeoutRef.current = setTimeout(() => {
+      if (socket && selectedChat) {
+        socket.emit("typing:stop", { conversationId: selectedChat, participant: "human" });
+      }
+      typingTimeoutRef.current = null;
+    }, 2500);
+  };
+
   const handleSendMessage = () => {
     if (!selectedChat || !manualMessage.trim()) return;
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+      typingTimeoutRef.current = null;
+    }
+    if (socket && selectedChat) {
+      socket.emit("typing:stop", { conversationId: selectedChat, participant: "human" });
+    }
     sendManualMessageMutation.mutate({ id: selectedChat, text: manualMessage.trim() });
   };
 
@@ -701,17 +797,28 @@ export function SalesInbox() {
                     </div>
 
                     <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-1 text-[11px] text-white/60 truncate min-w-0">
-                        {chat.lastMessage?.sender === "human" && (
-                          <span className="text-sky-400 font-bold shrink-0">Admin: </span>
-                        )}
-                        {chat.lastMessage?.sender === "ai" && (
-                          <span className="text-emerald-400 font-bold shrink-0">IA: </span>
-                        )}
-                        {chat.lastMessage?.type === "audio" && <Mic size={11} className="text-sky-400 shrink-0" />}
-                        {chat.lastMessage?.type === "image" && <ImageIcon size={11} className="text-amber-400 shrink-0" />}
-                        <span className="truncate">{stripActionTags(lastSnippet)}</span>
-                      </div>
+                      {typingMap[chat._id]?.isTyping ? (
+                        <div className="flex items-center gap-1.5 text-xs text-emerald-400 font-bold animate-pulse truncate min-w-0">
+                          <span className="inline-flex items-center gap-1">
+                            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-ping shrink-0" />
+                            <span className="italic text-[11px] font-semibold">
+                              {typingMap[chat._id]?.participant === "ai" ? "Vendeur IA répond..." : "En train d'écrire..."}
+                            </span>
+                          </span>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-1 text-[11px] text-white/60 truncate min-w-0">
+                          {chat.lastMessage?.sender === "human" && (
+                            <span className="text-sky-400 font-bold shrink-0">Admin: </span>
+                          )}
+                          {chat.lastMessage?.sender === "ai" && (
+                            <span className="text-emerald-400 font-bold shrink-0">IA: </span>
+                          )}
+                          {chat.lastMessage?.type === "audio" && <Mic size={11} className="text-sky-400 shrink-0" />}
+                          {chat.lastMessage?.type === "image" && <ImageIcon size={11} className="text-amber-400 shrink-0" />}
+                          <span className="truncate">{stripActionTags(lastSnippet)}</span>
+                        </div>
+                      )}
 
                       {/* Unread badge or Takeover Pill */}
                       <div className="flex items-center gap-1 shrink-0">
@@ -779,20 +886,32 @@ export function SalesInbox() {
                     )}
                   </div>
 
-                  <div className="text-[11px] sm:text-xs text-white/60 flex items-center gap-1.5 font-medium mt-0.5">
-                    <Phone size={11} className="text-emerald-400 shrink-0" />
-                    <span className="truncate">{formatDisplayPhone(activeChatData?.customerId?.phone, "CI") || "WhatsApp Direct"}</span>
-                    {activeChatData?.customerId?.phone && (
-                      <button
-                        type="button"
-                        onClick={() => handleCopyPhone(activeChatData.customerId.phone)}
-                        className="text-white/40 hover:text-emerald-400 p-0.5 rounded hover:bg-white/5 transition-colors shrink-0"
-                        title="Copier le numéro"
-                      >
-                        {hasCopiedPhone ? <Check size={12} className="text-emerald-400" /> : <Copy size={12} />}
-                      </button>
-                    )}
-                  </div>
+                  {selectedChat && typingMap[selectedChat]?.isTyping ? (
+                    <WhatsAppTypingIndicator
+                      variant="header"
+                      label={
+                        typingMap[selectedChat]?.participant === "ai"
+                          ? "Vendeur IA prépare sa réponse..."
+                          : `${formatCustomerDisplayName(activeChatData?.customerId, merchant?.businessName, user?.displayName)} est en train d'écrire`
+                      }
+                      className="mt-0.5"
+                    />
+                  ) : (
+                    <div className="text-[11px] sm:text-xs text-white/60 flex items-center gap-1.5 font-medium mt-0.5">
+                      <Phone size={11} className="text-emerald-400 shrink-0" />
+                      <span className="truncate">{formatDisplayPhone(activeChatData?.customerId?.phone, "CI") || "WhatsApp Direct"}</span>
+                      {activeChatData?.customerId?.phone && (
+                        <button
+                          type="button"
+                          onClick={() => handleCopyPhone(activeChatData.customerId.phone)}
+                          className="text-white/40 hover:text-emerald-400 p-0.5 rounded hover:bg-white/5 transition-colors shrink-0"
+                          title="Copier le numéro"
+                        >
+                          {hasCopiedPhone ? <Check size={12} className="text-emerald-400" /> : <Copy size={12} />}
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -926,13 +1045,27 @@ export function SalesInbox() {
                   <p className="text-xs text-white/30">Envoyez le premier message à ce client.</p>
                 </div>
               ) : (
-                messages?.map((msg: any) => (
-                  <WhatsAppBubble
-                    key={msg._id}
-                    msg={msg}
-                    onImageClick={(url) => setPreviewImage(url)}
-                  />
-                ))
+                <>
+                  {messages?.map((msg: any) => (
+                    <WhatsAppBubble
+                      key={msg._id}
+                      msg={msg}
+                      onImageClick={(url) => setPreviewImage(url)}
+                    />
+                  ))}
+
+                  {/* Real-time Dynamic Typing Bubble */}
+                  {selectedChat && typingMap[selectedChat]?.isTyping && (
+                    <WhatsAppTypingIndicator
+                      variant="bubble"
+                      label={
+                        typingMap[selectedChat]?.participant === "ai"
+                          ? "Le Vendeur IA compose sa réponse..."
+                          : undefined
+                      }
+                    />
+                  )}
+                </>
               )}
             </div>
 
@@ -1015,7 +1148,7 @@ export function SalesInbox() {
                     placeholder="Écrivez votre message WhatsApp (Entrée pour envoyer, Maj+Entrée nouvelle ligne)..."
                     rows={1}
                     value={manualMessage}
-                    onChange={(e) => setManualMessage(e.target.value)}
+                    onChange={handleTextareaChange}
                     onKeyDown={(e) => {
                       if (e.key === "Enter" && !e.shiftKey) {
                         e.preventDefault();
@@ -1240,9 +1373,33 @@ function WhatsAppBubble({ msg, onImageClick }: { msg: any; onImageClick?: (url: 
             : stripActionTags(msg.content)}
         </p>
 
-        {/* Bubble Timestamp */}
-        <div className="flex items-center justify-end mt-1 opacity-60">
-          <span className="text-[9px] font-medium text-white/70">{time}</span>
+        {/* Bubble Timestamp & Read Receipt Status Coche */}
+        <div className="flex items-center justify-end gap-1 mt-1 opacity-75 select-none">
+          <span className="text-[10px] font-medium text-white/70">{time}</span>
+          {!isCustomer && (
+            <span
+              className="inline-flex items-center ml-0.5"
+              title={
+                msg.status === "read"
+                  ? `Lu par le destinataire ${msg.readAt ? `(${new Date(msg.readAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })})` : '✓✓'}`
+                  : msg.status === "delivered"
+                  ? "Distribué sur l'appareil du destinataire ✓✓"
+                  : msg.status === "pending"
+                  ? "En cours d'envoi... ⏳"
+                  : "Envoyé aux serveurs ✓"
+              }
+            >
+              {msg.status === "pending" ? (
+                <Clock size={11} className="text-white/40 animate-pulse" />
+              ) : msg.status === "delivered" ? (
+                <CheckCheck size={13} className="text-white/50" />
+              ) : msg.status === "read" ? (
+                <CheckCheck size={13} className="text-[#53bdeb] drop-shadow-[0_0_4px_rgba(83,189,235,0.6)]" />
+              ) : (
+                <Check size={13} className="text-white/50" />
+              )}
+            </span>
+          )}
         </div>
       </div>
     </div>

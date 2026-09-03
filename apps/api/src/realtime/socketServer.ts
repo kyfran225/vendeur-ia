@@ -54,6 +54,26 @@ export function initSocketServer(httpServer: HttpServer) {
       });
     });
 
+    socket.on("typing:start", (payload: { conversationId: string; userId?: string; participant?: string }) => {
+      if (payload?.conversationId) {
+        socket.broadcast.emit("conversation:typing", {
+          conversationId: payload.conversationId,
+          isTyping: true,
+          participant: payload.participant || "human"
+        });
+      }
+    });
+
+    socket.on("typing:stop", (payload: { conversationId: string; userId?: string; participant?: string }) => {
+      if (payload?.conversationId) {
+        socket.broadcast.emit("conversation:typing", {
+          conversationId: payload.conversationId,
+          isTyping: false,
+          participant: payload.participant || "human"
+        });
+      }
+    });
+
     socket.on("disconnect", () => {
       console.log(`[Socket] Disconnected: ${socket.id}`);
     });

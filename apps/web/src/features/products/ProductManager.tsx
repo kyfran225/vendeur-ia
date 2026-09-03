@@ -563,19 +563,19 @@ export function ProductManager() {
           
           <form
             onSubmit={editingProduct ? handleUpdate : handleManualCreate}
-            className="relative w-full max-w-4xl bg-[#0b120e] border border-white/10 rounded-3xl sm:rounded-[2.5rem] shadow-[0_25px_80px_rgba(0,0,0,0.85)] flex flex-col max-h-[92vh] overflow-hidden my-auto animate-in zoom-in-95 duration-200"
+            className="relative w-full max-w-4xl bg-white dark:bg-[#0b120e] border border-slate-200 dark:border-white/10 rounded-3xl sm:rounded-[2.5rem] shadow-2xl dark:shadow-[0_25px_80px_rgba(0,0,0,0.85)] flex flex-col max-h-[92vh] overflow-hidden my-auto animate-in zoom-in-95 duration-200 text-slate-900 dark:text-white"
           >
             {/* Modal Header */}
-            <div className="px-5 py-4 sm:px-8 sm:py-5 border-b border-white/5 bg-white/[0.02] flex items-center justify-between shrink-0">
+            <div className="px-5 py-4 sm:px-8 sm:py-5 border-b border-slate-200 dark:border-white/5 bg-slate-50 dark:bg-white/[0.02] flex items-center justify-between shrink-0">
               <div className="flex items-center gap-3.5">
-                <div className="h-11 w-11 rounded-2xl bg-vendeur-emerald/10 border border-vendeur-emerald/20 flex items-center justify-center text-vendeur-emerald shrink-0">
+                <div className="h-11 w-11 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-600 dark:text-vendeur-emerald shrink-0">
                   {editingProduct ? <Edit size={20} /> : <Plus size={20} />}
                 </div>
                 <div>
-                  <h2 className="text-lg sm:text-2xl font-black text-white uppercase tracking-tight flex items-center gap-2">
+                  <h2 className="text-lg sm:text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight flex items-center gap-2">
                     <span>{editingProduct ? "Modifier" : "Ajouter"} {config.itemLabel}</span>
                   </h2>
-                  <p className="text-[11px] text-white/40 font-medium">
+                  <p className="text-[11px] text-slate-500 dark:text-white/40 font-medium">
                     Configurez les détails et le visuel que le Vendeur IA présentera à vos clients sur WhatsApp.
                   </p>
                 </div>
@@ -583,7 +583,7 @@ export function ProductManager() {
               <button
                 type="button"
                 onClick={() => { setEditingProduct(null); setIsAddingManual(false); }}
-                className="h-9 w-9 rounded-xl bg-white/5 hover:bg-white/10 text-white/40 hover:text-white flex items-center justify-center transition-all cursor-pointer"
+                className="h-9 w-9 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-white/5 dark:hover:bg-white/10 text-slate-500 dark:text-white/40 hover:text-slate-900 dark:hover:text-white flex items-center justify-center transition-all cursor-pointer"
                 title="Fermer"
               >
                 <X size={18} />
@@ -599,12 +599,12 @@ export function ProductManager() {
                   {businessCategory !== "digital" ? (
                     <div className="space-y-3">
                       <div className="flex items-center justify-between">
-                        <span className="text-xs font-black uppercase tracking-wider text-white/70 flex items-center gap-1.5">
-                          <ImageIcon size={14} className="text-vendeur-emerald" />
+                        <span className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-white/70 flex items-center gap-1.5">
+                          <ImageIcon size={14} className="text-emerald-600 dark:text-vendeur-emerald" />
                           Visuel de l'article
                         </span>
                         {(editingProduct ? (editingProduct as any).imageUrl : newProduct.imageUrl) && (
-                          <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-vendeur-emerald/10 text-vendeur-emerald border border-vendeur-emerald/20">
+                          <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-vendeur-emerald border border-emerald-500/20">
                             Photo Active
                           </span>
                         )}
@@ -612,7 +612,7 @@ export function ProductManager() {
 
                       <div className="relative w-full">
                         <label className={cn(
-                          "relative flex flex-col items-center justify-center w-full aspect-square max-h-72 lg:max-h-80 rounded-2xl sm:rounded-3xl bg-black/40 border-2 border-dashed border-white/10 hover:border-vendeur-emerald/50 transition-all cursor-pointer overflow-hidden p-3 group text-center select-none shadow-inner",
+                          "relative flex flex-col items-center justify-center w-full aspect-square max-h-72 lg:max-h-80 rounded-2xl sm:rounded-3xl bg-slate-50 dark:bg-black/40 border-2 border-dashed border-slate-300 dark:border-white/10 hover:border-emerald-500/50 transition-all cursor-pointer overflow-hidden p-3 group text-center select-none shadow-inner",
                           analyzing && "opacity-75 cursor-wait border-sky-400/50"
                         )}>
                           {(editingProduct ? (editingProduct as any).imageUrl : newProduct.imageUrl) ? (
@@ -637,88 +637,55 @@ export function ProductManager() {
                                   </div>
                                   <div className="space-y-1">
                                     <p className="text-xs font-black uppercase text-sky-400 tracking-wider">Analyse par Vendeur IA...</p>
-                                    <p className="text-[10px] text-white/40">Extraction du produit et des prix...</p>
+                                    <p className="text-[10px] text-slate-500 dark:text-white/40">Extraction du produit et des prix...</p>
                                   </div>
                                 </>
                               ) : (
                                 <>
-                                  <div className="h-14 w-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-white/40 group-hover:text-vendeur-emerald group-hover:bg-vendeur-emerald/10 group-hover:border-vendeur-emerald/30 group-hover:scale-110 transition-all">
+                                  <div className="h-14 w-14 rounded-2xl bg-slate-200/70 dark:bg-white/5 border border-slate-300 dark:border-white/10 flex items-center justify-center text-slate-500 dark:text-white/40 group-hover:text-emerald-600 dark:group-hover:text-vendeur-emerald group-hover:bg-emerald-500/10 group-hover:border-emerald-500/30 group-hover:scale-110 transition-all">
                                     <Camera size={26} />
                                   </div>
                                   <div className="space-y-1">
-                                    <p className="text-xs font-black uppercase text-white tracking-wider">Importer une photo</p>
-                                    <p className="text-[10px] text-white/40 font-medium">Glissez une image ou cliquez pour parcourir</p>
+                                    <p className="text-xs font-black uppercase text-slate-800 dark:text-white tracking-wider">Importer une photo</p>
+                                    <p className="text-[10px] text-slate-500 dark:text-white/40 font-medium">Glissez une image ou cliquez pour parcourir</p>
                                   </div>
-                                  <span className="text-[9px] font-bold uppercase tracking-widest text-white/20 px-2.5 py-1 rounded-lg bg-white/[0.02]">
-                                    JPG, PNG, WebP
-                                  </span>
                                 </>
                               )}
                             </div>
                           )}
                           <input type="file" accept="image/*" className="hidden" onChange={handleUnifiedPhotoUpload} disabled={analyzing} />
                         </label>
-
-                        {/* Delete photo button */}
-                        {(editingProduct ? (editingProduct as any).imageUrl : newProduct.imageUrl) && (
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              editingProduct
-                                ? setEditingProduct({ ...editingProduct, imageUrl: "" } as any)
-                                : setNewProduct(prev => ({ ...prev, imageUrl: "" }));
-                            }}
-                            className="absolute top-3 right-3 h-8 w-8 rounded-full bg-rose-500/90 hover:bg-rose-600 text-white flex items-center justify-center shadow-xl transition-all z-10 cursor-pointer"
-                            title="Supprimer cette photo"
-                          >
-                            <X size={15} />
-                          </button>
-                        )}
                       </div>
 
                       {/* AI Auto-fill Checkbox */}
                       {config.showScanner && (
-                        <label className="flex items-start gap-3 p-3.5 rounded-2xl bg-white/[0.03] hover:bg-white/[0.05] border border-white/5 hover:border-vendeur-emerald/30 transition-all cursor-pointer">
+                        <label className="flex items-center gap-2.5 px-3 py-2 rounded-xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 cursor-pointer select-none">
                           <input
                             type="checkbox"
                             checked={autoAnalyzeWithIA}
                             onChange={(e) => setAutoAnalyzeWithIA(e.target.checked)}
-                            className="w-4 h-4 mt-0.5 rounded border-white/20 text-vendeur-emerald focus:ring-vendeur-emerald accent-vendeur-emerald shrink-0 cursor-pointer"
+                            className="rounded border-slate-300 text-emerald-500 focus:ring-emerald-500"
                           />
-                          <div className="space-y-0.5">
-                            <span className="text-[11px] font-black uppercase tracking-wider text-white flex items-center gap-1.5">
-                              <Sparkles size={12} className="text-vendeur-emerald" /> Auto-remplissage IA
-                            </span>
-                            <p className="text-[10px] text-white/40 leading-relaxed font-medium">
-                              Vendeur IA détecte le nom, l'estimation du prix et rédige la fiche à partir de la photo.
-                            </p>
-                          </div>
+                          <span className="text-[11px] font-bold text-slate-700 dark:text-white/70">
+                            Auto-remplir le nom et prix par Vision IA
+                          </span>
                         </label>
                       )}
                     </div>
                   ) : (
                     /* Digital products banner */
-                    <div className="p-6 rounded-3xl bg-black/40 border border-white/5 space-y-3 text-center">
-                      <div className="h-12 w-12 rounded-2xl bg-purple-500/10 border border-purple-500/20 text-purple-400 flex items-center justify-center mx-auto">
+                    <div className="p-6 rounded-3xl bg-slate-100 dark:bg-black/40 border border-slate-200 dark:border-white/5 space-y-3 text-center">
+                      <div className="h-12 w-12 rounded-2xl bg-purple-500/10 border border-purple-500/20 text-purple-600 dark:text-purple-400 flex items-center justify-center mx-auto">
                         <Laptop size={24} />
                       </div>
                       <div className="space-y-1">
-                        <h4 className="text-xs font-black uppercase tracking-wider text-white">Produit Numérique</h4>
-                        <p className="text-[11px] text-white/40 leading-relaxed">
+                        <h4 className="text-xs font-black uppercase tracking-wider text-slate-900 dark:text-white">Produit Numérique</h4>
+                        <p className="text-[11px] text-slate-500 dark:text-white/40 leading-relaxed">
                           La livraison s'effectue automatiquement via le lien d'accès sécurisé dès réception du paiement Mobile Money.
                         </p>
                       </div>
                     </div>
                   )}
-
-                  {/* Customer Preview Note */}
-                  <div className="px-4 py-3 rounded-2xl bg-vendeur-emerald/[0.04] border border-vendeur-emerald/15 flex items-center gap-2.5">
-                    <Zap size={14} className="text-vendeur-emerald shrink-0" />
-                    <p className="text-[10px] text-vendeur-emerald/80 font-semibold leading-normal">
-                      Synchronisé en temps réel avec votre boutique WhatsApp et votre catalogue public.
-                    </p>
-                  </div>
                 </div>
 
                 {/* RIGHT COLUMN: Product Attributes & Data (7 cols) */}
@@ -726,26 +693,16 @@ export function ProductManager() {
                   
                   {/* Title / Name Field */}
                   <div className="space-y-1.5">
-                    <label className="text-xs font-black uppercase tracking-wider text-white/70 flex items-center justify-between">
-                      <span>
-                        {businessCategory === "digital" && "Titre du Contenu / E-Book / Formation"}
-                        {businessCategory === "services" && "Intitulé de la Prestation"}
-                        {businessCategory === "food" && "Nom du Plat ou Formule"}
-                        {businessCategory !== "digital" && businessCategory !== "services" && businessCategory !== "food" && "Nom de l'Article"}
-                      </span>
-                      <span className="text-[10px] text-rose-400 font-bold">* Requis</span>
+                    <label className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-white/70 flex items-center justify-between">
+                      <span>Nom de l'{config.itemLabel.toLowerCase()}</span>
+                      <span className="text-[10px] text-slate-400 font-bold">* Requis</span>
                     </label>
                     <input
-                      className="w-full h-12 rounded-2xl bg-black/40 border border-white/10 px-4 text-sm font-semibold text-white outline-none focus:border-vendeur-emerald focus:ring-1 focus:ring-vendeur-emerald/30 transition-all placeholder:text-white/20 shadow-inner"
+                      className="w-full h-12 rounded-2xl bg-slate-50 dark:bg-black/40 border border-slate-300 dark:border-white/10 px-4 text-sm font-semibold text-slate-900 dark:text-white outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/30 transition-all placeholder:text-slate-400 dark:placeholder:text-white/20 shadow-inner"
                       value={editingProduct ? editingProduct.name : newProduct.name}
                       onChange={e => editingProduct
                         ? setEditingProduct({...editingProduct, name: e.target.value})
                         : setNewProduct({...newProduct, name: e.target.value})
-                      }
-                      placeholder={
-                        businessCategory === "digital" ? "ex: E-Book Réussir sur WhatsApp" :
-                        businessCategory === "services" ? "ex: Consultation Coaching 1h" :
-                        businessCategory === "food" ? "ex: Menu Burger Gourmet + Frites" : "ex: Chaussure Sneakers Nike Air"
                       }
                       required
                     />
@@ -755,14 +712,14 @@ export function ProductManager() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                     {/* Price Input */}
                     <div className="space-y-1.5">
-                      <label className="text-xs font-black uppercase tracking-wider text-white/70 flex items-center justify-between">
+                      <label className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-white/70 flex items-center justify-between">
                         <span>Prix</span>
-                        <span className="text-[10px] text-vendeur-emerald font-black uppercase">{activeCurrency}</span>
+                        <span className="text-[10px] text-emerald-600 dark:text-vendeur-emerald font-black uppercase">{activeCurrency}</span>
                       </label>
                       <div className="relative flex items-center">
                         <input
                           type="number"
-                          className="w-full h-12 rounded-2xl bg-black/40 border border-white/10 pl-4 pr-16 text-sm font-black text-white outline-none focus:border-vendeur-emerald focus:ring-1 focus:ring-vendeur-emerald/30 transition-all placeholder:text-white/20 shadow-inner"
+                          className="w-full h-12 rounded-2xl bg-slate-50 dark:bg-black/40 border border-slate-300 dark:border-white/10 pl-4 pr-16 text-sm font-black text-slate-900 dark:text-white outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/30 transition-all placeholder:text-slate-400 dark:placeholder:text-white/20 shadow-inner"
                           value={editingProduct ? (isNaN(editingProduct.price) ? "" : editingProduct.price) : (isNaN(newProduct.price) ? "" : newProduct.price)}
                           onChange={e => {
                             const val = e.target.value === "" ? NaN : parseInt(e.target.value);
@@ -773,7 +730,7 @@ export function ProductManager() {
                           placeholder="0"
                           required
                         />
-                        <span className="absolute right-3 px-2 py-1 rounded-lg bg-white/5 border border-white/10 text-[10px] font-black uppercase text-white/40 select-none">
+                        <span className="absolute right-3 px-2 py-1 rounded-lg bg-slate-200/80 dark:bg-white/5 border border-slate-300 dark:border-white/10 text-[10px] font-black uppercase text-slate-600 dark:text-white/40 select-none">
                           {activeCurrency}
                         </span>
                       </div>
@@ -782,11 +739,11 @@ export function ProductManager() {
                     {/* Secondary Field by Domain */}
                     {businessCategory === "digital" && (
                       <div className="space-y-1.5">
-                        <label className="text-xs font-black uppercase tracking-wider text-white/70">
+                        <label className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-white/70">
                           Format du Contenu
                         </label>
                         <select
-                          className="w-full h-12 rounded-2xl bg-[#121814] border border-white/10 px-4 text-sm font-medium text-white outline-none focus:border-vendeur-emerald transition-all"
+                          className="w-full h-12 rounded-2xl bg-slate-50 dark:bg-[#121814] border border-slate-300 dark:border-white/10 px-4 text-sm font-medium text-slate-900 dark:text-white outline-none focus:border-emerald-500 transition-all"
                           value={editingProduct ? (editingProduct.digitalFormat || "PDF / E-Book") : newProduct.digitalFormat}
                           onChange={e => editingProduct
                             ? setEditingProduct({...editingProduct, digitalFormat: e.target.value})
@@ -803,11 +760,11 @@ export function ProductManager() {
 
                     {businessCategory === "services" && (
                       <div className="space-y-1.5">
-                        <label className="text-xs font-black uppercase tracking-wider text-white/70">
+                        <label className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-white/70">
                           Durée Estimée
                         </label>
                         <input
-                          className="w-full h-12 rounded-2xl bg-black/40 border border-white/10 px-4 text-sm font-medium text-white outline-none focus:border-vendeur-emerald transition-all placeholder:text-white/20"
+                          className="w-full h-12 rounded-2xl bg-slate-50 dark:bg-black/40 border border-slate-300 dark:border-white/10 px-4 text-sm font-medium text-slate-900 dark:text-white outline-none focus:border-emerald-500 transition-all placeholder:text-slate-400 dark:placeholder:text-white/20"
                           value={editingProduct ? (editingProduct.serviceDuration || "1h") : newProduct.serviceDuration}
                           onChange={e => editingProduct
                             ? setEditingProduct({...editingProduct, serviceDuration: e.target.value})
@@ -820,11 +777,11 @@ export function ProductManager() {
 
                     {businessCategory === "food" && (
                       <div className="space-y-1.5">
-                        <label className="text-xs font-black uppercase tracking-wider text-white/70">
+                        <label className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-white/70">
                           Temps de Préparation
                         </label>
                         <input
-                          className="w-full h-12 rounded-2xl bg-black/40 border border-white/10 px-4 text-sm font-medium text-white outline-none focus:border-vendeur-emerald transition-all placeholder:text-white/20"
+                          className="w-full h-12 rounded-2xl bg-slate-50 dark:bg-black/40 border border-slate-300 dark:border-white/10 px-4 text-sm font-medium text-slate-900 dark:text-white outline-none focus:border-emerald-500 transition-all placeholder:text-slate-400 dark:placeholder:text-white/20"
                           value={editingProduct ? (editingProduct.preparationTime || "15-20 min") : newProduct.preparationTime}
                           onChange={e => editingProduct
                             ? setEditingProduct({...editingProduct, preparationTime: e.target.value})
@@ -837,13 +794,13 @@ export function ProductManager() {
 
                     {config.showStock && (
                       <div className="space-y-1.5">
-                        <label className="text-xs font-black uppercase tracking-wider text-white/70 flex items-center justify-between">
+                        <label className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-white/70 flex items-center justify-between">
                           <span>{config.stockLabel}</span>
-                          <span className="text-[10px] text-white/40">Unités</span>
+                          <span className="text-[10px] text-slate-400 dark:text-white/40">Unités</span>
                         </label>
                         <input
                           type="number"
-                          className="w-full h-12 rounded-2xl bg-black/40 border border-white/10 px-4 text-sm font-bold text-white outline-none focus:border-vendeur-emerald transition-all placeholder:text-white/20"
+                          className="w-full h-12 rounded-2xl bg-slate-50 dark:bg-black/40 border border-slate-300 dark:border-white/10 px-4 text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-emerald-500 transition-all placeholder:text-slate-400 dark:placeholder:text-white/20"
                           value={editingProduct ? (isNaN(editingProduct.stock) ? "" : editingProduct.stock) : (isNaN(newProduct.stock) ? "" : newProduct.stock)}
                           onChange={e => {
                             const val = e.target.value === "" ? NaN : parseInt(e.target.value);
@@ -860,11 +817,11 @@ export function ProductManager() {
                   {/* Domain Specific Extensions */}
                   {businessCategory === "food" && (
                     <div className="space-y-1.5">
-                      <label className="text-xs font-black uppercase tracking-wider text-white/70">
+                      <label className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-white/70">
                         Options & Formules d'accompagnement
                       </label>
                       <input
-                        className="w-full h-12 rounded-2xl bg-black/40 border border-white/10 px-4 text-sm text-white outline-none focus:border-vendeur-emerald transition-all placeholder:text-white/20"
+                        className="w-full h-12 rounded-2xl bg-slate-50 dark:bg-black/40 border border-slate-300 dark:border-white/10 px-4 text-sm text-slate-900 dark:text-white outline-none focus:border-emerald-500 transition-all placeholder:text-slate-400 dark:placeholder:text-white/20"
                         value={editingProduct ? (editingProduct.foodOptions || "") : newProduct.foodOptions}
                         onChange={e => editingProduct
                           ? setEditingProduct({...editingProduct, foodOptions: e.target.value})
@@ -872,17 +829,17 @@ export function ProductManager() {
                         }
                         placeholder="ex: Sans sauce, Extra fromage, Frites incluses..."
                       />
-                      <p className="text-[10px] text-white/40">Le Vendeur IA proposera spontanément ces choix aux clients lors de leur commande.</p>
+                      <p className="text-[10px] text-slate-500 dark:text-white/40">Le Vendeur IA proposera spontanément ces choix aux clients lors de leur commande.</p>
                     </div>
                   )}
 
                   {businessCategory === "digital" && (
                     <div className="space-y-1.5">
-                      <label className="text-xs font-black uppercase tracking-wider text-white/70">
+                      <label className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-white/70">
                         Lien d'Accès Sécurisé (Google Drive, Notion, etc.)
                       </label>
                       <input
-                        className="w-full h-12 rounded-2xl bg-black/40 border border-white/10 px-4 text-sm text-emerald-400 outline-none focus:border-vendeur-emerald transition-all placeholder:text-white/20"
+                        className="w-full h-12 rounded-2xl bg-slate-50 dark:bg-black/40 border border-slate-300 dark:border-white/10 px-4 text-sm text-emerald-600 dark:text-emerald-400 outline-none focus:border-emerald-500 transition-all placeholder:text-slate-400 dark:placeholder:text-white/20"
                         value={editingProduct ? (editingProduct.digitalUrl || "") : newProduct.digitalUrl}
                         onChange={e => editingProduct
                           ? setEditingProduct({...editingProduct, digitalUrl: e.target.value})
@@ -890,17 +847,17 @@ export function ProductManager() {
                         }
                         placeholder="https://drive.google.com/file/d/..."
                       />
-                      <p className="text-[10px] text-white/40">Ce lien est délivré de manière automatisée et privée au client après paiement.</p>
+                      <p className="text-[10px] text-slate-500 dark:text-white/40">Ce lien est délivré de manière automatisée et privée au client après paiement.</p>
                     </div>
                   )}
 
                   {businessCategory === "services" && (
                     <div className="space-y-1.5">
-                      <label className="text-xs font-black uppercase tracking-wider text-white/70">
+                      <label className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-white/70">
                         Mode de délivrance
                       </label>
                       <select
-                        className="w-full h-12 rounded-2xl bg-[#121814] border border-white/10 px-4 text-sm text-white outline-none focus:border-vendeur-emerald transition-all"
+                        className="w-full h-12 rounded-2xl bg-slate-50 dark:bg-[#121814] border border-slate-300 dark:border-white/10 px-4 text-sm text-slate-900 dark:text-white outline-none focus:border-emerald-500 transition-all"
                         value={editingProduct ? (editingProduct.serviceDeliveryType || "Présentiel") : newProduct.serviceDeliveryType}
                         onChange={e => editingProduct
                           ? setEditingProduct({...editingProduct, serviceDeliveryType: e.target.value})
@@ -916,13 +873,13 @@ export function ProductManager() {
 
                   {/* Description Field */}
                   <div className="space-y-1.5">
-                    <label className="text-xs font-black uppercase tracking-wider text-white/70 flex items-center justify-between">
+                    <label className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-white/70 flex items-center justify-between">
                       <span>Description détaillée</span>
-                      <span className="text-[10px] text-white/40">Contexte pour l'IA</span>
+                      <span className="text-[10px] text-slate-500 dark:text-white/40">Contexte pour l'IA</span>
                     </label>
                     <textarea
                       rows={3}
-                      className="w-full rounded-2xl bg-black/40 border border-white/10 p-4 text-sm text-white outline-none focus:border-vendeur-emerald focus:ring-1 focus:ring-vendeur-emerald/30 transition-all resize-none placeholder:text-white/20 shadow-inner"
+                      className="w-full rounded-2xl bg-slate-50 dark:bg-black/40 border border-slate-300 dark:border-white/10 p-4 text-sm text-slate-900 dark:text-white outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/30 transition-all resize-none placeholder:text-slate-400 dark:placeholder:text-white/20 shadow-inner"
                       value={editingProduct ? (editingProduct.description || "") : newProduct.description}
                       onChange={e => editingProduct
                         ? setEditingProduct({...editingProduct, description: e.target.value})
@@ -941,11 +898,11 @@ export function ProductManager() {
             </div>
 
             {/* Modal Footer Actions */}
-            <div className="px-5 py-4 sm:px-8 sm:py-5 border-t border-white/5 bg-black/40 flex items-center justify-between gap-4 shrink-0">
+            <div className="px-5 py-4 sm:px-8 sm:py-5 border-t border-slate-200 dark:border-white/5 bg-slate-50 dark:bg-black/40 flex items-center justify-between gap-4 shrink-0">
               <button
                 type="button"
                 onClick={() => { setEditingProduct(null); setIsAddingManual(false); }}
-                className="px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider text-white/50 hover:text-white hover:bg-white/5 transition-all cursor-pointer"
+                className="px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider text-slate-600 dark:text-white/50 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-white/5 transition-all cursor-pointer"
               >
                 Annuler
               </button>
@@ -953,7 +910,7 @@ export function ProductManager() {
               <button
                 type="submit"
                 disabled={createMutation.isPending || updateMutation.isPending}
-                className="h-12 px-5 sm:px-7 bg-vendeur-emerald hover:bg-emerald-400 text-vendeur-coal font-black uppercase text-xs tracking-wider rounded-2xl flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all shadow-xl shadow-vendeur-emerald/20 disabled:opacity-50 cursor-pointer"
+                className="h-12 px-5 sm:px-7 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black uppercase text-xs tracking-wider rounded-2xl flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-emerald-500/20 disabled:opacity-50 cursor-pointer"
               >
                 {(createMutation.isPending || updateMutation.isPending) ? (
                   <Loader2 size={18} className="animate-spin" />
@@ -984,14 +941,14 @@ export function ProductManager() {
       {/* Main Header */}
       <header id="tour-products-catalog" className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-6">
         <div className="min-w-0">
-          <h1 className="text-2xl sm:text-3xl md:text-5xl font-black tracking-tighter text-white uppercase truncate">{config.title}</h1>
-          <p className="text-white/40 mt-1 text-sm md:text-lg">Gérez vos {config.itemLabel.toLowerCase()}s et laissez le Vendeur IA conclure les transactions.</p>
+          <h1 className="text-2xl sm:text-3xl md:text-5xl font-black tracking-tighter text-slate-900 dark:text-white uppercase truncate">{config.title}</h1>
+          <p className="text-slate-500 dark:text-white/40 mt-1 text-sm md:text-lg">Gérez vos {config.itemLabel.toLowerCase()}s et laissez le Vendeur IA conclure les transactions.</p>
         </div>
         <div className="flex flex-row gap-3 shrink-0">
           {config.showScanner && (
             <button
               onClick={() => setIsScannerOpen(true)}
-              className="flex items-center justify-center gap-2 bg-sky-400 text-black px-4 md:px-6 py-3 md:py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] md:text-xs shadow-xl hover:bg-sky-500 hover:scale-[1.02] active:scale-95 transition-all"
+              className="flex items-center justify-center gap-2 bg-sky-500 text-white px-4 md:px-6 py-3 md:py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] md:text-xs shadow-xl hover:bg-sky-600 hover:scale-[1.02] active:scale-95 transition-all"
             >
               <Camera size={16} /> <span className="hidden xs:inline">Scanner</span>
             </button>
@@ -1016,21 +973,21 @@ export function ProductManager() {
             <VendeurIALoader size="lg" label="Chargement de votre catalogue..." />
           </div>
         ) : products.length === 0 ? (
-          <div className="col-span-full py-20 border-2 border-dashed border-white/5 rounded-[3rem] flex flex-col items-center justify-center gap-4 text-white/20">
+          <div className="col-span-full py-20 border-2 border-dashed border-slate-300 dark:border-white/5 rounded-[3rem] flex flex-col items-center justify-center gap-4 text-slate-400 dark:text-white/20">
             {config.icon}
             <p className="font-black uppercase tracking-[0.2em] text-xs">Aucun {config.itemLabel.toLowerCase()} créé pour le moment</p>
           </div>
         ) : (
           products.map(p => (
-            <div key={p._id} className="bg-[#0c0f0d] border border-white/10 rounded-3xl overflow-hidden group hover:border-emerald-500/30 transition-all shadow-xl flex flex-col justify-between">
+            <div key={p._id} className="bg-white dark:bg-[#0c0f0d] border border-slate-200 dark:border-white/10 rounded-3xl overflow-hidden group hover:border-emerald-500/40 dark:hover:border-emerald-500/30 transition-all shadow-md dark:shadow-xl flex flex-col justify-between text-slate-900 dark:text-white">
               <div>
-                <div className="aspect-square bg-white/5 flex items-center justify-center relative overflow-hidden">
+                <div className="aspect-square bg-slate-100 dark:bg-white/5 flex items-center justify-center relative overflow-hidden">
                   {(p as any).imageUrl || (p as any).images?.[0] ? (
                     <img src={(p as any).imageUrl || (p as any).images?.[0]} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt={p.name} />
                   ) : (
                     <div className="flex flex-col items-center gap-2">
                       {config.icon}
-                      <span className="text-[10px] font-black uppercase text-white/20 tracking-widest">{businessCategory}</span>
+                      <span className="text-[10px] font-black uppercase text-slate-400 dark:text-white/20 tracking-widest">{businessCategory}</span>
                     </div>
                   )}
                   {/* Pin as Featured Spotlight Button */}
@@ -1044,7 +1001,7 @@ export function ProductManager() {
                       "absolute top-4 left-4 px-2.5 py-1 rounded-lg flex items-center gap-1.5 backdrop-blur-md transition-all text-[10px] font-black uppercase tracking-wider z-10",
                       p.isFeatured
                         ? "bg-amber-400 text-black shadow-lg shadow-amber-400/30 scale-105"
-                        : "bg-black/60 text-white/60 hover:text-amber-300 hover:bg-black/80 border border-white/10"
+                        : "bg-black/60 text-white/80 hover:text-amber-300 hover:bg-black/80 border border-white/10"
                     )}
                     title={p.isFeatured ? "Article en Vedette (cliquez pour retirer)" : "Mettre en Vedette sur la vitrine"}
                   >
@@ -1053,31 +1010,31 @@ export function ProductManager() {
                   </button>
 
                   <div className="absolute top-4 right-4 bg-sky-500/10 border border-sky-500/30 px-3 py-1 rounded-lg flex items-center gap-1.5 backdrop-blur-md">
-                    <span className="text-[10px] font-black text-sky-400 uppercase tracking-widest">IA Active</span>
+                    <span className="text-[10px] font-black text-sky-600 dark:text-sky-400 uppercase tracking-widest">IA Active</span>
                   </div>
                 </div>
 
                 <div className="p-4 sm:p-5 space-y-2">
                   <div className="flex items-start justify-between gap-2">
                     <div>
-                      <h3 className="font-black text-lg text-white line-clamp-1">{p.name}</h3>
-                      <p className="text-xs text-white/40">{p.digitalFormat || p.serviceDuration || p.category}</p>
+                      <h3 className="font-black text-lg text-slate-900 dark:text-white line-clamp-1">{p.name}</h3>
+                      <p className="text-xs text-slate-500 dark:text-white/40">{p.digitalFormat || p.serviceDuration || p.category}</p>
                     </div>
-                    <p className="font-black text-emerald-400 whitespace-nowrap">{p.price.toLocaleString()} {(p as any).currency || activeCurrency}</p>
+                    <p className="font-black text-emerald-600 dark:text-emerald-400 whitespace-nowrap">{p.price.toLocaleString()} {(p as any).currency || activeCurrency}</p>
                   </div>
                   {p.description && (
-                    <p className="text-xs text-white/40 line-clamp-2">{p.description}</p>
+                    <p className="text-xs text-slate-600 dark:text-white/40 line-clamp-2">{p.description}</p>
                   )}
                 </div>
               </div>
 
               <div className="p-4 pt-0 space-y-3">
                 {/* Stock / Badge row */}
-                <div className="flex flex-wrap items-center justify-between pt-3 border-t border-white/5 gap-2">
+                <div className="flex flex-wrap items-center justify-between pt-3 border-t border-slate-100 dark:border-white/5 gap-2">
                   {config.showStock ? (
                     <div className="flex items-center gap-1.5 min-w-0">
-                      <span className="text-xs font-bold text-white/60 shrink-0">{config.stockLabel}:</span>
-                      <div className="flex items-center bg-white/5 rounded-xl border border-white/10 px-1 py-0.5">
+                      <span className="text-xs font-bold text-slate-600 dark:text-white/60 shrink-0">{config.stockLabel}:</span>
+                      <div className="flex items-center bg-slate-100 dark:bg-white/5 rounded-xl border border-slate-200 dark:border-white/10 px-1 py-0.5">
                         <button
                           type="button"
                           onClick={(e) => {
@@ -1085,12 +1042,12 @@ export function ProductManager() {
                             updateStockMutation.mutate({ id: p._id, stock: Math.max(0, p.stock - 1) });
                           }}
                           disabled={updateStockMutation.isPending}
-                          className="h-7 w-7 flex items-center justify-center rounded-lg hover:bg-rose-500/10 hover:text-rose-400 transition-colors disabled:opacity-30 cursor-pointer"
+                          className="h-7 w-7 flex items-center justify-center rounded-lg hover:bg-rose-500/10 hover:text-rose-600 dark:hover:text-rose-400 transition-colors disabled:opacity-30 cursor-pointer"
                           title="Diminuer stock"
                         >
                           <Minus size={13} />
                         </button>
-                        <span className="w-8 text-center text-xs font-black text-white">
+                        <span className="w-8 text-center text-xs font-black text-slate-900 dark:text-white">
                           {updateStockMutation.isPending && updateStockMutation.variables?.id === p._id
                             ? <Loader2 size={11} className="animate-spin inline" />
                             : p.stock
@@ -1103,7 +1060,7 @@ export function ProductManager() {
                             updateStockMutation.mutate({ id: p._id, stock: p.stock + 1 });
                           }}
                           disabled={updateStockMutation.isPending}
-                          className="h-7 w-7 flex items-center justify-center rounded-lg hover:bg-emerald-500/10 hover:text-emerald-400 transition-colors disabled:opacity-30 cursor-pointer"
+                          className="h-7 w-7 flex items-center justify-center rounded-lg hover:bg-emerald-500/10 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors disabled:opacity-30 cursor-pointer"
                           title="Augmenter stock"
                         >
                           <Plus size={13} />
@@ -1123,7 +1080,7 @@ export function ProductManager() {
                     <button
                       type="button"
                       onClick={() => setPosterProduct(p)}
-                      className="h-9 w-9 sm:h-9 sm:w-9 flex items-center justify-center bg-emerald-500/10 text-emerald-400 hover:text-emerald-300 rounded-xl hover:bg-emerald-500/20 active:scale-95 transition-all cursor-pointer shadow-sm"
+                      className="h-9 w-9 sm:h-9 sm:w-9 flex items-center justify-center bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 rounded-xl hover:bg-emerald-500/20 active:scale-95 transition-all cursor-pointer shadow-sm"
                       title="Créer Affiche Statut WhatsApp / Story"
                     >
                       <ImageIcon size={16} />
@@ -1132,7 +1089,7 @@ export function ProductManager() {
                       type="button"
                       onClick={() => generateCaptionMutation.mutate(p._id)}
                       disabled={generateCaptionMutation.isPending}
-                      className="h-9 w-9 sm:h-9 sm:w-9 flex items-center justify-center bg-sky-500/10 text-sky-400 hover:text-sky-300 rounded-xl hover:bg-sky-500/20 active:scale-95 transition-all cursor-pointer disabled:opacity-50 shadow-sm"
+                      className="h-9 w-9 sm:h-9 sm:w-9 flex items-center justify-center bg-sky-500/10 text-sky-600 dark:text-sky-400 hover:text-sky-700 dark:hover:text-sky-300 rounded-xl hover:bg-sky-500/20 active:scale-95 transition-all cursor-pointer disabled:opacity-50 shadow-sm"
                       title="Générer Légende TikTok/Insta par IA"
                     >
                       {generateCaptionMutation.isPending && generateCaptionMutation.variables === p._id ? (
@@ -1144,7 +1101,7 @@ export function ProductManager() {
                     <button
                       type="button"
                       onClick={() => setEditingProduct(p)}
-                      className="h-9 w-9 sm:h-9 sm:w-9 flex items-center justify-center bg-white/5 text-white/70 hover:text-white rounded-xl hover:bg-white/10 active:scale-95 transition-all cursor-pointer shadow-sm"
+                      className="h-9 w-9 sm:h-9 sm:w-9 flex items-center justify-center bg-slate-100 dark:bg-white/5 text-slate-700 dark:text-white/70 hover:text-slate-900 dark:hover:text-white rounded-xl hover:bg-slate-200 dark:hover:bg-white/10 active:scale-95 transition-all cursor-pointer shadow-sm"
                       title="Modifier"
                     >
                       <Edit size={16} />
@@ -1152,7 +1109,7 @@ export function ProductManager() {
                     <button
                       type="button"
                       onClick={() => setDeletingProduct(p)}
-                      className="h-9 w-9 sm:h-9 sm:w-9 flex items-center justify-center bg-rose-500/10 text-rose-400 hover:text-rose-300 rounded-xl hover:bg-rose-500/20 active:scale-95 transition-all cursor-pointer shadow-sm"
+                      className="h-9 w-9 sm:h-9 sm:w-9 flex items-center justify-center bg-rose-500/10 text-rose-600 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300 rounded-xl hover:bg-rose-500/20 active:scale-95 transition-all cursor-pointer shadow-sm"
                       title="Supprimer"
                     >
                       <Trash2 size={16} />

@@ -680,45 +680,45 @@ export function SalesInbox() {
     <div
       id="tour-inbox-channels"
       className={cn(
-        "flex bg-[#111b21] transition-all duration-300 animate-in fade-in h-full w-full min-h-0 flex-1 overflow-hidden",
+        "flex bg-white dark:bg-[#111b21] text-slate-900 dark:text-white transition-all duration-300 animate-in fade-in h-full w-full min-h-0 flex-1 overflow-hidden",
         showMobileChat
-          ? "fixed inset-0 z-[60] h-[100dvh] w-full rounded-none border-0 m-0 overflow-hidden md:relative md:inset-auto md:z-auto md:h-full md:rounded-2xl md:border md:border-white/10 md:shadow-2xl"
-          : "rounded-2xl border border-white/10 shadow-2xl"
+          ? "fixed inset-0 z-[60] h-[100dvh] w-full rounded-none border-0 m-0 overflow-hidden md:relative md:inset-auto md:z-auto md:h-full md:rounded-2xl md:border md:border-slate-200 md:dark:border-white/10 md:shadow-2xl"
+          : "rounded-2xl border border-slate-200 dark:border-white/10 shadow-xl dark:shadow-2xl"
       )}
     >
       {/* ========================================================================= */}
       {/* SIDEBAR: CONVERSATIONS LIST (WhatsApp Web Pro Style) */}
       {/* ========================================================================= */}
       <aside className={cn(
-        "w-full md:w-[380px] lg:w-[420px] border-r border-white/10 flex flex-col bg-[#111b21] transition-all shrink-0 h-full min-h-0 overflow-hidden",
+        "w-full md:w-[380px] lg:w-[420px] border-r border-slate-200 dark:border-white/10 flex flex-col bg-white dark:bg-[#111b21] transition-all shrink-0 h-full min-h-0 overflow-hidden",
         showMobileChat ? "hidden md:flex" : "flex"
       )}>
         {/* Sidebar Header */}
-        <div className="p-4 bg-[#202c33] border-b border-white/5 space-y-3">
+        <div className="p-4 bg-slate-50 dark:bg-[#202c33] border-b border-slate-200 dark:border-white/5 space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3 min-w-0">
               <Link
                 to="/dashboard"
-                className="hidden md:flex p-2 rounded-xl bg-white/5 border border-white/10 text-white/60 hover:text-white hover:bg-white/10 transition-all items-center justify-center shrink-0"
+                className="hidden md:flex p-2 rounded-xl bg-slate-200/80 dark:bg-white/5 border border-slate-300 dark:border-white/10 text-slate-600 dark:text-white/60 hover:text-slate-900 dark:hover:text-white hover:bg-slate-300 dark:hover:bg-white/10 transition-all items-center justify-center shrink-0"
                 title="Quitter le plein écran et retourner au Tableau de bord"
               >
                 <ArrowLeft size={16} />
               </Link>
               <div className="relative shrink-0">
-                <div className="h-10 w-10 rounded-full bg-vendeur-emerald/20 border border-vendeur-emerald/40 flex items-center justify-center font-black text-vendeur-emerald">
+                <div className="h-10 w-10 rounded-full bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center font-black text-emerald-700 dark:text-vendeur-emerald">
                   {merchant?.businessName ? merchant.businessName.charAt(0).toUpperCase() : "V"}
                 </div>
-                <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-emerald-500 ring-2 ring-[#202c33]" />
+                <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-[#202c33]" />
               </div>
               <div className="min-w-0">
                 <div className="flex items-center gap-1.5">
-                  <h2 className="text-sm font-black text-white truncate">{merchant?.businessName || "WhatsApp Pro"}</h2>
-                  <span className="px-1.5 py-0.5 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[9px] font-black uppercase rounded">
+                  <h2 className="text-sm font-black text-slate-900 dark:text-white truncate">{merchant?.businessName || "WhatsApp Pro"}</h2>
+                  <span className="px-1.5 py-0.5 bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 text-[9px] font-black uppercase rounded">
                     Admin
                   </span>
                 </div>
-                <p className="text-[11px] text-white/50 truncate flex items-center gap-1">
-                  <Phone size={10} className="text-emerald-400" />
+                <p className="text-[11px] text-slate-500 dark:text-white/50 truncate flex items-center gap-1">
+                  <Phone size={10} className="text-emerald-600 dark:text-emerald-400" />
                   <span>{merchant?.whatsappNumber || "Système Vendeur IA"}</span>
                 </p>
               </div>
@@ -732,8 +732,8 @@ export function SalesInbox() {
                 className={cn(
                   "p-2 rounded-xl border transition-all cursor-pointer",
                   isSoundEnabled
-                    ? "bg-emerald-500/15 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/25"
-                    : "bg-white/5 border-white/10 text-white/40 hover:text-white"
+                    ? "bg-emerald-500/15 border-emerald-500/30 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/25"
+                    : "bg-slate-200/80 dark:bg-white/5 border-slate-300 dark:border-white/10 text-slate-500 dark:text-white/40 hover:text-slate-900 dark:hover:text-white"
                 )}
                 title={isSoundEnabled ? "Sonnerie WhatsApp active (Cliquer pour couper)" : "Sonnerie coupée (Cliquer pour activer)"}
               >
@@ -744,7 +744,7 @@ export function SalesInbox() {
                 <button
                   type="button"
                   onClick={handleEnableNotifications}
-                  className="p-2 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-400 hover:bg-amber-500/25 transition-all cursor-pointer animate-pulse"
+                  className="p-2 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-600 dark:text-amber-400 hover:bg-amber-500/25 transition-all cursor-pointer animate-pulse"
                   title="Autoriser les notifications de bureau"
                 >
                   <Bell size={16} />
@@ -754,7 +754,7 @@ export function SalesInbox() {
               <button
                 type="button"
                 onClick={() => setIsNewChatModalOpen(true)}
-                className="p-2 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 hover:bg-emerald-500/30 hover:text-white transition-all cursor-pointer shadow-sm"
+                className="p-2 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/30 hover:text-emerald-950 dark:hover:text-white transition-all cursor-pointer shadow-sm"
                 title="Nouvelle discussion (Démarrer avec un numéro WhatsApp)"
               >
                 <Plus size={16} />
@@ -763,7 +763,7 @@ export function SalesInbox() {
               <button
                 type="button"
                 onClick={() => refetchConvs()}
-                className="p-2 rounded-xl bg-white/5 border border-white/10 text-white/60 hover:text-white hover:bg-white/10 transition-all cursor-pointer"
+                className="p-2 rounded-xl bg-slate-200/80 dark:bg-white/5 border border-slate-300 dark:border-white/10 text-slate-600 dark:text-white/60 hover:text-slate-900 dark:hover:text-white hover:bg-slate-300 dark:hover:bg-white/10 transition-all cursor-pointer"
                 title="Actualiser les messages"
               >
                 <RefreshCw size={16} />
@@ -773,9 +773,9 @@ export function SalesInbox() {
 
           {/* Search Box */}
           <div className="relative">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/30" size={16} />
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-white/30" size={16} />
             <input
-              className="w-full bg-[#111b21] border border-white/10 rounded-xl py-2.5 pl-10 pr-4 text-xs text-white placeholder:text-white/30 outline-none focus:border-emerald-500 transition-all"
+              className="w-full bg-white dark:bg-[#111b21] border border-slate-300 dark:border-white/10 rounded-xl py-2.5 pl-10 pr-4 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-white/30 outline-none focus:border-emerald-500 transition-all"
               placeholder="Rechercher nom, numéro ou mot-clé..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -783,7 +783,7 @@ export function SalesInbox() {
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery("")}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-white/40 hover:text-slate-900 dark:hover:text-white"
               >
                 <X size={14} />
               </button>
@@ -797,8 +797,8 @@ export function SalesInbox() {
               className={cn(
                 "px-3 py-1.5 rounded-full text-[11px] font-bold transition-all cursor-pointer shrink-0",
                 filterTab === "all"
-                  ? "bg-emerald-500 text-black shadow-md shadow-emerald-500/20"
-                  : "bg-white/5 text-white/60 hover:bg-white/10 hover:text-white"
+                  ? "bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20 font-black"
+                  : "bg-slate-200/80 text-slate-700 dark:bg-white/5 dark:text-white/60 hover:bg-slate-300 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white"
               )}
             >
               Tous ({conversations?.length || 0})
@@ -809,8 +809,8 @@ export function SalesInbox() {
               className={cn(
                 "px-3 py-1.5 rounded-full text-[11px] font-bold transition-all cursor-pointer shrink-0 flex items-center gap-1.5",
                 filterTab === "unread"
-                  ? "bg-rose-500 text-white shadow-md shadow-rose-500/20"
-                  : "bg-white/5 text-white/60 hover:bg-white/10 hover:text-white"
+                  ? "bg-rose-500 text-white shadow-md shadow-rose-500/20 font-black"
+                  : "bg-slate-200/80 text-slate-700 dark:bg-white/5 dark:text-white/60 hover:bg-slate-300 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white"
               )}
             >
               <span>Non lus</span>
@@ -829,8 +829,8 @@ export function SalesInbox() {
               className={cn(
                 "px-3 py-1.5 rounded-full text-[11px] font-bold transition-all cursor-pointer shrink-0 flex items-center gap-1",
                 filterTab === "ai"
-                  ? "bg-vendeur-emerald text-black"
-                  : "bg-white/5 text-white/60 hover:bg-white/10 hover:text-white"
+                  ? "bg-emerald-500 text-slate-950 font-black"
+                  : "bg-slate-200/80 text-slate-700 dark:bg-white/5 dark:text-white/60 hover:bg-slate-300 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white"
               )}
             >
               <Bot size={12} />
@@ -842,8 +842,8 @@ export function SalesInbox() {
               className={cn(
                 "px-3 py-1.5 rounded-full text-[11px] font-bold transition-all cursor-pointer shrink-0 flex items-center gap-1",
                 filterTab === "human"
-                  ? "bg-sky-500 text-black"
-                  : "bg-white/5 text-white/60 hover:bg-white/10 hover:text-white"
+                  ? "bg-sky-500 text-slate-950 font-black"
+                  : "bg-slate-200/80 text-slate-700 dark:bg-white/5 dark:text-white/60 hover:bg-slate-300 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white"
               )}
             >
               <User size={12} />
@@ -853,16 +853,16 @@ export function SalesInbox() {
         </div>
 
         {/* Conversation List */}
-        <div className="flex-1 overflow-y-auto divide-y divide-white/5">
+        <div className="flex-1 overflow-y-auto divide-y divide-slate-100 dark:divide-white/5">
           {loadingChats ? (
             <div className="flex flex-col items-center justify-center p-12 space-y-3">
               <VendeurIALoader size="md" label="Chargement de vos échanges WhatsApp..." />
             </div>
           ) : filteredConversations.length === 0 ? (
-            <div className="flex flex-col items-center justify-center p-8 text-center text-white/40 space-y-2">
+            <div className="flex flex-col items-center justify-center p-8 text-center text-slate-400 dark:text-white/40 space-y-2">
               <MessageCircle size={36} className="opacity-30" />
-              <p className="text-xs font-bold">Aucune conversation trouvée</p>
-              <p className="text-[11px] text-white/30">
+              <p className="text-xs font-bold text-slate-600 dark:text-white/60">Aucune conversation trouvée</p>
+              <p className="text-[11px] text-slate-400 dark:text-white/30">
                 {filterTab === "unread" ? "Toutes vos conversations ont été lues !" : "Les messages WhatsApp apparaîtront ici dès réception."}
               </p>
             </div>
@@ -881,10 +881,10 @@ export function SalesInbox() {
                   className={cn(
                     "p-3.5 flex items-center gap-3 cursor-pointer transition-all border-l-4 relative group",
                     isActive
-                      ? "bg-[#2a3942] border-emerald-500"
+                      ? "bg-emerald-50/70 dark:bg-[#2a3942] border-emerald-500"
                       : hasUnread
-                      ? "bg-[#182229] border-emerald-400 hover:bg-[#202c33]"
-                      : "border-transparent hover:bg-[#202c33]/70"
+                      ? "bg-emerald-50/30 dark:bg-[#182229] border-emerald-400 hover:bg-emerald-50/60 dark:hover:bg-[#202c33]"
+                      : "border-transparent hover:bg-slate-50 dark:hover:bg-[#202c33]/70"
                   )}
                 >
                   {/* Contact Avatar with WhatsApp Profile Picture */}
@@ -903,7 +903,7 @@ export function SalesInbox() {
                       <div className="flex items-center gap-1.5 min-w-0">
                         <p className={cn(
                           "text-xs truncate",
-                          hasUnread ? "font-black text-white" : "font-bold text-white/90"
+                          hasUnread ? "font-black text-slate-900 dark:text-white" : "font-bold text-slate-800 dark:text-white/90"
                         )}>
                           {displayName}
                         </p>
@@ -915,7 +915,7 @@ export function SalesInbox() {
                       </div>
                       <p className={cn(
                         "text-[10px] shrink-0",
-                        hasUnread ? "text-emerald-400 font-bold" : "text-white/40"
+                        hasUnread ? "text-emerald-600 dark:text-emerald-400 font-bold" : "text-slate-400 dark:text-white/40"
                       )}>
                         {formatMessageTime(chat.lastMessageAt || chat.updatedAt)}
                       </p>
@@ -923,24 +923,24 @@ export function SalesInbox() {
 
                     <div className="flex items-center justify-between gap-2">
                       {typingMap[chat._id]?.isTyping ? (
-                        <div className="flex items-center gap-1.5 text-xs text-emerald-400 font-bold animate-pulse truncate min-w-0">
+                        <div className="flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400 font-bold animate-pulse truncate min-w-0">
                           <span className="inline-flex items-center gap-1">
-                            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-ping shrink-0" />
+                            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-ping shrink-0" />
                             <span className="italic text-[11px] font-semibold">
                               {typingMap[chat._id]?.participant === "ai" ? "Vendeur IA répond..." : "En train d'écrire..."}
                             </span>
                           </span>
                         </div>
                       ) : (
-                        <div className="flex items-center gap-1 text-[11px] text-white/60 truncate min-w-0">
+                        <div className="flex items-center gap-1 text-[11px] text-slate-500 dark:text-white/60 truncate min-w-0">
                           {chat.lastMessage?.sender === "human" && (
-                            <span className="text-sky-400 font-bold shrink-0">Admin: </span>
+                            <span className="text-sky-600 dark:text-sky-400 font-bold shrink-0">Admin: </span>
                           )}
                           {chat.lastMessage?.sender === "ai" && (
-                            <span className="text-emerald-400 font-bold shrink-0">IA: </span>
+                            <span className="text-emerald-600 dark:text-emerald-400 font-bold shrink-0">IA: </span>
                           )}
-                          {chat.lastMessage?.type === "audio" && <Mic size={11} className="text-sky-400 shrink-0" />}
-                          {chat.lastMessage?.type === "image" && <ImageIcon size={11} className="text-amber-400 shrink-0" />}
+                          {chat.lastMessage?.type === "audio" && <Mic size={11} className="text-sky-500 shrink-0" />}
+                          {chat.lastMessage?.type === "image" && <ImageIcon size={11} className="text-amber-500 shrink-0" />}
                           <span className="truncate">{stripActionTags(lastSnippet)}</span>
                         </div>
                       )}
@@ -948,12 +948,12 @@ export function SalesInbox() {
                       {/* Unread badge or Takeover Pill */}
                       <div className="flex items-center gap-1 shrink-0">
                         {isHumanTakeover && (
-                          <span className="px-1.5 py-0.5 rounded bg-sky-500/20 text-sky-300 text-[9px] font-bold uppercase">
+                          <span className="px-1.5 py-0.5 rounded bg-sky-500/20 text-sky-700 dark:text-sky-300 text-[9px] font-bold uppercase">
                             Manuel
                           </span>
                         )}
                         {hasUnread && (
-                          <span className="h-5 min-w-5 px-1.5 rounded-full bg-emerald-500 text-black text-[10px] font-black flex items-center justify-center shadow-lg shadow-emerald-500/30">
+                          <span className="h-5 min-w-5 px-1.5 rounded-full bg-emerald-500 text-slate-950 text-[10px] font-black flex items-center justify-center shadow-md shadow-emerald-500/30">
                             {chat.unreadCount}
                           </span>
                         )}
@@ -971,18 +971,18 @@ export function SalesInbox() {
       {/* MAIN CHAT AREA (WhatsApp Web Pro Admin Chat) */}
       {/* ========================================================================= */}
       <main className={cn(
-        "flex-1 flex flex-col relative bg-[#0b141a] transition-all min-w-0 overflow-x-hidden",
+        "flex-1 flex flex-col relative bg-slate-100 dark:bg-[#0b141a] transition-all min-w-0 overflow-x-hidden",
         !showMobileChat ? "hidden md:flex" : "flex"
       )}>
         {selectedChat ? (
-          <div className="flex-1 flex flex-col h-full w-full bg-[#0b141a] relative min-w-0 overflow-x-hidden">
+          <div className="flex-1 flex flex-col h-full w-full bg-slate-100 dark:bg-[#0b141a] relative min-w-0 overflow-x-hidden">
             {/* WhatsApp Chat Header: Tier 1 - Customer Info & Live Mode Indicator */}
-            <header className="px-3 py-2.5 sm:px-5 sm:py-3 bg-[#202c33] border-b border-white/10 flex items-center justify-between sticky top-0 z-30 gap-3 pt-[calc(0.5rem+env(safe-area-inset-top,0px))] md:pt-3">
+            <header className="px-3 py-2.5 sm:px-5 sm:py-3 bg-slate-50 dark:bg-[#202c33] border-b border-slate-200 dark:border-white/10 flex items-center justify-between sticky top-0 z-30 gap-3 pt-[calc(0.5rem+env(safe-area-inset-top,0px))] md:pt-3">
               {/* Left Column: Back Button + Avatar + Customer Name & Phone */}
               <div className="flex items-center gap-2.5 sm:gap-3.5 min-w-0 flex-1">
                 <button
                   onClick={() => setShowMobileChat(false)}
-                  className="md:hidden p-1.5 -ml-1 text-white/70 hover:text-white shrink-0 cursor-pointer rounded-lg hover:bg-white/5 active:scale-95 transition-all"
+                  className="md:hidden p-1.5 -ml-1 text-slate-600 dark:text-white/70 hover:text-slate-900 dark:hover:text-white shrink-0 cursor-pointer rounded-lg hover:bg-slate-200 dark:hover:bg-white/5 active:scale-95 transition-all"
                   aria-label="Retour"
                 >
                   <ChevronLeft size={22} />
@@ -1001,7 +1001,7 @@ export function SalesInbox() {
 
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2 min-w-0">
-                    <p className="font-bold sm:font-black text-sm sm:text-base text-white truncate">
+                    <p className="font-bold sm:font-black text-sm sm:text-base text-slate-900 dark:text-white truncate">
                       {formatCustomerDisplayName(activeChatData?.customerId, merchant?.businessName, user?.displayName)}
                     </p>
                     {activeChatData?.customerId?.loyaltyPoints >= vipThreshold && (
@@ -1022,17 +1022,17 @@ export function SalesInbox() {
                       className="mt-0.5"
                     />
                   ) : (
-                    <div className="text-[11px] sm:text-xs text-white/60 flex items-center gap-1.5 font-medium mt-0.5">
-                      <Phone size={11} className="text-emerald-400 shrink-0" />
+                    <div className="text-[11px] sm:text-xs text-slate-500 dark:text-white/60 flex items-center gap-1.5 font-medium mt-0.5">
+                      <Phone size={11} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
                       <span className="truncate">{formatDisplayPhone(activeChatData?.customerId?.phone, "CI") || "WhatsApp Direct"}</span>
                       {activeChatData?.customerId?.phone && (
                         <button
                           type="button"
                           onClick={() => handleCopyPhone(activeChatData.customerId.phone)}
-                          className="text-white/40 hover:text-emerald-400 p-0.5 rounded hover:bg-white/5 transition-colors shrink-0"
+                          className="text-slate-400 hover:text-emerald-600 dark:text-white/40 dark:hover:text-emerald-400 p-0.5 rounded hover:bg-slate-200 dark:hover:bg-white/5 transition-colors shrink-0"
                           title="Copier le numéro"
                         >
-                          {hasCopiedPhone ? <Check size={12} className="text-emerald-400" /> : <Copy size={12} />}
+                          {hasCopiedPhone ? <Check size={12} className="text-emerald-600 dark:text-emerald-400" /> : <Copy size={12} />}
                         </button>
                       )}
                     </div>
@@ -1045,12 +1045,12 @@ export function SalesInbox() {
                 <div className={cn(
                   "px-2.5 py-1 rounded-full border flex items-center gap-1.5 text-[10px] sm:text-[11px] font-bold tracking-tight shadow-sm",
                   activeChatData?.status === "needs_human"
-                    ? "bg-rose-500/15 border-rose-500/30 text-rose-300"
-                    : "bg-emerald-500/15 border-emerald-500/30 text-emerald-300"
+                    ? "bg-rose-500/15 border-rose-500/30 text-rose-700 dark:text-rose-300"
+                    : "bg-emerald-500/15 border-emerald-500/30 text-emerald-700 dark:text-emerald-300"
                 )}>
                   <span className={cn(
                     "h-2 w-2 rounded-full shrink-0",
-                    activeChatData?.status === "needs_human" ? "bg-rose-400 animate-pulse" : "bg-emerald-400 animate-pulse"
+                    activeChatData?.status === "needs_human" ? "bg-rose-500 animate-pulse" : "bg-emerald-500 animate-pulse"
                   )} />
                   <span className="hidden xs:inline">
                     {activeChatData?.status === "needs_human" ? "Mode Manuel" : "IA 24/7 Active"}
@@ -1063,14 +1063,14 @@ export function SalesInbox() {
             </header>
 
             {/* Chat Action Toolbar: Tier 2 - Action Buttons Sub-bar */}
-            <div className="bg-[#182229] border-b border-white/10 px-3 py-2 sm:px-4 sm:py-2 flex items-center justify-between sm:justify-start gap-2 overflow-x-auto no-scrollbar sticky top-[57px] sm:top-[65px] z-20">
+            <div className="bg-slate-100/90 dark:bg-[#182229] border-b border-slate-200 dark:border-white/10 px-3 py-2 sm:px-4 sm:py-2 flex items-center justify-between sm:justify-start gap-2 overflow-x-auto no-scrollbar sticky top-[57px] sm:top-[65px] z-20">
               <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
                 {/* AI Follow-up Relance */}
                 <button
                   type="button"
                   onClick={() => selectedChat && generateFollowupMutation.mutate(selectedChat)}
                   disabled={generateFollowupMutation.isPending}
-                  className="flex items-center justify-center h-8 sm:h-8.5 px-2.5 sm:px-3 bg-sky-500/15 border border-sky-500/30 text-sky-300 rounded-xl hover:bg-sky-500/25 hover:text-white transition-all active:scale-95 cursor-pointer font-bold text-[11px] sm:text-xs shrink-0"
+                  className="flex items-center justify-center h-8 sm:h-8.5 px-2.5 sm:px-3 bg-sky-500/15 border border-sky-500/30 text-sky-700 dark:text-sky-300 rounded-xl hover:bg-sky-500/25 hover:text-sky-950 dark:hover:text-white transition-all active:scale-95 cursor-pointer font-bold text-[11px] sm:text-xs shrink-0"
                   title="Générer une relance intelligente par l'IA"
                 >
                   {generateFollowupMutation.isPending ? (
@@ -1085,7 +1085,7 @@ export function SalesInbox() {
                 <button
                   type="button"
                   onClick={() => setIsFastPayModalOpen(true)}
-                  className="flex items-center justify-center h-8 sm:h-8.5 px-2.5 sm:px-3 bg-amber-500/15 border border-amber-500/30 text-amber-300 rounded-xl hover:bg-amber-500/25 hover:text-white transition-all active:scale-95 cursor-pointer font-bold text-[11px] sm:text-xs shrink-0"
+                  className="flex items-center justify-center h-8 sm:h-8.5 px-2.5 sm:px-3 bg-amber-500/15 border border-amber-500/30 text-amber-700 dark:text-amber-300 rounded-xl hover:bg-amber-500/25 hover:text-amber-950 dark:hover:text-white transition-all active:scale-95 cursor-pointer font-bold text-[11px] sm:text-xs shrink-0"
                   title="Générer et envoyer un lien de paiement Mobile Money"
                 >
                   <CreditCard size={13} />
@@ -1096,7 +1096,7 @@ export function SalesInbox() {
                 <button
                   type="button"
                   onClick={() => setIsOrderModalOpen(true)}
-                  className="flex items-center justify-center h-8 sm:h-8.5 px-3 sm:px-3.5 bg-emerald-500 hover:bg-emerald-400 text-black font-black rounded-xl transition-all active:scale-95 cursor-pointer text-[11px] sm:text-xs shadow-md shadow-emerald-500/20 shrink-0"
+                  className="flex items-center justify-center h-8 sm:h-8.5 px-3 sm:px-3.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-xl transition-all active:scale-95 cursor-pointer text-[11px] sm:text-xs shadow-md shadow-emerald-500/20 shrink-0"
                   title="Créer une commande pour ce client"
                 >
                   <ShoppingCart size={13} />
@@ -1112,8 +1112,8 @@ export function SalesInbox() {
                 className={cn(
                   "flex items-center justify-center h-8 sm:h-8.5 px-2.5 sm:px-3 rounded-xl border font-bold text-[11px] sm:text-xs transition-all active:scale-95 cursor-pointer shrink-0 ml-auto sm:ml-auto",
                   activeChatData?.status === "needs_human"
-                    ? "bg-rose-500/20 border-rose-500/40 text-rose-300 hover:bg-rose-500/30"
-                    : "bg-white/5 border-white/10 text-white/70 hover:bg-white/10 hover:text-white"
+                    ? "bg-rose-500/20 border-rose-500/40 text-rose-700 dark:text-rose-300 hover:bg-rose-500/30"
+                    : "bg-slate-200/80 dark:bg-white/5 border-slate-300 dark:border-white/10 text-slate-700 dark:text-white/70 hover:bg-slate-300 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white"
                 )}
                 title={activeChatData?.status === "needs_human" ? "Mode Manuel actif (Cliquer pour réactiver l'IA)" : "IA 24/7 active (Cliquer pour prendre la main manuellement)"}
               >
@@ -1133,9 +1133,9 @@ export function SalesInbox() {
 
             {/* Global Pause Notification Banner */}
             {merchant?.aiSettings?.autoReply === false && (
-              <div className="bg-sky-500/15 border-b border-sky-500/30 px-4 py-2 flex items-center justify-between text-xs text-sky-200 animate-in fade-in">
+              <div className="bg-sky-500/15 border-b border-sky-500/30 px-4 py-2 flex items-center justify-between text-xs text-sky-800 dark:text-sky-200 animate-in fade-in">
                 <div className="flex items-center gap-2">
-                  <PauseCircle size={15} className="text-sky-400 shrink-0" />
+                  <PauseCircle size={15} className="text-sky-600 dark:text-sky-400 shrink-0" />
                   <span className="text-xs font-semibold">
                     Vendeur IA en pause générale (Toutes vos ventes WhatsApp sont gérées manuellement).
                   </span>
@@ -1143,7 +1143,7 @@ export function SalesInbox() {
                 <button
                   onClick={() => resumeGlobalSalesMutation.mutate()}
                   disabled={resumeGlobalSalesMutation.isPending}
-                  className="text-[10px] font-black uppercase text-black bg-sky-400 hover:bg-sky-300 px-3 py-1 rounded-lg transition-all active:scale-95 cursor-pointer shrink-0 ml-2"
+                  className="text-[10px] font-black uppercase text-slate-950 bg-sky-400 hover:bg-sky-300 px-3 py-1 rounded-lg transition-all active:scale-95 cursor-pointer shrink-0 ml-2 shadow-sm"
                 >
                   {resumeGlobalSalesMutation.isPending ? "..." : "Reprendre 24/7"}
                 </button>
@@ -1157,7 +1157,7 @@ export function SalesInbox() {
               onPaste={handlePaste}
               onDrop={handleDrop}
               onDragOver={(e) => e.preventDefault()}
-              className="flex-1 p-3 md:p-6 space-y-4 overflow-y-auto bg-[#0b141a] bg-repeat opacity-95 relative"
+              className="flex-1 p-3 md:p-6 space-y-4 overflow-y-auto bg-[#efeae2]/80 dark:bg-[#0b141a] bg-repeat opacity-95 relative"
               style={{
                 backgroundImage: "url('https://static.whatsapp.net/rsrc.php/v3/y6/r/wa669ae5qee.png')",
                 backgroundSize: "420px"
@@ -1168,10 +1168,10 @@ export function SalesInbox() {
                   <VendeurIALoader size="md" label="Chargement des échanges..." />
                 </div>
               ) : messages?.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-16 text-center text-white/40 space-y-2">
+                <div className="flex flex-col items-center justify-center py-16 text-center text-slate-400 dark:text-white/40 space-y-2">
                   <MessageCircle size={48} className="opacity-30" />
-                  <p className="text-sm font-bold">Aucun message pour l'instant</p>
-                  <p className="text-xs text-white/30">Envoyez le premier message à ce client ou déposez un fichier.</p>
+                  <p className="text-sm font-bold text-slate-600 dark:text-white/60">Aucun message pour l'instant</p>
+                  <p className="text-xs text-slate-400 dark:text-white/30">Envoyez le premier message à ce client ou déposez un fichier.</p>
                 </div>
               ) : (
                 <>
@@ -1219,16 +1219,16 @@ export function SalesInbox() {
               <button
                 type="button"
                 onClick={() => scrollToBottom(true)}
-                className="absolute bottom-24 right-6 z-20 px-3.5 py-2 rounded-full bg-[#202c33] border border-[#00a884]/40 text-white text-xs font-bold shadow-2xl flex items-center gap-2 hover:bg-[#2a3942] active:scale-95 transition-all animate-in fade-in slide-in-from-bottom-2 cursor-pointer"
+                className="absolute bottom-24 right-6 z-20 px-3.5 py-2 rounded-full bg-white dark:bg-[#202c33] border border-emerald-500/40 text-slate-900 dark:text-white text-xs font-bold shadow-2xl flex items-center gap-2 hover:bg-slate-50 dark:hover:bg-[#2a3942] active:scale-95 transition-all animate-in fade-in slide-in-from-bottom-2 cursor-pointer"
               >
-                <ArrowDown size={14} className="text-[#00a884] animate-bounce" />
+                <ArrowDown size={14} className="text-emerald-500 animate-bounce" />
                 <span>
                   {unreadCountBelow > 0
                     ? `${unreadCountBelow} nouveau${unreadCountBelow > 1 ? "x" : ""} message${unreadCountBelow > 1 ? "s" : ""}`
                     : "Descendre"}
                 </span>
                 {unreadCountBelow > 0 && (
-                  <span className="h-5 min-w-5 px-1.5 rounded-full bg-[#00a884] text-[#111b21] text-[10px] font-black flex items-center justify-center">
+                  <span className="h-5 min-w-5 px-1.5 rounded-full bg-emerald-500 text-slate-950 text-[10px] font-black flex items-center justify-center">
                     {unreadCountBelow}
                   </span>
                 )}
@@ -1237,18 +1237,18 @@ export function SalesInbox() {
 
             {/* AI Follow-up Preview Box */}
             {followupData.isOpen && (
-              <div className="p-3 bg-[#182229] border-t border-sky-500/30 animate-in slide-in-from-bottom duration-300">
+              <div className="p-3 bg-slate-50 dark:bg-[#182229] border-t border-sky-400 dark:border-sky-500/30 animate-in slide-in-from-bottom duration-300">
                 <div className="flex justify-between items-center mb-1.5">
-                  <span className="text-[11px] font-bold text-sky-400 flex items-center gap-1.5">
+                  <span className="text-[11px] font-bold text-sky-600 dark:text-sky-400 flex items-center gap-1.5">
                     <Sparkles size={13} />
                     Proposition de relance IA :
                   </span>
-                  <button onClick={() => setFollowupData({ ...followupData, isOpen: false })} className="text-white/40 hover:text-white">
+                  <button onClick={() => setFollowupData({ ...followupData, isOpen: false })} className="text-slate-400 dark:text-white/40 hover:text-slate-900 dark:hover:text-white">
                     <X size={14} />
                   </button>
                 </div>
                 <textarea
-                  className="w-full bg-[#111b21] border border-white/10 rounded-xl p-2.5 text-xs text-white outline-none focus:border-sky-500 transition-all resize-none"
+                  className="w-full bg-white dark:bg-[#111b21] border border-slate-300 dark:border-white/10 rounded-xl p-2.5 text-xs text-slate-900 dark:text-white outline-none focus:border-sky-500 transition-all resize-none"
                   rows={2}
                   value={followupData.text}
                   onChange={(e) => setFollowupData({ ...followupData, text: e.target.value })}
@@ -1256,14 +1256,14 @@ export function SalesInbox() {
                 <div className="flex justify-end mt-2 gap-2">
                   <button
                     onClick={() => setFollowupData({ ...followupData, isOpen: false })}
-                    className="px-3 py-1.5 text-xs font-bold text-white/40 hover:text-white"
+                    className="px-3 py-1.5 text-xs font-bold text-slate-500 dark:text-white/40 hover:text-slate-900 dark:hover:text-white"
                   >
                     Annuler
                   </button>
                   <button
                     onClick={() => selectedChat && sendManualMessageMutation.mutate({ id: selectedChat, text: followupData.text, quotedMessageId: quotedMessage?.id })}
                     disabled={sendManualMessageMutation.isPending}
-                    className="bg-sky-500 text-black px-4 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider hover:bg-sky-400 active:scale-95 transition-all cursor-pointer"
+                    className="bg-sky-500 text-slate-950 px-4 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider hover:bg-sky-400 active:scale-95 transition-all cursor-pointer shadow-sm"
                   >
                     {sendManualMessageMutation.isPending ? "Envoi..." : "Envoyer cette relance"}
                   </button>
@@ -1273,15 +1273,15 @@ export function SalesInbox() {
 
             {/* Quoted Message Preview Banner (WhatsApp Style) */}
             {quotedMessage && (
-              <div className="px-4 py-2 bg-[#202c33] border-t border-[#2a3942] flex items-center justify-between animate-in slide-in-from-bottom-2 duration-200">
+              <div className="px-4 py-2 bg-slate-100 dark:bg-[#202c33] border-t border-slate-200 dark:border-[#2a3942] flex items-center justify-between animate-in slide-in-from-bottom-2 duration-200">
                 <div className="flex items-center gap-3 overflow-hidden">
-                  <div className="w-1 self-stretch rounded-full bg-[#00a884]" />
+                  <div className="w-1 self-stretch rounded-full bg-emerald-500" />
                   <div className="text-xs overflow-hidden">
-                    <div className="font-bold text-[#00a884] flex items-center gap-1">
+                    <div className="font-bold text-emerald-600 dark:text-[#00a884] flex items-center gap-1">
                       <Reply size={12} />
                       <span>{quotedMessage.sender === "customer" ? "Répondre au client" : "Répondre à soi-même"}</span>
                     </div>
-                    <div className="text-[#8696a0] truncate max-w-md">
+                    <div className="text-slate-500 dark:text-[#8696a0] truncate max-w-md">
                       {stripActionTags(quotedMessage.content)}
                     </div>
                   </div>
@@ -1289,7 +1289,7 @@ export function SalesInbox() {
                 <button
                   type="button"
                   onClick={() => setQuotedMessage(null)}
-                  className="p-1 rounded-full text-[#8696a0] hover:text-white hover:bg-white/10"
+                  className="p-1 rounded-full text-slate-400 dark:text-[#8696a0] hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-white/10"
                 >
                   <X size={15} />
                 </button>
@@ -1297,13 +1297,13 @@ export function SalesInbox() {
             )}
 
             {/* WhatsApp Chat Footer Input */}
-            <footer className="p-2.5 md:p-3.5 bg-[#202c33] border-t border-white/10 space-y-2 shrink-0 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] md:pb-3.5 relative">
+            <footer className="p-2.5 md:p-3.5 bg-slate-50 dark:bg-[#202c33] border-t border-slate-200 dark:border-white/10 space-y-2 shrink-0 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] md:pb-3.5 relative">
               {/* Quick Template Chips */}
               <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1">
                 <button
                   type="button"
                   onClick={() => setIsFastPayModalOpen(true)}
-                  className="px-2.5 py-1 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-[10px] font-bold text-amber-300 flex items-center gap-1 shrink-0 cursor-pointer"
+                  className="px-2.5 py-1 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-[10px] font-bold text-amber-700 dark:text-amber-300 flex items-center gap-1 shrink-0 cursor-pointer"
                 >
                   <CreditCard size={11} />
                   <span>💰 FastPay Wave/OM</span>
@@ -1311,14 +1311,14 @@ export function SalesInbox() {
                 <button
                   type="button"
                   onClick={() => setManualMessage("Bonjour ! Merci de nous préciser votre commune ou quartier de livraison pour lancer l'expédition.")}
-                  className="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-[10px] font-bold text-white/70 hover:text-white shrink-0 cursor-pointer"
+                  className="px-2.5 py-1 rounded-lg bg-slate-200/80 hover:bg-slate-300 dark:bg-white/5 dark:hover:bg-white/10 border border-slate-300 dark:border-white/10 text-[10px] font-bold text-slate-700 dark:text-white/70 hover:text-slate-900 dark:hover:text-white shrink-0 cursor-pointer"
                 >
                   📍 Demander Adresse
                 </button>
                 <button
                   type="button"
                   onClick={() => setManualMessage("Votre commande a bien été enregistrée et transmise à notre livreur. Vous serez contacté sous peu ! ✨")}
-                  className="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-[10px] font-bold text-white/70 hover:text-white shrink-0 cursor-pointer"
+                  className="px-2.5 py-1 rounded-lg bg-slate-200/80 hover:bg-slate-300 dark:bg-white/5 dark:hover:bg-white/10 border border-slate-300 dark:border-white/10 text-[10px] font-bold text-slate-700 dark:text-white/70 hover:text-slate-900 dark:hover:text-white shrink-0 cursor-pointer"
                 >
                   📦 Confirmation Commande
                 </button>
@@ -1333,8 +1333,8 @@ export function SalesInbox() {
                   className={cn(
                     "p-2 rounded-xl border transition-all cursor-pointer shrink-0",
                     isEmojiPickerOpen
-                      ? "bg-[#00a884]/20 border-[#00a884] text-[#00a884]"
-                      : "bg-[#2a3942] border-white/5 text-[#8696a0] hover:text-white"
+                      ? "bg-emerald-500/20 border-emerald-500 text-emerald-600 dark:text-[#00a884]"
+                      : "bg-white dark:bg-[#2a3942] border-slate-200 dark:border-white/5 text-slate-500 dark:text-[#8696a0] hover:text-slate-900 dark:hover:text-white"
                   )}
                   title="Insérer un émoji"
                 >
@@ -1359,7 +1359,7 @@ export function SalesInbox() {
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="p-2 rounded-xl bg-[#2a3942] border border-white/5 text-[#8696a0] hover:text-white transition-all cursor-pointer shrink-0"
+                  className="p-2 rounded-xl bg-white dark:bg-[#2a3942] border border-slate-200 dark:border-white/5 text-slate-500 dark:text-[#8696a0] hover:text-slate-900 dark:hover:text-white transition-all cursor-pointer shrink-0"
                   title="Envoyer une photo ou document"
                 >
                   <Paperclip size={18} />
@@ -1371,10 +1371,10 @@ export function SalesInbox() {
                 )}
 
                 {/* Textarea Input */}
-                <div className="flex-1 bg-[#2a3942] rounded-2xl px-3 py-2 border border-white/5 focus-within:border-[#00a884] transition-all flex items-center min-h-[42px]">
+                <div className="flex-1 bg-white dark:bg-[#2a3942] rounded-2xl px-3 py-2 border border-slate-300 dark:border-white/5 focus-within:border-emerald-500 transition-all flex items-center min-h-[42px] shadow-inner dark:shadow-none">
                   <textarea
                     ref={inputRef}
-                    className="w-full bg-transparent outline-none text-xs sm:text-sm text-white resize-none max-h-24 no-scrollbar placeholder:text-white/40 leading-relaxed"
+                    className="w-full bg-transparent outline-none text-xs sm:text-sm text-slate-900 dark:text-white resize-none max-h-24 no-scrollbar placeholder:text-slate-400 dark:placeholder:text-white/40 leading-relaxed"
                     placeholder="Écrivez votre message WhatsApp (Entrée pour envoyer, Maj+Entrée nouvelle ligne)..."
                     rows={1}
                     value={manualMessage}
@@ -1395,8 +1395,8 @@ export function SalesInbox() {
                   className={cn(
                     "h-10 w-10 rounded-full flex items-center justify-center transition-all shrink-0 cursor-pointer",
                     manualMessage.trim()
-                      ? "bg-[#00a884] text-[#111b21] hover:scale-105 active:scale-95 shadow-lg shadow-[#00a884]/25 font-bold"
-                      : "bg-white/5 text-white/20 cursor-not-allowed"
+                      ? "bg-emerald-500 text-slate-950 hover:scale-105 active:scale-95 shadow-lg shadow-emerald-500/25 font-bold"
+                      : "bg-slate-200 dark:bg-white/5 text-slate-400 dark:text-white/20 cursor-not-allowed"
                   )}
                   title="Envoyer le message"
                 >
@@ -1411,18 +1411,18 @@ export function SalesInbox() {
           </div>
         ) : (
           <div className="flex-1 flex flex-col items-center justify-center text-center p-8 space-y-4">
-            <div className="h-20 w-20 rounded-full bg-[#00a884]/10 border border-[#00a884]/20 flex items-center justify-center text-[#00a884]">
+            <div className="h-20 w-20 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-600 dark:text-[#00a884]">
               <MessageCircle size={40} />
             </div>
             <div className="max-w-md space-y-2">
-              <h3 className="text-lg font-black text-white">WhatsApp Vendeur IA • Inbox Pro</h3>
-              <p className="text-xs text-white/50 leading-relaxed">
-                Sélectionnez une discussion à gauche ou cliquez sur <span className="text-[#00a884] font-bold">+</span> pour démarrer une nouvelle conversation directe avec un numéro WhatsApp.
+              <h3 className="text-lg font-black text-slate-900 dark:text-white">WhatsApp Vendeur IA • Inbox Pro</h3>
+              <p className="text-xs text-slate-500 dark:text-white/50 leading-relaxed">
+                Sélectionnez une discussion à gauche ou cliquez sur <span className="text-emerald-600 dark:text-[#00a884] font-bold">+</span> pour démarrer une nouvelle conversation directe avec un numéro WhatsApp.
               </p>
               <button
                 type="button"
                 onClick={() => setIsNewChatModalOpen(true)}
-                className="mt-2 px-4 py-2 rounded-xl bg-[#00a884] text-[#111b21] font-bold text-xs hover:bg-[#00a884]/90 transition-all inline-flex items-center gap-1.5 shadow-lg shadow-[#00a884]/20"
+                className="mt-2 px-4 py-2 rounded-xl bg-emerald-500 text-slate-950 font-bold text-xs hover:bg-emerald-400 transition-all inline-flex items-center gap-1.5 shadow-md shadow-emerald-500/20"
               >
                 <Plus size={15} />
                 <span>Nouvelle discussion</span>
@@ -1561,7 +1561,7 @@ function WhatsAppBubble({
     )}>
       {/* Mini Hover Reactions Toolbar */}
       <div className={cn(
-        "absolute top-0 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 z-10 bg-[#202c33] border border-[#2a3942] rounded-full px-2 py-1 shadow-lg",
+        "absolute top-0 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 z-10 bg-white dark:bg-[#202c33] border border-slate-200 dark:border-[#2a3942] rounded-full px-2 py-1 shadow-lg",
         isCustomer ? "left-full ml-2" : "right-full mr-2"
       )}>
         {REACTION_EMOJIS.map((em) => (
@@ -1577,7 +1577,7 @@ function WhatsAppBubble({
         <button
           type="button"
           onClick={() => onReplyClick?.(msg)}
-          className="text-[#8696a0] hover:text-white p-1 hover:bg-white/5 rounded-full ml-1"
+          className="text-slate-400 hover:text-slate-800 dark:text-[#8696a0] dark:hover:text-white p-1 hover:bg-slate-100 dark:hover:bg-white/5 rounded-full ml-1"
           title="Citer / Répondre"
         >
           <Reply size={13} />
@@ -1585,22 +1585,22 @@ function WhatsAppBubble({
       </div>
 
       <div className={cn(
-        "max-w-[85%] sm:max-w-[70%] p-3 rounded-2xl shadow-md relative break-words overflow-hidden min-w-[120px]",
+        "max-w-[85%] sm:max-w-[70%] p-3 rounded-2xl shadow-sm md:shadow relative break-words overflow-hidden min-w-[120px]",
         isCustomer
-          ? "bg-[#202c33] text-white rounded-tl-none border border-white/5"
+          ? "bg-white dark:bg-[#202c33] text-slate-900 dark:text-white rounded-tl-none border border-slate-200/80 dark:border-white/5"
           : isHuman
-          ? "bg-[#005c4b] text-white rounded-tr-none font-medium border border-emerald-500/20"
-          : "bg-[#005c4b] text-white rounded-tr-none font-medium border border-emerald-400/30",
-        isPaymentValidated && "ring-2 ring-emerald-400 border-emerald-400 bg-emerald-950/80",
-        isPaymentFlagged && "ring-2 ring-amber-400 border-amber-400 bg-amber-950/80",
-        isFraudAlert && "ring-2 ring-rose-500 border-rose-500 bg-rose-950/90"
+          ? "bg-[#d9fdd3] dark:bg-[#005c4b] text-slate-900 dark:text-white rounded-tr-none font-medium border border-emerald-300/60 dark:border-emerald-500/20"
+          : "bg-[#d9fdd3] dark:bg-[#005c4b] text-slate-900 dark:text-white rounded-tr-none font-medium border border-emerald-300/60 dark:border-emerald-400/30",
+        isPaymentValidated && "ring-2 ring-emerald-500 border-emerald-500 bg-emerald-50 dark:bg-emerald-950/80",
+        isPaymentFlagged && "ring-2 ring-amber-500 border-amber-500 bg-amber-50 dark:bg-amber-950/80",
+        isFraudAlert && "ring-2 ring-rose-500 border-rose-500 bg-rose-50 dark:bg-rose-950/90 text-slate-900 dark:text-white"
       )}>
         {/* Sender Role Badge */}
         {!isCustomer && (
           <div className="flex items-center justify-between gap-2 mb-1 opacity-80 text-[10px]">
             <span className={cn(
               "font-black uppercase tracking-wider flex items-center gap-1",
-              isHuman ? "text-sky-300" : "text-emerald-300"
+              isHuman ? "text-sky-700 dark:text-sky-300" : "text-emerald-700 dark:text-emerald-300"
             )}>
               {isHuman ? <User size={10} /> : <Bot size={10} />}
               {isHuman ? "Admin (Manuel)" : "Vendeur IA"}
@@ -1609,17 +1609,17 @@ function WhatsAppBubble({
             <div className="flex items-center gap-1.5">
               <button
                 onClick={() => onReplyClick?.(msg)}
-                className="opacity-0 group-hover:opacity-100 hover:text-white transition-opacity cursor-pointer"
+                className="opacity-0 group-hover:opacity-100 text-slate-600 hover:text-slate-900 dark:text-white/70 dark:hover:text-white transition-opacity cursor-pointer"
                 title="Citer"
               >
                 <Reply size={11} />
               </button>
               <button
                 onClick={handleCopy}
-                className="opacity-0 group-hover:opacity-100 hover:text-white transition-opacity cursor-pointer"
+                className="opacity-0 group-hover:opacity-100 text-slate-600 hover:text-slate-900 dark:text-white/70 dark:hover:text-white transition-opacity cursor-pointer"
                 title="Copier le texte"
               >
-                {copied ? <Check size={11} className="text-emerald-400" /> : <Copy size={11} />}
+                {copied ? <Check size={11} className="text-emerald-600 dark:text-emerald-400" /> : <Copy size={11} />}
               </button>
             </div>
           </div>
@@ -1627,11 +1627,11 @@ function WhatsAppBubble({
 
         {/* Quoted Message Display Inside Bubble */}
         {msg.quotedMessage && (
-          <div className="mb-2 p-2 rounded-xl bg-black/30 border-l-4 border-[#00a884] text-xs space-y-0.5">
-            <div className="font-bold text-[#00a884] text-[11px]">
+          <div className="mb-2 p-2 rounded-xl bg-black/5 dark:bg-black/30 border-l-4 border-emerald-600 dark:border-[#00a884] text-xs space-y-0.5">
+            <div className="font-bold text-emerald-700 dark:text-[#00a884] text-[11px]">
               {msg.quotedMessage.sender === "customer" ? "Client" : "Boutique"}
             </div>
-            <div className="text-white/70 line-clamp-2 text-[11px]">
+            <div className="text-slate-600 dark:text-white/70 line-clamp-2 text-[11px]">
               {stripActionTags(msg.quotedMessage.content)}
             </div>
           </div>
@@ -1639,21 +1639,21 @@ function WhatsAppBubble({
 
         {/* Shield OCR Payment Result Card */}
         {isPaymentValidated && (
-          <div className="flex items-center gap-2 mb-2 px-2.5 py-1.5 bg-emerald-500 text-black rounded-xl text-[10px] font-black uppercase tracking-wider shadow-lg">
+          <div className="flex items-center gap-2 mb-2 px-2.5 py-1.5 bg-emerald-500 text-slate-950 rounded-xl text-[10px] font-black uppercase tracking-wider shadow-md">
             <CheckCheck size={14} />
             <span>Paiement Validé par Shield OCR 💰</span>
           </div>
         )}
 
         {isPaymentFlagged && (
-          <div className="flex items-center gap-2 mb-2 px-2.5 py-1.5 bg-amber-500 text-black rounded-xl text-[10px] font-black uppercase tracking-wider shadow-lg">
+          <div className="flex items-center gap-2 mb-2 px-2.5 py-1.5 bg-amber-500 text-slate-950 rounded-xl text-[10px] font-black uppercase tracking-wider shadow-md">
             <ShieldCheck size={14} />
             <span>Preuve Suspecte à Vérifier ⚠️</span>
           </div>
         )}
 
         {isFraudAlert && (
-          <div className="flex items-center gap-2 mb-2 px-2.5 py-1.5 bg-rose-600 text-white rounded-xl text-[10px] font-black uppercase tracking-wider shadow-lg">
+          <div className="flex items-center gap-2 mb-2 px-2.5 py-1.5 bg-rose-600 text-white rounded-xl text-[10px] font-black uppercase tracking-wider shadow-md">
             <AlertTriangle size={14} />
             <span>Alerte Fausse Preuve / Fraude 🚨</span>
           </div>
@@ -1689,16 +1689,16 @@ function WhatsAppBubble({
             href={msg.mediaUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="mb-2 p-3 rounded-xl bg-black/30 border border-white/10 flex items-center gap-3 hover:bg-black/40 transition-colors"
+            className="mb-2 p-3 rounded-xl bg-black/5 dark:bg-black/30 border border-slate-200 dark:border-white/10 flex items-center gap-3 hover:bg-black/10 dark:hover:bg-black/40 transition-colors"
           >
-            <div className="w-10 h-10 rounded-lg bg-[#00a884]/20 text-[#00a884] flex items-center justify-center shrink-0">
+            <div className="w-10 h-10 rounded-lg bg-emerald-500/20 text-emerald-700 dark:text-[#00a884] flex items-center justify-center shrink-0">
               <FileText size={20} />
             </div>
             <div className="flex-1 min-w-0">
-              <div className="text-xs font-bold text-white truncate">
+              <div className="text-xs font-bold text-slate-900 dark:text-white truncate">
                 {msg.mediaMetadata?.fileName || "Document PDF"}
               </div>
-              <div className="text-[10px] text-white/50">
+              <div className="text-[10px] text-slate-500 dark:text-white/50">
                 {msg.mediaMetadata?.fileSize ? `${(msg.mediaMetadata.fileSize / 1024).toFixed(1)} KB` : "Télécharger"}
               </div>
             </div>
@@ -1707,7 +1707,7 @@ function WhatsAppBubble({
 
         {/* Text Message Content */}
         {msg.content && msg.content !== "[Image]" && (
-          <p className="text-[13px] sm:text-[14px] leading-relaxed whitespace-pre-wrap break-words overflow-wrap-anywhere select-text">
+          <p className="text-[13px] sm:text-[14px] leading-relaxed whitespace-pre-wrap break-words overflow-wrap-anywhere select-text text-slate-900 dark:text-white">
             {isVoiceMessage
               ? msg.content?.replace(/^\[Message Vocal\]:\s*/, "")
               : stripActionTags(msg.content)}
@@ -1720,7 +1720,7 @@ function WhatsAppBubble({
             {msg.reactions.map((r: any, idx: number) => (
               <span
                 key={idx}
-                className="px-1.5 py-0.5 rounded-full bg-black/40 border border-white/10 text-xs flex items-center gap-1 shadow-sm"
+                className="px-1.5 py-0.5 rounded-full bg-slate-100 dark:bg-black/40 border border-slate-200 dark:border-white/10 text-xs flex items-center gap-1 shadow-sm text-slate-800 dark:text-white"
               >
                 <span>{r.emoji}</span>
               </span>
@@ -1730,7 +1730,7 @@ function WhatsAppBubble({
 
         {/* Bubble Timestamp & Read Receipt Status Coche */}
         <div className="flex items-center justify-end gap-1 mt-1 opacity-75 select-none">
-          <span className="text-[10px] font-medium text-white/70">{time}</span>
+          <span className="text-[10px] font-medium text-slate-500 dark:text-white/70">{time}</span>
           {!isCustomer && (
             <span
               className="inline-flex items-center ml-0.5"
@@ -1745,13 +1745,13 @@ function WhatsAppBubble({
               }
             >
               {msg.status === "pending" ? (
-                <Clock size={11} className="text-white/40 animate-pulse" />
+                <Clock size={11} className="text-slate-400 dark:text-white/40 animate-pulse" />
               ) : msg.status === "delivered" ? (
-                <CheckCheck size={13} className="text-white/50" />
+                <CheckCheck size={13} className="text-slate-500 dark:text-white/50" />
               ) : msg.status === "read" ? (
-                <CheckCheck size={13} className="text-[#53bdeb] drop-shadow-[0_0_4px_rgba(83,189,235,0.6)]" />
+                <CheckCheck size={13} className="text-sky-600 dark:text-[#53bdeb] drop-shadow-[0_0_4px_rgba(83,189,235,0.6)]" />
               ) : (
-                <Check size={13} className="text-white/50" />
+                <Check size={13} className="text-slate-500 dark:text-white/50" />
               )}
             </span>
           )}

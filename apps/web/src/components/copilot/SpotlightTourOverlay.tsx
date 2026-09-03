@@ -120,12 +120,22 @@ export function SpotlightTourOverlay() {
       }
     };
 
+    // Scroll element into view smoothly on step change
+    const scrollTimeout = setTimeout(() => {
+      const el = document.querySelector(currentStep.selector);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+        updateRect();
+      }
+    }, 200);
+
     updateRect();
-    const interval = setInterval(updateRect, 300);
+    const interval = setInterval(updateRect, 200);
     window.addEventListener("resize", updateRect);
     window.addEventListener("scroll", updateRect);
 
     return () => {
+      clearTimeout(scrollTimeout);
       clearInterval(interval);
       window.removeEventListener("resize", updateRect);
       window.removeEventListener("scroll", updateRect);
@@ -137,47 +147,49 @@ export function SpotlightTourOverlay() {
   return (
     <div className="fixed inset-0 z-[150] pointer-events-none select-none animate-in fade-in duration-300">
       
-      {/* Dark backdrop with cutout effect if target found, or uniform high-contrast overlay */}
-      <div className="absolute inset-0 bg-black/75 backdrop-blur-sm pointer-events-auto" />
+      {/* Dark backdrop fallback only when target element is not yet found */}
+      {!targetInfo && (
+        <div className="absolute inset-0 bg-black/75 pointer-events-auto" />
+      )}
 
-      {/* Target Spotlight Highlight Ring - perfectly matching the card border radius and refined thickness */}
+      {/* Target Spotlight Highlight Ring - perfectly sharp cutout with outer shadow and crisp interior */}
       {targetInfo && (
         <div
-          className="absolute border border-emerald-400/90 transition-all duration-300 pointer-events-none"
+          className="absolute border-2 border-emerald-400 dark:border-emerald-400 transition-all duration-300 pointer-events-none"
           style={{
-            top: Math.max(4, targetInfo.rect.top - 3),
-            left: Math.max(4, targetInfo.rect.left - 3),
-            width: targetInfo.rect.width + 6,
-            height: targetInfo.rect.height + 6,
+            top: Math.max(4, targetInfo.rect.top - 4),
+            left: Math.max(4, targetInfo.rect.left - 4),
+            width: targetInfo.rect.width + 8,
+            height: targetInfo.rect.height + 8,
             borderRadius: targetInfo.borderRadius && targetInfo.borderRadius !== "0px"
-              ? `calc(${targetInfo.borderRadius} + 3px)`
+              ? `calc(${targetInfo.borderRadius} + 4px)`
               : "1.5rem",
-            boxShadow: "0 0 0 9999px rgba(0, 0, 0, 0.72), 0 0 16px rgba(16, 185, 129, 0.35), inset 0 0 6px rgba(16, 185, 129, 0.12)"
+            boxShadow: "0 0 0 9999px rgba(0, 0, 0, 0.78), 0 0 20px rgba(16, 185, 129, 0.45), inset 0 0 8px rgba(16, 185, 129, 0.15)"
           }}
         />
       )}
 
       {/* Floating Guided Tour Card */}
       <div className="fixed inset-x-4 bottom-6 sm:bottom-10 sm:left-auto sm:right-10 sm:w-[460px] pointer-events-auto">
-        <div className="bg-vendeur-coal/95 border border-emerald-500/40 rounded-3xl p-6 shadow-2xl backdrop-blur-xl space-y-4 animate-in slide-in-from-bottom-4 duration-300">
+        <div className="bg-white/95 dark:bg-vendeur-coal/95 border border-slate-200 dark:border-emerald-500/40 rounded-3xl p-6 shadow-2xl backdrop-blur-xl space-y-4 animate-in slide-in-from-bottom-4 duration-300 text-slate-900 dark:text-white">
           
           {/* Header */}
-          <div className="flex items-center justify-between gap-3 border-b border-white/10 pb-3">
+          <div className="flex items-center justify-between gap-3 border-b border-slate-200 dark:border-white/10 pb-3">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center border border-emerald-500/30">
+              <div className="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center border border-emerald-500/30">
                 <Compass size={18} className="animate-spin" style={{ animationDuration: "12s" }} />
               </div>
               <div>
-                <span className="text-[10px] font-black uppercase tracking-wider text-emerald-400">
+                <span className="text-[10px] font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
                   Visite Guidée (Étape {tourStepIndex + 1}/{TOUR_STEPS.length})
                 </span>
-                <p className="text-xs font-black text-white">{currentStep.badge}</p>
+                <p className="text-xs font-black text-slate-900 dark:text-white">{currentStep.badge}</p>
               </div>
             </div>
 
             <button
               onClick={endTour}
-              className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-white/50 hover:text-white transition-colors"
+              className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-white/5 dark:hover:bg-white/10 text-slate-500 hover:text-slate-900 dark:text-white/50 dark:hover:text-white transition-colors cursor-pointer"
               title="Quitter la visite"
             >
               <X size={16} />
@@ -186,13 +198,13 @@ export function SpotlightTourOverlay() {
 
           {/* Body Content */}
           <div className="space-y-2">
-            <h3 className="font-black text-base text-white">
+            <h3 className="font-black text-base text-slate-900 dark:text-white">
               {currentStep.title}
             </h3>
-            <p className="text-xs text-white/80 leading-relaxed">
+            <p className="text-xs text-slate-600 dark:text-white/80 leading-relaxed">
               {currentStep.description}
             </p>
-            <div className="p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-[11px] text-emerald-300 font-medium">
+            <div className="p-3 rounded-2xl bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 text-[11px] text-emerald-800 dark:text-emerald-300 font-medium">
               {currentStep.tips}
             </div>
           </div>
@@ -203,8 +215,8 @@ export function SpotlightTourOverlay() {
               onClick={prevTourStep}
               disabled={tourStepIndex === 0}
               className={cn(
-                "px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1 transition-all",
-                tourStepIndex === 0 ? "opacity-30 cursor-not-allowed text-white/40" : "bg-white/5 hover:bg-white/10 text-white"
+                "px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1 transition-all cursor-pointer",
+                tourStepIndex === 0 ? "opacity-30 cursor-not-allowed text-slate-400 dark:text-white/40" : "bg-slate-100 hover:bg-slate-200 dark:bg-white/5 dark:hover:bg-white/10 text-slate-800 dark:text-white"
               )}
             >
               <ChevronLeft size={14} />
@@ -218,7 +230,7 @@ export function SpotlightTourOverlay() {
                   key={idx}
                   className={cn(
                     "h-1.5 rounded-full transition-all",
-                    idx === tourStepIndex ? "w-6 bg-emerald-400" : "w-1.5 bg-white/20"
+                    idx === tourStepIndex ? "w-6 bg-emerald-500" : "w-1.5 bg-slate-300 dark:bg-white/20"
                   )}
                 />
               ))}
@@ -227,7 +239,7 @@ export function SpotlightTourOverlay() {
             {isLastStep ? (
               <button
                 onClick={endTour}
-                className="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-black uppercase text-xs tracking-wider flex items-center gap-1.5 transition-all shadow-lg active:scale-95"
+                className="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black uppercase text-xs tracking-wider flex items-center gap-1.5 transition-all shadow-lg active:scale-95 cursor-pointer"
               >
                 <CheckCircle2 size={14} />
                 <span>Terminer</span>
@@ -235,7 +247,7 @@ export function SpotlightTourOverlay() {
             ) : (
               <button
                 onClick={nextTourStep}
-                className="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-black uppercase text-xs tracking-wider flex items-center gap-1.5 transition-all shadow-lg active:scale-95"
+                className="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black uppercase text-xs tracking-wider flex items-center gap-1.5 transition-all shadow-lg active:scale-95 cursor-pointer"
               >
                 <span>Suivant</span>
                 <ChevronRight size={14} />

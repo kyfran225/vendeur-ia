@@ -25,24 +25,29 @@ export function WifiOff() {
           initial={{ y: -100, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: -100, opacity: 0 }}
-          className="fixed top-6 left-1/2 -translate-x-1/2 z-[200] w-[90%] max-w-md"
+          className="fixed top-3 sm:top-6 inset-x-0 mx-auto px-3 z-[200] w-full max-w-md pointer-events-auto"
         >
-          <div className="bg-red-500/10 backdrop-blur-xl border border-red-500/20 p-4 rounded-2xl flex items-center justify-between shadow-2xl shadow-red-500/10">
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-full bg-red-500/20 flex items-center justify-center text-red-500">
-                <WifiOffIcon size={20} />
+          <div className="bg-[#1a0c0f]/95 backdrop-blur-2xl border border-red-500/40 p-3 sm:p-4 rounded-2xl flex items-center justify-between gap-2.5 sm:gap-3 shadow-2xl shadow-red-500/20 w-full overflow-hidden">
+            <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
+              <div className="h-9 w-9 sm:h-10 sm:w-10 rounded-xl sm:rounded-full bg-red-500/20 flex items-center justify-center text-red-500 shrink-0">
+                <WifiOffIcon size={18} />
               </div>
-              <div>
-                <p className="text-white font-black uppercase tracking-widest text-[10px]">Connexion Interrompue</p>
-                <p className="text-white/40 text-[10px]">Certaines fonctionnalités sont limitées.</p>
+              <div className="min-w-0 flex-1">
+                <p className="text-white font-black uppercase tracking-wider text-[10px] sm:text-xs truncate">
+                  Connexion Interrompue
+                </p>
+                <p className="text-white/60 text-[9px] sm:text-[10px] truncate">
+                  Vérifiez votre réseau internet.
+                </p>
               </div>
             </div>
             <button
+              type="button"
               onClick={() => window.location.reload()}
-              className="h-10 px-4 bg-white/5 hover:bg-white/10 text-white rounded-xl transition-colors flex items-center gap-2 text-[10px] font-bold"
+              className="h-8 sm:h-9 px-3 sm:px-4 bg-red-500 hover:bg-red-400 active:scale-95 text-white rounded-xl transition-all flex items-center gap-1.5 text-[10px] sm:text-xs font-bold shrink-0 shadow-md shadow-red-500/25 cursor-pointer"
             >
-              <RefreshCw size={14} />
-              Actualiser
+              <RefreshCw size={13} className="shrink-0 animate-spin-slow" />
+              <span>Actualiser</span>
             </button>
           </div>
         </motion.div>

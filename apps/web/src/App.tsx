@@ -32,13 +32,6 @@ import { VendeurIALoader } from "@/components/ui/VendeurIALoader";
 
 const GOOGLE_CLIENT_ID = (import.meta as any).env.VITE_GOOGLE_CLIENT_ID;
 
-function DashboardRoute() {
-  const { isFounder } = useFounderRole();
-  if (isFounder) {
-    return <Navigate to="/admin" replace />;
-  }
-  return <SalesDashboard />;
-}
 
 function App() {
   const { user, accessToken, _hasHydrated } = useAuthStore();
@@ -75,7 +68,7 @@ function App() {
         <Route element={
           user ? <AppLayout /> : <Navigate to="/" replace />
         }>
-          <Route path="/dashboard" element={<DashboardRoute />} />
+          <Route path="/dashboard" element={<SalesDashboard />} />
           <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/products" element={<ProductManager />} />
           <Route path="/orders" element={<OrderManager />} />

@@ -11,7 +11,7 @@ interface LogoProps extends React.SVGProps<SVGSVGElement> {
 export const Logo: React.FC<LogoProps> = ({
   size = 24,
   className,
-  leftBranchColor = "#ffffff",
+  leftBranchColor = "currentColor",
   rightBranchColor = "#10b981",
   ...props
 }) => {

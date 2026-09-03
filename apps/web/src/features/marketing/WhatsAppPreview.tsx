@@ -27,40 +27,40 @@ export function WhatsAppPreview({
   const currentTime = new Date().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
 
   return (
-    <div className="w-full max-w-md mx-auto rounded-2xl overflow-hidden border border-white/10 shadow-2xl bg-[#0b141a] text-white flex flex-col animate-in fade-in duration-300 font-sans">
+    <div className="w-full max-w-md mx-auto rounded-2xl overflow-hidden border border-slate-200 dark:border-white/10 shadow-2xl bg-white dark:bg-[#0b141a] text-slate-900 dark:text-white flex flex-col animate-in fade-in duration-300 font-sans">
       {/* WhatsApp Header */}
-      <div className="bg-[#1f2c34] px-3.5 py-2.5 flex items-center justify-between border-b border-white/5">
+      <div className="bg-slate-100 dark:bg-[#1f2c34] px-3.5 py-2.5 flex items-center justify-between border-b border-slate-200 dark:border-white/5">
         <div className="flex items-center gap-2.5">
-          <div className="h-8 w-8 rounded-full bg-[#00a884] flex items-center justify-center text-black font-black text-xs shadow">
+          <div className="h-8 w-8 rounded-full bg-emerald-500 flex items-center justify-center text-slate-950 font-black text-xs shadow">
             <Store size={15} />
           </div>
           <div>
             <div className="flex items-center gap-1.5">
-              <span className="text-xs font-bold text-white tracking-wide">{businessName}</span>
-              <ShieldCheck size={12} className="text-[#00a884]" />
+              <span className="text-xs font-bold text-slate-900 dark:text-white tracking-wide">{businessName}</span>
+              <ShieldCheck size={12} className="text-emerald-600 dark:text-[#00a884]" />
             </div>
-            <span className="text-[10px] text-[#00a884] font-medium leading-none block">Compte professionnel • En ligne</span>
+            <span className="text-[10px] text-emerald-600 dark:text-[#00a884] font-medium leading-none block">Compte professionnel • En ligne</span>
           </div>
         </div>
         <div className="flex items-center gap-1">
-          <span className="px-2 py-0.5 rounded-full bg-white/10 text-[9px] font-bold text-white/70">Aperçu direct</span>
+          <span className="px-2 py-0.5 rounded-full bg-slate-200/80 dark:bg-white/10 text-[9px] font-bold text-slate-600 dark:text-white/70">Aperçu direct</span>
         </div>
       </div>
 
       {/* WhatsApp Chat Area */}
-      <div className="p-3.5 sm:p-4 bg-[#0b141a] min-h-[180px] flex flex-col justify-end relative bg-[radial-gradient(#1f2c34_1px,transparent_1px)] [background-size:16px_16px]">
+      <div className="p-3.5 sm:p-4 bg-[#efeae2]/90 dark:bg-[#0b141a] min-h-[180px] flex flex-col justify-end relative bg-[radial-gradient(#cbd5e1_1px,transparent_1px)] dark:bg-[radial-gradient(#1f2c34_1px,transparent_1px)] [background-size:16px_16px]">
         {/* Date pill */}
         <div className="text-center mb-3">
-          <span className="px-2.5 py-0.5 rounded-md bg-[#182229] text-[9px] font-bold text-white/50 shadow-sm uppercase tracking-wider">
+          <span className="px-2.5 py-0.5 rounded-md bg-white/80 dark:bg-[#182229] text-[9px] font-bold text-slate-500 dark:text-white/50 shadow-sm uppercase tracking-wider border border-slate-200/60 dark:border-transparent">
             Aujourd'hui
           </span>
         </div>
 
         {/* Message Bubble (Outgoing) */}
-        <div className="self-end max-w-[88%] sm:max-w-[80%] bg-[#005c4b] rounded-2xl rounded-tr-xs p-2 sm:p-2.5 shadow-md space-y-2 relative border border-[#00705b]/50">
+        <div className="self-end max-w-[88%] sm:max-w-[80%] bg-[#d9fdd3] dark:bg-[#005c4b] rounded-2xl rounded-tr-xs p-2 sm:p-2.5 shadow-md space-y-2 relative border border-emerald-300/60 dark:border-[#00705b]/50">
           {/* Product Image preview */}
           {product?.images?.[0] && (
-            <div className="relative aspect-video w-full rounded-xl overflow-hidden bg-black/30 border border-white/10">
+            <div className="relative aspect-video w-full rounded-xl overflow-hidden bg-black/10 dark:bg-black/30 border border-slate-200/50 dark:border-white/10">
               <img
                 src={product.images[0]}
                 alt={product.name}
@@ -73,24 +73,24 @@ export function WhatsAppPreview({
           )}
 
           {/* Text Content */}
-          <div className="text-xs sm:text-[13px] text-white/95 leading-relaxed whitespace-pre-wrap break-words font-normal px-0.5">
+          <div className="text-xs sm:text-[13px] text-slate-900 dark:text-white/95 leading-relaxed whitespace-pre-wrap break-words font-normal px-0.5">
             {formattedText || (
-              <span className="italic text-white/40">Le message rédigé apparaîtra ici...</span>
+              <span className="italic text-slate-400 dark:text-white/40">Le message rédigé apparaîtra ici...</span>
             )}
           </div>
 
           {/* Time & Double Checkmark */}
-          <div className="flex items-center justify-end gap-1 text-[10px] text-white/60 pt-0.5">
+          <div className="flex items-center justify-end gap-1 text-[10px] text-slate-500 dark:text-white/60 pt-0.5">
             <span>{currentTime}</span>
-            <CheckCheck size={14} className="text-[#53bdeb]" />
+            <CheckCheck size={14} className="text-sky-600 dark:text-[#53bdeb]" />
           </div>
         </div>
       </div>
 
       {/* WhatsApp Input Bar Mockup */}
-      <div className="bg-[#1f2c34] px-3 py-2 flex items-center justify-between border-t border-white/5 text-white/30 text-xs">
-        <span className="text-[11px] text-white/40">Répondre à ce message pour réserver...</span>
-        <MessageCircle size={15} className="text-[#00a884]" />
+      <div className="bg-slate-100 dark:bg-[#1f2c34] px-3 py-2 flex items-center justify-between border-t border-slate-200 dark:border-white/5 text-slate-400 dark:text-white/30 text-xs">
+        <span className="text-[11px] text-slate-500 dark:text-white/40">Répondre à ce message pour réserver...</span>
+        <MessageCircle size={15} className="text-emerald-600 dark:text-[#00a884]" />
       </div>
     </div>
   );

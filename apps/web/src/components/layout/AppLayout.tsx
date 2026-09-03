@@ -16,7 +16,7 @@ export function AppLayout() {
   const isInbox = location.pathname.startsWith("/inbox");
 
   return (
-    <div className="flex h-screen overflow-hidden flex-col md:flex-row bg-vendeur-bg relative overscroll-none">
+    <div className="flex h-screen overflow-hidden flex-col md:flex-row bg-slate-50 dark:bg-vendeur-bg text-slate-900 dark:text-white relative overscroll-none transition-colors">
       <WifiOff />
       <Sidebar hideDesktop={isInbox} />
       <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">

@@ -226,7 +226,7 @@ export function StoryViewerModal({
                 e.stopPropagation();
                 onAddToCart(product);
               }}
-              className="h-12 px-4 rounded-xl bg-vendeur-emerald text-vendeur-coal font-black uppercase text-[10px] tracking-widest flex items-center gap-2 hover:scale-105 active:scale-95 transition-all shrink-0 shadow-lg shadow-vendeur-emerald/20"
+              className="h-12 px-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black uppercase text-[10px] tracking-widest flex items-center gap-2 hover:scale-105 active:scale-95 transition-all shrink-0 shadow-lg shadow-emerald-500/20 cursor-pointer"
             >
               <ShoppingCart size={16} />
               <span>+ Panier</span>
@@ -239,9 +239,9 @@ export function StoryViewerModal({
                 e.stopPropagation();
                 onDirectWhatsApp(product);
               }}
-              className="h-14 bg-white/10 hover:bg-white/15 border border-white/10 text-white rounded-2xl font-black uppercase text-xs tracking-wider flex items-center justify-center gap-2 transition-all"
+              className="h-14 bg-white/10 hover:bg-white/15 border border-white/10 text-white rounded-2xl font-black uppercase text-xs tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer"
             >
-              <MessageCircle size={18} className="text-vendeur-emerald" />
+              <MessageCircle size={18} className="text-emerald-400" />
               <span>WhatsApp Direct</span>
             </button>
 
@@ -251,7 +251,7 @@ export function StoryViewerModal({
                 onAddToCart(product);
                 onClose();
               }}
-              className="h-14 bg-vendeur-emerald hover:bg-emerald-400 text-vendeur-coal rounded-2xl font-black uppercase text-xs tracking-wider flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all shadow-xl shadow-vendeur-emerald/20"
+              className="h-14 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black uppercase text-xs tracking-wider flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all shadow-xl shadow-emerald-500/20 cursor-pointer"
             >
               <span>Acheter vite</span>
               <ArrowRight size={18} />

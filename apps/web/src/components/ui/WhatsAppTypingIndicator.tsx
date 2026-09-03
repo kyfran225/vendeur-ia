@@ -57,16 +57,16 @@ export function WhatsAppTypingIndicator({
   if (variant === "copilot") {
     return (
       <div className={cn("flex items-center gap-3 mr-auto max-w-[85%] min-w-0 animate-in fade-in slide-in-from-bottom-2 duration-300", className)}>
-        <div className="w-8 h-8 rounded-xl bg-vendeur-emerald/20 border border-vendeur-emerald/40 flex items-center justify-center p-1 text-vendeur-emerald shrink-0">
-          <Logo size={16} leftBranchColor="#ffffff" rightBranchColor="#10b981" className="animate-spin" />
+        <div className="w-8 h-8 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center p-1 text-emerald-700 dark:text-vendeur-emerald shrink-0">
+          <Logo size={16} className="animate-spin" />
         </div>
-        <div className="bg-vendeur-slate/90 border border-white/10 rounded-2xl px-4 py-3 text-sm text-white/80 flex items-center gap-3 min-w-0 shadow-lg">
+        <div className="bg-slate-100 dark:bg-[#182229] border border-slate-200 dark:border-white/10 rounded-2xl px-4 py-3 text-sm text-slate-800 dark:text-white/80 flex items-center gap-3 min-w-0 shadow-sm">
           <div className="flex items-center gap-1.5 shrink-0 pt-2 pb-1 px-1">
-            <span className="w-2.5 h-2.5 rounded-full bg-vendeur-emerald animate-typing-dot-1" />
-            <span className="w-2.5 h-2.5 rounded-full bg-vendeur-emerald animate-typing-dot-2" />
-            <span className="w-2.5 h-2.5 rounded-full bg-vendeur-emerald animate-typing-dot-3" />
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-typing-dot-1" />
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-typing-dot-2" />
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-typing-dot-3" />
           </div>
-          <span className="text-xs sm:text-[13px] text-white/70 font-medium truncate">
+          <span className="text-xs sm:text-[13px] text-slate-600 dark:text-white/70 font-medium truncate">
             {label || "Le Copilote analyse votre boutique..."}
           </span>
         </div>

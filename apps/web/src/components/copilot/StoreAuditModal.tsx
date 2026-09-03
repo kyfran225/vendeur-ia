@@ -65,11 +65,11 @@ export function StoreAuditModal() {
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
       <div
-        className="relative w-full max-w-2xl max-h-[90vh] bg-vendeur-coal border border-white/10 rounded-3xl shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-200"
+        className="relative w-full max-w-2xl max-h-[90vh] bg-white dark:bg-vendeur-coal border border-slate-200 dark:border-white/10 rounded-3xl shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-200 text-slate-900 dark:text-white"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header with Dynamic Score */}
-        <div className="relative p-6 border-b border-white/10 bg-vendeur-slate/50 flex items-start justify-between gap-4">
+        <div className="relative p-6 border-b border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-[#0f1d17] flex items-start justify-between gap-4">
           
           <div className="flex items-center gap-4">
             {/* Score Badge */}
@@ -78,21 +78,21 @@ export function StoreAuditModal() {
               getScoreColor()
             )}>
               <span className="text-2xl font-black leading-none">{score}</span>
-              <span className="text-[10px] font-black uppercase tracking-wider text-white/50">/ 100</span>
-              <span className="text-[9px] font-black px-1.5 py-0.2 rounded-full bg-white/10 mt-0.5">Note {grade}</span>
+              <span className="text-[10px] font-black uppercase tracking-wider opacity-60">/ 100</span>
+              <span className="text-[9px] font-black px-1.5 py-0.2 rounded-full bg-black/10 dark:bg-white/10 mt-0.5">Note {grade}</span>
             </div>
 
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="font-black text-lg sm:text-xl text-white tracking-wide flex items-center gap-2">
-                  <Sparkles size={18} className="text-emerald-400" />
+                <h3 className="font-black text-lg sm:text-xl text-slate-900 dark:text-white tracking-wide flex items-center gap-2">
+                  <Sparkles size={18} className="text-emerald-600 dark:text-emerald-400" />
                   Audit IA de Conversion
                 </h3>
-                <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30">
                   Temps Réel
                 </span>
               </div>
-              <p className="text-xs text-white/70 mt-1 max-w-md">
+              <p className="text-xs text-slate-500 dark:text-white/70 mt-1 max-w-md">
                 {auditData?.summaryTitle || "Diagnostic de rentabilité et d'attractivité de votre boutique."}
               </p>
             </div>
@@ -103,13 +103,13 @@ export function StoreAuditModal() {
               onClick={() => runStoreAudit()}
               disabled={isAuditLoading}
               title="Relancer le scan IA"
-              className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-white/70 hover:text-white transition-colors"
+              className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-white/5 dark:hover:bg-white/10 text-slate-600 hover:text-slate-900 dark:text-white/70 dark:hover:text-white transition-colors cursor-pointer"
             >
-              <RefreshCw size={16} className={isAuditLoading ? "animate-spin text-emerald-400" : ""} />
+              <RefreshCw size={16} className={isAuditLoading ? "animate-spin text-emerald-500" : ""} />
             </button>
             <button
               onClick={() => setAuditModalOpen(false)}
-              className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-white/50 hover:text-white transition-colors"
+              className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-white/5 dark:hover:bg-white/10 text-slate-500 hover:text-slate-900 dark:text-white/50 dark:hover:text-white transition-colors cursor-pointer"
             >
               <X size={18} />
             </button>
@@ -122,45 +122,45 @@ export function StoreAuditModal() {
           {/* Quick Metrics Bar */}
           {auditData && (
             <div className="grid grid-cols-3 gap-3">
-              <div className="p-3 rounded-2xl bg-black/30 border border-white/5 flex flex-col items-center text-center">
-                <span className="text-[10px] font-black uppercase text-rose-400 flex items-center gap-1">
+              <div className="p-3 rounded-2xl bg-slate-50 dark:bg-black/30 border border-slate-200 dark:border-white/5 flex flex-col items-center text-center">
+                <span className="text-[10px] font-black uppercase text-rose-600 dark:text-rose-400 flex items-center gap-1">
                   <AlertTriangle size={12} /> Bloquants
                 </span>
-                <span className="text-lg font-black text-white">{auditData.criticalCount}</span>
+                <span className="text-lg font-black text-slate-900 dark:text-white">{auditData.criticalCount}</span>
               </div>
 
-              <div className="p-3 rounded-2xl bg-black/30 border border-white/5 flex flex-col items-center text-center">
-                <span className="text-[10px] font-black uppercase text-amber-400 flex items-center gap-1">
+              <div className="p-3 rounded-2xl bg-slate-50 dark:bg-black/30 border border-slate-200 dark:border-white/5 flex flex-col items-center text-center">
+                <span className="text-[10px] font-black uppercase text-amber-600 dark:text-amber-400 flex items-center gap-1">
                   <AlertCircle size={12} /> À améliorer
                 </span>
-                <span className="text-lg font-black text-white">{auditData.warningCount}</span>
+                <span className="text-lg font-black text-slate-900 dark:text-white">{auditData.warningCount}</span>
               </div>
 
-              <div className="p-3 rounded-2xl bg-black/30 border border-white/5 flex flex-col items-center text-center">
-                <span className="text-[10px] font-black uppercase text-emerald-400 flex items-center gap-1">
+              <div className="p-3 rounded-2xl bg-slate-50 dark:bg-black/30 border border-slate-200 dark:border-white/5 flex flex-col items-center text-center">
+                <span className="text-[10px] font-black uppercase text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
                   <TrendingUp size={12} /> Astuces Pro
                 </span>
-                <span className="text-lg font-black text-white">{auditData.tipCount}</span>
+                <span className="text-lg font-black text-slate-900 dark:text-white">{auditData.tipCount}</span>
               </div>
             </div>
           )}
 
           {/* Actionable Checkpoints List */}
           <div className="space-y-3">
-            <h4 className="text-xs font-black uppercase tracking-wider text-white/50">
+            <h4 className="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-white/50">
               Plan d'Action Correctif en 1-Clic
             </h4>
 
             {isAuditLoading ? (
-              <div className="py-12 flex flex-col items-center justify-center gap-3 text-white/40">
-                <RefreshCw size={28} className="animate-spin text-emerald-400" />
+              <div className="py-12 flex flex-col items-center justify-center gap-3 text-slate-400 dark:text-white/40">
+                <RefreshCw size={28} className="animate-spin text-emerald-500" />
                 <p className="text-xs">Vendeur IA diagnostique votre catalogue, paiements et vitrine...</p>
               </div>
             ) : !auditData || auditData.issues.length === 0 ? (
               <div className="p-8 text-center rounded-3xl bg-emerald-500/10 border border-emerald-500/20 space-y-2">
-                <CheckCircle2 size={36} className="mx-auto text-emerald-400" />
-                <h4 className="font-black text-sm text-emerald-300">Félicitations ! Aucun point critique détecté</h4>
-                <p className="text-xs text-white/60">Votre boutique est parfaitement configurée pour convertir à 100%.</p>
+                <CheckCircle2 size={36} className="mx-auto text-emerald-500" />
+                <h4 className="font-black text-sm text-emerald-700 dark:text-emerald-300">Félicitations ! Aucun point critique détecté</h4>
+                <p className="text-xs text-slate-600 dark:text-white/60">Votre boutique est parfaitement configurée pour convertir à 100%.</p>
               </div>
             ) : (
               auditData.issues.map((issue) => {
@@ -174,37 +174,37 @@ export function StoreAuditModal() {
                     className={cn(
                       "p-4 rounded-2xl border transition-all flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 group",
                       isCritical
-                        ? "bg-rose-500/[0.04] border-rose-500/30 hover:border-rose-500/50"
+                        ? "bg-rose-50 dark:bg-rose-500/[0.04] border-rose-200 dark:border-rose-500/30 hover:border-rose-300 dark:hover:border-rose-500/50"
                         : isWarning
-                        ? "bg-amber-500/[0.04] border-amber-500/30 hover:border-amber-500/50"
-                        : "bg-white/[0.02] border-white/10 hover:border-white/20"
+                        ? "bg-amber-50 dark:bg-amber-500/[0.04] border-amber-200 dark:border-amber-500/30 hover:border-amber-300 dark:hover:border-amber-500/50"
+                        : "bg-slate-50 dark:bg-white/[0.02] border-slate-200 dark:border-white/10 hover:border-slate-300 dark:hover:border-white/20"
                     )}
                   >
                     <div className="flex items-start gap-3 flex-1 min-w-0">
                       <div className={cn(
                         "w-9 h-9 rounded-xl flex items-center justify-center shrink-0 mt-0.5",
-                        isCritical ? "bg-rose-500/20 text-rose-300" :
-                        isWarning ? "bg-amber-500/20 text-amber-300" :
-                        "bg-white/10 text-white/60"
+                        isCritical ? "bg-rose-500/20 text-rose-600 dark:text-rose-300" :
+                        isWarning ? "bg-amber-500/20 text-amber-600 dark:text-amber-300" :
+                        "bg-slate-200 dark:bg-white/10 text-slate-700 dark:text-white/60"
                       )}>
                         <CatIcon size={18} />
                       </div>
 
                       <div className="space-y-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-bold text-xs sm:text-sm text-white">
+                          <span className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white">
                             {issue.title}
                           </span>
                           <span className={cn(
                             "px-2 py-0.5 rounded-full text-[9px] font-black uppercase",
-                            isCritical ? "bg-rose-500/20 text-rose-400" :
-                            isWarning ? "bg-amber-500/20 text-amber-400" :
-                            "bg-blue-500/20 text-blue-400"
+                            isCritical ? "bg-rose-500/20 text-rose-700 dark:text-rose-400" :
+                            isWarning ? "bg-amber-500/20 text-amber-700 dark:text-amber-400" :
+                            "bg-blue-500/20 text-blue-700 dark:text-blue-400"
                           )}>
                             {issue.impact}
                           </span>
                         </div>
-                        <p className="text-xs text-white/60 leading-relaxed">
+                        <p className="text-xs text-slate-500 dark:text-white/60 leading-relaxed">
                           {issue.description}
                         </p>
                       </div>
@@ -213,12 +213,12 @@ export function StoreAuditModal() {
                     <button
                       onClick={() => handleActionClick(issue.actionType, issue.actionPayload)}
                       className={cn(
-                        "h-9 px-4 rounded-xl font-black uppercase text-[10px] tracking-wider flex items-center gap-1.5 transition-all shadow-md active:scale-95 shrink-0 self-end sm:self-center",
+                        "h-9 px-4 rounded-xl font-black uppercase text-[10px] tracking-wider flex items-center gap-1.5 transition-all shadow-md active:scale-95 shrink-0 self-end sm:self-center cursor-pointer",
                         isCritical
                           ? "bg-rose-500 hover:bg-rose-400 text-white"
                           : isWarning
-                          ? "bg-amber-500 hover:bg-amber-400 text-black"
-                          : "bg-emerald-500 hover:bg-emerald-400 text-black"
+                          ? "bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold"
+                          : "bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold"
                       )}
                     >
                       <span>{issue.actionLabel}</span>
@@ -233,13 +233,13 @@ export function StoreAuditModal() {
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t border-white/10 bg-black/40 flex items-center justify-between">
-          <span className="text-[10px] text-white/40">
+        <div className="p-4 border-t border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-black/40 flex items-center justify-between">
+          <span className="text-[10px] text-slate-400 dark:text-white/40">
             Dernier scan : {auditData ? new Date(auditData.auditedAt).toLocaleTimeString("fr-FR") : "--"}
           </span>
           <button
             onClick={() => setAuditModalOpen(false)}
-            className="px-5 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-white font-bold text-xs transition-colors"
+            className="px-5 py-2 rounded-xl bg-slate-200 hover:bg-slate-300 dark:bg-white/10 dark:hover:bg-white/15 text-slate-800 dark:text-white font-bold text-xs transition-colors cursor-pointer"
           >
             Fermer l'audit
           </button>

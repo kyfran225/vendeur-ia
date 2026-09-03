@@ -159,33 +159,33 @@ export function VendeurIAPlaygroundModal({ isOpen, onClose, merchant }: VendeurI
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
-          className="relative w-full max-w-2xl bg-vendeur-coal border-0 sm:border sm:border-vendeur-emerald/30 rounded-none sm:rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col h-[100dvh] sm:h-[90vh] sm:max-h-[750px]"
+          className="relative w-full max-w-2xl bg-white dark:bg-vendeur-coal border-0 sm:border sm:border-slate-200 sm:dark:border-vendeur-emerald/30 rounded-none sm:rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col h-[100dvh] sm:h-[90vh] sm:max-h-[750px] text-slate-900 dark:text-white"
         >
           {/* Mobile Sheet Indicator */}
-          <div className="w-12 h-1 bg-white/20 rounded-full mx-auto mt-2 sm:hidden shrink-0" />
+          <div className="w-12 h-1 bg-slate-300 dark:bg-white/20 rounded-full mx-auto mt-2 sm:hidden shrink-0" />
 
           {/* Top Header */}
-          <div className="p-3.5 sm:p-5 md:p-6 bg-vendeur-bg border-b border-white/10 flex items-center justify-between shrink-0 gap-3">
+          <div className="p-3.5 sm:p-5 md:p-6 bg-slate-50 dark:bg-vendeur-bg border-b border-slate-200 dark:border-white/10 flex items-center justify-between shrink-0 gap-3">
             <div className="flex items-center gap-3 min-w-0 flex-1">
               <div className="h-10 w-10 sm:h-12 sm:w-12 shrink-0 flex items-center justify-center">
                 <AssistantIcon size="100%" color="#10B981" withBackground={false} className="drop-shadow-[0_0_8px_rgba(16,185,129,0.3)]" />
               </div>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <h3 className="text-sm sm:text-base md:text-xl font-black text-white uppercase tracking-tight truncate">
+                  <h3 className="text-sm sm:text-base md:text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight truncate">
                     Banc d'Essai IA
                   </h3>
                   <span className={cn(
                     "inline-flex items-center gap-1 border text-[8px] sm:text-[9px] font-black uppercase px-2 py-0.5 rounded-full shrink-0",
                     isPaidActive
-                      ? "bg-vendeur-emerald/10 border-vendeur-emerald/30 text-vendeur-emerald"
-                      : "bg-amber-500/10 border-amber-500/30 text-amber-400"
+                      ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-vendeur-emerald"
+                      : "bg-amber-500/10 border-amber-500/30 text-amber-700 dark:text-amber-400"
                   )}>
-                    <span className={cn("h-1.5 w-1.5 rounded-full", isPaidActive ? "bg-vendeur-emerald animate-pulse" : "bg-amber-400")} />
+                    <span className={cn("h-1.5 w-1.5 rounded-full", isPaidActive ? "bg-emerald-500 animate-pulse" : "bg-amber-500")} />
                     {isPaidActive ? "IA en Ligne" : "Mode Simulateur"}
                   </span>
                 </div>
-                <p className="text-[10px] sm:text-xs text-white/50 font-medium truncate">
+                <p className="text-[10px] sm:text-xs text-slate-500 dark:text-white/50 font-medium truncate">
                   {merchant?.businessName || merchant?.storeName || "Votre boutique"} • Simulateur
                 </p>
               </div>
@@ -195,13 +195,13 @@ export function VendeurIAPlaygroundModal({ isOpen, onClose, merchant }: VendeurI
               <button
                 onClick={handleResetChat}
                 title="Réinitialiser le chat"
-                className="h-9 w-9 sm:h-10 sm:w-10 rounded-xl bg-white/5 hover:bg-white/10 text-white/60 hover:text-white flex items-center justify-center transition-all"
+                className="h-9 w-9 sm:h-10 sm:w-10 rounded-xl bg-slate-200/80 hover:bg-slate-300 dark:bg-white/5 dark:hover:bg-white/10 text-slate-700 dark:text-white/60 hover:text-slate-900 dark:hover:text-white flex items-center justify-center transition-all cursor-pointer"
               >
                 <RefreshCw size={15} />
               </button>
               <button
                 onClick={onClose}
-                className="h-9 w-9 sm:h-10 sm:w-10 rounded-xl bg-white/5 hover:bg-white/10 text-white/60 hover:text-white flex items-center justify-center transition-all"
+                className="h-9 w-9 sm:h-10 sm:w-10 rounded-xl bg-slate-200/80 hover:bg-slate-300 dark:bg-white/5 dark:hover:bg-white/10 text-slate-700 dark:text-white/60 hover:text-slate-900 dark:hover:text-white flex items-center justify-center transition-all cursor-pointer"
               >
                 <X size={18} />
               </button>
@@ -211,11 +211,13 @@ export function VendeurIAPlaygroundModal({ isOpen, onClose, merchant }: VendeurI
           {/* Dual Action Strip (Real WA vs Simulator) */}
           <div className={cn(
             "border-b p-2.5 px-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 text-xs shrink-0",
-            isPaidActive ? "bg-vendeur-emerald/10 border-vendeur-emerald/20" : "bg-amber-500/10 border-amber-500/20"
+            isPaidActive
+              ? "bg-emerald-50 dark:bg-vendeur-emerald/10 border-emerald-200 dark:border-vendeur-emerald/20"
+              : "bg-amber-50 dark:bg-amber-500/10 border-amber-200 dark:border-amber-500/20"
           )}>
             <div className={cn(
               "flex items-center gap-2 font-bold text-[11px] sm:text-xs",
-              isPaidActive ? "text-vendeur-emerald" : "text-amber-400"
+              isPaidActive ? "text-emerald-800 dark:text-vendeur-emerald" : "text-amber-800 dark:text-amber-400"
             )}>
               <Zap size={14} className={cn(isPaidActive && "animate-pulse", "shrink-0")} />
               <span className="truncate">
@@ -228,9 +230,9 @@ export function VendeurIAPlaygroundModal({ isOpen, onClose, merchant }: VendeurI
             <div className="flex items-center gap-2 w-full sm:w-auto">
               <button
                 onClick={handleCopyWATestLink}
-                className="flex-1 sm:flex-initial h-9 sm:h-8 px-3 rounded-lg bg-black/40 border border-white/10 hover:border-vendeur-emerald/40 text-white/90 text-[10px] font-black uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all truncate"
+                className="flex-1 sm:flex-initial h-9 sm:h-8 px-3 rounded-lg bg-white dark:bg-black/40 border border-slate-300 dark:border-white/10 hover:border-emerald-500 dark:hover:border-vendeur-emerald/40 text-slate-800 dark:text-white/90 text-[10px] font-black uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all truncate shadow-sm cursor-pointer"
               >
-                {copied ? <Check size={12} className="text-vendeur-emerald shrink-0" /> : <Copy size={12} className="shrink-0" />}
+                {copied ? <Check size={12} className="text-emerald-600 dark:text-vendeur-emerald shrink-0" /> : <Copy size={12} className="shrink-0" />}
                 <span className="truncate">{copied ? "Copié !" : "Copier lien"}</span>
               </button>
               {whatsappNumber && (
@@ -238,7 +240,7 @@ export function VendeurIAPlaygroundModal({ isOpen, onClose, merchant }: VendeurI
                   href={waTestLink}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex-1 sm:flex-initial h-9 sm:h-8 px-3 rounded-lg bg-vendeur-emerald text-vendeur-coal text-[10px] font-black uppercase tracking-wider flex items-center justify-center gap-1.5 hover:scale-105 transition-all shadow-md truncate"
+                  className="flex-1 sm:flex-initial h-9 sm:h-8 px-3 rounded-lg bg-emerald-500 text-slate-950 text-[10px] font-black uppercase tracking-wider flex items-center justify-center gap-1.5 hover:scale-105 transition-all shadow-md truncate"
                 >
                   <MessageSquare size={12} className="shrink-0" />
                   <span className="truncate">WhatsApp</span>
@@ -248,7 +250,7 @@ export function VendeurIAPlaygroundModal({ isOpen, onClose, merchant }: VendeurI
           </div>
 
           {/* Chat Messages Body */}
-          <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4">
+          <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4 bg-slate-50/50 dark:bg-transparent">
             {messages.map((msg) => (
               <div
                 key={msg.id}
@@ -261,7 +263,7 @@ export function VendeurIAPlaygroundModal({ isOpen, onClose, merchant }: VendeurI
                   className={cn(
                     "h-8 w-8 rounded-xl flex items-center justify-center shrink-0 text-xs font-black",
                     msg.role === "customer"
-                      ? "bg-white/10 text-white shadow-md"
+                      ? "bg-slate-200 dark:bg-white/10 text-slate-800 dark:text-white shadow-sm"
                       : "bg-transparent p-0"
                   )}
                 >
@@ -270,17 +272,17 @@ export function VendeurIAPlaygroundModal({ isOpen, onClose, merchant }: VendeurI
 
                 <div
                   className={cn(
-                    "p-4 rounded-2xl text-xs md:text-sm font-medium leading-relaxed whitespace-pre-wrap shadow-lg",
+                    "p-4 rounded-2xl text-xs md:text-sm font-medium leading-relaxed whitespace-pre-wrap shadow-md",
                     msg.role === "customer"
-                      ? "bg-vendeur-emerald text-vendeur-coal rounded-tr-none"
-                      : "bg-black/60 border border-white/10 text-white rounded-tl-none"
+                      ? "bg-emerald-500 text-slate-950 rounded-tr-none font-medium"
+                      : "bg-white dark:bg-black/60 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white rounded-tl-none shadow-sm"
                   )}
                 >
                   {stripActionTags(msg.text)}
                   <div
                     className={cn(
                       "text-[9px] mt-2 text-right font-mono",
-                      msg.role === "customer" ? "text-vendeur-coal/60" : "text-white/30"
+                      msg.role === "customer" ? "text-slate-900/60" : "text-slate-400 dark:text-white/30"
                     )}
                   >
                     {new Date(msg.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
@@ -296,13 +298,13 @@ export function VendeurIAPlaygroundModal({ isOpen, onClose, merchant }: VendeurI
           </div>
 
           {/* Quick Questions Chips */}
-          <div className="p-3 px-4 bg-vendeur-bg border-t border-white/5 flex gap-2 overflow-x-auto no-scrollbar shrink-0">
+          <div className="p-3 px-4 bg-slate-50 dark:bg-vendeur-bg border-t border-slate-200 dark:border-white/5 flex gap-2 overflow-x-auto no-scrollbar shrink-0">
             {SAMPLE_QUESTIONS.map((q, idx) => (
               <button
                 key={idx}
                 onClick={() => handleSendMessage(q)}
                 disabled={isLoading}
-                className="shrink-0 px-3 py-1.5 rounded-xl bg-white/5 hover:bg-vendeur-emerald/10 hover:border-vendeur-emerald/30 border border-white/10 text-[10px] text-white/70 hover:text-vendeur-emerald font-bold transition-all disabled:opacity-50"
+                className="shrink-0 px-3 py-1.5 rounded-xl bg-white hover:bg-emerald-50 dark:bg-white/5 dark:hover:bg-vendeur-emerald/10 border border-slate-200 hover:border-emerald-300 dark:border-white/10 dark:hover:border-vendeur-emerald/30 text-[10px] text-slate-700 hover:text-emerald-700 dark:text-white/70 dark:hover:text-vendeur-emerald font-bold transition-all disabled:opacity-50 cursor-pointer shadow-sm"
               >
                 💬 {q}
               </button>
@@ -310,7 +312,7 @@ export function VendeurIAPlaygroundModal({ isOpen, onClose, merchant }: VendeurI
           </div>
 
           {/* Chat Input Field */}
-          <div className="p-3 sm:p-4 bg-vendeur-bg border-t border-white/10 shrink-0 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))]">
+          <div className="p-3 sm:p-4 bg-slate-50 dark:bg-vendeur-bg border-t border-slate-200 dark:border-white/10 shrink-0 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))]">
             <form
               onSubmit={(e) => {
                 e.preventDefault();
@@ -324,12 +326,12 @@ export function VendeurIAPlaygroundModal({ isOpen, onClose, merchant }: VendeurI
                 onChange={(e) => setInputText(e.target.value)}
                 placeholder="Tapez un message de test comme un client..."
                 disabled={isLoading}
-                className="flex-1 h-12 px-4 rounded-2xl bg-black/60 border border-white/10 text-sm text-white placeholder:text-white/30 focus:border-vendeur-emerald outline-none transition-all"
+                className="flex-1 h-12 px-4 rounded-2xl bg-white dark:bg-black/60 border border-slate-300 dark:border-white/10 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-white/30 focus:border-emerald-500 outline-none transition-all shadow-inner"
               />
               <button
                 type="submit"
                 disabled={!inputText.trim() || isLoading}
-                className="h-12 px-5 rounded-2xl bg-vendeur-emerald hover:bg-vendeur-emerald/90 text-vendeur-coal font-black uppercase text-xs flex items-center justify-center gap-2 transition-all shadow-lg shadow-vendeur-emerald/20 disabled:opacity-50"
+                className="h-12 px-5 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black uppercase text-xs flex items-center justify-center gap-2 transition-all shadow-md shadow-emerald-500/20 disabled:opacity-50 cursor-pointer"
               >
                 <Send size={16} />
                 <span className="hidden sm:inline">Envoyer</span>

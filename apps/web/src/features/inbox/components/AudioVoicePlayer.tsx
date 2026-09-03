@@ -86,11 +86,7 @@ export function AudioVoicePlayer({ audioUrl, duration = 0, isSender = false }: A
       <button
         type="button"
         onClick={togglePlay}
-        className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 transition-transform active:scale-95 shadow-sm ${
-          isSender
-            ? "bg-[#00a884] text-[#111b21] hover:bg-[#00a884]/90"
-            : "bg-[#00a884] text-[#111b21] hover:bg-[#00a884]/90"
-        }`}
+        className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 transition-transform active:scale-95 shadow-sm bg-emerald-500 text-slate-950 hover:bg-emerald-400 cursor-pointer"
       >
         {isPlaying ? <Pause size={18} fill="currentColor" /> : <Play size={18} fill="currentColor" className="ml-0.5" />}
       </button>
@@ -105,12 +101,12 @@ export function AudioVoicePlayer({ audioUrl, duration = 0, isSender = false }: A
             max={totalDuration || 100}
             value={currentTime}
             onChange={handleSeek}
-            className="w-full h-1.5 bg-white/20 rounded-lg appearance-none cursor-pointer accent-[#00a884] focus:outline-none"
+            className="w-full h-1.5 bg-black/20 dark:bg-white/20 rounded-lg appearance-none cursor-pointer accent-emerald-500 focus:outline-none"
           />
         </div>
 
         {/* Time display */}
-        <div className="flex items-center justify-between text-[11px] text-[#8696a0]">
+        <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-[#8696a0]">
           <span>{formatSec(currentTime)}</span>
           <span>{formatSec(totalDuration)}</span>
         </div>
@@ -120,7 +116,7 @@ export function AudioVoicePlayer({ audioUrl, duration = 0, isSender = false }: A
       <button
         type="button"
         onClick={handleSpeedToggle}
-        className="px-2 py-1 rounded-md bg-white/10 hover:bg-white/20 text-[10px] font-bold text-white transition-colors"
+        className="px-2 py-1 rounded-md bg-black/10 dark:bg-white/10 hover:bg-black/20 dark:hover:bg-white/20 text-[10px] font-bold text-slate-800 dark:text-white transition-colors cursor-pointer"
         title="Vitesse de lecture"
       >
         {playbackRate}x

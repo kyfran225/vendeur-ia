@@ -2,9 +2,44 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  color-scheme: light;
+  --bg-app-rgb: 248 250 252;
+  --bg-surface-rgb: 255 255 255;
+  --bg-app: rgb(var(--bg-app-rgb));
+  --bg-surface: rgb(var(--bg-surface-rgb));
+  --bg-surface-subtle: #f1f5f9;
+  --bg-surface-elevated: #ffffff;
+  --bg-input: #ffffff;
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #94a3b8;
+  --border-subtle: rgba(226, 232, 240, 0.8);
+  --border-card: #e2e8f0;
+  --border-strong: #cbd5e1;
+}
+
+html.dark {
+  color-scheme: dark;
+  --bg-app-rgb: 7 16 13;
+  --bg-surface-rgb: 13 31 24;
+  --bg-app: rgb(var(--bg-app-rgb));
+  --bg-surface: rgb(var(--bg-surface-rgb));
+  --bg-surface-subtle: #132a21;
+  --bg-surface-elevated: #163228;
+  --bg-input: rgba(0, 0, 0, 0.4);
+  --text-primary: #ffffff;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-card: rgba(255, 255, 255, 0.12);
+  --border-strong: rgba(255, 255, 255, 0.2);
+}
+
 @layer base {
   html, body {
-    @apply bg-[#07100d] text-white;
+    background-color: var(--bg-app);
+    color: var(--text-primary);
     margin: 0;
     padding: 0;
     width: 100%;
@@ -12,6 +47,7 @@
     overflow-x: hidden;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
+    transition: background-color 0.2s ease, color 0.2s ease;
   }
 
   /* Universal Button & Input Resilience & Anti-Squash System */
@@ -56,8 +92,11 @@
     background: transparent;
   }
   ::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.15);
+    background: rgba(0, 0, 0, 0.15);
     border-radius: 9999px;
+  }
+  .dark ::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.15);
   }
   ::-webkit-scrollbar-thumb:hover {
     background: #10B981; /* Vendeur Emerald uniquement au survol */
@@ -88,6 +127,132 @@
   .no-scrollbar {
     -ms-overflow-style: none;
     scrollbar-width: none;
+  }
+}
+
+/* Light mode smart adaptive surfaces, typography & borders */
+html:not(.dark) {
+  /* Surfaces & Cards */
+  .bg-\[\#07100d\],
+  .bg-\[\#0c0f0d\],
+  .bg-\[\#0d1f18\],
+  .bg-\[\#132a21\],
+  .bg-\[\#121c18\],
+  .bg-\[\#0f1714\],
+  .bg-\[\#1a2e26\] {
+    background-color: var(--bg-surface) !important;
+  }
+
+  .bg-black\/40,
+  .bg-black\/30,
+  .bg-black\/20,
+  .bg-black\/50,
+  .bg-black\/60 {
+    background-color: var(--bg-input);
+  }
+
+  .bg-white\/5,
+  .bg-white\/\[0\.02\],
+  .bg-white\/\[0\.03\],
+  .bg-white\/\[0\.04\],
+  .bg-white\/\[0\.06\] {
+    background-color: var(--bg-surface-subtle);
+  }
+
+  .bg-white\/10,
+  .bg-white\/15 {
+    background-color: #f1f5f9;
+  }
+
+  /* Borders */
+  .border-white\/5,
+  .border-white\/10,
+  .border-white\/15,
+  .border-white\/20,
+  .border-white\/30 {
+    border-color: var(--border-card) !important;
+  }
+
+  /* Typography for Light Theme */
+  .text-white:not(
+    .bg-emerald-500 *,
+    .bg-emerald-600 *,
+    .bg-vendeur-emerald *,
+    .bg-red-500 *,
+    .bg-red-600 *,
+    .bg-rose-500 *,
+    .bg-rose-600 *,
+    .bg-amber-500 *,
+    .bg-blue-500 *,
+    .bg-indigo-600 *
+  ) {
+    color: var(--text-primary);
+  }
+
+  .text-white\/90,
+  .text-white\/80,
+  .text-white\/70 {
+    color: var(--text-primary) !important;
+  }
+
+  .text-white\/60,
+  .text-white\/50,
+  .text-white\/40 {
+    color: var(--text-secondary) !important;
+  }
+
+  .text-white\/30,
+  .text-white\/20 {
+    color: var(--text-muted) !important;
+  }
+
+  /* Inputs & Textareas */
+  input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]),
+  textarea,
+  select {
+    background-color: var(--bg-input);
+    color: var(--text-primary);
+    border-color: var(--border-card);
+  }
+
+  input::placeholder,
+  textarea::placeholder {
+    color: var(--text-muted);
+  }
+
+  /* WhatsApp Native Inbox Light Mode Adaptation */
+  .bg-\[\#111b21\] {
+    background-color: #f0f2f5 !important;
+  }
+  .bg-\[\#202c33\] {
+    background-color: #ffffff !important;
+  }
+  .bg-\[\#222e35\] {
+    background-color: #f7f9fa !important;
+  }
+  .bg-\[\#2a3942\] {
+    background-color: #ffffff !important;
+    border-color: #e2e8f0 !important;
+    color: #0f172a !important;
+  }
+  .bg-\[\#2a3942\] textarea {
+    color: #0f172a !important;
+  }
+  .bg-\[\#005c4b\] {
+    background-color: #d9fdd3 !important;
+    color: #111b21 !important;
+  }
+  .bg-\[\#005c4b\] * {
+    color: #111b21 !important;
+  }
+  .text-\[\#8696a0\] {
+    color: #64748b !important;
+  }
+  .text-\[\#e9edef\] {
+    color: #0f172a !important;
+  }
+  .text-\[\#d1d7db\] {
+    color: #334155 !important;
   }
 }
 

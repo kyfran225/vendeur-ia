@@ -6,6 +6,10 @@ import { HelmetProvider } from "react-helmet-async";
 import { registerSW } from "virtual:pwa-register";
 import App from "./App";
 import "./index.css";
+import { useThemeStore } from "./stores/themeStore";
+
+// Initialize adaptive theme immediately
+useThemeStore.getState().initTheme();
 
 // Register Service Worker for PWA
 registerSW({

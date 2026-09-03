@@ -1,5 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 export default {
+  darkMode: "class",
   content: [
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
@@ -18,8 +19,19 @@ export default {
         vendeur: {
           green: "#0F5A4F",
           emerald: "#10B981",
-          coal: "#0c0f0d",
-          bg: "#07100d",
+          coal: "rgb(var(--bg-surface-rgb) / <alpha-value>)",
+          bg: "rgb(var(--bg-app-rgb) / <alpha-value>)",
+        },
+        surface: {
+          DEFAULT: "var(--bg-surface)",
+          subtle: "var(--bg-surface-subtle)",
+          elevated: "var(--bg-surface-elevated)",
+          input: "var(--bg-input)",
+        },
+        theme: {
+          primary: "var(--text-primary)",
+          secondary: "var(--text-secondary)",
+          muted: "var(--text-muted)",
         }
       },
       fontFamily: {

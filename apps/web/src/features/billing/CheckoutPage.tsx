@@ -40,6 +40,7 @@ import { twMerge } from "tailwind-merge";
 import { VendeurIALoader } from "@/components/ui/VendeurIALoader";
 import { WhatsAppIcon } from "@/components/ui/WhatsAppIcon";
 import { AuthSheet } from "@/features/auth/components/AuthSheet";
+import { ThemeToggle } from "@/components/ui/ThemeToggle";
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -385,11 +386,11 @@ export function CheckoutPage() {
   ];
 
   return (
-    <div className="min-h-[100dvh] bg-[#070c09] text-white p-3.5 sm:p-6 md:p-10 animate-in fade-in duration-500">
+    <div className="min-h-[100dvh] bg-slate-50 dark:bg-[#070c09] text-slate-900 dark:text-white p-3.5 sm:p-6 md:p-10 animate-in fade-in duration-500 transition-colors duration-200">
       <div className="max-w-4xl mx-auto space-y-5 sm:space-y-7">
         
         {/* Navigation & Stepper Header */}
-        <div className="flex items-center justify-between border-b border-white/5 pb-4">
+        <div className="flex items-center justify-between border-b border-slate-200/80 dark:border-white/5 pb-4">
           <button
             onClick={() => {
               if (currentStep > 1) {
@@ -398,65 +399,68 @@ export function CheckoutPage() {
                 navigate(-1);
               }
             }}
-            className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-white/50 hover:text-white transition-all cursor-pointer"
+            className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-slate-500 hover:text-slate-900 dark:text-white/50 dark:hover:text-white transition-all cursor-pointer"
           >
             <ArrowLeft size={16} />
             <span>{currentStep > 1 ? "Étape précédente" : "Retour aux offres"}</span>
           </button>
 
-          {/* Clean Stepper Indicators */}
-          <div className="flex items-center gap-2">
-            {steps.map((s, idx) => (
-              <React.Fragment key={s.num}>
-                <div
-                  onClick={() => {
-                    // Allow going back to previous steps
-                    if (s.num < currentStep) setCurrentStep(s.num as any);
-                  }}
-                  className={cn(
-                    "flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider transition-all",
-                    currentStep === s.num
-                      ? "bg-vendeur-emerald text-vendeur-coal shadow-md shadow-vendeur-emerald/20"
-                      : currentStep > s.num
-                      ? "bg-white/10 text-white hover:bg-white/15 cursor-pointer"
-                      : "text-white/20"
+          <div className="flex items-center gap-4">
+            <ThemeToggle />
+            {/* Clean Stepper Indicators */}
+            <div className="flex items-center gap-2">
+              {steps.map((s, idx) => (
+                <React.Fragment key={s.num}>
+                  <div
+                    onClick={() => {
+                      // Allow going back to previous steps
+                      if (s.num < currentStep) setCurrentStep(s.num as any);
+                    }}
+                    className={cn(
+                      "flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider transition-all",
+                      currentStep === s.num
+                        ? "bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20 font-black"
+                        : currentStep > s.num
+                        ? "bg-slate-200 text-slate-800 dark:bg-white/10 dark:text-white hover:bg-slate-300 dark:hover:bg-white/15 cursor-pointer"
+                        : "text-slate-400 dark:text-white/20"
+                    )}
+                  >
+                    <span>{s.num}</span>
+                    <span className="hidden sm:inline">{s.label}</span>
+                  </div>
+                  {idx < steps.length - 1 && (
+                    <div className={cn("w-3 h-px", currentStep > s.num ? "bg-emerald-500" : "bg-slate-200 dark:bg-white/10")} />
                   )}
-                >
-                  <span>{s.num}</span>
-                  <span className="hidden sm:inline">{s.label}</span>
-                </div>
-                {idx < steps.length - 1 && (
-                  <div className={cn("w-3 h-px", currentStep > s.num ? "bg-vendeur-emerald" : "bg-white/10")} />
-                )}
-              </React.Fragment>
-            ))}
+                </React.Fragment>
+              ))}
+            </div>
           </div>
         </div>
 
         {/* Compact Plan Summary Banner (Mobile-Optimized & Reassuring) */}
-        <div className="bg-[#0e1713] border border-white/10 rounded-2xl sm:rounded-3xl p-4 sm:p-5 shadow-xl">
+        <div className="bg-white dark:bg-[#0e1713] border border-slate-200 dark:border-white/10 rounded-2xl sm:rounded-3xl p-4 sm:p-5 shadow-md dark:shadow-xl text-slate-900 dark:text-white">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 sm:gap-4">
             <div className="flex items-center gap-3 min-w-0">
-              <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-xl sm:rounded-2xl bg-vendeur-emerald/10 text-vendeur-emerald border border-vendeur-emerald/20 flex items-center justify-center shrink-0">
+              <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-xl sm:rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-vendeur-emerald border border-emerald-500/20 flex items-center justify-center shrink-0">
                 <Sparkles size={20} />
               </div>
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
-                  <h2 className="text-sm sm:text-base font-black uppercase text-white tracking-tight">{offer.name}</h2>
-                  <span className="text-[9px] font-black uppercase tracking-wider text-vendeur-emerald bg-vendeur-emerald/10 px-2 py-0.5 rounded-full border border-vendeur-emerald/20 whitespace-nowrap">
+                  <h2 className="text-sm sm:text-base font-black uppercase text-slate-900 dark:text-white tracking-tight">{offer.name}</h2>
+                  <span className="text-[9px] font-black uppercase tracking-wider text-emerald-700 dark:text-vendeur-emerald bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20 whitespace-nowrap">
                     {isYearly ? "Annuel (-17%)" : "Mensuel"}
                   </span>
                 </div>
-                <p className="text-[11px] text-white/50 mt-0.5">Activation instantanée & assistance 7j/7</p>
+                <p className="text-[11px] text-slate-500 dark:text-white/50 mt-0.5">Activation instantanée & assistance 7j/7</p>
               </div>
             </div>
 
-            <div className="flex sm:flex-col items-baseline sm:items-end justify-between sm:justify-center border-t border-white/5 sm:border-t-0 pt-2 sm:pt-0 shrink-0">
-              <div className="text-lg sm:text-2xl font-black italic text-vendeur-emerald font-mono leading-none">
-                {totalToday.toLocaleString()} <span className="text-xs uppercase text-vendeur-emerald/70 font-sans">{activeCurrencySymbol}</span>
+            <div className="flex sm:flex-col items-baseline sm:items-end justify-between sm:justify-center border-t border-slate-100 dark:border-white/5 sm:border-t-0 pt-2 sm:pt-0 shrink-0">
+              <div className="text-lg sm:text-2xl font-black italic text-emerald-600 dark:text-vendeur-emerald font-mono leading-none">
+                {totalToday.toLocaleString()} <span className="text-xs uppercase text-emerald-600/70 dark:text-vendeur-emerald/70 font-sans">{activeCurrencySymbol}</span>
               </div>
               {isYearly && savings > 0 && (
-                <span className="text-[9px] font-bold text-white/40 block mt-0.5 sm:mt-1">
+                <span className="text-[9px] font-bold text-slate-400 dark:text-white/40 block mt-0.5 sm:mt-1">
                   Économie de {savings.toLocaleString()} {activeCurrencySymbol}
                 </span>
               )}
@@ -466,16 +470,16 @@ export function CheckoutPage() {
 
         {/* Unauthenticated Visitor Identification Card */}
         {!user && (
-          <div className="bg-gradient-to-r from-emerald-950/70 via-[#0c1611] to-emerald-950/70 border border-vendeur-emerald/40 rounded-2xl sm:rounded-3xl p-4 sm:p-6 text-left space-y-3.5 shadow-xl animate-in fade-in">
+          <div className="bg-emerald-50 dark:bg-gradient-to-r dark:from-emerald-950/70 dark:via-[#0c1611] dark:to-emerald-950/70 border border-emerald-300 dark:border-vendeur-emerald/40 rounded-2xl sm:rounded-3xl p-4 sm:p-6 text-left space-y-3.5 shadow-md dark:shadow-xl animate-in fade-in">
             <div className="flex items-start sm:items-center gap-3.5">
-              <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-xl sm:rounded-2xl bg-vendeur-emerald/20 text-vendeur-emerald border border-vendeur-emerald/40 flex items-center justify-center shrink-0">
+              <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-xl sm:rounded-2xl bg-emerald-500/20 text-emerald-700 dark:text-vendeur-emerald border border-emerald-500/30 flex items-center justify-center shrink-0">
                 <User size={22} />
               </div>
               <div className="flex-1 min-w-0">
-                <h3 className="text-sm sm:text-base font-black uppercase text-white tracking-tight">
+                <h3 className="text-sm sm:text-base font-black uppercase text-slate-900 dark:text-white tracking-tight">
                   Identifiez-vous pour lier votre Vendeur IA
                 </h3>
-                <p className="text-xs sm:text-sm text-white/70 mt-0.5 leading-relaxed">
+                <p className="text-xs sm:text-sm text-slate-600 dark:text-white/70 mt-0.5 leading-relaxed">
                   Créez votre compte ou connectez-vous en 30 secondes pour associer votre abonnement et votre numéro WhatsApp commercial.
                 </p>
               </div>
@@ -484,12 +488,12 @@ export function CheckoutPage() {
               <button
                 type="button"
                 onClick={() => setIsAuthOpen(true)}
-                className="h-11 sm:h-12 px-6 bg-vendeur-emerald hover:bg-emerald-400 text-vendeur-coal font-black uppercase tracking-wider text-xs sm:text-sm rounded-xl flex items-center justify-center gap-2 transition-all active:scale-95 shadow-lg shadow-vendeur-emerald/20 cursor-pointer shrink-0"
+                className="h-11 sm:h-12 px-6 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black uppercase tracking-wider text-xs sm:text-sm rounded-xl flex items-center justify-center gap-2 transition-all active:scale-95 shadow-md shadow-emerald-500/20 cursor-pointer shrink-0"
               >
                 <Sparkles size={16} />
                 <span>Créer mon compte / Me connecter</span>
               </button>
-              <span className="text-[11px] text-white/40 sm:ml-2">
+              <span className="text-[11px] text-slate-500 dark:text-white/40 sm:ml-2">
                 ✓ Sans engagement · Configuration immédiate
               </span>
             </div>
@@ -510,17 +514,17 @@ export function CheckoutPage() {
               className="space-y-6"
             >
               <div className="space-y-1 text-left">
-                <h1 className="text-xl sm:text-3xl font-black uppercase tracking-tight text-white">
+                <h1 className="text-xl sm:text-3xl font-black uppercase tracking-tight text-slate-900 dark:text-white">
                   1. Comment souhaitez-vous payer ?
                 </h1>
-                <p className="text-xs sm:text-sm text-white/50">
+                <p className="text-xs sm:text-sm text-slate-500 dark:text-white/50">
                   Sélectionnez votre pays et votre moyen de règlement privilégié.
                 </p>
               </div>
 
               {/* Country Picker Pills */}
               <div className="space-y-2 text-left">
-                <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-white/40 ml-1">
                   Pays de facturation
                 </label>
                 <div className="flex flex-wrap gap-2">
@@ -536,8 +540,8 @@ export function CheckoutPage() {
                       className={cn(
                         "px-3 py-2 rounded-xl border text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer",
                         userCountry === c.code
-                          ? "bg-vendeur-emerald/15 border-vendeur-emerald text-white shadow-lg shadow-vendeur-emerald/10"
-                          : "bg-black/40 border-white/10 text-white/40 hover:border-white/20 hover:text-white/70"
+                          ? "bg-emerald-500/15 border-emerald-500 text-slate-900 dark:text-white shadow-sm"
+                          : "bg-white dark:bg-black/40 border-slate-200 dark:border-white/10 text-slate-600 dark:text-white/40 hover:border-slate-300 dark:hover:border-white/20 hover:text-slate-900 dark:hover:text-white/70"
                       )}
                     >
                       <span>{c.name}</span>
@@ -548,7 +552,7 @@ export function CheckoutPage() {
 
               {/* Payment Methods Grid */}
               <div className="space-y-2.5 text-left">
-                <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-white/40 ml-1">
                   Moyen de paiement
                 </label>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-3">
@@ -562,18 +566,18 @@ export function CheckoutPage() {
                         className={cn(
                           "p-3.5 sm:p-4 rounded-2xl border text-left flex flex-col justify-between gap-2.5 transition-all cursor-pointer relative overflow-hidden",
                           isSelected
-                            ? "bg-vendeur-emerald/10 border-vendeur-emerald ring-1 ring-vendeur-emerald/30 shadow-lg shadow-vendeur-emerald/10"
-                            : "bg-[#0b120f] border-white/10 hover:border-white/20"
+                            ? "bg-emerald-500/10 border-emerald-500 ring-1 ring-emerald-500/30 shadow-md"
+                            : "bg-white dark:bg-[#0b120f] border-slate-200 dark:border-white/10 hover:border-slate-300 dark:hover:border-white/20 text-slate-900 dark:text-white"
                         )}
                       >
                         <div className="flex items-center justify-between w-full">
-                          <span className="text-xs sm:text-sm font-black uppercase tracking-tight text-white">{method.name.split(" ")[0]}</span>
+                          <span className="text-xs sm:text-sm font-black uppercase tracking-tight text-slate-900 dark:text-white">{method.name.split(" ")[0]}</span>
                           <div
                             className="w-2.5 h-2.5 rounded-full"
                             style={{ backgroundColor: method.color }}
                           />
                         </div>
-                        <span className="text-[10px] sm:text-[11px] text-white/50 font-medium truncate">
+                        <span className="text-[10px] sm:text-[11px] text-slate-500 dark:text-white/50 font-medium truncate">
                           {method.badge || method.name}
                         </span>
                       </button>
@@ -585,15 +589,15 @@ export function CheckoutPage() {
                     onClick={() => {
                       toast.info("💳 Le paiement par Carte Bancaire (Visa / Mastercard) sera bientôt disponible ! Pour une activation instantanée, choisissez Wave, MTN MoMo ou Orange Money. 🚀");
                     }}
-                    className="p-3.5 sm:p-4 rounded-2xl border text-left flex flex-col justify-between gap-2.5 transition-all cursor-pointer bg-[#0b120f]/60 border-white/10 opacity-70 hover:opacity-100 hover:border-white/20 relative overflow-hidden group"
+                    className="p-3.5 sm:p-4 rounded-2xl border text-left flex flex-col justify-between gap-2.5 transition-all cursor-pointer bg-slate-50/60 dark:bg-[#0b120f]/60 border-slate-200 dark:border-white/10 opacity-70 hover:opacity-100 hover:border-slate-300 dark:hover:border-white/20 relative overflow-hidden group text-slate-900 dark:text-white"
                   >
                     <div className="flex items-center justify-between w-full">
-                      <span className="text-xs sm:text-sm font-black uppercase tracking-tight text-white/80">Carte Bancaire</span>
-                      <CreditCard size={16} className="text-white/40 group-hover:text-white/70" />
+                      <span className="text-xs sm:text-sm font-black uppercase tracking-tight text-slate-800 dark:text-white/80">Carte Bancaire</span>
+                      <CreditCard size={16} className="text-slate-400 dark:text-white/40 group-hover:text-slate-700 dark:group-hover:text-white/70" />
                     </div>
                     <div className="flex items-center justify-between gap-1">
-                      <span className="text-[10px] sm:text-[11px] text-white/40 font-medium">Visa, Mastercard</span>
-                      <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-400 border border-amber-500/30">
+                      <span className="text-[10px] sm:text-[11px] text-slate-500 dark:text-white/40 font-medium">Visa, Mastercard</span>
+                      <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30">
                         Bientôt dispo
                       </span>
                     </div>
@@ -614,7 +618,7 @@ export function CheckoutPage() {
                     if (isStep1Ready) setCurrentStep(2);
                   }}
                   disabled={!isStep1Ready}
-                  className="w-full h-14 min-h-[56px] bg-vendeur-emerald hover:bg-emerald-400 text-vendeur-coal font-black uppercase tracking-wider text-xs sm:text-sm rounded-2xl flex items-center justify-center gap-2 transition-all active:scale-98 shadow-xl shadow-vendeur-emerald/20 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-vendeur-emerald disabled:shadow-none shrink-0"
+                  className="w-full h-14 min-h-[56px] bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black uppercase tracking-wider text-xs sm:text-sm rounded-2xl flex items-center justify-center gap-2 transition-all active:scale-98 shadow-lg shadow-emerald-500/20 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-emerald-500 disabled:shadow-none shrink-0"
                 >
                   <span>Continuer le paiement</span>
                   <ChevronRight size={18} className="shrink-0" />
@@ -637,20 +641,20 @@ export function CheckoutPage() {
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
                     <div className="w-3 h-3 rounded-full" style={{ backgroundColor: currentMethodConfig.color }} />
-                    <h1 className="text-xl sm:text-3xl font-black uppercase tracking-tight text-white">
+                    <h1 className="text-xl sm:text-3xl font-black uppercase tracking-tight text-slate-900 dark:text-white">
                       2. Effectuez votre transfert {currentMethodConfig.name}
                     </h1>
                   </div>
-                  <p className="text-xs sm:text-sm text-white/50">
+                  <p className="text-xs sm:text-sm text-slate-500 dark:text-white/50">
                     Transférez le montant exact ci-dessous vers le numéro marchand dédié.
                   </p>
                 </div>
 
                 {/* Unobtrusive Minimal Reference Pill */}
                 {activeIntent?.reference && (
-                  <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-[11px] font-mono text-white/60 shrink-0">
+                  <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-200/80 dark:bg-white/5 border border-slate-300 dark:border-white/10 text-[11px] font-mono text-slate-700 dark:text-white/60 shrink-0">
                     <span>Réf :</span>
-                    <span className="text-white font-bold">{activeIntent.reference}</span>
+                    <span className="text-slate-900 dark:text-white font-bold">{activeIntent.reference}</span>
                   </div>
                 )}
               </div>
@@ -658,17 +662,17 @@ export function CheckoutPage() {
               {/* Ultra-Clear Transfer Cards (Number & Amount) */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 {/* Beneficiary Card */}
-                <div className="p-4 sm:p-5 rounded-2xl bg-[#0c1410] border border-white/15 space-y-1 relative group shadow-lg">
-                  <div className="text-[10px] font-black uppercase tracking-widest text-white/40">
+                <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-[#0c1410] border border-slate-200 dark:border-white/15 space-y-1 relative group shadow-md dark:shadow-lg text-slate-900 dark:text-white">
+                  <div className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-white/40">
                     Numéro Destinataire ({paymentConfig?.recipientName || "Vendeur IA"})
                   </div>
-                  <div className="text-lg sm:text-2xl font-mono font-black text-white tracking-wider pt-0.5">
+                  <div className="text-lg sm:text-2xl font-mono font-black text-slate-900 dark:text-white tracking-wider pt-0.5">
                     {currentMethodConfig.number}
                   </div>
                   <button
                     type="button"
                     onClick={() => copyToClipboard(currentMethodConfig.number, "number")}
-                    className="absolute right-3.5 top-1/2 -translate-y-1/2 px-3 py-2 rounded-xl bg-white/10 hover:bg-vendeur-emerald hover:text-black text-white text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer shadow"
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 px-3 py-2 rounded-xl bg-slate-100 hover:bg-emerald-500 hover:text-slate-950 dark:bg-white/10 dark:hover:bg-vendeur-emerald dark:hover:text-black text-slate-800 dark:text-white text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer shadow"
                   >
                     {copiedField === "number" ? <Check size={14} /> : <Copy size={14} />}
                     <span>{copiedField === "number" ? "Copié !" : "Copier"}</span>
@@ -676,17 +680,17 @@ export function CheckoutPage() {
                 </div>
 
                 {/* Amount Card */}
-                <div className="p-4 sm:p-5 rounded-2xl bg-[#0c1410] border border-white/15 space-y-1 relative shadow-lg">
-                  <div className="text-[10px] font-black uppercase tracking-widest text-white/40">
-                    Montant Exact à Envoyer {isYearly && <span className="text-amber-400">(Réduction Annuelle Incluse)</span>}
+                <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-[#0c1410] border border-slate-200 dark:border-white/15 space-y-1 relative shadow-md dark:shadow-lg text-slate-900 dark:text-white">
+                  <div className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-white/40">
+                    Montant Exact à Envoyer {isYearly && <span className="text-amber-600 dark:text-amber-400">(Réduction Annuelle Incluse)</span>}
                   </div>
-                  <div className="text-lg sm:text-2xl font-mono font-black text-vendeur-emerald pt-0.5">
+                  <div className="text-lg sm:text-2xl font-mono font-black text-emerald-600 dark:text-vendeur-emerald pt-0.5">
                     {totalToday.toLocaleString()} {activeCurrencySymbol}
                   </div>
                   <button
                     type="button"
                     onClick={() => copyToClipboard(totalToday.toString(), "amount")}
-                    className="absolute right-3.5 top-1/2 -translate-y-1/2 px-3 py-2 rounded-xl bg-white/10 hover:bg-vendeur-emerald hover:text-black text-white text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer shadow"
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 px-3 py-2 rounded-xl bg-slate-100 hover:bg-emerald-500 hover:text-slate-950 dark:bg-white/10 dark:hover:bg-vendeur-emerald dark:hover:text-black text-slate-800 dark:text-white text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer shadow"
                   >
                     {copiedField === "amount" ? <Check size={14} /> : <Copy size={14} />}
                     <span>{copiedField === "amount" ? "Copié !" : "Copier"}</span>
@@ -695,8 +699,8 @@ export function CheckoutPage() {
               </div>
 
               {/* Simple Guidance Note */}
-              <div className="p-4 rounded-2xl bg-black/30 border border-white/10 text-xs text-white/70 flex items-start gap-3">
-                <ShieldCheck size={18} className="text-vendeur-emerald shrink-0 mt-0.5" />
+              <div className="p-4 rounded-2xl bg-slate-100 dark:bg-black/30 border border-slate-200 dark:border-white/10 text-xs text-slate-700 dark:text-white/70 flex items-start gap-3">
+                <ShieldCheck size={18} className="text-emerald-600 dark:text-vendeur-emerald shrink-0 mt-0.5" />
                 <p className="leading-relaxed">
                   {currentMethodConfig.instructions || "Ouvrez votre application de paiement et envoyez le montant exact. Une fois le virement validé, cliquez sur le bouton ci-dessous pour confirmer."}
                 </p>
@@ -707,7 +711,7 @@ export function CheckoutPage() {
                 <button
                   type="button"
                   onClick={() => setCurrentStep(1)}
-                  className="order-2 sm:order-1 sm:w-1/3 h-14 min-h-[56px] bg-white/5 hover:bg-white/10 text-white font-black uppercase tracking-wider text-xs rounded-2xl transition-all cursor-pointer flex items-center justify-center shrink-0"
+                  className="order-2 sm:order-1 sm:w-1/3 h-14 min-h-[56px] bg-slate-200/80 hover:bg-slate-300 dark:bg-white/5 dark:hover:bg-white/10 text-slate-800 dark:text-white font-black uppercase tracking-wider text-xs rounded-2xl transition-all cursor-pointer flex items-center justify-center shrink-0"
                 >
                   ← Changer de mode
                 </button>
@@ -715,7 +719,7 @@ export function CheckoutPage() {
                 <button
                   type="button"
                   onClick={() => setCurrentStep(3)}
-                  className="order-1 sm:order-2 sm:w-2/3 h-14 min-h-[56px] bg-vendeur-emerald hover:bg-emerald-400 text-vendeur-coal font-black uppercase tracking-wider text-xs sm:text-sm rounded-2xl flex items-center justify-center gap-2 transition-all active:scale-98 shadow-xl shadow-vendeur-emerald/20 cursor-pointer shrink-0"
+                  className="order-1 sm:order-2 sm:w-2/3 h-14 min-h-[56px] bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black uppercase tracking-wider text-xs sm:text-sm rounded-2xl flex items-center justify-center gap-2 transition-all active:scale-98 shadow-lg shadow-emerald-500/20 cursor-pointer shrink-0"
                 >
                   <span>J'ai envoyé le montant → Continuer</span>
                   <ChevronRight size={18} className="shrink-0" />
@@ -735,24 +739,24 @@ export function CheckoutPage() {
               className="space-y-6 text-left"
             >
               <div className="space-y-1">
-                <h1 className="text-xl sm:text-3xl font-black uppercase tracking-tight text-white">
+                <h1 className="text-xl sm:text-3xl font-black uppercase tracking-tight text-slate-900 dark:text-white">
                   3. Validation de votre règlement
                 </h1>
-                <p className="text-xs sm:text-sm text-white/50">
+                <p className="text-xs sm:text-sm text-slate-500 dark:text-white/50">
                   Renseignez les détails pour que notre système active automatiquement votre boutique.
                 </p>
               </div>
 
               {!proofSubmitted ? (
                 <form onSubmit={handleSubmitProof} className="space-y-4">
-                  <div className="bg-[#0b120f] border border-white/10 rounded-2xl sm:rounded-3xl p-4.5 sm:p-6 space-y-6 shadow-xl">
+                  <div className="bg-white dark:bg-[#0b120f] border border-slate-200 dark:border-white/10 rounded-2xl sm:rounded-3xl p-4.5 sm:p-6 space-y-6 shadow-md dark:shadow-xl text-slate-900 dark:text-white">
                     {/* Element Principal: Numéro émetteur */}
                     <div className="space-y-2">
                       <div className="flex items-center gap-2 mb-1">
-                        <div className="h-7 w-7 rounded-xl bg-vendeur-emerald/15 text-vendeur-emerald border border-vendeur-emerald/30 flex items-center justify-center">
+                        <div className="h-7 w-7 rounded-xl bg-emerald-500/15 text-emerald-600 dark:text-vendeur-emerald border border-emerald-500/30 flex items-center justify-center">
                           <Phone size={15} />
                         </div>
-                        <label className="text-xs sm:text-sm font-black uppercase tracking-wider text-white">
+                        <label className="text-xs sm:text-sm font-black uppercase tracking-wider text-slate-900 dark:text-white">
                           Numéro ayant effectué le transfert
                         </label>
                       </div>
@@ -764,12 +768,12 @@ export function CheckoutPage() {
                             setUserCountry(c.code);
                           }}
                           dropdownPosition="top"
-                          className="h-12 sm:h-14 !rounded-2xl px-3.5 sm:px-4"
+                          className="h-12 sm:h-14 !rounded-2xl px-3.5 sm:px-4 bg-slate-50 dark:bg-black/50 border-slate-300 dark:border-white/10 text-slate-900 dark:text-white"
                         />
                         <div className="flex-1 min-w-0">
                           <input
                             type="tel"
-                            className="w-full h-12 sm:h-14 bg-black/50 border border-white/10 focus:border-vendeur-emerald rounded-2xl px-4 text-white font-mono text-sm placeholder:text-white/20 outline-none transition-all"
+                            className="w-full h-12 sm:h-14 bg-slate-50 dark:bg-black/50 border border-slate-300 dark:border-white/10 focus:border-emerald-500 rounded-2xl px-4 text-slate-900 dark:text-white font-mono text-sm placeholder:text-slate-400 dark:placeholder:text-white/20 outline-none transition-all shadow-inner"
                             placeholder="01 02 27 39 66"
                             value={senderLocalPhone}
                             onChange={(e) => setSenderLocalPhone(e.target.value.replace(/\D/g, ""))}
@@ -781,12 +785,12 @@ export function CheckoutPage() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       {/* ID de Transaction : Plus discret */}
                       <div className="space-y-1.5">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-white/40 ml-1">
                           ID Transaction / Réf SMS (Optionnel)
                         </label>
                         <input
                           type="text"
-                          className="w-full h-11 bg-black/30 border border-white/5 focus:border-vendeur-emerald/50 rounded-xl px-4 text-white font-mono text-[11px] placeholder:text-white/10 outline-none transition-all"
+                          className="w-full h-11 bg-slate-50 dark:bg-black/30 border border-slate-300 dark:border-white/5 focus:border-emerald-500 rounded-xl px-4 text-slate-900 dark:text-white font-mono text-[11px] placeholder:text-slate-400 dark:placeholder:text-white/10 outline-none transition-all"
                           placeholder="Ex: PP260817..."
                           value={transactionIdInput}
                           onChange={(e) => setTransactionIdInput(e.target.value)}
@@ -795,7 +799,7 @@ export function CheckoutPage() {
 
                       {/* Upload Photo : Zone réduite */}
                       <div className="space-y-1.5">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-white/40 ml-1">
                           Capture du reçu (Optionnel)
                         </label>
                         <input
@@ -812,18 +816,18 @@ export function CheckoutPage() {
                           <button
                             type="button"
                             onClick={() => fileInputRef.current?.click()}
-                            className="w-full h-11 bg-white/5 border border-white/5 hover:bg-white/10 rounded-xl flex items-center justify-center gap-2 text-[11px] font-bold text-white/60 transition-all cursor-pointer"
+                            className="w-full h-11 bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/5 hover:bg-slate-200 dark:hover:bg-white/10 rounded-xl flex items-center justify-center gap-2 text-[11px] font-bold text-slate-600 dark:text-white/60 transition-all cursor-pointer"
                           >
                             <Camera size={14} />
                             <span>Ajouter une photo</span>
                           </button>
                         ) : (
-                          <div className="h-11 bg-vendeur-emerald/10 border border-vendeur-emerald/20 rounded-xl px-2 flex items-center justify-between gap-2 overflow-hidden">
+                          <div className="h-11 bg-emerald-500/10 border border-emerald-500/20 rounded-xl px-2 flex items-center justify-between gap-2 overflow-hidden">
                             <div className="flex items-center gap-2 min-w-0">
                                <img src={receiptPreview} className="h-7 w-7 rounded object-cover" />
-                               <span className="text-[10px] font-bold text-emerald-400 truncate">{receiptFile?.name}</span>
+                               <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 truncate">{receiptFile?.name}</span>
                             </div>
-                            <button type="button" onClick={handleRemoveReceipt} className="text-red-400/60 hover:text-red-400 p-1">
+                            <button type="button" onClick={handleRemoveReceipt} className="text-rose-500 hover:text-rose-600 p-1">
                               <Trash2 size={14} />
                             </button>
                           </div>
@@ -834,8 +838,8 @@ export function CheckoutPage() {
                     {/* Scan Progress Feedback (if scanning) */}
                     {isScanningReceipt && (
                       <div className="p-3 rounded-xl bg-emerald-500/5 border border-emerald-500/10 flex items-center gap-2 animate-pulse">
-                        <Loader2 size={12} className="animate-spin text-vendeur-emerald" />
-                        <span className="text-[10px] font-bold text-emerald-300">Analyse IA du reçu en cours...</span>
+                        <Loader2 size={12} className="animate-spin text-emerald-600 dark:text-vendeur-emerald" />
+                        <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-300">Analyse IA du reçu en cours...</span>
                       </div>
                     )}
                   </div>
@@ -844,7 +848,7 @@ export function CheckoutPage() {
                     <button
                       type="button"
                       onClick={() => setCurrentStep(2)}
-                      className="order-2 sm:order-1 sm:w-1/3 h-14 min-h-[56px] bg-white/5 hover:bg-white/10 text-white font-black uppercase tracking-wider text-xs rounded-2xl transition-all cursor-pointer flex items-center justify-center shrink-0"
+                      className="order-2 sm:order-1 sm:w-1/3 h-14 min-h-[56px] bg-slate-200/80 hover:bg-slate-300 dark:bg-white/5 dark:hover:bg-white/10 text-slate-800 dark:text-white font-black uppercase tracking-wider text-xs rounded-2xl transition-all cursor-pointer flex items-center justify-center shrink-0"
                     >
                       ← Revoir les infos
                     </button>
@@ -852,7 +856,7 @@ export function CheckoutPage() {
                     <button
                       type="submit"
                       disabled={submittingProof}
-                      className="order-1 sm:order-2 sm:w-2/3 h-14 min-h-[56px] bg-vendeur-emerald hover:bg-emerald-400 text-vendeur-coal font-black uppercase tracking-wider text-xs sm:text-sm rounded-2xl flex items-center justify-center gap-2 transition-all active:scale-98 shadow-xl shadow-vendeur-emerald/25 cursor-pointer disabled:opacity-50 shrink-0"
+                      className="order-1 sm:order-2 sm:w-2/3 h-14 min-h-[56px] bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black uppercase tracking-wider text-xs sm:text-sm rounded-2xl flex items-center justify-center gap-2 transition-all active:scale-98 shadow-lg shadow-emerald-500/25 cursor-pointer disabled:opacity-50 shrink-0"
                     >
                       {submittingProof ? (
                         <Loader2 className="animate-spin shrink-0" size={18} />
@@ -879,8 +883,8 @@ export function CheckoutPage() {
         </AnimatePresence>
 
         {/* Security & Peace of Mind Footer */}
-        <div className="pt-4 flex items-center justify-center gap-2 text-center text-white/40 text-[11px]">
-          <ShieldCheck size={14} className="text-vendeur-emerald shrink-0" />
+        <div className="pt-4 flex items-center justify-center gap-2 text-center text-slate-500 dark:text-white/40 text-[11px]">
+          <ShieldCheck size={14} className="text-emerald-600 dark:text-vendeur-emerald shrink-0" />
           <span>Paiement sécurisé et garanti. Support direct WhatsApp 7j/7.</span>
         </div>
 

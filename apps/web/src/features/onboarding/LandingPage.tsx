@@ -59,6 +59,7 @@ import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { useOnboardingStore } from "@/stores/onboardingStore";
 import { Logo } from "@/components/ui/Logo";
+import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { Link, useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import { WhatsAppTypingIndicator } from "@/components/ui/WhatsAppTypingIndicator";
 import { MetaHead } from "@/components/seo/MetaHead";
@@ -162,15 +163,15 @@ function BentoFeatures({ onOpenProduct }: { onOpenProduct?: (tab: ProductTab) =>
     <section className="py-24 px-4 max-w-7xl mx-auto">
       <FadeIn delay={0.1}>
         <div className="text-center mb-16">
-          <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/5 px-4 py-1.5 text-[11px] font-black uppercase tracking-widest text-emerald-400 mb-4">
+          <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-4 py-1.5 text-[11px] font-black uppercase tracking-widest text-emerald-600 dark:text-emerald-400 mb-4">
             <Sparkles size={14} />
             <span>Moteur d'Intelligence Commerciale</span>
           </div>
-          <h2 className="text-3xl md:text-5xl font-black text-white uppercase tracking-tighter mb-4">
+          <h2 className="text-3xl md:text-5xl font-black text-slate-900 dark:text-white uppercase tracking-tighter mb-4">
             Une Armée de Vente <br className="hidden sm:block" />
-            <span className="text-emerald-400">dans votre poche.</span>
+            <span className="text-emerald-600 dark:text-emerald-400">dans votre poche.</span>
           </h2>
-          <p className="text-white/40 max-w-2xl mx-auto font-medium">
+          <p className="text-slate-600 dark:text-white/40 max-w-2xl mx-auto font-medium">
             Oubliez les bots basiques. Vendeur IA est un cerveau commercial autonome conçu pour convertir vos prospects en clients payants.
           </p>
         </div>
@@ -180,7 +181,7 @@ function BentoFeatures({ onOpenProduct }: { onOpenProduct?: (tab: ProductTab) =>
         {/* STAR CARD: Flagship Showcase spanning full width across all 3 columns */}
         <motion.div
           whileHover={{ y: -3 }}
-          className="relative overflow-hidden rounded-[2rem] sm:rounded-[2.5rem] border bg-gradient-to-br from-[#07130e] via-[#091511] to-[#040907] border-emerald-500/25 p-6 sm:p-8 md:p-10 flex flex-col justify-between transition-all group md:col-span-3 shadow-xl transform-gpu"
+          className="relative overflow-hidden rounded-[2rem] sm:rounded-[2.5rem] border bg-white dark:bg-gradient-to-br dark:from-[#07130e] dark:via-[#091511] dark:to-[#040907] border-slate-200 dark:border-emerald-500/25 p-6 sm:p-8 md:p-10 flex flex-col justify-between transition-all group md:col-span-3 shadow-xl transform-gpu text-slate-900 dark:text-white"
         >
           {/* Lightweight Ambient Background Glow */}
           <div className="absolute -top-10 -right-10 w-48 h-48 bg-emerald-500/10 blur-2xl rounded-full pointer-events-none" />
@@ -188,12 +189,12 @@ function BentoFeatures({ onOpenProduct }: { onOpenProduct?: (tab: ProductTab) =>
           <div className="relative z-10 space-y-6">
             {/* Top clean badge */}
             <div className="flex items-center justify-between flex-wrap gap-2">
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 text-[11px] font-black uppercase tracking-wider">
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-emerald-600 dark:text-emerald-400 text-[11px] font-black uppercase tracking-wider">
                 <span>Commercial Virtuel Intelligent</span>
               </div>
               <button
                 onClick={() => onOpenProduct?.("vision")}
-                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/5 border border-white/10 hover:border-emerald-500/40 hover:bg-emerald-500/10 text-white/70 hover:text-emerald-400 text-xs font-bold transition-all cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 hover:border-emerald-500/40 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 text-slate-700 hover:text-emerald-600 dark:text-white/70 dark:hover:text-emerald-400 text-xs font-bold transition-all cursor-pointer"
               >
                 <span>Découvrir nos 4 technologies clés</span>
                 <ArrowRight size={13} />
@@ -201,10 +202,10 @@ function BentoFeatures({ onOpenProduct }: { onOpenProduct?: (tab: ProductTab) =>
             </div>
 
             <div>
-              <h3 className="text-2xl sm:text-3xl md:text-4xl font-black text-white tracking-tight uppercase mb-3 leading-tight">
-                Vendez 24h/7 avec <span className="text-emerald-400">Vendeur IA.</span>
+              <h3 className="text-2xl sm:text-3xl md:text-4xl font-black text-slate-900 dark:text-white tracking-tight uppercase mb-3 leading-tight">
+                Vendez 24h/7 avec <span className="text-emerald-600 dark:text-emerald-400">Vendeur IA.</span>
               </h3>
-              <p className="text-white/60 leading-relaxed text-sm md:text-base font-medium max-w-2xl">
+              <p className="text-slate-600 dark:text-white/60 leading-relaxed text-sm md:text-base font-medium max-w-2xl">
                 Votre assistant commercial ne dort jamais : il comprend vos produits, conseille vos clients, négocie les ventes et sécurise vos encaissements instantanément.
               </p>
             </div>
@@ -213,7 +214,7 @@ function BentoFeatures({ onOpenProduct }: { onOpenProduct?: (tab: ProductTab) =>
             <div className="py-2 flex flex-col lg:flex-row items-center gap-6 lg:gap-8 my-2">
               {/* Bot Icon Showcase Container */}
               <div className="relative flex items-center justify-center shrink-0">
-                <div className="relative h-20 w-20 sm:h-24 sm:w-24 rounded-2xl bg-[#0b1611] border border-emerald-500/20 p-3.5 flex items-center justify-center shadow-md">
+                <div className="relative h-20 w-20 sm:h-24 sm:w-24 rounded-2xl bg-slate-100/60 dark:bg-white/5 border border-slate-200 dark:border-white/10 p-3.5 flex items-center justify-center shadow-sm">
                   <AnimatedAssistantBot size={52} glow={false} />
                 </div>
               </div>
@@ -222,72 +223,72 @@ function BentoFeatures({ onOpenProduct }: { onOpenProduct?: (tab: ProductTab) =>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 w-full flex-1 min-w-0">
                 <div
                   onClick={() => onOpenProduct?.("simulator")}
-                  className="p-3.5 rounded-2xl bg-white/5 border border-white/10 hover:border-emerald-500/40 hover:bg-emerald-500/10 transition-all flex items-start gap-3 cursor-pointer group/pillar"
+                  className="p-3.5 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 hover:border-emerald-500/40 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 transition-all flex items-start gap-3 cursor-pointer group/pillar shadow-sm"
                 >
-                  <div className="h-8 w-8 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 shrink-0 group-hover/pillar:scale-110 transition-transform">
+                  <div className="h-8 w-8 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shrink-0 group-hover/pillar:scale-110 transition-transform">
                     <Zap size={16} />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-xs font-black uppercase tracking-wider text-white flex items-center gap-1">
-                      Réponse en 3s <ArrowRight size={10} className="opacity-0 group-hover/pillar:opacity-100 transition-opacity text-emerald-400" />
+                    <p className="text-xs font-black uppercase tracking-wider text-slate-900 dark:text-white flex items-center gap-1">
+                      Réponse en 3s <ArrowRight size={10} className="opacity-0 group-hover/pillar:opacity-100 transition-opacity text-emerald-500" />
                     </p>
-                    <p className="text-[11px] text-white/50 leading-snug mt-0.5">Zéro prospect perdu par attente</p>
+                    <p className="text-[11px] text-slate-500 dark:text-white/50 leading-snug mt-0.5">Zéro prospect perdu par attente</p>
                   </div>
                 </div>
 
                 <div
                   onClick={() => onOpenProduct?.("vision")}
-                  className="p-3.5 rounded-2xl bg-white/5 border border-white/10 hover:border-emerald-500/40 hover:bg-emerald-500/10 transition-all flex items-start gap-3 cursor-pointer group/pillar"
+                  className="p-3.5 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 hover:border-emerald-500/40 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 transition-all flex items-start gap-3 cursor-pointer group/pillar shadow-sm"
                 >
-                  <div className="h-8 w-8 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 shrink-0 group-hover/pillar:scale-110 transition-transform">
+                  <div className="h-8 w-8 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shrink-0 group-hover/pillar:scale-110 transition-transform">
                     <Camera size={16} />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-xs font-black uppercase tracking-wider text-white flex items-center gap-1">
-                      IA Vision™ <ArrowRight size={10} className="opacity-0 group-hover/pillar:opacity-100 transition-opacity text-emerald-400" />
+                    <p className="text-xs font-black uppercase tracking-wider text-slate-900 dark:text-white flex items-center gap-1">
+                      IA Vision™ <ArrowRight size={10} className="opacity-0 group-hover/pillar:opacity-100 transition-opacity text-emerald-500" />
                     </p>
-                    <p className="text-[11px] text-white/50 leading-snug mt-0.5">Scan photo & fiche produit</p>
+                    <p className="text-[11px] text-slate-500 dark:text-white/50 leading-snug mt-0.5">Scan photo & fiche produit</p>
                   </div>
                 </div>
 
                 <div
                   onClick={() => onOpenProduct?.("marketing")}
-                  className="p-3.5 rounded-2xl bg-white/5 border border-white/10 hover:border-emerald-500/40 hover:bg-emerald-500/10 transition-all flex items-start gap-3 cursor-pointer group/pillar"
+                  className="p-3.5 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 hover:border-emerald-500/40 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 transition-all flex items-start gap-3 cursor-pointer group/pillar shadow-sm"
                 >
-                  <div className="h-8 w-8 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 shrink-0 group-hover/pillar:scale-110 transition-transform">
+                  <div className="h-8 w-8 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shrink-0 group-hover/pillar:scale-110 transition-transform">
                     <Mic size={16} />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-xs font-black uppercase tracking-wider text-white flex items-center gap-1">
-                      Voix WhatsApp <ArrowRight size={10} className="opacity-0 group-hover/pillar:opacity-100 transition-opacity text-emerald-400" />
+                    <p className="text-xs font-black uppercase tracking-wider text-slate-900 dark:text-white flex items-center gap-1">
+                      Voix WhatsApp <ArrowRight size={10} className="opacity-0 group-hover/pillar:opacity-100 transition-opacity text-emerald-500" />
                     </p>
-                    <p className="text-[11px] text-white/50 leading-snug mt-0.5">Notes vocales réalistes</p>
+                    <p className="text-[11px] text-slate-500 dark:text-white/50 leading-snug mt-0.5">Notes vocales réalistes</p>
                   </div>
                 </div>
 
                 <div
                   onClick={() => onOpenProduct?.("api")}
-                  className="p-3.5 rounded-2xl bg-white/5 border border-white/10 hover:border-emerald-500/40 hover:bg-emerald-500/10 transition-all flex items-start gap-3 cursor-pointer group/pillar"
+                  className="p-3.5 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 hover:border-emerald-500/40 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 transition-all flex items-start gap-3 cursor-pointer group/pillar shadow-sm"
                 >
-                  <div className="h-8 w-8 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 shrink-0 group-hover/pillar:scale-110 transition-transform">
+                  <div className="h-8 w-8 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shrink-0 group-hover/pillar:scale-110 transition-transform">
                     <ShieldCheck size={16} />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-xs font-black uppercase tracking-wider text-white flex items-center gap-1">
-                      Closing 24/7 <ArrowRight size={10} className="opacity-0 group-hover/pillar:opacity-100 transition-opacity text-emerald-400" />
+                    <p className="text-xs font-black uppercase tracking-wider text-slate-900 dark:text-white flex items-center gap-1">
+                      Closing 24/7 <ArrowRight size={10} className="opacity-0 group-hover/pillar:opacity-100 transition-opacity text-emerald-500" />
                     </p>
-                    <p className="text-[11px] text-white/50 leading-snug mt-0.5">Négociation & encaissement</p>
+                    <p className="text-[11px] text-slate-500 dark:text-white/50 leading-snug mt-0.5">Négociation & encaissement</p>
                   </div>
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="relative z-10 pt-5 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-white/40 text-center sm:text-left">
+          <div className="relative z-10 pt-5 border-t border-slate-100 dark:border-white/5 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-slate-500 dark:text-white/40 text-center sm:text-left">
             <span className="font-medium">Compatible avec votre numéro WhatsApp existant</span>
             <button
               onClick={() => onOpenProduct?.("vision")}
-              className="text-emerald-400 font-bold flex items-center gap-1 hover:underline cursor-pointer"
+              className="text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1 hover:underline cursor-pointer"
             >
               Explorer les fonctionnalités en détail <ArrowRight size={14} />
             </button>
@@ -301,21 +302,20 @@ function BentoFeatures({ onOpenProduct }: { onOpenProduct?: (tab: ProductTab) =>
             whileHover={{ y: -4 }}
             onClick={() => onOpenProduct?.(f.id)}
             className={cn(
-              "relative overflow-hidden rounded-[2rem] sm:rounded-[2.5rem] border p-7 sm:p-8 flex flex-col justify-between transition-all group col-span-1 shadow-lg cursor-pointer",
-              f.color
+              "relative overflow-hidden rounded-[2rem] sm:rounded-[2.5rem] border bg-white dark:bg-[#0b1813] border-slate-200 dark:border-white/10 p-7 sm:p-8 flex flex-col justify-between transition-all group col-span-1 shadow-md hover:shadow-xl cursor-pointer text-slate-900 dark:text-white"
             )}
           >
             <div className="relative z-10">
               <div className="flex items-center justify-between mb-6">
-                <div className="h-12 w-12 rounded-2xl bg-white/5 flex items-center justify-center border border-white/10 group-hover:scale-105 transition-transform shadow-md">
+                <div className="h-12 w-12 rounded-2xl bg-slate-100 dark:bg-white/5 flex items-center justify-center border border-slate-200 dark:border-white/10 group-hover:scale-105 transition-transform shadow-sm">
                   {f.icon}
                 </div>
-                <span className="text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full bg-white/5 border border-white/10 text-white/60 group-hover:text-white transition-colors">
+                <span className="text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-700 dark:text-white/60 group-hover:text-emerald-600 dark:group-hover:text-white transition-colors">
                   {f.badge}
                 </span>
               </div>
-              <h3 className="text-xl font-black text-white mb-2 tracking-tight uppercase group-hover:text-emerald-300 transition-colors">{f.title}</h3>
-              <p className="text-white/50 leading-relaxed text-xs sm:text-sm font-medium">{f.desc}</p>
+              <h3 className="text-xl font-black text-slate-900 dark:text-white mb-2 tracking-tight uppercase group-hover:text-emerald-600 dark:group-hover:text-emerald-300 transition-colors">{f.title}</h3>
+              <p className="text-slate-600 dark:text-white/50 leading-relaxed text-xs sm:text-sm font-medium">{f.desc}</p>
 
               {f.isPayment && (
                 <div className="flex flex-wrap items-center gap-2.5 mt-5">
@@ -323,42 +323,57 @@ function BentoFeatures({ onOpenProduct }: { onOpenProduct?: (tab: ProductTab) =>
                   <img
                     src="https://www.wave.com/img/favicon.png"
                     alt="Wave"
-                    className="h-6 w-6 rounded-md shadow-lg group-hover:scale-105 transition-transform object-contain"
+                    className="h-6 w-6 rounded-md shadow-md group-hover:scale-105 transition-transform object-contain"
                   />
-                  {/* Orange */}
-                  <div className="h-6 w-6 rounded-md bg-[#FF7900] overflow-hidden shadow-lg group-hover:scale-105 transition-transform flex items-center justify-center">
+
+                  {/* Orange Money */}
+                  <div className="h-6 w-6 rounded-md bg-[#FF7900] overflow-hidden shadow-md group-hover:scale-105 transition-transform flex items-center justify-center">
                     <img
                       src="https://upload.wikimedia.org/wikipedia/commons/c/c8/Orange_logo.svg"
                       alt="Orange"
                       className="h-full w-full object-contain p-0.5"
                     />
                   </div>
+
                   {/* MTN */}
-                  <div className="h-6 px-1.5 rounded-md bg-[#FFCC00] flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform">
+                  <div className="h-6 px-1.5 rounded-md bg-[#FFCC00] flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
                     <svg viewBox="0 0 512 256" className="h-3.5 w-auto" fill="black" xmlns="http://www.w3.org/2000/svg">
                       <path d="M256 40c-110.5 0-200 38.5-200 86s89.5 86 200 86 200-38.5 200-86-89.5-86-200-86zm0 162c-104.9 0-190-34-190-76s85.1-76 190-76 190 34 190 76-85.1 76-190 76z" />
                       <path d="M125 85h25 l15 40 15-40 h25 v85 h-20 v-55 l-20 55 h-10 l-20-55 v55 h-20 V85z M225 85 h60 v20 h-20 v65 h-20 v-65 h-20 V85z M310 85 h20 l25 50 v-50 h20 v85 h-20 l-25-50 v50 h-20 V85z" />
                     </svg>
                   </div>
+
                   {/* Moov Money */}
-                  <div className="h-6 px-2 rounded-md bg-[#005CA9] flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform text-white font-black text-[9px] tracking-tight">
-                    MOOV
+                  <div className="h-6 px-2 rounded-md bg-[#005CA9] flex items-center justify-center shadow-md group-hover:scale-105 transition-transform" title="Moov Money">
+                    <svg viewBox="0 0 110 26" className="h-3.5 w-auto" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M6 19.5V7.5h3.6l3 6.8 3-6.8h3.6v12h-2.6v-7.8l-2.8 6.4h-2.4l-2.8-6.4v7.8H6z" fill="#FFFFFF"/>
+                      <circle cx="27.5" cy="13.5" r="5.5" stroke="#FFFFFF" strokeWidth="2.4" fill="none"/>
+                      <path d="M27.5 8a5.5 5.5 0 0 1 5.5 5.5" stroke="#FF7900" strokeWidth="2.8" strokeLinecap="round"/>
+                      <circle cx="39.5" cy="13.5" r="5.5" stroke="#FFFFFF" strokeWidth="2.4" fill="none"/>
+                      <path d="M39.5 8a5.5 5.5 0 0 1 5.5 5.5" stroke="#FF7900" strokeWidth="2.8" strokeLinecap="round"/>
+                      <path d="M47 7.5h2.8l3.4 12h-2.6l-2.1-7.8-2.1 7.8h-2.6l3.2-12z" fill="#FFFFFF"/>
+                      <text x="56" y="17" fill="#FF7900" fontSize="8.5" fontWeight="900" fontFamily="system-ui, -apple-system, sans-serif" letterSpacing="0.8">MONEY</text>
+                    </svg>
                   </div>
+
                   {/* Paystack */}
-                  <div className="h-6 px-2 rounded-md bg-[#00C3F8]/15 border border-[#00C3F8]/30 flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform text-[#00C3F8] font-bold text-[9px] tracking-tight">
-                    PAYSTACK
+                  <div className="h-6 px-2 rounded-md bg-[#011B33] border border-[#00C3F8]/30 flex items-center justify-center shadow-md group-hover:scale-105 transition-transform" title="Paystack">
+                    <svg viewBox="0 0 96 26" className="h-3.5 w-auto" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M19 2.5H1.5C.7 2.5 0 3.2 0 4v2c0 .8.7 1.5 1.5 1.5H19c.8 0 1.5-.7 1.5-1.5V4c0-.8-.7-1.5-1.5-1.5zm0 11.5H1.5c-.8 0-1.5.7-1.5 1.5v2c0 .8.7 1.5 1.5 1.5H19c.8 0 1.5-.7 1.5-1.5V15.5c0-.8-.7-1.5-1.5-1.5zm-8 6H1.5c-.8 0-1.5.7-1.5 1.5v2c0 .8.7 1.5 1.5 1.5H11c.8 0 1.5-.7 1.5-1.5v-2c0-.8-.7-1.5-1.5-1.5zM20 8.5H1.5C.7 8.5 0 9.2 0 10v2c0 .8.7 1.5 1.5 1.5H20c.8 0 1.5-.7 1.5-1.5V10c0-.8-.7-1.5-1.5-1.5z" fill="#00C3F8"/>
+                      <text x="26" y="17.5" fill="#FFFFFF" fontSize="11" fontWeight="800" fontFamily="system-ui, -apple-system, sans-serif" letterSpacing="-0.2">paystack</text>
+                    </svg>
                   </div>
                 </div>
               )}
             </div>
 
-            <div className="pt-4 mt-4 border-t border-white/5 flex items-center justify-between text-[11px] font-bold text-white/40 group-hover:text-emerald-400 transition-colors">
+            <div className="pt-4 mt-4 border-t border-slate-100 dark:border-white/5 flex items-center justify-between text-[11px] font-bold text-slate-500 dark:text-white/40 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
               <span>Voir la démo interactive</span>
               <ArrowRight size={12} className="group-hover:translate-x-1 transition-transform" />
             </div>
 
             {/* Decorative background glow */}
-            <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-white/5 blur-3xl rounded-full group-hover:bg-white/10 transition-all" />
+            <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-emerald-500/5 dark:bg-white/5 blur-3xl rounded-full group-hover:bg-emerald-500/10 transition-all" />
           </motion.div>
         ))}
       </div>
@@ -641,21 +656,21 @@ function LandingHero({
       {/* Left Text Side */}
       <div className="w-full lg:max-w-lg xl:max-w-xl text-center lg:text-left space-y-6">
         <FadeIn delay={0.2} direction="down">
-          <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/5 px-4 py-2 text-[11px] font-black uppercase tracking-widest text-emerald-400">
+          <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-4 py-2 text-[11px] font-black uppercase tracking-widest text-emerald-600 dark:text-emerald-400">
             <Rocket size={14} />
             <span>Le Futur du Commerce Social</span>
           </div>
         </FadeIn>
 
         <FadeIn delay={0.3}>
-          <h1 className="text-5xl md:text-6xl lg:text-7xl font-black leading-[0.95] text-white tracking-tighter uppercase">
+          <h1 className="text-5xl md:text-6xl lg:text-7xl font-black leading-[0.95] text-slate-900 dark:text-white tracking-tighter uppercase">
             WhatsApp <br/>
-            <span className="text-emerald-400">Vend tout seul.</span>
+            <span className="text-emerald-600 dark:text-emerald-400">Vend tout seul.</span>
           </h1>
         </FadeIn>
 
         <FadeIn delay={0.4}>
-          <p className="text-base md:text-lg text-white/50 leading-relaxed font-medium max-w-lg mx-auto lg:mx-0">
+          <p className="text-base md:text-lg text-slate-600 dark:text-white/50 leading-relaxed font-medium max-w-lg mx-auto lg:mx-0">
             Transformez votre WhatsApp en une machine de vente autonome. Propulsé par Vendeur IA qui comprend vos produits, gère vos clients et sécurise vos paiements 24h/7.
           </p>
         </FadeIn>
@@ -664,13 +679,13 @@ function LandingHero({
           <div className="flex flex-col sm:flex-row items-center gap-4 justify-center lg:justify-start">
             <button
               onClick={onLaunchDemo}
-              className="w-full sm:w-auto h-14 px-10 rounded-2xl bg-vendeur-emerald text-vendeur-coal font-black uppercase tracking-widest text-xs flex items-center justify-center gap-3 hover:scale-105 active:scale-95 transition-all shadow-[0_20px_50px_rgba(16,185,129,0.3)] cursor-pointer"
+              className="w-full sm:w-auto h-14 px-10 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black uppercase tracking-widest text-xs flex items-center justify-center gap-3 hover:scale-105 active:scale-95 transition-all shadow-[0_20px_50px_rgba(16,185,129,0.3)] cursor-pointer"
             >
               Lancer Vendeur IA <Play size={16} fill="currentColor" />
             </button>
             <button
               onClick={onAuth}
-              className="w-full sm:w-auto h-14 px-10 rounded-2xl border border-white/10 bg-white/5 text-white font-black uppercase tracking-widest text-xs flex items-center justify-center gap-3 hover:bg-white/10 transition-all cursor-pointer"
+              className="w-full sm:w-auto h-14 px-10 rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-slate-900 dark:text-white font-black uppercase tracking-widest text-xs flex items-center justify-center gap-3 hover:bg-slate-100 dark:hover:bg-white/10 transition-all cursor-pointer shadow-sm"
             >
               Connexion Marchand <ArrowRight size={18} />
             </button>
@@ -678,34 +693,34 @@ function LandingHero({
         </FadeIn>
 
         <FadeIn delay={0.6}>
-           <div className="grid grid-cols-3 gap-2 md:gap-8 pt-6 max-w-lg mx-auto lg:mx-0">
-              <div className="flex flex-col sm:flex-row items-center sm:gap-3 bg-white/5 border border-white/10 px-2 py-3 sm:px-4 sm:py-2 rounded-2xl backdrop-blur-sm">
-                <div className="h-7 w-7 sm:h-8 sm:w-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-400 mb-2 sm:mb-0">
+            <div className="grid grid-cols-3 gap-2 md:gap-8 pt-6 max-w-lg mx-auto lg:mx-0">
+              <div className="flex flex-col sm:flex-row items-center sm:gap-3 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 px-2 py-3 sm:px-4 sm:py-2 rounded-2xl shadow-sm backdrop-blur-sm">
+                <div className="h-7 w-7 sm:h-8 sm:w-8 rounded-lg bg-slate-100 dark:bg-white/5 border border-slate-200/60 dark:border-white/10 flex items-center justify-center text-emerald-600 dark:text-emerald-400 mb-2 sm:mb-0">
                   <ShieldCheck size={16} className="sm:w-[18px] sm:h-[18px]" />
                 </div>
                 <div className="text-center sm:text-left">
-                  <p className="text-lg sm:text-xl font-black text-white leading-none">98%</p>
-                  <p className="text-[7px] sm:text-[9px] uppercase font-black tracking-widest text-white/30 mt-1">Satisfait</p>
+                  <p className="text-lg sm:text-xl font-black text-slate-900 dark:text-white leading-none">98%</p>
+                  <p className="text-[7px] sm:text-[9px] uppercase font-black tracking-widest text-slate-400 dark:text-white/30 mt-1">Satisfait</p>
                 </div>
               </div>
 
-              <div className="flex flex-col sm:flex-row items-center sm:gap-3 bg-white/5 border border-white/10 px-2 py-3 sm:px-4 sm:py-2 rounded-2xl backdrop-blur-sm">
-                <div className="h-7 w-7 sm:h-8 sm:w-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-400 mb-2 sm:mb-0">
+              <div className="flex flex-col sm:flex-row items-center sm:gap-3 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 px-2 py-3 sm:px-4 sm:py-2 rounded-2xl shadow-sm backdrop-blur-sm">
+                <div className="h-7 w-7 sm:h-8 sm:w-8 rounded-lg bg-slate-100 dark:bg-white/5 border border-slate-200/60 dark:border-white/10 flex items-center justify-center text-emerald-600 dark:text-emerald-400 mb-2 sm:mb-0">
                   <Zap size={16} className="sm:w-[18px] sm:h-[18px]" />
                 </div>
                 <div className="text-center sm:text-left">
-                  <p className="text-lg sm:text-xl font-black text-white leading-none">3s</p>
-                  <p className="text-[7px] sm:text-[9px] uppercase font-black tracking-widest text-white/30 mt-1">Réponse</p>
+                  <p className="text-lg sm:text-xl font-black text-slate-900 dark:text-white leading-none">3s</p>
+                  <p className="text-[7px] sm:text-[9px] uppercase font-black tracking-widest text-slate-400 dark:text-white/30 mt-1">Réponse</p>
                 </div>
               </div>
 
-              <div className="flex flex-col sm:flex-row items-center sm:gap-3 bg-white/5 border border-white/10 px-2 py-3 sm:px-4 sm:py-2 rounded-2xl backdrop-blur-sm group hover:border-emerald-500/30 transition-all">
-                <div className="h-7 w-7 sm:h-8 sm:w-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-400 mb-2 sm:mb-0">
+              <div className="flex flex-col sm:flex-row items-center sm:gap-3 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 px-2 py-3 sm:px-4 sm:py-2 rounded-2xl shadow-sm backdrop-blur-sm group hover:border-emerald-500/30 transition-all">
+                <div className="h-7 w-7 sm:h-8 sm:w-8 rounded-lg bg-slate-100 dark:bg-white/5 border border-slate-200/60 dark:border-white/10 flex items-center justify-center text-emerald-600 dark:text-emerald-400 mb-2 sm:mb-0">
                   <AnimatedAssistantBot size={20} glow={false} />
                 </div>
                 <div className="text-center sm:text-left">
-                  <p className="text-lg sm:text-xl font-black text-white leading-none">24/7</p>
-                  <p className="text-[7px] sm:text-[9px] uppercase font-black tracking-widest text-white/30 mt-1">Actif</p>
+                  <p className="text-lg sm:text-xl font-black text-slate-900 dark:text-white leading-none">24/7</p>
+                  <p className="text-[7px] sm:text-[9px] uppercase font-black tracking-widest text-slate-400 dark:text-white/30 mt-1">Actif</p>
                 </div>
               </div>
            </div>
@@ -727,19 +742,19 @@ function LandingHero({
                   animate={{ opacity: 1, scale: 1, x: 0 }}
                   exit={{ opacity: 0, scale: 0.9, x: -10 }}
                   transition={{ duration: 0.25 }}
-                  className="hidden lg:flex absolute -left-28 xl:-left-36 -top-8 z-20 items-center gap-3 p-3 pr-4 rounded-2xl bg-[#0d1612]/95 border border-white/10 shadow-lg select-none"
+                  className="hidden lg:flex absolute -left-28 xl:-left-36 -top-8 z-20 items-center gap-3 p-3 pr-4 rounded-2xl bg-white/95 dark:bg-[#0d1612]/95 border border-slate-200 dark:border-white/10 shadow-xl select-none"
                 >
                   <div className="relative flex items-center justify-center shrink-0">
-                    <div className="relative h-11 w-11 rounded-xl bg-[#101e17] border border-emerald-500/20 flex items-center justify-center p-1.5 shadow-sm">
+                    <div className="relative h-11 w-11 rounded-xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 flex items-center justify-center p-1.5 shadow-sm">
                       <AnimatedAssistantBot size={26} glow={false} />
                     </div>
                   </div>
                   <div className="text-left whitespace-nowrap">
                     <div className="flex items-center gap-1.5">
-                      <p className="text-[11px] font-black text-white uppercase tracking-tight">Vendeur IA Actif</p>
-                      <span className="text-[9px] px-1.5 py-0.2 rounded bg-emerald-500/15 text-emerald-400 font-bold">24/7</span>
+                      <p className="text-[11px] font-black text-slate-900 dark:text-white uppercase tracking-tight">Vendeur IA Actif</p>
+                      <span className="text-[9px] px-1.5 py-0.2 rounded bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-bold">24/7</span>
                     </div>
-                    <p className="text-[10px] text-white/50 font-medium">Conseille & encaisse en direct</p>
+                    <p className="text-[10px] text-slate-500 dark:text-white/50 font-medium">Conseille & encaisse en direct</p>
                   </div>
                 </motion.div>
               )}
@@ -1086,32 +1101,32 @@ export function LandingPage() {
   }, [user, navigate]);
 
   return (
-    <div className="min-h-[100dvh] bg-[#07100d] selection:bg-emerald-300/30 overflow-x-hidden pt-16 md:pt-20 lg:pt-24 w-full text-left">
+    <div className="min-h-[100dvh] bg-slate-50 dark:bg-[#07100d] text-slate-900 dark:text-white selection:bg-emerald-300/30 overflow-x-hidden pt-16 md:pt-20 lg:pt-24 w-full text-left transition-colors duration-200">
       <MetaHead
         title="Vendeur IA | Commercial Virtuel Haute-Performance sur WhatsApp"
         description="Vendeur IA : votre commercial virtuel sur WhatsApp & Instagram. Répondez, conseillez et vendez 24h/24, 7j/7."
       />
 
       {/* Modern Header / Glassmorphism Giant-Tech Nav */}
-      <header className="fixed top-0 left-0 right-0 z-[100] border-b border-white/5 bg-[#07100d]/90 backdrop-blur-2xl w-full h-16 md:h-20 transition-all">
+      <header className="fixed top-0 left-0 right-0 z-[100] border-b border-slate-200/80 dark:border-white/5 bg-white/90 dark:bg-[#07100d]/90 backdrop-blur-2xl w-full h-16 md:h-20 transition-all text-slate-900 dark:text-white">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 sm:px-6 md:px-8 h-full gap-4">
           
           {/* Logo & Dynamic Brand Name */}
           <div className="flex items-center gap-3 md:gap-4 shrink-0">
-            <Link to="/" className="flex h-10 w-10 md:h-11 md:w-11 shrink-0 items-center justify-center bg-white/5 rounded-2xl border border-white/10 shadow-xl text-vendeur-emerald transition-all hover:scale-105 hover:border-emerald-500/40">
-              <Logo size={24} />
+            <Link to="/" className="flex h-10 w-10 md:h-11 md:w-11 shrink-0 items-center justify-center rounded-2xl text-slate-900 dark:text-white transition-all hover:scale-105">
+              <Logo size={26} />
             </Link>
             <div className="min-w-0">
-              <p className="truncate text-base md:text-lg font-black text-white uppercase leading-tight tracking-tight">{dynamicTitle}</p>
+              <p className="truncate text-base md:text-lg font-black text-slate-900 dark:text-white uppercase leading-tight tracking-tight">{dynamicTitle}</p>
               <div className="flex items-center gap-1.5">
-                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                 <p className="truncate text-[8px] md:text-[9px] uppercase tracking-[0.2em] text-white/50 font-black">AI Sales Machine</p>
+                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                 <p className="truncate text-[8px] md:text-[9px] uppercase tracking-[0.2em] text-slate-500 dark:text-white/50 font-black">AI Sales Machine</p>
               </div>
             </div>
           </div>
 
           {/* Desktop Center Navigation Menu */}
-          <nav className="hidden lg:flex items-center gap-1 text-xs font-bold uppercase tracking-wider text-white/70">
+          <nav className="hidden lg:flex items-center gap-1 text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-white/70">
             
             {/* Mega Dropdown: Produit */}
             <div className="relative" ref={dropdownRef}>
@@ -1119,12 +1134,12 @@ export function LandingPage() {
                 onClick={() => setProductsDropdownOpen(prev => !prev)}
                 onMouseEnter={() => setProductsDropdownOpen(true)}
                 className={cn(
-                  "flex items-center gap-1.5 px-4 py-2 rounded-xl transition-all hover:text-white hover:bg-white/5 cursor-pointer",
-                  productsDropdownOpen && "text-emerald-400 bg-white/5"
+                  "flex items-center gap-1.5 px-4 py-2 rounded-xl transition-all hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 cursor-pointer",
+                  productsDropdownOpen && "text-emerald-600 dark:text-emerald-400 bg-slate-100 dark:bg-white/5"
                 )}
               >
                 <span>Produits</span>
-                <ChevronDown size={14} className={cn("transition-transform duration-200", productsDropdownOpen && "rotate-180 text-emerald-400")} />
+                <ChevronDown size={14} className={cn("transition-transform duration-200", productsDropdownOpen && "rotate-180 text-emerald-500")} />
               </button>
 
               <AnimatePresence>
@@ -1135,69 +1150,69 @@ export function LandingPage() {
                     exit={{ opacity: 0, y: 10, scale: 0.95 }}
                     transition={{ duration: 0.15 }}
                     onMouseLeave={() => setProductsDropdownOpen(false)}
-                    className="absolute top-full left-0 mt-2 w-80 p-3 rounded-2xl bg-[#09140f] border border-emerald-500/20 shadow-[0_20px_50px_rgba(0,0,0,0.8)] backdrop-blur-2xl grid gap-1.5 z-50"
+                    className="absolute top-full left-0 mt-2 w-80 p-3 rounded-2xl bg-white dark:bg-[#09140f] border border-slate-200 dark:border-emerald-500/20 shadow-[0_20px_50px_rgba(0,0,0,0.15)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.8)] backdrop-blur-2xl grid gap-1.5 z-50 text-slate-900 dark:text-white"
                   >
                     <button
                       onClick={() => openProduct("vision")}
-                      className="w-full p-2.5 rounded-xl hover:bg-white/5 transition-all text-left flex items-start gap-3 group cursor-pointer"
+                      className="w-full p-2.5 rounded-xl hover:bg-slate-50 dark:hover:bg-white/5 transition-all text-left flex items-start gap-3 group cursor-pointer"
                     >
-                      <div className="h-9 w-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 shrink-0 group-hover:scale-110 transition-transform">
+                      <div className="h-9 w-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shrink-0 group-hover:scale-110 transition-transform">
                         <Eye size={17} />
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
-                          <p className="text-xs font-black uppercase tracking-wider text-white group-hover:text-emerald-400 transition-colors">Vendeur IA Vision</p>
-                          <span className="text-[8px] font-black uppercase px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">OCR</span>
+                          <p className="text-xs font-black uppercase tracking-wider text-slate-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">Vendeur IA Vision</p>
+                          <span className="text-[8px] font-black uppercase px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">OCR</span>
                         </div>
-                        <p className="text-[10px] text-white/40 leading-snug mt-0.5">Scan photo de rayon, fiches produits & OCR de reçus Mobile Money.</p>
+                        <p className="text-[10px] text-slate-500 dark:text-white/40 leading-snug mt-0.5">Scan photo de rayon, fiches produits & OCR de reçus Mobile Money.</p>
                       </div>
                     </button>
 
                     <button
                       onClick={() => openProduct("marketing")}
-                      className="w-full p-2.5 rounded-xl hover:bg-white/5 transition-all text-left flex items-start gap-3 group cursor-pointer"
+                      className="w-full p-2.5 rounded-xl hover:bg-slate-50 dark:hover:bg-white/5 transition-all text-left flex items-start gap-3 group cursor-pointer"
                     >
-                      <div className="h-9 w-9 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 shrink-0 group-hover:scale-110 transition-transform">
+                      <div className="h-9 w-9 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-500 dark:text-amber-400 shrink-0 group-hover:scale-110 transition-transform">
                         <Megaphone size={17} />
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
-                          <p className="text-xs font-black uppercase tracking-wider text-white group-hover:text-amber-400 transition-colors">Marketing Hub</p>
-                          <span className="text-[8px] font-black uppercase px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20">+340%</span>
+                          <p className="text-xs font-black uppercase tracking-wider text-slate-900 dark:text-white group-hover:text-amber-500 dark:group-hover:text-amber-400 transition-colors">Marketing Hub</p>
+                          <span className="text-[8px] font-black uppercase px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-500 dark:text-amber-400 border border-amber-500/20">+340%</span>
                         </div>
-                        <p className="text-[10px] text-white/40 leading-snug mt-0.5">Relances prédictives WhatsApp, affiches IA & récupération paniers.</p>
+                        <p className="text-[10px] text-slate-500 dark:text-white/40 leading-snug mt-0.5">Relances prédictives WhatsApp, affiches IA & récupération paniers.</p>
                       </div>
                     </button>
 
                     <button
                       onClick={() => openProduct("api")}
-                      className="w-full p-2.5 rounded-xl hover:bg-white/5 transition-all text-left flex items-start gap-3 group cursor-pointer"
+                      className="w-full p-2.5 rounded-xl hover:bg-slate-50 dark:hover:bg-white/5 transition-all text-left flex items-start gap-3 group cursor-pointer"
                     >
-                      <div className="h-9 w-9 rounded-xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-400 shrink-0 group-hover:scale-110 transition-transform">
+                      <div className="h-9 w-9 rounded-xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-500 dark:text-sky-400 shrink-0 group-hover:scale-110 transition-transform">
                         <Code2 size={17} />
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
-                          <p className="text-xs font-black uppercase tracking-wider text-white group-hover:text-sky-400 transition-colors">API WhatsApp</p>
-                          <span className="text-[8px] font-black uppercase px-1.5 py-0.5 rounded bg-sky-500/10 text-sky-400 border border-sky-500/20">Cloud</span>
+                          <p className="text-xs font-black uppercase tracking-wider text-slate-900 dark:text-white group-hover:text-sky-500 dark:group-hover:text-sky-400 transition-colors">API WhatsApp</p>
+                          <span className="text-[8px] font-black uppercase px-1.5 py-0.5 rounded bg-sky-500/10 text-sky-500 dark:text-sky-400 border border-sky-500/20">Cloud</span>
                         </div>
-                        <p className="text-[10px] text-white/40 leading-snug mt-0.5">Passerelle développeur, webhooks instantanés & multi-numéros.</p>
+                        <p className="text-[10px] text-slate-500 dark:text-white/40 leading-snug mt-0.5">Passerelle développeur, webhooks instantanés & multi-numéros.</p>
                       </div>
                     </button>
 
                     <button
                       onClick={() => openProduct("simulator")}
-                      className="w-full p-2.5 rounded-xl hover:bg-white/5 transition-all text-left flex items-start gap-3 group cursor-pointer"
+                      className="w-full p-2.5 rounded-xl hover:bg-slate-50 dark:hover:bg-white/5 transition-all text-left flex items-start gap-3 group cursor-pointer"
                     >
-                      <div className="h-9 w-9 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400 shrink-0 group-hover:scale-110 transition-transform">
+                      <div className="h-9 w-9 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-500 dark:text-purple-400 shrink-0 group-hover:scale-110 transition-transform">
                         <Cpu size={17} />
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
-                          <p className="text-xs font-black uppercase tracking-wider text-white group-hover:text-purple-400 transition-colors">Simulateur Commercial</p>
-                          <span className="text-[8px] font-black uppercase px-1.5 py-0.5 rounded bg-purple-500/10 text-purple-400 border border-purple-500/20">Live</span>
+                          <p className="text-xs font-black uppercase tracking-wider text-slate-900 dark:text-white group-hover:text-purple-500 dark:group-hover:text-purple-400 transition-colors">Simulateur Commercial</p>
+                          <span className="text-[8px] font-black uppercase px-1.5 py-0.5 rounded bg-purple-500/10 text-purple-500 dark:text-purple-400 border border-purple-500/20">Live</span>
                         </div>
-                        <p className="text-[10px] text-white/40 leading-snug mt-0.5">Laboratoire interactif pour tester les négociations et closing en direct.</p>
+                        <p className="text-[10px] text-slate-500 dark:text-white/40 leading-snug mt-0.5">Laboratoire interactif pour tester les négociations et closing en direct.</p>
                       </div>
                     </button>
                   </motion.div>
@@ -1208,28 +1223,28 @@ export function LandingPage() {
             {/* Direct Links */}
             <button
               onClick={() => openProduct("vision")}
-              className="px-3.5 py-2 rounded-xl transition-all hover:text-white hover:bg-white/5 cursor-pointer"
+              className="px-3.5 py-2 rounded-xl transition-all hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 cursor-pointer"
             >
               IA Vision™
             </button>
 
             <button
               onClick={() => openProduct("marketing")}
-              className="px-3.5 py-2 rounded-xl transition-all hover:text-white hover:bg-white/5 cursor-pointer"
+              className="px-3.5 py-2 rounded-xl transition-all hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 cursor-pointer"
             >
               Marketing Hub
             </button>
 
             <Link
               to="/offers"
-              className="px-3.5 py-2 rounded-xl transition-all hover:text-white hover:bg-white/5 cursor-pointer"
+              className="px-3.5 py-2 rounded-xl transition-all hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 cursor-pointer"
             >
               Tarifs & Offres
             </Link>
 
             <button
               onClick={handleLaunchDemo}
-              className="px-3.5 py-2 rounded-xl transition-all text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10 cursor-pointer flex items-center gap-1.5 font-black"
+              className="px-3.5 py-2 rounded-xl transition-all text-emerald-600 dark:text-emerald-400 hover:text-emerald-500 hover:bg-emerald-500/10 cursor-pointer flex items-center gap-1.5 font-black"
             >
               <Zap size={13} />
               <span>Simulateur Live</span>
@@ -1240,11 +1255,14 @@ export function LandingPage() {
           <div className="flex items-center gap-2.5 shrink-0">
             <button
               onClick={handleLaunchDemo}
-              className="hidden sm:flex h-9 md:h-10 px-4 md:px-5 rounded-xl md:rounded-2xl bg-vendeur-emerald text-vendeur-coal text-[9px] md:text-[10px] font-black uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-[0_4px_20px_rgba(16,185,129,0.3)] items-center gap-2 cursor-pointer"
+              className="hidden sm:flex h-9 md:h-10 px-4 md:px-5 rounded-xl md:rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-[9px] md:text-[10px] font-black uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-md items-center gap-2 cursor-pointer"
             >
               <Play size={13} fill="currentColor" />
               <span>Tester la Démo</span>
             </button>
+
+            {/* ☀️/🌙 1-Click Direct Theme Switcher */}
+            <ThemeToggle />
 
             <button
               onClick={() => {
@@ -1254,7 +1272,7 @@ export function LandingPage() {
                   setIsAuthOpen(true);
                 }
               }}
-              className="h-9 md:h-10 px-4 md:px-6 rounded-xl md:rounded-2xl bg-white/5 border border-white/10 hover:border-emerald-500/50 hover:bg-emerald-500/5 text-white text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 cursor-pointer"
+              className="h-9 md:h-10 px-4 md:px-6 rounded-xl md:rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-white/5 border border-slate-200 dark:border-white/10 hover:border-emerald-500/50 hover:bg-emerald-500/5 text-slate-900 dark:text-white text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 cursor-pointer shadow-sm"
             >
               {user && !user.onboardingCompleted ? "Créer ma Boutique" : "Connexion"}
             </button>
@@ -1262,7 +1280,7 @@ export function LandingPage() {
             {/* Mobile Menu Hamburger */}
             <button
               onClick={() => setMobileMenuOpen(prev => !prev)}
-              className="lg:hidden h-9 w-9 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-white/70 hover:text-white transition-all cursor-pointer"
+              className="lg:hidden h-9 w-9 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-white/5 border border-slate-200 dark:border-white/10 flex items-center justify-center text-slate-700 dark:text-white/70 hover:text-slate-900 dark:hover:text-white transition-all cursor-pointer"
             >
               {mobileMenuOpen ? <X size={18} /> : <Menu size={18} />}
             </button>
@@ -1276,47 +1294,47 @@ export function LandingPage() {
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: "auto" }}
               exit={{ opacity: 0, height: 0 }}
-              className="lg:hidden border-b border-white/10 bg-[#07100d]/95 backdrop-blur-2xl px-5 py-4 space-y-3"
+              className="lg:hidden border-b border-slate-200 dark:border-white/10 bg-white/95 dark:bg-[#07100d]/95 backdrop-blur-2xl px-5 py-4 space-y-3 text-slate-900 dark:text-white"
             >
               <div className="space-y-1">
-                <p className="text-[10px] font-black uppercase tracking-widest text-white/40 px-2">Nos Produits</p>
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-white/40 px-2">Nos Produits</p>
                 <button
                   onClick={() => openProduct("vision")}
-                  className="w-full flex items-center gap-2.5 p-2.5 rounded-xl hover:bg-white/5 text-left text-xs font-bold text-white uppercase tracking-wider"
+                  className="w-full flex items-center gap-2.5 p-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-white/5 text-left text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider"
                 >
-                  <Eye size={16} className="text-emerald-400" />
+                  <Eye size={16} className="text-emerald-500" />
                   <span>Vendeur IA Vision™</span>
                 </button>
                 <button
                   onClick={() => openProduct("marketing")}
-                  className="w-full flex items-center gap-2.5 p-2.5 rounded-xl hover:bg-white/5 text-left text-xs font-bold text-white uppercase tracking-wider"
+                  className="w-full flex items-center gap-2.5 p-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-white/5 text-left text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider"
                 >
-                  <Megaphone size={16} className="text-amber-400" />
+                  <Megaphone size={16} className="text-amber-500" />
                   <span>Marketing Hub™</span>
                 </button>
                 <button
                   onClick={() => openProduct("api")}
-                  className="w-full flex items-center gap-2.5 p-2.5 rounded-xl hover:bg-white/5 text-left text-xs font-bold text-white uppercase tracking-wider"
+                  className="w-full flex items-center gap-2.5 p-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-white/5 text-left text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider"
                 >
-                  <Code2 size={16} className="text-sky-400" />
+                  <Code2 size={16} className="text-sky-500" />
                   <span>API WhatsApp & Cloud</span>
                 </button>
                 <button
                   onClick={() => openProduct("simulator")}
-                  className="w-full flex items-center gap-2.5 p-2.5 rounded-xl hover:bg-white/5 text-left text-xs font-bold text-white uppercase tracking-wider"
+                  className="w-full flex items-center gap-2.5 p-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-white/5 text-left text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider"
                 >
-                  <Cpu size={16} className="text-purple-400" />
+                  <Cpu size={16} className="text-purple-500" />
                   <span>Simulateur Commercial IA</span>
                 </button>
               </div>
 
-              <div className="pt-2 border-t border-white/10 flex flex-col gap-2">
+              <div className="pt-2 border-t border-slate-200 dark:border-white/10 flex flex-col gap-2">
                 <Link
                   to="/offers"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center gap-2 p-2.5 rounded-xl hover:bg-white/5 text-xs font-bold text-white uppercase tracking-wider"
+                  className="flex items-center gap-2 p-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-white/5 text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider"
                 >
-                  <CreditCard size={16} className="text-emerald-400" />
+                  <CreditCard size={16} className="text-emerald-500" />
                   <span>Offres & Tarifs</span>
                 </Link>
                 <button
@@ -1324,7 +1342,7 @@ export function LandingPage() {
                     setMobileMenuOpen(false);
                     handleLaunchDemo();
                   }}
-                  className="w-full h-11 rounded-xl bg-vendeur-emerald text-vendeur-coal text-xs font-black uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg"
+                  className="w-full h-11 rounded-xl bg-emerald-500 text-slate-950 text-xs font-black uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg cursor-pointer"
                 >
                   <Play size={14} fill="currentColor" />
                   <span>Lancer le Simulateur</span>
@@ -1346,39 +1364,39 @@ export function LandingPage() {
         {/* LOGOS / TRUST BAR */}
         <div className="py-24 flex flex-col items-center justify-center gap-10">
            <div className="flex items-center gap-4 w-full max-w-lg px-6">
-              <div className="h-px flex-1 bg-gradient-to-r from-transparent via-white/10 to-transparent" />
-              <p className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.3em] text-white/30 whitespace-nowrap">Compatible avec les meilleurs canaux</p>
-              <div className="h-px flex-1 bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+              <div className="h-px flex-1 bg-gradient-to-r from-transparent via-slate-300 dark:via-white/10 to-transparent" />
+              <p className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 dark:text-white/30 whitespace-nowrap">Compatible avec les meilleurs canaux</p>
+              <div className="h-px flex-1 bg-gradient-to-r from-transparent via-slate-300 dark:via-white/10 to-transparent" />
            </div>
 
-           <div className="flex flex-wrap items-center justify-center gap-6 md:gap-16 px-4 opacity-50 hover:opacity-100 transition-opacity duration-300">
+           <div className="flex flex-wrap items-center justify-center gap-6 md:gap-16 px-4 opacity-70 hover:opacity-100 transition-opacity duration-300">
               {/* WhatsApp */}
-              <div className="flex items-center gap-2 md:gap-3 text-white group cursor-default">
-                <div className="p-2 md:p-2.5 rounded-xl bg-white/5 border border-white/10 group-hover:border-emerald-500/50 group-hover:bg-emerald-500/10 group-hover:text-[#25D366] transition-all">
+              <div className="flex items-center gap-2 md:gap-3 text-slate-800 dark:text-white group cursor-default">
+                <div className="p-2 md:p-2.5 rounded-xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 group-hover:border-emerald-500/50 group-hover:bg-emerald-500/10 group-hover:text-[#25D366] transition-all">
                   <WhatsAppIcon size={22} className="w-5 h-5 md:w-6 md:h-6" />
                 </div>
                 <span className="text-xs md:text-lg font-black tracking-tighter uppercase">WhatsApp</span>
               </div>
 
               {/* Instagram */}
-              <div className="flex items-center gap-2 md:gap-3 text-white group cursor-default">
-                <div className="p-2 md:p-2.5 rounded-xl bg-white/5 border border-white/10 group-hover:border-pink-500/50 group-hover:bg-pink-500/10 group-hover:text-[#E4405F] transition-all">
+              <div className="flex items-center gap-2 md:gap-3 text-slate-800 dark:text-white group cursor-default">
+                <div className="p-2 md:p-2.5 rounded-xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 group-hover:border-pink-500/50 group-hover:bg-pink-500/10 group-hover:text-[#E4405F] transition-all">
                   <InstagramIcon size={20} className="w-5 h-5 md:w-6 md:h-6" />
                 </div>
                 <span className="text-xs md:text-lg font-black tracking-tighter uppercase">Instagram</span>
               </div>
 
               {/* Meta Ads */}
-              <div className="flex items-center gap-2 md:gap-3 text-white group cursor-default">
-                <div className="p-2 md:p-2.5 rounded-xl bg-white/5 border border-white/10 group-hover:border-blue-500/50 group-hover:bg-blue-500/10 group-hover:text-[#0081FB] transition-all">
+              <div className="flex items-center gap-2 md:gap-3 text-slate-800 dark:text-white group cursor-default">
+                <div className="p-2 md:p-2.5 rounded-xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 group-hover:border-blue-500/50 group-hover:bg-blue-500/10 group-hover:text-[#0081FB] transition-all">
                   <MetaIcon size={22} className="w-5 h-5 md:w-6 md:h-6" />
                 </div>
                 <span className="text-xs md:text-lg font-black tracking-tighter uppercase">Meta Ads</span>
               </div>
 
               {/* TikTok */}
-              <div className="flex items-center gap-2 md:gap-3 text-white group cursor-default">
-                <div className="p-2 md:p-2.5 rounded-xl bg-white/5 border border-white/10 group-hover:border-cyan-500/50 group-hover:bg-cyan-500/10 group-hover:text-[#00F2FE] transition-all">
+              <div className="flex items-center gap-2 md:gap-3 text-slate-800 dark:text-white group cursor-default">
+                <div className="p-2 md:p-2.5 rounded-xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 group-hover:border-cyan-500/50 group-hover:bg-cyan-500/10 group-hover:text-[#00F2FE] transition-all">
                   <TikTokIcon size={20} className="w-5 h-5 md:w-6 md:h-6" />
                 </div>
                 <span className="text-xs md:text-lg font-black tracking-tighter uppercase">TikTok</span>
@@ -1391,25 +1409,25 @@ export function LandingPage() {
 
         {/* CTA FINAL SECTION */}
         <section className="py-24 md:py-32 px-4 md:px-6">
-           <div className="max-w-4xl mx-auto rounded-[2rem] md:rounded-[2.5rem] bg-gradient-to-br from-[#0c1813] via-[#07110d] to-[#040806] border border-emerald-500/15 p-8 md:p-16 text-center relative overflow-hidden">
-              <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none bg-[radial-gradient(#ffffff10_1px,transparent_1px)] [background-size:16px_16px]" />
+           <div className="max-w-4xl mx-auto rounded-[2rem] md:rounded-[2.5rem] bg-white dark:bg-gradient-to-br dark:from-[#0c1813] dark:via-[#07110d] dark:to-[#040806] border border-slate-200 dark:border-emerald-500/15 p-8 md:p-16 text-center relative overflow-hidden shadow-xl dark:shadow-2xl text-slate-900 dark:text-white transition-colors">
+              <div className="absolute top-0 left-0 w-full h-full opacity-5 dark:opacity-10 pointer-events-none bg-[radial-gradient(#00000020_1px,transparent_1px)] dark:bg-[radial-gradient(#ffffff10_1px,transparent_1px)] [background-size:16px_16px]" />
 
               <FadeIn>
                 <div className="inline-flex items-center justify-center mb-6">
-                  <div className="h-16 w-16 md:h-18 md:w-18 rounded-2xl bg-[#0d1a13] border border-emerald-500/20 p-3 flex items-center justify-center shadow-md">
+                  <div className="h-16 w-16 md:h-18 md:w-18 rounded-2xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 p-3 flex items-center justify-center shadow-sm">
                     <AnimatedAssistantBot size={40} glow={false} />
                   </div>
                 </div>
 
-                <h2 className="text-4xl md:text-6xl font-black text-white uppercase tracking-tighter mb-6 leading-[0.95]">
-                  Prêt à <span className="text-emerald-400">multiplier</span> vos ventes ?
+                <h2 className="text-4xl md:text-6xl font-black text-slate-900 dark:text-white uppercase tracking-tighter mb-6 leading-[0.95]">
+                  Prêt à <span className="text-emerald-600 dark:text-emerald-400">multiplier</span> vos ventes ?
                 </h2>
-                <p className="text-white/60 text-base md:text-lg mb-10 max-w-xl mx-auto font-medium">
+                <p className="text-slate-600 dark:text-white/70 text-base md:text-lg mb-10 max-w-xl mx-auto font-medium">
                   Rejoignez des centaines de commerçants qui ont déjà automatisé leur croissance avec Vendeur IA.
                 </p>
                 <button
                   onClick={handleLaunchDemo}
-                  className="w-full sm:w-auto h-16 px-10 rounded-2xl bg-vendeur-emerald text-vendeur-coal font-black uppercase tracking-widest text-xs sm:text-sm hover:scale-105 active:scale-95 transition-all shadow-[0_20px_60px_rgba(16,185,129,0.4)] border-t border-white/30 flex items-center justify-center gap-3 mx-auto cursor-pointer"
+                  className="w-full sm:w-auto h-16 px-10 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black uppercase tracking-widest text-xs sm:text-sm hover:scale-105 active:scale-95 transition-all shadow-[0_20px_60px_rgba(16,185,129,0.3)] flex items-center justify-center gap-3 mx-auto cursor-pointer"
                 >
                   Configurer mon Vendeur IA
                 </button>
@@ -1418,73 +1436,73 @@ export function LandingPage() {
         </section>
 
         {/* FOOTER WITH INTERACTIVE PRODUCT LINKS */}
-        <footer className="py-20 border-t border-white/5 bg-black/20">
+        <footer className="py-20 border-t border-slate-200 dark:border-white/5 bg-white dark:bg-black/20 text-slate-900 dark:text-white transition-colors">
           <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
             <div className="space-y-6">
                <div className="flex items-center gap-3">
                  <Logo size={32} />
-                 <span className="text-2xl font-black text-white tracking-tighter uppercase">Vendeur IA</span>
+                 <span className="text-2xl font-black text-slate-900 dark:text-white tracking-tighter uppercase">Vendeur IA</span>
                </div>
-               <p className="text-sm text-white/40 leading-relaxed font-medium">
+               <p className="text-sm text-slate-600 dark:text-white/40 leading-relaxed font-medium">
                  L'assistant commercial intelligent conçu spécifiquement pour le commerce social en Afrique.
                </p>
             </div>
 
             <div className="space-y-4">
-              <p className="text-xs font-black uppercase tracking-widest text-white">Produit</p>
-              <ul className="space-y-2.5 text-sm text-white/40">
+              <p className="text-xs font-black uppercase tracking-widest text-slate-900 dark:text-white">Produit</p>
+              <ul className="space-y-2.5 text-sm text-slate-600 dark:text-white/40">
                 <li>
                   <button
                     onClick={() => openProduct("vision")}
-                    className="hover:text-emerald-400 transition-colors cursor-pointer text-left flex items-center gap-1.5 group"
+                    className="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors cursor-pointer text-left flex items-center gap-1.5 group"
                   >
                     <span>Vendeur IA Vision</span>
-                    <ArrowRight size={12} className="opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all text-emerald-400" />
+                    <ArrowRight size={12} className="opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all text-emerald-500" />
                   </button>
                 </li>
                 <li>
                   <button
                     onClick={() => openProduct("marketing")}
-                    className="hover:text-amber-400 transition-colors cursor-pointer text-left flex items-center gap-1.5 group"
+                    className="hover:text-amber-500 dark:hover:text-amber-400 transition-colors cursor-pointer text-left flex items-center gap-1.5 group"
                   >
                     <span>Marketing Hub</span>
-                    <ArrowRight size={12} className="opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all text-amber-400" />
+                    <ArrowRight size={12} className="opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all text-amber-500" />
                   </button>
                 </li>
                 <li>
                   <button
                     onClick={() => openProduct("api")}
-                    className="hover:text-sky-400 transition-colors cursor-pointer text-left flex items-center gap-1.5 group"
+                    className="hover:text-sky-500 dark:hover:text-sky-400 transition-colors cursor-pointer text-left flex items-center gap-1.5 group"
                   >
                     <span>API WhatsApp</span>
-                    <ArrowRight size={12} className="opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all text-sky-400" />
+                    <ArrowRight size={12} className="opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all text-sky-500" />
                   </button>
                 </li>
                 <li>
                   <button
                     onClick={() => openProduct("simulator")}
-                    className="hover:text-purple-400 transition-colors cursor-pointer text-left flex items-center gap-1.5 group"
+                    className="hover:text-purple-500 dark:hover:text-purple-400 transition-colors cursor-pointer text-left flex items-center gap-1.5 group"
                   >
                     <span>Simulateur</span>
-                    <ArrowRight size={12} className="opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all text-purple-400" />
+                    <ArrowRight size={12} className="opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all text-purple-500" />
                   </button>
                 </li>
               </ul>
             </div>
 
             <div className="space-y-4">
-              <p className="text-xs font-black uppercase tracking-widest text-white">Légal</p>
-              <ul className="space-y-2 text-sm text-white/40">
-                <li><Link to="/privacy" className="hover:text-emerald-400 transition-colors">Confidentialité</Link></li>
-                <li><Link to="/terms" className="hover:text-emerald-400 transition-colors">Conditions</Link></li>
-                <li><Link to="/data-deletion" className="hover:text-emerald-400 transition-colors">Meta Data</Link></li>
+              <p className="text-xs font-black uppercase tracking-widest text-slate-900 dark:text-white">Légal</p>
+              <ul className="space-y-2 text-sm text-slate-600 dark:text-white/40">
+                <li><Link to="/privacy" className="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors">Confidentialité</Link></li>
+                <li><Link to="/terms" className="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors">Conditions</Link></li>
+                <li><Link to="/data-deletion" className="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors">Meta Data</Link></li>
               </ul>
             </div>
 
             <div className="space-y-4">
               <div>
-                <p className="text-xs font-black uppercase tracking-widest text-white">Newsletter Stratégique</p>
-                <p className="text-[11px] text-white/40 leading-snug mt-1">
+                <p className="text-xs font-black uppercase tracking-widest text-slate-900 dark:text-white">Newsletter Stratégique</p>
+                <p className="text-[11px] text-slate-500 dark:text-white/40 leading-snug mt-1">
                   Recevez nos analyses e-commerce et secrets d'automatisation WhatsApp.
                 </p>
               </div>
@@ -1496,7 +1514,7 @@ export function LandingPage() {
                      value={newsletterEmail}
                      onChange={(e) => setNewsletterEmail(e.target.value)}
                      disabled={isSubscribingNewsletter}
-                     className="h-12 flex-1 bg-white/5 border border-white/20 focus:border-emerald-400 rounded-xl px-4 text-xs text-white outline-none transition-all placeholder:text-white/30 disabled:opacity-50"
+                     className="h-12 flex-1 bg-slate-50 dark:bg-white/5 border border-slate-300 dark:border-white/20 focus:border-emerald-500 rounded-xl px-4 text-xs text-slate-900 dark:text-white outline-none transition-all placeholder:text-slate-400 dark:placeholder:text-white/30 disabled:opacity-50"
                      placeholder="Votre adresse email"
                    />
                    <button
@@ -1505,8 +1523,8 @@ export function LandingPage() {
                      className={cn(
                        "h-12 w-12 rounded-xl flex items-center justify-center shrink-0 transition-all cursor-pointer font-black",
                        newsletterSuccess
-                         ? "bg-emerald-500 text-black shadow-[0_0_20px_rgba(16,185,129,0.4)]"
-                         : "bg-vendeur-emerald text-vendeur-coal hover:scale-105 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
+                         ? "bg-emerald-500 text-slate-950 shadow-[0_0_20px_rgba(16,185,129,0.4)]"
+                         : "bg-emerald-500 hover:bg-emerald-400 text-slate-950 hover:scale-105 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
                      )}
                    >
                      {isSubscribingNewsletter ? (
@@ -1519,7 +1537,7 @@ export function LandingPage() {
                    </button>
                 </div>
                 {newsletterSuccess && (
-                  <p className="text-[10px] font-bold text-emerald-400 flex items-center gap-1 animate-fadeIn">
+                  <p className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1 animate-fadeIn">
                     <CheckCircle2 size={12} />
                     <span>Inscrit avec succès ! Bienvenue dans la communauté.</span>
                   </p>
@@ -1528,8 +1546,8 @@ export function LandingPage() {
             </div>
           </div>
 
-          <div className="max-w-7xl mx-auto px-6 pt-20 flex flex-col md:flex-row items-center justify-between gap-6 border-t border-white/5 mt-10">
-            <p className="text-[10px] font-black uppercase tracking-widest text-white/20">
+          <div className="max-w-7xl mx-auto px-6 pt-20 flex flex-col md:flex-row items-center justify-between gap-6 border-t border-slate-200 dark:border-white/5 mt-10 text-slate-500 dark:text-white/40">
+            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-white/20">
               © 2026 Franck Corp. Built with ❤️ for Commerce.
             </p>
             <div className="flex items-center gap-3">
@@ -1539,7 +1557,7 @@ export function LandingPage() {
                  target="_blank"
                  rel="noopener noreferrer"
                  title="Contacter le numéro système officiel Vendeur IA sur WhatsApp"
-                 className="p-2.5 rounded-xl bg-white/5 border border-white/10 hover:border-emerald-500/50 hover:bg-emerald-500/10 text-white/60 hover:text-[#25D366] transition-all cursor-pointer shadow-sm hover:scale-110 active:scale-95 flex items-center justify-center"
+                 className="p-2.5 rounded-xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 hover:border-emerald-500/50 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 text-slate-600 hover:text-[#25D366] dark:text-white/60 dark:hover:text-[#25D366] transition-all cursor-pointer shadow-sm hover:scale-110 active:scale-95 flex items-center justify-center"
                >
                  <WhatsAppIcon size={18} />
                </a>
@@ -1550,7 +1568,7 @@ export function LandingPage() {
                    toast.info("Vendeur IA est disponible dans toute la zone UEMOA / CEMAC (XOF, XAF, GNF, NGN, EUR, USD).");
                  }}
                  title="Disponibilité multi-pays & devises"
-                 className="p-2.5 rounded-xl bg-white/5 border border-white/10 hover:border-sky-500/50 hover:bg-sky-500/10 text-white/60 hover:text-sky-400 transition-all cursor-pointer shadow-sm hover:scale-110 active:scale-95 flex items-center justify-center"
+                 className="p-2.5 rounded-xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 hover:border-sky-500/50 hover:bg-sky-50 dark:hover:bg-sky-500/10 text-slate-600 hover:text-sky-500 dark:text-white/60 dark:hover:text-sky-400 transition-all cursor-pointer shadow-sm hover:scale-110 active:scale-95 flex items-center justify-center"
                >
                  <Globe size={18} />
                </button>
@@ -1559,7 +1577,7 @@ export function LandingPage() {
                <Link
                  to="/privacy"
                  title="Sécurité des données & Chiffrement RGPD"
-                 className="p-2.5 rounded-xl bg-white/5 border border-white/10 hover:border-emerald-500/50 hover:bg-emerald-500/10 text-white/60 hover:text-emerald-400 transition-all cursor-pointer shadow-sm hover:scale-110 active:scale-95 flex items-center justify-center"
+                 className="p-2.5 rounded-xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 hover:border-emerald-500/50 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 text-slate-600 hover:text-emerald-600 dark:text-white/60 dark:hover:text-emerald-400 transition-all cursor-pointer shadow-sm hover:scale-110 active:scale-95 flex items-center justify-center"
                >
                  <ShieldCheck size={18} />
                </Link>

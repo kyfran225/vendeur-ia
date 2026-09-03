@@ -82,19 +82,19 @@ export function CustomerProfileModal({
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
       <div
-        className="relative w-full max-w-sm bg-[#182229] border border-white/10 rounded-3xl overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200"
+        className="relative w-full max-w-sm bg-white dark:bg-[#182229] border border-slate-200 dark:border-white/10 rounded-3xl overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200 text-slate-900 dark:text-white"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 z-20 h-9 w-9 rounded-full bg-black/60 hover:bg-black/80 text-white/80 hover:text-white flex items-center justify-center border border-white/10 transition-all active:scale-95 cursor-pointer"
+          className="absolute top-4 right-4 z-20 h-9 w-9 rounded-full bg-slate-900/60 hover:bg-slate-900/80 text-white flex items-center justify-center border border-white/20 transition-all active:scale-95 cursor-pointer shadow-md"
         >
           <X size={18} />
         </button>
 
         {/* Large Profile Picture Header */}
-        <div className="relative h-64 w-full bg-[#111b21] flex items-center justify-center overflow-hidden border-b border-white/10 group">
+        <div className="relative h-64 w-full bg-slate-100 dark:bg-[#111b21] flex items-center justify-center overflow-hidden border-b border-slate-200 dark:border-white/10 group">
           {customer.avatarUrl && !imageError ? (
             <img
               src={customer.avatarUrl}
@@ -103,7 +103,7 @@ export function CustomerProfileModal({
               className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
             />
           ) : (
-            <div className="h-28 w-28 rounded-full bg-emerald-500/20 border-2 border-emerald-500/40 flex items-center justify-center font-black text-4xl text-emerald-400 shadow-2xl">
+            <div className="h-28 w-28 rounded-full bg-emerald-500/15 dark:bg-emerald-500/20 border-2 border-emerald-500/40 flex items-center justify-center font-black text-4xl text-emerald-600 dark:text-emerald-400 shadow-xl">
               {initial !== "+" ? initial : <User size={48} />}
             </div>
           )}
@@ -113,7 +113,7 @@ export function CustomerProfileModal({
             <button
               onClick={() => refreshAvatarMutation.mutate()}
               disabled={refreshAvatarMutation.isPending}
-              className="absolute bottom-3 right-3 px-3 py-1.5 rounded-full bg-black/70 hover:bg-black text-white/90 hover:text-white border border-white/15 text-[11px] font-bold flex items-center gap-1.5 shadow-lg backdrop-blur-md transition-all active:scale-95 cursor-pointer"
+              className="absolute bottom-3 right-3 px-3 py-1.5 rounded-full bg-slate-900/80 hover:bg-slate-950 text-white border border-white/20 text-[11px] font-bold flex items-center gap-1.5 shadow-lg backdrop-blur-md transition-all active:scale-95 cursor-pointer"
               title="Synchroniser la photo avec WhatsApp"
             >
               <RefreshCw size={12} className={refreshAvatarMutation.isPending ? "animate-spin text-emerald-400" : "text-emerald-400"} />
@@ -126,31 +126,31 @@ export function CustomerProfileModal({
         <div className="p-5 space-y-4">
           <div className="space-y-1">
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-black text-white truncate">{displayName}</h3>
+              <h3 className="text-lg font-black text-slate-900 dark:text-white truncate">{displayName}</h3>
               {(customer.loyaltyPoints || 0) >= 50 && (
-                <span className="px-2 py-0.5 bg-emerald-500 text-black text-[10px] font-black rounded uppercase">
+                <span className="px-2 py-0.5 bg-emerald-500 text-slate-950 text-[10px] font-black rounded uppercase">
                   Client VIP
                 </span>
               )}
             </div>
             {displayPhone && (
-              <div className="flex items-center gap-2 text-xs text-white/60">
-                <Phone size={12} className="text-emerald-400 shrink-0" />
+              <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-white/60">
+                <Phone size={12} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
                 <span className="font-mono">{displayPhone}</span>
                 <button
                   type="button"
                   onClick={handleCopy}
-                  className="text-white/40 hover:text-emerald-400 p-1 rounded hover:bg-white/5 transition-colors"
+                  className="text-slate-400 hover:text-emerald-600 dark:text-white/40 dark:hover:text-emerald-400 p-1 rounded hover:bg-slate-100 dark:hover:bg-white/5 transition-colors cursor-pointer"
                   title="Copier le numéro"
                 >
-                  {copied ? <Check size={13} className="text-emerald-400" /> : <Copy size={13} />}
+                  {copied ? <Check size={13} className="text-emerald-600 dark:text-emerald-400" /> : <Copy size={13} />}
                 </button>
               </div>
             )}
           </div>
 
           {/* Quick Actions Grid */}
-          <div className="grid grid-cols-3 gap-2 pt-2 border-t border-white/10">
+          <div className="grid grid-cols-3 gap-2 pt-2 border-t border-slate-200 dark:border-white/10">
             {onTriggerFollowup && (
               <button
                 type="button"
@@ -158,7 +158,7 @@ export function CustomerProfileModal({
                   onClose();
                   onTriggerFollowup();
                 }}
-                className="flex flex-col items-center justify-center p-2.5 rounded-2xl bg-sky-500/10 border border-sky-500/30 text-sky-400 hover:bg-sky-500/20 active:scale-95 transition-all cursor-pointer"
+                className="flex flex-col items-center justify-center p-2.5 rounded-2xl bg-sky-500/10 border border-sky-500/30 text-sky-700 dark:text-sky-400 hover:bg-sky-500/20 active:scale-95 transition-all cursor-pointer"
               >
                 <Sparkles size={16} className="mb-1" />
                 <span className="text-[10px] font-bold">Relance IA</span>
@@ -172,7 +172,7 @@ export function CustomerProfileModal({
                   onClose();
                   onOpenFastPayModal();
                 }}
-                className="flex flex-col items-center justify-center p-2.5 rounded-2xl bg-amber-500/15 border border-amber-500/30 text-amber-400 hover:bg-amber-500/25 active:scale-95 transition-all cursor-pointer"
+                className="flex flex-col items-center justify-center p-2.5 rounded-2xl bg-amber-500/15 border border-amber-500/30 text-amber-700 dark:text-amber-400 hover:bg-amber-500/25 active:scale-95 transition-all cursor-pointer"
               >
                 <CreditCard size={16} className="mb-1" />
                 <span className="text-[10px] font-bold">Fast Pay</span>
@@ -186,7 +186,7 @@ export function CustomerProfileModal({
                   onClose();
                   onOpenOrderModal();
                 }}
-                className="flex flex-col items-center justify-center p-2.5 rounded-2xl bg-emerald-500 text-black hover:bg-emerald-400 active:scale-95 transition-all cursor-pointer shadow-md shadow-emerald-500/20"
+                className="flex flex-col items-center justify-center p-2.5 rounded-2xl bg-emerald-500 text-slate-950 hover:bg-emerald-400 active:scale-95 transition-all cursor-pointer shadow-md shadow-emerald-500/20 font-black"
               >
                 <ShoppingCart size={16} className="mb-1" />
                 <span className="text-[10px] font-black">Vendre</span>

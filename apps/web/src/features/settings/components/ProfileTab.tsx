@@ -28,6 +28,7 @@ import { toast } from "sonner";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { ConfirmationModal } from "@/components/ui/ConfirmationModal";
+import { ThemeToggle } from "@/components/ui/ThemeToggle";
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -605,8 +606,29 @@ export function ProfileTab({ merchant }: { merchant?: any }) {
         </form>
       </section>
 
+      {/* 2.5 Theme & Display Preferences */}
+      <section className="bg-white dark:bg-vendeur-coal/60 backdrop-blur-2xl border border-slate-200/80 dark:border-white/10 p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl md:rounded-[2.5rem] shadow-sm dark:shadow-2xl space-y-5 w-full max-w-full overflow-hidden box-border transition-colors">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-xl sm:rounded-2xl bg-emerald-50 dark:bg-vendeur-emerald/10 border border-emerald-200 dark:border-vendeur-emerald/20 flex items-center justify-center text-emerald-600 dark:text-vendeur-emerald shrink-0">
+              <Palette size={20} className="shrink-0" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <h3 className="text-base sm:text-lg md:text-xl font-black uppercase text-slate-900 dark:text-white tracking-tight leading-tight">
+                Mode d'Affichage & Thème
+              </h3>
+              <p className="text-[10px] sm:text-xs font-medium text-slate-500 dark:text-white/40 mt-0.5">
+                Adaptez l'interface au thème de votre navigateur ou forcez le mode Clair / Sombre
+              </p>
+            </div>
+          </div>
+
+          <ThemeToggle variant="segmented" />
+        </div>
+      </section>
+
       {/* 3. Security & Password Change */}
-      <section className="bg-vendeur-coal/60 backdrop-blur-2xl border border-white/10 p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl md:rounded-[2.5rem] shadow-2xl space-y-6 w-full max-w-full overflow-hidden box-border">
+      <section className="bg-white dark:bg-vendeur-coal/60 backdrop-blur-2xl border border-slate-200/80 dark:border-white/10 p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl md:rounded-[2.5rem] shadow-sm dark:shadow-2xl space-y-6 w-full max-w-full overflow-hidden box-border transition-colors">
         <div className="flex items-center gap-3">
           <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-xl sm:rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 shrink-0">
             <KeyRound size={20} className="shrink-0" />

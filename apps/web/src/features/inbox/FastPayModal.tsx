@@ -106,10 +106,10 @@ export function FastPayModal({
 
   return (
     <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="relative w-full max-w-lg bg-vendeur-coal border border-white/10 rounded-3xl p-6 md:p-8 space-y-6 shadow-2xl animate-in zoom-in-95 duration-200 text-white">
+      <div className="relative w-full max-w-lg bg-white dark:bg-vendeur-coal border border-slate-200 dark:border-white/10 rounded-3xl p-6 md:p-8 space-y-6 shadow-2xl animate-in zoom-in-95 duration-200 text-slate-900 dark:text-white">
         
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-white/10 pb-4">
+        <div className="flex items-center justify-between border-b border-slate-200 dark:border-white/10 pb-4">
           <div className="flex items-center gap-3 min-w-0 flex-1">
             <CustomerAvatar
               name={customerName}
@@ -120,15 +120,15 @@ export function FastPayModal({
               showPlatformBadge={true}
             />
             <div className="min-w-0 flex-1">
-              <h3 className="text-lg font-black uppercase tracking-tight truncate">Fast Pay Mobile Money</h3>
-              <p className="text-xs text-white/50 font-medium truncate">
-                Destinataire : <strong className="text-emerald-400 font-bold">{customerName}</strong> {customerPhone && `(${formatDisplayPhone(customerPhone, "CI")})`}
+              <h3 className="text-lg font-black uppercase tracking-tight text-slate-900 dark:text-white truncate">Fast Pay Mobile Money</h3>
+              <p className="text-xs text-slate-500 dark:text-white/50 font-medium truncate">
+                Destinataire : <strong className="text-emerald-600 dark:text-emerald-400 font-bold">{customerName}</strong> {customerPhone && `(${formatDisplayPhone(customerPhone, "CI")})`}
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="h-9 w-9 bg-white/5 hover:bg-white/10 rounded-full flex items-center justify-center text-white/40 hover:text-white transition-colors shrink-0 ml-2"
+            className="h-9 w-9 bg-slate-100 hover:bg-slate-200 dark:bg-white/5 dark:hover:bg-white/10 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-900 dark:text-white/40 dark:hover:text-white transition-colors shrink-0 ml-2 cursor-pointer"
           >
             <X size={16} />
           </button>
@@ -139,7 +139,7 @@ export function FastPayModal({
           
           {/* Amount Input */}
           <div className="space-y-2">
-            <label className="text-[10px] font-black text-vendeur-emerald uppercase tracking-widest">
+            <label className="text-[10px] font-black text-emerald-700 dark:text-vendeur-emerald uppercase tracking-widest">
               Montant à Encaisser ({currency})
             </label>
             <div className="relative">
@@ -148,9 +148,9 @@ export function FastPayModal({
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
                 placeholder="Ex: 15000"
-                className="w-full h-14 bg-white/5 border border-white/10 rounded-2xl px-4 text-2xl font-black text-white outline-none focus:border-vendeur-emerald transition-all"
+                className="w-full h-14 bg-slate-50 dark:bg-white/5 border border-slate-300 dark:border-white/10 rounded-2xl px-4 text-2xl font-black text-slate-900 dark:text-white outline-none focus:border-emerald-500 transition-all shadow-inner"
               />
-              <div className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-black text-white/40">
+              <div className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-black text-slate-400 dark:text-white/40">
                 {currency}
               </div>
             </div>
@@ -162,10 +162,10 @@ export function FastPayModal({
                   key={amt}
                   type="button"
                   onClick={() => setAmount(amt.toString())}
-                  className={`px-3 py-1.5 rounded-xl border text-[10px] font-black uppercase tracking-wider shrink-0 transition-all ${
+                  className={`px-3 py-1.5 rounded-xl border text-[10px] font-black uppercase tracking-wider shrink-0 transition-all cursor-pointer ${
                     numAmount === amt
-                      ? "bg-vendeur-emerald text-vendeur-coal border-vendeur-emerald font-black shadow-md shadow-vendeur-emerald/20"
-                      : "bg-white/5 border-white/5 text-white/50 hover:text-white"
+                      ? "bg-emerald-500 text-slate-950 border-emerald-500 font-black shadow-md shadow-emerald-500/20"
+                      : "bg-slate-100 dark:bg-white/5 border-slate-200 dark:border-white/5 text-slate-600 dark:text-white/50 hover:text-slate-900 dark:hover:text-white"
                   }`}
                 >
                   +{amt.toLocaleString()}
@@ -176,7 +176,7 @@ export function FastPayModal({
 
           {/* Title / Description */}
           <div className="space-y-1.5">
-            <label className="text-[10px] font-black text-white/50 uppercase tracking-widest">
+            <label className="text-[10px] font-black text-slate-500 dark:text-white/50 uppercase tracking-widest">
               Objet du Paiement / Articles
             </label>
             <input
@@ -184,13 +184,13 @@ export function FastPayModal({
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Ex: Commande 2 Robes + Livraison Angré"
-              className="w-full h-11 bg-white/5 border border-white/10 rounded-xl px-4 text-xs font-bold text-white outline-none focus:border-vendeur-emerald transition-all"
+              className="w-full h-11 bg-slate-50 dark:bg-white/5 border border-slate-300 dark:border-white/10 rounded-xl px-4 text-xs font-bold text-slate-900 dark:text-white outline-none focus:border-emerald-500 transition-all shadow-inner"
             />
           </div>
 
           {/* Provider Selector */}
           <div className="space-y-1.5">
-            <label className="text-[10px] font-black text-white/50 uppercase tracking-widest">
+            <label className="text-[10px] font-black text-slate-500 dark:text-white/50 uppercase tracking-widest">
               Moyen de Paiement Cible
             </label>
             <div className="grid grid-cols-2 gap-2">
@@ -199,15 +199,15 @@ export function FastPayModal({
                   key={opt.id}
                   type="button"
                   onClick={() => setProvider(opt.id)}
-                  className={`p-3 rounded-2xl border text-left flex items-center justify-between transition-all ${
+                  className={`p-3 rounded-2xl border text-left flex items-center justify-between transition-all cursor-pointer ${
                     provider === opt.id
-                      ? "bg-white/10 border-vendeur-emerald text-white shadow-lg"
-                      : "bg-white/5 border-white/5 text-white/40 hover:text-white"
+                      ? "bg-emerald-50 dark:bg-white/10 border-emerald-500 dark:border-vendeur-emerald text-slate-900 dark:text-white shadow-sm"
+                      : "bg-slate-50 dark:bg-white/5 border-slate-200 dark:border-white/5 text-slate-500 dark:text-white/40 hover:text-slate-900 dark:hover:text-white"
                   }`}
                 >
                   <div>
                     <p className="text-xs font-black uppercase tracking-tight">{opt.label}</p>
-                    <p className="text-[9px] text-vendeur-emerald font-bold mt-0.5">{opt.badge}</p>
+                    <p className="text-[9px] text-emerald-600 dark:text-vendeur-emerald font-bold mt-0.5">{opt.badge}</p>
                   </div>
                 </button>
               ))}
@@ -220,9 +220,9 @@ export function FastPayModal({
           <button
             type="button"
             onClick={handleCopyFormattedText}
-            className="h-14 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 text-white font-black uppercase text-[10px] tracking-widest flex items-center justify-center gap-2 transition-all"
+            className="h-14 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-white/5 dark:hover:bg-white/10 border border-slate-300 dark:border-white/10 text-slate-800 dark:text-white font-black uppercase text-[10px] tracking-widest flex items-center justify-center gap-2 transition-all cursor-pointer shadow-sm"
           >
-            {copied ? <Check size={16} className="text-vendeur-emerald" /> : <Copy size={16} />}
+            {copied ? <Check size={16} className="text-emerald-600 dark:text-vendeur-emerald" /> : <Copy size={16} />}
             <span>{copied ? "Copié" : "Copier"}</span>
           </button>
 
@@ -230,7 +230,7 @@ export function FastPayModal({
             type="button"
             onClick={() => fastPayMutation.mutate({ sendDirectly: true })}
             disabled={fastPayMutation.isPending || !numAmount}
-            className="col-span-2 h-14 bg-vendeur-emerald hover:bg-emerald-400 text-vendeur-coal font-black uppercase text-xs tracking-widest rounded-2xl flex items-center justify-center gap-2.5 hover:scale-[1.02] active:scale-95 transition-all shadow-xl shadow-vendeur-emerald/20 disabled:opacity-50"
+            className="col-span-2 h-14 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black uppercase text-xs tracking-widest rounded-2xl flex items-center justify-center gap-2.5 hover:scale-[1.02] active:scale-95 transition-all shadow-xl shadow-emerald-500/20 disabled:opacity-50 cursor-pointer"
           >
             {fastPayMutation.isPending ? (
               <Loader2 size={18} className="animate-spin" />
@@ -243,8 +243,8 @@ export function FastPayModal({
           </button>
         </div>
 
-        <div className="flex items-center justify-center gap-2 text-[9px] font-black uppercase tracking-widest text-white/30 pt-1">
-          <ShieldCheck size={12} className="text-vendeur-emerald" />
+        <div className="flex items-center justify-center gap-2 text-[9px] font-black uppercase tracking-widest text-slate-400 dark:text-white/30 pt-1">
+          <ShieldCheck size={12} className="text-emerald-600 dark:text-vendeur-emerald" />
           <span>Génère le lien direct Wave + instructions instantanées</span>
         </div>
       </div>

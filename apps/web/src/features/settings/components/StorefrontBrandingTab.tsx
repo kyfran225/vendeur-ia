@@ -26,7 +26,10 @@ import {
   Zap,
   MessageCircle,
   HelpCircle,
-  Copy
+  Copy,
+  Sun,
+  Moon,
+  Laptop
 } from "lucide-react";
 import { toast } from "sonner";
 import { apiClient } from "@/lib/apiClient";
@@ -143,8 +146,10 @@ export function StorefrontBrandingTab({ merchant }: StorefrontBrandingTabProps) 
   const logoInputRef = useRef<HTMLInputElement>(null);
   const coverInputRef = useRef<HTMLInputElement>(null);
 
+  // Saved state snapshot for change detection
   const [savedBranding, setSavedBranding] = useState({
     accentColor: merchant?.branding?.accentColor || "emerald",
+    storefrontTheme: merchant?.branding?.storefrontTheme || "dark",
     logoUrl: merchant?.branding?.logoUrl || "",
     coverUrl: merchant?.branding?.coverUrl || "",
     announcementEnabled: merchant?.branding?.announcement?.enabled || false,
@@ -156,6 +161,9 @@ export function StorefrontBrandingTab({ merchant }: StorefrontBrandingTabProps) 
   });
 
   const [accentColor, setAccentColor] = useState(merchant?.branding?.accentColor || "emerald");
+  const [storefrontTheme, setStorefrontTheme] = useState<"dark" | "light" | "system">(
+    merchant?.branding?.storefrontTheme || "dark"
+  );
   const [logoUrl, setLogoUrl] = useState(merchant?.branding?.logoUrl || "");
   const [coverUrl, setCoverUrl] = useState(merchant?.branding?.coverUrl || "");
   const [announcementEnabled, setAnnouncementEnabled] = useState(merchant?.branding?.announcement?.enabled || false);
@@ -181,6 +189,7 @@ export function StorefrontBrandingTab({ merchant }: StorefrontBrandingTabProps) 
       const b = merchant.branding;
       const initial = {
         accentColor: b.accentColor || "emerald",
+        storefrontTheme: b.storefrontTheme || "dark",
         logoUrl: b.logoUrl || "",
         coverUrl: b.coverUrl || "",
         announcementEnabled: b.announcement?.enabled || false,
@@ -192,6 +201,7 @@ export function StorefrontBrandingTab({ merchant }: StorefrontBrandingTabProps) 
       };
       setSavedBranding(initial);
       setAccentColor(initial.accentColor);
+      setStorefrontTheme(initial.storefrontTheme);
       setLogoUrl(initial.logoUrl);
       setCoverUrl(initial.coverUrl);
       setAnnouncementEnabled(initial.announcementEnabled);
@@ -206,6 +216,7 @@ export function StorefrontBrandingTab({ merchant }: StorefrontBrandingTabProps) 
   // Dirty State Checker against currently saved branding
   const isDirty =
     accentColor !== savedBranding.accentColor ||
+    storefrontTheme !== savedBranding.storefrontTheme ||
     logoUrl !== savedBranding.logoUrl ||
     coverUrl !== savedBranding.coverUrl ||
     announcementEnabled !== savedBranding.announcementEnabled ||
@@ -220,6 +231,7 @@ export function StorefrontBrandingTab({ merchant }: StorefrontBrandingTabProps) 
       const payload = {
         branding: {
           accentColor,
+          storefrontTheme,
           logoUrl: logoUrl.trim(),
           coverUrl: coverUrl.trim(),
           announcement: {
@@ -240,6 +252,7 @@ export function StorefrontBrandingTab({ merchant }: StorefrontBrandingTabProps) 
     onSuccess: (updatedMerchant) => {
       const newSaved = {
         accentColor,
+        storefrontTheme,
         logoUrl: logoUrl.trim(),
         coverUrl: coverUrl.trim(),
         announcementEnabled,
@@ -597,7 +610,85 @@ export function StorefrontBrandingTab({ merchant }: StorefrontBrandingTabProps) 
         </div>
       </div>
 
-      {/* ─── 2. LOGO DE LA BOUTIQUE & BANNIÈRE COUVERTURE ─── */}
+      {/* ─── 2. THÈME D'AFFICHAGE DE LA VITRINE ─── */}
+      <div id="storefront-theme" className="p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl md:rounded-[2.5rem] bg-vendeur-coal border border-white/10 space-y-4 sm:space-y-6 scroll-mt-28 shadow-xl">
+        <div className="flex items-start gap-2.5">
+          <div className="h-8 w-8 rounded-lg bg-white/5 flex items-center justify-center shrink-0 mt-0.5 border border-white/10">
+            <Sun size={16} className="text-amber-400 shrink-0" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <h4 className="text-xs sm:text-sm font-black uppercase tracking-wider text-white leading-tight">
+              2. Ambiance Visuelle par Défaut (Clair / Sombre / Adaptatif)
+            </h4>
+            <p className="text-[11px] sm:text-xs text-white/40 leading-relaxed mt-0.5">
+              Choisissez comment votre vitrine s'ouvre pour vos clients. Vos visiteurs pourront aussi basculer en 1 clic grâce au bouton de thème.
+            </p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          {[
+            {
+              id: "dark",
+              name: "Sombre Élégant",
+              subtitle: "Fond nuit profond, idéal pour l'électronique et le luxe",
+              icon: Moon,
+              iconColor: "text-emerald-400"
+            },
+            {
+              id: "light",
+              name: "Clair & Épuré",
+              subtitle: "Fond blanc lumineux, idéal pour la mode, cosmétique et food",
+              icon: Sun,
+              iconColor: "text-amber-400"
+            },
+            {
+              id: "system",
+              name: "Adaptatif Automatique",
+              subtitle: "S'adapte automatiquement au smartphone du visiteur",
+              icon: Laptop,
+              iconColor: "text-sky-400"
+            }
+          ].map((mode) => {
+            const isSelected = storefrontTheme === mode.id;
+            const Icon = mode.icon;
+            return (
+              <button
+                key={mode.id}
+                type="button"
+                onClick={() => setStorefrontTheme(mode.id as any)}
+                className={`p-4 rounded-2xl border text-left flex flex-col justify-between gap-3 transition-all cursor-pointer ${
+                  isSelected
+                    ? "bg-white/[0.08] border-vendeur-emerald ring-2 ring-vendeur-emerald/30 shadow-xl"
+                    : "bg-white/[0.02] border-white/5 hover:border-white/20 hover:bg-white/[0.04]"
+                }`}
+              >
+                <div className="flex items-center justify-between w-full">
+                  <div className="h-10 w-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center shrink-0">
+                    <Icon size={20} className={mode.iconColor} />
+                  </div>
+                  {isSelected && (
+                    <span className="px-2 py-0.5 rounded-full bg-vendeur-emerald/20 text-vendeur-emerald border border-vendeur-emerald/40 text-[9px] font-black uppercase tracking-wider">
+                      Actif
+                    </span>
+                  )}
+                </div>
+
+                <div>
+                  <p className="text-xs sm:text-sm font-black uppercase tracking-tight text-white leading-tight">
+                    {mode.name}
+                  </p>
+                  <p className="text-[10px] text-white/40 leading-relaxed mt-1">
+                    {mode.subtitle}
+                  </p>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* ─── 3. LOGO DE LA BOUTIQUE & BANNIÈRE COUVERTURE ─── */}
       <div id="logo" className="p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl md:rounded-[2.5rem] bg-vendeur-coal border border-white/10 space-y-4 sm:space-y-6 scroll-mt-28 shadow-xl">
         <div className="flex items-start gap-2.5">
           <div className="h-8 w-8 rounded-lg bg-white/5 flex items-center justify-center shrink-0 mt-0.5 border border-white/10">
@@ -605,7 +696,7 @@ export function StorefrontBrandingTab({ merchant }: StorefrontBrandingTabProps) 
           </div>
           <div className="min-w-0 flex-1">
             <h4 className="text-xs sm:text-sm font-black uppercase tracking-wider text-white leading-tight">
-              2. Identité Visuelle (Logo &amp; Bannière Officielle)
+              3. Identité Visuelle (Logo &amp; Bannière Officielle)
             </h4>
             <p className="text-[11px] sm:text-xs text-white/40 leading-relaxed mt-0.5">
               Ces images apparaissent sur votre vitrine, vos cartes de partage WhatsApp et l'en-tête de votre application.

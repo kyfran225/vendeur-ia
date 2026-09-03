@@ -152,7 +152,7 @@ function FormattedMessageContent({ text, onNavigate }: { text: string; onNavigat
               key={idx}
               type="button"
               onClick={() => onNavigate(rawUrl, label)}
-              className="inline-flex items-center gap-1 font-bold text-emerald-400 hover:text-emerald-300 underline underline-offset-2 transition-colors cursor-pointer text-left"
+              className="inline-flex items-center gap-1 font-bold text-emerald-700 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300 underline underline-offset-2 transition-colors cursor-pointer text-left"
             >
               <span>{label}</span>
               <ExternalLink size={11} className="inline shrink-0 opacity-70" />
@@ -164,7 +164,7 @@ function FormattedMessageContent({ text, onNavigate }: { text: string; onNavigat
         const boldMatch = part.match(/^\*\*([^*]+)\*\*$/);
         if (boldMatch) {
           return (
-            <strong key={idx} className="font-black text-white">
+            <strong key={idx} className="font-black text-inherit">
               {boldMatch[1]}
             </strong>
           );
@@ -447,17 +447,15 @@ export function CopilotWidget() {
           title="Copilote Vendeur IA (Cliquez pour ouvrir, glissez pour déplacer)"
         >
           {/* Main Round Orb Button */}
-          <div className="relative w-14 h-14 rounded-full bg-vendeur-coal/90 hover:bg-vendeur-coal/98 border border-white/10 hover:border-vendeur-emerald/60 text-white flex items-center justify-center shadow-[0_6px_24px_rgba(0,0,0,0.45)] hover:shadow-[0_0_26px_rgba(16,185,129,0.45)] backdrop-blur-xl transition-all duration-300">
+          <div className="relative w-14 h-14 rounded-full bg-white/95 dark:bg-[#0d1f18]/95 hover:bg-white dark:hover:bg-[#132a21] border border-slate-200 dark:border-emerald-500/30 text-slate-900 dark:text-white flex items-center justify-center shadow-[0_8px_28px_rgba(0,0,0,0.15)] dark:shadow-[0_8px_30px_rgba(0,0,0,0.7)] hover:shadow-[0_0_28px_rgba(16,185,129,0.5)] backdrop-blur-xl transition-all duration-300">
             {/* Green Online Dot */}
-            <span className="absolute top-1 right-1 w-3 h-3 bg-vendeur-emerald rounded-full ring-2 ring-vendeur-coal pointer-events-none" />
+            <span className="absolute top-1 right-1 w-3 h-3 bg-vendeur-emerald rounded-full ring-2 ring-white dark:ring-vendeur-coal pointer-events-none" />
 
             {/* Logo Heartbeat Sphere */}
-            <div className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center p-2 animate-orb-beat group-hover:bg-vendeur-emerald/10 group-hover:scale-105 transition-all duration-300 pointer-events-none">
+            <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-white/5 border border-slate-200/80 dark:border-white/10 flex items-center justify-center p-2 animate-orb-beat group-hover:bg-vendeur-emerald/20 group-hover:scale-105 transition-all duration-300 pointer-events-none">
               <Logo
                 size={22}
-                leftBranchColor="#ffffff"
-                rightBranchColor="#10b981"
-                className="drop-shadow-[0_0_8px_rgba(16,185,129,0.5)] group-hover:rotate-6 group-hover:scale-110 transition-transform duration-300"
+                className="group-hover:rotate-6 group-hover:scale-110 transition-transform duration-300"
               />
             </div>
 
@@ -490,37 +488,37 @@ export function CopilotWidget() {
 
           <div
             className={cn(
-              "fixed z-[70] transition-all duration-300 ease-out flex flex-col bg-vendeur-coal/98 backdrop-blur-2xl border border-white/10 shadow-2xl overflow-hidden",
+              "fixed z-[70] transition-all duration-300 ease-out flex flex-col bg-white dark:bg-[#0c1511] text-slate-900 dark:text-white backdrop-blur-2xl border border-slate-200 dark:border-emerald-500/20 shadow-2xl overflow-hidden",
               isMinimized
                 ? "bottom-20 right-4 sm:bottom-6 sm:right-6 w-[calc(100%-2rem)] sm:w-96 h-14 sm:h-16 rounded-2xl sm:rounded-3xl"
                 : "bottom-0 left-0 right-0 sm:left-auto sm:bottom-6 sm:right-6 w-full sm:w-[450px] md:w-[480px] h-full sm:h-[680px] sm:max-h-[88vh] rounded-none sm:rounded-3xl border-b-0 sm:border-b"
             )}
           >
             {/* Mobile Sheet Handle */}
-            <div className="w-12 h-1 bg-white/20 rounded-full mx-auto mt-2 sm:hidden shrink-0" />
+            <div className="w-12 h-1 bg-slate-300 dark:bg-white/20 rounded-full mx-auto mt-2 sm:hidden shrink-0" />
 
             {/* Header Bar */}
-            <div className="flex items-center justify-between px-4 py-3 sm:px-5 sm:py-3.5 border-b border-white/10 bg-vendeur-slate/90 backdrop-blur-md select-none gap-3">
+            <div className="flex items-center justify-between px-4 py-3 sm:px-5 sm:py-3.5 border-b border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-[#0f1d17] select-none gap-3">
               {/* Identity & Live indicator */}
               <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
-                <div className="relative w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-gradient-to-br from-vendeur-emerald/25 to-vendeur-emerald/5 border border-vendeur-emerald/40 flex items-center justify-center p-1.5 text-vendeur-emerald shrink-0 shadow-[inset_0_1px_1px_rgba(255,255,255,0.2)]">
-                  <Logo size={20} leftBranchColor="#ffffff" rightBranchColor="#10b981" />
+                <div className="relative w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-slate-100 dark:bg-emerald-950/40 border border-slate-200 dark:border-emerald-500/40 flex items-center justify-center p-1.5 text-slate-900 dark:text-white shrink-0 shadow-sm">
+                  <Logo size={20} />
                   {/* Glowing Live Dot */}
                   <span className="absolute -top-0.5 -right-0.5 flex h-3 w-3">
-                    <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500 ring-2 ring-vendeur-coal border border-white/40"></span>
+                    <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500 ring-2 ring-white dark:ring-vendeur-coal border border-white/40"></span>
                   </span>
                 </div>
 
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
-                    <h3 className="font-black text-white text-xs sm:text-sm tracking-wide uppercase truncate">
+                    <h3 className="font-black text-slate-900 dark:text-white text-xs sm:text-sm tracking-wide uppercase truncate">
                       Copilote Vendeur IA
                     </h3>
-                    <span className="px-1.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 shrink-0">
+                    <span className="px-1.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 shrink-0">
                       Live
                     </span>
                   </div>
-                  <p className="text-[10px] sm:text-[11px] text-white/50 truncate font-medium">
+                  <p className="text-[10px] sm:text-[11px] text-slate-500 dark:text-white/50 truncate font-medium">
                     Votre guide intelligent & proactif
                   </p>
                 </div>
@@ -531,7 +529,7 @@ export function CopilotWidget() {
                 <button
                   onClick={clearHistory}
                   title="Effacer la discussion"
-                  className="w-8 h-8 rounded-xl bg-white/5 hover:bg-red-500/20 text-white/60 hover:text-red-400 border border-white/5 hover:border-red-500/30 flex items-center justify-center transition-all duration-200"
+                  className="w-8 h-8 rounded-xl bg-slate-200/80 hover:bg-rose-500/20 text-slate-600 hover:text-rose-600 dark:bg-white/5 dark:hover:bg-red-500/20 dark:text-white/60 dark:hover:text-red-400 border border-slate-300 dark:border-white/5 hover:border-rose-400 dark:hover:border-red-500/30 flex items-center justify-center transition-all duration-200 cursor-pointer"
                 >
                   <Trash2 size={14} />
                 </button>
@@ -539,7 +537,7 @@ export function CopilotWidget() {
                 <button
                   onClick={() => setMinimized(!isMinimized)}
                   title={isMinimized ? "Agrandir" : "Réduire"}
-                  className="hidden sm:flex w-8 h-8 rounded-xl bg-white/5 hover:bg-white/10 text-white/60 hover:text-white border border-white/5 flex items-center justify-center transition-all duration-200"
+                  className="hidden sm:flex w-8 h-8 rounded-xl bg-slate-200/80 hover:bg-slate-300 dark:bg-white/5 dark:hover:bg-white/10 text-slate-600 hover:text-slate-900 dark:text-white/60 dark:hover:text-white border border-slate-300 dark:border-white/5 flex items-center justify-center transition-all duration-200 cursor-pointer"
                 >
                   {isMinimized ? <Maximize2 size={14} /> : <Minimize2 size={14} />}
                 </button>
@@ -547,7 +545,7 @@ export function CopilotWidget() {
                 <button
                   onClick={closeCopilot}
                   title="Fermer"
-                  className="w-8 h-8 rounded-xl bg-white/5 hover:bg-white/15 text-white/70 hover:text-white border border-white/5 flex items-center justify-center transition-all duration-200 active:scale-95"
+                  className="w-8 h-8 rounded-xl bg-slate-200/80 hover:bg-slate-300 dark:bg-white/5 dark:hover:bg-white/15 text-slate-700 hover:text-slate-950 dark:text-white/70 dark:hover:text-white border border-slate-300 dark:border-white/5 flex items-center justify-center transition-all duration-200 active:scale-95 cursor-pointer"
                 >
                   <X size={16} />
                 </button>
@@ -557,41 +555,41 @@ export function CopilotWidget() {
             {!isMinimized && (
               <>
                 {/* Premium Quick Actions Bar */}
-                <div className="px-3.5 py-2 bg-black/40 border-b border-white/5 flex items-center gap-2 overflow-x-auto no-scrollbar">
+                <div className="px-3.5 py-2 bg-slate-100 dark:bg-[#09130e] border-b border-slate-200 dark:border-white/5 flex items-center gap-2 overflow-x-auto no-scrollbar">
                   <button
                     onClick={() => runStoreAudit()}
                     title="Lancer l'Audit IA et Score de Conversion"
-                    className="shrink-0 px-2.5 py-1.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 text-[11px] font-black uppercase tracking-wider flex items-center gap-1.5 border border-emerald-500/30 transition-all active:scale-95 shadow-sm"
+                    className="shrink-0 px-2.5 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 hover:bg-emerald-100 dark:hover:bg-emerald-500/20 text-emerald-800 dark:text-emerald-400 text-[11px] font-black uppercase tracking-wider flex items-center gap-1.5 border border-emerald-300 dark:border-emerald-500/30 transition-all active:scale-95 shadow-sm cursor-pointer"
                   >
-                    <Sparkles size={13} className="text-emerald-400" />
+                    <Sparkles size={13} className="text-emerald-600 dark:text-emerald-400" />
                     <span>Audit IA</span>
                   </button>
 
                   <button
                     onClick={() => startTour()}
                     title="Lancer la Visite Guidée 30s"
-                    className="shrink-0 px-2.5 py-1.5 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 text-[11px] font-black uppercase tracking-wider flex items-center gap-1.5 border border-cyan-500/30 transition-all active:scale-95 shadow-sm"
+                    className="shrink-0 px-2.5 py-1.5 rounded-xl bg-cyan-50 dark:bg-cyan-500/10 hover:bg-cyan-100 dark:hover:bg-cyan-500/20 text-cyan-800 dark:text-cyan-400 text-[11px] font-black uppercase tracking-wider flex items-center gap-1.5 border border-cyan-300 dark:border-cyan-500/30 transition-all active:scale-95 shadow-sm cursor-pointer"
                   >
-                    <Compass size={13} className="text-cyan-400" />
+                    <Compass size={13} className="text-cyan-600 dark:text-cyan-400" />
                     <span>Visite 30s</span>
                   </button>
 
                   <button
                     onClick={() => setFounderModalOpen(true)}
                     title="Envoyer un message au Fondateur"
-                    className="shrink-0 px-2.5 py-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 text-[11px] font-bold flex items-center gap-1.5 border border-amber-500/30 transition-all active:scale-95 shadow-sm"
+                    className="shrink-0 px-2.5 py-1.5 rounded-xl bg-amber-50 dark:bg-amber-500/10 hover:bg-amber-100 dark:hover:bg-amber-500/20 text-amber-800 dark:text-amber-300 text-[11px] font-bold flex items-center gap-1.5 border border-amber-300 dark:border-amber-500/30 transition-all active:scale-95 shadow-sm cursor-pointer"
                   >
-                    <Crown size={13} className="text-amber-400" />
+                    <Crown size={13} className="text-amber-600 dark:text-amber-400" />
                     <span>Fondateur</span>
                   </button>
                 </div>
 
                 {/* Store Health Live Pill */}
                 {storeHealth && (
-                  <div className="px-4 py-1.5 bg-black/20 border-b border-white/5 flex items-center justify-between text-[11px] text-white/70 overflow-x-auto gap-2">
+                  <div className="px-4 py-1.5 bg-slate-50 dark:bg-[#070e0b] border-b border-slate-200 dark:border-white/5 flex items-center justify-between text-[11px] text-slate-600 dark:text-white/70 overflow-x-auto gap-2">
                     <div className="flex items-center gap-1.5 shrink-0">
-                      <Store size={12} className="text-vendeur-emerald" />
-                      <span className="font-bold text-white truncate max-w-[130px]">
+                      <Store size={12} className="text-emerald-600 dark:text-vendeur-emerald" />
+                      <span className="font-bold text-slate-900 dark:text-white truncate max-w-[130px]">
                         {storeHealth.businessName}
                       </span>
                     </div>
@@ -599,12 +597,12 @@ export function CopilotWidget() {
                       <span className={cn(
                         "px-1.5 py-0.5 rounded-md text-[9px] font-bold uppercase tracking-wider",
                         storeHealth.whatsappStatus === "connected"
-                          ? "bg-vendeur-emerald/20 text-vendeur-emerald border border-vendeur-emerald/30"
-                          : "bg-amber-500/20 text-amber-300 border border-amber-500/30"
+                          ? "bg-emerald-500/20 text-emerald-700 dark:text-vendeur-emerald border border-emerald-500/30"
+                          : "bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/30"
                       )}>
                         {storeHealth.whatsappStatus === "connected" ? "WhatsApp Prêt" : "WhatsApp Off"}
                       </span>
-                      <span className="text-[10px] text-white/40">
+                      <span className="text-[10px] text-slate-400 dark:text-white/40">
                         • {storeHealth.productCount || 0} art. • {storeHealth.pendingOrdersCount || 0} cmd(s)
                       </span>
                     </div>
@@ -612,7 +610,7 @@ export function CopilotWidget() {
                 )}
 
               {/* Messages Stream */}
-              <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-4 scroll-smooth min-w-0">
+              <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-4 scroll-smooth min-w-0 bg-slate-50/50 dark:bg-transparent">
                 {messages.map((msg) => {
                   const isAssistant = msg.role === "assistant";
                   return (
@@ -627,18 +625,18 @@ export function CopilotWidget() {
                       <div className={cn(
                         "w-8 h-8 rounded-xl flex items-center justify-center shrink-0 mt-0.5 shadow-sm text-xs font-bold overflow-hidden p-0.5",
                         isAssistant
-                          ? "bg-[#01524b]/40 border border-vendeur-emerald/40 text-vendeur-emerald"
-                          : "bg-white/10 border border-white/20 text-white"
+                          ? "bg-emerald-500/15 border border-emerald-500/30 text-emerald-700 dark:text-vendeur-emerald"
+                          : "bg-slate-200 dark:bg-white/10 border border-slate-300 dark:border-white/20 text-slate-800 dark:text-white"
                       )}>
-                        {isAssistant ? <AssistantIcon size={24} withBackground={true} className="rounded-lg" /> : "M"}
+                        {isAssistant ? <AssistantIcon size={24} withBackground={false} className="rounded-lg" /> : "M"}
                       </div>
 
                       {/* Bubble with Comfortable, Highly Readable Typography */}
                       <div className={cn(
                         "rounded-2xl p-3.5 sm:p-4 text-sm sm:text-[14.5px] leading-relaxed relative group min-w-0 break-words [overflow-wrap:anywhere]",
                         isAssistant
-                          ? "bg-vendeur-slate/90 border border-white/10 text-white/95 shadow-md"
-                          : "bg-vendeur-emerald text-vendeur-coal font-medium shadow-md"
+                          ? "bg-slate-100 dark:bg-[#13231c] border border-slate-200 dark:border-emerald-500/20 text-slate-900 dark:text-white/95 shadow-sm"
+                          : "bg-emerald-500 text-slate-950 font-medium shadow-sm"
                       )}>
                         {/* Text Content */}
                         <FormattedMessageContent
@@ -652,18 +650,18 @@ export function CopilotWidget() {
 
                         {/* Speech output button for assistant */}
                         {isAssistant && (
-                          <div className="mt-3 pt-2.5 border-t border-white/10 flex items-center justify-between">
-                            <span className="text-[11px] text-white/40">
+                          <div className="mt-3 pt-2.5 border-t border-slate-200/80 dark:border-white/10 flex items-center justify-between">
+                            <span className="text-[11px] text-slate-400 dark:text-white/40">
                               {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                             </span>
                             <button
                               onClick={() => isSpeaking ? stopSpeaking() : speakText(msg.content)}
-                              className="text-xs font-bold text-white/60 hover:text-vendeur-emerald flex items-center gap-1.5 transition-colors py-0.5 px-2 rounded-lg hover:bg-white/5"
+                              className="text-xs font-bold text-slate-500 hover:text-emerald-700 dark:text-white/60 dark:hover:text-vendeur-emerald flex items-center gap-1.5 transition-colors py-0.5 px-2 rounded-lg hover:bg-slate-200/60 dark:hover:bg-white/5 cursor-pointer"
                               title="Écouter la réponse"
                             >
                               {isSpeaking ? (
                                 <>
-                                  <VolumeX size={14} className="text-rose-400" />
+                                  <VolumeX size={14} className="text-rose-500 dark:text-rose-400" />
                                   <span>Stop</span>
                                 </>
                               ) : (
@@ -678,12 +676,12 @@ export function CopilotWidget() {
 
                         {/* Interactive Suggested Action Buttons */}
                         {msg.suggestedActions && msg.suggestedActions.length > 0 && (
-                          <div className="mt-3.5 pt-3 border-t border-white/10 flex flex-wrap gap-2">
+                          <div className="mt-3.5 pt-3 border-t border-slate-200/80 dark:border-white/10 flex flex-wrap gap-2">
                             {msg.suggestedActions.map((action, aIdx) => (
                               <button
                                 key={aIdx}
                                 onClick={() => handleActionClick(action)}
-                                className="px-3 py-2 rounded-xl bg-vendeur-emerald/15 hover:bg-vendeur-emerald border border-vendeur-emerald/30 hover:border-vendeur-emerald text-vendeur-emerald hover:text-vendeur-coal text-xs sm:text-[13px] font-bold transition-all flex items-center gap-2 shadow-sm active:scale-95 shrink-0 max-w-full truncate"
+                                className="px-3 py-2 rounded-xl bg-emerald-500/15 hover:bg-emerald-500 border border-emerald-500/30 hover:border-emerald-500 text-emerald-800 dark:text-vendeur-emerald hover:text-slate-950 dark:hover:text-vendeur-coal text-xs sm:text-[13px] font-bold transition-all flex items-center gap-2 shadow-sm active:scale-95 shrink-0 max-w-full truncate cursor-pointer"
                               >
                                 <span className="truncate">{action.label}</span>
                                 <ArrowRight size={13} className="shrink-0" />
@@ -706,10 +704,10 @@ export function CopilotWidget() {
 
               {/* Suggestions Bar */}
               {suggestions.length > 0 && (
-                <div className="px-4 py-2.5 border-t border-white/5 bg-vendeur-slate/40 min-w-0">
+                <div className="px-4 py-2.5 border-t border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-[#0f1d17] min-w-0">
                   <div className="flex items-center gap-1.5 mb-2">
-                    <HelpCircle size={13} className="text-vendeur-emerald" />
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-white/70">
+                    <HelpCircle size={13} className="text-emerald-600 dark:text-vendeur-emerald" />
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-slate-700 dark:text-white/70">
                       Suggestions 1-Clic
                     </span>
                   </div>
@@ -718,10 +716,19 @@ export function CopilotWidget() {
                       <button
                         key={sIdx}
                         onClick={() => {
+                          const lower = (sug.text || "").toLowerCase();
+                          if (sug.category === "tour" || lower.includes("visite") || lower.includes("tour guidé")) {
+                            startTour();
+                            return;
+                          }
+                          if (sug.category === "audit" || lower.includes("audit complet") || lower.includes("score de conversion")) {
+                            runStoreAudit();
+                            return;
+                          }
                           sendMessage(sug.text, location.pathname);
                         }}
                         disabled={isLoading}
-                        className="px-3 py-2 rounded-xl bg-white/5 hover:bg-vendeur-emerald/20 border border-white/10 hover:border-vendeur-emerald/40 text-xs sm:text-[12.5px] text-white/90 hover:text-white shrink-0 flex items-center gap-2 transition-all text-left max-w-[300px] truncate"
+                        className="px-3 py-2 rounded-xl bg-white dark:bg-[#13231c] hover:bg-emerald-50 dark:hover:bg-[#192f25] border border-slate-200 dark:border-white/10 hover:border-emerald-300 dark:hover:border-emerald-500/40 text-xs sm:text-[12.5px] text-slate-800 dark:text-white/90 hover:text-emerald-800 dark:hover:text-white shrink-0 flex items-center gap-2 transition-all text-left max-w-[300px] truncate shadow-sm cursor-pointer"
                       >
                         {getIconForSuggestion(sug.icon)}
                         <span className="truncate">{sug.text}</span>
@@ -734,7 +741,7 @@ export function CopilotWidget() {
               {/* Input Form */}
               <form
                 onSubmit={handleSendMessage}
-                className="p-3 sm:p-3.5 border-t border-white/10 bg-vendeur-slate/80 flex items-center gap-2.5 min-w-0"
+                className="p-3 sm:p-3.5 border-t border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-[#0f1d17] flex items-center gap-2.5 min-w-0"
               >
                 {/* Voice Input Button */}
                 <button
@@ -742,10 +749,10 @@ export function CopilotWidget() {
                   onClick={toggleVoiceRecording}
                   title={isVoiceInputActive ? "Arrêter l'enregistrement" : "Dicter votre question au micro"}
                   className={cn(
-                    "w-11 h-11 rounded-xl flex items-center justify-center shrink-0 transition-all border",
+                    "w-11 h-11 rounded-xl flex items-center justify-center shrink-0 transition-all border cursor-pointer",
                     isVoiceInputActive
-                      ? "bg-red-500/20 border-red-500 text-red-400 animate-pulse"
-                      : "bg-white/5 border-white/10 text-white/70 hover:text-white hover:bg-white/10"
+                      ? "bg-rose-500/20 border-rose-500 text-rose-600 dark:text-red-400 animate-pulse"
+                      : "bg-white dark:bg-[#13231c] border-slate-300 dark:border-white/10 text-slate-600 hover:text-slate-900 dark:text-white/70 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10"
                   )}
                 >
                   {isVoiceInputActive ? <MicOff size={20} /> : <Mic size={20} />}
@@ -761,14 +768,14 @@ export function CopilotWidget() {
                       ? "Écoute en cours, parlez..."
                       : "Posez votre question ou demandez une action..."
                   }
-                  className="flex-1 min-w-0 bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm sm:text-[15px] text-white placeholder-white/40 focus:outline-none focus:border-vendeur-emerald transition-colors"
+                  className="flex-1 min-w-0 bg-white dark:bg-[#09130e] border border-slate-300 dark:border-white/10 rounded-xl px-4 py-2.5 text-sm sm:text-[15px] text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder-white/40 focus:outline-none focus:border-emerald-500 transition-colors shadow-inner"
                 />
 
                 {/* Send Button */}
                 <button
                   type="submit"
                   disabled={isLoading || !inputPrompt.trim()}
-                  className="w-11 h-11 rounded-xl bg-vendeur-emerald text-vendeur-coal flex items-center justify-center shrink-0 hover:bg-vendeur-emerald/90 disabled:opacity-40 transition-all shadow-md shadow-vendeur-emerald/20 active:scale-95"
+                  className="w-11 h-11 rounded-xl bg-emerald-500 text-slate-950 flex items-center justify-center shrink-0 hover:bg-emerald-400 disabled:opacity-40 transition-all shadow-md shadow-emerald-500/20 active:scale-95 cursor-pointer font-bold"
                 >
                   <Send size={18} />
                 </button>

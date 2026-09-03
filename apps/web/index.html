@@ -14,8 +14,25 @@
     <meta name="description" content="Vendeur IA : votre commercial virtuel sur WhatsApp et Instagram. Répondez, conseillez et vendez 24h/24 et 7j/7." />
     <meta name="keywords" content="vendeur IA, vendeuria, vendeur IA whatsapp, commercial virtuel whatsapp, commercial virtuel instagram, vente automatique whatsapp, whatsapp business api, agent IA vendeur, automatisation vente, bot vendeur whatsapp" />
     <meta name="author" content="Vendeur IA" />
-    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
-    <meta name="theme-color" content="#052e16" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#07100d" />
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#ffffff" />
+    <meta name="theme-color" content="#07100d" />
+    <script>
+      (function() {
+        try {
+          var savedTheme = localStorage.getItem('vendeuria-theme') || 'system';
+          var isDark = savedTheme === 'dark' || (savedTheme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+          if (isDark) {
+            document.documentElement.classList.add('dark');
+            document.documentElement.classList.remove('light');
+          } else {
+            document.documentElement.classList.remove('dark');
+            document.documentElement.classList.add('light');
+          }
+          document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+        } catch (e) {}
+      })();
+    </script>
     
     <!-- Open Graph / Facebook / WhatsApp Preview -->
     <meta property="og:site_name" content="Vendeur IA" />

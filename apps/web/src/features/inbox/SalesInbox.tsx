@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from "react";
+import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import {
   MessageCircle, Search, MoreVertical, CheckCheck, ShieldCheck,
   Send, User, Bot, Loader2, Sparkles, X, Instagram, Facebook,
@@ -116,7 +116,10 @@ export function SalesInbox() {
   const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
   const chatFromUrl = searchParams.get("chat");
+  const messageIdFromUrl = searchParams.get("messageId") || searchParams.get("msg");
   const [selectedChat, setSelectedChat] = useState<string | null>(chatFromUrl || null);
+  const [targetMessageId, setTargetMessageId] = useState<string | null>(messageIdFromUrl || null);
+  const [highlightedMessageId, setHighlightedMessageId] = useState<string | null>(null);
   const [showMobileChat, setShowMobileChat] = useState(Boolean(chatFromUrl));
   const [manualMessage, setManualMessage] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
@@ -220,14 +223,20 @@ export function SalesInbox() {
     }
   };
 
-  // Synchronize URL search params with active chat
+  // Synchronize URL search params with active chat and target message
   useEffect(() => {
     if (chatFromUrl && chatFromUrl !== selectedChat) {
       setSelectedChat(chatFromUrl);
       setShowMobileChat(true);
       markReadMutation.mutate(chatFromUrl);
     }
-  }, [chatFromUrl]);
+  }, [chatFromUrl, selectedChat]);
+
+  useEffect(() => {
+    if (messageIdFromUrl) {
+      setTargetMessageId(messageIdFromUrl);
+    }
+  }, [messageIdFromUrl]);
 
   // Handle messages from Service Worker for instant navigation
   useEffect(() => {
@@ -237,8 +246,9 @@ export function SalesInbox() {
         try {
           const parsed = new URL(event.data.url, window.location.origin);
           const chatId = parsed.searchParams.get("chat");
+          const msgId = parsed.searchParams.get("messageId") || parsed.searchParams.get("msg");
           if (chatId) {
-            handleChatSelect(chatId);
+            handleChatSelect(chatId, msgId || undefined);
           }
         } catch (err) {
           console.warn("[Inbox] SW navigation URL parse failed:", err);
@@ -259,7 +269,7 @@ export function SalesInbox() {
     const handleConvUpdate = (data: any) => {
       queryClient.invalidateQueries({ queryKey: ["conversations"] });
 
-      if (data.conversationId === selectedChat) {
+      if (data?.conversationId && String(data.conversationId) === String(selectedChat)) {
         if (data.message) {
           queryClient.setQueryData(["messages", selectedChat], (old: any[] | undefined) => {
             if (!old) return [data.message];
@@ -280,7 +290,7 @@ export function SalesInbox() {
       }
 
       // If message is from customer, alert the admin with the WhatsApp incoming sound chime
-      if (data.message?.sender === "customer") {
+      if (data?.message?.sender === "customer") {
         playWhatsAppIncomingChime();
       }
     };
@@ -310,7 +320,7 @@ export function SalesInbox() {
       playWhatsAppIncomingChime();
       toast.success(`💰 Paiement détecté (${data.amount} ${data.currency || merchantCurrency}) !`);
       queryClient.invalidateQueries({ queryKey: ["conversations"] });
-      if (data.conversationId === selectedChat) {
+      if (data.conversationId && String(data.conversationId) === String(selectedChat)) {
         queryClient.invalidateQueries({ queryKey: ["messages", selectedChat] });
       }
     };
@@ -329,7 +339,7 @@ export function SalesInbox() {
       if (!data?.conversationId) return;
       setTypingMap(prev => ({
         ...prev,
-        [data.conversationId]: {
+        [String(data.conversationId)]: {
           isTyping: data.isTyping,
           participant: data.participant || "customer",
           lastUpdated: Date.now()
@@ -346,7 +356,7 @@ export function SalesInbox() {
       deliveredAt?: Date;
       readAt?: Date;
     }) => {
-      if (data.conversationId === selectedChat) {
+      if (data.conversationId && String(data.conversationId) === String(selectedChat)) {
         queryClient.setQueryData(["messages", selectedChat], (old: any[] | undefined) => {
           if (!old) return old;
           return old.map(m => {
@@ -371,9 +381,9 @@ export function SalesInbox() {
     const handleConversationRead = (data: { conversationId: string; unreadCount: number }) => {
       queryClient.setQueryData(["conversations"], (old: any[] | undefined) => {
         if (!old) return old;
-        return old.map(c => c._id === data.conversationId ? { ...c, unreadCount: 0 } : c);
+        return old.map(c => String(c._id) === String(data.conversationId) ? { ...c, unreadCount: 0 } : c);
       });
-      if (data.conversationId === selectedChat) {
+      if (data.conversationId && String(data.conversationId) === String(selectedChat)) {
         queryClient.setQueryData(["messages", selectedChat], (old: any[] | undefined) => {
           if (!old) return old;
           return old.map(m => {
@@ -399,6 +409,9 @@ export function SalesInbox() {
     }
 
     return () => {
+      if (selectedChat) {
+        socket.emit("chat:leave", { conversationId: selectedChat, userId: user?.id });
+      }
       socket.off("conversation:update", handleConvUpdate);
       socket.off("notification:new", handleNotificationNew);
       socket.off("payment:detected", handlePaymentDetected);
@@ -448,15 +461,47 @@ export function SalesInbox() {
     }
   };
 
-  // Auto-scroll when messages update based on scroll position
+  // Dedicated function to scroll to a specific message and pulse/highlight it
+  const scrollToMessage = useCallback((messageId: string, smooth = true) => {
+    if (!messageId) return false;
+    const element = document.getElementById(`msg-${messageId}`);
+    if (element) {
+      element.scrollIntoView({ behavior: smooth ? "smooth" : "auto", block: "center" });
+      setHighlightedMessageId(messageId);
+      setTimeout(() => {
+        setHighlightedMessageId((current) => (current === messageId ? null : current));
+      }, 3000);
+      return true;
+    }
+    return false;
+  }, []);
+
+  // Auto-scroll when messages update based on scroll position or target message
   useEffect(() => {
     if (!scrollRef.current) return;
+
+    if (targetMessageId && messages && messages.length > 0) {
+      const scrolled = scrollToMessage(targetMessageId, true);
+      if (!scrolled) {
+        const timer = setTimeout(() => {
+          const retryScrolled = scrollToMessage(targetMessageId, true);
+          if (retryScrolled) {
+            setTargetMessageId(null);
+          }
+        }, 200);
+        return () => clearTimeout(timer);
+      } else {
+        setTargetMessageId(null);
+      }
+      return;
+    }
+
     if (isNearBottom) {
       scrollToBottom(false);
     } else {
       setUnreadCountBelow(prev => prev + 1);
     }
-  }, [messages]);
+  }, [messages, targetMessageId, scrollToMessage]);
 
   // Reset scroll and unread count on chat change
   useEffect(() => {
@@ -464,7 +509,9 @@ export function SalesInbox() {
       setIsNearBottom(true);
       setUnreadCountBelow(0);
       setQuotedMessage(null);
-      setTimeout(() => scrollToBottom(false), 50);
+      if (!targetMessageId && !messageIdFromUrl) {
+        setTimeout(() => scrollToBottom(false), 50);
+      }
     }
   }, [selectedChat]);
 
@@ -582,14 +629,15 @@ export function SalesInbox() {
     }
   });
 
-  const handleChatSelect = (id: string) => {
+  const handleChatSelect = (id: string, targetMsgId?: string) => {
     setSelectedChat(id);
     setShowMobileChat(true);
-    setSearchParams((prev) => {
-      const next = new URLSearchParams(prev);
-      next.set("chat", id);
-      return next;
-    }, { replace: true });
+    if (targetMsgId) {
+      setTargetMessageId(targetMsgId);
+      setSearchParams({ chat: id, messageId: targetMsgId }, { replace: true });
+    } else {
+      setSearchParams({ chat: id }, { replace: true });
+    }
     markReadMutation.mutate(id);
   };
 
@@ -607,14 +655,15 @@ export function SalesInbox() {
     if (!socket || !selectedChat) return;
 
     if (!typingTimeoutRef.current) {
-      socket.emit("typing:start", { conversationId: selectedChat, participant: "human" });
-    } else {
+      socket.emit("typing:start", { conversationId: selectedChat, participant: "human", userId: user?.id });
+    }
+    if (typingTimeoutRef.current) {
       clearTimeout(typingTimeoutRef.current);
     }
 
     typingTimeoutRef.current = setTimeout(() => {
       if (socket && selectedChat) {
-        socket.emit("typing:stop", { conversationId: selectedChat, participant: "human" });
+        socket.emit("typing:stop", { conversationId: selectedChat, participant: "human", userId: user?.id });
       }
       typingTimeoutRef.current = null;
     }, 2500);
@@ -627,7 +676,7 @@ export function SalesInbox() {
       typingTimeoutRef.current = null;
     }
     if (socket && selectedChat) {
-      socket.emit("typing:stop", { conversationId: selectedChat, participant: "human" });
+      socket.emit("typing:stop", { conversationId: selectedChat, participant: "human", userId: user?.id });
     }
     sendManualMessageMutation.mutate({
       id: selectedChat,
@@ -1221,6 +1270,7 @@ export function SalesInbox() {
                     <WhatsAppBubble
                       key={msg._id}
                       msg={msg}
+                      isHighlighted={highlightedMessageId === msg._id}
                       onImageClick={(url, caption) => setLightboxMedia({
                         url,
                         caption,
@@ -1236,6 +1286,9 @@ export function SalesInbox() {
                           mediaUrl: m.mediaUrl
                         });
                         if (inputRef.current) inputRef.current.focus();
+                      }}
+                      onQuotedMessageClick={(quotedId) => {
+                        scrollToMessage(quotedId, true);
                       }}
                       onReaction={(emoji) => handleReaction(msg._id, emoji)}
                     />
@@ -1561,13 +1614,17 @@ export function SalesInbox() {
 // =========================================================================
 function WhatsAppBubble({
   msg,
+  isHighlighted = false,
   onImageClick,
   onReplyClick,
+  onQuotedMessageClick,
   onReaction
 }: {
   msg: any;
+  isHighlighted?: boolean;
   onImageClick?: (url: string, caption?: string) => void;
   onReplyClick?: (msg: any) => void;
+  onQuotedMessageClick?: (quotedId: string) => void;
   onReaction?: (emoji: string) => void;
 }) {
   const isCustomer = msg.sender === "customer";
@@ -1617,10 +1674,14 @@ function WhatsAppBubble({
   const REACTION_EMOJIS = ["👍", "❤️", "😂", "😮", "😢", "🙏", "🔥"];
 
   return (
-    <div className={cn(
-      "flex w-full animate-in slide-in-from-bottom-2 duration-200 group relative select-text py-0.5",
-      isCustomer ? "justify-start" : "justify-end"
-    )}>
+    <div
+      id={`msg-${msg._id}`}
+      data-message-id={msg._id}
+      className={cn(
+        "flex w-full animate-in slide-in-from-bottom-2 duration-200 group relative select-text py-0.5 scroll-mt-24 transition-all",
+        isCustomer ? "justify-start" : "justify-end"
+      )}
+    >
       {/* Floating Quick Action Toolbar (WhatsApp Web Style: Reactions & Reply) */}
       <div className={cn(
         "absolute top-0 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-all duration-150 flex items-center gap-1 z-20 bg-white/95 dark:bg-[#202c33]/95 border border-slate-200 dark:border-[#2a3942] rounded-full px-2 py-1 shadow-lg backdrop-blur-sm",
@@ -1656,12 +1717,13 @@ function WhatsAppBubble({
       </div>
 
       <div className={cn(
-        "max-w-[88%] sm:max-w-[72%] p-3.5 sm:p-4 rounded-2xl shadow-sm md:shadow relative break-words overflow-hidden min-w-[140px]",
+        "max-w-[88%] sm:max-w-[72%] p-3.5 sm:p-4 rounded-2xl shadow-sm md:shadow relative break-words overflow-hidden min-w-[140px] transition-all duration-300",
         isCustomer
           ? "bg-white dark:bg-[#202c33] text-slate-900 dark:text-white rounded-tl-none border border-slate-200/80 dark:border-white/5"
           : isHuman
           ? "bg-[#d9fdd3] dark:bg-[#005c4b] text-slate-900 dark:text-white rounded-tr-none font-normal border border-emerald-300/60 dark:border-emerald-500/20"
           : "bg-[#d9fdd3] dark:bg-[#005c4b] text-slate-900 dark:text-white rounded-tr-none font-normal border border-emerald-300/60 dark:border-emerald-400/30",
+        isHighlighted && "ring-4 ring-emerald-500/80 shadow-2xl scale-[1.02] bg-emerald-100 dark:bg-emerald-900/60",
         isPaymentValidated && "ring-2 ring-emerald-500 border-emerald-500 bg-emerald-50 dark:bg-emerald-950/80",
         isPaymentFlagged && "ring-2 ring-amber-500 border-amber-500 bg-amber-50 dark:bg-amber-950/80",
         isFraudAlert && "ring-2 ring-rose-500 border-rose-500 bg-rose-50 dark:bg-rose-950/90 text-slate-900 dark:text-white"
@@ -1703,7 +1765,11 @@ function WhatsAppBubble({
 
         {/* Quoted Message Display Inside Bubble */}
         {msg.quotedMessage && (
-          <div className="mb-2.5 p-2.5 rounded-xl bg-black/5 dark:bg-black/30 border-l-4 border-emerald-600 dark:border-[#00a884] text-xs sm:text-[13px] space-y-0.5">
+          <div
+            onClick={() => onQuotedMessageClick?.(msg.quotedMessage.id || msg.quotedMessage._id)}
+            className="mb-2.5 p-2.5 rounded-xl bg-black/5 dark:bg-black/30 border-l-4 border-emerald-600 dark:border-[#00a884] text-xs sm:text-[13px] space-y-0.5 cursor-pointer hover:bg-black/10 dark:hover:bg-black/40 transition-colors"
+            title="Aller au message cité"
+          >
             <div className="font-bold text-emerald-700 dark:text-[#00a884] text-xs">
               {msg.quotedMessage.sender === "customer" ? "Client" : "Boutique"}
             </div>

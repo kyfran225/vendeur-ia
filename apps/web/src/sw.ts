@@ -28,7 +28,11 @@ self.addEventListener('push', (event: PushEvent) => {
       }
 
       const title = payload.title || "Vendeur IA OS 🚀";
-      const targetUrl = payload.data?.url || (payload.data?.conversationId ? `/inbox?chat=${payload.data.conversationId}` : '/inbox');
+      const targetUrl = payload.data?.url || (payload.data?.conversationId
+        ? (payload.data?.messageId
+            ? `/inbox?chat=${payload.data.conversationId}&messageId=${payload.data.messageId}`
+            : `/inbox?chat=${payload.data.conversationId}`)
+        : '/inbox');
 
       let actions: Array<{ action: string; title: string }> = [];
       if (payload.actions && Array.isArray(payload.actions)) {
@@ -81,7 +85,9 @@ self.addEventListener('notificationclick', (event: NotificationEvent) => {
   if (event.action === 'inspect' && notifData.reference) {
     targetUrl = notifData.url || '/admin';
   } else if (event.action === 'open_chat' && notifData.conversationId) {
-    targetUrl = `/inbox?chat=${notifData.conversationId}`;
+    targetUrl = notifData.messageId
+      ? `/inbox?chat=${notifData.conversationId}&messageId=${notifData.messageId}`
+      : `/inbox?chat=${notifData.conversationId}`;
   }
 
   const origin = self.location.origin;

@@ -524,6 +524,18 @@ class WhatsAppService {
       }
     });
 
+    sock.ev.on("presence.update", async (p: any) => {
+      await this.handlePresenceUpdate(userId, p);
+    });
+
+    sock.ev.on("messages.update", async (updates: any) => {
+      await this.handleMessagesUpdate(userId, updates);
+    });
+
+    sock.ev.on("message-receipt.update", async (receipts: any) => {
+      await this.handleMessageReceiptsUpdate(userId, receipts);
+    });
+
     sock.ev.on("messages.upsert", async (m) => {
       if (m.type === "notify") {
         for (const msg of m.messages) {
@@ -1482,7 +1494,8 @@ class WhatsAppService {
           customerId: customer._id.toString(),
           phone: customer.phone,
           senderName: customerDisplay,
-          messageId: customerMsg._id.toString()
+          messageId: customerMsg._id.toString(),
+          url: `/inbox?chat=${conversation._id.toString()}&messageId=${customerMsg._id.toString()}`
         }
       });
 
@@ -1497,7 +1510,8 @@ class WhatsAppService {
           conversationId: conversation._id.toString(),
           customerId: customer._id.toString(),
           phone: customer.phone,
-          url: `/inbox?chat=${conversation._id.toString()}`
+          messageId: customerMsg._id.toString(),
+          url: `/inbox?chat=${conversation._id.toString()}&messageId=${customerMsg._id.toString()}`
         }
       }).catch(err => console.warn("[WhatsApp Push Error]", err?.message || err));
     }
@@ -2401,14 +2415,22 @@ class WhatsAppService {
       const targetUserIds = new Set<string>([userId.toString()]);
       if (merchant.ownerId) targetUserIds.add(merchant.ownerId.toString());
 
+      const typingPayload = {
+        conversationId: conversation._id.toString(),
+        customerPhone: cleanPhone,
+        isTyping,
+        participant: "customer"
+      };
+
       targetUserIds.forEach(tId => {
-        emitToUser(tId, "conversation:typing", {
-          conversationId: conversation._id.toString(),
-          customerPhone: cleanPhone,
-          isTyping,
-          participant: "customer"
-        });
+        emitToUser(tId, "conversation:typing", typingPayload);
       });
+
+      const io = getSocketServer();
+      if (io) {
+        io.to(`conv:${conversation._id.toString()}`).emit("conversation:typing", typingPayload);
+        io.emit("conversation:typing", typingPayload);
+      }
     } catch (err) {
       console.warn("[WhatsApp Presence] Error handling presence update:", err);
     }

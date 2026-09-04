@@ -32,7 +32,7 @@ import { aiQueue } from "../../services/ai-queue.service.js";
 import { aiProvider } from "../../services/ai-provider.js";
 import axios from "axios";
 import multer from "multer";
-import { emitToUser } from "../../realtime/socketServer.js";
+import { emitToUser, getSocketServer } from "../../realtime/socketServer.js";
 import { UserModel } from "../auth/user.model.js";
 import { isFounderNumber } from "../auth/auth.service.js";
 import { storageService } from "../../services/storage.service.js";
@@ -563,10 +563,24 @@ router.patch("/conversations/:id/read", authenticate, async (req, res) => {
         } catch (err) {}
       }
 
-      emitToUser(ownerId, "conversation:read", {
-        conversationId: conversation._id,
+      const convIdStr = conversation._id.toString();
+      const readPayload = {
+        conversationId: convIdStr,
         unreadCount: 0
+      };
+
+      const targetUserIds = new Set<string>([ownerId.toString()]);
+      if (conversation.merchantId) targetUserIds.add(conversation.merchantId.toString());
+
+      targetUserIds.forEach(tId => {
+        emitToUser(tId, "conversation:read", readPayload);
       });
+
+      const io = getSocketServer();
+      if (io) {
+        io.to(`conv:${convIdStr}`).emit("conversation:read", readPayload);
+        io.emit("conversation:read", readPayload);
+      }
     }
 
     res.json(conversation);
@@ -877,17 +891,26 @@ router.post("/conversations/:id/media", authenticate, upload.single("file"), asy
     await conversation.save();
 
     // Emit Realtime
+    const convIdStr = conversation._id.toString();
+    const updatePayload = {
+      conversationId: convIdStr,
+      message,
+      status: "needs_human",
+      unreadCount: 0
+    };
+
     const targetUserIds = new Set<string>([ownerId.toString()]);
     if (merchant.ownerId) targetUserIds.add(merchant.ownerId.toString());
 
     targetUserIds.forEach(tId => {
-      emitToUser(tId, "conversation:update", {
-        conversationId: conversation._id,
-        message,
-        status: "needs_human",
-        unreadCount: 0
-      });
+      emitToUser(tId, "conversation:update", updatePayload);
     });
+
+    const io = getSocketServer();
+    if (io) {
+      io.to(`conv:${convIdStr}`).emit("conversation:update", updatePayload);
+      io.emit("conversation:update", updatePayload);
+    }
 
     // Send to WhatsApp / External platform
     let customer = conversation.customerId as any;
@@ -917,14 +940,21 @@ router.post("/conversations/:id/media", authenticate, upload.single("file"), asy
       console.error("[Media Send Error]:", sendError.message);
     }
 
+    const finalUpdatePayload = {
+      conversationId: convIdStr,
+      message,
+      status: "needs_human",
+      unreadCount: 0
+    };
+
     targetUserIds.forEach(tId => {
-      emitToUser(tId, "conversation:update", {
-        conversationId: conversation._id,
-        message,
-        status: "needs_human",
-        unreadCount: 0
-      });
+      emitToUser(tId, "conversation:update", finalUpdatePayload);
     });
+
+    if (io) {
+      io.to(`conv:${convIdStr}`).emit("conversation:update", finalUpdatePayload);
+      io.emit("conversation:update", finalUpdatePayload);
+    }
 
     res.status(201).json({ ...message.toObject(), deliveryError });
   } catch (error: any) {
@@ -1039,14 +1069,23 @@ router.post("/conversations/:id/messages", authenticate, async (req, res) => {
     }
 
     // 4. Emit real-time sync with final message data
+    const convIdStr = conversation._id.toString();
+    const updatePayload = {
+      conversationId: convIdStr,
+      message,
+      status: "needs_human",
+      unreadCount: 0
+    };
+
     targetUserIds.forEach(tId => {
-      emitToUser(tId, "conversation:update", {
-        conversationId: conversation._id,
-        message,
-        status: "needs_human",
-        unreadCount: 0
-      });
+      emitToUser(tId, "conversation:update", updatePayload);
     });
+
+    const io = getSocketServer();
+    if (io) {
+      io.to(`conv:${convIdStr}`).emit("conversation:update", updatePayload);
+      io.emit("conversation:update", updatePayload);
+    }
 
     res.status(201).json({ ...message.toObject(), deliveryError });
   } catch (error: any) {

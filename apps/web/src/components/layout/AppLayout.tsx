@@ -4,6 +4,7 @@ import { Sidebar } from "./Sidebar";
 import { ShellHeader } from "./ShellHeader";
 import { WifiOff } from "../ui/WifiOff";
 import { CopilotWidget } from "../copilot/CopilotWidget";
+import { useGlobalNotifications } from "@/hooks";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
@@ -12,6 +13,7 @@ function cn(...inputs: ClassValue[]) {
 }
 
 export function AppLayout() {
+  useGlobalNotifications();
   const location = useLocation();
   const isInbox = location.pathname.startsWith("/inbox");
 

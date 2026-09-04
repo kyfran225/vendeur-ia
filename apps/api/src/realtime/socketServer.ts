@@ -56,15 +56,17 @@ export function initSocketServer(httpServer: HttpServer) {
 
     socket.on("chat:open", async (payload: { conversationId: string; userId?: string }) => {
       if (payload?.conversationId) {
+        socket.join(`conv:${payload.conversationId}`);
         try {
           const { CommerceConversationModel, CommerceMerchantModel } = await import("../modules/commerce/commerce.model.js");
           const { whatsappService } = await import("../modules/whatsapp/whatsapp.service.js");
           const conv = await CommerceConversationModel.findById(payload.conversationId).populate("customerId");
-          if (conv && conv.platform === "whatsapp" && (conv.customerId as any)?.phone) {
-            const customerPhone = (conv.customerId as any).phone;
+          const customerPhone = (conv?.customerId as any)?.phone || (conv?.customerId as any)?.platformId;
+          const isWhatsApp = !conv?.platform || conv?.platform === "whatsapp";
+          if (conv && isWhatsApp && customerPhone && customerPhone !== "WEB_VISITOR") {
             const merchant = await CommerceMerchantModel.findById(conv.merchantId);
             const ownerId = payload.userId || merchant?.ownerId?.toString() || conv.merchantId?.toString();
-            if (ownerId && customerPhone) {
+            if (ownerId) {
               await whatsappService.subscribePresence(ownerId, customerPhone);
             }
           }
@@ -74,24 +76,33 @@ export function initSocketServer(httpServer: HttpServer) {
       }
     });
 
+    socket.on("chat:leave", (payload: { conversationId: string; userId?: string }) => {
+      if (payload?.conversationId) {
+        socket.leave(`conv:${payload.conversationId}`);
+      }
+    });
+
     socket.on("typing:start", async (payload: { conversationId: string; userId?: string; participant?: string }) => {
       if (payload?.conversationId) {
-        socket.broadcast.emit("conversation:typing", {
+        const typingData = {
           conversationId: payload.conversationId,
           isTyping: true,
           participant: payload.participant || "human"
-        });
+        };
+        io?.to(`conv:${payload.conversationId}`).emit("conversation:typing", typingData);
+        socket.broadcast.emit("conversation:typing", typingData);
 
         // Propagate typing state directly to WhatsApp recipient's device
         try {
           const { CommerceConversationModel, CommerceMerchantModel } = await import("../modules/commerce/commerce.model.js");
           const { whatsappService } = await import("../modules/whatsapp/whatsapp.service.js");
           const conv = await CommerceConversationModel.findById(payload.conversationId).populate("customerId");
-          if (conv && conv.platform === "whatsapp" && (conv.customerId as any)?.phone) {
-            const customerPhone = (conv.customerId as any).phone;
+          const customerPhone = (conv?.customerId as any)?.phone || (conv?.customerId as any)?.platformId;
+          const isWhatsApp = !conv?.platform || conv?.platform === "whatsapp";
+          if (conv && isWhatsApp && customerPhone && customerPhone !== "WEB_VISITOR") {
             const merchant = await CommerceMerchantModel.findById(conv.merchantId);
             const ownerId = payload.userId || merchant?.ownerId?.toString() || conv.merchantId?.toString();
-            if (ownerId && customerPhone) {
+            if (ownerId) {
               await whatsappService.sendPresence(ownerId, customerPhone, 'composing');
             }
           }
@@ -103,22 +114,25 @@ export function initSocketServer(httpServer: HttpServer) {
 
     socket.on("typing:stop", async (payload: { conversationId: string; userId?: string; participant?: string }) => {
       if (payload?.conversationId) {
-        socket.broadcast.emit("conversation:typing", {
+        const typingData = {
           conversationId: payload.conversationId,
           isTyping: false,
           participant: payload.participant || "human"
-        });
+        };
+        io?.to(`conv:${payload.conversationId}`).emit("conversation:typing", typingData);
+        socket.broadcast.emit("conversation:typing", typingData);
 
         // Propagate pause state directly to WhatsApp recipient's device
         try {
           const { CommerceConversationModel, CommerceMerchantModel } = await import("../modules/commerce/commerce.model.js");
           const { whatsappService } = await import("../modules/whatsapp/whatsapp.service.js");
           const conv = await CommerceConversationModel.findById(payload.conversationId).populate("customerId");
-          if (conv && conv.platform === "whatsapp" && (conv.customerId as any)?.phone) {
-            const customerPhone = (conv.customerId as any).phone;
+          const customerPhone = (conv?.customerId as any)?.phone || (conv?.customerId as any)?.platformId;
+          const isWhatsApp = !conv?.platform || conv?.platform === "whatsapp";
+          if (conv && isWhatsApp && customerPhone && customerPhone !== "WEB_VISITOR") {
             const merchant = await CommerceMerchantModel.findById(conv.merchantId);
             const ownerId = payload.userId || merchant?.ownerId?.toString() || conv.merchantId?.toString();
-            if (ownerId && customerPhone) {
+            if (ownerId) {
               await whatsappService.sendPresence(ownerId, customerPhone, 'paused');
             }
           }

@@ -51,7 +51,7 @@ export function OffersPage() {
   }
 
   return (
-    <div className="min-h-[100dvh] bg-slate-50 dark:bg-[#07100d] text-slate-900 dark:text-white p-4 sm:p-6 md:p-12 animate-in fade-in duration-700 transition-colors duration-200">
+    <div data-page="landing" className="min-h-[100dvh] bg-slate-50 dark:bg-[#07100d] text-slate-900 dark:text-white p-4 sm:p-6 md:p-12 animate-in fade-in duration-700 transition-colors duration-200">
       <MetaHead
         title="Offres & Tarifs | Vendeur IA WhatsApp Commercial"
         description="Découvrez nos formules Vendeur IA pour automatiser vos ventes sur WhatsApp Business. Tarifs transparents, sans engagement avec période d'essai."

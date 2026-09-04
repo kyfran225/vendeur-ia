@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { createPortal } from "react-dom";
-import { X, Facebook, Settings, Loader2, ShieldCheck, Rocket, HelpCircle } from "lucide-react";
+import { X, Settings, Loader2, ShieldCheck, Rocket, HelpCircle } from "lucide-react";
+import { FacebookIcon } from "@/components/ui/SocialIcons";
 import { apiClient } from "@/lib/apiClient";
 import { toast } from "sonner";
 import { clsx, type ClassValue } from "clsx";
@@ -54,8 +55,8 @@ export function FacebookConnectionModal({ isOpen, onClose, merchant, onRefresh, 
         </button>
 
         <div className="text-center space-y-1.5 pt-1">
-          <div className="h-12 w-12 bg-blue-600/10 border border-blue-600/20 rounded-2xl flex items-center justify-center mx-auto">
-            <Facebook className="text-blue-500" size={24} />
+          <div className="h-12 w-12 bg-[#1877F2] rounded-2xl flex items-center justify-center mx-auto shadow-lg shadow-[#1877F2]/30 text-white">
+            <FacebookIcon size={24} color="#FFFFFF" />
           </div>
           <h2 className="text-xl sm:text-2xl font-black text-white uppercase tracking-tight">Lier Facebook Pro</h2>
           <p className="text-white/40 text-xs">Automatisez votre Page et Marketplace Business.</p>

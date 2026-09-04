@@ -54,13 +54,12 @@ export const useThemeStore = create<ThemeState>((set, get) => ({
 
     // Écoute automatique des changements du navigateur
     const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
-    const handleChange = (e: MediaQueryListEvent) => {
-      // Si aucune préférence manuelle n'a été fixée, on synchronise avec l'OS
-      if (!localStorage.getItem(STORAGE_KEY)) {
-        const newResolved: ThemeMode = e.matches ? "dark" : "light";
-        applyThemeToDOM(newResolved);
-        set({ theme: newResolved, resolvedTheme: newResolved });
-      }
+    const handleChange = (e: MediaQueryListEvent | MediaQueryList) => {
+      // Lorsque le thème du navigateur/système change, l'application synchronise immédiatement
+      const newResolved: ThemeMode = e.matches ? "dark" : "light";
+      localStorage.setItem(STORAGE_KEY, newResolved);
+      applyThemeToDOM(newResolved);
+      set({ theme: newResolved, resolvedTheme: newResolved });
     };
 
     try {

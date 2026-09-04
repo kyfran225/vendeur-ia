@@ -135,8 +135,14 @@ export function CustomerProfileModal({
             </div>
             {displayPhone && (
               <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-white/60">
-                <Phone size={12} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
-                <span className="font-mono">{displayPhone}</span>
+                {displayName !== displayPhone ? (
+                  <>
+                    <Phone size={12} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+                    <span className="font-mono">{displayPhone}</span>
+                  </>
+                ) : (
+                  <span className="text-emerald-600 dark:text-emerald-400 font-medium">WhatsApp Direct</span>
+                )}
                 <button
                   type="button"
                   onClick={handleCopy}

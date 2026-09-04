@@ -448,16 +448,19 @@ export function CopilotWidget() {
         >
           {/* Main Round Orb Button */}
           <div className="relative w-14 h-14 rounded-full bg-white/95 dark:bg-[#0d1f18]/95 hover:bg-white dark:hover:bg-[#132a21] border border-slate-200 dark:border-emerald-500/30 text-slate-900 dark:text-white flex items-center justify-center shadow-[0_8px_28px_rgba(0,0,0,0.15)] dark:shadow-[0_8px_30px_rgba(0,0,0,0.7)] hover:shadow-[0_0_28px_rgba(16,185,129,0.5)] backdrop-blur-xl transition-all duration-300">
-            {/* Green Online Dot */}
-            <span className="absolute top-1 right-1 w-3 h-3 bg-vendeur-emerald rounded-full ring-2 ring-white dark:ring-vendeur-coal pointer-events-none" />
-
             {/* Logo Heartbeat Sphere */}
-            <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-white/5 border border-slate-200/80 dark:border-white/10 flex items-center justify-center p-2 animate-orb-beat group-hover:bg-vendeur-emerald/20 group-hover:scale-105 transition-all duration-300 pointer-events-none">
+            <div className="relative z-10 w-10 h-10 rounded-full bg-slate-100 dark:bg-white/5 border border-slate-200/80 dark:border-white/10 flex items-center justify-center p-2 animate-orb-beat group-hover:bg-vendeur-emerald/20 group-hover:scale-105 transition-all duration-300 pointer-events-none">
               <Logo
                 size={22}
                 className="group-hover:rotate-6 group-hover:scale-110 transition-transform duration-300"
               />
             </div>
+
+            {/* Green Online Dot (Premier plan / Foreground) */}
+            <span className="absolute top-0.5 right-0.5 z-20 flex h-3.5 w-3.5 pointer-events-none">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+              <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-emerald-500 ring-2 ring-white dark:ring-[#0d1f18] shadow-sm" />
+            </span>
 
             {/* Smart Non-disruptive Tooltip on Hover (Always faces inward) */}
             <div
@@ -622,14 +625,15 @@ export function CopilotWidget() {
                       )}
                     >
                       {/* Avatar */}
-                      <div className={cn(
-                        "w-8 h-8 rounded-xl flex items-center justify-center shrink-0 mt-0.5 shadow-sm text-xs font-bold overflow-hidden p-0.5",
-                        isAssistant
-                          ? "bg-emerald-500/15 border border-emerald-500/30 text-emerald-700 dark:text-vendeur-emerald"
-                          : "bg-slate-200 dark:bg-white/10 border border-slate-300 dark:border-white/20 text-slate-800 dark:text-white"
-                      )}>
-                        {isAssistant ? <AssistantIcon size={24} withBackground={false} className="rounded-lg" /> : "M"}
-                      </div>
+                      {isAssistant ? (
+                        <div className="w-8 h-8 flex items-center justify-center shrink-0 mt-0.5 select-none pointer-events-none">
+                          <AssistantIcon size={30} color="#10B981" withBackground={false} className="shrink-0" />
+                        </div>
+                      ) : (
+                        <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 mt-0.5 shadow-sm text-xs font-bold bg-slate-200 dark:bg-white/10 border border-slate-300 dark:border-white/20 text-slate-800 dark:text-white">
+                          M
+                        </div>
+                      )}
 
                       {/* Bubble with Comfortable, Highly Readable Typography */}
                       <div className={cn(

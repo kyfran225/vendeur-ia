@@ -35,7 +35,7 @@ export function ThemeToggle({ variant = "button", className }: ThemeToggleProps)
           className={cn(
             "flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer",
             resolvedTheme === "dark"
-              ? "bg-vendeur-emerald text-vendeur-coal font-black shadow-sm"
+              ? "bg-vendeur-emerald text-slate-950 font-black shadow-sm"
               : "text-slate-600 dark:text-white/60 hover:text-slate-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-white/5"
           )}
         >

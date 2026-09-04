@@ -63,24 +63,11 @@ import { useSocket } from "@/hooks/useSocket";
 import { getProvidersForCountry, getZonesForCity, getCountryByCode, convertCurrencyAmount, CURRENCIES_DATA } from "@vendeur-ia/core";
 import { ConfirmationModal } from "@/components/ui/ConfirmationModal";
 import { StepMilestoneModal } from "@/components/ui/StepMilestoneModal";
+import { FacebookIcon, InstagramIcon, TikTokIcon } from "@/components/ui/SocialIcons";
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
-
-const TikTokIcon = ({ size = 20, className = "" }: { size?: number; className?: string }) => (
-  <svg width={size} height={size} fill="currentColor" viewBox="0 0 16 16" className={className}>
-    <path d="M9 0h1.98c.144.715.54 1.617 1.235 2.512C12.895 3.38 13.797 4 15 4v2c-1.753 0-3.07-.814-4-1.829V11a5 5 0 1 1-5-5v2a3 3 0 1 0 3 3z"/>
-  </svg>
-);
-
-const InstagramIcon = ({ size = 22, className = "" }: { size?: number; className?: string }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}>
-    <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
-    <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
-    <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/>
-  </svg>
-);
 
 import { Gift, TrendingUp } from "lucide-react";
 
@@ -343,7 +330,7 @@ export function SettingsPage() {
                     className={cn(
                       "flex items-center gap-2 px-4 h-10 md:h-11 min-h-[40px] md:min-h-[44px] rounded-xl text-xs font-black uppercase tracking-tight transition-all shrink-0 whitespace-nowrap active:scale-95 cursor-pointer",
                       isActive
-                        ? "bg-vendeur-emerald text-vendeur-coal shadow-md shadow-vendeur-emerald/20 font-black"
+                        ? "bg-vendeur-emerald text-slate-950 shadow-md shadow-vendeur-emerald/20 font-black"
                         : "bg-white/[0.03] text-white/60 hover:text-white hover:bg-white/[0.08] border border-white/5 font-bold"
                     )}
                   >
@@ -401,22 +388,22 @@ export function SettingsPage() {
                   setIsMobileMenuOpen(false);
                 }}
                 className={cn(
-                  "w-full flex items-center justify-between p-4 rounded-2xl border transition-all",
+                  "w-full flex items-center justify-between p-4 rounded-2xl border transition-all cursor-pointer active:scale-[0.98]",
                   activeTab === tab.id
-                    ? "bg-vendeur-emerald border-vendeur-emerald text-vendeur-coal font-black shadow-lg shadow-vendeur-emerald/20"
+                    ? "bg-vendeur-emerald border-vendeur-emerald text-slate-950 font-black shadow-lg shadow-vendeur-emerald/20"
                     : "bg-white/[0.02] border-white/5 text-white/60 hover:bg-white/5 hover:text-white"
                 )}
               >
                 <div className="flex items-center gap-4">
                   <div className={cn(
-                    "h-10 w-10 rounded-xl flex items-center justify-center transition-all",
-                    activeTab === tab.id ? "bg-black/20 text-vendeur-coal" : "bg-white/5 text-vendeur-emerald"
+                    "h-10 w-10 rounded-xl flex items-center justify-center transition-all shrink-0",
+                    activeTab === tab.id ? "bg-slate-950 text-vendeur-emerald shadow-sm" : "bg-white/5 text-vendeur-emerald"
                   )}>
                     <tab.icon size={20} />
                   </div>
                   <span className="text-xs uppercase font-black tracking-widest">{tab.label}</span>
                 </div>
-                {activeTab === tab.id && <ChevronDown size={14} className="-rotate-90 opacity-40" />}
+                {activeTab === tab.id && <ChevronDown size={14} className="-rotate-90 text-slate-950/70" />}
               </button>
             ))}
           </nav>
@@ -658,10 +645,10 @@ function BoutiqueTab({
       <section
         id="identity"
         className={cn(
-          "bg-vendeur-coal/50 backdrop-blur-md border p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl md:rounded-[2.5rem] space-y-6 sm:space-y-8 shadow-2xl scroll-mt-28 w-full max-w-full overflow-hidden box-border transition-all duration-500",
+          "bg-white dark:bg-vendeur-coal/50 backdrop-blur-md border p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl md:rounded-[2.5rem] space-y-6 sm:space-y-8 shadow-md dark:shadow-2xl scroll-mt-28 w-full max-w-full overflow-hidden box-border transition-all duration-500",
           highlightedSection === "identity"
-            ? "border-vendeur-emerald bg-emerald-950/20"
-            : "border-white/10"
+            ? "border-emerald-500 bg-emerald-50/70 dark:bg-emerald-950/20 ring-2 ring-emerald-500/30 shadow-xl shadow-emerald-500/10"
+            : "border-slate-200/80 dark:border-white/10"
         )}
       >
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -982,10 +969,10 @@ function BoutiqueTab({
       <section
         id="delivery"
         className={cn(
-          "bg-vendeur-coal border p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl md:rounded-[2.5rem] space-y-6 sm:space-y-8 shadow-2xl scroll-mt-28 w-full max-w-full overflow-hidden box-border transition-all duration-500",
+          "bg-white dark:bg-vendeur-coal border p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl md:rounded-[2.5rem] space-y-6 sm:space-y-8 shadow-md dark:shadow-2xl scroll-mt-28 w-full max-w-full overflow-hidden box-border transition-all duration-500",
           highlightedSection === "delivery"
-            ? "border-vendeur-emerald bg-gradient-to-b from-emerald-950/40 to-vendeur-coal"
-            : "border-white/10"
+            ? "border-emerald-500 bg-emerald-50/70 dark:bg-emerald-950/20 ring-2 ring-emerald-500/30 shadow-xl shadow-emerald-500/10"
+            : "border-slate-200/80 dark:border-white/10"
         )}
       >
         <div className="flex items-center justify-between gap-3 md:gap-4 px-1">
@@ -1021,53 +1008,56 @@ function BoutiqueTab({
         <div className="space-y-3 sm:space-y-4 w-full max-w-full">
            <div className="flex flex-row gap-2 px-1 text-[9px] sm:text-[10px] font-black uppercase tracking-[0.15em] text-white/30">
               <span className="flex-1">Zone / Commune</span>
-              <span className="w-24 sm:w-36 md:w-40 text-right pr-2">Tarif ({localMerchant?.currency || "XOF"})</span>
-              <span className="w-9 sm:w-11" />
+              <span className="w-28 sm:w-40 text-right pr-2">Tarif ({localMerchant?.currency || "XOF"})</span>
            </div>
 
            {deliveryFees.map((fee: any, idx: number) => (
-              <div key={idx} className="flex items-center gap-2 w-full max-w-full animate-in slide-in-from-left-2 duration-200">
-                <ZoneAutocomplete
-                    value={fee.zone}
-                    city={localMerchant?.city}
-                    countryCode={localMerchant?.country}
-                    onChange={(val) => {
-                      setDeliveryFees((prev: any[]) => prev.map((f: any, i: number) => i === idx ? { ...f, zone: val } : f));
-                      setIsDirty(true);
-                    }}
-                    placeholder="Ex: Riviera 3"
-                    className="flex-1 min-w-0 h-12 sm:h-14 text-xs sm:text-sm font-bold"
-                />
-                <div className="relative w-24 sm:w-36 md:w-40 shrink-0">
-                  <input
-                      type="text"
-                      inputMode="numeric"
-                      pattern="[0-9]*"
-                      className="w-full h-12 sm:h-14 bg-black/40 border border-white/10 rounded-xl sm:rounded-2xl px-2.5 sm:px-3 text-xs sm:text-sm text-vendeur-emerald font-black outline-none focus:border-sky-500 transition-all font-mono"
-                      placeholder="1500"
-                      value={fee.price}
-                      onChange={(e) => {
-                        const val = parseInt(e.target.value.replace(/\D/g, "")) || 0;
-                        setDeliveryFees((prev: any[]) => prev.map((f: any, i: number) => i === idx ? { ...f, price: val } : f));
-                        setIsDirty(true);
-                      }}
-                  />
-                  <span className="absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 text-[9px] sm:text-[10px] font-black text-white/30 pointer-events-none font-mono">
-                    {localMerchant?.currency || "XOF"}
-                  </span>
-                </div>
-
+              <div key={idx} className="relative group w-full max-w-full animate-in slide-in-from-left-2 duration-200">
+                {/* Bouton Supprimer en exposant au coin supérieur droit lors du clic/focus ou survol */}
                 <button
                   type="button"
                   onClick={() => {
                     setDeliveryFees((prev: any[]) => prev.filter((_: any, i: number) => i !== idx));
                     setIsDirty(true);
                   }}
-                  className="h-12 w-9 sm:h-14 sm:w-11 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 rounded-xl sm:rounded-2xl flex items-center justify-center transition-all active:scale-95 shrink-0 cursor-pointer"
-                  title="Supprimer cette zone"
+                  className="absolute -top-2.5 -right-1.5 z-20 h-6 w-6 sm:h-6 sm:w-6 rounded-full bg-rose-500 hover:bg-rose-600 text-white shadow-md shadow-rose-500/40 flex items-center justify-center transition-all duration-200 cursor-pointer active:scale-90 border border-white/20 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 scale-90 group-hover:scale-100 group-focus-within:scale-100"
+                  title="Supprimer cette zone de livraison"
+                  aria-label="Supprimer cette zone de livraison"
                 >
-                  <Trash2 size={14} />
+                  <Trash2 size={12} />
                 </button>
+
+                <div className="flex items-center gap-2 w-full max-w-full">
+                  <ZoneAutocomplete
+                      value={fee.zone}
+                      city={localMerchant?.city}
+                      countryCode={localMerchant?.country}
+                      onChange={(val) => {
+                        setDeliveryFees((prev: any[]) => prev.map((f: any, i: number) => i === idx ? { ...f, zone: val } : f));
+                        setIsDirty(true);
+                      }}
+                      placeholder="Ex: Riviera 3"
+                      className="flex-1 min-w-0 h-12 sm:h-14 text-xs sm:text-sm font-bold"
+                  />
+                  <div className="relative w-28 sm:w-40 shrink-0">
+                    <input
+                        type="text"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        className="w-full h-12 sm:h-14 bg-black/40 border border-white/10 rounded-xl sm:rounded-2xl px-2.5 sm:px-3.5 text-xs sm:text-sm text-vendeur-emerald font-black outline-none focus:border-sky-500 transition-all font-mono pr-11 sm:pr-14"
+                        placeholder="1500"
+                        value={fee.price}
+                        onChange={(e) => {
+                          const val = parseInt(e.target.value.replace(/\D/g, "")) || 0;
+                          setDeliveryFees((prev: any[]) => prev.map((f: any, i: number) => i === idx ? { ...f, price: val } : f));
+                          setIsDirty(true);
+                        }}
+                    />
+                    <span className="absolute right-2.5 sm:right-3.5 top-1/2 -translate-y-1/2 text-[9px] sm:text-[10px] font-black text-white/30 pointer-events-none font-mono">
+                      {localMerchant?.currency || "XOF"}
+                    </span>
+                  </div>
+                </div>
               </div>
            ))}
 
@@ -1144,28 +1134,28 @@ function BoutiqueTab({
       <section
         id="payments"
         className={cn(
-          "bg-vendeur-coal border p-5 sm:p-7 md:p-8 rounded-2xl sm:rounded-3xl md:rounded-[2.5rem] space-y-6 sm:space-y-8 shadow-2xl scroll-mt-28 transition-all duration-500",
+          "bg-white dark:bg-vendeur-coal border p-5 sm:p-7 md:p-8 rounded-2xl sm:rounded-3xl md:rounded-[2.5rem] space-y-6 sm:space-y-8 shadow-md dark:shadow-2xl scroll-mt-28 transition-all duration-500",
           highlightedSection === "payments"
-            ? "border-emerald-400 bg-gradient-to-b from-emerald-950/30 to-vendeur-coal"
-            : "border-white/10"
+            ? "border-emerald-500 bg-emerald-50/70 dark:bg-emerald-950/20 ring-2 ring-emerald-500/30 shadow-xl shadow-emerald-500/10"
+            : "border-slate-200/80 dark:border-white/10"
         )}
       >
         <div className="flex items-center justify-between gap-3 px-2">
           <div className="space-y-1">
-            <h2 className="text-xl md:text-2xl font-black text-white flex items-center gap-3">
-              <Banknote size={22} className="text-emerald-400 shrink-0" />
+            <h2 className="text-xl md:text-2xl font-black text-slate-900 dark:text-white flex items-center gap-3">
+              <Banknote size={22} className="text-emerald-500 dark:text-emerald-400 shrink-0" />
               <span className="whitespace-nowrap">Canal de paiement</span>
               {highlightedSection === "payments" && (
-                <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 animate-pulse hidden sm:inline-block">
+                <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-300 border border-emerald-500/40 animate-pulse hidden sm:inline-block">
                   Étape en cours 👉
                 </span>
               )}
             </h2>
-            <p className="text-[10px] md:text-xs text-white/40">Coordonnées pour les transferts d'argent.</p>
+            <p className="text-[10px] md:text-xs text-slate-400 dark:text-white/40">Coordonnées pour les transferts d'argent.</p>
           </div>
 
           {highlightedSection === "payments" && (
-            <span className="sm:hidden text-[9px] font-black uppercase px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 animate-pulse shrink-0">
+            <span className="sm:hidden text-[9px] font-black uppercase px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-300 border border-emerald-500/40 animate-pulse shrink-0">
               À configurer
             </span>
           )}
@@ -1180,11 +1170,25 @@ function BoutiqueTab({
 
               return (
                 <div key={idx} className="relative group space-y-2 animate-in slide-in-from-left-2 duration-300 py-1">
+                  {/* Bouton Supprimer en exposant au coin supérieur droit lors du clic/focus ou survol */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPayments((prev: any[]) => prev.filter((_: any, i: number) => i !== idx));
+                      setIsDirty(true);
+                    }}
+                    className="absolute -top-1.5 -right-1.5 z-20 h-6 w-6 sm:h-6 sm:w-6 rounded-full bg-rose-500 hover:bg-rose-600 text-white shadow-md shadow-rose-500/40 flex items-center justify-center transition-all duration-200 cursor-pointer active:scale-90 border border-white/20 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 scale-90 group-hover:scale-100 group-focus-within:scale-100"
+                    title="Supprimer ce canal"
+                    aria-label="Supprimer ce canal"
+                  >
+                    <Trash2 size={12} />
+                  </button>
+
                   <div className="flex flex-row gap-2 items-center w-full">
-                    <div className="w-[38%] sm:w-[30%] md:w-[26%] shrink-0">
+                    <div className="w-[38%] sm:w-[32%] md:w-[28%] shrink-0">
                         <div className="relative">
                           <select
-                            className="w-full h-12 sm:h-14 bg-black/40 border border-white/10 rounded-xl sm:rounded-2xl px-2 text-[10px] sm:text-xs font-black uppercase tracking-tight text-white focus:border-emerald-500 outline-none transition-all appearance-none cursor-pointer"
+                            className="w-full h-12 sm:h-14 bg-slate-100 dark:bg-black/40 border border-slate-200 dark:border-white/10 rounded-xl sm:rounded-2xl px-2.5 sm:px-3 text-[10px] sm:text-xs font-black uppercase tracking-tight text-slate-900 dark:text-white focus:border-emerald-500 outline-none transition-all appearance-none cursor-pointer"
                             value={p.provider}
                             onChange={(e) => {
                               const val = e.target.value;
@@ -1193,16 +1197,16 @@ function BoutiqueTab({
                             }}
                           >
                             {countryProviders.map(provider => (
-                              <option key={provider.id} value={provider.label}>{provider.label}</option>
+                              <option key={provider.id} value={provider.label} className="bg-white dark:bg-vendeur-coal text-slate-900 dark:text-white">{provider.label}</option>
                             ))}
                           </select>
-                          <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 text-white/20 pointer-events-none" size={14} />
+                          <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 dark:text-white/20 pointer-events-none" size={14} />
                         </div>
                     </div>
                     <div className="flex-1 min-w-0">
                         <div className="relative">
                           {isPhoneType && (
-                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-black text-white/30 font-mono">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-400 dark:text-white/30 font-mono">
                               {getCountryByCode(localMerchant?.country || "CI")?.dialCode}
                             </span>
                           )}
@@ -1210,7 +1214,7 @@ function BoutiqueTab({
                             type={isPhoneType ? "tel" : "text"}
                             inputMode={isPhoneType ? "tel" : "text"}
                             className={cn(
-                              "w-full h-12 sm:h-14 bg-black/40 border border-white/10 rounded-xl sm:rounded-2xl px-3 sm:px-4 text-xs sm:text-sm font-bold text-white focus:border-emerald-500 outline-none transition-all font-mono",
+                              "w-full h-12 sm:h-14 bg-slate-100 dark:bg-black/40 border border-slate-200 dark:border-white/10 rounded-xl sm:rounded-2xl px-3 sm:px-4 text-xs sm:text-sm font-bold text-slate-900 dark:text-white focus:border-emerald-500 outline-none transition-all font-mono",
                               isPhoneType && "pl-11 sm:pl-12"
                             )}
                             value={p.number}
@@ -1223,31 +1227,19 @@ function BoutiqueTab({
                           />
                         </div>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setPayments((prev: any[]) => prev.filter((_: any, i: number) => i !== idx));
-                        setIsDirty(true);
-                      }}
-                      className="h-12 w-9 sm:h-14 sm:w-11 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 rounded-xl sm:rounded-2xl flex items-center justify-center transition-all active:scale-95 shrink-0 cursor-pointer"
-                      title="Supprimer ce canal"
-                    >
-                      <Trash2 size={14} />
-                    </button>
                   </div>
 
                   {matchedProvider?.corridorNote && (
-                    <p className="text-[10px] text-emerald-400/80 font-medium px-2 flex items-center gap-1.5">
-                      <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shrink-0"></span>
-                      <span>{matchedProvider.corridorNote}</span>
+                    <p className="text-[10px] text-slate-400 dark:text-white/40 font-medium px-1 mt-0.5">
+                      {matchedProvider.corridorNote}
                     </p>
                   )}
 
                   {p.provider === "Autre (Préciser)" && (
-                    <div className="animate-in slide-in-from-top-1 duration-200">
+                    <div className="animate-in slide-in-from-top-1 duration-200 mt-1">
                       <input
-                        className="w-full md:w-2/3 h-10 bg-emerald-500/5 border border-emerald-500/10 rounded-xl px-4 text-[9px] font-black text-emerald-400 outline-none focus:border-emerald-500 transition-all uppercase tracking-widest"
-                        placeholder="NOM DU CANAL..."
+                        className="w-full md:w-2/3 h-11 bg-slate-100 dark:bg-black/40 border border-slate-200 dark:border-white/10 rounded-xl px-4 text-xs font-bold text-slate-900 dark:text-white outline-none focus:border-emerald-500 transition-all uppercase tracking-wider"
+                        placeholder="Préciser le nom du canal..."
                         value={p.customLabel || ""}
                         onChange={(e) => {
                           const val = e.target.value;
@@ -1270,7 +1262,7 @@ function BoutiqueTab({
                   setPayments((prev: any[]) => [...prev, { provider: defaultProvider, number: "" }]);
                   setIsDirty(true);
                 }}
-                className="flex items-center gap-2 text-emerald-400 text-[10px] font-black uppercase tracking-[0.2em] hover:underline px-1 py-1 cursor-pointer"
+                className="flex items-center gap-2 text-sky-600 dark:text-sky-400 text-[10px] font-black uppercase tracking-[0.2em] hover:underline px-1 py-1 cursor-pointer"
               >
                  <Plus size={16} /> Ajouter un canal de paiement
               </button>
@@ -1290,14 +1282,14 @@ function BoutiqueTab({
                 className={cn(
                   "h-12 px-6 rounded-2xl font-black uppercase text-xs tracking-wider flex items-center justify-center gap-2 transition-all shadow-lg shrink-0",
                   !isPaymentsModified && payments.length > 0
-                    ? "bg-white/10 text-white/50 border border-white/10 cursor-default"
-                    : "bg-vendeur-emerald hover:bg-emerald-400 text-vendeur-coal hover:scale-105 active:scale-95 shadow-vendeur-emerald/20 cursor-pointer disabled:opacity-50"
+                    ? "bg-slate-100 dark:bg-white/10 text-slate-400 dark:text-white/50 border border-slate-200 dark:border-white/10 cursor-default"
+                    : "bg-emerald-500 hover:bg-emerald-400 text-white hover:scale-105 active:scale-95 shadow-emerald-500/20 cursor-pointer disabled:opacity-50"
                 )}
               >
                 {updateMutation.isPending && savedSectionType === "payments" ? (
                   <Loader2 size={16} className="animate-spin" />
                 ) : !isPaymentsModified && payments.length > 0 ? (
-                  <Check size={16} className="text-vendeur-emerald" />
+                  <Check size={16} className="text-white" />
                 ) : (
                   <Check size={16} />
                 )}
@@ -1312,9 +1304,9 @@ function BoutiqueTab({
       </section>
 
       {/* Alertes Push */}
-      <section id="push" className="bg-vendeur-coal border border-white/10 p-6 md:p-8 rounded-[2.5rem] space-y-6 overflow-hidden">
+      <section id="push" className="bg-white dark:bg-vendeur-coal border border-slate-200/80 dark:border-white/10 p-6 md:p-8 rounded-2xl sm:rounded-3xl md:rounded-[2.5rem] space-y-6 overflow-hidden shadow-md dark:shadow-2xl">
         <div className="flex items-center gap-4">
-           <div className="h-10 w-10 md:h-12 md:w-12 bg-amber-500/10 rounded-2xl flex items-center justify-center text-amber-400 border border-amber-500/20 shadow-lg shadow-amber-500/5 shrink-0">
+           <div className="h-10 w-10 md:h-12 md:w-12 bg-amber-500/10 rounded-2xl flex items-center justify-center text-amber-500 dark:text-amber-400 border border-amber-500/20 shadow-lg shadow-amber-500/5 shrink-0">
               <Bell size={20} className="md:w-6 md:h-6" />
            </div>
            <div>
@@ -1875,7 +1867,7 @@ function ConnexionsTab({ merchant, systemSettings }: { merchant: any; systemSett
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 sm:gap-5 w-full max-w-full">
           <SocialCard
-            icon={<Facebook size={22} />}
+            icon={<FacebookIcon size={22} color="#FFFFFF" />}
             name="Facebook Messenger"
             status={merchant?.facebookConfig?.pageId ? "Actif & Connecté" : "Non configuré"}
             active={!!merchant?.facebookConfig?.pageId}
@@ -1883,18 +1875,18 @@ function ConnexionsTab({ merchant, systemSettings }: { merchant: any; systemSett
             onClick={() => setIsFacebookModalOpen(true)}
           />
           <SocialCard
-            icon={<InstagramIcon size={22} />}
+            icon={<InstagramIcon size={22} color="#FFFFFF" />}
             name="Instagram Business"
             status={merchant?.instagramConfig?.pageId ? "Actif & Connecté" : "Non configuré"}
             active={!!merchant?.instagramConfig?.pageId}
             color="bg-gradient-to-tr from-[#f09433] via-[#e6683c] via-[#dc2743] via-[#cc2366] to-[#bc1888]"
           />
           <SocialCard
-            icon={<TikTokIcon size={22} />}
+            icon={<TikTokIcon size={22} color="#FFFFFF" />}
             name="TikTok Shop"
             status="Bientôt disponible"
             active={false}
-            color="bg-black"
+            color="bg-[#000000] border border-white/15"
           />
         </div>
       </section>
@@ -1994,15 +1986,17 @@ function SocialCard({ icon, name, status, active, color, onClick }: any) {
   return (
     <div className={cn(
       "p-4 sm:p-5 md:p-6 rounded-2xl sm:rounded-3xl border transition-all flex items-center justify-between gap-3.5 group w-full max-w-full box-border",
-      active ? "bg-white/[0.04] border-white/15 shadow-lg" : "bg-white/[0.02] border-white/5 opacity-70 hover:opacity-100"
+      active
+        ? "bg-slate-50 dark:bg-white/[0.04] border-slate-200 dark:border-white/15 shadow-sm"
+        : "bg-slate-50/50 dark:bg-white/[0.02] border-slate-200/80 dark:border-white/5 opacity-80 hover:opacity-100"
     )}>
       <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1">
-        <div className={cn("h-11 w-11 sm:h-13 sm:w-13 rounded-xl sm:rounded-2xl flex items-center justify-center text-white shadow-lg shrink-0 group-hover:scale-105 transition-transform", color)}>
+        <div className={cn("h-11 w-11 sm:h-13 sm:w-13 rounded-xl sm:rounded-2xl flex items-center justify-center text-white shadow-md shrink-0 group-hover:scale-105 transition-transform", color)}>
           {icon}
         </div>
         <div className="min-w-0 flex-1">
-          <h4 className="text-sm sm:text-base font-black text-white truncate">{name}</h4>
-          <p className="text-[10px] font-bold uppercase tracking-wider text-white/40 truncate">{status}</p>
+          <h4 className="text-sm sm:text-base font-black text-slate-900 dark:text-white truncate">{name}</h4>
+          <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-white/40 truncate">{status}</p>
         </div>
       </div>
       <button
@@ -2012,10 +2006,10 @@ function SocialCard({ icon, name, status, active, color, onClick }: any) {
         className={cn(
           "h-9 sm:h-10 px-3.5 sm:px-5 rounded-xl text-[10px] sm:text-xs font-black uppercase tracking-wider transition-all shrink-0 active:scale-95",
           active
-            ? "bg-vendeur-emerald/15 hover:bg-vendeur-emerald/25 text-vendeur-emerald border border-vendeur-emerald/30 cursor-pointer"
+            ? "bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-700 dark:text-vendeur-emerald border border-emerald-500/30 cursor-pointer font-bold"
             : onClick
-              ? "bg-white/10 hover:bg-white/20 text-white cursor-pointer border border-white/10"
-              : "bg-white/5 text-white/30 cursor-not-allowed border border-white/5"
+              ? "bg-slate-200 dark:bg-white/10 hover:bg-slate-300 dark:hover:bg-white/20 text-slate-900 dark:text-white cursor-pointer border border-slate-300 dark:border-white/10"
+              : "bg-slate-100 dark:bg-white/5 text-slate-400 dark:text-white/30 cursor-not-allowed border border-slate-200 dark:border-white/5"
         )}
       >
         {active ? "Détails" : onClick ? "Lier" : "Bientôt"}

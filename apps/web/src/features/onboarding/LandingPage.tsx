@@ -1101,7 +1101,7 @@ export function LandingPage() {
   }, [user, navigate]);
 
   return (
-    <div className="min-h-[100dvh] bg-slate-50 dark:bg-[#07100d] text-slate-900 dark:text-white selection:bg-emerald-300/30 overflow-x-hidden pt-16 md:pt-20 lg:pt-24 w-full text-left transition-colors duration-200">
+    <div data-page="landing" className="min-h-[100dvh] bg-slate-50 dark:bg-[#07100d] text-slate-900 dark:text-white selection:bg-emerald-300/30 overflow-x-hidden pt-16 md:pt-20 lg:pt-24 w-full text-left transition-colors duration-200">
       <MetaHead
         title="Vendeur IA | Commercial Virtuel Haute-Performance sur WhatsApp"
         description="Vendeur IA : votre commercial virtuel sur WhatsApp & Instagram. Répondez, conseillez et vendez 24h/24, 7j/7."

@@ -840,9 +840,6 @@ export function SalesInbox() {
               <div className="min-w-0">
                 <div className="flex items-center gap-1.5">
                   <h2 className="text-base font-black text-slate-900 dark:text-white truncate">{merchant?.businessName || "WhatsApp Pro"}</h2>
-                  <span className="px-2 py-0.5 bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 text-[11px] font-black uppercase rounded">
-                    Admin
-                  </span>
                 </div>
                 <p className="text-xs sm:text-[13px] text-slate-500 dark:text-white/60 truncate flex items-center gap-1 mt-0.5">
                   <Phone size={12} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
@@ -1060,11 +1057,8 @@ export function SalesInbox() {
                         </div>
                       ) : (
                         <div className="flex items-center gap-1 text-xs sm:text-[13px] text-slate-500 dark:text-white/60 truncate min-w-0 font-normal leading-normal">
-                          {chat.lastMessage?.sender === "human" && (
-                            <span className="text-sky-600 dark:text-sky-400 font-bold shrink-0">Admin: </span>
-                          )}
-                          {chat.lastMessage?.sender === "ai" && (
-                            <span className="text-emerald-600 dark:text-emerald-400 font-bold shrink-0">IA: </span>
+                          {(chat.lastMessage?.sender === "human" || chat.lastMessage?.sender === "ai") && (
+                            <span className="text-slate-700 dark:text-white/70 font-semibold shrink-0">Vous: </span>
                           )}
                           {chat.lastMessage?.type === "audio" && <Mic size={13} className="text-sky-500 shrink-0" />}
                           {chat.lastMessage?.type === "image" && <ImageIcon size={13} className="text-amber-500 shrink-0" />}
@@ -1153,18 +1147,50 @@ export function SalesInbox() {
                     />
                   ) : (
                     <div className="text-[11px] sm:text-xs text-slate-500 dark:text-white/60 flex items-center gap-1.5 font-medium mt-0.5">
-                      <Phone size={11} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
-                      <span className="truncate">{formatDisplayPhone(activeChatData?.customerId?.phone, "CI") || "WhatsApp Direct"}</span>
-                      {activeChatData?.customerId?.phone && (
-                        <button
-                          type="button"
-                          onClick={() => handleCopyPhone(activeChatData.customerId.phone)}
-                          className="text-slate-400 hover:text-emerald-600 dark:text-white/40 dark:hover:text-emerald-400 p-0.5 rounded hover:bg-slate-200 dark:hover:bg-white/5 transition-colors shrink-0"
-                          title="Copier le numéro"
-                        >
-                          {hasCopiedPhone ? <Check size={12} className="text-emerald-600 dark:text-emerald-400" /> : <Copy size={12} />}
-                        </button>
-                      )}
+                      {(() => {
+                        const displayName = formatCustomerDisplayName(activeChatData?.customerId, merchant?.businessName, user?.displayName);
+                        const phoneFormatted = formatDisplayPhone(activeChatData?.customerId?.phone, "CI");
+                        const hasDistinctName = activeChatData?.customerId?.name &&
+                          activeChatData.customerId.name.trim() !== "" &&
+                          displayName !== phoneFormatted &&
+                          displayName !== "Client";
+
+                        if (hasDistinctName && phoneFormatted) {
+                          return (
+                            <>
+                              <Phone size={11} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+                              <span className="truncate">{phoneFormatted}</span>
+                              {activeChatData?.customerId?.phone && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleCopyPhone(activeChatData.customerId.phone)}
+                                  className="text-slate-400 hover:text-emerald-600 dark:text-white/40 dark:hover:text-emerald-400 p-0.5 rounded hover:bg-slate-200 dark:hover:bg-white/5 transition-colors shrink-0"
+                                  title="Copier le numéro"
+                                >
+                                  {hasCopiedPhone ? <Check size={12} className="text-emerald-600 dark:text-emerald-400" /> : <Copy size={12} />}
+                                </button>
+                              )}
+                            </>
+                          );
+                        }
+
+                        return (
+                          <>
+                            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 shrink-0" />
+                            <span className="truncate text-emerald-600 dark:text-emerald-400 font-medium">WhatsApp Direct</span>
+                            {activeChatData?.customerId?.phone && (
+                              <button
+                                type="button"
+                                onClick={() => handleCopyPhone(activeChatData.customerId.phone)}
+                                className="text-slate-400 hover:text-emerald-600 dark:text-white/40 dark:hover:text-emerald-400 p-0.5 rounded hover:bg-slate-200 dark:hover:bg-white/5 transition-colors shrink-0 ml-0.5"
+                                title="Copier le numéro"
+                              >
+                                {hasCopiedPhone ? <Check size={12} className="text-emerald-600 dark:text-emerald-400" /> : <Copy size={12} />}
+                              </button>
+                            )}
+                          </>
+                        );
+                      })()}
                     </div>
                   )}
                 </div>
@@ -1770,41 +1796,6 @@ function WhatsAppBubble({
         isPaymentFlagged && "ring-2 ring-amber-500 border-amber-500 bg-amber-50 dark:bg-amber-950/80",
         isFraudAlert && "ring-2 ring-rose-500 border-rose-500 bg-rose-50 dark:bg-rose-950/90 text-slate-900 dark:text-white"
       )}>
-        {/* Message Top Bar: Sender Tag (Admin/IA) & Top Action Icons */}
-        <div className="flex items-center justify-between gap-2 mb-1.5 opacity-85 text-xs">
-          {!isCustomer ? (
-            <span className={cn(
-              "font-black uppercase tracking-wider flex items-center gap-1.5 text-[11px] sm:text-xs",
-              isHuman ? "text-sky-700 dark:text-sky-300" : "text-emerald-700 dark:text-emerald-300"
-            )}>
-              {isHuman ? <User size={13} /> : <Bot size={13} />}
-              {isHuman ? "Admin (Manuel)" : "Vendeur IA"}
-            </span>
-          ) : (
-            <span className="text-[11px] font-bold text-slate-500 dark:text-white/50">
-              Client
-            </span>
-          )}
-
-          {/* Quick Actions (Reply & Copy for all messages) */}
-          <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
-            <button
-              onClick={() => onReplyClick?.(msg)}
-              className="text-slate-500 hover:text-slate-900 dark:text-white/70 dark:hover:text-white cursor-pointer p-0.5 rounded hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
-              title="Citer"
-            >
-              <Reply size={13} />
-            </button>
-            <button
-              onClick={handleCopy}
-              className="text-slate-500 hover:text-slate-900 dark:text-white/70 dark:hover:text-white cursor-pointer p-0.5 rounded hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
-              title="Copier le texte"
-            >
-              {copied ? <Check size={13} className="text-emerald-600 dark:text-emerald-400" /> : <Copy size={13} />}
-            </button>
-          </div>
-        </div>
-
         {/* Quoted Message Display Inside Bubble */}
         {msg.quotedMessage && (
           <div

@@ -57,8 +57,8 @@ export function WhatsAppTypingIndicator({
   if (variant === "copilot") {
     return (
       <div className={cn("flex items-center gap-3 mr-auto max-w-[85%] min-w-0 animate-in fade-in slide-in-from-bottom-2 duration-300", className)}>
-        <div className="w-8 h-8 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center p-1 text-emerald-700 dark:text-vendeur-emerald shrink-0">
-          <Logo size={16} className="animate-spin" />
+        <div className="w-8 h-8 flex items-center justify-center shrink-0 select-none pointer-events-none">
+          <AssistantIcon size={28} color="#10B981" withBackground={false} className="shrink-0 animate-pulse" />
         </div>
         <div className="bg-slate-100 dark:bg-[#182229] border border-slate-200 dark:border-white/10 rounded-2xl px-4 py-3 text-sm text-slate-800 dark:text-white/80 flex items-center gap-3 min-w-0 shadow-sm">
           <div className="flex items-center gap-1.5 shrink-0 pt-2 pb-1 px-1">

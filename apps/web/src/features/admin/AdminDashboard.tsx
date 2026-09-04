@@ -282,16 +282,16 @@ export function AdminDashboard() {
                   setIsMobileMenuOpen(false);
                 }}
                 className={cn(
-                  "w-full flex items-center justify-between p-4 rounded-2xl border transition-all",
+                  "w-full flex items-center justify-between p-4 rounded-2xl border transition-all cursor-pointer active:scale-[0.98]",
                   activeTab === tab.id
-                    ? "bg-vendeur-emerald border-vendeur-emerald text-vendeur-coal font-black shadow-lg shadow-vendeur-emerald/20"
+                    ? "bg-vendeur-emerald border-vendeur-emerald text-slate-950 font-black shadow-lg shadow-vendeur-emerald/20"
                     : "bg-white/[0.02] border-white/5 text-white/60 hover:bg-white/5 hover:text-white"
                 )}
               >
                 <div className="flex items-center gap-4">
                   <div className={cn(
-                    "h-10 w-10 rounded-xl flex items-center justify-center transition-all",
-                    activeTab === tab.id ? "bg-black/20 text-vendeur-coal" : "bg-white/5 text-vendeur-emerald"
+                    "h-10 w-10 rounded-xl flex items-center justify-center transition-all shrink-0",
+                    activeTab === tab.id ? "bg-slate-950 text-vendeur-emerald shadow-sm" : "bg-white/5 text-vendeur-emerald"
                   )}>
                     {tab.icon}
                   </div>
@@ -300,7 +300,7 @@ export function AdminDashboard() {
                 {tab.badge && tab.badge > 0 && (
                   <span className={cn(
                     "px-2 py-1 rounded-full text-[10px] font-black",
-                    activeTab === tab.id ? "bg-vendeur-coal text-white" : "bg-vendeur-emerald text-vendeur-coal"
+                    activeTab === tab.id ? "bg-slate-950 text-emerald-400" : "bg-vendeur-emerald text-slate-950"
                   )}>
                     {tab.badge}
                   </span>
@@ -388,7 +388,7 @@ function AdminTabButton({ active, onClick, icon, label, badge }: { active: boole
       onClick={onClick}
       className={cn(
         "relative flex items-center justify-center gap-2 px-3.5 lg:px-5 py-2.5 rounded-xl transition-all whitespace-nowrap cursor-pointer shrink-0",
-        active ? "bg-vendeur-emerald text-vendeur-coal shadow-lg shadow-vendeur-emerald/20 font-black" : "text-white/50 hover:bg-white/5 hover:text-white font-bold"
+        active ? "bg-vendeur-emerald text-slate-950 shadow-lg shadow-vendeur-emerald/20 font-black" : "text-white/50 hover:bg-white/5 hover:text-white font-bold"
       )}
     >
       <div className="shrink-0">{icon}</div>
@@ -398,7 +398,7 @@ function AdminTabButton({ active, onClick, icon, label, badge }: { active: boole
       {badge !== undefined && (
         <span className={cn(
           "px-1.5 py-0.5 rounded-full text-[10px] font-black leading-none",
-          active ? "bg-black text-white" : "bg-emerald-500 text-black animate-pulse"
+          active ? "bg-slate-950 text-emerald-400" : "bg-emerald-500 text-slate-950 animate-pulse"
         )}>
           {badge}
         </span>

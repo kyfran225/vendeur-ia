@@ -890,12 +890,16 @@ router.post("/conversations/:id/media", authenticate, upload.single("file"), asy
     });
 
     // Send to WhatsApp / External platform
-    const customer = conversation.customerId as any;
-    const remoteId = customer?.phone;
+    let customer = conversation.customerId as any;
+    if (customer && !customer.phone && !customer.platformId) {
+      customer = await CommerceCustomerModel.findById(customer);
+    }
+    const platform = conversation.platform || "whatsapp";
+    const remoteId = platform === "web" ? (customer?.platformId || "WEB_VISITOR") : (customer?.phone || customer?.platformId);
 
     let deliveryError: string | undefined;
     try {
-      const sendRes: any = await messagingService.sendMessage(merchant, conversation.platform || "whatsapp", remoteId, caption.trim(), {
+      const sendRes: any = await messagingService.sendMessage(merchant, platform, remoteId, caption.trim(), {
         type: mediaType,
         mediaUrl: storageResult.url,
         fileBuffer: req.file.buffer,
@@ -969,7 +973,7 @@ router.post("/conversations/:id/messages", authenticate, async (req, res) => {
     const merchant = await CommerceMerchantModel.findOne({ ownerId });
     if (!merchant) return res.status(404).json({ error: "Marchand non trouvé" });
 
-    const conversation = await CommerceConversationModel.findById(req.params.id);
+    const conversation = await CommerceConversationModel.findById(req.params.id).populate("customerId");
     if (!conversation) return res.status(404).json({ error: "Conversation non trouvée" });
 
     // Populate Quoted Message if provided
@@ -1008,9 +1012,12 @@ router.post("/conversations/:id/messages", authenticate, async (req, res) => {
     if (merchant.ownerId) targetUserIds.add(merchant.ownerId.toString());
 
     // 3. Send via Platform Messaging
-    const customer = conversation.customerId as any;
+    let customer = conversation.customerId as any;
+    if (customer && !customer.phone && !customer.platformId) {
+      customer = await CommerceCustomerModel.findById(customer);
+    }
     const platform = conversation.platform || "whatsapp";
-    const remoteId = platform === "web" ? (customer.platformId || "WEB_VISITOR") : customer.phone;
+    const remoteId = platform === "web" ? (customer?.platformId || "WEB_VISITOR") : (customer?.phone || customer?.platformId);
 
     let deliveryError: string | undefined;
     try {

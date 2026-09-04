@@ -119,7 +119,7 @@ export function AuthSheet({ isOpen, onClose, onSuccess }: { isOpen: boolean; onC
   const [pairingCode, setPairingCode] = useState<string>("");
   const [qrCodeData, setQrCodeData] = useState<string>("");
   const [authSessionId, setAuthSessionId] = useState<string>("");
-  const [timeLeft, setTimeLeft] = useState<number>(60);
+  const [timeLeft, setTimeLeft] = useState<number>(180);
   const [copied, setCopied] = useState<boolean>(false);
   const [isConnectingLive, setIsConnectingLive] = useState<boolean>(false);
   const [isRegenerating, setIsRegenerating] = useState<boolean>(false);
@@ -198,7 +198,7 @@ export function AuthSheet({ isOpen, onClose, onSuccess }: { isOpen: boolean; onC
             } else {
               setPairingCode(res.data?.pairingCode || "");
               if (res.data?.qr) setQrCodeData(res.data.qr);
-              setTimeLeft(60);
+              setTimeLeft(180);
               setWhatsappStep("pairing");
               setIsConnectingLive(false);
             }
@@ -361,6 +361,22 @@ export function AuthSheet({ isOpen, onClose, onSuccess }: { isOpen: boolean; onC
     socket.on("whatsapp:pairing_code", (data) => {
       if (data?.code) {
         setPairingCode(data.code);
+        setTimeLeft(180);
+      }
+    });
+
+    socket.on("whatsapp:pairing_expired", (data) => {
+      setTimeLeft(0);
+      setIsConnectingLive(false);
+      if (data?.error) {
+        toast.info(data.error);
+      }
+    });
+
+    socket.on("whatsapp:pairing_error", (data) => {
+      setIsConnectingLive(false);
+      if (data?.error) {
+        toast.error(data.error);
       }
     });
 
@@ -443,7 +459,7 @@ export function AuthSheet({ isOpen, onClose, onSuccess }: { isOpen: boolean; onC
       } else {
         setPairingCode(res.data?.pairingCode || "");
         if (res.data?.qr) setQrCodeData(res.data.qr);
-        setTimeLeft(60);
+        setTimeLeft(180);
         setWhatsappStep("pairing");
         setIsConnectingLive(false);
       }
@@ -497,7 +513,7 @@ export function AuthSheet({ isOpen, onClose, onSuccess }: { isOpen: boolean; onC
       if (res.data?.pairingCode) {
         setPairingCode(res.data.pairingCode);
         if (res.data?.qr) setQrCodeData(res.data.qr);
-        setTimeLeft(60);
+        setTimeLeft(180);
         setIsConnectingLive(false);
         setWhatsappStep("pairing");
         toast.success("Nouveau code de jumelage généré !");
@@ -813,7 +829,7 @@ export function AuthSheet({ isOpen, onClose, onSuccess }: { isOpen: boolean; onC
                     <div className="flex items-center justify-between px-1 text-xs">
                       {timeLeft > 0 ? (
                         <span className="text-[10px] font-mono text-slate-500 dark:text-white/40">
-                          Expire dans : <strong className="text-slate-900 dark:text-white">{timeLeft}s</strong>
+                          Expire dans : <strong className="text-slate-900 dark:text-white">{Math.floor(timeLeft / 60)}:{String(timeLeft % 60).padStart(2, "0")}</strong>
                         </span>
                       ) : (
                         <button

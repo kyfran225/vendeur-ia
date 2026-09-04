@@ -55,7 +55,7 @@ export function WhatsAppConnectionFlow() {
   const [isRequestingQr, setIsRequestingQr] = useState(false);
   const [copiedCode, setCopiedCode] = useState(false);
   const [isDisconnecting, setIsDisconnecting] = useState(false);
-  const [timeLeft, setTimeLeft] = useState<number>(120);
+  const [timeLeft, setTimeLeft] = useState<number>(180);
 
   // Meta Cloud API Form
   const [metaForm, setMetaForm] = useState({
@@ -125,7 +125,7 @@ export function WhatsAppConnectionFlow() {
     }
   }, [activeNumber, storeWhatsApp]);
 
-  // Countdown timer for pairing code (120s)
+  // Countdown timer for pairing code (180s)
   useEffect(() => {
     if (!pairingCode || isConnectedLive || timeLeft <= 0) return;
 
@@ -164,7 +164,7 @@ export function WhatsAppConnectionFlow() {
     const handlePairingCode = (data: { code: string }) => {
       if (data?.code) {
         setPairingCode(data.code);
-        setTimeLeft(120);
+        setTimeLeft(180);
         setIsRequestingPairing(false);
       }
     };
@@ -246,12 +246,12 @@ export function WhatsAppConnectionFlow() {
     setIsRequestingPairing(true);
     setPairingCode(null);
     setCopiedCode(false);
-    setTimeLeft(120);
+    setTimeLeft(180);
     try {
       const res = await apiClient.post("/api/whatsapp/pair-code", { phoneNumber: normalizedPhone });
       if (res.data?.code) {
         setPairingCode(res.data.code);
-        setTimeLeft(120);
+        setTimeLeft(180);
         toast.success("Code de jumelage généré ! Collez-le dans WhatsApp.");
       }
     } catch (err: any) {

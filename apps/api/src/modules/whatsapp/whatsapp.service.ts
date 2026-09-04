@@ -308,15 +308,16 @@ class WhatsAppService {
       version,
       auth: state,
       printQRInTerminal: false,
-      browser: Browsers.macOS("Desktop"),
+      browser: Browsers.ubuntu("Chrome"),
       syncFullHistory: false,
       generateHighQualityLinkPreview: false,
       markOnlineOnConnect: false,
-      connectTimeoutMs: 60000,
-      defaultQueryTimeoutMs: 60000,
-      keepAliveIntervalMs: 25000,
+      qrTimeout: 240000,
+      connectTimeoutMs: 120000,
+      defaultQueryTimeoutMs: 120000,
+      keepAliveIntervalMs: 30000,
       retryRequestDelayMs: 500,
-      maxMsgRetryCount: 2,
+      maxMsgRetryCount: 3,
       shouldIgnoreJid: (jid: string) => jid.includes('@broadcast') || jid.includes('@newsletter') || jid.endsWith('@g.us'),
       getMessage: async (key) => {
         if (key.id) {
@@ -814,42 +815,88 @@ class WhatsAppService {
         const errMessage = (lastDisconnect?.error as Error)?.message || "";
         console.log(`[WhatsApp Onboarding Close] Session: ${currentOwnerId}, StatusCode: ${statusCode}, Error: ${errMessage}`);
 
-        const isExplicitLogout = statusCode === DisconnectReason.loggedOut || statusCode === 401 || statusCode === 403;
-        const isBadSession = statusCode === DisconnectReason.badSession || (statusCode === 500 && errMessage.includes("Bad Session"));
+        const isRegistered = Boolean(sock.authState?.creds?.registered);
 
-        if (isExplicitLogout || isBadSession) {
-          console.log(`[WhatsApp Onboarding] Explicit logout / restricted / bad session for ${authSessionId} (Code ${statusCode}, Error: ${errMessage}). Cleaning session.`);
-          this.activeSessions.delete(currentOwnerId);
+        // If session was already established with userId, delegate to handleConnectionClose
+        if (currentOwnerId !== authSessionId || isRegistered) {
+          const isExplicitLogout = statusCode === DisconnectReason.loggedOut || statusCode === 401 || statusCode === 403;
+          const isBadSession = statusCode === DisconnectReason.badSession || (statusCode === 500 && errMessage.includes("Bad Session"));
+
+          if (isExplicitLogout || isBadSession) {
+            console.log(`[WhatsApp Onboarding] Explicit logout / restricted session for ${currentOwnerId} (Code ${statusCode}, Error: ${errMessage}). Cleaning session.`);
+            this.activeSessions.delete(currentOwnerId);
+            this.activeSessions.delete(authSessionId);
+            this.pendingInitializations.delete(authSessionId);
+            this.onboardingAttempts.delete(authSessionId);
+            this.lastPairingCodeMap.delete(authSessionId);
+            this.lastQrMap.delete(authSessionId);
+
+            await clearMongoAuthState(authSessionId);
+            if (currentOwnerId !== authSessionId) {
+              await clearMongoAuthState(currentOwnerId);
+            }
+
+            const errorPayload = {
+              status: "error",
+              code: statusCode,
+              error: isExplicitLogout
+                ? "Numéro déconnecté ou temporairement restreint par WhatsApp."
+                : "Session WhatsApp expirée ou invalide."
+            };
+            emitToSession(authSessionId, "whatsapp:pairing_error", errorPayload);
+            emitToAuth(cleanNumber, "whatsapp:pairing_error", errorPayload);
+            return;
+          }
+
+          await this.handleConnectionClose(currentOwnerId, lastDisconnect);
+          return;
+        }
+
+        // --- PRE-REGISTRATION / PAIRING FLOW HANDLING ---
+
+        // 1. QR or Pairing Code Expiration (Timeout 408)
+        if (statusCode === 408 || errMessage.includes("QR refs attempts ended")) {
+          console.log(`[WhatsApp Onboarding] Pairing code window expired for ${authSessionId}. Cleaning session.`);
           this.activeSessions.delete(authSessionId);
           this.pendingInitializations.delete(authSessionId);
           this.onboardingAttempts.delete(authSessionId);
           this.lastPairingCodeMap.delete(authSessionId);
           this.lastQrMap.delete(authSessionId);
-
           await clearMongoAuthState(authSessionId);
-          if (currentOwnerId !== authSessionId) {
-            await clearMongoAuthState(currentOwnerId);
-          }
+
+          const errorPayload = {
+            status: "expired",
+            code: 408,
+            error: "Le code de jumelage a expiré. Veuillez cliquer sur « Régénérer le code »."
+          };
+          emitToSession(authSessionId, "whatsapp:pairing_expired", errorPayload);
+          emitToAuth(cleanNumber, "whatsapp:pairing_expired", errorPayload);
+          emitToAuth(authSessionId, "whatsapp:pairing_expired", errorPayload);
+          return;
+        }
+
+        // 2. Handshake Failure or Abort before Registration (Code 401 / Connection Failure)
+        if (statusCode === 401 || statusCode === 403 || errMessage.includes("Connection Failure")) {
+          console.warn(`[WhatsApp Onboarding] Handshake failed or rejected by WhatsApp for ${authSessionId} (Code ${statusCode}, Error: ${errMessage}).`);
+          this.activeSessions.delete(authSessionId);
+          this.pendingInitializations.delete(authSessionId);
+          this.onboardingAttempts.delete(authSessionId);
+          this.lastPairingCodeMap.delete(authSessionId);
+          this.lastQrMap.delete(authSessionId);
+          await clearMongoAuthState(authSessionId);
 
           const errorPayload = {
             status: "error",
-            code: statusCode,
-            error: isExplicitLogout
-              ? "Numéro déconnecté ou temporairement restreint par WhatsApp."
-              : "Session d'appairage expirée ou invalide."
+            code: statusCode || 401,
+            error: "La tentative de jumelage a expiré ou n'a pas abouti. Veuillez générer un nouveau code."
           };
           emitToSession(authSessionId, "whatsapp:pairing_error", errorPayload);
           emitToAuth(cleanNumber, "whatsapp:pairing_error", errorPayload);
+          emitToAuth(authSessionId, "whatsapp:pairing_error", errorPayload);
           return;
         }
 
-        // If session was already established with userId, delegate to handleConnectionClose
-        if (currentOwnerId !== authSessionId) {
-          await this.handleConnectionClose(currentOwnerId, lastDisconnect);
-          return;
-        }
-
-        // Retry limit for transient onboarding handshake disconnects (e.g. 515 restart required)
+        // 3. Transient WhatsApp Socket restart (e.g. 515 restart required)
         const attempts = (this.onboardingAttempts.get(authSessionId) || 0) + 1;
         this.onboardingAttempts.set(authSessionId, attempts);
 
@@ -867,10 +914,11 @@ class WhatsAppService {
           };
           emitToSession(authSessionId, "whatsapp:pairing_error", errorPayload);
           emitToAuth(cleanNumber, "whatsapp:pairing_error", errorPayload);
+          emitToAuth(authSessionId, "whatsapp:pairing_error", errorPayload);
           return;
         }
 
-        const delay = attempts * 2500;
+        const delay = attempts * 2000;
         console.log(`[WhatsApp Onboarding] Restarting connection attempt ${attempts}/3 for ${authSessionId} in ${delay}ms (Code ${statusCode}, Error: ${errMessage})...`);
         this.activeSessions.delete(authSessionId);
         setTimeout(() => {

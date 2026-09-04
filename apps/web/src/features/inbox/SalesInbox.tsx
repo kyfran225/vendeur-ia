@@ -1016,35 +1016,38 @@ export function SalesInbox() {
         {selectedChat ? (
           <div className="flex-1 flex flex-col h-full w-full bg-slate-100 dark:bg-[#0b141a] relative min-w-0 overflow-x-hidden">
             {/* WhatsApp Chat Header: Tier 1 - Customer Info & Live Mode Indicator */}
-            <header className="px-3.5 py-3 sm:px-5 sm:py-3.5 bg-slate-50 dark:bg-[#202c33] border-b border-slate-200 dark:border-white/10 flex items-center justify-between sticky top-0 z-30 gap-3 pt-[calc(0.5rem+env(safe-area-inset-top,0px))] md:pt-3">
+            <header className="px-3 py-2.5 sm:px-5 sm:py-3 bg-slate-50 dark:bg-[#202c33] border-b border-slate-200 dark:border-white/10 flex items-center justify-between sticky top-0 z-30 gap-3 pt-[calc(0.5rem+env(safe-area-inset-top,0px))] md:pt-3">
               {/* Left Column: Back Button + Avatar + Customer Name & Phone */}
               <div className="flex items-center gap-3 sm:gap-3.5 min-w-0 flex-1">
-                <button
-                  onClick={() => setShowMobileChat(false)}
-                  className="md:hidden p-2 -ml-1 text-slate-600 dark:text-white/70 hover:text-slate-900 dark:hover:text-white shrink-0 cursor-pointer rounded-xl hover:bg-slate-200 dark:hover:bg-white/5 active:scale-95 transition-all"
-                  aria-label="Retour"
-                >
-                  <ChevronLeft size={24} />
-                </button>
+                {/* Back button & Avatar grouped together (WhatsApp Mobile Style) */}
+                <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
+                  <button
+                    onClick={() => setShowMobileChat(false)}
+                    className="md:hidden p-1 -ml-1 text-slate-600 dark:text-white/70 hover:text-slate-900 dark:hover:text-white shrink-0 cursor-pointer rounded-lg hover:bg-slate-200 dark:hover:bg-white/5 active:scale-95 transition-all"
+                    aria-label="Retour"
+                  >
+                    <ChevronLeft size={22} />
+                  </button>
 
-                <CustomerAvatar
-                  name={formatCustomerDisplayName(activeChatData?.customerId, merchant?.businessName, user?.displayName)}
-                  phone={activeChatData?.customerId?.phone}
-                  avatarUrl={activeChatData?.customerId?.avatarUrl}
-                  platform={activeChatData?.platform || "whatsapp"}
-                  size="md"
-                  showPlatformBadge={false}
-                  onClick={() => setIsProfileModalOpen(true)}
-                  className="cursor-pointer shadow-inner hover:ring-2 hover:ring-emerald-400/50 rounded-full transition-all"
-                />
+                  <CustomerAvatar
+                    name={formatCustomerDisplayName(activeChatData?.customerId, merchant?.businessName, user?.displayName)}
+                    phone={activeChatData?.customerId?.phone}
+                    avatarUrl={activeChatData?.customerId?.avatarUrl}
+                    platform={activeChatData?.platform || "whatsapp"}
+                    size="md"
+                    showPlatformBadge={false}
+                    onClick={() => setIsProfileModalOpen(true)}
+                    className="cursor-pointer shadow-inner hover:ring-2 hover:ring-emerald-400/50 rounded-full transition-all"
+                  />
+                </div>
 
-                <div className="min-w-0 flex-1">
+                <div className="min-w-0 flex-1 pl-1">
                   <div className="flex items-center gap-2 min-w-0">
-                    <p className="font-bold sm:font-black text-base sm:text-lg text-slate-900 dark:text-white truncate">
+                    <p className="font-bold sm:font-black text-sm sm:text-base text-slate-900 dark:text-white truncate">
                       {formatCustomerDisplayName(activeChatData?.customerId, merchant?.businessName, user?.displayName)}
                     </p>
                     {activeChatData?.customerId?.loyaltyPoints >= vipThreshold && (
-                      <span className="text-[9px] sm:text-[10px] font-black bg-emerald-500 text-black px-1.5 py-0.5 rounded uppercase shrink-0">
+                      <span className="text-[8px] sm:text-[9px] font-black bg-emerald-500 text-black px-1.5 py-0.5 rounded uppercase shrink-0">
                         VIP
                       </span>
                     )}
@@ -1061,17 +1064,17 @@ export function SalesInbox() {
                       className="mt-0.5"
                     />
                   ) : (
-                    <div className="text-xs sm:text-sm text-slate-500 dark:text-white/60 flex items-center gap-1.5 font-medium mt-0.5">
-                      <Phone size={13} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+                    <div className="text-[11px] sm:text-xs text-slate-500 dark:text-white/60 flex items-center gap-1.5 font-medium mt-0.5">
+                      <Phone size={11} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
                       <span className="truncate">{formatDisplayPhone(activeChatData?.customerId?.phone, "CI") || "WhatsApp Direct"}</span>
                       {activeChatData?.customerId?.phone && (
                         <button
                           type="button"
                           onClick={() => handleCopyPhone(activeChatData.customerId.phone)}
-                          className="text-slate-400 hover:text-emerald-600 dark:text-white/40 dark:hover:text-emerald-400 p-1 rounded hover:bg-slate-200 dark:hover:bg-white/5 transition-colors shrink-0"
+                          className="text-slate-400 hover:text-emerald-600 dark:text-white/40 dark:hover:text-emerald-400 p-0.5 rounded hover:bg-slate-200 dark:hover:bg-white/5 transition-colors shrink-0"
                           title="Copier le numéro"
                         >
-                          {hasCopiedPhone ? <Check size={14} className="text-emerald-600 dark:text-emerald-400" /> : <Copy size={14} />}
+                          {hasCopiedPhone ? <Check size={12} className="text-emerald-600 dark:text-emerald-400" /> : <Copy size={12} />}
                         </button>
                       )}
                     </div>
@@ -1082,13 +1085,13 @@ export function SalesInbox() {
               {/* Right Column: Active Status Badge Indicator */}
               <div className="shrink-0 flex items-center gap-2">
                 <div className={cn(
-                  "px-3 py-1.5 rounded-full border flex items-center gap-1.5 text-xs sm:text-[13px] font-bold tracking-tight shadow-sm",
+                  "px-2.5 py-1 rounded-full border flex items-center gap-1.5 text-[10px] sm:text-[11px] font-bold tracking-tight shadow-sm",
                   activeChatData?.status === "needs_human"
                     ? "bg-rose-500/15 border-rose-500/30 text-rose-700 dark:text-rose-300"
                     : "bg-emerald-500/15 border-emerald-500/30 text-emerald-700 dark:text-emerald-300"
                 )}>
                   <span className={cn(
-                    "h-2.5 w-2.5 rounded-full shrink-0",
+                    "h-2 w-2 rounded-full shrink-0",
                     activeChatData?.status === "needs_human" ? "bg-rose-500 animate-pulse" : "bg-emerald-500 animate-pulse"
                   )} />
                   <span className="hidden xs:inline">
@@ -1363,58 +1366,37 @@ export function SalesInbox() {
                 </button>
               </div>
 
-              {/* Input Row */}
-              <div className="flex items-center gap-2.5 relative">
-                {/* Emoji Picker Button */}
-                <button
-                  type="button"
-                  onClick={() => setIsEmojiPickerOpen(!isEmojiPickerOpen)}
-                  className={cn(
-                    "p-2.5 rounded-xl border transition-all cursor-pointer shrink-0",
-                    isEmojiPickerOpen
-                      ? "bg-emerald-500/20 border-emerald-500 text-emerald-600 dark:text-[#00a884]"
-                      : "bg-white dark:bg-[#2a3942] border-slate-200 dark:border-white/5 text-slate-500 dark:text-[#8696a0] hover:text-slate-900 dark:hover:text-white"
-                  )}
-                  title="Insérer un émoji"
-                >
-                  <Smile size={20} />
-                </button>
+              {/* Input Row - Native WhatsApp Capsule Style */}
+              <div className="flex items-end gap-2 relative">
+                {/* Unified Input Capsule */}
+                <div className="flex-1 bg-white dark:bg-[#2a3942] rounded-3xl px-2.5 py-1.5 border border-slate-300 dark:border-white/5 focus-within:border-emerald-500 transition-all flex items-center min-h-[46px] shadow-inner dark:shadow-none relative">
+                  {/* Emoji Picker Button (Inside Left) */}
+                  <button
+                    type="button"
+                    onClick={() => setIsEmojiPickerOpen(!isEmojiPickerOpen)}
+                    className={cn(
+                      "p-1.5 rounded-full transition-all cursor-pointer shrink-0",
+                      isEmojiPickerOpen
+                        ? "text-emerald-600 dark:text-[#00a884] bg-emerald-500/10"
+                        : "text-slate-500 dark:text-[#8696a0] hover:text-slate-900 dark:hover:text-white"
+                    )}
+                    title="Insérer un émoji"
+                  >
+                    <Smile size={20} />
+                  </button>
 
-                {/* Emoji Popover */}
-                <EmojiPickerPopover
-                  isOpen={isEmojiPickerOpen}
-                  onClose={() => setIsEmojiPickerOpen(false)}
-                  onSelectEmoji={handleSelectEmoji}
-                />
+                  {/* Emoji Popover */}
+                  <EmojiPickerPopover
+                    isOpen={isEmojiPickerOpen}
+                    onClose={() => setIsEmojiPickerOpen(false)}
+                    onSelectEmoji={handleSelectEmoji}
+                  />
 
-                {/* File Attachment Button (Hidden file input) */}
-                <input
-                  type="file"
-                  ref={fileInputRef}
-                  onChange={handleFileSelect}
-                  className="hidden"
-                  accept="image/*,video/*,audio/*,.pdf,.doc,.docx"
-                />
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="p-2.5 rounded-xl bg-white dark:bg-[#2a3942] border border-slate-200 dark:border-white/5 text-slate-500 dark:text-[#8696a0] hover:text-slate-900 dark:hover:text-white transition-all cursor-pointer shrink-0"
-                  title="Envoyer une photo ou document"
-                >
-                  <Paperclip size={20} />
-                </button>
-
-                {/* Voice Recorder button */}
-                {selectedChat && (
-                  <VoiceRecorder conversationId={selectedChat} />
-                )}
-
-                {/* Textarea Input */}
-                <div className="flex-1 bg-white dark:bg-[#2a3942] rounded-2xl px-4 py-2.5 border border-slate-300 dark:border-white/5 focus-within:border-emerald-500 transition-all flex items-center min-h-[46px] shadow-inner dark:shadow-none">
+                  {/* Textarea Input (Expands fully in center) */}
                   <textarea
                     ref={inputRef}
-                    className="w-full bg-transparent outline-none text-sm sm:text-base text-slate-900 dark:text-white resize-none max-h-28 no-scrollbar placeholder:text-slate-400 dark:placeholder:text-white/40 leading-relaxed font-normal"
-                    placeholder="Écrivez votre message WhatsApp (Entrée pour envoyer, Maj+Entrée nouvelle ligne)..."
+                    className="flex-1 bg-transparent outline-none text-sm sm:text-base text-slate-900 dark:text-white resize-none max-h-32 no-scrollbar placeholder:text-slate-400 dark:placeholder:text-white/40 leading-relaxed font-normal px-2 py-1"
+                    placeholder="Écrivez un message WhatsApp..."
                     rows={1}
                     value={manualMessage}
                     onChange={handleTextareaChange}
@@ -1425,26 +1407,44 @@ export function SalesInbox() {
                       }
                     }}
                   />
+
+                  {/* File Attachment Button (Inside Right) */}
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleFileSelect}
+                    className="hidden"
+                    accept="image/*,video/*,audio/*,.pdf,.doc,.docx"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="p-1.5 rounded-full text-slate-500 dark:text-[#8696a0] hover:text-slate-900 dark:hover:text-white transition-all cursor-pointer shrink-0"
+                    title="Envoyer une photo ou document"
+                  >
+                    <Paperclip size={20} />
+                  </button>
                 </div>
 
-                {/* Send Button */}
-                <button
-                  onClick={handleSendMessage}
-                  disabled={!manualMessage.trim() || sendManualMessageMutation.isPending}
-                  className={cn(
-                    "h-11 w-11 rounded-full flex items-center justify-center transition-all shrink-0 cursor-pointer",
-                    manualMessage.trim()
-                      ? "bg-emerald-500 text-slate-950 hover:scale-105 active:scale-95 shadow-lg shadow-emerald-500/25 font-bold"
-                      : "bg-slate-200 dark:bg-white/5 text-slate-400 dark:text-white/20 cursor-not-allowed"
-                  )}
-                  title="Envoyer le message"
-                >
-                  {sendManualMessageMutation.isPending ? (
-                    <Loader2 size={18} className="animate-spin" />
-                  ) : (
-                    <Send size={18} className="ml-0.5" />
-                  )}
-                </button>
+                {/* Right Action Button: Voice Recorder if input empty OR Send Button if text present */}
+                {manualMessage.trim() ? (
+                  <button
+                    onClick={handleSendMessage}
+                    disabled={sendManualMessageMutation.isPending}
+                    className="h-11 w-11 rounded-full bg-emerald-500 text-slate-950 flex items-center justify-center transition-all shrink-0 cursor-pointer hover:scale-105 active:scale-95 shadow-lg shadow-emerald-500/25 font-bold"
+                    title="Envoyer le message"
+                  >
+                    {sendManualMessageMutation.isPending ? (
+                      <Loader2 size={18} className="animate-spin" />
+                    ) : (
+                      <Send size={18} className="ml-0.5" />
+                    )}
+                  </button>
+                ) : selectedChat ? (
+                  <div className="shrink-0">
+                    <VoiceRecorder conversationId={selectedChat} />
+                  </div>
+                ) : null}
               </div>
             </footer>
           </div>

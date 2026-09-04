@@ -1613,24 +1613,26 @@ function WhatsAppBubble({
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const [showActionsDropdown, setShowActionsDropdown] = useState(false);
   const REACTION_EMOJIS = ["👍", "❤️", "😂", "😮", "😢", "🙏", "🔥"];
 
   return (
     <div className={cn(
-      "flex w-full animate-in slide-in-from-bottom-2 duration-200 group relative select-text",
+      "flex w-full animate-in slide-in-from-bottom-2 duration-200 group relative select-text py-0.5",
       isCustomer ? "justify-start" : "justify-end"
     )}>
-      {/* Mini Hover Reactions Toolbar */}
+      {/* Floating Quick Action Toolbar (WhatsApp Web Style: Reactions & Reply) */}
       <div className={cn(
-        "absolute top-0 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 z-10 bg-white dark:bg-[#202c33] border border-slate-200 dark:border-[#2a3942] rounded-full px-2.5 py-1 shadow-lg",
-        isCustomer ? "left-full ml-2" : "right-full mr-2"
+        "absolute top-0 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-all duration-150 flex items-center gap-1 z-20 bg-white/95 dark:bg-[#202c33]/95 border border-slate-200 dark:border-[#2a3942] rounded-full px-2 py-1 shadow-lg backdrop-blur-sm",
+        isCustomer ? "left-2 sm:left-4 -top-3.5" : "right-2 sm:right-4 -top-3.5"
       )}>
-        {REACTION_EMOJIS.map((em) => (
+        {REACTION_EMOJIS.slice(0, 5).map((em) => (
           <button
             key={em}
             type="button"
             onClick={() => onReaction?.(em)}
-            className="hover:scale-125 transition-transform text-base p-0.5 cursor-pointer"
+            className="hover:scale-125 transition-transform text-sm sm:text-base p-0.5 cursor-pointer leading-none"
+            title={`Réagir ${em}`}
           >
             {em}
           </button>
@@ -1638,10 +1640,18 @@ function WhatsAppBubble({
         <button
           type="button"
           onClick={() => onReplyClick?.(msg)}
-          className="text-slate-400 hover:text-slate-800 dark:text-[#8696a0] dark:hover:text-white p-1 hover:bg-slate-100 dark:hover:bg-white/5 rounded-full ml-1"
-          title="Citer / Répondre"
+          className="text-slate-500 hover:text-slate-900 dark:text-[#8696a0] dark:hover:text-white p-1 hover:bg-slate-100 dark:hover:bg-white/10 rounded-full ml-0.5 cursor-pointer transition-colors"
+          title="Répondre / Citer ce message"
         >
-          <Reply size={15} />
+          <Reply size={14} />
+        </button>
+        <button
+          type="button"
+          onClick={handleCopy}
+          className="text-slate-500 hover:text-slate-900 dark:text-[#8696a0] dark:hover:text-white p-1 hover:bg-slate-100 dark:hover:bg-white/10 rounded-full cursor-pointer transition-colors"
+          title="Copier le texte"
+        >
+          {copied ? <Check size={14} className="text-emerald-600 dark:text-emerald-400" /> : <Copy size={14} />}
         </button>
       </div>
 
@@ -1656,9 +1666,9 @@ function WhatsAppBubble({
         isPaymentFlagged && "ring-2 ring-amber-500 border-amber-500 bg-amber-50 dark:bg-amber-950/80",
         isFraudAlert && "ring-2 ring-rose-500 border-rose-500 bg-rose-50 dark:bg-rose-950/90 text-slate-900 dark:text-white"
       )}>
-        {/* Sender Role Badge */}
-        {!isCustomer && (
-          <div className="flex items-center justify-between gap-2 mb-1.5 opacity-85 text-xs">
+        {/* Message Top Bar: Sender Tag (Admin/IA) & Top Action Icons */}
+        <div className="flex items-center justify-between gap-2 mb-1.5 opacity-85 text-xs">
+          {!isCustomer ? (
             <span className={cn(
               "font-black uppercase tracking-wider flex items-center gap-1.5 text-[11px] sm:text-xs",
               isHuman ? "text-sky-700 dark:text-sky-300" : "text-emerald-700 dark:text-emerald-300"
@@ -1666,25 +1676,30 @@ function WhatsAppBubble({
               {isHuman ? <User size={13} /> : <Bot size={13} />}
               {isHuman ? "Admin (Manuel)" : "Vendeur IA"}
             </span>
+          ) : (
+            <span className="text-[11px] font-bold text-slate-500 dark:text-white/50">
+              Client
+            </span>
+          )}
 
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => onReplyClick?.(msg)}
-                className="opacity-0 group-hover:opacity-100 text-slate-600 hover:text-slate-900 dark:text-white/70 dark:hover:text-white transition-opacity cursor-pointer p-0.5"
-                title="Citer"
-              >
-                <Reply size={13} />
-              </button>
-              <button
-                onClick={handleCopy}
-                className="opacity-0 group-hover:opacity-100 text-slate-600 hover:text-slate-900 dark:text-white/70 dark:hover:text-white transition-opacity cursor-pointer p-0.5"
-                title="Copier le texte"
-              >
-                {copied ? <Check size={13} className="text-emerald-600 dark:text-emerald-400" /> : <Copy size={13} />}
-              </button>
-            </div>
+          {/* Quick Actions (Reply & Copy for all messages) */}
+          <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+            <button
+              onClick={() => onReplyClick?.(msg)}
+              className="text-slate-500 hover:text-slate-900 dark:text-white/70 dark:hover:text-white cursor-pointer p-0.5 rounded hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+              title="Citer"
+            >
+              <Reply size={13} />
+            </button>
+            <button
+              onClick={handleCopy}
+              className="text-slate-500 hover:text-slate-900 dark:text-white/70 dark:hover:text-white cursor-pointer p-0.5 rounded hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+              title="Copier le texte"
+            >
+              {copied ? <Check size={13} className="text-emerald-600 dark:text-emerald-400" /> : <Copy size={13} />}
+            </button>
           </div>
-        )}
+        </div>
 
         {/* Quoted Message Display Inside Bubble */}
         {msg.quotedMessage && (

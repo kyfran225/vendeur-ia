@@ -542,19 +542,22 @@ router.patch("/conversations/:id/read", authenticate, async (req, res) => {
         { $set: { status: "read", readAt: new Date() } }
       );
 
-      // Send read receipt to WhatsApp network so the customer sees blue checkmarks
-      if (conversation.platform === "whatsapp" && unreadCustomerMessages.length > 0) {
+      // Send read receipt and subscribe to presence on WhatsApp network
+      if (conversation.platform === "whatsapp") {
         try {
           const customer = await CommerceCustomerModel.findById(conversation.customerId);
           if (customer?.phone) {
-            const { jid } = formatToWhatsAppRecipient(customer.phone);
-            if (jid) {
-              const keys = unreadCustomerMessages.map(m => ({
-                remoteJid: jid,
-                id: m.whatsappMessageId,
-                fromMe: false
-              }));
-              whatsappService.markConversationAsRead(ownerId, customer.phone, keys).catch(() => {});
+            whatsappService.subscribePresence(ownerId, customer.phone).catch(() => {});
+            if (unreadCustomerMessages.length > 0) {
+              const { jid } = formatToWhatsAppRecipient(customer.phone);
+              if (jid) {
+                const keys = unreadCustomerMessages.map(m => ({
+                  remoteJid: jid,
+                  id: m.whatsappMessageId,
+                  fromMe: false
+                }));
+                whatsappService.markConversationAsRead(ownerId, customer.phone, keys).catch(() => {});
+              }
             }
           }
         } catch (err) {}
@@ -767,8 +770,9 @@ router.post("/conversations/start", authenticate, async (req, res) => {
       // Send via WhatsApp
       try {
         const sendRes: any = await messagingService.sendMessage(merchant, "whatsapp", cleanPhone, initialMessage.trim());
-        if (sendRes?.key?.id) {
-          createdMessage.whatsappMessageId = sendRes.key.id;
+        const msgId = sendRes?.key?.id || sendRes?.messageId || sendRes?.id;
+        if (msgId) {
+          createdMessage.whatsappMessageId = msgId;
           await createdMessage.save();
         }
       } catch (err: any) {
@@ -894,16 +898,29 @@ router.post("/conversations/:id/media", authenticate, upload.single("file"), asy
       const sendRes: any = await messagingService.sendMessage(merchant, conversation.platform || "whatsapp", remoteId, caption.trim(), {
         type: mediaType,
         mediaUrl: storageResult.url,
-        audioBuffer: mediaType === "audio" ? req.file.buffer : undefined
+        fileBuffer: req.file.buffer,
+        audioBuffer: mediaType === "audio" ? req.file.buffer : undefined,
+        fileName: req.file.originalname,
+        mimeType: req.file.mimetype
       });
-      if (sendRes?.key?.id) {
-        message.whatsappMessageId = sendRes.key.id;
+      const msgId = sendRes?.key?.id || sendRes?.messageId || sendRes?.id;
+      if (msgId) {
+        message.whatsappMessageId = msgId;
         await message.save();
       }
     } catch (sendError: any) {
       deliveryError = sendError.message;
       console.error("[Media Send Error]:", sendError.message);
     }
+
+    targetUserIds.forEach(tId => {
+      emitToUser(tId, "conversation:update", {
+        conversationId: conversation._id,
+        message,
+        status: "needs_human",
+        unreadCount: 0
+      });
+    });
 
     res.status(201).json({ ...message.toObject(), deliveryError });
   } catch (error: any) {
@@ -915,33 +932,29 @@ router.post("/conversations/:id/media", authenticate, upload.single("file"), asy
 // ADD REACTION TO MESSAGE (👍❤️😂😮😢🙏🔥)
 router.post("/conversations/:id/reactions", authenticate, async (req, res) => {
   try {
-    const ownerId = (req as any).user.id;
     const { messageId, emoji } = req.body;
+    const conversationId = req.params.id;
 
     if (!messageId || !emoji) {
-      return res.status(400).json({ error: "messageId et emoji sont requis" });
+      return res.status(400).json({ error: "Message ID et émoji sont requis." });
     }
 
-    const message = await CommerceMessageModel.findById(messageId);
-    if (!message) return res.status(404).json({ error: "Message non trouvé" });
+    const message = await CommerceMessageModel.findOne({ _id: messageId, conversationId });
+    if (!message) {
+      return res.status(404).json({ error: "Message introuvable." });
+    }
 
-    // Add reaction
-    message.reactions = message.reactions || [];
-    message.reactions.push({
-      emoji,
-      sender: "merchant",
-      timestamp: new Date()
-    });
+    const currentReactions: any[] = (message.reactions || []) as any;
+    const existingIndex = currentReactions.findIndex((r: any) => r.emoji === emoji);
+    if (existingIndex > -1) {
+      currentReactions.splice(existingIndex, 1);
+    } else {
+      currentReactions.push({ emoji, sender: "merchant", timestamp: new Date() });
+    }
+    (message as any).reactions = currentReactions;
+
     await message.save();
-
-    emitToUser(ownerId, "message:reaction", {
-      conversationId: req.params.id,
-      messageId: message._id,
-      emoji,
-      reactions: message.reactions
-    });
-
-    res.json({ success: true, message });
+    res.json({ success: true, reactions: message.reactions });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
@@ -951,29 +964,15 @@ router.post("/conversations/:id/messages", authenticate, async (req, res) => {
   try {
     const ownerId = (req as any).user.id;
     const { content, quotedMessageId } = req.body;
-    if (!content || !content.trim()) {
-      return res.status(400).json({ error: "Le contenu du message est requis" });
-    }
+    if (!content || !content.trim()) return res.status(400).json({ error: "Message content is required" });
 
-    const conversation = await CommerceConversationModel.findById(req.params.id)
-      .populate("customerId");
-
-    if (!conversation) return res.status(404).json({ error: "Conversation not found" });
-
-    let merchant = await CommerceMerchantModel.findById(conversation.merchantId);
-    if (!merchant) {
-      merchant = await CommerceMerchantModel.findOne({
-        $or: [
-          { ownerId },
-          { businessName: "Vendeur IA" },
-          { whatsappNumber: { $regex: '5111157' } }
-        ]
-      });
-    }
-
+    const merchant = await CommerceMerchantModel.findOne({ ownerId });
     if (!merchant) return res.status(404).json({ error: "Marchand non trouvé" });
 
-    // Optional Quoted message lookup
+    const conversation = await CommerceConversationModel.findById(req.params.id);
+    if (!conversation) return res.status(404).json({ error: "Conversation non trouvée" });
+
+    // Populate Quoted Message if provided
     let quotedMessage: any = undefined;
     if (quotedMessageId) {
       const qMsg = await CommerceMessageModel.findById(quotedMessageId);
@@ -1005,20 +1004,10 @@ router.post("/conversations/:id/messages", authenticate, async (req, res) => {
     conversation.unreadCount = 0;
     await conversation.save();
 
-    // 3. Emit real-time sync to all user & merchant tabs
     const targetUserIds = new Set<string>([ownerId.toString()]);
     if (merchant.ownerId) targetUserIds.add(merchant.ownerId.toString());
 
-    targetUserIds.forEach(tId => {
-      emitToUser(tId, "conversation:update", {
-        conversationId: conversation._id,
-        message,
-        status: "needs_human",
-        unreadCount: 0
-      });
-    });
-
-    // 4. Send via Platform Messaging
+    // 3. Send via Platform Messaging
     const customer = conversation.customerId as any;
     const platform = conversation.platform || "whatsapp";
     const remoteId = platform === "web" ? (customer.platformId || "WEB_VISITOR") : customer.phone;
@@ -1026,8 +1015,9 @@ router.post("/conversations/:id/messages", authenticate, async (req, res) => {
     let deliveryError: string | undefined;
     try {
       const sendRes: any = await messagingService.sendMessage(merchant, platform, remoteId, content.trim());
-      if (sendRes?.key?.id) {
-        message.whatsappMessageId = sendRes.key.id;
+      const msgId = sendRes?.key?.id || sendRes?.messageId || sendRes?.id;
+      if (msgId) {
+        message.whatsappMessageId = msgId;
         await message.save();
       }
     } catch (sendError: any) {
@@ -1040,6 +1030,16 @@ router.post("/conversations/:id/messages", authenticate, async (req, res) => {
         });
       });
     }
+
+    // 4. Emit real-time sync with final message data
+    targetUserIds.forEach(tId => {
+      emitToUser(tId, "conversation:update", {
+        conversationId: conversation._id,
+        message,
+        status: "needs_human",
+        unreadCount: 0
+      });
+    });
 
     res.status(201).json({ ...message.toObject(), deliveryError });
   } catch (error: any) {
@@ -1218,8 +1218,13 @@ router.post("/conversations/:id/voice", authenticate, upload.single("audio"), as
       transcription = "🎤 [Note vocale envoyée]";
     }
 
-    // 2. Base64 Audio data URI for playback
-    const base64Audio = `data:${req.file.mimetype || "audio/ogg"};base64,${req.file.buffer.toString("base64")}`;
+    // 2. Upload Audio buffer to persistent storage
+    const storageResult = await storageService.uploadBuffer(
+      req.file.buffer,
+      `voice_${Date.now()}.ogg`,
+      req.file.mimetype || "audio/ogg",
+      "audio"
+    );
 
     // 3. Save to DB
     const message = await CommerceMessageModel.create({
@@ -1227,7 +1232,14 @@ router.post("/conversations/:id/voice", authenticate, upload.single("audio"), as
       sender: "human",
       type: "audio",
       content: transcription || "🎤 [Note vocale]",
-      mediaUrl: base64Audio
+      mediaUrl: storageResult.url,
+      mediaMetadata: {
+        fileName: "voice.ogg",
+        fileSize: req.file.size,
+        mimeType: req.file.mimetype || "audio/ogg"
+      },
+      status: "sent",
+      timestamp: new Date()
     });
 
     conversation.lastMessageAt = new Date();
@@ -1249,10 +1261,18 @@ router.post("/conversations/:id/voice", authenticate, upload.single("audio"), as
     const remoteId = platform === "web" ? (customer.platformId || "WEB_VISITOR") : customer.phone;
 
     try {
-      await messagingService.sendMessage(merchant, platform, remoteId, transcription, {
+      const sendRes: any = await messagingService.sendMessage(merchant, platform, remoteId, transcription, {
         type: "audio",
-        audioBuffer: req.file.buffer
+        audioBuffer: req.file.buffer,
+        fileBuffer: req.file.buffer,
+        mediaUrl: storageResult.url,
+        mimeType: req.file.mimetype || "audio/ogg"
       });
+      const msgId = sendRes?.key?.id || sendRes?.messageId || sendRes?.id;
+      if (msgId) {
+        message.whatsappMessageId = msgId;
+        await message.save();
+      }
     } catch (sendError: any) {
       console.error(`[Voice Messaging Dispatch Error]`, sendError.message);
     }

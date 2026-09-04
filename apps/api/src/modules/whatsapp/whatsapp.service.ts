@@ -23,6 +23,7 @@ import { smsService } from "../../services/sms.service.js";
 import { SystemSettingsModel } from "../commerce/admin.model.js";
 import { generatePhoneVariants, isFounderNumber } from "../auth/auth.service.js";
 import { parsePhoneNumber, formatToWhatsAppRecipient } from "@vendeur-ia/core";
+import { storageService } from "../../services/storage.service.js";
 
 class WhatsAppService {
   private activeSessions: Map<string, any> = new Map();
@@ -1002,8 +1003,23 @@ class WhatsAppService {
       from = msg.key.sender_pn;
     }
 
-    let text = msg.message?.conversation || msg.message?.extendedTextMessage?.text;
-    const imageMsg = msg.message?.imageMessage;
+    const rawMsg = msg.message?.ephemeralMessage?.message ||
+                   msg.message?.viewOnceMessage?.message ||
+                   msg.message?.viewOnceMessageV2?.message ||
+                   msg.message?.documentWithCaptionMessage?.message ||
+                   msg.message ||
+                   {};
+
+    const imageMsg = rawMsg.imageMessage;
+    const audioMsg = rawMsg.audioMessage;
+    const videoMsg = rawMsg.videoMessage;
+    const docMsg = rawMsg.documentMessage || rawMsg.documentWithCaptionMessage?.message?.documentMessage;
+    const stickerMsg = rawMsg.stickerMessage;
+
+    let text = rawMsg.conversation || rawMsg.extendedTextMessage?.text || imageMsg?.caption || videoMsg?.caption || docMsg?.caption || "";
+    let mediaUrl: string | undefined = msg._savedMediaUrl;
+    let mediaMetadata: any = msg._savedMediaMetadata;
+    let messageType: "text" | "image" | "audio" | "video" | "document" | "file" = "text";
 
     // Reverse WhatsApp Auth Interception (Baileys)
     if (text) {
@@ -1054,31 +1070,130 @@ class WhatsAppService {
       return;
     }
 
-    const isAudioMsg = !text && (msg.message?.audioMessage || msg.message?.videoMessage);
+    const isAudioMsg = Boolean(audioMsg);
+    const isVideoMsg = Boolean(videoMsg);
+    const isImageMsg = Boolean(imageMsg);
+    const isDocMsg = Boolean(docMsg);
+    const isStickerMsg = Boolean(stickerMsg);
 
     // Vocal Support: Handle Audio Messages
     if (isAudioMsg) {
-      console.log("[WhatsApp] Audio/Video message received, attempting transcription...");
+      messageType = "audio";
+      console.log("[WhatsApp] Audio message received, downloading and attempting transcription...");
       try {
-        const type = msg.message?.audioMessage ? 'audio' : 'video';
-        const buffer = await whatsappMediaService.downloadBaileysMedia(msg, type);
-        const merchantContext = merchant ? `Boutique: ${merchant.businessName}, Ville: ${merchant.city}` : "";
+        const mimeType = audioMsg?.mimetype || 'audio/ogg';
+        const buffer = msg._savedBuffer || await whatsappMediaService.downloadBaileysMedia(msg, 'audio');
+        if (!mediaUrl) {
+          const storageResult = await storageService.uploadBuffer(
+            buffer,
+            `wa_voice_${Date.now()}.ogg`,
+            mimeType,
+            "audio"
+          );
+          mediaUrl = storageResult.url;
+        }
+        mediaMetadata = mediaMetadata || {
+          fileName: "voice.ogg",
+          fileSize: buffer.length,
+          mimeType
+        };
 
+        const merchantContext = merchant ? `Boutique: ${merchant.businessName}, Ville: ${merchant.city}` : "";
         const transcription = await aiProvider.transcribeAudio(
           buffer,
-          msg.message?.[`${type}Message`]?.mimetype || 'audio/ogg',
+          mimeType,
           merchantContext
         );
 
         text = `[Message Vocal]: ${transcription}`;
-        console.log(`[WhatsApp] Transcription result: ${text}`);
-      } catch (err) {
-        console.error("Error handling audio/video transcription:", err);
-        text = "[Message Vocal Reçu (Transcription indisponible)]";
+        console.log(`[WhatsApp] Audio transcription result: ${text}`);
+      } catch (err: any) {
+        console.error("Error handling audio transcription:", err?.message || err);
+        text = text || "[Message Vocal Reçu]";
       }
     }
 
-    if (!text && !imageMsg) return;
+    // Video Support
+    if (isVideoMsg) {
+      messageType = "video";
+      console.log("[WhatsApp] Video message received, downloading...");
+      try {
+        const mimeType = videoMsg?.mimetype || 'video/mp4';
+        const buffer = msg._savedBuffer || await whatsappMediaService.downloadBaileysMedia(msg, 'video');
+        if (!mediaUrl) {
+          const storageResult = await storageService.uploadBuffer(
+            buffer,
+            `wa_video_${Date.now()}.mp4`,
+            mimeType,
+            "inbox-media"
+          );
+          mediaUrl = storageResult.url;
+        }
+        mediaMetadata = mediaMetadata || {
+          fileName: "video.mp4",
+          fileSize: buffer.length,
+          mimeType
+        };
+        if (!text) text = "[Vidéo reçue]";
+      } catch (err: any) {
+        console.error("Error handling video download:", err?.message || err);
+        if (!text) text = "[Vidéo reçue]";
+      }
+    }
+
+    // Document Support
+    if (isDocMsg) {
+      messageType = "document";
+      console.log("[WhatsApp] Document received, downloading...");
+      try {
+        const fileName = docMsg?.fileName || `document_${Date.now()}.pdf`;
+        const mimeType = docMsg?.mimetype || 'application/pdf';
+        const buffer = msg._savedBuffer || await whatsappMediaService.downloadBaileysMedia(msg, 'document');
+        if (!mediaUrl) {
+          const storageResult = await storageService.uploadBuffer(
+            buffer,
+            fileName,
+            mimeType,
+            "inbox-media"
+          );
+          mediaUrl = storageResult.url;
+        }
+        mediaMetadata = mediaMetadata || {
+          fileName,
+          fileSize: docMsg?.fileLength || buffer.length,
+          mimeType
+        };
+        if (!text) text = `[Document: ${fileName}]`;
+      } catch (err: any) {
+        console.error("Error handling document download:", err?.message || err);
+        if (!text) text = `[Document reçu]`;
+      }
+    }
+
+    // Sticker Support
+    if (isStickerMsg) {
+      messageType = "image";
+      try {
+        const buffer = msg._savedBuffer || await whatsappMediaService.downloadBaileysMedia(msg, 'sticker');
+        if (!mediaUrl) {
+          const storageResult = await storageService.uploadBuffer(
+            buffer,
+            `wa_sticker_${Date.now()}.webp`,
+            'image/webp',
+            "inbox-media"
+          );
+          mediaUrl = storageResult.url;
+        }
+        mediaMetadata = mediaMetadata || {
+          fileName: "sticker.webp",
+          fileSize: buffer.length,
+          mimeType: "image/webp"
+        };
+        text = "[Sticker]";
+      } catch (err) {}
+    }
+
+    if (!text && !isImageMsg && !mediaUrl && !isAudioMsg && !isVideoMsg && !isDocMsg && !isStickerMsg) return;
 
     // Find or create customer
     const pushName = msg.pushName || undefined;
@@ -1128,10 +1243,27 @@ class WhatsAppService {
     }
 
     // Handle Image / Payment Proof (Baileys)
-    if (imageMsg && typeof imageMsg === 'object') {
-      console.log("[WhatsApp] Image received, checking for payment proof...");
+    if (isImageMsg && typeof imageMsg === 'object') {
+      messageType = "image";
+      console.log("[WhatsApp] Image received, downloading and checking for payment proof...");
       try {
-        const buffer = await whatsappMediaService.downloadBaileysMedia(msg, 'image');
+        const mimeType = imageMsg?.mimetype || 'image/jpeg';
+        const buffer = msg._savedBuffer || await whatsappMediaService.downloadBaileysMedia(msg, 'image');
+        if (!mediaUrl) {
+          const storageResult = await storageService.uploadBuffer(
+            buffer,
+            `wa_img_${Date.now()}.jpg`,
+            mimeType,
+            "inbox-media"
+          );
+          mediaUrl = storageResult.url;
+        }
+        mediaMetadata = mediaMetadata || {
+          fileName: "photo.jpg",
+          fileSize: buffer.length,
+          mimeType
+        };
+
         const auditResult = await commerceService.auditAndLinkPaymentToOrder({
           merchant,
           customer,
@@ -1184,11 +1316,11 @@ class WhatsAppService {
             text = `[ALERTE SHIELD FRAUDE DÉTECTÉE: Reçu rejeté (${auditResult.flags.join(", ")})]`;
           }
         } else {
-          text = "[Image / Capture d'écran reçue]";
+          text = text || "[Image]";
         }
       } catch (err) {
         console.error("Error handling image:", err);
-        text = "[Image / Capture d'écran reçue]";
+        text = text || "[Image]";
       }
     }
 
@@ -1196,8 +1328,10 @@ class WhatsAppService {
     const customerMsg = await CommerceMessageModel.create({
       conversationId: conversation._id,
       sender: "customer",
-      type: isAudioMsg ? "audio" : imageMsg ? "image" : "text",
-      content: text,
+      type: messageType,
+      content: text || (messageType === "image" ? "[Image]" : messageType === "audio" ? "[Note vocale]" : messageType === "video" ? "[Vidéo]" : "[Document]"),
+      mediaUrl,
+      mediaMetadata,
       whatsappMessageId: msg.key?.id,
       status: "delivered",
       timestamp: new Date()
@@ -1206,6 +1340,29 @@ class WhatsAppService {
     // Update conversation metadata
     conversation.lastMessageAt = new Date();
     await conversation.save();
+
+    // Subscribe to presence updates for this contact (so Baileys receives typing indicators)
+    this.subscribePresence(userId, from).catch(() => {});
+
+    // Auto-mark previous outbound messages in this conversation as 'read' (double blue ticks)
+    try {
+      const unreadOutbound = await CommerceMessageModel.find({
+        conversationId: conversation._id,
+        sender: { $in: ["human", "ai"] },
+        status: { $in: ["sent", "delivered", "pending"] }
+      }).lean();
+
+      if (unreadOutbound.length > 0) {
+        await CommerceMessageModel.updateMany(
+          {
+            conversationId: conversation._id,
+            sender: { $in: ["human", "ai"] },
+            status: { $in: ["sent", "delivered", "pending"] }
+          },
+          { $set: { status: "read", readAt: new Date() } }
+        );
+      }
+    } catch (e) {}
 
     // --- REALTIME NOTIFICATIONS & LIVE SYNC FOR ADMIN ---
     const cleanCustomerPhone = (customer.phone || "").replace(/@s\.whatsapp\.net/g, "").replace(/\D/g, "");
@@ -1241,6 +1398,14 @@ class WhatsAppService {
 
         adminUsers.forEach(u => targetUserIds.add(u._id.toString()));
       } catch (adminFetchErr) {}
+    }
+
+    // Emit read status update for prior messages
+    for (const targetId of targetUserIds) {
+      emitToUser(targetId, "conversation:read", {
+        conversationId: conversation._id.toString(),
+        unreadCount: conversation.unreadCount
+      });
     }
 
     for (const targetId of targetUserIds) {
@@ -1393,11 +1558,25 @@ class WhatsAppService {
       to = msg.key.sender_pn;
     }
 
-    let text = msg.message?.conversation || msg.message?.extendedTextMessage?.text || msg.message?.imageMessage?.caption || "";
-    const isAudioMsg = !text && (msg.message?.audioMessage || msg.message?.videoMessage);
-    const isImageMsg = !text && msg.message?.imageMessage;
+    const rawMsg = msg.message?.ephemeralMessage?.message ||
+                   msg.message?.viewOnceMessage?.message ||
+                   msg.message?.viewOnceMessageV2?.message ||
+                   msg.message?.documentWithCaptionMessage?.message ||
+                   msg.message ||
+                   {};
 
-    if (!text && !isAudioMsg && !isImageMsg) return;
+    const imageMsg = rawMsg.imageMessage;
+    const audioMsg = rawMsg.audioMessage;
+    const videoMsg = rawMsg.videoMessage;
+    const docMsg = rawMsg.documentMessage || rawMsg.documentWithCaptionMessage?.message?.documentMessage;
+
+    let text = rawMsg.conversation || rawMsg.extendedTextMessage?.text || imageMsg?.caption || videoMsg?.caption || docMsg?.caption || "";
+    const isAudioMsg = Boolean(audioMsg);
+    const isVideoMsg = Boolean(videoMsg);
+    const isImageMsg = Boolean(imageMsg);
+    const isDocMsg = Boolean(docMsg);
+
+    if (!text && !isAudioMsg && !isImageMsg && !isVideoMsg && !isDocMsg) return;
 
     let merchant = await CommerceMerchantModel.findOne({
       $or: [
@@ -1460,12 +1639,90 @@ class WhatsAppService {
       return;
     }
 
+    // Download outgoing media if sent from phone
+    let mediaUrl: string | undefined = undefined;
+    let mediaMetadata: any = undefined;
+    let messageType: "text" | "image" | "audio" | "video" | "document" | "file" = "text";
+
+    if (isImageMsg) {
+      messageType = "image";
+      try {
+        const buffer = await whatsappMediaService.downloadBaileysMedia(msg, 'image');
+        const storageResult = await storageService.uploadBuffer(
+          buffer,
+          `out_img_${Date.now()}.jpg`,
+          imageMsg?.mimetype || 'image/jpeg',
+          "inbox-media"
+        );
+        mediaUrl = storageResult.url;
+        mediaMetadata = {
+          fileName: "photo.jpg",
+          fileSize: buffer.length,
+          mimeType: imageMsg?.mimetype || 'image/jpeg'
+        };
+      } catch (e) {}
+    } else if (isAudioMsg) {
+      messageType = "audio";
+      try {
+        const buffer = await whatsappMediaService.downloadBaileysMedia(msg, 'audio');
+        const storageResult = await storageService.uploadBuffer(
+          buffer,
+          `out_voice_${Date.now()}.ogg`,
+          audioMsg?.mimetype || 'audio/ogg',
+          "audio"
+        );
+        mediaUrl = storageResult.url;
+        mediaMetadata = {
+          fileName: "voice.ogg",
+          fileSize: buffer.length,
+          mimeType: audioMsg?.mimetype || 'audio/ogg'
+        };
+      } catch (e) {}
+    } else if (isVideoMsg) {
+      messageType = "video";
+      try {
+        const buffer = await whatsappMediaService.downloadBaileysMedia(msg, 'video');
+        const storageResult = await storageService.uploadBuffer(
+          buffer,
+          `out_video_${Date.now()}.mp4`,
+          videoMsg?.mimetype || 'video/mp4',
+          "inbox-media"
+        );
+        mediaUrl = storageResult.url;
+        mediaMetadata = {
+          fileName: "video.mp4",
+          fileSize: buffer.length,
+          mimeType: videoMsg?.mimetype || 'video/mp4'
+        };
+      } catch (e) {}
+    } else if (isDocMsg) {
+      messageType = "document";
+      try {
+        const buffer = await whatsappMediaService.downloadBaileysMedia(msg, 'document');
+        const fileName = docMsg?.fileName || `document_${Date.now()}.pdf`;
+        const storageResult = await storageService.uploadBuffer(
+          buffer,
+          fileName,
+          docMsg?.mimetype || 'application/pdf',
+          "inbox-media"
+        );
+        mediaUrl = storageResult.url;
+        mediaMetadata = {
+          fileName,
+          fileSize: docMsg?.fileLength || buffer.length,
+          mimeType: docMsg?.mimetype || 'application/pdf'
+        };
+      } catch (e) {}
+    }
+
     // Save outgoing human message
     const merchantMsg = await CommerceMessageModel.create({
       conversationId: conversation._id,
       sender: "human",
-      type: isAudioMsg ? "audio" : isImageMsg ? "image" : "text",
-      content: text || (isAudioMsg ? "🎤 [Note vocale]" : "📷 [Photo]"),
+      type: messageType,
+      content: text || (messageType === "audio" ? "🎤 [Note vocale]" : messageType === "image" ? "📷 [Photo]" : messageType === "video" ? "🎥 [Vidéo]" : `[${docMsg?.fileName || "Document"}]`),
+      mediaUrl,
+      mediaMetadata,
       whatsappMessageId: msg.key?.id,
       status: "sent",
       timestamp: new Date()
@@ -1508,22 +1765,23 @@ class WhatsAppService {
     });
   }
 
-  async sendMetaMessage(merchant: any, to: string, text: string): Promise<boolean> {
+  async sendMetaMessage(merchant: any, to: string, text: string): Promise<{ success: boolean; messageId?: string; id?: string; key?: { id: string } }> {
     if (env.AI_MOCK_MODE) {
       console.log(`[AI_MOCK_MODE] Skip Meta Message to ${to}: ${text.substring(0, 50)}...`);
-      return true;
+      const mockId = `mock_${Date.now()}`;
+      return { success: true, messageId: mockId, id: mockId, key: { id: mockId } };
     }
     const config = await this.getMetaConfig(merchant);
 
     if (!config.phoneNumberId || !config.accessToken) {
       console.warn(`[Meta WhatsApp] API Credentials missing for merchant ${merchant?.businessName}`);
-      return false;
+      return { success: false };
     }
 
     const { cleanPhone } = formatToWhatsAppRecipient(to);
 
     try {
-      await axios.post(
+      const res = await axios.post(
         `https://graph.facebook.com/v20.0/${config.phoneNumberId}/messages`,
         {
           messaging_product: "whatsapp",
@@ -1539,15 +1797,16 @@ class WhatsAppService {
           },
         }
       );
-      console.log(`[Meta WhatsApp] Message sent to ${cleanPhone} (Merchant: ${merchant.businessName})`);
-      return true;
+      const metaMsgId = res.data?.messages?.[0]?.id || `wamid.meta_${Date.now()}`;
+      console.log(`[Meta WhatsApp] Message sent to ${cleanPhone} (MsgID: ${metaMsgId}, Merchant: ${merchant.businessName})`);
+      return { success: true, messageId: metaMsgId, id: metaMsgId, key: { id: metaMsgId } };
     } catch (error: any) {
       const errData = error.response?.data || {};
       if (errData?.error?.code === 131030) {
         console.warn(`[Meta WhatsApp Warning] Le numéro ${cleanPhone} n'est pas dans la liste des destinataires autorisés du mode Sandbox Meta. Ajoutez-le sur developers.facebook.com ou passez l'app Meta en Production.`);
       }
       console.error("[Meta WhatsApp] Error sending message:", errData || error.message);
-      return false;
+      return { success: false };
     }
   }
 
@@ -1606,23 +1865,31 @@ class WhatsAppService {
     }
   }
 
-  async sendMetaAudio(merchant: any, to: string, audioBuffer: Buffer) {
+  async sendMetaMedia(
+    merchant: any,
+    to: string,
+    buffer: Buffer,
+    mediaType: 'image' | 'audio' | 'video' | 'document',
+    options?: { fileName?: string; mimeType?: string; caption?: string }
+  ): Promise<{ success: boolean; messageId?: string; id?: string; key?: { id: string } }> {
     if (env.AI_MOCK_MODE) {
-      console.log(`[AI_MOCK_MODE] Skip Meta Audio to ${to}`);
-      return;
+      console.log(`[AI_MOCK_MODE] Skip Meta ${mediaType} to ${to}`);
+      const mockId = `mock_${Date.now()}`;
+      return { success: true, messageId: mockId, id: mockId, key: { id: mockId } };
     }
     const config = await this.getMetaConfig(merchant);
-
-    if (!config.phoneNumberId || !config.accessToken) return;
+    if (!config.phoneNumberId || !config.accessToken) return { success: false };
 
     const { cleanPhone } = formatToWhatsAppRecipient(to);
+    const fileName = options?.fileName || (mediaType === 'image' ? 'photo.jpg' : mediaType === 'audio' ? 'voice.ogg' : mediaType === 'video' ? 'video.mp4' : 'document.pdf');
+    const mimeType = options?.mimeType || (mediaType === 'image' ? 'image/jpeg' : mediaType === 'audio' ? 'audio/ogg' : mediaType === 'video' ? 'video/mp4' : 'application/pdf');
 
     try {
       // 1. Upload Media
       const formData = new FormData();
-      const blob = new Blob([new Uint8Array(audioBuffer)], { type: "audio/ogg" });
-      formData.append("file", blob, "voice.ogg");
-      formData.append("type", "audio/ogg");
+      const blob = new Blob([new Uint8Array(buffer)], { type: mimeType });
+      formData.append("file", blob, fileName);
+      formData.append("type", mimeType);
       formData.append("messaging_product", "whatsapp");
 
       const uploadRes = await axios.post(
@@ -1637,15 +1904,23 @@ class WhatsAppService {
 
       const mediaId = uploadRes.data.id;
 
-      // 2. Send Audio Message
-      await axios.post(
+      // 2. Send Media Message
+      const mediaPayload: any = { id: mediaId };
+      if (options?.caption && (mediaType === 'image' || mediaType === 'video' || mediaType === 'document')) {
+        mediaPayload.caption = options.caption;
+      }
+      if (mediaType === 'document' && fileName) {
+        mediaPayload.filename = fileName;
+      }
+
+      const res = await axios.post(
         `https://graph.facebook.com/v20.0/${config.phoneNumberId}/messages`,
         {
           messaging_product: "whatsapp",
           recipient_type: "individual",
           to: cleanPhone,
-          type: "audio",
-          audio: { id: mediaId },
+          type: mediaType,
+          [mediaType]: mediaPayload,
         },
         {
           headers: {
@@ -1654,10 +1929,18 @@ class WhatsAppService {
           },
         }
       );
-      console.log(`[Meta WhatsApp] Audio sent to ${cleanPhone}`);
+
+      const metaMsgId = res.data?.messages?.[0]?.id || `wamid.meta_${Date.now()}`;
+      console.log(`[Meta WhatsApp] ${mediaType} sent to ${cleanPhone} (MsgID: ${metaMsgId})`);
+      return { success: true, messageId: metaMsgId, id: metaMsgId, key: { id: metaMsgId } };
     } catch (error: any) {
-      console.error("[Meta WhatsApp] Error sending audio:", error.response?.data || error.message);
+      console.error(`[Meta WhatsApp] Error sending ${mediaType}:`, error.response?.data || error.message);
+      return { success: false };
     }
+  }
+
+  async sendMetaAudio(merchant: any, to: string, audioBuffer: Buffer): Promise<{ success: boolean; messageId?: string; id?: string; key?: { id: string } }> {
+    return this.sendMetaMedia(merchant, to, audioBuffer, 'audio', { mimeType: 'audio/ogg' });
   }
 
   async handleMetaIncomingMessage(from: string, text: string, phoneId: string, media?: { mediaId: string, mediaType: string }, messageId?: string, pushName?: string) {
@@ -1793,7 +2076,7 @@ class WhatsAppService {
 
     // 2. Prepare message object for handleIncomingMessage
     const msg: any = {
-      key: { remoteJid: from, fromMe: false },
+      key: { remoteJid: from, fromMe: false, id: messageId },
       message: { conversation: text },
       pushName: pushName || undefined
     };
@@ -1806,6 +2089,24 @@ class WhatsAppService {
         const buffer = await whatsappMediaService.downloadMetaMedia(media.mediaId, config.accessToken);
 
         if (media.mediaType === 'image') {
+          const storageResult = await storageService.uploadBuffer(
+            buffer,
+            `meta_img_${Date.now()}.jpg`,
+            'image/jpeg',
+            'inbox-media'
+          );
+          msg._savedMediaUrl = storageResult.url;
+          msg._savedBuffer = buffer;
+          msg._savedMediaMetadata = {
+            fileName: "photo.jpg",
+            fileSize: buffer.length,
+            mimeType: "image/jpeg"
+          };
+          msg.message.imageMessage = {
+            mimetype: 'image/jpeg',
+            caption: text
+          };
+
           // Find or create customer to get the ID for linking
           let customer = await CommerceCustomerModel.findOne({ merchantId: merchant._id, phone: from });
           if (!customer) {
@@ -1863,17 +2164,61 @@ class WhatsAppService {
             msg.message.conversation = text;
           }
         } else if (media.mediaType === 'audio') {
-          console.log("[Meta WhatsApp] Audio received, attempting transcription...");
-          const merchantContext = merchant ? `Boutique: ${merchant.businessName}, Ville: ${merchant.city}` : "";
+          console.log("[Meta WhatsApp] Audio received, uploading and attempting transcription...");
+          const storageResult = await storageService.uploadBuffer(
+            buffer,
+            `meta_voice_${Date.now()}.ogg`,
+            'audio/ogg',
+            'audio'
+          );
+          msg._savedMediaUrl = storageResult.url;
+          msg._savedBuffer = buffer;
+          msg._savedMediaMetadata = {
+            fileName: "voice.ogg",
+            fileSize: buffer.length,
+            mimeType: "audio/ogg"
+          };
+          msg.message.audioMessage = { mimetype: 'audio/ogg' };
 
+          const merchantContext = merchant ? `Boutique: ${merchant.businessName}, Ville: ${merchant.city}` : "";
           text = await aiProvider.transcribeAudio(
             buffer,
-            'audio/ogg', // Meta usually sends ogg
+            'audio/ogg',
             merchantContext
           );
 
           msg.message.conversation = text;
           console.log(`[Meta WhatsApp] Transcription result: ${text}`);
+        } else if (media.mediaType === 'video') {
+          const storageResult = await storageService.uploadBuffer(
+            buffer,
+            `meta_video_${Date.now()}.mp4`,
+            'video/mp4',
+            'inbox-media'
+          );
+          msg._savedMediaUrl = storageResult.url;
+          msg._savedBuffer = buffer;
+          msg._savedMediaMetadata = {
+            fileName: "video.mp4",
+            fileSize: buffer.length,
+            mimeType: "video/mp4"
+          };
+          msg.message.videoMessage = { mimetype: 'video/mp4', caption: text };
+        } else if (media.mediaType === 'document') {
+          const storageResult = await storageService.uploadBuffer(
+            buffer,
+            `meta_doc_${Date.now()}.pdf`,
+            'application/pdf',
+            'inbox-media'
+          );
+          msg._savedMediaUrl = storageResult.url;
+          msg._savedBuffer = buffer;
+          msg._savedMediaMetadata = {
+            fileName: "document.pdf",
+            fileSize: buffer.length,
+            mimeType: "application/pdf"
+          };
+          msg.message.documentMessage = { mimetype: 'application/pdf', fileName: 'document.pdf', caption: text };
         }
       } catch (error) {
         console.error("[Meta WhatsApp] Error processing media:", error);
@@ -1883,18 +2228,65 @@ class WhatsAppService {
     await this.handleIncomingMessage(merchant.ownerId, msg);
   }
 
+  async subscribePresence(userId: string, remoteJidOrPhone: string) {
+    const { jid } = formatToWhatsAppRecipient(remoteJidOrPhone);
+    if (!jid) return;
+
+    let sock = this.activeSessions.get(userId);
+    if (!sock) {
+      for (const [sId, s] of this.activeSessions.entries()) {
+        if (s && s.user?.id) {
+          sock = s;
+          break;
+        }
+      }
+    }
+
+    if (sock && sock.user && typeof sock.presenceSubscribe === "function") {
+      try {
+        await sock.presenceSubscribe(jid);
+      } catch (err) {
+        // Non-blocking
+      }
+    }
+  }
+
   async sendPresence(userId: string, remoteJid: string, presence: 'composing' | 'available' | 'paused') {
     const { jid } = formatToWhatsAppRecipient(remoteJid);
     if (!jid) return;
-    const sock = this.activeSessions.get(userId);
-    if (sock && sock.user && (sock.user.id || (sock.user as any).lid)) {
+
+    let sock = this.activeSessions.get(userId);
+    if (!sock) {
+      try {
+        const merchant = await CommerceMerchantModel.findOne({
+          $or: [
+            { ownerId: userId },
+            ...(mongoose.isValidObjectId(userId) ? [{ _id: new mongoose.Types.ObjectId(userId) }, { ownerId: new mongoose.Types.ObjectId(userId) }] : []),
+            { whatsappNumber: { $regex: '5111157' } }
+          ]
+        });
+        if (merchant?.ownerId) {
+          sock = this.activeSessions.get(merchant.ownerId.toString());
+        }
+      } catch (e) {}
+    }
+
+    if (!sock && this.activeSessions.size > 0) {
+      for (const s of this.activeSessions.values()) {
+        if (s && s.user) {
+          sock = s;
+          break;
+        }
+      }
+    }
+
+    if (sock && sock.user && typeof sock.sendPresenceUpdate === "function") {
       try {
         await sock.sendPresenceUpdate(presence, jid);
-      } catch (err) {
-        console.error(`[WhatsApp] Failed to send presence for user ${userId}:`, err);
+        console.log(`[WhatsApp Presence] Sent "${presence}" to ${jid} (User: ${userId})`);
+      } catch (err: any) {
+        console.warn(`[WhatsApp Presence] Failed to send presence for user ${userId}:`, err.message);
       }
-    } else {
-      console.warn(`[WhatsApp] Skipping presence update for ${userId}: socket not fully authenticated`);
     }
   }
 
@@ -1903,7 +2295,7 @@ class WhatsAppService {
       const remoteJid = presenceUpdate?.id;
       if (!remoteJid || remoteJid.includes("@g.us") || remoteJid === "status@broadcast") return;
 
-      const { cleanPhone } = formatToWhatsAppRecipient(remoteJid);
+      const { cleanPhone, jid } = formatToWhatsAppRecipient(remoteJid);
       const presences = presenceUpdate.presences || {};
       const participantInfo = presences[remoteJid] || Object.values(presences)[0] as any;
       const lastKnown = participantInfo?.lastKnownPresence;
@@ -1917,19 +2309,40 @@ class WhatsAppService {
           { whatsappNumber: { $regex: '5111157' } }
         ]
       });
+
+      if (!merchant) {
+        merchant = await CommerceMerchantModel.findOne({
+          $or: [
+            { businessName: "Vendeur IA" },
+            { whatsappNumber: { $regex: '5111157' } },
+            { phone: { $regex: '5111157' } }
+          ]
+        });
+      }
+
       if (!merchant) return;
 
+      const cleanDigits = cleanPhone.replace(/\D/g, "");
       const phoneVariants = generatePhoneVariants(cleanPhone);
+
       const customer = await CommerceCustomerModel.findOne({
         merchantId: merchant._id,
-        phone: { $in: phoneVariants }
+        $or: [
+          { phone: { $in: phoneVariants } },
+          { phone: remoteJid },
+          { phone: jid },
+          { phone: cleanPhone },
+          ...(cleanDigits.length >= 8 ? [{ phone: { $regex: cleanDigits.slice(-8) } }] : [])
+        ]
       });
+
       if (!customer) return;
 
       const conversation = await CommerceConversationModel.findOne({
         merchantId: merchant._id,
         customerId: customer._id
       });
+
       if (!conversation) return;
 
       const targetUserIds = new Set<string>([userId.toString()]);
@@ -1937,7 +2350,7 @@ class WhatsAppService {
 
       targetUserIds.forEach(tId => {
         emitToUser(tId, "conversation:typing", {
-          conversationId: conversation._id,
+          conversationId: conversation._id.toString(),
           customerPhone: cleanPhone,
           isTyping,
           participant: "customer"
@@ -1954,14 +2367,14 @@ class WhatsAppService {
 
       for (const item of updates) {
         const key = item.key;
-        const statusNum = item.update?.status;
-        if (!key?.id || statusNum === undefined) continue;
+        const statusVal = item.update?.status;
+        if (!key?.id || statusVal === undefined) continue;
 
         // Baileys WAMessageStatus: 1=PENDING, 2=SERVER_ACK, 3=DELIVERY_ACK, 4=READ, 5=PLAYED
         let mappedStatus: "pending" | "sent" | "delivered" | "read" | null = null;
-        if (statusNum === 2) mappedStatus = "sent";
-        else if (statusNum === 3) mappedStatus = "delivered";
-        else if (statusNum === 4 || statusNum === 5) mappedStatus = "read";
+        if (statusVal === 2 || statusVal === "SERVER_ACK" || statusVal === "2") mappedStatus = "sent";
+        else if (statusVal === 3 || statusVal === "DELIVERY_ACK" || statusVal === "3") mappedStatus = "delivered";
+        else if (statusVal === 4 || statusVal === 5 || statusVal === "READ" || statusVal === "PLAYED" || statusVal === "4" || statusVal === "5") mappedStatus = "read";
 
         if (!mappedStatus) continue;
 
@@ -1985,8 +2398,8 @@ class WhatsAppService {
 
           targetUserIds.forEach(tId => {
             emitToUser(tId, "message:status_update", {
-              messageId: updatedMsg._id,
-              conversationId: updatedMsg.conversationId,
+              messageId: updatedMsg._id.toString(),
+              conversationId: updatedMsg.conversationId.toString(),
               whatsappMessageId: key.id,
               status: mappedStatus,
               deliveredAt: updatedMsg.deliveredAt,
@@ -2038,8 +2451,8 @@ class WhatsAppService {
 
           targetUserIds.forEach(tId => {
             emitToUser(tId, "message:status_update", {
-              messageId: updatedMsg._id,
-              conversationId: updatedMsg.conversationId,
+              messageId: updatedMsg._id.toString(),
+              conversationId: updatedMsg.conversationId.toString(),
               whatsappMessageId: key.id,
               status: mappedStatus,
               deliveredAt: updatedMsg.deliveredAt,
@@ -2053,19 +2466,146 @@ class WhatsAppService {
     }
   }
 
-  async markConversationAsRead(userId: string, remoteJid: string, messageKeys?: any[]) {
-    const sock = this.activeSessions.get(userId);
-    if (!sock || !sock.user) return;
+  async handleMetaStatusUpdate(statusObj: any, phoneId?: string) {
     try {
-      if (messageKeys && messageKeys.length > 0 && typeof sock.readMessages === "function") {
-        await sock.readMessages(messageKeys);
+      const wamid = statusObj?.id;
+      const rawStatus = statusObj?.status; // "sent", "delivered", "read", "failed"
+      if (!wamid || !rawStatus) return;
+
+      let mappedStatus: "pending" | "sent" | "delivered" | "read" | "failed" | null = null;
+      if (rawStatus === "sent") mappedStatus = "sent";
+      else if (rawStatus === "delivered") mappedStatus = "delivered";
+      else if (rawStatus === "read") mappedStatus = "read";
+      else if (rawStatus === "failed") mappedStatus = "failed";
+
+      if (!mappedStatus) return;
+
+      const updateFields: any = { status: mappedStatus };
+      if (mappedStatus === "delivered") updateFields.deliveredAt = new Date();
+      if (mappedStatus === "read") updateFields.readAt = new Date();
+
+      let updatedMsg = await CommerceMessageModel.findOneAndUpdate(
+        { whatsappMessageId: wamid },
+        { $set: updateFields },
+        { new: true }
+      );
+
+      // If not found by wamid directly, look for latest outgoing message to this recipient if recipient_id is provided
+      if (!updatedMsg && statusObj.recipient_id) {
+        const recipientClean = statusObj.recipient_id.replace(/\D/g, "");
+        const variants = generatePhoneVariants(recipientClean);
+        const customers = await CommerceCustomerModel.find({
+          $or: [
+            { phone: { $in: variants } },
+            ...(recipientClean.length >= 8 ? [{ phone: { $regex: recipientClean.slice(-8) } }] : [])
+          ]
+        }).select("_id");
+
+        if (customers.length > 0) {
+          const customerIds = customers.map(c => c._id);
+          const conversations = await CommerceConversationModel.find({ customerId: { $in: customerIds } }).select("_id");
+          const convIds = conversations.map(c => c._id);
+
+          updatedMsg = await CommerceMessageModel.findOneAndUpdate(
+            {
+              conversationId: { $in: convIds },
+              sender: { $in: ["human", "ai"] },
+              timestamp: { $gte: new Date(Date.now() - 10 * 60 * 1000) }
+            },
+            {
+              $set: {
+                ...updateFields,
+                whatsappMessageId: wamid
+              }
+            },
+            { sort: { timestamp: -1 }, new: true }
+          );
+        }
+      }
+
+      if (updatedMsg) {
+        const conv = await CommerceConversationModel.findById(updatedMsg.conversationId);
+        const targetUserIds = new Set<string>();
+        if (conv) {
+          const merchant = await CommerceMerchantModel.findById(conv.merchantId);
+          if (merchant?.ownerId) targetUserIds.add(merchant.ownerId.toString());
+        }
+
+        targetUserIds.forEach(tId => {
+          emitToUser(tId, "message:status_update", {
+            messageId: updatedMsg._id.toString(),
+            conversationId: updatedMsg.conversationId.toString(),
+            whatsappMessageId: wamid,
+            status: mappedStatus,
+            deliveredAt: updatedMsg.deliveredAt,
+            readAt: updatedMsg.readAt
+          });
+        });
       }
     } catch (err) {
-      console.warn("[WhatsApp Read] Failed to send read receipt to WhatsApp:", err);
+      console.warn("[Meta Status Update Error]:", err);
     }
   }
 
-  async sendMessage(userId: string, to: string, text: string, options?: { type?: string; mediaUrl?: string; audioBuffer?: Buffer }) {
+  async markConversationAsRead(userId: string, remoteJid: string, messageKeys?: any[]) {
+    const { jid, cleanPhone } = formatToWhatsAppRecipient(remoteJid);
+    let sock = this.activeSessions.get(userId);
+    if (!sock) {
+      for (const [sId, s] of this.activeSessions.entries()) {
+        if (s && s.user?.id) {
+          sock = s;
+          break;
+        }
+      }
+    }
+
+    if (sock && sock.user && messageKeys && messageKeys.length > 0 && typeof sock.readMessages === "function") {
+      try {
+        await sock.readMessages(messageKeys);
+        console.log(`[WhatsApp Read] Sent read receipt for ${messageKeys.length} messages to ${jid}`);
+      } catch (err) {
+        console.warn("[WhatsApp Read] Failed to send read receipt to WhatsApp via Baileys:", err);
+      }
+    }
+
+    // Also support Meta Cloud API read receipt
+    try {
+      let merchant = await CommerceMerchantModel.findOne({
+        $or: [
+          { ownerId: userId },
+          ...(mongoose.isValidObjectId(userId) ? [{ ownerId: new mongoose.Types.ObjectId(userId) }] : []),
+          { whatsappNumber: { $regex: '5111157' } }
+        ]
+      });
+      if (merchant?.whatsappConfig?.provider === 'meta' && messageKeys && messageKeys.length > 0) {
+        const config = await this.getMetaConfig(merchant);
+        if (config.phoneNumberId && config.accessToken) {
+          for (const k of messageKeys) {
+            if (k.id) {
+              await axios.post(
+                `https://graph.facebook.com/v20.0/${config.phoneNumberId}/messages`,
+                {
+                  messaging_product: "whatsapp",
+                  status: "read",
+                  message_id: k.id
+                },
+                {
+                  headers: {
+                    Authorization: `Bearer ${config.accessToken}`,
+                    "Content-Type": "application/json"
+                  }
+                }
+              ).catch(() => {});
+            }
+          }
+        }
+      }
+    } catch (metaReadErr) {
+      // Non-blocking
+    }
+  }
+
+  async sendMessage(userId: string, to: string, text: string, options?: { type?: string; mediaUrl?: string; audioBuffer?: Buffer; fileBuffer?: Buffer; fileName?: string; mimeType?: string }) {
     let merchant = await CommerceMerchantModel.findOne({
       $or: [
         { ownerId: userId },
@@ -2081,8 +2621,8 @@ class WhatsAppService {
     const { jid, cleanPhone } = formatToWhatsAppRecipient(to);
     if (!jid) throw new Error(`Destinataire WhatsApp invalide: ${to}`);
 
-    const useAudio = options?.type === 'audio' || !!options?.audioBuffer || (merchant.aiSettings?.voiceMode && text.length < 300);
-    const useImage = (options?.type === 'image' || !!options?.mediaUrl) && !!options?.mediaUrl;
+    // Subscribe to presence so we receive typing indicator when recipient types
+    this.subscribePresence(userId, to).catch(() => {});
 
     const merchantOwnerId = merchant.ownerId?.toString() || userId?.toString();
     let sock = this.activeSessions.get(userId?.toString()) || this.activeSessions.get(merchantOwnerId);
@@ -2111,23 +2651,51 @@ class WhatsAppService {
       return await socket.sendMessage(targetJid, payload);
     };
 
+    const dispatchBaileys = async (socket: any) => {
+      // 1. Image
+      if (options?.type === 'image' || (options?.fileBuffer && options?.mimeType?.startsWith('image/')) || (options?.mediaUrl && options?.type !== 'audio' && options?.type !== 'document' && options?.type !== 'video' && !options?.mimeType?.startsWith('application/'))) {
+        const payload = options?.fileBuffer
+          ? { image: options.fileBuffer, caption: text }
+          : { image: { url: options.mediaUrl! }, caption: text };
+        return await sendWithPresence(socket, jid, payload);
+      }
+
+      // 2. Audio / Voice note
+      if (options?.type === 'audio' || options?.audioBuffer || (options?.fileBuffer && options?.mimeType?.startsWith('audio/')) || (merchant.aiSettings?.voiceMode && text && text.length < 300 && !options?.mediaUrl)) {
+        const audioBuffer = options?.audioBuffer || options?.fileBuffer || await aiProvider.generateSpeech(text).catch(() => null);
+        if (audioBuffer) {
+          return await socket.sendMessage(jid, {
+            audio: audioBuffer,
+            mimetype: options?.mimeType || 'audio/mp4',
+            ptt: true
+          });
+        }
+      }
+
+      // 3. Video
+      if (options?.type === 'video' || (options?.fileBuffer && options?.mimeType?.startsWith('video/'))) {
+        const payload = options?.fileBuffer
+          ? { video: options.fileBuffer, caption: text, mimetype: options?.mimeType || 'video/mp4' }
+          : { video: { url: options.mediaUrl! }, caption: text, mimetype: options?.mimeType || 'video/mp4' };
+        return await sendWithPresence(socket, jid, payload);
+      }
+
+      // 4. Document / PDF / File
+      if (options?.type === 'document' || options?.type === 'file' || (options?.fileBuffer && (options?.mimeType?.startsWith('application/') || options?.mimeType?.startsWith('text/')))) {
+        const payload = options?.fileBuffer
+          ? { document: options.fileBuffer, fileName: options?.fileName || 'document.pdf', mimetype: options?.mimeType || 'application/pdf', caption: text }
+          : { document: { url: options.mediaUrl! }, fileName: options?.fileName || 'document.pdf', mimetype: options?.mimeType || 'application/pdf', caption: text };
+        return await sendWithPresence(socket, jid, payload);
+      }
+
+      // 5. Default Text
+      return await sendWithPresence(socket, jid, { text });
+    };
+
     // 1. Direct active Baileys socket delivery
     if (sock && sock.user) {
       try {
-        if (useImage) {
-          return await sendWithPresence(sock, jid, { image: { url: options?.mediaUrl }, caption: text });
-        }
-        if (useAudio) {
-          const audioBuffer = options?.audioBuffer || await aiProvider.generateSpeech(text).catch(() => null);
-          if (audioBuffer) {
-            return await sock.sendMessage(jid, {
-              audio: audioBuffer,
-              mimetype: 'audio/mp4',
-              ptt: true
-            });
-          }
-        }
-        return await sendWithPresence(sock, jid, { text });
+        return await dispatchBaileys(sock);
       } catch (baileysErr: any) {
         console.warn(`[WhatsApp Baileys] Failed to send via socket for ${userId}:`, baileysErr.message);
       }
@@ -2135,21 +2703,38 @@ class WhatsAppService {
 
     // 2. If provider is Meta Cloud API
     if (merchant.whatsappConfig?.provider === 'meta') {
-      let metaSuccess = false;
-      if (useAudio) {
+      let metaResult: any = null;
+      const mediaBuf = options?.fileBuffer || options?.audioBuffer;
+
+      if (mediaBuf) {
+        const mType = (options?.type === 'audio' || options?.audioBuffer) ? 'audio' :
+                      (options?.type === 'video') ? 'video' :
+                      (options?.type === 'document' || options?.type === 'file') ? 'document' : 'image';
         try {
-          const audioBuffer = options?.audioBuffer || await aiProvider.generateSpeech(text);
-          await this.sendMetaAudio(merchant, cleanPhone, audioBuffer);
-          metaSuccess = true;
+          metaResult = await this.sendMetaMedia(merchant, cleanPhone, mediaBuf, mType as any, {
+            fileName: options?.fileName,
+            mimeType: options?.mimeType,
+            caption: text
+          });
         } catch (err) {
-          console.warn("[WhatsApp Meta] Failed audio send, falling back to text:", err);
+          console.warn(`[WhatsApp Meta] Failed media send (${mType}), falling back to text:`, err);
+        }
+      } else if (options?.type === 'audio' || (merchant.aiSettings?.voiceMode && text && text.length < 300)) {
+        try {
+          const audioBuffer = await aiProvider.generateSpeech(text);
+          metaResult = await this.sendMetaAudio(merchant, cleanPhone, audioBuffer);
+        } catch (err) {
+          console.warn("[WhatsApp Meta] Failed audio speech gen, falling back to text:", err);
         }
       }
-      if (!metaSuccess) {
-        metaSuccess = await this.sendMetaMessage(merchant, cleanPhone, text);
+
+      if (!metaResult || !metaResult.success) {
+        metaResult = await this.sendMetaMessage(merchant, cleanPhone, text);
       }
 
-      if (metaSuccess) return { success: true, provider: 'meta' };
+      if (metaResult && (metaResult.success || metaResult.messageId)) {
+        return { ...metaResult, provider: 'meta' };
+      }
       console.log(`[WhatsApp] Meta send unsuccessful, attempting fallback to Baileys socket for ${cleanPhone}...`);
     }
 
@@ -2175,26 +2760,15 @@ class WhatsAppService {
     }
 
     if (sock && sock.user) {
-      if (useImage) {
-        return await sendWithPresence(sock, jid, { image: { url: options?.mediaUrl }, caption: text });
-      }
-      if (useAudio) {
-        const audioBuffer = options?.audioBuffer || await aiProvider.generateSpeech(text).catch(() => null);
-        if (audioBuffer) {
-          return await sock.sendMessage(jid, {
-            audio: audioBuffer,
-            mimetype: 'audio/mp4',
-            ptt: true
-          });
-        }
-      }
-      return await sendWithPresence(sock, jid, { text });
+      return await dispatchBaileys(sock);
     }
 
     // 4. Meta fallback if not tried yet
     if (merchant.whatsappConfig?.provider !== 'meta') {
       const metaFallback = await this.sendMetaMessage(merchant, cleanPhone, text);
-      if (metaFallback) return { success: true, provider: 'meta_fallback' };
+      if (metaFallback && (metaFallback.success || metaFallback.messageId)) {
+        return { ...metaFallback, provider: 'meta_fallback' };
+      }
     }
 
     throw new Error("WhatsApp n'est pas connecté. Veuillez scanner le QR Code ou lier votre appareil dans les Paramètres WhatsApp.");

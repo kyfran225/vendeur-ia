@@ -367,8 +367,9 @@ Réponds UNIQUEMENT avec le texte final du message.`;
         audioBuffer: audioBuffer || undefined
       });
 
-      if (sendRes?.key?.id) {
-        aiMsg.whatsappMessageId = sendRes.key.id;
+      const msgId = sendRes?.key?.id || sendRes?.messageId || sendRes?.id;
+      if (msgId) {
+        aiMsg.whatsappMessageId = msgId;
         await aiMsg.save();
       }
 

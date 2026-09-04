@@ -5,7 +5,7 @@ import { formatToWhatsAppRecipient } from '@vendeur-ia/core';
 import axios from 'axios';
 
 export class MessagingService {
-  async sendMessage(merchant: any, platform: string, remoteId: string, content: string, options: { type?: string; mediaUrl?: string; audioBuffer?: Buffer } = {}) {
+  async sendMessage(merchant: any, platform: string, remoteId: string, content: string, options: { type?: string; mediaUrl?: string; audioBuffer?: Buffer; fileBuffer?: Buffer; fileName?: string; mimeType?: string } = {}) {
     console.log(`[MessagingService] Sending to ${platform}:${remoteId}`);
 
     switch (platform) {

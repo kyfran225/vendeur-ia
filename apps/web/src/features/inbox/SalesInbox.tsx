@@ -4,7 +4,7 @@ import {
   Send, User, Bot, Loader2, Sparkles, X, Instagram, Facebook,
   ShoppingCart, Plus, Minus, Package, ChevronLeft, Globe, CreditCard,
   PauseCircle, PlayCircle, Volume2, VolumeX, Bell, BellOff,
-  Copy, Check, Phone, RefreshCw, Zap, Image as ImageIcon,
+  Copy, Check, Phone, RefreshCw, Zap, Image as ImageIcon, Video,
   Mic, Paperclip, Clock, AlertTriangle, ArrowDown, ArrowLeft,
   Smile, FileText, Reply
 } from "lucide-react";
@@ -260,7 +260,23 @@ export function SalesInbox() {
       queryClient.invalidateQueries({ queryKey: ["conversations"] });
 
       if (data.conversationId === selectedChat) {
-        queryClient.invalidateQueries({ queryKey: ["messages", selectedChat] });
+        if (data.message) {
+          queryClient.setQueryData(["messages", selectedChat], (old: any[] | undefined) => {
+            if (!old) return [data.message];
+            const exists = old.some(m => String(m._id) === String(data.message._id) || (data.message.whatsappMessageId && m.whatsappMessageId === data.message.whatsappMessageId));
+            if (exists) {
+              return old.map(m => (String(m._id) === String(data.message._id) || (data.message.whatsappMessageId && m.whatsappMessageId === data.message.whatsappMessageId)) ? { ...m, ...data.message } : m);
+            }
+            // If customer message received, customer has read all previous outbound messages
+            if (data.message.sender === "customer") {
+              const updated = old.map(m => m.sender !== "customer" && m.status !== "read" ? { ...m, status: "read", readAt: new Date() } : m);
+              return [...updated, data.message];
+            }
+            return [...old, data.message];
+          });
+        } else {
+          queryClient.invalidateQueries({ queryKey: ["messages", selectedChat] });
+        }
       }
 
       // If message is from customer, alert the admin with the WhatsApp incoming sound chime
@@ -334,8 +350,16 @@ export function SalesInbox() {
         queryClient.setQueryData(["messages", selectedChat], (old: any[] | undefined) => {
           if (!old) return old;
           return old.map(m => {
-            if ((data.messageId && m._id === data.messageId) || (data.whatsappMessageId && m.whatsappMessageId === data.whatsappMessageId)) {
-              return { ...m, status: data.status, deliveredAt: data.deliveredAt || m.deliveredAt, readAt: data.readAt || m.readAt };
+            const isMatch = (data.messageId && String(m._id) === String(data.messageId)) ||
+                            (data.whatsappMessageId && m.whatsappMessageId === data.whatsappMessageId);
+            if (isMatch) {
+              return {
+                ...m,
+                status: data.status,
+                whatsappMessageId: data.whatsappMessageId || m.whatsappMessageId,
+                deliveredAt: data.deliveredAt || m.deliveredAt,
+                readAt: data.readAt || m.readAt
+              };
             }
             return m;
           });
@@ -349,6 +373,17 @@ export function SalesInbox() {
         if (!old) return old;
         return old.map(c => c._id === data.conversationId ? { ...c, unreadCount: 0 } : c);
       });
+      if (data.conversationId === selectedChat) {
+        queryClient.setQueryData(["messages", selectedChat], (old: any[] | undefined) => {
+          if (!old) return old;
+          return old.map(m => {
+            if (m.sender !== "customer" && m.status !== "read") {
+              return { ...m, status: "read", readAt: new Date() };
+            }
+            return m;
+          });
+        });
+      }
     };
 
     socket.on("conversation:update", handleConvUpdate);
@@ -359,6 +394,10 @@ export function SalesInbox() {
     socket.on("message:status_update", handleMessageStatusUpdate);
     socket.on("conversation:read", handleConversationRead);
 
+    if (selectedChat) {
+      socket.emit("chat:open", { conversationId: selectedChat, userId: user?.id });
+    }
+
     return () => {
       socket.off("conversation:update", handleConvUpdate);
       socket.off("notification:new", handleNotificationNew);
@@ -368,7 +407,7 @@ export function SalesInbox() {
       socket.off("message:status_update", handleMessageStatusUpdate);
       socket.off("conversation:read", handleConversationRead);
     };
-  }, [socket, selectedChat, queryClient, merchantCurrency]);
+  }, [socket, selectedChat, queryClient, merchantCurrency, user?.id]);
 
   // Calculate unread totals & sync dynamic tab title
   const totalUnreadCount = useMemo(() => {
@@ -699,103 +738,103 @@ export function SalesInbox() {
             <div className="flex items-center gap-3 min-w-0">
               <Link
                 to="/dashboard"
-                className="hidden md:flex p-2 rounded-xl bg-slate-200/80 dark:bg-white/5 border border-slate-300 dark:border-white/10 text-slate-600 dark:text-white/60 hover:text-slate-900 dark:hover:text-white hover:bg-slate-300 dark:hover:bg-white/10 transition-all items-center justify-center shrink-0"
+                className="hidden md:flex p-2.5 rounded-xl bg-slate-200/80 dark:bg-white/5 border border-slate-300 dark:border-white/10 text-slate-600 dark:text-white/60 hover:text-slate-900 dark:hover:text-white hover:bg-slate-300 dark:hover:bg-white/10 transition-all items-center justify-center shrink-0"
                 title="Quitter le plein écran et retourner au Tableau de bord"
               >
-                <ArrowLeft size={16} />
+                <ArrowLeft size={18} />
               </Link>
               <div className="relative shrink-0">
-                <div className="h-10 w-10 rounded-full bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center font-black text-emerald-700 dark:text-vendeur-emerald">
+                <div className="h-11 w-11 rounded-full bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center font-black text-emerald-700 dark:text-vendeur-emerald text-base">
                   {merchant?.businessName ? merchant.businessName.charAt(0).toUpperCase() : "V"}
                 </div>
-                <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-[#202c33]" />
+                <span className="absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-[#202c33]" />
               </div>
               <div className="min-w-0">
                 <div className="flex items-center gap-1.5">
-                  <h2 className="text-sm font-black text-slate-900 dark:text-white truncate">{merchant?.businessName || "WhatsApp Pro"}</h2>
-                  <span className="px-1.5 py-0.5 bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 text-[9px] font-black uppercase rounded">
+                  <h2 className="text-base font-black text-slate-900 dark:text-white truncate">{merchant?.businessName || "WhatsApp Pro"}</h2>
+                  <span className="px-2 py-0.5 bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 text-[11px] font-black uppercase rounded">
                     Admin
                   </span>
                 </div>
-                <p className="text-[11px] text-slate-500 dark:text-white/50 truncate flex items-center gap-1">
-                  <Phone size={10} className="text-emerald-600 dark:text-emerald-400" />
+                <p className="text-xs sm:text-[13px] text-slate-500 dark:text-white/60 truncate flex items-center gap-1 mt-0.5">
+                  <Phone size={12} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
                   <span>{merchant?.whatsappNumber || "Système Vendeur IA"}</span>
                 </p>
               </div>
             </div>
 
             {/* Header Controls: Sound, Desktop Notif, Refresh */}
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1.5">
               <button
                 type="button"
                 onClick={handleToggleSound}
                 className={cn(
-                  "p-2 rounded-xl border transition-all cursor-pointer",
+                  "p-2.5 rounded-xl border transition-all cursor-pointer",
                   isSoundEnabled
                     ? "bg-emerald-500/15 border-emerald-500/30 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/25"
                     : "bg-slate-200/80 dark:bg-white/5 border-slate-300 dark:border-white/10 text-slate-500 dark:text-white/40 hover:text-slate-900 dark:hover:text-white"
                 )}
                 title={isSoundEnabled ? "Sonnerie WhatsApp active (Cliquer pour couper)" : "Sonnerie coupée (Cliquer pour activer)"}
               >
-                {isSoundEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
+                {isSoundEnabled ? <Volume2 size={18} /> : <VolumeX size={18} />}
               </button>
 
               {notifPermission !== "granted" && (
                 <button
                   type="button"
                   onClick={handleEnableNotifications}
-                  className="p-2 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-600 dark:text-amber-400 hover:bg-amber-500/25 transition-all cursor-pointer animate-pulse"
+                  className="p-2.5 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-600 dark:text-amber-400 hover:bg-amber-500/25 transition-all cursor-pointer animate-pulse"
                   title="Autoriser les notifications de bureau"
                 >
-                  <Bell size={16} />
+                  <Bell size={18} />
                 </button>
               )}
 
               <button
                 type="button"
                 onClick={() => setIsNewChatModalOpen(true)}
-                className="p-2 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/30 hover:text-emerald-950 dark:hover:text-white transition-all cursor-pointer shadow-sm"
+                className="p-2.5 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/30 hover:text-emerald-950 dark:hover:text-white transition-all cursor-pointer shadow-sm"
                 title="Nouvelle discussion (Démarrer avec un numéro WhatsApp)"
               >
-                <Plus size={16} />
+                <Plus size={18} />
               </button>
 
               <button
                 type="button"
                 onClick={() => refetchConvs()}
-                className="p-2 rounded-xl bg-slate-200/80 dark:bg-white/5 border border-slate-300 dark:border-white/10 text-slate-600 dark:text-white/60 hover:text-slate-900 dark:hover:text-white hover:bg-slate-300 dark:hover:bg-white/10 transition-all cursor-pointer"
+                className="p-2.5 rounded-xl bg-slate-200/80 dark:bg-white/5 border border-slate-300 dark:border-white/10 text-slate-600 dark:text-white/60 hover:text-slate-900 dark:hover:text-white hover:bg-slate-300 dark:hover:bg-white/10 transition-all cursor-pointer"
                 title="Actualiser les messages"
               >
-                <RefreshCw size={16} />
+                <RefreshCw size={18} />
               </button>
             </div>
           </div>
 
           {/* Search Box */}
           <div className="relative">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-white/30" size={16} />
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-white/40" size={18} />
             <input
-              className="w-full bg-white dark:bg-[#111b21] border border-slate-300 dark:border-white/10 rounded-xl py-2.5 pl-10 pr-4 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-white/30 outline-none focus:border-emerald-500 transition-all"
-              placeholder="Rechercher nom, numéro ou mot-clé..."
+              className="w-full bg-white dark:bg-[#111b21] border border-slate-300 dark:border-white/10 rounded-xl py-3 pl-11 pr-4 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-white/40 outline-none focus:border-emerald-500 transition-all font-medium"
+              placeholder="Rechercher nom, numéro ou message..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery("")}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-white/40 hover:text-slate-900 dark:hover:text-white"
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-white/40 hover:text-slate-900 dark:hover:text-white p-1"
               >
-                <X size={14} />
+                <X size={16} />
               </button>
             )}
           </div>
 
           {/* Filter Pills */}
-          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pt-1">
+          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pt-1">
             <button
               onClick={() => setFilterTab("all")}
               className={cn(
-                "px-3 py-1.5 rounded-full text-[11px] font-bold transition-all cursor-pointer shrink-0",
+                "px-3.5 py-2 rounded-full text-xs sm:text-[13px] font-bold transition-all cursor-pointer shrink-0",
                 filterTab === "all"
                   ? "bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20 font-black"
                   : "bg-slate-200/80 text-slate-700 dark:bg-white/5 dark:text-white/60 hover:bg-slate-300 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white"
@@ -807,7 +846,7 @@ export function SalesInbox() {
             <button
               onClick={() => setFilterTab("unread")}
               className={cn(
-                "px-3 py-1.5 rounded-full text-[11px] font-bold transition-all cursor-pointer shrink-0 flex items-center gap-1.5",
+                "px-3.5 py-2 rounded-full text-xs sm:text-[13px] font-bold transition-all cursor-pointer shrink-0 flex items-center gap-1.5",
                 filterTab === "unread"
                   ? "bg-rose-500 text-white shadow-md shadow-rose-500/20 font-black"
                   : "bg-slate-200/80 text-slate-700 dark:bg-white/5 dark:text-white/60 hover:bg-slate-300 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white"
@@ -816,7 +855,7 @@ export function SalesInbox() {
               <span>Non lus</span>
               {totalUnreadCount > 0 && (
                 <span className={cn(
-                  "px-1.5 py-0.2 rounded-full text-[10px] font-black",
+                  "px-2 py-0.5 rounded-full text-xs font-black",
                   filterTab === "unread" ? "bg-white text-rose-600" : "bg-rose-500 text-white"
                 )}>
                   {totalUnreadCount}
@@ -827,26 +866,26 @@ export function SalesInbox() {
             <button
               onClick={() => setFilterTab("ai")}
               className={cn(
-                "px-3 py-1.5 rounded-full text-[11px] font-bold transition-all cursor-pointer shrink-0 flex items-center gap-1",
+                "px-3.5 py-2 rounded-full text-xs sm:text-[13px] font-bold transition-all cursor-pointer shrink-0 flex items-center gap-1.5",
                 filterTab === "ai"
                   ? "bg-emerald-500 text-slate-950 font-black"
                   : "bg-slate-200/80 text-slate-700 dark:bg-white/5 dark:text-white/60 hover:bg-slate-300 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white"
               )}
             >
-              <Bot size={12} />
+              <Bot size={14} />
               <span>IA 24/7</span>
             </button>
 
             <button
               onClick={() => setFilterTab("human")}
               className={cn(
-                "px-3 py-1.5 rounded-full text-[11px] font-bold transition-all cursor-pointer shrink-0 flex items-center gap-1",
+                "px-3.5 py-2 rounded-full text-xs sm:text-[13px] font-bold transition-all cursor-pointer shrink-0 flex items-center gap-1.5",
                 filterTab === "human"
                   ? "bg-sky-500 text-slate-950 font-black"
                   : "bg-slate-200/80 text-slate-700 dark:bg-white/5 dark:text-white/60 hover:bg-slate-300 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white"
               )}
             >
-              <User size={12} />
+              <User size={14} />
               <span>Manuel</span>
             </button>
           </div>
@@ -860,9 +899,9 @@ export function SalesInbox() {
             </div>
           ) : filteredConversations.length === 0 ? (
             <div className="flex flex-col items-center justify-center p-8 text-center text-slate-400 dark:text-white/40 space-y-2">
-              <MessageCircle size={36} className="opacity-30" />
-              <p className="text-xs font-bold text-slate-600 dark:text-white/60">Aucune conversation trouvée</p>
-              <p className="text-[11px] text-slate-400 dark:text-white/30">
+              <MessageCircle size={40} className="opacity-30" />
+              <p className="text-sm font-bold text-slate-600 dark:text-white/60">Aucune conversation trouvée</p>
+              <p className="text-xs text-slate-400 dark:text-white/30">
                 {filterTab === "unread" ? "Toutes vos conversations ont été lues !" : "Les messages WhatsApp apparaîtront ici dès réception."}
               </p>
             </div>
@@ -879,7 +918,7 @@ export function SalesInbox() {
                   key={chat._id}
                   onClick={() => handleChatSelect(chat._id)}
                   className={cn(
-                    "p-3.5 flex items-center gap-3 cursor-pointer transition-all border-l-4 relative group",
+                    "p-3.5 sm:p-4 flex items-center gap-3 cursor-pointer transition-all border-l-4 relative group",
                     isActive
                       ? "bg-emerald-50/70 dark:bg-[#2a3942] border-emerald-500"
                       : hasUnread
@@ -900,21 +939,21 @@ export function SalesInbox() {
                   {/* Details */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between mb-1">
-                      <div className="flex items-center gap-1.5 min-w-0">
+                      <div className="flex items-center gap-2 min-w-0">
                         <p className={cn(
-                          "text-xs truncate",
+                          "text-sm sm:text-[15px] truncate",
                           hasUnread ? "font-black text-slate-900 dark:text-white" : "font-bold text-slate-800 dark:text-white/90"
                         )}>
                           {displayName}
                         </p>
                         {chat.customerId?.loyaltyPoints >= vipThreshold && (
-                          <span className="text-[8px] font-black bg-emerald-500 text-black px-1 rounded uppercase tracking-tighter shrink-0">
+                          <span className="text-[9px] font-black bg-emerald-500 text-black px-1.5 py-0.5 rounded uppercase tracking-tight shrink-0">
                             VIP
                           </span>
                         )}
                       </div>
                       <p className={cn(
-                        "text-[10px] shrink-0",
+                        "text-xs shrink-0 font-medium",
                         hasUnread ? "text-emerald-600 dark:text-emerald-400 font-bold" : "text-slate-400 dark:text-white/40"
                       )}>
                         {formatMessageTime(chat.lastMessageAt || chat.updatedAt)}
@@ -923,37 +962,37 @@ export function SalesInbox() {
 
                     <div className="flex items-center justify-between gap-2">
                       {typingMap[chat._id]?.isTyping ? (
-                        <div className="flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400 font-bold animate-pulse truncate min-w-0">
+                        <div className="flex items-center gap-1.5 text-xs sm:text-[13px] text-emerald-600 dark:text-emerald-400 font-bold animate-pulse truncate min-w-0">
                           <span className="inline-flex items-center gap-1">
-                            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-ping shrink-0" />
-                            <span className="italic text-[11px] font-semibold">
+                            <span className="h-2 w-2 rounded-full bg-emerald-500 animate-ping shrink-0" />
+                            <span className="italic font-semibold">
                               {typingMap[chat._id]?.participant === "ai" ? "Vendeur IA répond..." : "En train d'écrire..."}
                             </span>
                           </span>
                         </div>
                       ) : (
-                        <div className="flex items-center gap-1 text-[11px] text-slate-500 dark:text-white/60 truncate min-w-0">
+                        <div className="flex items-center gap-1 text-xs sm:text-[13px] text-slate-500 dark:text-white/60 truncate min-w-0 font-normal leading-normal">
                           {chat.lastMessage?.sender === "human" && (
                             <span className="text-sky-600 dark:text-sky-400 font-bold shrink-0">Admin: </span>
                           )}
                           {chat.lastMessage?.sender === "ai" && (
                             <span className="text-emerald-600 dark:text-emerald-400 font-bold shrink-0">IA: </span>
                           )}
-                          {chat.lastMessage?.type === "audio" && <Mic size={11} className="text-sky-500 shrink-0" />}
-                          {chat.lastMessage?.type === "image" && <ImageIcon size={11} className="text-amber-500 shrink-0" />}
+                          {chat.lastMessage?.type === "audio" && <Mic size={13} className="text-sky-500 shrink-0" />}
+                          {chat.lastMessage?.type === "image" && <ImageIcon size={13} className="text-amber-500 shrink-0" />}
                           <span className="truncate">{stripActionTags(lastSnippet)}</span>
                         </div>
                       )}
 
                       {/* Unread badge or Takeover Pill */}
-                      <div className="flex items-center gap-1 shrink-0">
+                      <div className="flex items-center gap-1.5 shrink-0">
                         {isHumanTakeover && (
-                          <span className="px-1.5 py-0.5 rounded bg-sky-500/20 text-sky-700 dark:text-sky-300 text-[9px] font-bold uppercase">
+                          <span className="px-2 py-0.5 rounded bg-sky-500/20 text-sky-700 dark:text-sky-300 text-[10px] font-bold uppercase tracking-tight">
                             Manuel
                           </span>
                         )}
                         {hasUnread && (
-                          <span className="h-5 min-w-5 px-1.5 rounded-full bg-emerald-500 text-slate-950 text-[10px] font-black flex items-center justify-center shadow-md shadow-emerald-500/30">
+                          <span className="h-5 min-w-5 px-1.5 rounded-full bg-emerald-500 text-slate-950 text-xs font-black flex items-center justify-center shadow-md shadow-emerald-500/30">
                             {chat.unreadCount}
                           </span>
                         )}
@@ -977,15 +1016,15 @@ export function SalesInbox() {
         {selectedChat ? (
           <div className="flex-1 flex flex-col h-full w-full bg-slate-100 dark:bg-[#0b141a] relative min-w-0 overflow-x-hidden">
             {/* WhatsApp Chat Header: Tier 1 - Customer Info & Live Mode Indicator */}
-            <header className="px-3 py-2.5 sm:px-5 sm:py-3 bg-slate-50 dark:bg-[#202c33] border-b border-slate-200 dark:border-white/10 flex items-center justify-between sticky top-0 z-30 gap-3 pt-[calc(0.5rem+env(safe-area-inset-top,0px))] md:pt-3">
+            <header className="px-3.5 py-3 sm:px-5 sm:py-3.5 bg-slate-50 dark:bg-[#202c33] border-b border-slate-200 dark:border-white/10 flex items-center justify-between sticky top-0 z-30 gap-3 pt-[calc(0.5rem+env(safe-area-inset-top,0px))] md:pt-3">
               {/* Left Column: Back Button + Avatar + Customer Name & Phone */}
-              <div className="flex items-center gap-2.5 sm:gap-3.5 min-w-0 flex-1">
+              <div className="flex items-center gap-3 sm:gap-3.5 min-w-0 flex-1">
                 <button
                   onClick={() => setShowMobileChat(false)}
-                  className="md:hidden p-1.5 -ml-1 text-slate-600 dark:text-white/70 hover:text-slate-900 dark:hover:text-white shrink-0 cursor-pointer rounded-lg hover:bg-slate-200 dark:hover:bg-white/5 active:scale-95 transition-all"
+                  className="md:hidden p-2 -ml-1 text-slate-600 dark:text-white/70 hover:text-slate-900 dark:hover:text-white shrink-0 cursor-pointer rounded-xl hover:bg-slate-200 dark:hover:bg-white/5 active:scale-95 transition-all"
                   aria-label="Retour"
                 >
-                  <ChevronLeft size={22} />
+                  <ChevronLeft size={24} />
                 </button>
 
                 <CustomerAvatar
@@ -1001,11 +1040,11 @@ export function SalesInbox() {
 
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2 min-w-0">
-                    <p className="font-bold sm:font-black text-sm sm:text-base text-slate-900 dark:text-white truncate">
+                    <p className="font-bold sm:font-black text-base sm:text-lg text-slate-900 dark:text-white truncate">
                       {formatCustomerDisplayName(activeChatData?.customerId, merchant?.businessName, user?.displayName)}
                     </p>
                     {activeChatData?.customerId?.loyaltyPoints >= vipThreshold && (
-                      <span className="text-[8px] sm:text-[9px] font-black bg-emerald-500 text-black px-1.5 py-0.5 rounded uppercase shrink-0">
+                      <span className="text-[9px] sm:text-[10px] font-black bg-emerald-500 text-black px-1.5 py-0.5 rounded uppercase shrink-0">
                         VIP
                       </span>
                     )}
@@ -1022,17 +1061,17 @@ export function SalesInbox() {
                       className="mt-0.5"
                     />
                   ) : (
-                    <div className="text-[11px] sm:text-xs text-slate-500 dark:text-white/60 flex items-center gap-1.5 font-medium mt-0.5">
-                      <Phone size={11} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+                    <div className="text-xs sm:text-sm text-slate-500 dark:text-white/60 flex items-center gap-1.5 font-medium mt-0.5">
+                      <Phone size={13} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
                       <span className="truncate">{formatDisplayPhone(activeChatData?.customerId?.phone, "CI") || "WhatsApp Direct"}</span>
                       {activeChatData?.customerId?.phone && (
                         <button
                           type="button"
                           onClick={() => handleCopyPhone(activeChatData.customerId.phone)}
-                          className="text-slate-400 hover:text-emerald-600 dark:text-white/40 dark:hover:text-emerald-400 p-0.5 rounded hover:bg-slate-200 dark:hover:bg-white/5 transition-colors shrink-0"
+                          className="text-slate-400 hover:text-emerald-600 dark:text-white/40 dark:hover:text-emerald-400 p-1 rounded hover:bg-slate-200 dark:hover:bg-white/5 transition-colors shrink-0"
                           title="Copier le numéro"
                         >
-                          {hasCopiedPhone ? <Check size={12} className="text-emerald-600 dark:text-emerald-400" /> : <Copy size={12} />}
+                          {hasCopiedPhone ? <Check size={14} className="text-emerald-600 dark:text-emerald-400" /> : <Copy size={14} />}
                         </button>
                       )}
                     </div>
@@ -1043,13 +1082,13 @@ export function SalesInbox() {
               {/* Right Column: Active Status Badge Indicator */}
               <div className="shrink-0 flex items-center gap-2">
                 <div className={cn(
-                  "px-2.5 py-1 rounded-full border flex items-center gap-1.5 text-[10px] sm:text-[11px] font-bold tracking-tight shadow-sm",
+                  "px-3 py-1.5 rounded-full border flex items-center gap-1.5 text-xs sm:text-[13px] font-bold tracking-tight shadow-sm",
                   activeChatData?.status === "needs_human"
                     ? "bg-rose-500/15 border-rose-500/30 text-rose-700 dark:text-rose-300"
                     : "bg-emerald-500/15 border-emerald-500/30 text-emerald-700 dark:text-emerald-300"
                 )}>
                   <span className={cn(
-                    "h-2 w-2 rounded-full shrink-0",
+                    "h-2.5 w-2.5 rounded-full shrink-0",
                     activeChatData?.status === "needs_human" ? "bg-rose-500 animate-pulse" : "bg-emerald-500 animate-pulse"
                   )} />
                   <span className="hidden xs:inline">
@@ -1063,20 +1102,20 @@ export function SalesInbox() {
             </header>
 
             {/* Chat Action Toolbar: Tier 2 - Action Buttons Sub-bar */}
-            <div className="bg-slate-100/90 dark:bg-[#182229] border-b border-slate-200 dark:border-white/10 px-3 py-2 sm:px-4 sm:py-2 flex items-center justify-between sm:justify-start gap-2 overflow-x-auto no-scrollbar sticky top-[57px] sm:top-[65px] z-20">
-              <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+            <div className="bg-slate-100/90 dark:bg-[#182229] border-b border-slate-200 dark:border-white/10 px-3.5 py-2.5 sm:px-5 sm:py-2.5 flex items-center justify-between sm:justify-start gap-2.5 overflow-x-auto no-scrollbar sticky top-[57px] sm:top-[65px] z-20">
+              <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
                 {/* AI Follow-up Relance */}
                 <button
                   type="button"
                   onClick={() => selectedChat && generateFollowupMutation.mutate(selectedChat)}
                   disabled={generateFollowupMutation.isPending}
-                  className="flex items-center justify-center h-8 sm:h-8.5 px-2.5 sm:px-3 bg-sky-500/15 border border-sky-500/30 text-sky-700 dark:text-sky-300 rounded-xl hover:bg-sky-500/25 hover:text-sky-950 dark:hover:text-white transition-all active:scale-95 cursor-pointer font-bold text-[11px] sm:text-xs shrink-0"
+                  className="flex items-center justify-center h-9 sm:h-9.5 px-3 sm:px-3.5 bg-sky-500/15 border border-sky-500/30 text-sky-700 dark:text-sky-300 rounded-xl hover:bg-sky-500/25 hover:text-sky-950 dark:hover:text-white transition-all active:scale-95 cursor-pointer font-bold text-xs sm:text-[13px] shrink-0"
                   title="Générer une relance intelligente par l'IA"
                 >
                   {generateFollowupMutation.isPending ? (
-                    <Loader2 size={13} className="animate-spin" />
+                    <Loader2 size={15} className="animate-spin" />
                   ) : (
-                    <Sparkles size={13} />
+                    <Sparkles size={15} />
                   )}
                   <span className="ml-1.5">Relance IA</span>
                 </button>
@@ -1085,10 +1124,10 @@ export function SalesInbox() {
                 <button
                   type="button"
                   onClick={() => setIsFastPayModalOpen(true)}
-                  className="flex items-center justify-center h-8 sm:h-8.5 px-2.5 sm:px-3 bg-amber-500/15 border border-amber-500/30 text-amber-700 dark:text-amber-300 rounded-xl hover:bg-amber-500/25 hover:text-amber-950 dark:hover:text-white transition-all active:scale-95 cursor-pointer font-bold text-[11px] sm:text-xs shrink-0"
+                  className="flex items-center justify-center h-9 sm:h-9.5 px-3 sm:px-3.5 bg-amber-500/15 border border-amber-500/30 text-amber-700 dark:text-amber-300 rounded-xl hover:bg-amber-500/25 hover:text-amber-950 dark:hover:text-white transition-all active:scale-95 cursor-pointer font-bold text-xs sm:text-[13px] shrink-0"
                   title="Générer et envoyer un lien de paiement Mobile Money"
                 >
-                  <CreditCard size={13} />
+                  <CreditCard size={15} />
                   <span className="ml-1.5">Fast Pay</span>
                 </button>
 
@@ -1096,10 +1135,10 @@ export function SalesInbox() {
                 <button
                   type="button"
                   onClick={() => setIsOrderModalOpen(true)}
-                  className="flex items-center justify-center h-8 sm:h-8.5 px-3 sm:px-3.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-xl transition-all active:scale-95 cursor-pointer text-[11px] sm:text-xs shadow-md shadow-emerald-500/20 shrink-0"
+                  className="flex items-center justify-center h-9 sm:h-9.5 px-3.5 sm:px-4 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-xl transition-all active:scale-95 cursor-pointer text-xs sm:text-[13px] shadow-md shadow-emerald-500/20 shrink-0"
                   title="Créer une commande pour ce client"
                 >
-                  <ShoppingCart size={13} />
+                  <ShoppingCart size={15} />
                   <span className="ml-1.5">Vendre</span>
                 </button>
               </div>
@@ -1110,7 +1149,7 @@ export function SalesInbox() {
                 onClick={toggleTakeover}
                 disabled={updateStatusMutation.isPending}
                 className={cn(
-                  "flex items-center justify-center h-8 sm:h-8.5 px-2.5 sm:px-3 rounded-xl border font-bold text-[11px] sm:text-xs transition-all active:scale-95 cursor-pointer shrink-0 ml-auto sm:ml-auto",
+                  "flex items-center justify-center h-9 sm:h-9.5 px-3 sm:px-3.5 rounded-xl border font-bold text-xs sm:text-[13px] transition-all active:scale-95 cursor-pointer shrink-0 ml-auto sm:ml-auto",
                   activeChatData?.status === "needs_human"
                     ? "bg-rose-500/20 border-rose-500/40 text-rose-700 dark:text-rose-300 hover:bg-rose-500/30"
                     : "bg-slate-200/80 dark:bg-white/5 border-slate-300 dark:border-white/10 text-slate-700 dark:text-white/70 hover:bg-slate-300 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white"
@@ -1119,12 +1158,12 @@ export function SalesInbox() {
               >
                 {activeChatData?.status === "needs_human" ? (
                   <>
-                    <User size={13} />
+                    <User size={15} />
                     <span className="ml-1.5">Réactiver IA</span>
                   </>
                 ) : (
                   <>
-                    <ShieldCheck size={13} />
+                    <ShieldCheck size={15} />
                     <span className="ml-1.5">Prendre la main</span>
                   </>
                 )}
@@ -1219,16 +1258,16 @@ export function SalesInbox() {
               <button
                 type="button"
                 onClick={() => scrollToBottom(true)}
-                className="absolute bottom-24 right-6 z-20 px-3.5 py-2 rounded-full bg-white dark:bg-[#202c33] border border-emerald-500/40 text-slate-900 dark:text-white text-xs font-bold shadow-2xl flex items-center gap-2 hover:bg-slate-50 dark:hover:bg-[#2a3942] active:scale-95 transition-all animate-in fade-in slide-in-from-bottom-2 cursor-pointer"
+                className="absolute bottom-24 right-6 z-20 px-4 py-2.5 rounded-full bg-white dark:bg-[#202c33] border border-emerald-500/40 text-slate-900 dark:text-white text-sm font-bold shadow-2xl flex items-center gap-2 hover:bg-slate-50 dark:hover:bg-[#2a3942] active:scale-95 transition-all animate-in fade-in slide-in-from-bottom-2 cursor-pointer"
               >
-                <ArrowDown size={14} className="text-emerald-500 animate-bounce" />
+                <ArrowDown size={16} className="text-emerald-500 animate-bounce" />
                 <span>
                   {unreadCountBelow > 0
                     ? `${unreadCountBelow} nouveau${unreadCountBelow > 1 ? "x" : ""} message${unreadCountBelow > 1 ? "s" : ""}`
                     : "Descendre"}
                 </span>
                 {unreadCountBelow > 0 && (
-                  <span className="h-5 min-w-5 px-1.5 rounded-full bg-emerald-500 text-slate-950 text-[10px] font-black flex items-center justify-center">
+                  <span className="h-5 min-w-5 px-1.5 rounded-full bg-emerald-500 text-slate-950 text-xs font-black flex items-center justify-center">
                     {unreadCountBelow}
                   </span>
                 )}
@@ -1237,33 +1276,33 @@ export function SalesInbox() {
 
             {/* AI Follow-up Preview Box */}
             {followupData.isOpen && (
-              <div className="p-3 bg-slate-50 dark:bg-[#182229] border-t border-sky-400 dark:border-sky-500/30 animate-in slide-in-from-bottom duration-300">
-                <div className="flex justify-between items-center mb-1.5">
-                  <span className="text-[11px] font-bold text-sky-600 dark:text-sky-400 flex items-center gap-1.5">
-                    <Sparkles size={13} />
+              <div className="p-3.5 bg-slate-50 dark:bg-[#182229] border-t border-sky-400 dark:border-sky-500/30 animate-in slide-in-from-bottom duration-300">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-xs sm:text-sm font-bold text-sky-600 dark:text-sky-400 flex items-center gap-1.5">
+                    <Sparkles size={15} />
                     Proposition de relance IA :
                   </span>
-                  <button onClick={() => setFollowupData({ ...followupData, isOpen: false })} className="text-slate-400 dark:text-white/40 hover:text-slate-900 dark:hover:text-white">
-                    <X size={14} />
+                  <button onClick={() => setFollowupData({ ...followupData, isOpen: false })} className="text-slate-400 dark:text-white/40 hover:text-slate-900 dark:hover:text-white p-1">
+                    <X size={16} />
                   </button>
                 </div>
                 <textarea
-                  className="w-full bg-white dark:bg-[#111b21] border border-slate-300 dark:border-white/10 rounded-xl p-2.5 text-xs text-slate-900 dark:text-white outline-none focus:border-sky-500 transition-all resize-none"
+                  className="w-full bg-white dark:bg-[#111b21] border border-slate-300 dark:border-white/10 rounded-xl p-3 text-sm text-slate-900 dark:text-white outline-none focus:border-sky-500 transition-all resize-none leading-relaxed"
                   rows={2}
                   value={followupData.text}
                   onChange={(e) => setFollowupData({ ...followupData, text: e.target.value })}
                 />
-                <div className="flex justify-end mt-2 gap-2">
+                <div className="flex justify-end mt-2.5 gap-2">
                   <button
                     onClick={() => setFollowupData({ ...followupData, isOpen: false })}
-                    className="px-3 py-1.5 text-xs font-bold text-slate-500 dark:text-white/40 hover:text-slate-900 dark:hover:text-white"
+                    className="px-3.5 py-2 text-xs sm:text-sm font-bold text-slate-500 dark:text-white/40 hover:text-slate-900 dark:hover:text-white"
                   >
                     Annuler
                   </button>
                   <button
                     onClick={() => selectedChat && sendManualMessageMutation.mutate({ id: selectedChat, text: followupData.text, quotedMessageId: quotedMessage?.id })}
                     disabled={sendManualMessageMutation.isPending}
-                    className="bg-sky-500 text-slate-950 px-4 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider hover:bg-sky-400 active:scale-95 transition-all cursor-pointer shadow-sm"
+                    className="bg-sky-500 text-slate-950 px-4 py-2 rounded-xl text-xs sm:text-sm font-black uppercase tracking-wider hover:bg-sky-400 active:scale-95 transition-all cursor-pointer shadow-sm"
                   >
                     {sendManualMessageMutation.isPending ? "Envoi..." : "Envoyer cette relance"}
                   </button>
@@ -1273,15 +1312,15 @@ export function SalesInbox() {
 
             {/* Quoted Message Preview Banner (WhatsApp Style) */}
             {quotedMessage && (
-              <div className="px-4 py-2 bg-slate-100 dark:bg-[#202c33] border-t border-slate-200 dark:border-[#2a3942] flex items-center justify-between animate-in slide-in-from-bottom-2 duration-200">
+              <div className="px-4 py-2.5 bg-slate-100 dark:bg-[#202c33] border-t border-slate-200 dark:border-[#2a3942] flex items-center justify-between animate-in slide-in-from-bottom-2 duration-200">
                 <div className="flex items-center gap-3 overflow-hidden">
-                  <div className="w-1 self-stretch rounded-full bg-emerald-500" />
-                  <div className="text-xs overflow-hidden">
-                    <div className="font-bold text-emerald-600 dark:text-[#00a884] flex items-center gap-1">
-                      <Reply size={12} />
+                  <div className="w-1.5 self-stretch rounded-full bg-emerald-500" />
+                  <div className="text-xs sm:text-sm overflow-hidden">
+                    <div className="font-bold text-emerald-600 dark:text-[#00a884] flex items-center gap-1 text-xs sm:text-sm">
+                      <Reply size={14} />
                       <span>{quotedMessage.sender === "customer" ? "Répondre au client" : "Répondre à soi-même"}</span>
                     </div>
-                    <div className="text-slate-500 dark:text-[#8696a0] truncate max-w-md">
+                    <div className="text-slate-500 dark:text-[#8696a0] truncate max-w-md text-xs sm:text-sm">
                       {stripActionTags(quotedMessage.content)}
                     </div>
                   </div>
@@ -1289,56 +1328,56 @@ export function SalesInbox() {
                 <button
                   type="button"
                   onClick={() => setQuotedMessage(null)}
-                  className="p-1 rounded-full text-slate-400 dark:text-[#8696a0] hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-white/10"
+                  className="p-1.5 rounded-full text-slate-400 dark:text-[#8696a0] hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-white/10"
                 >
-                  <X size={15} />
+                  <X size={16} />
                 </button>
               </div>
             )}
 
             {/* WhatsApp Chat Footer Input */}
-            <footer className="p-2.5 md:p-3.5 bg-slate-50 dark:bg-[#202c33] border-t border-slate-200 dark:border-white/10 space-y-2 shrink-0 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] md:pb-3.5 relative">
+            <footer className="p-3 md:p-4 bg-slate-50 dark:bg-[#202c33] border-t border-slate-200 dark:border-white/10 space-y-2.5 shrink-0 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] md:pb-4 relative">
               {/* Quick Template Chips */}
-              <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1">
+              <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
                 <button
                   type="button"
                   onClick={() => setIsFastPayModalOpen(true)}
-                  className="px-2.5 py-1 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-[10px] font-bold text-amber-700 dark:text-amber-300 flex items-center gap-1 shrink-0 cursor-pointer"
+                  className="px-3 py-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-xs sm:text-[13px] font-bold text-amber-700 dark:text-amber-300 flex items-center gap-1.5 shrink-0 cursor-pointer transition-colors"
                 >
-                  <CreditCard size={11} />
+                  <CreditCard size={13} />
                   <span>💰 FastPay Wave/OM</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => setManualMessage("Bonjour ! Merci de nous préciser votre commune ou quartier de livraison pour lancer l'expédition.")}
-                  className="px-2.5 py-1 rounded-lg bg-slate-200/80 hover:bg-slate-300 dark:bg-white/5 dark:hover:bg-white/10 border border-slate-300 dark:border-white/10 text-[10px] font-bold text-slate-700 dark:text-white/70 hover:text-slate-900 dark:hover:text-white shrink-0 cursor-pointer"
+                  className="px-3 py-1.5 rounded-xl bg-slate-200/80 hover:bg-slate-300 dark:bg-white/5 dark:hover:bg-white/10 border border-slate-300 dark:border-white/10 text-xs sm:text-[13px] font-bold text-slate-700 dark:text-white/70 hover:text-slate-900 dark:hover:text-white shrink-0 cursor-pointer transition-colors"
                 >
                   📍 Demander Adresse
                 </button>
                 <button
                   type="button"
                   onClick={() => setManualMessage("Votre commande a bien été enregistrée et transmise à notre livreur. Vous serez contacté sous peu ! ✨")}
-                  className="px-2.5 py-1 rounded-lg bg-slate-200/80 hover:bg-slate-300 dark:bg-white/5 dark:hover:bg-white/10 border border-slate-300 dark:border-white/10 text-[10px] font-bold text-slate-700 dark:text-white/70 hover:text-slate-900 dark:hover:text-white shrink-0 cursor-pointer"
+                  className="px-3 py-1.5 rounded-xl bg-slate-200/80 hover:bg-slate-300 dark:bg-white/5 dark:hover:bg-white/10 border border-slate-300 dark:border-white/10 text-xs sm:text-[13px] font-bold text-slate-700 dark:text-white/70 hover:text-slate-900 dark:hover:text-white shrink-0 cursor-pointer transition-colors"
                 >
                   📦 Confirmation Commande
                 </button>
               </div>
 
               {/* Input Row */}
-              <div className="flex items-center gap-2 relative">
+              <div className="flex items-center gap-2.5 relative">
                 {/* Emoji Picker Button */}
                 <button
                   type="button"
                   onClick={() => setIsEmojiPickerOpen(!isEmojiPickerOpen)}
                   className={cn(
-                    "p-2 rounded-xl border transition-all cursor-pointer shrink-0",
+                    "p-2.5 rounded-xl border transition-all cursor-pointer shrink-0",
                     isEmojiPickerOpen
                       ? "bg-emerald-500/20 border-emerald-500 text-emerald-600 dark:text-[#00a884]"
                       : "bg-white dark:bg-[#2a3942] border-slate-200 dark:border-white/5 text-slate-500 dark:text-[#8696a0] hover:text-slate-900 dark:hover:text-white"
                   )}
                   title="Insérer un émoji"
                 >
-                  <Smile size={18} />
+                  <Smile size={20} />
                 </button>
 
                 {/* Emoji Popover */}
@@ -1359,10 +1398,10 @@ export function SalesInbox() {
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="p-2 rounded-xl bg-white dark:bg-[#2a3942] border border-slate-200 dark:border-white/5 text-slate-500 dark:text-[#8696a0] hover:text-slate-900 dark:hover:text-white transition-all cursor-pointer shrink-0"
+                  className="p-2.5 rounded-xl bg-white dark:bg-[#2a3942] border border-slate-200 dark:border-white/5 text-slate-500 dark:text-[#8696a0] hover:text-slate-900 dark:hover:text-white transition-all cursor-pointer shrink-0"
                   title="Envoyer une photo ou document"
                 >
-                  <Paperclip size={18} />
+                  <Paperclip size={20} />
                 </button>
 
                 {/* Voice Recorder button */}
@@ -1371,10 +1410,10 @@ export function SalesInbox() {
                 )}
 
                 {/* Textarea Input */}
-                <div className="flex-1 bg-white dark:bg-[#2a3942] rounded-2xl px-3 py-2 border border-slate-300 dark:border-white/5 focus-within:border-emerald-500 transition-all flex items-center min-h-[42px] shadow-inner dark:shadow-none">
+                <div className="flex-1 bg-white dark:bg-[#2a3942] rounded-2xl px-4 py-2.5 border border-slate-300 dark:border-white/5 focus-within:border-emerald-500 transition-all flex items-center min-h-[46px] shadow-inner dark:shadow-none">
                   <textarea
                     ref={inputRef}
-                    className="w-full bg-transparent outline-none text-xs sm:text-sm text-slate-900 dark:text-white resize-none max-h-24 no-scrollbar placeholder:text-slate-400 dark:placeholder:text-white/40 leading-relaxed"
+                    className="w-full bg-transparent outline-none text-sm sm:text-base text-slate-900 dark:text-white resize-none max-h-28 no-scrollbar placeholder:text-slate-400 dark:placeholder:text-white/40 leading-relaxed font-normal"
                     placeholder="Écrivez votre message WhatsApp (Entrée pour envoyer, Maj+Entrée nouvelle ligne)..."
                     rows={1}
                     value={manualMessage}
@@ -1393,7 +1432,7 @@ export function SalesInbox() {
                   onClick={handleSendMessage}
                   disabled={!manualMessage.trim() || sendManualMessageMutation.isPending}
                   className={cn(
-                    "h-10 w-10 rounded-full flex items-center justify-center transition-all shrink-0 cursor-pointer",
+                    "h-11 w-11 rounded-full flex items-center justify-center transition-all shrink-0 cursor-pointer",
                     manualMessage.trim()
                       ? "bg-emerald-500 text-slate-950 hover:scale-105 active:scale-95 shadow-lg shadow-emerald-500/25 font-bold"
                       : "bg-slate-200 dark:bg-white/5 text-slate-400 dark:text-white/20 cursor-not-allowed"
@@ -1401,9 +1440,9 @@ export function SalesInbox() {
                   title="Envoyer le message"
                 >
                   {sendManualMessageMutation.isPending ? (
-                    <Loader2 size={16} className="animate-spin" />
+                    <Loader2 size={18} className="animate-spin" />
                   ) : (
-                    <Send size={16} className="ml-0.5" />
+                    <Send size={18} className="ml-0.5" />
                   )}
                 </button>
               </div>
@@ -1540,7 +1579,29 @@ function WhatsAppBubble({
   const isFraudAlert = msg.content?.includes("[ALERTE SHIELD FRAUDE");
   const isVoiceMessage = msg.type === "audio" || msg.content?.includes("[Message Vocal]");
   const isDocument = msg.type === "document" || msg.type === "file";
+  const isVideoMessage = msg.type === "video";
+  const isImageMessage = msg.type === "image";
   const time = new Date(msg.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+
+  const isGenericMediaLabel = (text?: string) => {
+    if (!text) return true;
+    const trimmed = text.trim();
+    return (
+      trimmed === "[Image]" ||
+      trimmed === "[Photo]" ||
+      trimmed === "📷 [Photo]" ||
+      trimmed === "[Image / Capture d'écran reçue]" ||
+      trimmed === "[Vidéo]" ||
+      trimmed === "[Vidéo reçue]" ||
+      trimmed === "🎥 [Vidéo]" ||
+      trimmed === "[Document]" ||
+      trimmed === "[Document reçu]" ||
+      trimmed === "[Note vocale]" ||
+      trimmed === "🎤 [Note vocale]" ||
+      trimmed === "[Message Vocal Reçu]" ||
+      trimmed === "[Sticker]"
+    );
+  };
 
   const [copied, setCopied] = useState(false);
   const [showReactionMenu, setShowReactionMenu] = useState(false);
@@ -1561,7 +1622,7 @@ function WhatsAppBubble({
     )}>
       {/* Mini Hover Reactions Toolbar */}
       <div className={cn(
-        "absolute top-0 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 z-10 bg-white dark:bg-[#202c33] border border-slate-200 dark:border-[#2a3942] rounded-full px-2 py-1 shadow-lg",
+        "absolute top-0 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 z-10 bg-white dark:bg-[#202c33] border border-slate-200 dark:border-[#2a3942] rounded-full px-2.5 py-1 shadow-lg",
         isCustomer ? "left-full ml-2" : "right-full mr-2"
       )}>
         {REACTION_EMOJIS.map((em) => (
@@ -1569,7 +1630,7 @@ function WhatsAppBubble({
             key={em}
             type="button"
             onClick={() => onReaction?.(em)}
-            className="hover:scale-125 transition-transform text-sm p-0.5 cursor-pointer"
+            className="hover:scale-125 transition-transform text-base p-0.5 cursor-pointer"
           >
             {em}
           </button>
@@ -1580,46 +1641,46 @@ function WhatsAppBubble({
           className="text-slate-400 hover:text-slate-800 dark:text-[#8696a0] dark:hover:text-white p-1 hover:bg-slate-100 dark:hover:bg-white/5 rounded-full ml-1"
           title="Citer / Répondre"
         >
-          <Reply size={13} />
+          <Reply size={15} />
         </button>
       </div>
 
       <div className={cn(
-        "max-w-[85%] sm:max-w-[70%] p-3 rounded-2xl shadow-sm md:shadow relative break-words overflow-hidden min-w-[120px]",
+        "max-w-[88%] sm:max-w-[72%] p-3.5 sm:p-4 rounded-2xl shadow-sm md:shadow relative break-words overflow-hidden min-w-[140px]",
         isCustomer
           ? "bg-white dark:bg-[#202c33] text-slate-900 dark:text-white rounded-tl-none border border-slate-200/80 dark:border-white/5"
           : isHuman
-          ? "bg-[#d9fdd3] dark:bg-[#005c4b] text-slate-900 dark:text-white rounded-tr-none font-medium border border-emerald-300/60 dark:border-emerald-500/20"
-          : "bg-[#d9fdd3] dark:bg-[#005c4b] text-slate-900 dark:text-white rounded-tr-none font-medium border border-emerald-300/60 dark:border-emerald-400/30",
+          ? "bg-[#d9fdd3] dark:bg-[#005c4b] text-slate-900 dark:text-white rounded-tr-none font-normal border border-emerald-300/60 dark:border-emerald-500/20"
+          : "bg-[#d9fdd3] dark:bg-[#005c4b] text-slate-900 dark:text-white rounded-tr-none font-normal border border-emerald-300/60 dark:border-emerald-400/30",
         isPaymentValidated && "ring-2 ring-emerald-500 border-emerald-500 bg-emerald-50 dark:bg-emerald-950/80",
         isPaymentFlagged && "ring-2 ring-amber-500 border-amber-500 bg-amber-50 dark:bg-amber-950/80",
         isFraudAlert && "ring-2 ring-rose-500 border-rose-500 bg-rose-50 dark:bg-rose-950/90 text-slate-900 dark:text-white"
       )}>
         {/* Sender Role Badge */}
         {!isCustomer && (
-          <div className="flex items-center justify-between gap-2 mb-1 opacity-80 text-[10px]">
+          <div className="flex items-center justify-between gap-2 mb-1.5 opacity-85 text-xs">
             <span className={cn(
-              "font-black uppercase tracking-wider flex items-center gap-1",
+              "font-black uppercase tracking-wider flex items-center gap-1.5 text-[11px] sm:text-xs",
               isHuman ? "text-sky-700 dark:text-sky-300" : "text-emerald-700 dark:text-emerald-300"
             )}>
-              {isHuman ? <User size={10} /> : <Bot size={10} />}
+              {isHuman ? <User size={13} /> : <Bot size={13} />}
               {isHuman ? "Admin (Manuel)" : "Vendeur IA"}
             </span>
 
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-2">
               <button
                 onClick={() => onReplyClick?.(msg)}
-                className="opacity-0 group-hover:opacity-100 text-slate-600 hover:text-slate-900 dark:text-white/70 dark:hover:text-white transition-opacity cursor-pointer"
+                className="opacity-0 group-hover:opacity-100 text-slate-600 hover:text-slate-900 dark:text-white/70 dark:hover:text-white transition-opacity cursor-pointer p-0.5"
                 title="Citer"
               >
-                <Reply size={11} />
+                <Reply size={13} />
               </button>
               <button
                 onClick={handleCopy}
-                className="opacity-0 group-hover:opacity-100 text-slate-600 hover:text-slate-900 dark:text-white/70 dark:hover:text-white transition-opacity cursor-pointer"
+                className="opacity-0 group-hover:opacity-100 text-slate-600 hover:text-slate-900 dark:text-white/70 dark:hover:text-white transition-opacity cursor-pointer p-0.5"
                 title="Copier le texte"
               >
-                {copied ? <Check size={11} className="text-emerald-600 dark:text-emerald-400" /> : <Copy size={11} />}
+                {copied ? <Check size={13} className="text-emerald-600 dark:text-emerald-400" /> : <Copy size={13} />}
               </button>
             </div>
           </div>
@@ -1627,11 +1688,11 @@ function WhatsAppBubble({
 
         {/* Quoted Message Display Inside Bubble */}
         {msg.quotedMessage && (
-          <div className="mb-2 p-2 rounded-xl bg-black/5 dark:bg-black/30 border-l-4 border-emerald-600 dark:border-[#00a884] text-xs space-y-0.5">
-            <div className="font-bold text-emerald-700 dark:text-[#00a884] text-[11px]">
+          <div className="mb-2.5 p-2.5 rounded-xl bg-black/5 dark:bg-black/30 border-l-4 border-emerald-600 dark:border-[#00a884] text-xs sm:text-[13px] space-y-0.5">
+            <div className="font-bold text-emerald-700 dark:text-[#00a884] text-xs">
               {msg.quotedMessage.sender === "customer" ? "Client" : "Boutique"}
             </div>
-            <div className="text-slate-600 dark:text-white/70 line-clamp-2 text-[11px]">
+            <div className="text-slate-600 dark:text-white/70 line-clamp-2 text-xs sm:text-[13px] leading-relaxed">
               {stripActionTags(msg.quotedMessage.content)}
             </div>
           </div>
@@ -1639,29 +1700,29 @@ function WhatsAppBubble({
 
         {/* Shield OCR Payment Result Card */}
         {isPaymentValidated && (
-          <div className="flex items-center gap-2 mb-2 px-2.5 py-1.5 bg-emerald-500 text-slate-950 rounded-xl text-[10px] font-black uppercase tracking-wider shadow-md">
-            <CheckCheck size={14} />
+          <div className="flex items-center gap-2 mb-2 px-3 py-2 bg-emerald-500 text-slate-950 rounded-xl text-xs font-black uppercase tracking-wider shadow-md">
+            <CheckCheck size={16} />
             <span>Paiement Validé par Shield OCR 💰</span>
           </div>
         )}
 
         {isPaymentFlagged && (
-          <div className="flex items-center gap-2 mb-2 px-2.5 py-1.5 bg-amber-500 text-slate-950 rounded-xl text-[10px] font-black uppercase tracking-wider shadow-md">
-            <ShieldCheck size={14} />
+          <div className="flex items-center gap-2 mb-2 px-3 py-2 bg-amber-500 text-slate-950 rounded-xl text-xs font-black uppercase tracking-wider shadow-md">
+            <ShieldCheck size={16} />
             <span>Preuve Suspecte à Vérifier ⚠️</span>
           </div>
         )}
 
         {isFraudAlert && (
-          <div className="flex items-center gap-2 mb-2 px-2.5 py-1.5 bg-rose-600 text-white rounded-xl text-[10px] font-black uppercase tracking-wider shadow-md">
-            <AlertTriangle size={14} />
+          <div className="flex items-center gap-2 mb-2 px-3 py-2 bg-rose-600 text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-md">
+            <AlertTriangle size={16} />
             <span>Alerte Fausse Preuve / Fraude 🚨</span>
           </div>
         )}
 
         {/* Audio / Voice Note Player */}
         {isVoiceMessage && (
-          <div className="mb-1.5">
+          <div className="mb-2">
             <AudioVoicePlayer
               audioUrl={msg.mediaUrl}
               isSender={!isCustomer}
@@ -1669,36 +1730,60 @@ function WhatsAppBubble({
           </div>
         )}
 
+        {/* Video Player */}
+        {isVideoMessage && (
+          <div className="mb-2.5 rounded-xl overflow-hidden bg-black/90">
+            {msg.mediaUrl ? (
+              <video
+                src={msg.mediaUrl}
+                controls
+                className="max-h-72 rounded-xl w-full object-contain"
+              />
+            ) : (
+              <div className="p-3.5 text-xs sm:text-sm text-white/70 flex items-center gap-2">
+                <Video size={18} />
+                <span>Vidéo reçue</span>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Image Attachment with Lightbox */}
-        {msg.type === "image" && msg.mediaUrl && (
-          <div
-            className="mb-2 rounded-xl overflow-hidden cursor-pointer group/img relative"
-            onClick={() => onImageClick?.(msg.mediaUrl, msg.content !== "[Image]" ? msg.content : undefined)}
-          >
-            <img
-              src={msg.mediaUrl}
-              alt="Photo"
-              className="max-h-64 rounded-xl object-cover hover:scale-105 transition-transform"
-            />
+        {isImageMessage && (
+          <div className="mb-2.5 rounded-xl overflow-hidden cursor-pointer group/img relative">
+            {msg.mediaUrl ? (
+              <img
+                src={msg.mediaUrl}
+                alt="Photo"
+                onClick={() => onImageClick?.(msg.mediaUrl, !isGenericMediaLabel(msg.content) ? msg.content : undefined)}
+                className="max-h-72 w-auto rounded-xl object-cover hover:scale-[1.02] transition-transform"
+                loading="lazy"
+              />
+            ) : (
+              <div className="p-4 rounded-xl bg-black/10 dark:bg-white/10 flex items-center gap-2.5 text-xs sm:text-sm text-slate-700 dark:text-white/80">
+                <ImageIcon size={20} className="text-emerald-500" />
+                <span className="font-semibold">Photo WhatsApp</span>
+              </div>
+            )}
           </div>
         )}
 
         {/* Document / PDF Attachment */}
-        {isDocument && msg.mediaUrl && (
+        {isDocument && (
           <a
-            href={msg.mediaUrl}
-            target="_blank"
+            href={msg.mediaUrl || "#"}
+            target={msg.mediaUrl ? "_blank" : undefined}
             rel="noopener noreferrer"
-            className="mb-2 p-3 rounded-xl bg-black/5 dark:bg-black/30 border border-slate-200 dark:border-white/10 flex items-center gap-3 hover:bg-black/10 dark:hover:bg-black/40 transition-colors"
+            className="mb-2.5 p-3.5 rounded-xl bg-black/5 dark:bg-black/30 border border-slate-200 dark:border-white/10 flex items-center gap-3 hover:bg-black/10 dark:hover:bg-black/40 transition-colors"
           >
-            <div className="w-10 h-10 rounded-lg bg-emerald-500/20 text-emerald-700 dark:text-[#00a884] flex items-center justify-center shrink-0">
-              <FileText size={20} />
+            <div className="w-11 h-11 rounded-xl bg-emerald-500/20 text-emerald-700 dark:text-[#00a884] flex items-center justify-center shrink-0">
+              <FileText size={22} />
             </div>
             <div className="flex-1 min-w-0">
-              <div className="text-xs font-bold text-slate-900 dark:text-white truncate">
-                {msg.mediaMetadata?.fileName || "Document PDF"}
+              <div className="text-sm font-bold text-slate-900 dark:text-white truncate">
+                {msg.mediaMetadata?.fileName || (msg.content?.startsWith("[") && msg.content?.endsWith("]") ? msg.content.slice(1, -1) : "Document PDF")}
               </div>
-              <div className="text-[10px] text-slate-500 dark:text-white/50">
+              <div className="text-xs text-slate-500 dark:text-white/50 mt-0.5">
                 {msg.mediaMetadata?.fileSize ? `${(msg.mediaMetadata.fileSize / 1024).toFixed(1)} KB` : "Télécharger"}
               </div>
             </div>
@@ -1706,8 +1791,8 @@ function WhatsAppBubble({
         )}
 
         {/* Text Message Content */}
-        {msg.content && msg.content !== "[Image]" && (
-          <p className="text-[13px] sm:text-[14px] leading-relaxed whitespace-pre-wrap break-words overflow-wrap-anywhere select-text text-slate-900 dark:text-white">
+        {msg.content && !isGenericMediaLabel(msg.content) && (
+          <p className="text-[15px] sm:text-base leading-relaxed whitespace-pre-wrap break-words overflow-wrap-anywhere select-text text-slate-900 dark:text-white font-normal">
             {isVoiceMessage
               ? msg.content?.replace(/^\[Message Vocal\]:\s*/, "")
               : stripActionTags(msg.content)}
@@ -1716,11 +1801,11 @@ function WhatsAppBubble({
 
         {/* Message Reactions Badges */}
         {msg.reactions && msg.reactions.length > 0 && (
-          <div className="flex items-center gap-1 mt-1.5 flex-wrap">
+          <div className="flex items-center gap-1.5 mt-2 flex-wrap">
             {msg.reactions.map((r: any, idx: number) => (
               <span
                 key={idx}
-                className="px-1.5 py-0.5 rounded-full bg-slate-100 dark:bg-black/40 border border-slate-200 dark:border-white/10 text-xs flex items-center gap-1 shadow-sm text-slate-800 dark:text-white"
+                className="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-black/40 border border-slate-200 dark:border-white/10 text-xs sm:text-[13px] flex items-center gap-1 shadow-sm text-slate-800 dark:text-white font-medium"
               >
                 <span>{r.emoji}</span>
               </span>
@@ -1729,8 +1814,8 @@ function WhatsAppBubble({
         )}
 
         {/* Bubble Timestamp & Read Receipt Status Coche */}
-        <div className="flex items-center justify-end gap-1 mt-1 opacity-75 select-none">
-          <span className="text-[10px] font-medium text-slate-500 dark:text-white/70">{time}</span>
+        <div className="flex items-center justify-end gap-1.5 mt-1.5 opacity-80 select-none">
+          <span className="text-xs font-medium text-slate-500 dark:text-white/70">{time}</span>
           {!isCustomer && (
             <span
               className="inline-flex items-center ml-0.5"
@@ -1745,13 +1830,13 @@ function WhatsAppBubble({
               }
             >
               {msg.status === "pending" ? (
-                <Clock size={11} className="text-slate-400 dark:text-white/40 animate-pulse" />
+                <Clock size={13} className="text-slate-400 dark:text-white/40 animate-pulse" />
               ) : msg.status === "delivered" ? (
-                <CheckCheck size={13} className="text-slate-500 dark:text-white/50" />
+                <CheckCheck size={15} className="text-slate-500 dark:text-white/50" />
               ) : msg.status === "read" ? (
-                <CheckCheck size={13} className="text-sky-600 dark:text-[#53bdeb] drop-shadow-[0_0_4px_rgba(83,189,235,0.6)]" />
+                <CheckCheck size={15} className="text-sky-600 dark:text-[#53bdeb] drop-shadow-[0_0_4px_rgba(83,189,235,0.6)]" />
               ) : (
-                <Check size={13} className="text-slate-500 dark:text-white/50" />
+                <Check size={15} className="text-slate-500 dark:text-white/50" />
               )}
             </span>
           )}

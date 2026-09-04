@@ -106,7 +106,7 @@ export function AudioVoicePlayer({ audioUrl, duration = 0, isSender = false }: A
         </div>
 
         {/* Time display */}
-        <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-[#8696a0]">
+        <div className="flex items-center justify-between text-xs font-medium text-slate-500 dark:text-[#8696a0]">
           <span>{formatSec(currentTime)}</span>
           <span>{formatSec(totalDuration)}</span>
         </div>
@@ -116,7 +116,7 @@ export function AudioVoicePlayer({ audioUrl, duration = 0, isSender = false }: A
       <button
         type="button"
         onClick={handleSpeedToggle}
-        className="px-2 py-1 rounded-md bg-black/10 dark:bg-white/10 hover:bg-black/20 dark:hover:bg-white/20 text-[10px] font-bold text-slate-800 dark:text-white transition-colors cursor-pointer"
+        className="px-2.5 py-1 rounded-md bg-black/10 dark:bg-white/10 hover:bg-black/20 dark:hover:bg-white/20 text-xs font-bold text-slate-800 dark:text-white transition-colors cursor-pointer"
         title="Vitesse de lecture"
       >
         {playbackRate}x

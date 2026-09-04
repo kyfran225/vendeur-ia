@@ -27,8 +27,8 @@ export const VendeurIALoader: React.FC<VendeurIALoaderProps> = ({
   return (
     <div
       className={cn(
-        "flex flex-col items-center justify-center gap-4 select-none animate-in fade-in duration-300",
-        fullscreen ? "fixed inset-0 z-[60] bg-[#07100d] p-4" : "py-12 w-full",
+        "flex flex-col items-center justify-center gap-4 select-none animate-in fade-in duration-300 text-slate-900 dark:text-white",
+        fullscreen ? "fixed inset-0 z-[60] bg-slate-50 dark:bg-[#07100d] p-4" : "py-12 w-full",
         className
       )}
     >
@@ -36,7 +36,7 @@ export const VendeurIALoader: React.FC<VendeurIALoaderProps> = ({
         {/* Soft Ambient Neon Glow Aura */}
         <div
           className={cn(
-            "absolute rounded-full bg-vendeur-emerald/20 blur-xl pointer-events-none",
+            "absolute rounded-full bg-emerald-500/15 dark:bg-vendeur-emerald/20 blur-xl pointer-events-none",
             config.aura
           )}
         />
@@ -44,16 +44,15 @@ export const VendeurIALoader: React.FC<VendeurIALoaderProps> = ({
         {/* Outer Tech Ring with Emerald Accents */}
         <div
           className={cn(
-            "rounded-full border-white/5 border-t-vendeur-emerald border-r-vendeur-emerald/40 animate-brand-ring",
+            "rounded-full border-slate-200 dark:border-white/5 border-t-emerald-500 dark:border-t-vendeur-emerald border-r-emerald-500/40 dark:border-r-vendeur-emerald/40 animate-brand-ring",
             config.ring
           )}
         />
 
         {/* Center Logo with Breathing Pulse and Emerald Glow */}
-        <div className="absolute inset-0 flex items-center justify-center animate-brand-pulse">
+        <div className="absolute inset-0 flex items-center justify-center animate-brand-pulse text-slate-900 dark:text-white">
           <Logo
             size={config.logo}
-            leftBranchColor="#ffffff"
             rightBranchColor="#10b981"
           />
         </div>
@@ -61,10 +60,10 @@ export const VendeurIALoader: React.FC<VendeurIALoaderProps> = ({
 
       {label && (
         <div className="flex flex-col items-center gap-1.5 animate-in fade-in duration-500">
-          <p className={cn("font-black uppercase tracking-[0.2em] text-white/70 text-center", config.text)}>
+          <p className={cn("font-black uppercase tracking-[0.2em] text-slate-600 dark:text-white/70 text-center", config.text)}>
             {label}
           </p>
-          <div className="h-0.5 w-10 bg-gradient-to-r from-transparent via-vendeur-emerald to-transparent rounded-full" />
+          <div className="h-0.5 w-10 bg-gradient-to-r from-transparent via-emerald-500 dark:via-vendeur-emerald to-transparent rounded-full" />
         </div>
       )}
     </div>

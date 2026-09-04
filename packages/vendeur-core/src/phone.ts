@@ -282,6 +282,20 @@ export function generatePhoneVariants(phone: string): string[] {
     }
   }
 
+  // 4. Ajouter les variantes JID WhatsApp (@s.whatsapp.net, @c.us) pour matching instantané DB & Socket
+  const jidVariants = new Set<string>();
+  for (const v of variants) {
+    const cleanV = v.replace(/\D/g, "");
+    if (cleanV) {
+      jidVariants.add(`${cleanV}@s.whatsapp.net`);
+      jidVariants.add(`${cleanV}@c.us`);
+      jidVariants.add(`+${cleanV}@s.whatsapp.net`);
+    }
+  }
+  for (const jid of jidVariants) {
+    variants.add(jid);
+  }
+
   return Array.from(variants);
 }
 

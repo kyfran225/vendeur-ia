@@ -55,6 +55,7 @@ export function WhatsAppConnectionFlow() {
   const [isRequestingQr, setIsRequestingQr] = useState(false);
   const [copiedCode, setCopiedCode] = useState(false);
   const [isDisconnecting, setIsDisconnecting] = useState(false);
+  const [isReconnecting, setIsReconnecting] = useState(false);
   const [timeLeft, setTimeLeft] = useState<number>(180);
 
   // Meta Cloud API Form
@@ -298,6 +299,29 @@ export function WhatsAppConnectionFlow() {
     }
   };
 
+  // Reconnect saved WhatsApp session directly
+  const handleReconnect = async () => {
+    setIsReconnecting(true);
+    try {
+      const res = await apiClient.post("/api/whatsapp/reconnect");
+      if (res.data?.success) {
+        toast.success(res.data.message || "Reconnexion WhatsApp en cours !");
+        await Promise.all([
+          queryClient.invalidateQueries({ queryKey: ["dashboard"] }),
+          queryClient.invalidateQueries({ queryKey: ["whatsapp-status"] }),
+          queryClient.invalidateQueries({ queryKey: ["merchant"] })
+        ]);
+        await refetch();
+      } else {
+        toast.error(res.data?.message || "Impossible de reconnecter la session.");
+      }
+    } catch (err: any) {
+      toast.error(err.response?.data?.error || "Erreur lors de la reconnexion.");
+    } finally {
+      setIsReconnecting(false);
+    }
+  };
+
   // Copy pairing code & open WhatsApp
   const handleCopyCodeAndOpenWhatsApp = () => {
     if (!pairingCode) return;
@@ -462,6 +486,34 @@ export function WhatsAppConnectionFlow() {
         {/* 2. Onglets de Connexion & Jumelage */}
         {!isConnectedLive ? (
           <div className="space-y-5 pt-2">
+            {/* Quick Reconnect Alert if a paired session exists in storage */}
+            {liveStatusData?.hasSavedSession && (
+              <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 animate-in fade-in">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
+                    <RefreshCw size={20} className={cn(isReconnecting && "animate-spin")} />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-black text-white">
+                      Session WhatsApp Enregistrée Détectée
+                    </h4>
+                    <p className="text-xs text-white/60">
+                      Votre compte est déjà appairé. Reconnectez-le instantanément sans re-jumeler.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleReconnect}
+                  disabled={isReconnecting}
+                  className="h-10 px-5 rounded-xl bg-vendeur-emerald text-vendeur-coal font-black text-xs uppercase tracking-wider hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-2 shrink-0 shadow-lg shadow-emerald-500/20 w-full sm:w-auto"
+                >
+                  {isReconnecting ? <Loader2 size={15} className="animate-spin shrink-0" /> : <Zap size={15} className="shrink-0" />}
+                  <span>{isReconnecting ? "Reconnexion..." : "Reconnecter Directement"}</span>
+                </button>
+              </div>
+            )}
+
             {/* Tab Selector (Ergonomique Mobile-First) */}
             <div className="grid grid-cols-2 gap-1.5 p-1 bg-black/60 border border-white/10 rounded-2xl w-full">
               <button

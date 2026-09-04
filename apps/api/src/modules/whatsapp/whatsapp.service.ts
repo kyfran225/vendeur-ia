@@ -110,21 +110,16 @@ class WhatsAppService {
           continue;
         }
 
-        // Test the socket with a simple presence check or by checking if the state is still valid
-        // onWhatsApp check is a good way to verify if the connection is really alive
-        const testNumber = merchant.whatsappNumber?.replace(/\+/g, '') || "123456789";
-        const [result] = await sock.onWhatsApp(testNumber);
+        // Passive socket state verification (zero network probe spam to WhatsApp servers)
+        const isSocketOpen = sock?.ws ? sock.ws.readyState === 1 : false;
+        const hasLiveUser = Boolean(sock?.user && (sock.user.id || (sock.user as any).lid));
 
-        if (!result) {
-          console.warn(`[WhatsApp Heartbeat] Session for ${userId} seems stale. Reconnecting...`);
-          await this.repairSession(userId);
+        if (!isSocketOpen || !hasLiveUser) {
+          console.warn(`[WhatsApp Heartbeat] Socket for ${userId} is closed or unauthenticated. Cleaning stale reference.`);
+          this.activeSessions.delete(userId);
         }
       } catch (err: any) {
         console.error(`[WhatsApp Heartbeat] Error checking session for ${userId}:`, err.message);
-        // If the error indicates a closed connection, repair it
-        if (err.message?.includes("closed") || err.message?.includes("connection")) {
-          await this.repairSession(userId);
-        }
       }
     }
   }
@@ -1051,14 +1046,12 @@ class WhatsAppService {
       return;
     }
 
-    // Ignore historical/backlog messages received upon reconnection (> 2 minutes old)
-    const msgTimestamp = typeof msg.messageTimestamp === "number"
-      ? msg.messageTimestamp
-      : (typeof msg.messageTimestamp?.low === "number" ? msg.messageTimestamp.low : Number(msg.messageTimestamp || 0));
-
-    if (msgTimestamp > 0 && (Date.now() / 1000 - msgTimestamp) > 120) {
-      console.log(`[WhatsApp] Ignored stale historical message from sync (${Math.round(Date.now() / 1000 - msgTimestamp)}s old)`);
-      return;
+    // Check if message already recorded in DB to prevent duplicate processing
+    if (messageId) {
+      const existingInDb = await CommerceMessageModel.findOne({ whatsappMessageId: messageId }).select("_id").lean();
+      if (existingInDb) {
+        return;
+      }
     }
     
     // If Baileys uses LID (@lid), try to get the real phone number (sender_pn or remoteJidAlt)
@@ -1473,18 +1466,21 @@ class WhatsAppService {
       });
     }
 
+    const convIdStr = conversation._id.toString();
+    const convUpdatePayload = {
+      conversationId: conversation._id,
+      message: customerMsg,
+      customer: {
+        _id: customer._id,
+        name: customer.name,
+        phone: customer.phone,
+        loyaltyPoints: customer.loyaltyPoints
+      },
+      unreadCount: conversation.unreadCount
+    };
+
     for (const targetId of targetUserIds) {
-      emitToUser(targetId, "conversation:update", {
-        conversationId: conversation._id,
-        message: customerMsg,
-        customer: {
-          _id: customer._id,
-          name: customer.name,
-          phone: customer.phone,
-          loyaltyPoints: customer.loyaltyPoints
-        },
-        unreadCount: conversation.unreadCount
-      });
+      emitToUser(targetId, "conversation:update", convUpdatePayload);
 
       emitToUser(targetId, "notification:new", {
         title: `💬 ${customerDisplay}`,
@@ -1514,6 +1510,11 @@ class WhatsAppService {
           url: `/inbox?chat=${conversation._id.toString()}&messageId=${customerMsg._id.toString()}`
         }
       }).catch(err => console.warn("[WhatsApp Push Error]", err?.message || err));
+    }
+
+    const io = getSocketServer();
+    if (io) {
+      io.to(`conv:${convIdStr}`).emit("conversation:update", convUpdatePayload);
     }
 
     // --- SCHEDULE MARKETING RELANCE (2h) ---
@@ -1822,14 +1823,22 @@ class WhatsAppService {
       } catch (adminFetchErr) {}
     }
 
+    const convIdStr = conversation._id.toString();
+    const outgoingPayload = {
+      conversationId: conversation._id,
+      message: merchantMsg,
+      status: "needs_human",
+      unreadCount: 0
+    };
+
     targetUserIds.forEach(tId => {
-      emitToUser(tId, "conversation:update", {
-        conversationId: conversation._id,
-        message: merchantMsg,
-        status: "needs_human",
-        unreadCount: 0
-      });
+      emitToUser(tId, "conversation:update", outgoingPayload);
     });
+
+    const io = getSocketServer();
+    if (io) {
+      io.to(`conv:${convIdStr}`).emit("conversation:update", outgoingPayload);
+    }
   }
 
   async sendMetaMessage(merchant: any, to: string, text: string): Promise<{ success: boolean; messageId?: string; id?: string; key?: { id: string } }> {
@@ -2349,6 +2358,9 @@ class WhatsAppService {
 
     if (sock && sock.user && typeof sock.sendPresenceUpdate === "function") {
       try {
+        if (typeof sock.presenceSubscribe === "function") {
+          await sock.presenceSubscribe(jid).catch(() => {});
+        }
         await sock.sendPresenceUpdate(presence, jid);
         console.log(`[WhatsApp Presence] Sent "${presence}" to ${jid} (User: ${userId})`);
       } catch (err: any) {
@@ -2390,6 +2402,17 @@ class WhatsAppService {
       if (!merchant) return;
 
       const cleanDigits = cleanPhone.replace(/\D/g, "");
+
+      // Ignore self-presence updates (when merchant types on mobile)
+      const merchantPhoneDigits = (merchant.whatsappNumber || merchant.phone || "").replace(/\D/g, "");
+      const sock = this.activeSessions.get(userId);
+      const sockUserDigits = (sock?.user?.id || "").split("@")[0].split(":")[0].replace(/\D/g, "");
+
+      if ((merchantPhoneDigits && cleanDigits.length >= 8 && merchantPhoneDigits.includes(cleanDigits.slice(-8))) ||
+          (sockUserDigits && cleanDigits.length >= 8 && sockUserDigits.includes(cleanDigits.slice(-8)))) {
+        return;
+      }
+
       const phoneVariants = generatePhoneVariants(cleanPhone);
 
       const customer = await CommerceCustomerModel.findOne({
@@ -2429,7 +2452,6 @@ class WhatsAppService {
       const io = getSocketServer();
       if (io) {
         io.to(`conv:${conversation._id.toString()}`).emit("conversation:typing", typingPayload);
-        io.emit("conversation:typing", typingPayload);
       }
     } catch (err) {
       console.warn("[WhatsApp Presence] Error handling presence update:", err);
@@ -2873,7 +2895,51 @@ class WhatsAppService {
     }
   }
 
-  async getSessionStatus(userId: string): Promise<string> {
+  async hasStoredSession(userId: string): Promise<boolean> {
+    const userIds = [userId];
+    if (mongoose.isValidObjectId(userId)) {
+      const merchant = await CommerceMerchantModel.findOne({
+        $or: [{ ownerId: userId }, { _id: userId }]
+      }).select("ownerId").lean();
+      if (merchant?.ownerId) userIds.push(merchant.ownerId.toString());
+    }
+
+    const sessionExists = await WhatsAppSessionModel.exists({
+      sessionId: { $in: userIds },
+      key: "creds"
+    });
+    return Boolean(sessionExists);
+  }
+
+  async reconnectSession(userId: string): Promise<{ success: boolean; status: string; message: string }> {
+    const hasCreds = await this.hasStoredSession(userId);
+    if (!hasCreds) {
+      return {
+        success: false,
+        status: "no_session",
+        message: "Aucune session enregistrée. Veuillez générer un code de jumelage."
+      };
+    }
+
+    console.log(`[WhatsApp Reconnect] Reconnecting existing session for user ${userId}...`);
+    try {
+      await this.initSession(userId, false);
+      return {
+        success: true,
+        status: "connecting",
+        message: "Reconnexion de votre session WhatsApp en cours..."
+      };
+    } catch (err: any) {
+      console.error(`[WhatsApp Reconnect] Failed to reconnect session for ${userId}:`, err);
+      return {
+        success: false,
+        status: "error",
+        message: err?.message || "Échec de la reconnexion."
+      };
+    }
+  }
+
+  async getSessionStatus(userId: string): Promise<{ status: string; hasSavedSession: boolean }> {
     let merchant = await CommerceMerchantModel.findOne({
       $or: [
         { ownerId: userId },
@@ -2903,32 +2969,35 @@ class WhatsAppService {
       ]
     });
 
+    const hasSavedSession = await this.hasStoredSession(userId);
+
     // 0. Founder / Admin Official Meta Channel is always connected
     if (isFounder || (merchant?.whatsappConfig?.provider as string) === "meta") {
-      return "connected";
+      return { status: "connected", hasSavedSession: true };
     }
 
     // 1. Verify active Baileys socket in memory
     const activeSock = this.activeSessions.get(userId) || (merchant?.ownerId ? this.activeSessions.get(merchant.ownerId.toString()) : null);
     if (activeSock && activeSock.user && (activeSock.user.id || (activeSock.user as any).lid)) {
-      return "connected";
+      return { status: "connected", hasSavedSession: true };
     }
 
-    // 2. If status is explicitly disconnected
+    // 2. If initializing
+    if (this.pendingInitializations.has(userId) || connection?.status === "CONNECTING") {
+      return { status: "connecting", hasSavedSession };
+    }
+
+    // 3. If status is explicitly disconnected
     if (merchant?.whatsappConfig?.status === "disconnected" || connection?.status === "DISCONNECTED") {
-      return "disconnected";
+      return { status: "disconnected", hasSavedSession };
     }
 
-    // 3. Check Baileys connection status in DB
+    // 4. Check Baileys connection status in DB
     if (merchant?.whatsappConfig?.status === "connected" && connection?.status === "CONNECTED") {
-      return "connected";
+      return { status: "connected", hasSavedSession };
     }
 
-    if (connection?.status === "CONNECTING") {
-      return "connecting";
-    }
-
-    return "disconnected";
+    return { status: "disconnected", hasSavedSession };
   }
 
   async disconnectSession(userId: string) {

@@ -55,8 +55,23 @@ router.post("/disconnect", authenticate, async (req, res) => {
 
 router.get("/status", authenticate, async (req, res) => {
   try {
-    const status = await whatsappService.getSessionStatus((req as any).user.id);
-    res.json({ status });
+    const statusData = await whatsappService.getSessionStatus((req as any).user.id);
+    if (typeof statusData === "string") {
+      res.json({ status: statusData, hasSavedSession: statusData === "connected" });
+    } else {
+      res.json(statusData);
+    }
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Reconnexion directe d'une session WhatsApp déjà enregistrée (sans re-scanner ni re-jumeler)
+router.post("/reconnect", authenticate, async (req, res) => {
+  try {
+    const userId = (req as any).user.id;
+    const result = await whatsappService.reconnectSession(userId);
+    res.json(result);
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }

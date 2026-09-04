@@ -297,7 +297,7 @@ export class AuthService {
       };
     }
 
-    // 2. Check if user already exists and is actively connected on Baileys (unless forcePairing is requested)
+    // 2. Check if user already exists (unless forcePairing is explicitly requested)
     if (!forcePairing) {
       const existingUser = await UserModel.findOne({
         $or: [
@@ -306,21 +306,19 @@ export class AuthService {
         ]
       });
 
-      if (existingUser && whatsappService.isSessionConnected(existingUser._id.toString())) {
-        const merchant = await CommerceMerchantModel.findOne({ ownerId: existingUser._id.toString() });
-        const isMerchantConnected = merchant?.whatsappConfig?.status === "connected";
-
-        if (isMerchantConnected) {
-          const magicResult = await this.requestWhatsAppMagicLink(cleanNumber, env.CLIENT_URL || "http://localhost:5173", authSessionId);
-          if (magicResult.dispatched) {
-            return {
-              mode: "otp" as const,
-              authSessionId,
-              phoneNumber: cleanNumber,
-              message: "Un code de confirmation a été envoyé sur votre WhatsApp."
-            };
-          }
-        }
+      if (existingUser) {
+        const magicResult = await this.requestWhatsAppMagicLink(cleanNumber, env.CLIENT_URL || "http://localhost:5173", authSessionId);
+        return {
+          mode: "otp" as const,
+          authSessionId: magicResult.authSessionId || authSessionId,
+          phoneNumber: cleanNumber,
+          sessionCode: magicResult.sessionCode,
+          systemWhatsAppNumber: magicResult.systemWhatsAppNumber,
+          dispatched: magicResult.dispatched,
+          message: magicResult.dispatched
+            ? "Un code de confirmation à 6 chiffres a été envoyé sur votre WhatsApp."
+            : "Code généré. Saisissez votre code ou validez via WhatsApp."
+        };
       }
     }
 

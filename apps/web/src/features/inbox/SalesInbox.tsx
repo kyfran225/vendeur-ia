@@ -147,6 +147,7 @@ export function SalesInbox() {
   const [typingMap, setTypingMap] = useState<Record<string, { isTyping: boolean; participant: "customer" | "ai" | "human"; lastUpdated: number }>>({});
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -335,8 +336,20 @@ export function SalesInbox() {
     };
 
     // Real-time typing presence listener
-    const handleTypingStatus = (data: { conversationId: string; isTyping: boolean; participant?: "customer" | "ai" | "human" }) => {
+    const handleTypingStatus = (data: {
+      conversationId: string;
+      isTyping: boolean;
+      participant?: "customer" | "ai" | "human";
+      senderSocketId?: string;
+      senderUserId?: string;
+    }) => {
       if (!data?.conversationId) return;
+
+      // Filter out self-events & human actions: sender/merchant MUST NEVER see typing for themselves
+      if (data.participant === "human") return;
+      if (data.senderSocketId && socket?.id && data.senderSocketId === socket.id) return;
+      if (data.senderUserId && user?.id && String(data.senderUserId) === String(user.id)) return;
+
       setTypingMap(prev => ({
         ...prev,
         [String(data.conversationId)]: {
@@ -449,17 +462,22 @@ export function SalesInbox() {
     }
   };
 
-  const scrollToBottom = (smooth = true) => {
-    if (scrollRef.current) {
+  const scrollToBottom = useCallback((smooth = true) => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({
+        behavior: smooth ? "smooth" : "auto",
+        block: "end"
+      });
+    } else if (scrollRef.current) {
       if (smooth) {
         scrollRef.current.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
       } else {
         scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
       }
-      setIsNearBottom(true);
-      setUnreadCountBelow(0);
     }
-  };
+    setIsNearBottom(true);
+    setUnreadCountBelow(0);
+  }, []);
 
   // Dedicated function to scroll to a specific message and pulse/highlight it
   const scrollToMessage = useCallback((messageId: string, smooth = true) => {
@@ -476,11 +494,11 @@ export function SalesInbox() {
     return false;
   }, []);
 
-  // Auto-scroll when messages update based on scroll position or target message
+  // Auto-scroll when messages update or conversation is opened
   useEffect(() => {
-    if (!scrollRef.current) return;
+    if (!messages || messages.length === 0) return;
 
-    if (targetMessageId && messages && messages.length > 0) {
+    if (targetMessageId) {
       const scrolled = scrollToMessage(targetMessageId, true);
       if (!scrolled) {
         const timer = setTimeout(() => {
@@ -488,7 +506,7 @@ export function SalesInbox() {
           if (retryScrolled) {
             setTargetMessageId(null);
           }
-        }, 200);
+        }, 150);
         return () => clearTimeout(timer);
       } else {
         setTargetMessageId(null);
@@ -496,12 +514,19 @@ export function SalesInbox() {
       return;
     }
 
-    if (isNearBottom) {
-      scrollToBottom(false);
+    // Scroll to the latest message whenever messages load or change
+    if (isNearBottom || messages.length > 0) {
+      requestAnimationFrame(() => scrollToBottom(false));
+      const t1 = setTimeout(() => scrollToBottom(false), 50);
+      const t2 = setTimeout(() => scrollToBottom(false), 180);
+      return () => {
+        clearTimeout(t1);
+        clearTimeout(t2);
+      };
     } else {
       setUnreadCountBelow(prev => prev + 1);
     }
-  }, [messages, targetMessageId, scrollToMessage]);
+  }, [messages, targetMessageId, scrollToMessage, scrollToBottom]);
 
   // Reset scroll and unread count on chat change
   useEffect(() => {
@@ -510,10 +535,16 @@ export function SalesInbox() {
       setUnreadCountBelow(0);
       setQuotedMessage(null);
       if (!targetMessageId && !messageIdFromUrl) {
-        setTimeout(() => scrollToBottom(false), 50);
+        requestAnimationFrame(() => scrollToBottom(false));
+        const t1 = setTimeout(() => scrollToBottom(false), 50);
+        const t2 = setTimeout(() => scrollToBottom(false), 200);
+        return () => {
+          clearTimeout(t1);
+          clearTimeout(t2);
+        };
       }
     }
-  }, [selectedChat]);
+  }, [selectedChat, targetMessageId, messageIdFromUrl, scrollToBottom]);
 
   // Mark conversation read mutation
   const markReadMutation = useMutation({
@@ -632,11 +663,19 @@ export function SalesInbox() {
   const handleChatSelect = (id: string, targetMsgId?: string) => {
     setSelectedChat(id);
     setShowMobileChat(true);
+    setIsNearBottom(true);
+    setUnreadCountBelow(0);
+    setQuotedMessage(null);
     if (targetMsgId) {
       setTargetMessageId(targetMsgId);
       setSearchParams({ chat: id, messageId: targetMsgId }, { replace: true });
     } else {
+      setTargetMessageId(null);
       setSearchParams({ chat: id }, { replace: true });
+      requestAnimationFrame(() => scrollToBottom(false));
+      setTimeout(() => scrollToBottom(false), 50);
+      setTimeout(() => scrollToBottom(false), 150);
+      setTimeout(() => scrollToBottom(false), 300);
     }
     markReadMutation.mutate(id);
   };
@@ -1305,6 +1344,9 @@ export function SalesInbox() {
                       }
                     />
                   )}
+
+                  {/* Bottom anchor for scrolling */}
+                  <div ref={messagesEndRef} className="h-px w-full shrink-0" />
                 </>
               )}
             </div>

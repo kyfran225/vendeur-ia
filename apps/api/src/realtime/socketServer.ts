@@ -87,10 +87,12 @@ export function initSocketServer(httpServer: HttpServer) {
         const typingData = {
           conversationId: payload.conversationId,
           isTyping: true,
-          participant: payload.participant || "human"
+          participant: payload.participant || "human",
+          senderSocketId: socket.id,
+          senderUserId: payload.userId
         };
-        io?.to(`conv:${payload.conversationId}`).emit("conversation:typing", typingData);
-        socket.broadcast.emit("conversation:typing", typingData);
+        // Broadcast ONLY to other clients in this specific conversation room (never to the sender themselves)
+        socket.to(`conv:${payload.conversationId}`).emit("conversation:typing", typingData);
 
         // Propagate typing state directly to WhatsApp recipient's device
         try {
@@ -117,10 +119,12 @@ export function initSocketServer(httpServer: HttpServer) {
         const typingData = {
           conversationId: payload.conversationId,
           isTyping: false,
-          participant: payload.participant || "human"
+          participant: payload.participant || "human",
+          senderSocketId: socket.id,
+          senderUserId: payload.userId
         };
-        io?.to(`conv:${payload.conversationId}`).emit("conversation:typing", typingData);
-        socket.broadcast.emit("conversation:typing", typingData);
+        // Broadcast ONLY to other clients in this specific conversation room
+        socket.to(`conv:${payload.conversationId}`).emit("conversation:typing", typingData);
 
         // Propagate pause state directly to WhatsApp recipient's device
         try {

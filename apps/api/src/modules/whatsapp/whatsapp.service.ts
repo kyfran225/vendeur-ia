@@ -246,6 +246,11 @@ class WhatsAppService {
     }
 
     // For transient network disconnects (connectionClosed, connectionLost, timedOut, restartRequired, etc.):
+    if (userId.startsWith("auth_") || userId.startsWith("temp_")) {
+      console.log(`[WhatsApp] handleConnectionClose called for temporary onboarding session ${userId} - delegating to onboarding socket.`);
+      return;
+    }
+
     const currentAttempts = (this.reconnectAttempts.get(userId) || 0) + 1;
     this.reconnectAttempts.set(userId, currentAttempts);
     this.activeSessions.delete(userId);
@@ -817,8 +822,8 @@ class WhatsAppService {
 
         const isRegistered = Boolean(sock.authState?.creds?.registered);
 
-        // If session was already established with userId, delegate to handleConnectionClose
-        if (currentOwnerId !== authSessionId || isRegistered) {
+        // If session was already established and migrated to a real userId, delegate to handleConnectionClose
+        if (currentOwnerId !== authSessionId) {
           const isExplicitLogout = statusCode === DisconnectReason.loggedOut || statusCode === 401 || statusCode === 403;
           const isBadSession = statusCode === DisconnectReason.badSession || (statusCode === 500 && errMessage.includes("Bad Session"));
 
@@ -900,8 +905,8 @@ class WhatsAppService {
         const attempts = (this.onboardingAttempts.get(authSessionId) || 0) + 1;
         this.onboardingAttempts.set(authSessionId, attempts);
 
-        if (attempts > 3) {
-          console.warn(`[WhatsApp Onboarding] Max onboarding retry attempts reached (3) for ${authSessionId}. Aborting loop.`);
+        if (attempts > 5) {
+          console.warn(`[WhatsApp Onboarding] Max onboarding retry attempts reached (5) for ${authSessionId}. Aborting loop.`);
           this.activeSessions.delete(authSessionId);
           this.pendingInitializations.delete(authSessionId);
           this.onboardingAttempts.delete(authSessionId);
@@ -918,8 +923,8 @@ class WhatsAppService {
           return;
         }
 
-        const delay = attempts * 2000;
-        console.log(`[WhatsApp Onboarding] Restarting connection attempt ${attempts}/3 for ${authSessionId} in ${delay}ms (Code ${statusCode}, Error: ${errMessage})...`);
+        const delay = statusCode === 515 || isRegistered ? 1000 : Math.min(attempts * 1500, 5000);
+        console.log(`[WhatsApp Onboarding] Restarting connection attempt ${attempts}/5 for ${authSessionId} in ${delay}ms (Code ${statusCode}, registered=${isRegistered}, Error: ${errMessage})...`);
         this.activeSessions.delete(authSessionId);
         setTimeout(() => {
           this.startOnboardingSocket(authSessionId, cleanNumber, storeData).catch(err => {

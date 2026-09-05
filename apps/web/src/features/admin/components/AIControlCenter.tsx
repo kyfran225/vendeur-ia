@@ -168,13 +168,13 @@ export function AIControlCenter() {
       {/* 1. PROVIDER STATUS GRID - Flattened */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
         {aiStatus?.map((p: any) => (
-          <div key={p.name} className="bg-vendeur-coal/60 border border-white/5 p-4 rounded-2xl space-y-3">
+          <div key={p.name} className="bg-vendeur-coal/80 border border-white/10 p-4 rounded-2xl space-y-3 shadow-sm hover:shadow-md dark:shadow-xl transition-all">
             <div className="flex items-center justify-between">
               <h3 className="font-black uppercase tracking-tighter text-[11px] text-white/60">{p.name}</h3>
               <button
                 onClick={() => testProviderMutation.mutate(p.name)}
                 disabled={testProviderMutation.isPending}
-                className="p-1.5 hover:bg-white/5 rounded-lg transition-colors text-white/20"
+                className="p-1.5 hover:bg-white/5 rounded-lg transition-colors text-white/20 hover:text-white"
               >
                 <RefreshCw size={12} className={testProviderMutation.isPending ? "animate-spin" : ""} />
               </button>
@@ -195,7 +195,7 @@ export function AIControlCenter() {
       </div>
 
       {/* 2. CONFIGURATION PANEL - Flattened */}
-      <div className="bg-vendeur-coal border border-white/5 rounded-2xl md:rounded-[2.5rem] overflow-hidden">
+      <div className="bg-vendeur-coal/90 border border-white/10 rounded-2xl md:rounded-3xl overflow-hidden shadow-sm hover:shadow-md dark:shadow-xl transition-all">
         <div className="p-4 md:p-8 border-b border-white/5 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <div className="h-10 w-10 md:h-12 md:w-12 bg-vendeur-emerald/10 rounded-xl md:rounded-2xl flex items-center justify-center text-vendeur-emerald border border-vendeur-emerald/20 shrink-0">
@@ -325,7 +325,7 @@ export function AIControlCenter() {
 
       {/* 3. PERFORMANCE & QUOTA - Flattened */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
-          <div className="bg-vendeur-coal border border-white/5 p-4 md:p-8 rounded-2xl md:rounded-[2.5rem] space-y-6">
+          <div className="bg-vendeur-coal/90 border border-white/10 p-4 md:p-8 rounded-2xl md:rounded-3xl space-y-6 shadow-sm hover:shadow-md dark:shadow-xl transition-all">
             <h2 className="text-lg md:text-xl font-black uppercase tracking-tighter flex items-center gap-3">
               <Activity className="text-vendeur-emerald" size={20} />
               Token Economics Matrix
@@ -362,13 +362,13 @@ export function AIControlCenter() {
             </div>
           </div>
 
-          <div className="bg-vendeur-coal border border-white/5 p-4 md:p-8 rounded-2xl md:rounded-[2.5rem] space-y-6">
+          <div className="bg-vendeur-coal/90 border border-white/10 p-4 md:p-8 rounded-2xl md:rounded-3xl space-y-6 shadow-sm hover:shadow-md dark:shadow-xl transition-all">
              <div className="flex items-center justify-between">
                 <h2 className="text-lg md:text-xl font-black uppercase tracking-tighter flex items-center gap-3">
                   <Zap className="text-vendeur-emerald" size={20} />
                   Live Error Registry
                 </h2>
-                <span className="text-[10px] font-black text-white/20 uppercase tracking-widest">Master Logs</span>
+                <span className="text-[10px] font-black text-white/40 uppercase tracking-widest">Master Logs</span>
              </div>
              <div className="space-y-2 md:space-y-3 max-h-[350px] overflow-y-auto pr-1 no-scrollbar">
                 {settings?.aiConfig?.lastErrors?.length > 0 ? (
@@ -381,7 +381,7 @@ export function AIControlCenter() {
                     />
                   ))
                 ) : (
-                  <div className="text-center py-12 text-white/10 uppercase text-[10px] font-black tracking-widest italic border border-dashed border-white/5 rounded-2xl">
+                  <div className="text-center py-12 text-white/20 uppercase text-[10px] font-black tracking-widest italic border border-dashed border-white/10 rounded-2xl">
                     Clear Skies - No errors ✨
                   </div>
                 )}
@@ -390,7 +390,7 @@ export function AIControlCenter() {
       </div>
 
       {/* 4. NOTIFICATION SETTINGS - Flattened */}
-      <div className="bg-vendeur-coal border border-white/5 rounded-2xl md:rounded-[2.5rem] p-4 md:p-8 space-y-8">
+      <div className="bg-vendeur-coal/90 border border-white/10 rounded-2xl md:rounded-3xl p-4 md:p-8 space-y-8 shadow-sm hover:shadow-md dark:shadow-xl transition-all">
         <div className="flex items-center gap-4">
           <div className="h-10 w-10 md:h-12 md:w-12 bg-indigo-500/10 rounded-xl md:rounded-2xl flex items-center justify-center text-indigo-400 border border-indigo-500/20 shrink-0">
             <Sparkles size={20} />

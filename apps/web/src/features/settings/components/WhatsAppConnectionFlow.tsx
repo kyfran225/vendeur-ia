@@ -382,9 +382,9 @@ export function WhatsAppConnectionFlow() {
   };
 
   return (
-    <div className="space-y-6 w-full max-w-full overflow-hidden box-border">
+    <div className="space-y-6 w-full max-w-full box-border">
       {/* 1. Header Statut WhatsApp */}
-      <div id="whatsapp" className="scroll-mt-28 bg-vendeur-coal border border-white/10 rounded-2xl sm:rounded-3xl md:rounded-[2.5rem] p-4 sm:p-6 md:p-8 space-y-5 text-left shadow-2xl w-full max-w-full overflow-hidden box-border">
+      <div id="whatsapp" className="scroll-mt-28 bg-white dark:bg-vendeur-coal border border-slate-200 dark:border-white/10 rounded-2xl sm:rounded-3xl md:rounded-[2.5rem] p-4 sm:p-6 md:p-8 space-y-5 text-left shadow-sm hover:shadow-md dark:shadow-xl transition-all w-full max-w-full box-border">
         <div className="flex flex-col gap-4 border-b border-white/5 pb-5 w-full">
           <div className="flex items-start sm:items-center gap-3.5 min-w-0 flex-1 w-full">
             <div className={cn(
@@ -778,55 +778,55 @@ export function WhatsAppConnectionFlow() {
         )}
 
         {/* 3. Section Meta Cloud API Développeur (Collapsible Mobile-Optimized) */}
-        <div className="border-t border-white/5 pt-4">
+        <div className="border-t border-slate-200 dark:border-white/5 pt-4">
           <button
             type="button"
             onClick={() => setShowAdvancedMeta(!showAdvancedMeta)}
             className={cn(
               "flex items-center justify-between w-full text-left p-3 sm:p-3.5 rounded-2xl border transition-all cursor-pointer",
               showAdvancedMeta
-                ? "bg-black/60 border-white/15 shadow-inner"
-                : "bg-white/[0.02] hover:bg-white/[0.04] border-white/5 hover:border-white/10"
+                ? "bg-slate-100 dark:bg-black/60 border-slate-300 dark:border-white/15 shadow-inner"
+                : "bg-slate-50 hover:bg-slate-100 dark:bg-white/[0.02] dark:hover:bg-white/[0.04] border-slate-200 dark:border-white/5 hover:border-slate-300 dark:hover:border-white/10"
             )}
           >
             <div className="flex items-center gap-2.5 min-w-0 flex-1">
-              <div className="h-8 w-8 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400 flex items-center justify-center shrink-0">
+              <div className="h-8 w-8 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
                 <Settings2 size={16} />
               </div>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-1.5 flex-wrap">
-                  <span className="text-xs sm:text-sm font-black text-white tracking-tight">
+                  <span className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white tracking-tight">
                     Option Entreprise
                   </span>
-                  <span className="px-1.5 py-0.2 rounded bg-blue-500/15 border border-blue-500/30 text-[9px] font-black text-blue-300 uppercase tracking-wider">
+                  <span className="px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-500/15 border border-blue-300/60 dark:border-blue-500/30 text-[9px] font-black text-blue-700 dark:text-blue-300 uppercase tracking-wider">
                     Meta Cloud
                   </span>
                 </div>
-                <p className="text-[11px] text-white/40 truncate mt-0.5">
+                <p className="text-[11px] text-slate-500 dark:text-white/40 truncate mt-0.5 font-medium">
                   WhatsApp Business Cloud API (Optionnel)
                 </p>
               </div>
             </div>
 
             <div className={cn(
-              "h-7 w-7 rounded-lg bg-white/5 flex items-center justify-center text-white/50 transition-transform duration-200 shrink-0 ml-2",
-              showAdvancedMeta && "rotate-180 text-white bg-white/10"
+              "h-7 w-7 rounded-lg bg-slate-200/70 dark:bg-white/5 flex items-center justify-center text-slate-600 dark:text-white/50 transition-transform duration-200 shrink-0 ml-2",
+              showAdvancedMeta && "rotate-180 text-slate-900 dark:text-white bg-slate-200 dark:bg-white/10"
             )}>
               <ChevronDown size={14} />
             </div>
           </button>
 
           {showAdvancedMeta && (
-            <div className="space-y-4 p-3.5 sm:p-5 mt-2 bg-black/40 border border-white/10 rounded-2xl animate-in fade-in duration-300 w-full max-w-full box-border">
-              <div className="p-3 rounded-xl bg-blue-500/5 border border-blue-500/15 text-[11px] text-blue-300/80 leading-relaxed">
-                ℹ️ Réservé aux comptes vérifiés sur <strong>Meta Business Suite</strong> avec un accès WhatsApp Cloud API officiel.
+            <div className="space-y-4 p-3.5 sm:p-5 mt-2 bg-slate-50 dark:bg-black/40 border border-slate-200 dark:border-white/10 rounded-2xl animate-in fade-in duration-300 w-full max-w-full box-border shadow-sm">
+              <div className="p-3.5 rounded-xl bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20 text-xs sm:text-[12.5px] text-blue-900 dark:text-blue-200 leading-relaxed font-medium">
+                ℹ️ Réservé aux comptes vérifiés sur <strong className="font-bold text-blue-950 dark:text-white">Meta Business Suite</strong> avec un accès WhatsApp Cloud API officiel.
               </div>
 
               {/* Bouton d'activation 1-Click Ligne Officielle Système */}
-              <div className="p-3.5 rounded-xl bg-white/[0.02] border border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="p-3.5 rounded-xl bg-white dark:bg-white/[0.02] border border-slate-200 dark:border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm">
                 <div className="min-w-0">
-                  <p className="text-xs font-bold text-white">Ligne Système Vendeur IA</p>
-                  <p className="text-[10px] text-white/40 font-mono">+225 05 05 11 11 57 (Meta PhoneID: 1283754474826620)</p>
+                  <p className="text-xs font-bold text-slate-900 dark:text-white">Ligne Système Vendeur IA</p>
+                  <p className="text-[10px] text-slate-500 dark:text-white/40 font-mono mt-0.5">+225 05 05 11 11 57 (Meta PhoneID: 1283754474826620)</p>
                 </div>
                 <button
                   type="button"
@@ -851,22 +851,22 @@ export function WhatsAppConnectionFlow() {
                     }
                   }}
                   disabled={savingMeta}
-                  className="h-10 px-3.5 rounded-xl bg-blue-500/15 hover:bg-blue-500/25 border border-blue-500/30 text-blue-300 font-bold uppercase tracking-wider text-[10px] sm:text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer active:scale-95 disabled:opacity-50 shrink-0"
+                  className="h-10 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white dark:bg-blue-500/20 dark:hover:bg-blue-500/30 dark:text-blue-300 dark:border dark:border-blue-500/30 font-bold uppercase tracking-wider text-[10px] sm:text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer active:scale-95 disabled:opacity-50 shrink-0 shadow-sm"
                 >
-                  {savingMeta ? <Loader2 size={13} className="animate-spin shrink-0" /> : <Zap size={13} fill="currentColor" className="shrink-0" />}
+                  {savingMeta ? <Loader2 size={13} className="animate-spin shrink-0" /> : <Zap size={13} fill="currentColor" className="shrink-0 text-amber-300 dark:text-blue-300" />}
                   <span>Activer la Ligne Officielle</span>
                 </button>
               </div>
 
               {/* Formulaire Clés Personnalisées */}
               <div className="space-y-3 pt-1">
-                <p className="text-[11px] font-bold text-white/60 uppercase tracking-wider">
+                <p className="text-[11px] font-bold text-slate-700 dark:text-white/60 uppercase tracking-wider">
                   Ou saisissez vos propres clés Meta :
                 </p>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full">
                   <div className="space-y-1 min-w-0">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-white/50 ml-0.5">
+                    <label className="text-[10px] font-bold uppercase tracking-wider text-slate-600 dark:text-white/50 ml-0.5">
                       Phone Number ID
                     </label>
                     <input
@@ -874,12 +874,12 @@ export function WhatsAppConnectionFlow() {
                       placeholder="Ex: 1283754474826620"
                       value={metaForm.phoneNumberId}
                       onChange={(e) => setMetaForm({ ...metaForm, phoneNumberId: e.target.value })}
-                      className="w-full h-11 sm:h-12 bg-black/60 border border-white/10 rounded-xl px-3.5 text-xs sm:text-sm font-mono text-white placeholder:text-white/20 focus:border-vendeur-emerald outline-none transition-all box-border"
+                      className="w-full h-11 sm:h-12 bg-white dark:bg-black/60 border border-slate-300 dark:border-white/10 rounded-xl px-3.5 text-xs sm:text-sm font-mono text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-white/20 focus:border-vendeur-emerald outline-none transition-all box-border"
                     />
                   </div>
 
                   <div className="space-y-1 min-w-0">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-white/50 ml-0.5">
+                    <label className="text-[10px] font-bold uppercase tracking-wider text-slate-600 dark:text-white/50 ml-0.5">
                       WABA ID
                     </label>
                     <input
@@ -887,20 +887,20 @@ export function WhatsAppConnectionFlow() {
                       placeholder="Ex: 2049583920194"
                       value={metaForm.wabaId}
                       onChange={(e) => setMetaForm({ ...metaForm, wabaId: e.target.value })}
-                      className="w-full h-11 sm:h-12 bg-black/60 border border-white/10 rounded-xl px-3.5 text-xs sm:text-sm font-mono text-white placeholder:text-white/20 focus:border-vendeur-emerald outline-none transition-all box-border"
+                      className="w-full h-11 sm:h-12 bg-white dark:bg-black/60 border border-slate-300 dark:border-white/10 rounded-xl px-3.5 text-xs sm:text-sm font-mono text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-white/20 focus:border-vendeur-emerald outline-none transition-all box-border"
                     />
                   </div>
                 </div>
 
                 <div className="space-y-1 min-w-0">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-white/50 ml-0.5">
+                  <label className="text-[10px] font-bold uppercase tracking-wider text-slate-600 dark:text-white/50 ml-0.5">
                     Access Token Permanent (EAAG...)
                   </label>
                   <textarea
                     placeholder="Collez votre jeton d'accès Meta (EAAG...)"
                     value={metaForm.accessToken}
                     onChange={(e) => setMetaForm({ ...metaForm, accessToken: e.target.value })}
-                    className="w-full h-20 sm:h-24 bg-black/60 border border-white/10 rounded-xl p-3 text-xs font-mono text-white placeholder:text-white/20 focus:border-vendeur-emerald outline-none transition-all resize-none box-border"
+                    className="w-full h-20 sm:h-24 bg-white dark:bg-black/60 border border-slate-300 dark:border-white/10 rounded-xl p-3 text-xs font-mono text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-white/20 focus:border-vendeur-emerald outline-none transition-all resize-none box-border"
                   />
                 </div>
 
@@ -908,7 +908,7 @@ export function WhatsAppConnectionFlow() {
                   type="button"
                   onClick={handleSaveMetaConfig}
                   disabled={savingMeta}
-                  className="w-full sm:w-auto min-h-[48px] px-6 bg-vendeur-emerald text-vendeur-coal font-black uppercase tracking-wider text-xs sm:text-sm rounded-xl flex items-center justify-center gap-2 hover:bg-emerald-400 active:scale-95 transition-all shadow-lg shadow-emerald-500/20 disabled:opacity-50 cursor-pointer"
+                  className="w-full sm:w-auto min-h-[48px] px-6 bg-vendeur-emerald text-white font-bold uppercase tracking-wider text-xs sm:text-sm rounded-xl flex items-center justify-center gap-2 hover:bg-emerald-600 active:scale-95 transition-all shadow-lg shadow-emerald-500/20 disabled:opacity-50 cursor-pointer"
                 >
                   {savingMeta ? <Loader2 className="animate-spin shrink-0" size={16} /> : <Check size={16} className="shrink-0" />}
                   <span>Enregistrer mes clés Meta</span>

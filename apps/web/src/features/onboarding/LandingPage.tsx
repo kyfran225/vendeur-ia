@@ -52,6 +52,7 @@ import { AddressAutocomplete } from "./components/AddressAutocomplete";
 import { AuthSheet } from "../auth/components/AuthSheet";
 import { ProductShowcaseModal, type ProductTab } from "./components/ProductShowcaseModal";
 import { useAuthStore } from "@/stores/authStore";
+import { useFounderRole } from "@/hooks/useFounderRole";
 import { AudioRecorder } from "@/lib/audioUtils";
 import { apiClient } from "@/lib/apiClient";
 import axios from "axios";
@@ -392,6 +393,7 @@ function LandingHero({
   onLaunchDemo: () => void;
 }) {
   const navigate = useNavigate();
+  const { isFounder } = useFounderRole();
   const { tempData, setTempData, isSimulatorActive, setSimulatorActive } = useOnboardingStore();
   const [step, setStep] = useState<"form" | "simulator">(isSimulatorActive ? "simulator" : "form");
   const rawSavedPhone = tempData?.whatsappNumber || "";
@@ -581,7 +583,7 @@ function LandingHero({
       } catch (err) {
         console.warn("[Landing] Auto-create merchant error:", err);
       }
-      navigate("/dashboard");
+      navigate(isFounder ? "/admin" : "/dashboard");
     }
   };
 
@@ -1004,6 +1006,7 @@ export function LandingPage() {
   const [newsletterSuccess, setNewsletterSuccess] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const { user } = useAuthStore();
+  const { isFounder } = useFounderRole();
 
   const handleLaunchDemo = () => {
     const el = document.getElementById("demo-card");
@@ -1086,6 +1089,10 @@ export function LandingPage() {
 
   useEffect(() => {
     if (user) {
+      if (isFounder) {
+        navigate("/admin", { replace: true });
+        return;
+      }
       if (user.onboardingCompleted) {
         navigate("/dashboard");
       } else {
@@ -1098,7 +1105,7 @@ export function LandingPage() {
         }
       }
     }
-  }, [user, navigate]);
+  }, [user, isFounder, navigate]);
 
   return (
     <div data-page="landing" className="min-h-[100dvh] bg-slate-50 dark:bg-[#07100d] text-slate-900 dark:text-white selection:bg-emerald-300/30 overflow-x-hidden pt-16 md:pt-20 lg:pt-24 w-full text-left transition-colors duration-200">
@@ -1367,10 +1374,10 @@ export function LandingPage() {
               <div className="h-px flex-1 bg-gradient-to-r from-transparent via-slate-300 dark:via-white/10 to-transparent" />
            </div>
 
-           <div className="flex flex-wrap items-center justify-center gap-6 md:gap-16 px-4 opacity-70 hover:opacity-100 transition-opacity duration-300">
+           <div className="flex flex-wrap items-center justify-center gap-6 md:gap-16 px-4 opacity-80 hover:opacity-100 transition-opacity duration-300">
               {/* WhatsApp */}
               <div className="flex items-center gap-2 md:gap-3 text-slate-800 dark:text-white group cursor-default">
-                <div className="p-2 md:p-2.5 rounded-xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 group-hover:border-emerald-500/50 group-hover:bg-emerald-500/10 group-hover:text-[#25D366] transition-all">
+                <div className="p-2 md:p-2.5 rounded-xl bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-700 dark:text-white group-hover:border-emerald-500/50 group-hover:bg-emerald-500/10 group-hover:text-[#25D366] transition-all shadow-sm">
                   <WhatsAppIcon size={22} className="w-5 h-5 md:w-6 md:h-6" />
                 </div>
                 <span className="text-xs md:text-lg font-black tracking-tighter uppercase">WhatsApp</span>
@@ -1378,7 +1385,7 @@ export function LandingPage() {
 
               {/* Instagram */}
               <div className="flex items-center gap-2 md:gap-3 text-slate-800 dark:text-white group cursor-default">
-                <div className="p-2 md:p-2.5 rounded-xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 group-hover:border-pink-500/50 group-hover:bg-pink-500/10 group-hover:text-[#E4405F] transition-all">
+                <div className="p-2 md:p-2.5 rounded-xl bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-700 dark:text-white group-hover:border-pink-500/50 group-hover:bg-pink-500/10 group-hover:text-[#E4405F] transition-all shadow-sm">
                   <InstagramIcon size={20} className="w-5 h-5 md:w-6 md:h-6" />
                 </div>
                 <span className="text-xs md:text-lg font-black tracking-tighter uppercase">Instagram</span>
@@ -1386,7 +1393,7 @@ export function LandingPage() {
 
               {/* Meta Ads */}
               <div className="flex items-center gap-2 md:gap-3 text-slate-800 dark:text-white group cursor-default">
-                <div className="p-2 md:p-2.5 rounded-xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 group-hover:border-blue-500/50 group-hover:bg-blue-500/10 group-hover:text-[#0081FB] transition-all">
+                <div className="p-2 md:p-2.5 rounded-xl bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-700 dark:text-white group-hover:border-blue-500/50 group-hover:bg-blue-500/10 group-hover:text-[#0081FB] transition-all shadow-sm">
                   <MetaIcon size={22} className="w-5 h-5 md:w-6 md:h-6" />
                 </div>
                 <span className="text-xs md:text-lg font-black tracking-tighter uppercase">Meta Ads</span>
@@ -1394,7 +1401,7 @@ export function LandingPage() {
 
               {/* TikTok */}
               <div className="flex items-center gap-2 md:gap-3 text-slate-800 dark:text-white group cursor-default">
-                <div className="p-2 md:p-2.5 rounded-xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 group-hover:border-cyan-500/50 group-hover:bg-cyan-500/10 group-hover:text-[#00F2FE] transition-all">
+                <div className="p-2 md:p-2.5 rounded-xl bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-700 dark:text-white group-hover:border-cyan-500/50 group-hover:bg-cyan-500/10 group-hover:text-[#00F2FE] transition-all shadow-sm">
                   <TikTokIcon size={20} className="w-5 h-5 md:w-6 md:h-6" />
                 </div>
                 <span className="text-xs md:text-lg font-black tracking-tighter uppercase">TikTok</span>

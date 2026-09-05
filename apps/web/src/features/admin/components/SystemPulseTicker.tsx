@@ -54,7 +54,7 @@ export function SystemPulseTicker() {
   }, [socket]);
 
   return (
-    <div className="bg-vendeur-coal border border-white/10 rounded-[2rem] overflow-hidden flex flex-col h-[400px]">
+    <div className="bg-vendeur-coal/90 border border-white/10 rounded-2xl md:rounded-3xl overflow-hidden flex flex-col h-[400px] shadow-sm hover:shadow-md dark:shadow-xl transition-all">
       <div className="p-5 border-b border-white/5 flex items-center justify-between bg-black/20">
         <h3 className="text-sm font-black uppercase tracking-widest flex items-center gap-2">
           <Activity size={16} className="text-vendeur-emerald animate-pulse" />

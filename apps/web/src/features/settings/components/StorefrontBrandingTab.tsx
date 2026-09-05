@@ -436,28 +436,28 @@ export function StorefrontBrandingTab({ merchant }: StorefrontBrandingTabProps) 
       </div>
 
       {/* ─── LIVE INTERACTIVE STOREFRONT PREVIEW ─── */}
-      <div className="p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl md:rounded-[2.5rem] bg-vendeur-coal/90 border border-white/10 space-y-4 shadow-2xl relative overflow-hidden">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/5 pb-4">
+      <div className="p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl md:rounded-[2.5rem] bg-white dark:bg-vendeur-coal border border-slate-200 dark:border-white/10 space-y-4 shadow-sm hover:shadow-md dark:shadow-xl transition-all relative overflow-hidden">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 dark:border-white/5 pb-4">
           <div className="flex items-center gap-2.5">
-            <div className="h-8 w-8 rounded-lg bg-white/5 flex items-center justify-center text-vendeur-emerald shrink-0 border border-white/10">
+            <div className="h-8 w-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-vendeur-emerald shrink-0 border border-emerald-500/20">
               <Smartphone size={16} />
             </div>
             <div>
-              <h4 className="text-xs sm:text-sm font-black uppercase tracking-wider text-white">
+              <h4 className="text-xs sm:text-sm font-black uppercase tracking-wider text-slate-900 dark:text-white">
                 Aperçu de votre Vitrine en Direct
               </h4>
-              <p className="text-[10px] sm:text-[11px] text-white/40 font-medium">
+              <p className="text-[10px] sm:text-[11px] text-slate-500 dark:text-white/40 font-medium">
                 Voyez immédiatement ce que vos clients découvriront sur leur téléphone.
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-1.5 bg-black/40 p-1 rounded-xl border border-white/10 self-start sm:self-auto">
+          <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-black/40 p-1 rounded-xl border border-slate-200 dark:border-white/10 self-start sm:self-auto">
             <button
               type="button"
               onClick={() => setActivePreviewMode("phone")}
               className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all flex items-center gap-1.5 ${
-                activePreviewMode === "phone" ? "bg-vendeur-emerald text-vendeur-coal shadow-sm" : "text-white/40 hover:text-white"
+                activePreviewMode === "phone" ? "bg-vendeur-emerald text-vendeur-coal shadow-sm" : "text-slate-500 dark:text-white/40 hover:text-slate-900 dark:hover:text-white"
               }`}
             >
               <Smartphone size={13} />
@@ -467,7 +467,7 @@ export function StorefrontBrandingTab({ merchant }: StorefrontBrandingTabProps) 
               type="button"
               onClick={() => setActivePreviewMode("card")}
               className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all flex items-center gap-1.5 ${
-                activePreviewMode === "card" ? "bg-vendeur-emerald text-vendeur-coal shadow-sm" : "text-white/40 hover:text-white"
+                activePreviewMode === "card" ? "bg-vendeur-emerald text-vendeur-coal shadow-sm" : "text-slate-500 dark:text-white/40 hover:text-slate-900 dark:hover:text-white"
               }`}
             >
               <Layers size={13} />
@@ -479,7 +479,7 @@ export function StorefrontBrandingTab({ merchant }: StorefrontBrandingTabProps) 
         {/* Preview Viewport Container */}
         <div className="flex justify-center items-center py-2 sm:py-4">
           <div
-            className={`w-full transition-all duration-300 rounded-3xl overflow-hidden border border-white/15 shadow-2xl bg-[#0b1210] ${
+            className={`w-full transition-all duration-300 rounded-3xl overflow-hidden border border-slate-200 dark:border-white/15 shadow-md dark:shadow-2xl bg-[#0b1210] ${
               activePreviewMode === "phone" ? "max-w-sm" : "max-w-3xl"
             }`}
           >
@@ -560,16 +560,16 @@ export function StorefrontBrandingTab({ merchant }: StorefrontBrandingTabProps) 
       </div>
 
       {/* ─── 1. PALETTE DE COULEURS ─── */}
-      <div id="theme" className="p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl md:rounded-[2.5rem] bg-vendeur-coal border border-white/10 space-y-4 sm:space-y-6 scroll-mt-28 shadow-xl">
+      <div id="theme" className="p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl md:rounded-[2.5rem] bg-white dark:bg-vendeur-coal border border-slate-200 dark:border-white/10 space-y-4 sm:space-y-6 scroll-mt-28 shadow-sm hover:shadow-md dark:shadow-xl transition-all">
         <div className="flex items-start gap-2.5">
-          <div className="h-8 w-8 rounded-lg bg-white/5 flex items-center justify-center shrink-0 mt-0.5 border border-white/10">
+          <div className="h-8 w-8 rounded-lg bg-emerald-500/10 flex items-center justify-center shrink-0 mt-0.5 border border-emerald-500/20">
             <Sparkles size={16} className={`${currentPalette.textClass} shrink-0`} />
           </div>
           <div className="min-w-0 flex-1">
-            <h4 className="text-xs sm:text-sm font-black uppercase tracking-wider text-white leading-tight">
+            <h4 className="text-xs sm:text-sm font-black uppercase tracking-wider text-slate-900 dark:text-white leading-tight">
               1. Thème de Couleur &amp; Ambiance de Marque
             </h4>
-            <p className="text-[11px] sm:text-xs text-white/40 leading-relaxed mt-0.5">
+            <p className="text-[11px] sm:text-xs text-slate-500 dark:text-white/40 leading-relaxed mt-0.5">
               Harmonise automatiquement les boutons d'achat, les bannières, le chat et les badges de votre vitrine.
             </p>
           </div>
@@ -585,8 +585,8 @@ export function StorefrontBrandingTab({ merchant }: StorefrontBrandingTabProps) 
                 onClick={() => setAccentColor(pal.id)}
                 className={`p-3.5 sm:p-4 rounded-2xl border text-left flex items-center gap-3 transition-all cursor-pointer ${
                   isSelected
-                    ? `bg-white/[0.08] ${pal.borderClass} ring-2 ${pal.ringClass} shadow-xl scale-[1.01]`
-                    : "bg-white/[0.02] border-white/5 hover:border-white/20 hover:bg-white/[0.04]"
+                    ? `bg-slate-50 dark:bg-white/[0.08] ${pal.borderClass} ring-2 ${pal.ringClass} shadow-md scale-[1.01]`
+                    : "bg-slate-50/50 hover:bg-slate-100 border-slate-200 dark:bg-white/[0.02] dark:border-white/5 dark:hover:border-white/20 dark:hover:bg-white/[0.04]"
                 }`}
               >
                 <div
@@ -597,10 +597,10 @@ export function StorefrontBrandingTab({ merchant }: StorefrontBrandingTabProps) 
                 </div>
 
                 <div className="min-w-0 flex-1">
-                  <p className="text-xs sm:text-sm font-black uppercase tracking-tight text-white leading-tight truncate">
+                  <p className="text-xs sm:text-sm font-black uppercase tracking-tight text-slate-900 dark:text-white leading-tight truncate">
                     {pal.name}
                   </p>
-                  <p className="text-[10px] sm:text-xs text-white/40 truncate leading-tight mt-0.5">
+                  <p className="text-[10px] sm:text-xs text-slate-500 dark:text-white/40 truncate leading-tight mt-0.5">
                     {pal.subtitle}
                   </p>
                 </div>
@@ -611,7 +611,7 @@ export function StorefrontBrandingTab({ merchant }: StorefrontBrandingTabProps) 
       </div>
 
       {/* ─── 2. THÈME D'AFFICHAGE DE LA VITRINE ─── */}
-      <div id="storefront-theme" className="p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl md:rounded-[2.5rem] bg-vendeur-coal border border-white/10 space-y-4 sm:space-y-6 scroll-mt-28 shadow-xl">
+      <div id="storefront-theme" className="p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl md:rounded-[2.5rem] bg-white dark:bg-vendeur-coal border border-slate-200 dark:border-white/10 space-y-4 sm:space-y-6 scroll-mt-28 shadow-sm hover:shadow-md dark:shadow-xl transition-all">
         <div className="flex items-start gap-2.5">
           <div className="h-8 w-8 rounded-lg bg-white/5 flex items-center justify-center shrink-0 mt-0.5 border border-white/10">
             <Sun size={16} className="text-amber-400 shrink-0" />
@@ -689,16 +689,16 @@ export function StorefrontBrandingTab({ merchant }: StorefrontBrandingTabProps) 
       </div>
 
       {/* ─── 3. LOGO DE LA BOUTIQUE & BANNIÈRE COUVERTURE ─── */}
-      <div id="logo" className="p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl md:rounded-[2.5rem] bg-vendeur-coal border border-white/10 space-y-4 sm:space-y-6 scroll-mt-28 shadow-xl">
+      <div id="logo" className="p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl md:rounded-[2.5rem] bg-white dark:bg-vendeur-coal border border-slate-200 dark:border-white/10 space-y-4 sm:space-y-6 scroll-mt-28 shadow-sm hover:shadow-md dark:shadow-xl transition-all">
         <div className="flex items-start gap-2.5">
-          <div className="h-8 w-8 rounded-lg bg-white/5 flex items-center justify-center shrink-0 mt-0.5 border border-white/10">
+          <div className="h-8 w-8 rounded-lg bg-emerald-500/10 flex items-center justify-center shrink-0 mt-0.5 border border-emerald-500/20">
             <ImageIcon size={16} className="text-vendeur-emerald shrink-0" />
           </div>
           <div className="min-w-0 flex-1">
-            <h4 className="text-xs sm:text-sm font-black uppercase tracking-wider text-white leading-tight">
+            <h4 className="text-xs sm:text-sm font-black uppercase tracking-wider text-slate-900 dark:text-white leading-tight">
               3. Identité Visuelle (Logo &amp; Bannière Officielle)
             </h4>
-            <p className="text-[11px] sm:text-xs text-white/40 leading-relaxed mt-0.5">
+            <p className="text-[11px] sm:text-xs text-slate-500 dark:text-white/40 leading-relaxed mt-0.5">
               Ces images apparaissent sur votre vitrine, vos cartes de partage WhatsApp et l'en-tête de votre application.
             </p>
           </div>
@@ -899,17 +899,17 @@ export function StorefrontBrandingTab({ merchant }: StorefrontBrandingTabProps) 
       </div>
 
       {/* ─── 3. BANDEAU PROMOTIONNEL DÉFILANT ─── */}
-      <div id="announcement" className="p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl md:rounded-[2.5rem] bg-vendeur-coal border border-white/10 space-y-4 sm:space-y-6 scroll-mt-28 shadow-xl">
+      <div id="announcement" className="p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl md:rounded-[2.5rem] bg-white dark:bg-vendeur-coal border border-slate-200 dark:border-white/10 space-y-4 sm:space-y-6 scroll-mt-28 shadow-sm hover:shadow-md dark:shadow-xl transition-all">
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-start gap-2.5 min-w-0 flex-1">
-            <div className="h-8 w-8 rounded-lg bg-white/5 flex items-center justify-center shrink-0 mt-0.5 border border-white/10">
+            <div className="h-8 w-8 rounded-lg bg-amber-500/10 flex items-center justify-center shrink-0 mt-0.5 border border-amber-500/20">
               <Megaphone size={16} className="text-amber-400 shrink-0" />
             </div>
             <div className="min-w-0 flex-1">
-              <h4 className="text-xs sm:text-sm font-black uppercase tracking-wider text-white leading-tight">
+              <h4 className="text-xs sm:text-sm font-black uppercase tracking-wider text-slate-900 dark:text-white leading-tight">
                 3. Bandeau Promotionnel Flash
               </h4>
-              <p className="text-[11px] sm:text-xs text-white/40 leading-relaxed mt-0.5">
+              <p className="text-[11px] sm:text-xs text-slate-500 dark:text-white/40 leading-relaxed mt-0.5">
                 Bannière d'accroche animée tout en haut de votre vitrine.
               </p>
             </div>
@@ -922,13 +922,13 @@ export function StorefrontBrandingTab({ merchant }: StorefrontBrandingTabProps) 
               checked={announcementEnabled}
               onChange={(e) => setAnnouncementEnabled(e.target.checked)}
             />
-            <div className="w-12 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-vendeur-emerald"></div>
+            <div className="w-12 h-6 bg-slate-200 dark:bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-vendeur-emerald"></div>
           </label>
         </div>
 
         {announcementEnabled && (
           <div className="space-y-3 p-3.5 sm:p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 animate-in fade-in duration-200">
-            <label className="block text-[10px] sm:text-[11px] font-black uppercase tracking-wider text-amber-300">
+            <label className="block text-[10px] sm:text-[11px] font-black uppercase tracking-wider text-amber-700 dark:text-amber-300">
               Texte du message promotionnel
             </label>
             <input
@@ -936,19 +936,19 @@ export function StorefrontBrandingTab({ merchant }: StorefrontBrandingTabProps) 
               placeholder="Ex: 🔥 Promo du weekend : -20% sur les robes | Livraison express offerte !"
               value={announcementText}
               onChange={(e) => setAnnouncementText(e.target.value)}
-              className="w-full h-11 bg-black/40 border border-amber-500/30 rounded-xl px-3.5 text-xs text-white outline-none focus:border-amber-400 transition-all font-medium"
+              className="w-full h-11 bg-white dark:bg-black/40 border border-amber-500/30 rounded-xl px-3.5 text-xs text-slate-900 dark:text-white outline-none focus:border-amber-400 transition-all font-medium"
             />
             
             {/* Quick Presets */}
             <div className="space-y-1.5 pt-1">
-              <p className="text-[10px] font-black uppercase tracking-wider text-amber-200/70">Suggestions rapides :</p>
+              <p className="text-[10px] font-black uppercase tracking-wider text-amber-800/80 dark:text-amber-200/70">Suggestions rapides :</p>
               <div className="flex flex-wrap gap-1.5">
                 {ANNOUNCEMENT_PRESETS.map((preset, idx) => (
                   <button
                     key={idx}
                     type="button"
                     onClick={() => setAnnouncementText(preset)}
-                    className="px-2.5 py-1 rounded-lg bg-black/40 hover:bg-black/60 border border-amber-500/30 text-[10px] text-amber-200 text-left transition-all active:scale-95"
+                    className="px-2.5 py-1 rounded-lg bg-amber-50 hover:bg-amber-100 dark:bg-black/40 dark:hover:bg-black/60 border border-amber-500/30 text-[10px] text-amber-900 dark:text-amber-200 text-left transition-all active:scale-95 cursor-pointer"
                   >
                     {preset}
                   </button>
@@ -960,16 +960,16 @@ export function StorefrontBrandingTab({ merchant }: StorefrontBrandingTabProps) 
       </div>
 
       {/* ─── 4. RÉSEAUX SOCIAUX & HORAIRES D'OUVERTURE ─── */}
-      <div id="socials" className="p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl md:rounded-[2.5rem] bg-vendeur-coal border border-white/10 space-y-4 sm:space-y-6 scroll-mt-28 shadow-xl">
+      <div id="socials" className="p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl md:rounded-[2.5rem] bg-white dark:bg-vendeur-coal border border-slate-200 dark:border-white/10 space-y-4 sm:space-y-6 scroll-mt-28 shadow-sm hover:shadow-md dark:shadow-xl transition-all">
         <div className="flex items-start gap-2.5">
-          <div className="h-8 w-8 rounded-lg bg-white/5 flex items-center justify-center shrink-0 mt-0.5 border border-white/10">
-            <Clock size={16} className="text-sky-400 shrink-0" />
+          <div className="h-8 w-8 rounded-lg bg-sky-500/10 flex items-center justify-center shrink-0 mt-0.5 border border-sky-500/20">
+            <Clock size={16} className="text-sky-500 dark:text-sky-400 shrink-0" />
           </div>
           <div className="min-w-0 flex-1">
-            <h4 className="text-xs sm:text-sm font-black uppercase tracking-wider text-white leading-tight">
+            <h4 className="text-xs sm:text-sm font-black uppercase tracking-wider text-slate-900 dark:text-white leading-tight">
               4. Réseaux Sociaux &amp; Horaires de Vente
             </h4>
-            <p className="text-[11px] sm:text-xs text-white/40 leading-relaxed mt-0.5">
+            <p className="text-[11px] sm:text-xs text-slate-500 dark:text-white/40 leading-relaxed mt-0.5">
               Ces liens cliquables s'affichent dans l'en-tête de votre vitrine et rassureront vos clients.
             </p>
           </div>

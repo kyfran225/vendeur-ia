@@ -57,6 +57,13 @@ export function SalesDashboard() {
   const navigate = useNavigate();
   const { accessToken, user } = useAuthStore();
   const { isFounder } = useFounderRole();
+
+  useEffect(() => {
+    if (isFounder) {
+      navigate("/admin", { replace: true });
+    }
+  }, [isFounder, navigate]);
+
   const socket = useSocket();
   const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -75,6 +82,10 @@ export function SalesDashboard() {
     nextStep: { id: string; label: string } | null;
   }>({ isOpen: false, completedStepId: "", completedStepLabel: "", nextStep: null });
   const previousCompletedStepsRef = useRef<Set<string>>(new Set());
+
+  if (isFounder) {
+    return null;
+  }
 
   const setIsTestIAOpen = (open: boolean) => {
     if (open) {

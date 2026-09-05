@@ -120,7 +120,7 @@ export function BillingTab({ merchant }: { merchant: any }) {
   if (isFounder) {
     return (
       <div className="space-y-6 sm:space-y-8 animate-in slide-in-from-bottom-2 duration-500 pb-16">
-        <section className="bg-gradient-to-br from-emerald-50 via-white to-slate-50 dark:from-emerald-950/40 dark:via-vendeur-coal dark:to-black border border-emerald-300 dark:border-vendeur-emerald/30 p-6 sm:p-8 md:p-10 rounded-2xl sm:rounded-3xl md:rounded-[2.5rem] relative overflow-hidden shadow-xl dark:shadow-2xl space-y-6">
+        <section className="bg-gradient-to-br from-emerald-50 via-white to-slate-50 dark:from-emerald-950/40 dark:via-vendeur-coal dark:to-black border border-emerald-300 dark:border-vendeur-emerald/30 p-6 sm:p-8 md:p-10 rounded-2xl sm:rounded-3xl md:rounded-[2.5rem] relative overflow-hidden shadow-sm hover:shadow-md dark:shadow-xl transition-all space-y-6">
           <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
             <div className="space-y-4">
               <div className="flex flex-wrap items-center gap-2.5">
@@ -174,7 +174,7 @@ export function BillingTab({ merchant }: { merchant: any }) {
     <div className="space-y-6 sm:space-y-8 animate-in slide-in-from-bottom-2 duration-500 pb-16">
       {/* 0. Carte Dédiée : Paiement / Virement en cours d'approbation */}
       {isUnderVerification && latestPaymentIntent && (
-        <section className="bg-gradient-to-br from-emerald-50 via-white to-slate-50 dark:from-emerald-950/40 dark:via-[#0c1611] dark:to-black border border-emerald-400/60 dark:border-emerald-500/40 p-5 sm:p-7 md:p-8 rounded-2xl sm:rounded-3xl md:rounded-[2.5rem] relative overflow-hidden shadow-xl dark:shadow-2xl space-y-5 animate-in fade-in zoom-in-95 duration-300">
+        <section className="bg-gradient-to-br from-emerald-50 via-white to-slate-50 dark:from-emerald-950/40 dark:via-[#0c1611] dark:to-black border border-emerald-400/60 dark:border-emerald-500/40 p-5 sm:p-7 md:p-8 rounded-2xl sm:rounded-3xl md:rounded-[2.5rem] relative overflow-hidden shadow-sm hover:shadow-md dark:shadow-xl transition-all space-y-5 animate-in fade-in zoom-in-95 duration-300">
           <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-5">
             <div className="space-y-3 flex-1">
               <div className="flex flex-wrap items-center gap-2.5">
@@ -249,7 +249,7 @@ export function BillingTab({ merchant }: { merchant: any }) {
 
       {/* 1. Plan Actuel (si actif) */}
       {isPlanActive && (
-        <section id="billing" className="bg-white dark:bg-vendeur-coal border border-slate-200 dark:border-white/10 p-5 sm:p-8 md:p-10 rounded-2xl sm:rounded-3xl md:rounded-[2.5rem] relative overflow-hidden shadow-xl dark:shadow-2xl space-y-6 scroll-mt-28">
+        <section id="billing" className="bg-white dark:bg-vendeur-coal border border-slate-200 dark:border-white/10 p-5 sm:p-8 md:p-10 rounded-2xl sm:rounded-3xl md:rounded-[2.5rem] relative overflow-hidden shadow-sm hover:shadow-md dark:shadow-xl transition-all space-y-6 scroll-mt-28">
           <div className="relative z-10 flex flex-col lg:flex-row justify-between gap-6 sm:gap-8">
             <div className="space-y-5 sm:space-y-6 flex-1">
               <div className="flex items-center gap-3.5 sm:gap-4">
@@ -413,7 +413,7 @@ export function BillingTab({ merchant }: { merchant: any }) {
 
       {/* 2. Hero d'Activation si pas de plan actif */}
       {!isPlanActive && (
-        <section className="bg-gradient-to-br from-slate-50 via-white to-emerald-50/30 dark:from-vendeur-coal dark:via-vendeur-coal dark:to-black border border-slate-200 dark:border-vendeur-emerald/30 p-5 sm:p-8 md:p-10 rounded-2xl sm:rounded-3xl md:rounded-[2.5rem] relative overflow-hidden shadow-xl dark:shadow-2xl">
+        <section className="bg-gradient-to-br from-slate-50 via-white to-emerald-50/30 dark:from-vendeur-coal dark:via-vendeur-coal dark:to-black border border-slate-200 dark:border-vendeur-emerald/30 p-5 sm:p-8 md:p-10 rounded-2xl sm:rounded-3xl md:rounded-[2.5rem] relative overflow-hidden shadow-sm hover:shadow-md dark:shadow-xl transition-all">
           <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 sm:gap-8">
             <div className="space-y-3.5 max-w-xl">
               <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 text-xs font-black uppercase tracking-wider">
@@ -633,7 +633,7 @@ export function BillingTab({ merchant }: { merchant: any }) {
         </div>
 
         {/* 3.1 Pack Pro Expert Clé en Main */}
-        <div className="bg-gradient-to-r from-emerald-50 via-white to-slate-50 dark:from-vendeur-coal dark:via-vendeur-coal dark:to-black border border-emerald-300 dark:border-white/10 hover:border-emerald-500/50 dark:hover:border-vendeur-emerald/30 p-6 sm:p-8 rounded-2xl sm:rounded-3xl flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative overflow-hidden transition-all shadow-xl dark:shadow-2xl">
+        <div className="bg-gradient-to-r from-emerald-50 via-white to-slate-50 dark:from-vendeur-coal dark:via-vendeur-coal dark:to-black border border-emerald-300 dark:border-white/10 hover:border-emerald-500/50 dark:hover:border-vendeur-emerald/30 p-6 sm:p-8 rounded-2xl sm:rounded-3xl flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative overflow-hidden transition-all shadow-sm hover:shadow-md dark:shadow-xl">
           <div className="space-y-3 relative z-10 text-left max-w-xl">
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/25 text-[11px] sm:text-xs font-black uppercase tracking-wider whitespace-nowrap shadow-sm">
               <Sparkles size={13} className="shrink-0 text-emerald-600 dark:text-emerald-400" />

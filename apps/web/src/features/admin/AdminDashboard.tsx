@@ -428,7 +428,7 @@ function OverviewPanel({ stats, failedJobs, statsLoading }: { stats: any; failed
 
         <div className="lg:col-span-2">
           {/* --- QUEUE MONITORING SECTION --- FLATTENED MOBILE UI --- */}
-          <section className="bg-vendeur-coal border border-white/10 rounded-2xl md:rounded-[2.5rem] p-4 md:p-8 space-y-6">
+          <section className="bg-vendeur-coal/90 border border-white/10 rounded-2xl md:rounded-3xl p-4 md:p-8 space-y-6 shadow-sm hover:shadow-md dark:shadow-xl transition-all">
               <div className="flex items-center justify-between">
                 <h2 className="text-base md:text-xl font-black flex items-center gap-2">
                     <Activity className="text-vendeur-emerald w-5 h-5 md:w-6 md:h-6" />
@@ -455,7 +455,7 @@ function OverviewPanel({ stats, failedJobs, statsLoading }: { stats: any; failed
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
-        <div className="bg-vendeur-coal border border-white/5 rounded-[2rem] md:rounded-[2.5rem] p-5 md:p-8">
+        <div className="bg-vendeur-coal/90 border border-white/10 rounded-2xl md:rounded-3xl p-5 md:p-8 shadow-sm hover:shadow-md dark:shadow-xl transition-all">
             <h2 className="text-lg md:text-xl font-black mb-6 uppercase tracking-tighter">Paiements</h2>
             <div className="space-y-3">
                 {transactions.length === 0 ? (
@@ -480,7 +480,7 @@ function OverviewPanel({ stats, failedJobs, statsLoading }: { stats: any; failed
             </div>
         </div>
 
-        <div className="bg-vendeur-coal border border-white/5 rounded-[2.5rem] p-8">
+        <div className="bg-vendeur-coal/90 border border-white/10 rounded-2xl md:rounded-3xl p-5 md:p-8 shadow-sm hover:shadow-md dark:shadow-xl transition-all">
             <h2 className="text-xl font-black mb-6 uppercase tracking-tighter flex items-center gap-2">
                 <AlertCircle className="text-rose-500" size={24} />
                 Logs d'Erreurs IA
@@ -525,7 +525,7 @@ function MerchantsPanel({ merchants, loading }: { merchants: any[], loading: boo
   );
 
   return (
-    <div className="bg-vendeur-coal border border-white/5 rounded-2xl md:rounded-[2.5rem] overflow-hidden animate-in fade-in duration-700">
+    <div className="bg-vendeur-coal/90 border border-white/10 rounded-2xl md:rounded-3xl overflow-hidden animate-in fade-in duration-700 shadow-sm hover:shadow-md dark:shadow-xl transition-all">
       <div className="p-4 md:p-8 border-b border-white/5 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="space-y-1">
           <h2 className="text-lg md:text-xl font-black uppercase tracking-tighter leading-none">Global Ledger Index</h2>
@@ -734,7 +734,7 @@ function SettingsPanel({ settings, onUpdate, isUpdating }: { settings: any, onUp
 
   return (
     <div className="max-w-4xl space-y-6 md:space-y-8 animate-in fade-in duration-700 pb-12">
-      <section className="bg-vendeur-coal border border-white/5 p-4 md:p-8 rounded-2xl md:rounded-[2.5rem] space-y-8">
+      <section className="bg-vendeur-coal/90 border border-white/10 p-4 md:p-8 rounded-2xl md:rounded-3xl space-y-8 shadow-sm hover:shadow-md dark:shadow-xl transition-all">
         <div className="space-y-1">
           <h2 className="text-lg md:text-xl font-black uppercase tracking-tighter flex items-center gap-3 leading-none">
               <ShieldCheck size={24} className="text-vendeur-emerald" />
@@ -1226,7 +1226,7 @@ function BroadcastPanel() {
   });
 
   return (
-    <div className="max-w-4xl bg-vendeur-coal border border-white/5 p-4 md:p-8 rounded-2xl md:rounded-[2.5rem] space-y-8 animate-in fade-in duration-700">
+    <div className="max-w-4xl bg-vendeur-coal/90 border border-white/10 p-4 md:p-8 rounded-2xl md:rounded-3xl space-y-8 animate-in fade-in duration-700 shadow-sm hover:shadow-md dark:shadow-xl transition-all">
       <div className="space-y-1">
         <h3 className="text-lg md:text-xl font-black uppercase tracking-tight flex items-center gap-2 leading-none">
           <Megaphone className="text-vendeur-emerald" />
@@ -1326,7 +1326,7 @@ function ChannelToggle({ label, active, onClick }: { label: string; active: bool
 
 function StatCard({ label, value, icon, subtitle }: { label: string; value: number | string; icon: React.ReactNode; subtitle?: string }) {
   return (
-    <div className="bg-vendeur-coal/90 border border-white/10 p-3.5 sm:p-4.5 rounded-2xl md:rounded-3xl flex flex-col justify-between group hover:border-vendeur-emerald/40 transition-all shadow-lg min-w-0">
+    <div className="bg-vendeur-coal/90 border border-white/10 p-3.5 sm:p-4.5 rounded-2xl md:rounded-3xl flex flex-col justify-between group hover:border-vendeur-emerald/40 transition-all shadow-sm hover:shadow-md dark:shadow-xl min-w-0">
       <div className="flex items-center justify-between gap-1.5 mb-2">
         <span className="text-[10px] sm:text-[10.5px] xl:text-[11px] font-black uppercase tracking-wider text-white/60 whitespace-nowrap">
           {label}
@@ -1376,7 +1376,7 @@ function BillingPanel({ data, loading }: { data: any, loading: boolean }) {
 
   return (
     <div className="space-y-6 md:space-y-8 animate-in fade-in duration-700">
-      <div className="flex items-center justify-between gap-4 bg-vendeur-coal/40 p-4 md:p-6 rounded-2xl md:rounded-[2.5rem] border border-white/5">
+      <div className="flex items-center justify-between gap-4 bg-vendeur-coal/80 p-4 md:p-6 rounded-2xl md:rounded-3xl border border-white/10 shadow-sm hover:shadow-md dark:shadow-xl transition-all">
           <div className="flex items-center gap-3">
              <div className="h-10 w-10 rounded-xl bg-vendeur-emerald/10 flex items-center justify-center border border-vendeur-emerald/20">
                 <TrendingUp size={20} className="text-vendeur-emerald" />
@@ -1403,7 +1403,7 @@ function BillingPanel({ data, loading }: { data: any, loading: boolean }) {
       </div>
 
       {/* Regional Revenue Map / Stats */}
-      <section className="bg-vendeur-coal border border-white/5 p-4 md:p-8 rounded-2xl md:rounded-[2.5rem] space-y-6">
+      <section className="bg-vendeur-coal/90 border border-white/10 p-4 md:p-8 rounded-2xl md:rounded-3xl shadow-sm hover:shadow-md dark:shadow-xl transition-all space-y-6">
          <h3 className="text-lg md:text-xl font-black uppercase tracking-tight flex items-center gap-2">
             <Globe size={20} className="text-vendeur-emerald" />
             Regional Distribution
@@ -1420,7 +1420,7 @@ function BillingPanel({ data, loading }: { data: any, loading: boolean }) {
       </section>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
-        <div className="lg:col-span-2 bg-vendeur-coal border border-white/5 rounded-2xl md:rounded-[2.5rem] p-4 md:p-8 space-y-6">
+        <div className="lg:col-span-2 bg-vendeur-coal/90 border border-white/10 rounded-2xl md:rounded-3xl p-4 md:p-8 shadow-sm hover:shadow-md dark:shadow-xl transition-all space-y-6">
           <h3 className="text-lg md:text-xl font-black uppercase tracking-tight flex items-center gap-2 leading-none">
             <Activity size={20} className="text-vendeur-emerald" />
             Revenue Growth (6m)
@@ -1444,7 +1444,7 @@ function BillingPanel({ data, loading }: { data: any, loading: boolean }) {
           </div>
         </div>
 
-        <div className="bg-vendeur-coal border border-white/5 rounded-2xl md:rounded-[2.5rem] p-4 md:p-8 space-y-6">
+        <div className="bg-vendeur-coal/90 border border-white/10 rounded-2xl md:rounded-3xl p-4 md:p-8 shadow-sm hover:shadow-md dark:shadow-xl transition-all space-y-6">
           <h3 className="text-lg md:text-xl font-black uppercase tracking-tight leading-none">Plans Allocation</h3>
           <div className="space-y-6">
             <PlanRatio label="ESSENTIEL / TRIAL" value={data?.planStats?.starter + data?.planStats?.trial} total={data?.planStats?.starter + data?.planStats?.trial + data?.planStats?.premium + data?.planStats?.business} color="bg-vendeur-emerald" />
@@ -1454,7 +1454,7 @@ function BillingPanel({ data, loading }: { data: any, loading: boolean }) {
         </div>
       </div>
 
-      <div className="bg-vendeur-coal border border-white/5 rounded-2xl md:rounded-[2.5rem] p-4 md:p-8">
+      <div className="bg-vendeur-coal/90 border border-white/10 rounded-2xl md:rounded-3xl p-4 md:p-8 shadow-sm hover:shadow-md dark:shadow-xl transition-all">
         <h3 className="text-lg md:text-xl font-black uppercase tracking-tight mb-6">Recent Ledger Activity</h3>
         <div className="overflow-x-auto">
           <table className="w-full text-left">

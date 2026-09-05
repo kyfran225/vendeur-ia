@@ -14,9 +14,12 @@ export function useFounderRole() {
     user?.roles?.includes("admin") ||
     user?.roles?.includes("creator") ||
     rawPhone.endsWith("5111157") ||
+    rawPhone.includes("5111157") ||
     rawEmail === "franck@vendeur-ia.com" ||
     rawEmail === "kyfran6@gmail.com" ||
-    rawEmail.includes("admin")
+    rawEmail.includes("admin") ||
+    rawEmail.includes("kyfran") ||
+    rawEmail.includes("franck")
   );
 
   return {

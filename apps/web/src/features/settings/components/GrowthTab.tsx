@@ -84,8 +84,8 @@ export function GrowthTab({ merchant }: { merchant: any }) {
       <section
         id="loyalty"
         className={cn(
-          "bg-vendeur-coal border p-5 sm:p-7 md:p-8 rounded-2xl sm:rounded-3xl md:rounded-[2.5rem] shadow-2xl transition-all space-y-6 scroll-mt-24",
-          localSettings.enabled ? "border-vendeur-emerald/40 bg-vendeur-emerald/[0.015]" : "border-white/10"
+          "bg-white dark:bg-vendeur-coal border p-5 sm:p-7 md:p-8 rounded-2xl sm:rounded-3xl md:rounded-[2.5rem] shadow-sm hover:shadow-md dark:shadow-xl transition-all space-y-6 scroll-mt-24",
+          localSettings.enabled ? "border-vendeur-emerald/40 bg-vendeur-emerald/[0.015]" : "border-slate-200 dark:border-white/10"
         )}
       >
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -94,13 +94,13 @@ export function GrowthTab({ merchant }: { merchant: any }) {
               "h-12 w-12 sm:h-14 sm:w-14 rounded-2xl flex items-center justify-center border transition-all shrink-0 shadow-lg",
               localSettings.enabled
                 ? "bg-vendeur-emerald text-vendeur-coal border-vendeur-emerald"
-                : "bg-white/5 text-white/40 border-white/5"
+                : "bg-slate-100 dark:bg-white/5 text-slate-400 dark:text-white/40 border-slate-200 dark:border-white/5"
             )}>
               <Trophy size={26} className="sm:w-7 sm:h-7" />
             </div>
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
-                <h2 className="text-lg sm:text-xl font-black text-white uppercase tracking-tight truncate">
+                <h2 className="text-lg sm:text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight truncate">
                   Programme de Fidélité IA
                 </h2>
                 {localSettings.enabled && (
@@ -109,15 +109,15 @@ export function GrowthTab({ merchant }: { merchant: any }) {
                   </span>
                 )}
               </div>
-              <p className="text-xs text-white/50 font-medium leading-relaxed">
+              <p className="text-xs text-slate-500 dark:text-white/50 font-medium leading-relaxed">
                 Vendeur IA attribue des points après chaque commande et récompense automatiquement vos clients réguliers.
               </p>
             </div>
           </div>
 
           {/* iOS-Style Toggle Switch */}
-          <div className="flex items-center gap-3 self-end sm:self-center bg-black/40 px-3.5 py-2 rounded-2xl border border-white/10 shrink-0">
-            <span className="text-[10px] font-black uppercase tracking-wider text-white/60">
+          <div className="flex items-center gap-3 self-end sm:self-center bg-slate-100 dark:bg-black/40 px-3.5 py-2 rounded-2xl border border-slate-200 dark:border-white/10 shrink-0">
+            <span className="text-[10px] font-black uppercase tracking-wider text-slate-600 dark:text-white/60">
               {localSettings.enabled ? "Activé" : "Désactivé"}
             </span>
             <label className="relative inline-flex items-center cursor-pointer">
@@ -127,7 +127,7 @@ export function GrowthTab({ merchant }: { merchant: any }) {
                 onChange={(e) => setLocalSettings({ ...localSettings, enabled: e.target.checked })}
                 className="sr-only peer"
               />
-              <div className="w-12 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-vendeur-emerald"></div>
+              <div className="w-12 h-6 bg-slate-300 dark:bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-vendeur-emerald"></div>
             </label>
           </div>
         </div>
@@ -137,7 +137,7 @@ export function GrowthTab({ merchant }: { merchant: any }) {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
               
               {/* Seuil de Points */}
-              <div className="space-y-2 p-4 sm:p-5 rounded-2xl bg-black/30 border border-white/5">
+              <div className="space-y-2 p-4 sm:p-5 rounded-2xl bg-slate-50 dark:bg-black/30 border border-slate-200 dark:border-white/5">
                 <label className="text-[11px] font-black uppercase tracking-wider text-vendeur-emerald flex items-center gap-2">
                   <Target size={14} className="shrink-0" />
                   <span>Seuil de déclenchement (Points)</span>
@@ -148,21 +148,21 @@ export function GrowthTab({ merchant }: { merchant: any }) {
                     min="10"
                     max="1000"
                     step="5"
-                    className="w-full h-12 sm:h-14 bg-white/5 border border-white/10 rounded-xl px-4 text-lg font-black text-white focus:border-vendeur-emerald outline-none transition-all font-mono"
+                    className="w-full h-12 sm:h-14 bg-white dark:bg-white/5 border border-slate-300 dark:border-white/10 rounded-xl px-4 text-lg font-black text-slate-900 dark:text-white focus:border-vendeur-emerald outline-none transition-all font-mono"
                     value={localSettings.threshold}
                     onChange={(e) => setLocalSettings({ ...localSettings, threshold: parseInt(e.target.value) || 0 })}
                   />
-                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-white/40 uppercase tracking-wider">
+                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-400 dark:text-white/40 uppercase tracking-wider">
                     Points requis
                   </span>
                 </div>
-                <p className="text-[10px] text-white/40 font-medium">
+                <p className="text-[10px] text-slate-500 dark:text-white/40 font-medium">
                   💡 1 commande = 10 points. Avec un seuil à 50 points, la récompense se débloque à la 5ème commande.
                 </p>
               </div>
 
               {/* Récompense Offerte */}
-              <div className="space-y-2 p-4 sm:p-5 rounded-2xl bg-black/30 border border-white/5">
+              <div className="space-y-2 p-4 sm:p-5 rounded-2xl bg-slate-50 dark:bg-black/30 border border-slate-200 dark:border-white/5">
                 <label className="text-[11px] font-black uppercase tracking-wider text-vendeur-emerald flex items-center gap-2">
                   <Gift size={14} className="shrink-0" />
                   <span>Avantage ou Cadeau offert</span>
@@ -170,11 +170,11 @@ export function GrowthTab({ merchant }: { merchant: any }) {
                 <input
                   type="text"
                   placeholder="Ex: la livraison offerte, un échantillon offert, -15% sur la commande"
-                  className="w-full h-12 sm:h-14 bg-white/5 border border-white/10 rounded-xl px-4 text-xs sm:text-sm font-medium text-white focus:border-vendeur-emerald outline-none transition-all"
+                  className="w-full h-12 sm:h-14 bg-white dark:bg-white/5 border border-slate-300 dark:border-white/10 rounded-xl px-4 text-xs sm:text-sm font-medium text-slate-900 dark:text-white focus:border-vendeur-emerald outline-none transition-all"
                   value={localSettings.rewardDescription}
                   onChange={(e) => setLocalSettings({ ...localSettings, rewardDescription: e.target.value })}
                 />
-                <p className="text-[10px] text-white/40 font-medium">
+                <p className="text-[10px] text-slate-500 dark:text-white/40 font-medium">
                   Texte exact mentionné par Vendeur IA lors de la conversation WhatsApp avec le client VIP.
                 </p>
               </div>
@@ -187,7 +187,7 @@ export function GrowthTab({ merchant }: { merchant: any }) {
                 <h4 className="text-[11px] font-black uppercase tracking-wider text-vendeur-emerald">
                   Discours IA en direct sur WhatsApp
                 </h4>
-                <p className="text-xs text-white/80 leading-relaxed italic bg-black/30 p-3 rounded-xl border border-white/5 mt-1 font-medium">
+                <p className="text-xs text-slate-800 dark:text-white/80 leading-relaxed italic bg-white dark:bg-black/30 p-3 rounded-xl border border-slate-200 dark:border-white/5 mt-1 font-medium">
                   « Félicitations ! Grâce à vos achats réguliers, vous avez atteint <strong>{localSettings.threshold} points</strong> de fidélité ⭐. Le responsable m'a autorisé à vous offrir <strong>{localSettings.rewardDescription || 'un cadeau exclusif'}</strong> sur cette commande ! »
                 </p>
               </div>
@@ -199,7 +199,7 @@ export function GrowthTab({ merchant }: { merchant: any }) {
           <button
             onClick={() => updateMutation.mutate()}
             disabled={updateMutation.isPending}
-            className="w-full sm:w-auto h-12 sm:h-14 min-h-[48px] px-8 bg-white hover:bg-vendeur-emerald text-vendeur-coal font-black uppercase tracking-wider text-xs rounded-2xl flex items-center justify-center gap-2.5 transition-all shadow-xl active:scale-95 disabled:opacity-50 cursor-pointer"
+            className="w-full sm:w-auto h-12 sm:h-14 min-h-[48px] px-8 bg-slate-900 hover:bg-vendeur-emerald text-white hover:text-vendeur-coal dark:bg-white dark:hover:bg-vendeur-emerald dark:text-vendeur-coal font-black uppercase tracking-wider text-xs rounded-2xl flex items-center justify-center gap-2.5 transition-all shadow-xl active:scale-95 disabled:opacity-50 cursor-pointer"
           >
             {updateMutation.isPending ? <Loader2 className="animate-spin" size={16} /> : <Save size={16} />}
             <span>Enregistrer la Fidélité</span>
@@ -210,7 +210,7 @@ export function GrowthTab({ merchant }: { merchant: any }) {
       {/* 2. CANAUX META & FACEBOOK / INSTAGRAM SHOP */}
       <section
         id="facebook"
-        className="bg-vendeur-coal border border-white/10 p-5 sm:p-7 md:p-8 rounded-2xl sm:rounded-3xl md:rounded-[2.5rem] shadow-2xl space-y-5 scroll-mt-24"
+        className="bg-white dark:bg-vendeur-coal border border-slate-200 dark:border-white/10 p-5 sm:p-7 md:p-8 rounded-2xl sm:rounded-3xl md:rounded-[2.5rem] shadow-sm hover:shadow-md dark:shadow-xl transition-all space-y-5 scroll-mt-24"
       >
         <div className="flex items-start gap-3.5">
           <div className="h-12 w-12 sm:h-14 sm:w-14 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 shrink-0 shadow-lg">
@@ -218,21 +218,21 @@ export function GrowthTab({ merchant }: { merchant: any }) {
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
-              <h2 className="text-lg sm:text-xl font-black text-white uppercase tracking-tight truncate">
+              <h2 className="text-lg sm:text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight truncate">
                 Catalogue Meta (Facebook &amp; Instagram Shop)
               </h2>
               <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-blue-500/15 text-blue-400 border border-blue-500/30 shrink-0">
                 Croissance Ads
               </span>
             </div>
-            <p className="text-xs text-white/50 font-medium leading-relaxed mt-0.5">
+            <p className="text-xs text-slate-500 dark:text-white/50 font-medium leading-relaxed mt-0.5">
               Synchronisez automatiquement l'ensemble de vos articles avec Meta Commerce Manager pour taguer vos produits sur Instagram et lancer des campagnes publicitaires Facebook Ads.
             </p>
           </div>
         </div>
 
-        <div className="p-4 sm:p-5 rounded-2xl bg-black/30 border border-white/5 space-y-3">
-          <label className="text-[11px] font-black uppercase tracking-wider text-white/70 flex items-center gap-2">
+        <div className="p-4 sm:p-5 rounded-2xl bg-slate-50 dark:bg-black/30 border border-slate-200 dark:border-white/5 space-y-3">
+          <label className="text-[11px] font-black uppercase tracking-wider text-slate-700 dark:text-white/70 flex items-center gap-2">
             <span>URL de Synchronisation Flux Catalogue (XML / RSS)</span>
           </label>
 
@@ -241,18 +241,18 @@ export function GrowthTab({ merchant }: { merchant: any }) {
               type="text"
               readOnly
               value={catalogFeedUrl}
-              className="flex-1 h-12 bg-white/5 border border-white/10 rounded-xl px-4 text-xs text-white/70 font-mono select-all outline-none"
+              className="flex-1 h-12 bg-white dark:bg-white/5 border border-slate-300 dark:border-white/10 rounded-xl px-4 text-xs text-slate-800 dark:text-white/70 font-mono select-all outline-none"
             />
             <button
               onClick={handleCopyFeedUrl}
-              className="h-12 px-5 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 transition-all active:scale-95 shrink-0 cursor-pointer"
+              className="h-12 px-5 bg-slate-900 hover:bg-slate-800 text-white dark:bg-white/10 dark:hover:bg-white/20 dark:text-white rounded-xl text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 transition-all active:scale-95 shrink-0 cursor-pointer"
             >
               {copiedFeed ? <Check size={16} className="text-vendeur-emerald" /> : <Copy size={16} />}
               <span>{copiedFeed ? "Copié !" : "Copier le lien"}</span>
             </button>
           </div>
 
-          <div className="flex items-center gap-2 pt-1 text-[11px] text-white/40 font-medium">
+          <div className="flex items-center gap-2 pt-1 text-[11px] text-slate-500 dark:text-white/40 font-medium">
             <span>📌</span>
             <span>Mise à jour en temps réel selon les stocks et prix de votre boutique Vendeur IA.</span>
           </div>
@@ -260,44 +260,44 @@ export function GrowthTab({ merchant }: { merchant: any }) {
       </section>
 
       {/* 3. RELANCE AUTOMATIQUE DES PANIERS SUR WHATSAPP */}
-      <section className="bg-vendeur-coal border border-white/10 p-5 sm:p-7 md:p-8 rounded-2xl sm:rounded-3xl shadow-2xl space-y-4">
+      <section className="bg-white dark:bg-vendeur-coal border border-slate-200 dark:border-white/10 p-5 sm:p-7 md:p-8 rounded-2xl sm:rounded-3xl shadow-sm hover:shadow-md dark:shadow-xl transition-all space-y-4">
         <div className="flex items-start gap-3.5">
           <div className="h-12 w-12 sm:h-14 sm:w-14 bg-amber-500/10 rounded-2xl flex items-center justify-center text-amber-400 border border-amber-500/20 shrink-0 shadow-lg">
             <ShoppingCart size={24} />
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
-              <h2 className="text-lg sm:text-xl font-black text-white uppercase tracking-tight">
+              <h2 className="text-lg sm:text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight">
                 Relance des Paniers Abandonnés
               </h2>
               <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-amber-500/15 text-amber-400 border border-amber-500/30 shrink-0">
                 Automatisé IA
               </span>
             </div>
-            <p className="text-xs text-white/50 font-medium leading-relaxed mt-0.5">
+            <p className="text-xs text-slate-500 dark:text-white/50 font-medium leading-relaxed mt-0.5">
               Quand un acheteur sélectionne des articles dans votre catalogue sans finaliser le paiement, Vendeur IA lui envoie une relance WhatsApp bienveillante avec un récapitulatif pour sauver la vente.
             </p>
           </div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-2">
-          <div className="p-3.5 rounded-2xl bg-black/20 border border-white/5 flex items-center gap-3">
+          <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/5 flex items-center gap-3">
             <div className="h-8 w-8 rounded-lg bg-vendeur-emerald/10 flex items-center justify-center text-vendeur-emerald shrink-0">
               <Flame size={16} />
             </div>
             <div>
-              <p className="text-[11px] font-black uppercase text-white/80">+25% de conversion moyenne</p>
-              <p className="text-[10px] text-white/40">Recouvre les ventes hésitantes sur WhatsApp.</p>
+              <p className="text-[11px] font-black uppercase text-slate-800 dark:text-white/80">+25% de conversion moyenne</p>
+              <p className="text-[10px] text-slate-500 dark:text-white/40">Recouvre les ventes hésitantes sur WhatsApp.</p>
             </div>
           </div>
 
-          <div className="p-3.5 rounded-2xl bg-black/20 border border-white/5 flex items-center gap-3">
+          <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/5 flex items-center gap-3">
             <div className="h-8 w-8 rounded-lg bg-sky-500/10 flex items-center justify-center text-sky-400 shrink-0">
               <Award size={16} />
             </div>
             <div>
-              <p className="text-[11px] font-black uppercase text-white/80">Lien de commande direct</p>
-              <p className="text-[10px] text-white/40">Paiement Mobile Money en 1 clic pour le client.</p>
+              <p className="text-[11px] font-black uppercase text-slate-800 dark:text-white/80">Lien de commande direct</p>
+              <p className="text-[10px] text-slate-500 dark:text-white/40">Paiement Mobile Money en 1 clic pour le client.</p>
             </div>
           </div>
         </div>
@@ -330,17 +330,17 @@ export function GrowthTab({ merchant }: { merchant: any }) {
 
 function StatCard({ label, value, subtitle, icon }: { label: string; value: string | number; subtitle: string; icon: React.ReactNode }) {
   return (
-    <div className="bg-vendeur-coal border border-white/10 p-5 sm:p-6 rounded-2xl sm:rounded-3xl space-y-3 hover:border-white/20 transition-all shadow-xl">
+    <div className="bg-white dark:bg-vendeur-coal border border-slate-200 dark:border-white/10 p-5 sm:p-6 rounded-2xl sm:rounded-3xl space-y-3 hover:border-slate-300 dark:hover:border-white/20 transition-all shadow-sm hover:shadow-md dark:shadow-xl">
       <div className="flex items-center justify-between">
-        <div className="h-10 w-10 rounded-xl bg-white/5 border border-white/5 flex items-center justify-center shrink-0">
+        <div className="h-10 w-10 rounded-xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/5 flex items-center justify-center shrink-0">
           {icon}
         </div>
-        <span className="text-[9px] font-black uppercase tracking-wider text-white/30">KPI</span>
+        <span className="text-[9px] font-black uppercase tracking-wider text-slate-400 dark:text-white/30">KPI</span>
       </div>
       <div>
-        <p className="text-[10px] font-black uppercase tracking-wider text-white/40">{label}</p>
-        <p className="text-xl sm:text-2xl font-black text-white font-mono mt-0.5">{value}</p>
-        <p className="text-[10px] text-white/30 font-medium mt-1">{subtitle}</p>
+        <p className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-white/40">{label}</p>
+        <p className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white font-mono mt-0.5">{value}</p>
+        <p className="text-[10px] text-slate-500 dark:text-white/40 font-medium mt-1">{subtitle}</p>
       </div>
     </div>
   );

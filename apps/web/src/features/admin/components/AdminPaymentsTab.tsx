@@ -239,7 +239,7 @@ export function AdminPaymentsTab() {
     <div className="space-y-6 md:space-y-8 animate-in fade-in duration-300">
       {/* Header Stats - Clear & Readable */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
-        <div className="p-4 md:p-6 rounded-2xl md:rounded-3xl bg-[#0c0f0d] border border-amber-500/30 space-y-2">
+        <div className="p-4 md:p-6 rounded-2xl md:rounded-3xl bg-vendeur-coal/90 border border-amber-500/30 space-y-2 shadow-sm hover:shadow-md dark:shadow-xl transition-all">
           <div className="flex items-center justify-between text-amber-400/90 text-xs md:text-sm font-black uppercase tracking-wider">
             <span>À Vérifier</span>
             <Clock size={18} className="text-amber-400" />
@@ -247,7 +247,7 @@ export function AdminPaymentsTab() {
           <div className="text-3xl md:text-4xl font-black font-mono text-amber-400">{pendingCount}</div>
         </div>
 
-        <div className="p-4 md:p-6 rounded-2xl md:rounded-3xl bg-[#0c0f0d] border border-vendeur-emerald/30 space-y-2">
+        <div className="p-4 md:p-6 rounded-2xl md:rounded-3xl bg-vendeur-coal/90 border border-vendeur-emerald/30 space-y-2 shadow-sm hover:shadow-md dark:shadow-xl transition-all">
           <div className="flex items-center justify-between text-vendeur-emerald/90 text-xs md:text-sm font-black uppercase tracking-wider">
             <span>Validés</span>
             <CheckCircle2 size={18} className="text-vendeur-emerald" />
@@ -255,7 +255,7 @@ export function AdminPaymentsTab() {
           <div className="text-3xl md:text-4xl font-black font-mono text-vendeur-emerald">{confirmedCount}</div>
         </div>
 
-        <div className="p-4 md:p-6 rounded-2xl md:rounded-3xl bg-[#0c0f0d] border border-rose-500/30 space-y-2">
+        <div className="p-4 md:p-6 rounded-2xl md:rounded-3xl bg-vendeur-coal/90 border border-rose-500/30 space-y-2 shadow-sm hover:shadow-md dark:shadow-xl transition-all">
           <div className="flex items-center justify-between text-rose-400/90 text-xs md:text-sm font-black uppercase tracking-wider">
             <span>Alertes Fraude</span>
             <ShieldAlert size={18} className="text-rose-400" />
@@ -263,7 +263,7 @@ export function AdminPaymentsTab() {
           <div className="text-3xl md:text-4xl font-black font-mono text-rose-400">{fraudFlaggedCount}</div>
         </div>
 
-        <div className="p-4 md:p-6 rounded-2xl md:rounded-3xl bg-[#0c0f0d] border border-sky-500/30 space-y-2">
+        <div className="p-4 md:p-6 rounded-2xl md:rounded-3xl bg-vendeur-coal/90 border border-sky-500/30 space-y-2 shadow-sm hover:shadow-md dark:shadow-xl transition-all">
           <div className="flex items-center justify-between text-sky-400/90 text-xs md:text-sm font-black uppercase tracking-wider">
             <span>Brouillons / Clics</span>
             <Smartphone size={18} className="text-sky-400" />
@@ -276,7 +276,7 @@ export function AdminPaymentsTab() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8 items-start">
         {/* Left: Pending Payments List (7 cols) */}
         <div className="lg:col-span-7 space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-[#0c0f0d] p-4 md:p-5 rounded-2xl border border-white/10">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-vendeur-coal/90 p-4 md:p-5 rounded-2xl border border-white/10 shadow-sm hover:shadow-md dark:shadow-xl transition-all">
             <div className="flex items-center gap-3 flex-1">
               <Search size={18} className="text-white/40" />
               <input
@@ -325,7 +325,7 @@ export function AdminPaymentsTab() {
               <VendeurIALoader size="md" label="Chargement des paiements..." />
             </div>
           ) : filteredPayments.length === 0 ? (
-            <div className="p-12 text-center rounded-2xl md:rounded-3xl bg-[#0c0f0d] border border-white/10 text-white/60 text-sm md:text-base uppercase font-black tracking-wider">
+            <div className="p-12 text-center rounded-2xl md:rounded-3xl bg-vendeur-coal/90 border border-white/10 text-white/60 text-sm md:text-base uppercase font-black tracking-wider shadow-sm hover:shadow-md dark:shadow-xl transition-all">
               Aucun paiement dans cette catégorie
             </div>
           ) : (
@@ -346,7 +346,7 @@ export function AdminPaymentsTab() {
                   <div
                     key={p._id}
                     className={cn(
-                      "p-5 md:p-6 rounded-2xl md:rounded-3xl border transition-all space-y-4 relative group shadow-xl",
+                      "p-5 md:p-6 rounded-2xl md:rounded-3xl border transition-all space-y-4 relative group shadow-sm hover:shadow-md dark:shadow-xl",
                       hasFraudAlert
                         ? "bg-[#1a0e0e] border-rose-500/50"
                         : isUnderReview
@@ -523,7 +523,7 @@ export function AdminPaymentsTab() {
         </div>
 
         {/* Right: Multi-Country Corridors Config (5 cols) - Flattened */}
-        <div className="lg:col-span-5 bg-[#0c0f0d] border border-white/10 p-5 md:p-7 rounded-2xl md:rounded-3xl space-y-6 lg:sticky lg:top-6 shadow-xl">
+        <div className="lg:col-span-5 bg-vendeur-coal/90 border border-white/10 p-5 md:p-7 rounded-2xl md:rounded-3xl space-y-6 lg:sticky lg:top-6 shadow-sm hover:shadow-md dark:shadow-xl transition-all">
           <div className="flex items-center justify-between pb-3 border-b border-white/10">
             <div className="flex items-center gap-2.5">
               <Globe size={20} className="text-vendeur-emerald" />

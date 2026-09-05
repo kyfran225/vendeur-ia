@@ -168,22 +168,22 @@ export function FounderTicketsInbox() {
       {/* 1. Header & Quick KPIs - Flattened */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
         
-        <div className="p-4 rounded-2xl bg-vendeur-coal/60 border border-white/5 space-y-1">
+        <div className="p-4 rounded-2xl bg-vendeur-coal/80 border border-white/10 space-y-1 shadow-sm hover:shadow-md dark:shadow-xl transition-all">
           <div className="flex items-center justify-between">
-            <span className="text-[9px] font-black uppercase tracking-wider text-white/30">Registry</span>
-            <MessageSquare size={14} className="text-white/20" />
+            <span className="text-[9px] font-black uppercase tracking-wider text-white/40">Registry</span>
+            <MessageSquare size={14} className="text-white/30" />
           </div>
           <p className="text-xl font-black text-white">{totalCount}</p>
         </div>
 
-        <div className="p-4 rounded-2xl bg-emerald-500/[0.04] border border-emerald-500/20 space-y-1">
+        <div className="p-4 rounded-2xl bg-emerald-500/[0.06] border border-emerald-500/30 space-y-1 shadow-sm hover:shadow-md dark:shadow-xl transition-all">
           <div className="flex items-center justify-between">
             <span className="text-[9px] font-black uppercase tracking-wider text-emerald-400">Unread</span>
           </div>
           <p className="text-xl font-black text-emerald-400">{unreadCount}</p>
         </div>
 
-        <div className="p-4 rounded-2xl bg-amber-500/[0.04] border border-amber-500/20 space-y-1">
+        <div className="p-4 rounded-2xl bg-amber-500/[0.06] border border-amber-500/30 space-y-1 shadow-sm hover:shadow-md dark:shadow-xl transition-all">
           <div className="flex items-center justify-between">
             <span className="text-[9px] font-black uppercase tracking-wider text-amber-400">Ops</span>
             <Clock size={14} className="text-amber-400" />
@@ -191,14 +191,14 @@ export function FounderTicketsInbox() {
           <p className="text-xl font-black text-amber-400">{inProgressCount}</p>
         </div>
 
-        <div className="p-4 rounded-2xl bg-blue-500/[0.04] border border-blue-500/20 space-y-1">
+        <div className="p-4 rounded-2xl bg-blue-500/[0.06] border border-blue-500/30 space-y-1 shadow-sm hover:shadow-md dark:shadow-xl transition-all">
           <div className="flex items-center justify-between">
             <span className="text-[9px] font-black uppercase tracking-wider text-blue-400">Solved</span>
           </div>
           <p className="text-xl font-black text-blue-400">{resolvedCount}</p>
         </div>
 
-        <div className="p-4 rounded-2xl bg-rose-500/[0.04] border border-rose-500/20 space-y-1">
+        <div className="p-4 rounded-2xl bg-rose-500/[0.06] border border-rose-500/30 space-y-1 shadow-sm hover:shadow-md dark:shadow-xl transition-all">
           <div className="flex items-center justify-between">
             <span className="text-[9px] font-black uppercase tracking-wider text-rose-400">Urgent</span>
             <AlertTriangle size={14} className="text-rose-400" />
@@ -209,7 +209,7 @@ export function FounderTicketsInbox() {
       </div>
 
       {/* 2. Filters & Search Bar - Flattened */}
-      <div className="p-3 md:p-4 rounded-2xl bg-vendeur-coal/40 border border-white/5 space-y-4">
+      <div className="p-3 md:p-4 rounded-2xl bg-vendeur-coal/80 border border-white/10 space-y-4 shadow-sm hover:shadow-md dark:shadow-xl transition-all">
         <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3 justify-between">
           <div className="relative flex-1">
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/30" size={16} />
@@ -224,7 +224,7 @@ export function FounderTicketsInbox() {
 
           <button
             onClick={() => refetch()}
-            className="h-11 px-4 rounded-xl bg-white/5 text-white/70 text-xs font-black uppercase tracking-widest flex items-center justify-center gap-2 border border-white/5 transition-all"
+            className="h-11 px-4 rounded-xl bg-white/5 text-white/70 text-xs font-black uppercase tracking-widest flex items-center justify-center gap-2 border border-white/10 hover:bg-white/10 transition-all cursor-pointer"
           >
             <RefreshCw size={14} className={isLoading ? "animate-spin" : ""} />
             <span className="hidden md:inline">Sync Pulse</span>
@@ -239,8 +239,8 @@ export function FounderTicketsInbox() {
                 key={s.id}
                 onClick={() => setStatusFilter(s.id)}
                 className={cn(
-                  "px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all",
-                  statusFilter === s.id ? "bg-emerald-500 text-black" : "text-white/40"
+                  "px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all cursor-pointer",
+                  statusFilter === s.id ? "bg-emerald-500 text-black font-black" : "text-white/40 hover:text-white"
                 )}
               >
                 {s.label}
@@ -251,7 +251,7 @@ export function FounderTicketsInbox() {
           <select
             value={categoryFilter}
             onChange={(e) => setCategoryFilter(e.target.value)}
-            className="h-9 bg-black/40 border border-white/10 rounded-xl px-3 text-[10px] font-black uppercase text-white outline-none focus:border-emerald-500"
+            className="h-9 bg-black/40 border border-white/10 rounded-xl px-3 text-[10px] font-black uppercase text-white outline-none focus:border-emerald-500 cursor-pointer"
           >
             <option value="all">Category: All</option>
             <option value="founder_message">Founder Direct</option>
@@ -267,8 +267,8 @@ export function FounderTicketsInbox() {
           <VendeurIALoader size="md" label="Chargement des messages & tickets..." />
         </div>
       ) : filteredTickets.length === 0 ? (
-        <div className="p-12 text-center rounded-3xl bg-vendeur-coal/30 border border-white/5 space-y-2">
-          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/20">No active signals detected</p>
+        <div className="p-12 text-center rounded-2xl md:rounded-3xl bg-vendeur-coal/80 border border-white/10 space-y-2 shadow-sm hover:shadow-md dark:shadow-xl transition-all">
+          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40">No active signals detected</p>
         </div>
       ) : (
         <div className="space-y-4">
@@ -284,8 +284,8 @@ export function FounderTicketsInbox() {
               <div
                 key={ticket._id}
                 className={cn(
-                  "p-4 md:p-6 rounded-2xl md:rounded-3xl border transition-all space-y-4 shadow-lg",
-                  isUnread ? "bg-emerald-500/[0.02] border-emerald-500/30" : "bg-vendeur-coal/60 border-white/5 opacity-90"
+                  "p-4 md:p-6 rounded-2xl md:rounded-3xl border transition-all space-y-4 shadow-sm hover:shadow-md dark:shadow-xl",
+                  isUnread ? "bg-emerald-500/[0.04] border-emerald-500/40" : "bg-vendeur-coal/90 border-white/10 opacity-90"
                 )}
               >
                 <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-white/5 pb-4">

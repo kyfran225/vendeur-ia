@@ -222,7 +222,7 @@ export function OffersModal({ isOpen, onClose }: OffersModalProps) {
                   "w-full h-11 sm:h-14 min-h-[44px] rounded-xl sm:rounded-2xl font-black uppercase tracking-wider text-xs flex items-center justify-center gap-2 transition-all shadow-lg cursor-pointer",
                   isUnderVerification
                     ? "bg-slate-100 dark:bg-white/5 text-slate-400 dark:text-white/40 border border-slate-200 dark:border-white/10 cursor-not-allowed shadow-none"
-                    : "bg-emerald-500 text-slate-950 hover:bg-emerald-400 active:scale-95 shadow-emerald-500/20 font-black hover:scale-[1.02]"
+                    : "bg-emerald-500 text-white hover:bg-emerald-400 active:scale-95 shadow-emerald-500/20 font-black hover:scale-[1.02]"
                 )}
               >
                 {isRedirecting === "pro" ? (
@@ -239,14 +239,14 @@ export function OffersModal({ isOpen, onClose }: OffersModalProps) {
           {/* OPTION 3: PACK PRO EXPERT (CLÉ EN MAIN) */}
           <div className="p-5 sm:p-7 md:p-8 bg-gradient-to-b from-emerald-50/80 via-emerald-50/40 to-transparent dark:from-vendeur-emerald/10 dark:via-vendeur-emerald/5 dark:to-transparent flex flex-col justify-between space-y-5 sm:space-y-6 relative border-t md:border-t-0 border-emerald-200 dark:border-vendeur-emerald/30">
             <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-10">
-              <span className="bg-emerald-500 text-slate-950 text-[9px] sm:text-[10px] font-black uppercase px-3 sm:px-3.5 py-0.5 sm:py-1 rounded-full tracking-widest shadow-md whitespace-nowrap">
+              <span className="bg-emerald-500 text-white text-[9px] sm:text-[10px] font-black uppercase px-3 sm:px-3.5 py-0.5 sm:py-1 rounded-full tracking-widest shadow-md whitespace-nowrap">
                 ⭐ Clé en Main
               </span>
             </div>
 
             <div className="space-y-4 sm:space-y-5 pt-1.5 sm:pt-2">
               <div className="flex items-center gap-3">
-                <div className="h-10 w-10 sm:h-11 sm:w-11 bg-emerald-500 text-slate-950 rounded-xl sm:rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-500/20 shrink-0">
+                <div className="h-10 w-10 sm:h-11 sm:w-11 bg-emerald-500 text-white rounded-xl sm:rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-500/20 shrink-0">
                   <Sparkles size={20} className="sm:w-[22px] sm:h-[22px]" />
                 </div>
                 <div className="min-w-0">
@@ -286,7 +286,7 @@ export function OffersModal({ isOpen, onClose }: OffersModalProps) {
                   "w-full h-11 sm:h-14 min-h-[44px] rounded-xl sm:rounded-2xl font-black uppercase tracking-wider text-xs flex items-center justify-center gap-2 transition-all shadow-lg cursor-pointer",
                   isUnderVerification
                     ? "bg-slate-100 dark:bg-white/5 text-slate-400 dark:text-white/40 border border-slate-200 dark:border-white/10 cursor-not-allowed shadow-none"
-                    : "bg-emerald-600 hover:bg-emerald-500 text-white dark:bg-white dark:hover:bg-vendeur-emerald dark:text-vendeur-coal font-black hover:scale-[1.02] active:scale-95 shadow-md shadow-emerald-600/20"
+                    : "bg-emerald-600 hover:bg-emerald-500 text-white font-black hover:scale-[1.02] active:scale-95 shadow-md shadow-emerald-600/20"
                 )}
               >
                 {isRedirecting === "pro" ? (

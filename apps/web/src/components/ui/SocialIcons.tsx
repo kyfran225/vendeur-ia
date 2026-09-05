@@ -6,7 +6,7 @@ interface SocialIconProps extends React.SVGProps<SVGSVGElement> {
   color?: string;
 }
 
-export function FacebookIcon({ size = 20, className = "", color = "#FFFFFF", ...props }: SocialIconProps) {
+export function FacebookIcon({ size = 20, className = "", color = "currentColor", ...props }: SocialIconProps) {
   return (
     <svg
       width={size}
@@ -22,7 +22,7 @@ export function FacebookIcon({ size = 20, className = "", color = "#FFFFFF", ...
   );
 }
 
-export function InstagramIcon({ size = 20, className = "", color = "#FFFFFF", ...props }: SocialIconProps) {
+export function InstagramIcon({ size = 20, className = "", color = "currentColor", ...props }: SocialIconProps) {
   return (
     <svg
       width={size}
@@ -44,7 +44,7 @@ export function InstagramIcon({ size = 20, className = "", color = "#FFFFFF", ..
   );
 }
 
-export function MetaIcon({ size = 20, className = "", color = "#FFFFFF", ...props }: SocialIconProps) {
+export function MetaIcon({ size = 20, className = "", color = "currentColor", ...props }: SocialIconProps) {
   return (
     <svg
       width={size}
@@ -64,7 +64,7 @@ export function MetaIcon({ size = 20, className = "", color = "#FFFFFF", ...prop
   );
 }
 
-export function TikTokIcon({ size = 20, className = "", color = "#FFFFFF", ...props }: SocialIconProps) {
+export function TikTokIcon({ size = 20, className = "", color = "currentColor", ...props }: SocialIconProps) {
   return (
     <svg
       width={size}

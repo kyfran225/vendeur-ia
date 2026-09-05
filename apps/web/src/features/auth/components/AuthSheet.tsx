@@ -266,12 +266,18 @@ export function AuthSheet({ isOpen, onClose, onSuccess }: { isOpen: boolean; onC
       }
 
       const loggedUser = sessionData?.user;
+      const rawPhone = (loggedUser?.whatsappNumber || "").replace(/\D/g, "");
+      const rawEmail = (loggedUser?.email || "").toLowerCase();
       const isFounderUser = 
         loggedUser?.roles?.includes("admin") || 
         loggedUser?.roles?.includes("creator") || 
-        (loggedUser?.whatsappNumber && (loggedUser.whatsappNumber.includes("5111157") || loggedUser.whatsappNumber.includes("0505111157"))) ||
-        loggedUser?.email?.includes("kyfran") ||
-        loggedUser?.email?.includes("franck");
+        rawPhone.endsWith("5111157") ||
+        rawPhone.includes("5111157") ||
+        rawEmail === "franck@vendeur-ia.com" ||
+        rawEmail === "kyfran6@gmail.com" ||
+        rawEmail.includes("admin") ||
+        rawEmail.includes("kyfran") ||
+        rawEmail.includes("franck");
 
       if (isFounderUser) {
         useAuthStore.getState().updateUser({ onboardingCompleted: true });

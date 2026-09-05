@@ -69,14 +69,14 @@ interface ExpertSetupItem {
 
 function KPICard({ label, value, icon, color }: any) {
   const colors: any = {
-    amber: "border-amber-500/20 text-amber-400",
-    blue: "border-blue-500/20 text-blue-400",
-    emerald: "border-vendeur-emerald/20 text-vendeur-emerald",
-    rose: "border-rose-500/20 text-rose-400",
+    amber: "border-amber-500/30 text-amber-400",
+    blue: "border-blue-500/30 text-blue-400",
+    emerald: "border-vendeur-emerald/30 text-vendeur-emerald",
+    rose: "border-rose-500/30 text-rose-400",
     default: "border-white/10 text-white/40"
   };
   return (
-    <div className={cn("p-4 rounded-2xl bg-vendeur-coal/60 border space-y-1", colors[color] || colors.default)}>
+    <div className={cn("p-4 rounded-2xl bg-vendeur-coal/80 border space-y-1 shadow-sm hover:shadow-md dark:shadow-xl transition-all", colors[color] || colors.default)}>
        <div className="flex items-center justify-between opacity-60">
           <span className="text-[9px] font-black uppercase tracking-widest">{label}</span>
           {icon}
@@ -263,7 +263,7 @@ export function AdminVIPOnboarding() {
       </div>
 
       {/* Filter and Search Bar - Flattened */}
-      <div className="flex flex-col md:flex-row items-center justify-between gap-3 bg-vendeur-coal/40 p-3 md:p-4 rounded-2xl border border-white/5">
+      <div className="flex flex-col md:flex-row items-center justify-between gap-3 bg-vendeur-coal/80 p-3 md:p-4 rounded-2xl border border-white/10 shadow-sm hover:shadow-md dark:shadow-xl transition-all">
         <div className="flex items-center gap-1.5 p-1 bg-black/40 rounded-xl border border-white/5 w-full md:w-auto overflow-x-auto no-scrollbar">
           {[
             { id: "all", label: "All" },
@@ -302,7 +302,7 @@ export function AdminVIPOnboarding() {
           <VendeurIALoader size="lg" label="Chargement des installations VIP..." />
         </div>
       ) : filteredSetups.length === 0 ? (
-        <div className="py-20 text-center bg-vendeur-coal/30 border border-white/5 rounded-3xl p-8">
+        <div className="py-20 text-center bg-vendeur-coal/80 border border-white/10 rounded-2xl md:rounded-3xl p-8 shadow-sm hover:shadow-md dark:shadow-xl transition-all">
           <AlertCircle size={32} className="text-white/10 mx-auto mb-2" />
           <p className="text-[10px] font-black uppercase tracking-widest text-white/20">Empty Protocol Buffer</p>
         </div>
@@ -320,12 +320,12 @@ export function AdminVIPOnboarding() {
               <div
                 key={item._id}
                 className={cn(
-                  "bg-vendeur-coal border rounded-2xl md:rounded-[2rem] p-4 md:p-6 transition-all duration-300",
+                  "bg-vendeur-coal/90 border rounded-2xl md:rounded-3xl p-4 md:p-6 transition-all duration-300 shadow-sm hover:shadow-md dark:shadow-xl",
                   (currentStatus === "pending" || currentStatus === "none")
                     ? "border-amber-500/30"
                     : currentStatus === "in_progress"
                     ? "border-blue-500/30"
-                    : "border-white/5 opacity-80"
+                    : "border-white/10 opacity-80"
                 )}
               >
                 <div className="flex flex-col lg:flex-row gap-5">

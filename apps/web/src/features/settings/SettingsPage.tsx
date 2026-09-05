@@ -641,19 +641,19 @@ function BoutiqueTab({
   });
 
   return (
-    <div className="space-y-6 sm:space-y-8 animate-in slide-in-from-bottom-2 duration-500 w-full max-w-full overflow-hidden box-border">
+    <div className="space-y-6 sm:space-y-8 animate-in slide-in-from-bottom-2 duration-500 w-full max-w-full box-border">
       <section
         id="identity"
         className={cn(
-          "bg-white dark:bg-vendeur-coal/50 backdrop-blur-md border p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl md:rounded-[2.5rem] space-y-6 sm:space-y-8 shadow-md dark:shadow-2xl scroll-mt-28 w-full max-w-full overflow-hidden box-border transition-all duration-500",
+          "bg-white dark:bg-vendeur-coal border p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl md:rounded-[2.5rem] space-y-6 sm:space-y-8 shadow-sm hover:shadow-md dark:shadow-xl scroll-mt-28 w-full max-w-full box-border transition-all duration-500",
           highlightedSection === "identity"
             ? "border-emerald-500 bg-emerald-50/70 dark:bg-emerald-950/20 ring-2 ring-emerald-500/30 shadow-xl shadow-emerald-500/10"
-            : "border-slate-200/80 dark:border-white/10"
+            : "border-slate-200 dark:border-white/10"
         )}
       >
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="space-y-1 min-w-0 flex-1">
-            <h2 className="text-lg sm:text-xl md:text-2xl font-black text-white flex items-center gap-2.5 sm:gap-3 flex-wrap min-w-0">
+            <h2 className="text-lg sm:text-xl md:text-2xl font-black text-slate-900 dark:text-white flex items-center gap-2.5 sm:gap-3 flex-wrap min-w-0">
               <Store size={22} className="text-vendeur-emerald shrink-0" />
               <span>Profil de la Boutique</span>
               {highlightedSection === "identity" && (
@@ -662,7 +662,7 @@ function BoutiqueTab({
                 </span>
               )}
             </h2>
-            <p className="text-[10px] md:text-xs text-white/40 font-medium">Vendeur IA utilise ces infos pour présenter votre business.</p>
+            <p className="text-[10px] md:text-xs text-slate-500 dark:text-white/40 font-medium">Vendeur IA utilise ces infos pour présenter votre business.</p>
           </div>
         </div>
 
@@ -671,15 +671,15 @@ function BoutiqueTab({
           <InputGroup label="WhatsApp Business" type="tel" inputMode="tel" value={localMerchant?.whatsappNumber} onChange={v => { setLocalMerchant({...localMerchant, whatsappNumber: v}); setIsDirty(true); }} placeholder="Ex: 07 00 00 00 00" />
 
           {/* Custom Slug / Storefront URL Display */}
-          <div className="md:col-span-2 p-3.5 sm:p-4 md:p-5 rounded-2xl bg-white/[0.03] border border-white/5 space-y-3 w-full max-w-full overflow-hidden box-border">
+          <div className="md:col-span-2 p-3.5 sm:p-4 md:p-5 rounded-2xl bg-slate-50 dark:bg-white/[0.03] border border-slate-200 dark:border-white/5 space-y-3 w-full max-w-full overflow-hidden box-border">
             <div className="flex items-center gap-2">
               <Globe size={16} className="text-vendeur-emerald shrink-0" />
-              <span className="text-[11px] font-black uppercase tracking-wider text-white">Lien de votre boutique</span>
+              <span className="text-[11px] font-black uppercase tracking-wider text-slate-900 dark:text-white">Lien de votre boutique</span>
             </div>
 
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full max-w-full">
-              <div className="flex-1 min-w-0 h-11 sm:h-12 bg-black/40 border border-white/10 rounded-xl px-3 flex items-center gap-1 text-xs text-white/80 font-mono overflow-hidden">
-                <span className="text-white/40 select-none truncate shrink-0 text-[10px] sm:text-xs">
+              <div className="flex-1 min-w-0 h-11 sm:h-12 bg-slate-100 dark:bg-black/40 border border-slate-200 dark:border-white/10 rounded-xl px-3 flex items-center gap-1 text-xs text-slate-800 dark:text-white/80 font-mono overflow-hidden">
+                <span className="text-slate-400 dark:text-white/40 select-none truncate shrink-0 text-[10px] sm:text-xs">
                   {typeof window !== "undefined" ? window.location.host : ""}/shop/
                 </span>
                 <span className="font-bold text-vendeur-emerald truncate flex-1 min-w-0 text-[11px] sm:text-xs">
@@ -696,16 +696,16 @@ function BoutiqueTab({
                     navigator.clipboard.writeText(url);
                     toast.success("Lien copié !");
                   }}
-                  className="h-11 sm:h-12 px-3 sm:px-4 rounded-xl bg-white/5 hover:bg-white/10 active:scale-95 border border-white/10 text-white text-xs font-black uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                  className="h-11 sm:h-12 px-3 sm:px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 dark:bg-white/5 dark:hover:bg-white/10 dark:border-white/10 dark:text-white text-xs font-black uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all cursor-pointer"
                 >
-                  <Copy size={14} className="text-white/60 shrink-0" />
+                  <Copy size={14} className="text-slate-500 dark:text-white/60 shrink-0" />
                   <span>Copier</span>
                 </button>
 
                 <Link
                   to={`/shop/${slugify(localMerchant?.slug || localMerchant?.businessName || "boutique")}`}
                   target="_blank"
-                  className="h-11 sm:h-12 px-3 sm:px-4 rounded-xl bg-vendeur-emerald hover:bg-emerald-400 active:scale-95 text-vendeur-coal text-xs font-black uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-lg shadow-vendeur-emerald/20 transition-all font-bold"
+                  className="h-11 sm:h-12 px-3 sm:px-4 rounded-xl bg-vendeur-emerald hover:bg-emerald-400 active:scale-95 text-white text-xs font-black uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-lg shadow-vendeur-emerald/20 transition-all font-bold"
                 >
                   <ExternalLink size={14} className="shrink-0" />
                   <span>Visiter</span>
@@ -715,10 +715,10 @@ function BoutiqueTab({
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Devise du Catalogue &amp; Offres</label>
+            <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-white/40 ml-1">Devise du Catalogue &amp; Offres</label>
             <div className="relative">
               <select
-                className={`w-full h-14 bg-black/40 border px-5 text-sm text-white focus:border-vendeur-emerald outline-none transition-all appearance-none cursor-pointer rounded-2xl ${localMerchant?.currency !== merchant?.currency ? "border-amber-500/60 bg-amber-500/5" : "border-white/10"}`}
+                className={`w-full h-14 bg-slate-50 dark:bg-black/40 border px-5 text-sm text-slate-900 dark:text-white focus:border-vendeur-emerald outline-none transition-all appearance-none cursor-pointer rounded-2xl ${localMerchant?.currency !== merchant?.currency ? "border-amber-500/60 bg-amber-500/5" : "border-slate-200 dark:border-white/10"}`}
                 value={localMerchant?.currency || "XOF"}
                 onChange={e => {
                   const newCurr = e.target.value;
@@ -748,15 +748,15 @@ function BoutiqueTab({
                 <option value="EUR">Euro (€)</option>
                 <option value="USD">Dollar ($)</option>
               </select>
-              <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 text-white/20 pointer-events-none" size={16} />
+              <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-white/20 pointer-events-none" size={16} />
             </div>
-            <p className="text-[10px] text-white/30 ml-1 font-medium">Monnaie affichée à vos clients (produits, plats, prestations, formations &amp; WhatsApp).</p>
+            <p className="text-[10px] text-slate-500 dark:text-white/30 ml-1 font-medium">Monnaie affichée à vos clients (produits, plats, prestations, formations &amp; WhatsApp).</p>
 
             {/* Warning badge when currency has changed */}
             {localMerchant?.currency !== merchant?.currency && (
               <div className="flex items-start gap-2 px-4 py-3 rounded-xl bg-amber-500/10 border border-amber-500/20">
-                <p className="text-xs text-amber-300 leading-relaxed font-medium">
-                  Conversion automatique activée : après enregistrement, les prix de l'ensemble de votre catalogue et vos frais de livraison seront automatiquement convertis en <strong className="text-white font-black">{localMerchant?.currency}</strong>.
+                <p className="text-xs text-amber-600 dark:text-amber-300 leading-relaxed font-medium">
+                  Conversion automatique activée : après enregistrement, les prix de l'ensemble de votre catalogue et vos frais de livraison seront automatiquement convertis en <strong className="text-slate-900 dark:text-white font-black">{localMerchant?.currency}</strong>.
                 </p>
               </div>
             )}
@@ -831,11 +831,11 @@ function BoutiqueTab({
           )}
 
           <div className="space-y-1.5">
-            <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Catégorie de Commerce</label>
+            <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-white/40 ml-1">Catégorie de Commerce</label>
 
             <div className="relative">
               <select
-                className={`w-full h-14 rounded-2xl bg-black/40 border px-4 text-white focus:border-vendeur-emerald outline-none transition-all appearance-none cursor-pointer ${localMerchant?.category !== merchant?.category ? "border-amber-500/60 bg-amber-500/5" : "border-white/10"}`}
+                className={`w-full h-14 rounded-2xl bg-slate-50 dark:bg-black/40 border px-4 text-slate-900 dark:text-white focus:border-vendeur-emerald outline-none transition-all appearance-none cursor-pointer ${localMerchant?.category !== merchant?.category ? "border-amber-500/60 bg-amber-500/5" : "border-slate-200 dark:border-white/10"}`}
                 value={localMerchant?.category || ""}
                 onChange={e => {
                   const newCat = e.target.value;
@@ -860,13 +860,13 @@ function BoutiqueTab({
                 <option value="auto">Auto-Moto &amp; Pièces</option>
                 <option value="other">Autre Commerce</option>
               </select>
-              <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 text-white/20 pointer-events-none" size={16} />
+              <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-white/20 pointer-events-none" size={16} />
             </div>
 
             {/* Warning badge when category has been changed but not saved yet */}
             {localMerchant?.category !== merchant?.category && (
               <div className="flex items-start gap-2 px-4 py-3 rounded-xl bg-amber-500/10 border border-amber-500/20">
-                <p className="text-xs text-amber-300 leading-relaxed font-medium">
+                <p className="text-xs text-amber-600 dark:text-amber-300 leading-relaxed font-medium">
                   Changement non enregistré. L'interface Admin, le Vendeur IA WhatsApp et la vitrine publique s'adapteront au nouveau type de commerce après sauvegarde.
                 </p>
               </div>
@@ -876,29 +876,29 @@ function BoutiqueTab({
           {/* Category Change Confirmation Modal */}
           {categoryChangeWarning && (
             <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/70 backdrop-blur-lg animate-in fade-in duration-200">
-              <div className="w-full max-w-md bg-vendeur-coal border border-white/10 rounded-3xl p-8 space-y-6 shadow-2xl animate-in zoom-in-95 duration-300">
+              <div className="w-full max-w-md bg-white dark:bg-vendeur-coal border border-slate-200 dark:border-white/10 rounded-3xl p-8 space-y-6 shadow-2xl animate-in zoom-in-95 duration-300 text-slate-900 dark:text-white">
                 <div className="space-y-2">
-                  <h3 className="text-xl font-black uppercase tracking-tight text-white">Changer de type de commerce ?</h3>
-                  <p className="text-white/50 text-sm leading-relaxed">
-                    Cette action va adapter <strong className="text-white">l'interface Admin</strong> (labels, champs, icônes),
-                    le <strong className="text-white">Vendeur IA WhatsApp</strong> (nouveau comportement et persona),
-                    et la <strong className="text-white">vitrine publique</strong> (hero, CTA, messages clients).
+                  <h3 className="text-xl font-black uppercase tracking-tight text-slate-900 dark:text-white">Changer de type de commerce ?</h3>
+                  <p className="text-slate-600 dark:text-white/50 text-sm leading-relaxed">
+                    Cette action va adapter <strong className="text-slate-900 dark:text-white">l'interface Admin</strong> (labels, champs, icônes),
+                    le <strong className="text-slate-900 dark:text-white">Vendeur IA WhatsApp</strong> (nouveau comportement et persona),
+                    et la <strong className="text-slate-900 dark:text-white">vitrine publique</strong> (hero, CTA, messages clients).
                   </p>
                 </div>
 
-                <div className="flex items-center gap-4 p-4 bg-white/5 rounded-2xl border border-white/5">
+                <div className="flex items-center gap-4 p-4 bg-slate-50 dark:bg-white/5 rounded-2xl border border-slate-200 dark:border-white/5">
                   <div className="flex-1 text-center">
-                    <p className="text-[9px] font-black text-white/30 uppercase tracking-widest mb-1">Actuel</p>
-                    <p className="text-sm font-black text-white uppercase">{categoryChangeWarning.oldCategory}</p>
+                    <p className="text-[9px] font-black text-slate-400 dark:text-white/30 uppercase tracking-widest mb-1">Actuel</p>
+                    <p className="text-sm font-black text-slate-900 dark:text-white uppercase">{categoryChangeWarning.oldCategory}</p>
                   </div>
-                  <div className="text-2xl text-white/20">→</div>
+                  <div className="text-2xl text-slate-400 dark:text-white/20">→</div>
                   <div className="flex-1 text-center">
-                    <p className="text-[9px] font-black text-amber-400 uppercase tracking-widest mb-1">Nouveau</p>
-                    <p className="text-sm font-black text-amber-400 uppercase">{categoryChangeWarning.newCategory}</p>
+                    <p className="text-[9px] font-black text-amber-500 uppercase tracking-widest mb-1">Nouveau</p>
+                    <p className="text-sm font-black text-amber-600 dark:text-amber-400 uppercase">{categoryChangeWarning.newCategory}</p>
                   </div>
                 </div>
 
-                <p className="text-[10px] text-white/30 font-medium">
+                <p className="text-[10px] text-slate-500 dark:text-white/30 font-medium">
                   Vos produits existants ne seront pas supprimés. Seule l'interface et le comportement de Vendeur IA seront mis à jour après sauvegarde.
                 </p>
 
@@ -910,13 +910,13 @@ function BoutiqueTab({
                       setIsDirty(false);
                       setCategoryChangeWarning(null);
                     }}
-                    className="h-12 rounded-2xl border border-white/10 text-white/60 hover:text-white hover:bg-white/5 transition-all text-[10px] font-black uppercase tracking-widest"
+                    className="h-12 rounded-2xl border border-slate-200 dark:border-white/10 text-slate-600 dark:text-white/60 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 transition-all text-[10px] font-black uppercase tracking-widest cursor-pointer"
                   >
                     Annuler
                   </button>
                   <button
                     onClick={() => setCategoryChangeWarning(null)}
-                    className="h-12 rounded-2xl bg-amber-500 text-black font-black text-[10px] uppercase tracking-widest hover:bg-amber-400 transition-all"
+                    className="h-12 rounded-2xl bg-amber-500 text-slate-950 font-black text-[10px] uppercase tracking-widest hover:bg-amber-400 transition-all cursor-pointer"
                   >
                     Confirmer
                   </button>
@@ -925,7 +925,7 @@ function BoutiqueTab({
             </div>
           )}
           <div className="space-y-1.5">
-             <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Adresse / Zone</label>
+             <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-white/40 ml-1">Adresse / Zone</label>
              <AddressAutocomplete
                value={localMerchant?.address || ""}
                onChange={v => { setLocalMerchant({...localMerchant, address: v}); setIsDirty(true); }}
@@ -969,10 +969,10 @@ function BoutiqueTab({
       <section
         id="delivery"
         className={cn(
-          "bg-white dark:bg-vendeur-coal border p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl md:rounded-[2.5rem] space-y-6 sm:space-y-8 shadow-md dark:shadow-2xl scroll-mt-28 w-full max-w-full overflow-hidden box-border transition-all duration-500",
+          "bg-white dark:bg-vendeur-coal border p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl md:rounded-[2.5rem] space-y-6 sm:space-y-8 shadow-sm hover:shadow-md dark:shadow-xl scroll-mt-28 w-full max-w-full box-border transition-all duration-500",
           highlightedSection === "delivery"
             ? "border-emerald-500 bg-emerald-50/70 dark:bg-emerald-950/20 ring-2 ring-emerald-500/30 shadow-xl shadow-emerald-500/10"
-            : "border-slate-200/80 dark:border-white/10"
+            : "border-slate-200 dark:border-white/10"
         )}
       >
         <div className="flex items-center justify-between gap-3 md:gap-4 px-1">
@@ -981,12 +981,12 @@ function BoutiqueTab({
               "h-11 w-11 sm:h-12 sm:w-12 md:h-14 md:w-14 rounded-2xl flex items-center justify-center border shrink-0 transition-all",
               highlightedSection === "delivery"
                 ? "bg-vendeur-emerald/20 border-vendeur-emerald text-vendeur-emerald shadow-lg shadow-vendeur-emerald/20"
-                : "bg-sky-500/10 border-sky-500/20 text-sky-400"
+                : "bg-sky-500/10 border-sky-500/20 text-sky-500 dark:text-sky-400"
             )}>
               <Truck size={22} className="md:w-7 md:h-7" />
             </div>
             <div className="min-w-0 flex-1">
-              <h2 className="text-lg sm:text-xl md:text-2xl font-black uppercase text-white leading-tight flex items-center gap-2">
+              <h2 className="text-lg sm:text-xl md:text-2xl font-black uppercase text-slate-900 dark:text-white leading-tight flex items-center gap-2">
                 <span>Frais de Livraison</span>
                 {highlightedSection === "delivery" && (
                   <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-vendeur-emerald/20 text-vendeur-emerald border border-vendeur-emerald/40 animate-pulse hidden sm:inline-block">
@@ -994,7 +994,7 @@ function BoutiqueTab({
                   </span>
                 )}
               </h2>
-              <p className="text-[9px] md:text-[10px] font-black uppercase tracking-wider text-white/30">Ces tarifs seront communiqués aux clients.</p>
+              <p className="text-[9px] md:text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-white/30">Ces tarifs seront communiqués aux clients.</p>
             </div>
           </div>
 
@@ -1006,7 +1006,7 @@ function BoutiqueTab({
         </div>
 
         <div className="space-y-3 sm:space-y-4 w-full max-w-full">
-           <div className="flex flex-row gap-2 px-1 text-[9px] sm:text-[10px] font-black uppercase tracking-[0.15em] text-white/30">
+           <div className="flex flex-row gap-2 px-1 text-[9px] sm:text-[10px] font-black uppercase tracking-[0.15em] text-slate-400 dark:text-white/30">
               <span className="flex-1">Zone / Commune</span>
               <span className="w-28 sm:w-40 text-right pr-2">Tarif ({localMerchant?.currency || "XOF"})</span>
            </div>
@@ -1044,7 +1044,7 @@ function BoutiqueTab({
                         type="text"
                         inputMode="numeric"
                         pattern="[0-9]*"
-                        className="w-full h-12 sm:h-14 bg-black/40 border border-white/10 rounded-xl sm:rounded-2xl px-2.5 sm:px-3.5 text-xs sm:text-sm text-vendeur-emerald font-black outline-none focus:border-sky-500 transition-all font-mono pr-11 sm:pr-14"
+                        className="w-full h-12 sm:h-14 bg-slate-50 dark:bg-black/40 border border-slate-200 dark:border-white/10 rounded-xl sm:rounded-2xl px-2.5 sm:px-3.5 text-xs sm:text-sm text-emerald-600 dark:text-vendeur-emerald font-black outline-none focus:border-sky-500 transition-all font-mono pr-11 sm:pr-14"
                         placeholder="1500"
                         value={fee.price}
                         onChange={(e) => {
@@ -1053,7 +1053,7 @@ function BoutiqueTab({
                           setIsDirty(true);
                         }}
                     />
-                    <span className="absolute right-2.5 sm:right-3.5 top-1/2 -translate-y-1/2 text-[9px] sm:text-[10px] font-black text-white/30 pointer-events-none font-mono">
+                    <span className="absolute right-2.5 sm:right-3.5 top-1/2 -translate-y-1/2 text-[9px] sm:text-[10px] font-black text-slate-400 dark:text-white/30 pointer-events-none font-mono">
                       {localMerchant?.currency || "XOF"}
                     </span>
                   </div>
@@ -1062,8 +1062,8 @@ function BoutiqueTab({
            ))}
 
            {deliveryFees.length === 0 && localMerchant?.city && (
-              <div className="p-3 sm:p-4 rounded-2xl bg-white/[0.02] border border-dashed border-white/10 space-y-2">
-                 <p className="text-[10px] sm:text-xs text-white/50">Suggestions rapides pour votre ville ({localMerchant?.city}) :</p>
+              <div className="p-3 sm:p-4 rounded-2xl bg-slate-50 dark:bg-white/[0.02] border border-dashed border-slate-200 dark:border-white/10 space-y-2">
+                 <p className="text-[10px] sm:text-xs text-slate-600 dark:text-white/50">Suggestions rapides pour votre ville ({localMerchant?.city}) :</p>
                  <div className="flex flex-wrap gap-1.5 sm:gap-2">
                     {getZonesForCity(localMerchant.city).slice(0, 4).map((suggestion: any, sIdx: number) => (
                       <button
@@ -1073,7 +1073,7 @@ function BoutiqueTab({
                             setDeliveryFees((prev: any[]) => [...prev, { zone: suggestion.name, price: suggestion.suggestedPrice }]);
                             setIsDirty(true);
                           }}
-                          className="px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/20 text-sky-300 text-[10px] sm:text-xs font-bold transition-all"
+                          className="px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/20 text-sky-600 dark:text-sky-300 text-[10px] sm:text-xs font-bold transition-all cursor-pointer"
                       >
                         + {suggestion.name} ({suggestion.suggestedPrice} {localMerchant?.currency || "XOF"})
                       </button>
@@ -1089,7 +1089,7 @@ function BoutiqueTab({
                   setDeliveryFees((prev: any[]) => [...prev, { zone: "", price: 1000 }]);
                   setIsDirty(true);
                 }}
-                className="flex items-center gap-2 text-sky-400 text-[10px] font-black uppercase tracking-[0.2em] hover:underline px-1 py-1 cursor-pointer"
+                className="flex items-center gap-2 text-sky-600 dark:text-sky-400 text-[10px] font-black uppercase tracking-[0.2em] hover:underline px-1 py-1 cursor-pointer"
              >
                 <Plus size={16} /> Ajouter une zone de livraison
              </button>
@@ -1109,14 +1109,14 @@ function BoutiqueTab({
                 className={cn(
                   "h-12 px-6 rounded-2xl font-black uppercase text-xs tracking-wider flex items-center justify-center gap-2 transition-all shadow-lg shrink-0",
                   !isDeliveryModified && deliveryFees.length > 0
-                    ? "bg-white/10 text-white/50 border border-white/10 cursor-default"
-                    : "bg-sky-400 hover:bg-sky-300 text-vendeur-coal hover:scale-105 active:scale-95 shadow-sky-400/20 cursor-pointer disabled:opacity-50"
+                    ? "bg-slate-100 dark:bg-white/10 text-slate-400 dark:text-white/50 border border-slate-200 dark:border-white/10 cursor-default"
+                    : "bg-sky-500 hover:bg-sky-400 text-white hover:scale-105 active:scale-95 shadow-sky-500/20 cursor-pointer disabled:opacity-50"
                 )}
               >
                 {updateMutation.isPending && savedSectionType === "delivery" ? (
                   <Loader2 size={16} className="animate-spin" />
                 ) : !isDeliveryModified && deliveryFees.length > 0 ? (
-                  <Check size={16} className="text-white" />
+                  <Check size={16} className="text-emerald-500 dark:text-white" />
                 ) : (
                   <Check size={16} />
                 )}
@@ -1304,14 +1304,14 @@ function BoutiqueTab({
       </section>
 
       {/* Alertes Push */}
-      <section id="push" className="bg-white dark:bg-vendeur-coal border border-slate-200/80 dark:border-white/10 p-6 md:p-8 rounded-2xl sm:rounded-3xl md:rounded-[2.5rem] space-y-6 overflow-hidden shadow-md dark:shadow-2xl">
+      <section id="push" className="bg-white dark:bg-vendeur-coal border border-slate-200 dark:border-white/10 p-6 md:p-8 rounded-2xl sm:rounded-3xl md:rounded-[2.5rem] space-y-6 shadow-sm hover:shadow-md dark:shadow-xl transition-all">
         <div className="flex items-center gap-4">
            <div className="h-10 w-10 md:h-12 md:w-12 bg-amber-500/10 rounded-2xl flex items-center justify-center text-amber-500 dark:text-amber-400 border border-amber-500/20 shadow-lg shadow-amber-500/5 shrink-0">
               <Bell size={20} className="md:w-6 md:h-6" />
            </div>
            <div>
-              <h2 className="text-lg md:text-xl font-black text-white whitespace-nowrap">Alertes Push</h2>
-              <p className="text-[10px] md:text-xs text-white/40 font-medium leading-relaxed">Notifications en temps réel sur cet appareil.</p>
+              <h2 className="text-lg md:text-xl font-black text-slate-900 dark:text-white whitespace-nowrap">Alertes Push</h2>
+              <p className="text-[10px] md:text-xs text-slate-500 dark:text-white/40 font-medium leading-relaxed">Notifications en temps réel sur cet appareil.</p>
            </div>
         </div>
 
@@ -1347,15 +1347,15 @@ function BoutiqueTab({
           }}
           disabled={isSubscribed && pushStatus === 'granted'}
           className={cn(
-            "flex h-16 w-full md:w-auto px-10 items-center justify-center gap-3 rounded-2xl border text-[10px] font-black uppercase tracking-widest transition-all active:scale-95",
+            "flex h-16 w-full md:w-auto px-10 items-center justify-center gap-3 rounded-2xl border text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 cursor-pointer",
             (isSubscribed && pushStatus === 'granted')
-              ? "bg-vendeur-emerald/10 border-vendeur-emerald text-vendeur-emerald cursor-default"
-              : "bg-white/5 border-white/10 text-white hover:bg-white/10"
+              ? "bg-emerald-500/10 border-emerald-500 text-emerald-600 dark:text-vendeur-emerald cursor-default"
+              : "bg-slate-100 hover:bg-slate-200 border-slate-200 text-slate-800 dark:bg-white/5 dark:border-white/10 dark:text-white dark:hover:bg-white/10"
           )}
         >
           {isSubscribed && pushStatus === 'granted' ? (
             <>
-              <Bell size={18} className="text-vendeur-emerald" />
+              <Bell size={18} className="text-emerald-500 dark:text-vendeur-emerald" />
               Alertes Actives
             </>
           ) : (
@@ -1370,12 +1370,12 @@ function BoutiqueTab({
       {/* Sticky Floating Save Bar (Centered & Glassmorphism, only visible when modified) */}
       {isModified && (
         <div className="fixed bottom-6 inset-x-0 z-50 flex items-center justify-center px-3 sm:px-4 pointer-events-none animate-in fade-in slide-in-from-bottom-5 duration-300">
-          <div className="pointer-events-auto p-1.5 sm:p-2.5 rounded-2xl sm:rounded-3xl bg-vendeur-coal/95 backdrop-blur-2xl border border-white/20 shadow-[0_20px_50px_rgba(0,0,0,0.8)] flex items-center gap-2 sm:gap-3 max-w-full">
+          <div className="pointer-events-auto p-1.5 sm:p-2.5 rounded-2xl sm:rounded-3xl bg-slate-900/95 dark:bg-vendeur-coal/95 backdrop-blur-2xl border border-slate-700 dark:border-white/20 shadow-[0_20px_50px_rgba(0,0,0,0.4)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.8)] flex items-center gap-2 sm:gap-3 max-w-full">
             <button
               type="button"
               onClick={handleCancel}
               disabled={updateMutation.isPending}
-              className="h-11 sm:h-12 px-3.5 sm:px-5 rounded-xl sm:rounded-2xl bg-white/5 hover:bg-white/10 text-white/70 hover:text-white font-black uppercase text-xs tracking-wider flex items-center justify-center gap-1.5 transition-all shrink-0 active:scale-95 cursor-pointer"
+              className="h-11 sm:h-12 px-3.5 sm:px-5 rounded-xl sm:rounded-2xl bg-white/10 hover:bg-white/20 text-white/80 hover:text-white font-black uppercase text-xs tracking-wider flex items-center justify-center gap-1.5 transition-all shrink-0 active:scale-95 cursor-pointer"
             >
               <RotateCcw size={15} className="shrink-0" />
               <span>Annuler</span>
@@ -1388,7 +1388,7 @@ function BoutiqueTab({
                 updateMutation.mutate("all");
               }}
               disabled={updateMutation.isPending}
-              className="h-11 sm:h-12 px-5 sm:px-8 rounded-xl sm:rounded-2xl bg-vendeur-emerald hover:bg-emerald-400 text-vendeur-coal font-black uppercase text-xs tracking-widest flex items-center justify-center gap-2 hover:scale-105 active:scale-95 transition-all shadow-xl shadow-vendeur-emerald/30 disabled:opacity-50 shrink-0 whitespace-nowrap cursor-pointer"
+              className="h-11 sm:h-12 px-5 sm:px-8 rounded-xl sm:rounded-2xl bg-vendeur-emerald hover:bg-emerald-400 text-white font-black uppercase text-xs tracking-widest flex items-center justify-center gap-2 hover:scale-105 active:scale-95 transition-all shadow-xl shadow-vendeur-emerald/30 disabled:opacity-50 shrink-0 whitespace-nowrap cursor-pointer"
             >
               {updateMutation.isPending ? <Loader2 className="animate-spin shrink-0" size={16} /> : <Save size={16} className="shrink-0" />}
               <span>{updateMutation.isPending ? "Enregistrement..." : "Enregistrer"}</span>
@@ -1549,18 +1549,18 @@ function SavoirTab({ initialKnowledge }: { initialKnowledge: any }) {
   };
 
   return (
-    <div className="space-y-6 sm:space-y-8 animate-in slide-in-from-bottom-2 duration-500 w-full max-w-full overflow-hidden box-border">
-      <section className="bg-vendeur-coal border border-white/10 p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl md:rounded-[2.5rem] space-y-6 sm:space-y-8 shadow-2xl overflow-hidden w-full max-w-full box-border">
+    <div className="space-y-6 sm:space-y-8 animate-in slide-in-from-bottom-2 duration-500 w-full max-w-full box-border">
+      <section className="bg-white dark:bg-vendeur-coal border border-slate-200 dark:border-white/10 p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl md:rounded-[2.5rem] space-y-6 sm:space-y-8 shadow-sm hover:shadow-md dark:shadow-xl transition-all w-full max-w-full box-border">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 w-full">
           <div className="flex items-center gap-3 md:gap-4 min-w-0 flex-1">
-            <div className="h-11 w-11 sm:h-12 sm:w-12 md:h-14 md:w-14 bg-amber-500/10 rounded-2xl flex items-center justify-center text-amber-400 border border-amber-500/20 shrink-0">
+            <div className="h-11 w-11 sm:h-12 sm:w-12 md:h-14 md:w-14 bg-amber-500/10 rounded-2xl flex items-center justify-center text-amber-500 dark:text-amber-400 border border-amber-500/20 shrink-0">
               <HelpCircle size={22} className="md:w-7 md:h-7" />
             </div>
             <div className="min-w-0 flex-1">
-              <h2 className="text-lg sm:text-xl md:text-2xl font-black uppercase text-white leading-tight break-words">
+              <h2 className="text-lg sm:text-xl md:text-2xl font-black uppercase text-slate-900 dark:text-white leading-tight break-words">
                 Mémoire de Vendeur IA (FAQ)
               </h2>
-              <p className="text-[10px] md:text-xs text-white/40 font-medium mt-0.5">
+              <p className="text-[10px] md:text-xs text-slate-500 dark:text-white/40 font-medium mt-0.5">
                 Donnez des réponses précises à votre Vendeur IA.
               </p>
             </div>
@@ -1568,7 +1568,7 @@ function SavoirTab({ initialKnowledge }: { initialKnowledge: any }) {
           <button
             onClick={() => saveMutation.mutate(localData)}
             disabled={saveMutation.isPending}
-            className="flex h-11 sm:h-12 w-full sm:w-auto items-center justify-center gap-2 rounded-xl sm:rounded-2xl bg-white text-vendeur-coal px-6 sm:px-8 text-xs font-black uppercase shadow-lg hover:scale-105 active:scale-95 transition-all disabled:opacity-50 whitespace-nowrap cursor-pointer shrink-0"
+            className="flex h-11 sm:h-12 w-full sm:w-auto items-center justify-center gap-2 rounded-xl sm:rounded-2xl bg-vendeur-emerald hover:bg-emerald-400 text-white px-6 sm:px-8 text-xs font-black uppercase shadow-lg hover:scale-105 active:scale-95 transition-all disabled:opacity-50 whitespace-nowrap cursor-pointer shrink-0"
           >
             {saveMutation.isPending ? <Loader2 className="animate-spin" size={15} /> : <Save size={15} />}
             <span>Enregistrer</span>
@@ -1577,10 +1577,10 @@ function SavoirTab({ initialKnowledge }: { initialKnowledge: any }) {
 
         <div className="space-y-4 sm:space-y-5 w-full max-w-full">
           {(localData?.faq || []).map((item: any, i: number) => (
-            <div key={i} className="relative p-4 sm:p-5 bg-white/[0.02] border border-white/10 rounded-2xl sm:rounded-3xl space-y-3.5 hover:border-vendeur-emerald/30 transition-all w-full max-w-full box-border">
+            <div key={i} className="relative p-4 sm:p-5 bg-slate-50 dark:bg-white/[0.02] border border-slate-200 dark:border-white/10 rounded-2xl sm:rounded-3xl space-y-3.5 hover:border-emerald-500/30 dark:hover:border-vendeur-emerald/30 transition-all w-full max-w-full box-border">
               <div className="flex items-center justify-between gap-2">
-                <span className="text-[10px] font-black uppercase tracking-wider text-vendeur-emerald flex items-center gap-1.5">
-                  <span className="h-1.5 w-1.5 rounded-full bg-vendeur-emerald" />
+                <span className="text-[10px] font-black uppercase tracking-wider text-emerald-600 dark:text-vendeur-emerald flex items-center gap-1.5">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 dark:bg-vendeur-emerald" />
                   <span>Question & Réponse #{i + 1}</span>
                 </span>
                 <button
@@ -1589,7 +1589,7 @@ function SavoirTab({ initialKnowledge }: { initialKnowledge: any }) {
                     const faq = localData.faq.filter((_: any, idx: number) => idx !== i);
                     setLocalData({ ...localData, faq });
                   }}
-                  className="h-8 w-8 sm:h-9 sm:w-9 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 flex items-center justify-center transition-all cursor-pointer active:scale-95 shrink-0"
+                  className="h-8 w-8 sm:h-9 sm:w-9 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 dark:text-rose-400 border border-rose-500/20 flex items-center justify-center transition-all cursor-pointer active:scale-95 shrink-0"
                   title="Supprimer cette question"
                 >
                   <Trash2 size={14} />
@@ -1597,9 +1597,9 @@ function SavoirTab({ initialKnowledge }: { initialKnowledge: any }) {
               </div>
 
               <div className="space-y-1.5 min-w-0">
-                <label className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-white/30 ml-1">Question Client</label>
+                <label className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-white/30 ml-1">Question Client</label>
                 <input
-                  className="w-full bg-black/40 border border-white/10 rounded-xl px-3.5 sm:px-4 h-11 sm:h-12 text-xs sm:text-sm font-medium text-white focus:border-vendeur-emerald outline-none transition-all box-border placeholder-white/20"
+                  className="w-full bg-white dark:bg-black/40 border border-slate-200 dark:border-white/10 rounded-xl px-3.5 sm:px-4 h-11 sm:h-12 text-xs sm:text-sm font-medium text-slate-900 dark:text-white focus:border-vendeur-emerald outline-none transition-all box-border placeholder:text-slate-400 dark:placeholder:text-white/20"
                   placeholder="Ex: Livrez-vous à Bassam ?"
                   value={item.question}
                   onChange={(e) => {
@@ -1611,9 +1611,9 @@ function SavoirTab({ initialKnowledge }: { initialKnowledge: any }) {
               </div>
 
               <div className="space-y-1.5 min-w-0">
-                <label className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-white/30 ml-1">Réponse de Vendeur IA</label>
+                <label className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-white/30 ml-1">Réponse de Vendeur IA</label>
                 <textarea
-                  className="w-full bg-black/40 border border-white/10 rounded-xl px-3.5 sm:px-4 py-3 text-xs sm:text-sm font-medium text-white/80 focus:border-vendeur-emerald outline-none min-h-[90px] transition-all resize-none box-border placeholder-white/20"
+                  className="w-full bg-white dark:bg-black/40 border border-slate-200 dark:border-white/10 rounded-xl px-3.5 sm:px-4 py-3 text-xs sm:text-sm font-medium text-slate-800 dark:text-white/80 focus:border-vendeur-emerald outline-none min-h-[90px] transition-all resize-none box-border placeholder:text-slate-400 dark:placeholder:text-white/20"
                   placeholder="Oui, nous livrons partout à Bassam en 24h..."
                   value={item.answer}
                   onChange={(e) => {
@@ -1629,7 +1629,7 @@ function SavoirTab({ initialKnowledge }: { initialKnowledge: any }) {
           <button
             type="button"
             onClick={handleAddFaq}
-            className="w-full py-4 sm:py-5 border-2 border-dashed border-white/15 hover:border-vendeur-emerald/40 rounded-2xl sm:rounded-3xl text-vendeur-emerald text-[11px] font-black uppercase tracking-wider flex items-center justify-center gap-2 hover:bg-vendeur-emerald/5 transition-all cursor-pointer active:scale-[0.99]"
+            className="w-full py-4 sm:py-5 border-2 border-dashed border-slate-200 hover:border-emerald-500/40 dark:border-white/15 dark:hover:border-vendeur-emerald/40 rounded-2xl sm:rounded-3xl text-emerald-600 dark:text-vendeur-emerald text-[11px] font-black uppercase tracking-wider flex items-center justify-center gap-2 hover:bg-emerald-500/5 transition-all cursor-pointer active:scale-[0.99]"
           >
             <Plus size={16} />
             <span>Ajouter une information</span>
@@ -1660,20 +1660,20 @@ function PersonnaliteTab({ merchant }: { merchant: any }) {
   });
 
   return (
-    <div className="space-y-6 sm:space-y-8 animate-in slide-in-from-bottom-2 duration-500 w-full max-w-full overflow-hidden box-border">
-      <section className="bg-vendeur-coal/60 sm:bg-vendeur-coal border border-white/10 p-4 sm:p-6 md:p-10 rounded-2xl sm:rounded-3xl md:rounded-[3rem] space-y-6 sm:space-y-10 shadow-2xl overflow-hidden w-full max-w-full box-border">
+    <div className="space-y-6 sm:space-y-8 animate-in slide-in-from-bottom-2 duration-500 w-full max-w-full box-border">
+      <section className="bg-white dark:bg-vendeur-coal border border-slate-200 dark:border-white/10 p-4 sm:p-6 md:p-10 rounded-2xl sm:rounded-3xl md:rounded-[3rem] space-y-6 sm:space-y-10 shadow-sm hover:shadow-md dark:shadow-xl transition-all w-full max-w-full box-border">
          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="space-y-1 min-w-0 flex-1">
-               <h2 className="text-xl md:text-2xl font-black text-white flex items-center gap-2.5 sm:gap-3 flex-wrap">
+               <h2 className="text-xl md:text-2xl font-black text-slate-900 dark:text-white flex items-center gap-2.5 sm:gap-3 flex-wrap">
                  <Bot size={22} className="text-vendeur-emerald shrink-0" />
                  <span>Style de Communication</span>
                </h2>
-               <p className="text-[10px] md:text-xs text-white/40 font-medium">Définissez le caractère et les automatismes de votre Vendeur IA.</p>
+               <p className="text-[10px] md:text-xs text-slate-500 dark:text-white/40 font-medium">Définissez le caractère et les automatismes de votre Vendeur IA.</p>
             </div>
             <button
                onClick={() => updateMutation.mutate()}
                disabled={updateMutation.isPending}
-               className="h-11 sm:h-12 w-full sm:w-auto bg-vendeur-emerald hover:bg-emerald-400 text-vendeur-coal px-6 sm:px-8 rounded-xl sm:rounded-2xl text-xs font-black uppercase tracking-wider hover:scale-105 active:scale-95 transition-all shadow-lg whitespace-nowrap cursor-pointer shrink-0"
+               className="h-11 sm:h-12 w-full sm:w-auto bg-vendeur-emerald hover:bg-emerald-400 text-white px-6 sm:px-8 rounded-xl sm:rounded-2xl text-xs font-black uppercase tracking-wider hover:scale-105 active:scale-95 transition-all shadow-lg whitespace-nowrap cursor-pointer shrink-0"
             >
                {updateMutation.isPending ? <Loader2 className="animate-spin" size={16} /> : "Enregistrer"}
             </button>
@@ -1692,8 +1692,8 @@ function PersonnaliteTab({ merchant }: { merchant: any }) {
                   <div className={cn(
                     "h-11 w-11 sm:h-12 sm:w-12 rounded-xl sm:rounded-2xl flex items-center justify-center font-black shrink-0",
                     aiSettings.autoReply !== false
-                      ? "bg-vendeur-emerald text-vendeur-coal shadow-lg shadow-vendeur-emerald/20"
-                      : "bg-amber-500 text-vendeur-coal shadow-lg shadow-amber-500/20"
+                      ? "bg-vendeur-emerald text-white shadow-lg shadow-vendeur-emerald/20"
+                      : "bg-amber-500 text-slate-950 shadow-lg shadow-amber-500/20"
                   )}>
                     {aiSettings.autoReply !== false ? <Zap size={22} /> : <PauseCircle size={22} />}
                   </div>
@@ -1703,11 +1703,11 @@ function PersonnaliteTab({ merchant }: { merchant: any }) {
                         "w-2 h-2 rounded-full shrink-0",
                         aiSettings.autoReply !== false ? "bg-vendeur-emerald animate-pulse" : "bg-amber-400"
                       )} />
-                      <h3 className="font-black text-white text-sm sm:text-base uppercase tracking-tight">
+                      <h3 className="font-black text-slate-900 dark:text-white text-sm sm:text-base uppercase tracking-tight">
                         {aiSettings.autoReply !== false ? "Vendeur IA Actif (En Vente 24h/24)" : "Mode Pause (WhatsApp Manuel)"}
                       </h3>
                     </div>
-                    <p className="text-xs text-white/60 mt-1 max-w-xl leading-relaxed">
+                    <p className="text-xs text-slate-600 dark:text-white/60 mt-1 max-w-xl leading-relaxed">
                       {aiSettings.autoReply !== false
                         ? "L'IA prend le relais automatiquement pour répondre aux clients, présenter vos articles et enregistrer vos commandes."
                         : "L'IA ne répond plus automatiquement. Votre WhatsApp reste connecté et vous échangez manuellement avec vos clients."}
@@ -1726,7 +1726,7 @@ function PersonnaliteTab({ merchant }: { merchant: any }) {
 
             {/* Personnalité */}
             <div className="space-y-3 sm:space-y-4">
-              <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-vendeur-emerald ml-1">Tempérament Dominant</h3>
+              <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-600 dark:text-vendeur-emerald ml-1">Tempérament Dominant</h3>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
                  <PersonalityButton
                     active={aiSettings.personality === "friendly"}
@@ -1753,10 +1753,10 @@ function PersonnaliteTab({ merchant }: { merchant: any }) {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 sm:gap-6">
                <div className={cn(
                  "p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-[2rem] border transition-all space-y-4 sm:space-y-6 w-full max-w-full box-border",
-                 aiSettings.voiceMode ? "bg-sky-500/5 border-sky-400/30" : "bg-white/[0.03] border-white/5"
+                 aiSettings.voiceMode ? "bg-sky-500/5 border-sky-400/30" : "bg-slate-50 dark:bg-white/[0.03] border-slate-200 dark:border-white/5"
                )}>
                   <div className="flex items-center justify-between gap-3">
-                     <div className="h-11 w-11 sm:h-12 sm:w-12 rounded-xl sm:rounded-2xl bg-sky-400/10 flex items-center justify-center text-sky-400 shrink-0">
+                     <div className="h-11 w-11 sm:h-12 sm:w-12 rounded-xl sm:rounded-2xl bg-sky-400/10 flex items-center justify-center text-sky-500 dark:text-sky-400 shrink-0">
                         <Mic size={22} />
                      </div>
                      <ToggleButton
@@ -1766,17 +1766,17 @@ function PersonnaliteTab({ merchant }: { merchant: any }) {
                      />
                   </div>
                   <div>
-                    <h4 className="font-black text-white text-sm sm:text-base">Mode Note Vocale</h4>
-                    <p className="text-xs text-white/40 mt-1">Vendeur IA répondra par notes vocales.</p>
+                    <h4 className="font-black text-slate-900 dark:text-white text-sm sm:text-base">Mode Note Vocale</h4>
+                    <p className="text-xs text-slate-500 dark:text-white/40 mt-1">Vendeur IA répondra par notes vocales.</p>
                   </div>
                </div>
 
                <div className={cn(
                  "p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-[2rem] border transition-all space-y-4 sm:space-y-6 w-full max-w-full box-border",
-                 aiSettings.localSlang ? "bg-amber-500/5 border-amber-400/30" : "bg-white/[0.03] border-white/5"
+                 aiSettings.localSlang ? "bg-amber-500/5 border-amber-400/30" : "bg-slate-50 dark:bg-white/[0.03] border-slate-200 dark:border-white/5"
                )}>
                   <div className="flex items-center justify-between gap-3">
-                     <div className="h-11 w-11 sm:h-12 sm:w-12 rounded-xl sm:rounded-2xl bg-amber-400/10 flex items-center justify-center text-amber-400 shrink-0">
+                     <div className="h-11 w-11 sm:h-12 sm:w-12 rounded-xl sm:rounded-2xl bg-amber-400/10 flex items-center justify-center text-amber-500 dark:text-amber-400 shrink-0">
                         <MessageSquare size={22} />
                      </div>
                      <ToggleButton
@@ -1786,18 +1786,18 @@ function PersonnaliteTab({ merchant }: { merchant: any }) {
                      />
                   </div>
                   <div>
-                    <h4 className="font-black text-white text-sm sm:text-base">Ton Ivoirien (Slang)</h4>
-                    <p className="text-xs text-white/40 mt-1">Utilise le Nouchi et expressions locales pour plus de proximité.</p>
+                    <h4 className="font-black text-slate-900 dark:text-white text-sm sm:text-base">Ton Ivoirien (Slang)</h4>
+                    <p className="text-xs text-slate-500 dark:text-white/40 mt-1">Utilise le Nouchi et expressions locales pour plus de proximité.</p>
                   </div>
                </div>
 
                {/* Assistant Statuts WhatsApp du Matin */}
                 <div className={cn(
                   "p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-[2rem] border transition-all space-y-4 sm:space-y-6 w-full max-w-full box-border",
-                  aiSettings.dailyStatusAssistant !== false ? "bg-emerald-500/5 border-emerald-400/30" : "bg-white/[0.03] border-white/5"
+                  aiSettings.dailyStatusAssistant !== false ? "bg-emerald-500/5 border-emerald-400/30" : "bg-slate-50 dark:bg-white/[0.03] border-slate-200 dark:border-white/5"
                 )}>
                    <div className="flex items-center justify-between gap-3">
-                      <div className="h-11 w-11 sm:h-12 sm:w-12 rounded-xl sm:rounded-2xl bg-emerald-400/10 flex items-center justify-center text-emerald-400 shrink-0">
+                      <div className="h-11 w-11 sm:h-12 sm:w-12 rounded-xl sm:rounded-2xl bg-emerald-400/10 flex items-center justify-center text-emerald-500 dark:text-emerald-400 shrink-0">
                          <MessageSquare size={22} />
                       </div>
                       <ToggleButton
@@ -1807,18 +1807,18 @@ function PersonnaliteTab({ merchant }: { merchant: any }) {
                       />
                    </div>
                    <div>
-                     <h4 className="font-black text-white text-sm sm:text-base">Pack Statuts WhatsApp Quotidien</h4>
-                     <p className="text-xs text-white/40 mt-1">Reçois chaque matin 3 textes percutants prêts à être postés en statut.</p>
+                     <h4 className="font-black text-slate-900 dark:text-white text-sm sm:text-base">Pack Statuts WhatsApp Quotidien</h4>
+                     <p className="text-xs text-slate-500 dark:text-white/40 mt-1">Reçois chaque matin 3 textes percutants prêts à être postés en statut.</p>
                    </div>
                 </div>
 
                 {/* Auto-Publication Statut WhatsApp (QR Code / Baileys) */}
                 <div className={cn(
                   "p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-[2rem] border transition-all space-y-4 sm:space-y-6 w-full max-w-full box-border",
-                  aiSettings.autoPostStatus ? "bg-purple-500/5 border-purple-400/30" : "bg-white/[0.03] border-white/5"
+                  aiSettings.autoPostStatus ? "bg-purple-500/5 border-purple-400/30" : "bg-slate-50 dark:bg-white/[0.03] border-slate-200 dark:border-white/5"
                 )}>
                    <div className="flex items-center justify-between gap-3">
-                      <div className="h-11 w-11 sm:h-12 sm:w-12 rounded-xl sm:rounded-2xl bg-purple-400/10 flex items-center justify-center text-purple-400 shrink-0">
+                      <div className="h-11 w-11 sm:h-12 sm:w-12 rounded-xl sm:rounded-2xl bg-purple-400/10 flex items-center justify-center text-purple-500 dark:text-purple-400 shrink-0">
                          <Zap size={22} />
                       </div>
                       <ToggleButton
@@ -1828,8 +1828,8 @@ function PersonnaliteTab({ merchant }: { merchant: any }) {
                       />
                    </div>
                    <div>
-                     <h4 className="font-black text-white text-sm sm:text-base">Publication Automatique en Statut</h4>
-                     <p className="text-xs text-white/40 mt-1">Poste automatiquement 1 produit en statut chaque matin.</p>
+                     <h4 className="font-black text-slate-900 dark:text-white text-sm sm:text-base">Publication Automatique en Statut</h4>
+                     <p className="text-xs text-slate-500 dark:text-white/40 mt-1">Poste automatiquement 1 produit en statut chaque matin.</p>
                    </div>
                 </div>
             </div>
@@ -1847,7 +1847,7 @@ function ConnexionsTab({ merchant, systemSettings }: { merchant: any; systemSett
   const [isPackProOpen, setIsPackProOpen] = useState(false);
 
   return (
-    <div className="space-y-8 animate-in slide-in-from-bottom-2 duration-500 w-full max-w-full overflow-hidden box-border">
+    <div className="space-y-8 animate-in slide-in-from-bottom-2 duration-500 w-full max-w-full box-border">
       <WhatsAppConnectionFlow />
 
       <section className="space-y-4 sm:space-y-5 w-full max-w-full">
@@ -1856,10 +1856,10 @@ function ConnexionsTab({ merchant, systemSettings }: { merchant: any; systemSett
             <Globe size={22} className="md:w-7 md:h-7" />
           </div>
           <div className="min-w-0 flex-1">
-            <h2 className="text-lg sm:text-xl md:text-2xl font-black text-white uppercase tracking-tight leading-tight">
+            <h2 className="text-lg sm:text-xl md:text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight leading-tight">
               Canaux Connectés
             </h2>
-            <p className="text-xs sm:text-sm text-white/40 font-medium">
+            <p className="text-xs sm:text-sm text-slate-500 dark:text-white/40 font-medium">
               Gérez les plateformes où votre Vendeur IA est actif.
             </p>
           </div>
@@ -1933,12 +1933,12 @@ function InputGroup({
 }) {
   return (
     <div className="space-y-1.5">
-      <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">{label}</label>
+      <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-white/40 ml-1">{label}</label>
       <input
         type={type}
         inputMode={inputMode}
         pattern={pattern}
-        className="w-full h-14 rounded-2xl bg-black/40 border border-white/10 px-5 text-white focus:border-vendeur-emerald outline-none transition-all shadow-inner font-sans"
+        className="w-full h-14 rounded-2xl bg-slate-50 dark:bg-black/40 border border-slate-200 dark:border-white/10 px-5 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-white/30 focus:border-vendeur-emerald outline-none transition-all shadow-inner font-sans"
         value={value || ""}
         onChange={e => onChange(e.target.value)}
         placeholder={placeholder}
@@ -1950,16 +1950,19 @@ function InputGroup({
 function PersonalityButton({ active, onClick, label, desc, emoji }: any) {
   return (
     <button
+      type="button"
       onClick={onClick}
       className={cn(
         "p-4 sm:p-5 md:p-6 rounded-2xl sm:rounded-[2rem] border-2 text-left transition-all relative overflow-hidden group w-full cursor-pointer active:scale-[0.98]",
-        active ? "bg-vendeur-emerald/10 border-vendeur-emerald shadow-lg" : "bg-white/5 border-white/5 hover:border-white/20"
+        active
+          ? "bg-emerald-500/10 border-emerald-500 shadow-md dark:shadow-lg"
+          : "bg-slate-50 dark:bg-white/5 border-slate-200 dark:border-white/5 hover:border-slate-300 dark:hover:border-white/20"
       )}
     >
       <div className="relative z-10">
         {emoji && <span className="text-xl sm:text-2xl mb-1.5 sm:mb-2 block">{emoji}</span>}
-        <p className={cn("font-black text-xs sm:text-sm uppercase tracking-wider", active ? "text-vendeur-emerald" : "text-white")}>{label}</p>
-        <p className="text-[10px] text-white/40 font-medium mt-0.5">{desc}</p>
+        <p className={cn("font-black text-xs sm:text-sm uppercase tracking-wider", active ? "text-emerald-700 dark:text-vendeur-emerald" : "text-slate-900 dark:text-white")}>{label}</p>
+        <p className={cn("text-[10px] font-medium mt-0.5", active ? "text-emerald-700/80 dark:text-vendeur-emerald/70" : "text-slate-500 dark:text-white/40")}>{desc}</p>
       </div>
     </button>
   );
@@ -1968,10 +1971,11 @@ function PersonalityButton({ active, onClick, label, desc, emoji }: any) {
 function ToggleButton({ active, onToggle, color }: any) {
   return (
     <button
+      type="button"
       onClick={onToggle}
       className={cn(
-        "w-16 h-9 rounded-full relative transition-all duration-300 shadow-lg",
-        active ? color : "bg-white/10"
+        "w-16 h-9 rounded-full relative transition-all duration-300 shadow-lg cursor-pointer",
+        active ? color : "bg-slate-200 dark:bg-white/10"
       )}
     >
       <div className={cn(

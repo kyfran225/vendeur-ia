@@ -13,21 +13,23 @@ export function AddressAutocomplete({
   value,
   onChange,
   onSelectSuggestion,
-  placeholder = "Ex: Rue 12, Plateaux, face à...",
-  className
+  placeholder = "Ex: Cocody Angré, Marcory, Plateau...",
+  className,
+  inputClassName
 }: {
   value: string;
   onChange: (value: string) => void;
   onSelectSuggestion?: (suggestion: any) => void;
   placeholder?: string;
   className?: string;
+  inputClassName?: string;
 }) {
   const [suggestions, setSuggestions] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const portalRef = useRef<HTMLDivElement>(null);
-  const [coords, setCoords] = useState({ top: 0, left: 0, width: 0 });
+  const [coords, setCoords] = useState({ top: 0, left: 0, width: 0, height: 44 });
 
   const accessToken = (import.meta as any).env.VITE_MAPBOX_ACCESS_TOKEN;
 
@@ -46,7 +48,8 @@ export function AddressAutocomplete({
       setCoords({
         top: rect.top,
         left: rect.left,
-        width: rect.width
+        width: rect.width,
+        height: rect.height
       });
     }
   };
@@ -90,7 +93,6 @@ export function AddressAutocomplete({
         const response = await searchBox.suggest(newValue, {
           sessionToken,
           language: "fr",
-          // Removed country restriction for global search
         });
         setSuggestions(response.suggestions || []);
         setShowSuggestions(true);
@@ -106,7 +108,7 @@ export function AddressAutocomplete({
   };
 
   const handleSelect = async (suggestion: any) => {
-    const selectedAddress = suggestion.full_address || suggestion.place_name || suggestion.name;
+    const selectedAddress = suggestion.full_address || suggestion.place_formatted || suggestion.place_name || suggestion.name;
     onChange(selectedAddress);
     setLoading(true);
 
@@ -114,8 +116,8 @@ export function AddressAutocomplete({
       const result = await searchBox.retrieve(suggestion, {
         sessionToken,
       });
-      const feature = result.features[0];
-      onSelectSuggestion?.(feature);
+      const feature = result.features?.[0];
+      onSelectSuggestion?.(feature || suggestion);
     } catch (err) {
       console.error("Mapbox retrieve error:", err);
       onSelectSuggestion?.(suggestion); // Fallback to basic suggestion
@@ -126,19 +128,19 @@ export function AddressAutocomplete({
   };
 
   return (
-    <div className="relative w-full group" ref={containerRef}>
+    <div className={cn("relative w-full group", className)} ref={containerRef}>
       <div className={cn(
-        "absolute left-4 top-1/2 -translate-y-1/2 transition-colors z-10",
-        value ? "text-vendeur-emerald" : "text-white/20 group-focus-within:text-vendeur-emerald"
+        "absolute left-3.5 top-1/2 -translate-y-1/2 transition-colors z-10 pointer-events-none",
+        value ? "text-emerald-500 dark:text-emerald-400" : "text-slate-400 dark:text-white/30 group-focus-within:text-emerald-500"
       )}>
-        {loading ? <Loader2 size={16} className="animate-spin" /> : <MapPin size={16} />}
+        {loading ? <Loader2 size={15} className="animate-spin" /> : <MapPin size={15} />}
       </div>
 
       <input
         type="text"
         className={cn(
-          "h-14 w-full rounded-2xl border border-white/10 bg-black/40 pl-11 pr-10 text-white outline-none focus:border-vendeur-emerald transition-all placeholder:text-white/20 text-sm shadow-inner",
-          className
+          "h-11 w-full rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-vendeur-coal pl-10 pr-9 text-xs text-slate-900 dark:text-white outline-none focus:border-emerald-500 transition-all placeholder:text-slate-400 dark:placeholder:text-white/30 shadow-inner",
+          inputClassName
         )}
         value={value}
         onChange={handleInputChange}
@@ -154,43 +156,50 @@ export function AddressAutocomplete({
 
       {value && (
         <button
+          type="button"
           onClick={() => {
             onChange("");
             setSuggestions([]);
             setShowSuggestions(false);
           }}
-          className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-white/20 hover:text-white transition-colors z-10"
+          className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-700 dark:text-white/30 dark:hover:text-white transition-colors z-10"
         >
           <X size={14} />
         </button>
       )}
 
-      {/* Suggestions Dropdown */}
+      {/* Suggestions Dropdown via Portal */}
       {showSuggestions && suggestions.length > 0 && (
         <Portal.Root>
           <div
             ref={portalRef}
             style={{
               position: 'fixed',
-              top: `${coords.top + 48 + 8}px`,
+              top: `${coords.top + coords.height + 6}px`,
               left: `${coords.left}px`,
               width: `${coords.width}px`
             }}
-            className="z-[9999] max-h-60 overflow-y-auto rounded-xl border border-white/10 bg-vendeur-coal p-1 shadow-2xl animate-in fade-in zoom-in-95 duration-200 no-scrollbar"
+            className="z-[99999] max-h-60 overflow-y-auto rounded-2xl border border-slate-200 dark:border-white/15 bg-white dark:bg-[#111c18] p-1.5 shadow-2xl animate-in fade-in zoom-in-95 duration-150 no-scrollbar"
           >
-            {suggestions.map((suggestion) => (
+            {suggestions.map((suggestion, idx) => (
               <button
-                key={suggestion.mapbox_id}
+                key={suggestion.mapbox_id || idx}
                 type="button"
-                onClick={() => handleSelect(suggestion)}
-                className="flex w-full flex-col gap-0.5 rounded-lg px-4 py-3 text-left transition-colors hover:bg-white/5"
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  handleSelect(suggestion);
+                }}
+                className="flex w-full items-start gap-2.5 rounded-xl px-3 py-2.5 text-left transition-colors hover:bg-slate-100 dark:hover:bg-white/5 cursor-pointer group/item"
               >
-                <span className="text-sm font-bold text-white leading-tight">
-                  {suggestion.name}
-                </span>
-                <span className="text-[10px] text-white/40 truncate">
-                  {suggestion.full_address || suggestion.place_formatted}
-                </span>
+                <MapPin size={14} className="text-emerald-500 dark:text-emerald-400 shrink-0 mt-0.5" />
+                <div className="flex flex-col gap-0.5 min-w-0 flex-1">
+                  <span className="text-xs font-bold text-slate-900 dark:text-white leading-tight truncate group-hover/item:text-emerald-600 dark:group-hover/item:text-emerald-400">
+                    {suggestion.name}
+                  </span>
+                  <span className="text-[10px] text-slate-500 dark:text-white/40 truncate">
+                    {suggestion.full_address || suggestion.place_formatted}
+                  </span>
+                </div>
               </button>
             ))}
           </div>

@@ -21,6 +21,7 @@ import { apiClient } from "@/lib/apiClient";
 import { toast } from "sonner";
 import { getShopTheme, type ShopTheme } from "../lib/theme";
 import { cn } from "@/lib/utils";
+import { AddressAutocomplete } from "@/features/onboarding/components/AddressAutocomplete";
 
 export interface CartItem {
   product: any;
@@ -321,12 +322,11 @@ export function CartDrawer({
                   <label className="block text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-white/50 mb-1">
                     Adresse ou repère précis
                   </label>
-                  <input
-                    type="text"
-                    placeholder="Ex: Cocody Angré 8ème tranche, Pharmacie des Grâces"
+                  <AddressAutocomplete
                     value={customAddress}
-                    onChange={(e) => setCustomAddress(e.target.value)}
-                    className="w-full h-11 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-3 text-xs text-slate-900 dark:text-white outline-none focus:border-emerald-500 transition-all shadow-sm"
+                    onChange={setCustomAddress}
+                    placeholder="Ex: Cocody Angré 8ème tranche, Pharmacie des Grâces"
+                    inputClassName="h-11 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-3 pl-10 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-white/30 outline-none focus:border-emerald-500 transition-all shadow-sm"
                   />
                 </div>
 

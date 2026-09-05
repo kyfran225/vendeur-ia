@@ -979,7 +979,7 @@ export function ProductManager() {
           </div>
         ) : (
           products.map(p => (
-            <div key={p._id} className="bg-white dark:bg-[#0c0f0d] border border-slate-200 dark:border-white/10 rounded-3xl overflow-hidden group hover:border-emerald-500/40 dark:hover:border-emerald-500/30 transition-all shadow-md dark:shadow-xl flex flex-col justify-between text-slate-900 dark:text-white">
+            <div key={p._id} className="bg-white dark:bg-[#0c0f0d] border border-slate-200 dark:border-white/10 rounded-2xl sm:rounded-3xl overflow-hidden group hover:border-emerald-500/40 dark:hover:border-emerald-500/30 transition-all shadow-sm hover:shadow-md dark:shadow-xl flex flex-col justify-between text-slate-900 dark:text-white">
               <div>
                 <div className="aspect-square bg-slate-100 dark:bg-white/5 flex items-center justify-center relative overflow-hidden">
                   {(p as any).imageUrl || (p as any).images?.[0] ? (

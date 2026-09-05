@@ -240,7 +240,7 @@ export function VendeurIAPlaygroundModal({ isOpen, onClose, merchant }: VendeurI
                   href={waTestLink}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex-1 sm:flex-initial h-9 sm:h-8 px-3 rounded-lg bg-emerald-500 text-slate-950 text-[10px] font-black uppercase tracking-wider flex items-center justify-center gap-1.5 hover:scale-105 transition-all shadow-md truncate"
+                  className="flex-1 sm:flex-initial h-9 sm:h-8 px-3 rounded-lg bg-emerald-500 text-white text-[10px] font-black uppercase tracking-wider flex items-center justify-center gap-1.5 hover:scale-105 transition-all shadow-md truncate"
                 >
                   <MessageSquare size={12} className="shrink-0" />
                   <span className="truncate">WhatsApp</span>
@@ -274,7 +274,7 @@ export function VendeurIAPlaygroundModal({ isOpen, onClose, merchant }: VendeurI
                   className={cn(
                     "p-4 rounded-2xl text-xs md:text-sm font-medium leading-relaxed whitespace-pre-wrap shadow-md",
                     msg.role === "customer"
-                      ? "bg-emerald-500 text-slate-950 rounded-tr-none font-medium"
+                      ? "bg-emerald-500 text-white rounded-tr-none font-medium"
                       : "bg-white dark:bg-black/60 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white rounded-tl-none shadow-sm"
                   )}
                 >
@@ -282,7 +282,7 @@ export function VendeurIAPlaygroundModal({ isOpen, onClose, merchant }: VendeurI
                   <div
                     className={cn(
                       "text-[9px] mt-2 text-right font-mono",
-                      msg.role === "customer" ? "text-slate-900/60" : "text-slate-400 dark:text-white/30"
+                      msg.role === "customer" ? "text-white/80" : "text-slate-400 dark:text-white/30"
                     )}
                   >
                     {new Date(msg.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
@@ -331,7 +331,7 @@ export function VendeurIAPlaygroundModal({ isOpen, onClose, merchant }: VendeurI
               <button
                 type="submit"
                 disabled={!inputText.trim() || isLoading}
-                className="h-12 px-5 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black uppercase text-xs flex items-center justify-center gap-2 transition-all shadow-md shadow-emerald-500/20 disabled:opacity-50 cursor-pointer"
+                className="h-12 px-5 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-white font-black uppercase text-xs flex items-center justify-center gap-2 transition-all shadow-md shadow-emerald-500/20 disabled:opacity-50 cursor-pointer"
               >
                 <Send size={16} />
                 <span className="hidden sm:inline">Envoyer</span>

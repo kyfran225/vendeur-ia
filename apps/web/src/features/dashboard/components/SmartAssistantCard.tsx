@@ -151,55 +151,55 @@ export function SmartAssistantCard({ dashboard, onOpenTestIA, onOpenShare, onCon
   const getThemeConfig = () => {
     if (isUnderVerification) {
       return {
-        cardBg: "bg-amber-950/30 border-amber-500/40 shadow-amber-500/10",
-        badgeBg: "bg-amber-500/15 border-amber-500/40 text-amber-300",
+        cardBg: "bg-amber-50/80 dark:bg-amber-950/30 border-amber-200 dark:border-amber-500/40 shadow-amber-500/10",
+        badgeBg: "bg-amber-500/15 border-amber-500/40 text-amber-800 dark:text-amber-300",
         badgeText: "Paiement en validation ⏳",
         iconBorder: "border-amber-500/40",
-        accentText: "text-amber-400",
+        accentText: "text-amber-600 dark:text-amber-400",
         accentGlow: "shadow-amber-500/10",
-        progressColor: "bg-amber-400"
+        progressColor: "bg-amber-500"
       };
     }
     if (isExpired) {
       return {
-        cardBg: "bg-red-500/10 border-red-500/30",
-        badgeBg: "bg-red-500/15 border-red-500/30 text-red-300",
+        cardBg: "bg-red-50/80 dark:bg-red-500/10 border-red-200 dark:border-red-500/30",
+        badgeBg: "bg-red-500/15 border-red-500/30 text-red-700 dark:text-red-300",
         badgeText: "Forfait Vendeur IA Expiré",
         iconBorder: "border-red-500/30",
-        accentText: "text-red-400",
+        accentText: "text-red-600 dark:text-red-400",
         accentGlow: "shadow-red-500/10",
         progressColor: "bg-red-500"
       };
     }
     if (isPaused) {
       return {
-        cardBg: "bg-sky-500/10 border-sky-500/30 shadow-sky-500/5",
-        badgeBg: "bg-sky-500/15 border-sky-500/30 text-sky-300",
+        cardBg: "bg-sky-50/80 dark:bg-sky-500/10 border-sky-200 dark:border-sky-500/30 shadow-sky-500/5",
+        badgeBg: "bg-sky-500/15 border-sky-500/30 text-sky-700 dark:text-sky-300",
         badgeText: "Mode Pause (WhatsApp Manuel)",
         iconBorder: "border-sky-500/30",
-        accentText: "text-sky-400",
+        accentText: "text-sky-600 dark:text-sky-400",
         accentGlow: "shadow-sky-400/10",
-        progressColor: "bg-sky-400"
+        progressColor: "bg-sky-500"
       };
     }
     if (isDiscoveryMode) {
       return {
-        cardBg: "bg-amber-500/10 border-amber-500/30 shadow-amber-500/5",
-        badgeBg: "bg-amber-500/15 border-amber-500/30 text-amber-300",
+        cardBg: "bg-amber-50/80 dark:bg-amber-500/10 border-amber-200 dark:border-amber-500/30 shadow-amber-500/5",
+        badgeBg: "bg-amber-500/15 border-amber-500/30 text-amber-800 dark:text-amber-300",
         badgeText: "Mode Découverte (Gratuit)",
         iconBorder: "border-amber-500/30",
-        accentText: "text-amber-400",
+        accentText: "text-amber-600 dark:text-amber-400",
         accentGlow: "shadow-amber-500/10",
-        progressColor: "bg-amber-400"
+        progressColor: "bg-amber-500"
       };
     }
     return {
-      cardBg: "bg-vendeur-coal/60 border-white/10 hover:border-vendeur-emerald/30",
-      badgeBg: "bg-vendeur-emerald/15 border-vendeur-emerald/30 text-vendeur-emerald",
+      cardBg: "bg-white dark:bg-vendeur-coal/60 border-slate-200 dark:border-white/10 hover:border-emerald-500/30 dark:hover:border-vendeur-emerald/30 shadow-xl dark:shadow-2xl",
+      badgeBg: "bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-vendeur-emerald",
       badgeText: "En Vente 24h/24 (IA Active)",
-      iconBorder: "border-vendeur-emerald/30",
-      accentText: "text-vendeur-emerald",
-      accentGlow: "shadow-vendeur-emerald/10",
+      iconBorder: "border-emerald-500/30",
+      accentText: "text-emerald-600 dark:text-vendeur-emerald",
+      accentGlow: "shadow-emerald-500/10",
       progressColor: "bg-vendeur-emerald"
     };
   };
@@ -215,7 +215,7 @@ export function SmartAssistantCard({ dashboard, onOpenTestIA, onOpenShare, onCon
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
         className={cn(
-          "relative overflow-hidden border rounded-3xl sm:rounded-[2.5rem] p-4 sm:p-6 md:p-8 shadow-2xl transition-all duration-300 space-y-6",
+          "relative overflow-hidden border rounded-3xl sm:rounded-[2.5rem] p-4 sm:p-6 md:p-8 shadow-xl dark:shadow-2xl transition-all duration-300 space-y-6",
           theme.cardBg,
           theme.accentGlow
         )}
@@ -232,7 +232,7 @@ export function SmartAssistantCard({ dashboard, onOpenTestIA, onOpenShare, onCon
                   <AssistantIcon size="100%" color="#10B981" withBackground={false} className="drop-shadow-[0_0_8px_rgba(16,185,129,0.3)]" />
                 </div>
                 <div className="min-w-0">
-                  <h3 className="text-base sm:text-lg md:text-xl font-black text-white uppercase tracking-tight truncate">
+                  <h3 className="text-base sm:text-lg md:text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight truncate">
                     Assistant Vendeur IA
                   </h3>
                   <p className={cn("text-xs sm:text-xs font-bold uppercase tracking-widest truncate mt-0.5", theme.accentText)}>
@@ -258,15 +258,15 @@ export function SmartAssistantCard({ dashboard, onOpenTestIA, onOpenShare, onCon
             </div>
 
             {/* Contextual Message Box */}
-            <div className="bg-black/40 border border-white/5 rounded-2xl sm:rounded-3xl p-4 sm:p-6 relative space-y-4 w-full min-w-0">
-              <p className="text-sm sm:text-base md:text-[16px] text-white/95 leading-relaxed italic break-words font-medium">
+            <div className="bg-slate-50 dark:bg-black/40 border border-slate-200 dark:border-white/5 rounded-2xl sm:rounded-3xl p-4 sm:p-6 relative space-y-4 w-full min-w-0">
+              <p className="text-sm sm:text-base md:text-[16px] text-slate-800 dark:text-white/95 leading-relaxed italic break-words font-medium">
                 "{isUnderVerification ? (
                   <>
-                    Votre règlement de <span className="text-emerald-400 font-bold not-italic">{latestPaymentIntent?.amount?.toLocaleString() || "..."} {latestPaymentIntent?.currency || "XOF"}</span> (Réf : <span className="font-mono font-bold text-white not-italic">{latestPaymentIntent?.reference || "TRX"}</span>) est en cours de validation par notre équipe. Votre Vendeur IA 24h/24 sera activé dès confirmation !
+                    Votre règlement de <span className="text-emerald-600 dark:text-emerald-400 font-bold not-italic">{latestPaymentIntent?.amount?.toLocaleString() || "..."} {latestPaymentIntent?.currency || "XOF"}</span> (Réf : <span className="font-mono font-bold text-slate-900 dark:text-white not-italic">{latestPaymentIntent?.reference || "TRX"}</span>) est en cours de validation par notre équipe. Votre Vendeur IA 24h/24 sera activé dès confirmation !
                   </>
                 ) : isExpired ? (
                   <>
-                    Votre forfait Vendeur IA est arrivé à terme. Votre boutique <span className="text-white font-bold not-italic">{businessName}</span> est en pause sur WhatsApp. Rechargez votre abonnement pour relancer instantanément les réponses et ventes 24h/24 !
+                    Votre forfait Vendeur IA est arrivé à terme. Votre boutique <span className="text-slate-900 dark:text-white font-bold not-italic">{businessName}</span> est en pause sur WhatsApp. Rechargez votre abonnement pour relancer instantanément les réponses et ventes 24h/24 !
                   </>
                 ) : isPaused ? (
                   <>
@@ -275,15 +275,15 @@ export function SmartAssistantCard({ dashboard, onOpenTestIA, onOpenShare, onCon
                 ) : isDiscoveryMode ? (
                   nextStep?.id === "subscription" ? (
                     <>
-                      Félicitations <span className="text-amber-400 font-bold not-italic">{businessName}</span>, votre configuration est terminée ! 🏁 Votre Vendeur IA est en <strong>Mode Découverte (En attente d'activation)</strong>. Activez votre forfait pour qu'il prenne le relais de vos ventes 24h/24.
+                      Félicitations <span className="text-amber-600 dark:text-amber-400 font-bold not-italic">{businessName}</span>, votre configuration est terminée ! 🏁 Votre Vendeur IA est en <strong>Mode Découverte (En attente d'activation)</strong>. Activez votre forfait pour qu'il prenne le relais de vos ventes 24h/24.
                     </>
                   ) : nextStep?.id === "whatsapp" ? (
                     <>
-                      Bienvenue chez <span className="text-amber-400 font-bold not-italic">{businessName}</span> ! 🚀 Vous êtes en <strong>Mode Découverte Gratuit</strong> : je ne réponds pas encore à vos clients sur WhatsApp afin que vous gardiez 100% le contrôle. Première étape : relions votre WhatsApp !
+                      Bienvenue chez <span className="text-amber-600 dark:text-amber-400 font-bold not-italic">{businessName}</span> ! 🚀 Vous êtes en <strong>Mode Découverte Gratuit</strong> : je ne réponds pas encore à vos clients sur WhatsApp afin que vous gardiez 100% le contrôle. Première étape : relions votre WhatsApp !
                     </>
                   ) : nextStep?.id === "products" ? (
                     <>
-                      Génial, WhatsApp est relié à <span className="text-amber-400 font-bold not-italic">{businessName}</span> ! 🛍️ Ajoutez vos articles : votre vitrine publique sera automatiquement générée et vous pourrez me tester librement dans le simulateur.
+                      Génial, WhatsApp est relié à <span className="text-amber-600 dark:text-amber-400 font-bold not-italic">{businessName}</span> ! 🛍️ Ajoutez vos articles : votre vitrine publique sera automatiquement générée et vous pourrez me tester librement dans le simulateur.
                     </>
                   ) : nextStep?.id === "delivery" ? (
                     <>
@@ -295,17 +295,17 @@ export function SmartAssistantCard({ dashboard, onOpenTestIA, onOpenShare, onCon
                     </>
                   ) : (
                     <>
-                      Bienvenue chez <span className="text-amber-400 font-bold not-italic">{businessName}</span> ! {hasProducts ? `Votre catalogue (${productsCount} article${productsCount > 1 ? 's' : ''}) et votre vitrine sont prêts.` : "Ajoutez vos articles pour activer votre vitrine."} Le Vendeur IA ne répondra pas sur WhatsApp tant que le forfait n'est pas activé.
+                      Bienvenue chez <span className="text-amber-600 dark:text-amber-400 font-bold not-italic">{businessName}</span> ! {hasProducts ? `Votre catalogue (${productsCount} article${productsCount > 1 ? 's' : ''}) et votre vitrine sont prêts.` : "Ajoutez vos articles pour activer votre vitrine."} Le Vendeur IA ne répondra pas sur WhatsApp tant que le forfait n'est pas activé.
                     </>
                   )
                 ) : isFullyOperational ? (
                   <>
-                    Tout est parfait pour <span className="text-vendeur-emerald font-bold not-italic">{businessName}</span> ! 🎯 Votre boutique est entièrement configurée. Je réponds à vos clients, présente vos produits et enregistre vos commandes sur WhatsApp 24h/24.
+                    Tout est parfait pour <span className="text-emerald-700 dark:text-vendeur-emerald font-bold not-italic">{businessName}</span> ! 🎯 Votre boutique est entièrement configurée. Je réponds à vos clients, présente vos produits et enregistre vos commandes sur WhatsApp 24h/24.
                   </>
                 ) : (
                   nextStep?.id === "whatsapp" ? (
                     <>
-                      Bienvenue chez <span className="text-vendeur-emerald font-bold not-italic">{businessName}</span> ! Connectons votre numéro WhatsApp pour que je prenne le relais de vos ventes 24h/24.
+                      Bienvenue chez <span className="text-emerald-700 dark:text-vendeur-emerald font-bold not-italic">{businessName}</span> ! Connectons votre numéro WhatsApp pour que je prenne le relais de vos ventes 24h/24.
                     </>
                   ) : nextStep?.id === "products" ? (
                     <>
@@ -321,7 +321,7 @@ export function SmartAssistantCard({ dashboard, onOpenTestIA, onOpenShare, onCon
                     </>
                   ) : (
                     <>
-                      Bravo, votre boutique <span className="text-vendeur-emerald font-bold not-italic">{businessName}</span> est presque prête à tourner à 100% en automatique !
+                      Bravo, votre boutique <span className="text-emerald-700 dark:text-vendeur-emerald font-bold not-italic">{businessName}</span> est presque prête à tourner à 100% en automatique !
                     </>
                   )
                 )}"
@@ -333,7 +333,7 @@ export function SmartAssistantCard({ dashboard, onOpenTestIA, onOpenShare, onCon
                   <>
                     <Link
                       to="/settings?tab=billing"
-                      className="flex-1 flex items-center justify-center gap-2.5 min-h-[52px] sm:min-h-[56px] px-6 py-3.5 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-vendeur-coal font-black uppercase text-xs sm:text-sm tracking-wider transition-all shadow-lg shadow-emerald-500/20 active:scale-95 cursor-pointer shrink-0 truncate"
+                      className="flex-1 flex items-center justify-center gap-2.5 min-h-[52px] sm:min-h-[56px] px-6 py-3.5 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-white font-black uppercase text-xs sm:text-sm tracking-wider transition-all shadow-lg shadow-emerald-500/20 active:scale-95 cursor-pointer shrink-0 truncate"
                     >
                       <Clock size={17} className="shrink-0" />
                       <span className="truncate">Suivre mon activation {latestPaymentIntent?.reference ? `(Réf : #${latestPaymentIntent.reference.slice(-6)})` : ""}</span>
@@ -346,7 +346,7 @@ export function SmartAssistantCard({ dashboard, onOpenTestIA, onOpenShare, onCon
                       )}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="min-h-[52px] sm:min-h-[56px] px-5 py-3.5 rounded-2xl bg-white/10 hover:bg-[#25D366]/20 hover:border-[#25D366]/50 border border-white/10 text-white hover:text-[#25D366] font-black uppercase text-xs tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95 shrink-0"
+                      className="min-h-[52px] sm:min-h-[56px] px-5 py-3.5 rounded-2xl bg-slate-100 hover:bg-[#25D366]/20 hover:border-[#25D366]/50 dark:bg-white/10 dark:hover:bg-[#25D366]/20 dark:hover:border-[#25D366]/50 border border-slate-200 dark:border-white/10 text-slate-800 dark:text-white hover:text-[#25D366] font-black uppercase text-xs tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95 shrink-0"
                     >
                       <WhatsAppIcon size={16} variant="brand" />
                       <span>Assistance WhatsApp</span>
@@ -366,7 +366,7 @@ export function SmartAssistantCard({ dashboard, onOpenTestIA, onOpenShare, onCon
                     type="button"
                     onClick={() => resumeSalesMutation.mutate()}
                     disabled={resumeSalesMutation.isPending}
-                    className="flex-1 flex items-center justify-center gap-2.5 min-h-[52px] sm:min-h-[56px] px-6 py-3.5 rounded-2xl bg-sky-400 hover:bg-sky-300 text-vendeur-coal font-black uppercase text-xs sm:text-sm tracking-wider transition-all shadow-lg shadow-sky-400/20 active:scale-95 cursor-pointer shrink-0"
+                    className="flex-1 flex items-center justify-center gap-2.5 min-h-[52px] sm:min-h-[56px] px-6 py-3.5 rounded-2xl bg-sky-500 hover:bg-sky-400 text-white font-black uppercase text-xs sm:text-sm tracking-wider transition-all shadow-lg shadow-sky-500/20 active:scale-95 cursor-pointer shrink-0"
                   >
                     <PlayCircle size={18} />
                     <span>{resumeSalesMutation.isPending ? "Réactivation..." : "Reprendre les Ventes 24h/24"}</span>
@@ -379,7 +379,7 @@ export function SmartAssistantCard({ dashboard, onOpenTestIA, onOpenShare, onCon
                           <button
                             type="button"
                             onClick={onConnectWhatsApp}
-                            className="flex-1 flex items-center justify-center gap-2.5 min-h-[52px] sm:min-h-[56px] px-5 py-3.5 rounded-2xl bg-vendeur-emerald text-vendeur-coal font-black uppercase text-xs sm:text-sm tracking-wider hover:bg-emerald-400 active:scale-95 transition-all shadow-lg shadow-vendeur-emerald/20 cursor-pointer shrink-0 truncate group"
+                            className="flex-1 flex items-center justify-center gap-2.5 min-h-[52px] sm:min-h-[56px] px-5 py-3.5 rounded-2xl bg-vendeur-emerald text-white font-black uppercase text-xs sm:text-sm tracking-wider hover:bg-emerald-400 active:scale-95 transition-all shadow-lg shadow-emerald-500/20 cursor-pointer shrink-0 truncate group"
                           >
                             <Zap size={17} fill="currentColor" className="shrink-0 group-hover:scale-110 transition-transform" />
                             <span className="truncate">Lier mon WhatsApp</span>
@@ -388,7 +388,7 @@ export function SmartAssistantCard({ dashboard, onOpenTestIA, onOpenShare, onCon
                         ) : (
                           <Link
                             to={getActionLink(nextStep.id)}
-                            className="flex-1 flex items-center justify-center gap-2.5 min-h-[52px] sm:min-h-[56px] px-5 py-3.5 rounded-2xl bg-vendeur-emerald text-vendeur-coal font-black uppercase text-xs sm:text-sm tracking-wider hover:bg-emerald-400 active:scale-95 transition-all shadow-lg shadow-vendeur-emerald/20 cursor-pointer shrink-0 truncate group"
+                            className="flex-1 flex items-center justify-center gap-2.5 min-h-[52px] sm:min-h-[56px] px-5 py-3.5 rounded-2xl bg-vendeur-emerald text-white font-black uppercase text-xs sm:text-sm tracking-wider hover:bg-emerald-400 active:scale-95 transition-all shadow-lg shadow-emerald-500/20 cursor-pointer shrink-0 truncate group"
                           >
                             <Zap size={17} fill="currentColor" className="shrink-0 group-hover:scale-110 transition-transform" />
                             <span className="truncate">{nextStep.label}</span>
@@ -399,10 +399,10 @@ export function SmartAssistantCard({ dashboard, onOpenTestIA, onOpenShare, onCon
                         <button
                           type="button"
                           onClick={onOpenTestIA}
-                          className="min-h-[52px] sm:min-h-[56px] px-5 py-3.5 rounded-2xl bg-white/10 hover:bg-white/15 border border-white/10 text-white font-black uppercase text-xs tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95 shrink-0"
+                          className="min-h-[52px] sm:min-h-[56px] px-5 py-3.5 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-white/10 dark:hover:bg-white/15 border border-slate-200 dark:border-white/10 text-slate-800 dark:text-white font-black uppercase text-xs tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95 shrink-0"
                           title="Tester les réponses de l'IA"
                         >
-                          <Play size={16} fill="currentColor" className="text-vendeur-emerald shrink-0" />
+                          <Play size={16} fill="currentColor" className="text-emerald-600 dark:text-vendeur-emerald shrink-0" />
                           <span>Simulateur & Test IA</span>
                         </button>
                       </>
@@ -411,7 +411,7 @@ export function SmartAssistantCard({ dashboard, onOpenTestIA, onOpenShare, onCon
                         <button
                           type="button"
                           onClick={onOpenTestIA}
-                          className="flex-1 flex items-center justify-center gap-2.5 min-h-[52px] sm:min-h-[56px] px-5 py-3.5 rounded-2xl bg-vendeur-emerald text-vendeur-coal font-black uppercase text-xs sm:text-sm tracking-wider hover:bg-emerald-400 active:scale-95 transition-all shadow-lg shadow-vendeur-emerald/20 cursor-pointer shrink-0 truncate"
+                          className="flex-1 flex items-center justify-center gap-2.5 min-h-[52px] sm:min-h-[56px] px-5 py-3.5 rounded-2xl bg-vendeur-emerald text-white font-black uppercase text-xs sm:text-sm tracking-wider hover:bg-emerald-400 active:scale-95 transition-all shadow-lg shadow-emerald-500/20 cursor-pointer shrink-0 truncate"
                         >
                           <Play size={17} fill="currentColor" className="shrink-0" />
                           <span>Simulateur & Test IA</span>
@@ -420,9 +420,9 @@ export function SmartAssistantCard({ dashboard, onOpenTestIA, onOpenShare, onCon
                         {isDiscoveryMode && (
                           <Link
                             to="/offers"
-                            className="min-h-[52px] sm:min-h-[56px] px-5 py-3.5 rounded-2xl bg-white/10 hover:bg-white/15 text-white font-black uppercase text-xs tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95 shrink-0"
+                            className="min-h-[52px] sm:min-h-[56px] px-5 py-3.5 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-white/10 dark:hover:bg-white/15 text-slate-800 dark:text-white font-black uppercase text-xs tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95 shrink-0 border border-slate-200 dark:border-white/10"
                           >
-                            <Sparkles size={16} className="text-amber-300" />
+                            <Sparkles size={16} className="text-amber-500 dark:text-amber-300" />
                             <span>Activer le Forfait 24h/24</span>
                           </Link>
                         )}
@@ -437,10 +437,10 @@ export function SmartAssistantCard({ dashboard, onOpenTestIA, onOpenShare, onCon
             {!isFullyOperational && (
               <div className="space-y-2 w-full min-w-0 pt-1">
                 <div className="flex justify-between items-center px-1">
-                  <span className="text-xs font-black uppercase text-white/50 tracking-wider">Progression de mise en place</span>
+                  <span className="text-xs font-black uppercase text-slate-500 dark:text-white/50 tracking-wider">Progression de mise en place</span>
                   <span className={cn("text-base sm:text-lg font-black", theme.accentText)}>{score}%</span>
                 </div>
-                <div className="h-2.5 bg-white/5 rounded-full overflow-hidden w-full">
+                <div className="h-2.5 bg-slate-100 dark:bg-white/5 rounded-full overflow-hidden w-full">
                   <motion.div
                     initial={{ width: 0 }}
                     animate={{ width: `${score}%` }}
@@ -461,13 +461,13 @@ export function SmartAssistantCard({ dashboard, onOpenTestIA, onOpenShare, onCon
                   <>
                     <div className={cn(
                       "h-5 w-5 rounded-full flex items-center justify-center shrink-0",
-                      step.completed ? "text-vendeur-emerald" : step.id === nextStep?.id ? (isDiscoveryMode ? "text-amber-400" : "text-vendeur-emerald") : "text-white/20"
+                      step.completed ? "text-emerald-600 dark:text-vendeur-emerald" : step.id === nextStep?.id ? (isDiscoveryMode ? "text-amber-600 dark:text-amber-400" : "text-emerald-600 dark:text-vendeur-emerald") : "text-slate-400 dark:text-white/20"
                     )}>
                       {step.completed ? <CheckCircle2 size={18} /> : <Circle size={18} />}
                     </div>
                     <span className={cn(
                       "flex-1 text-xs sm:text-sm font-bold truncate min-w-0 text-left",
-                      step.completed ? "text-white/40 line-through" : step.id === nextStep?.id ? "text-white font-black" : "text-white/80"
+                      step.completed ? "text-slate-400 dark:text-white/40 line-through" : step.id === nextStep?.id ? "text-slate-900 dark:text-white font-black" : "text-slate-700 dark:text-white/80"
                     )}>
                       {step.label}
                     </span>
@@ -476,15 +476,15 @@ export function SmartAssistantCard({ dashboard, onOpenTestIA, onOpenShare, onCon
                       <span className={cn(
                         "text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full shrink-0 border",
                         isDiscoveryMode
-                          ? "text-amber-300 bg-amber-500/10 border-amber-500/30"
-                          : "text-vendeur-emerald bg-vendeur-emerald/10 border-vendeur-emerald/30"
+                          ? "text-amber-800 dark:text-amber-300 bg-amber-500/10 border-amber-500/30"
+                          : "text-emerald-700 dark:text-vendeur-emerald bg-emerald-500/10 border-emerald-500/30"
                       )}>
                         En cours
                       </span>
                     )}
 
                     {!step.completed && (
-                      <ChevronRight size={16} className="text-white/30 group-hover:text-white transition-colors shrink-0" />
+                      <ChevronRight size={16} className="text-slate-400 dark:text-white/30 group-hover:text-slate-900 dark:group-hover:text-white transition-colors shrink-0" />
                     )}
                   </>
                 );
@@ -492,10 +492,10 @@ export function SmartAssistantCard({ dashboard, onOpenTestIA, onOpenShare, onCon
                 const itemClass = cn(
                   "w-full flex items-center gap-3 p-3.5 sm:p-4 rounded-2xl border transition-all group min-w-0 min-h-[48px] cursor-pointer",
                   step.completed
-                    ? "bg-vendeur-emerald/5 border-vendeur-emerald/20 opacity-60"
+                    ? "bg-emerald-500/5 dark:bg-vendeur-emerald/5 border-emerald-500/20 dark:border-vendeur-emerald/20 opacity-70"
                     : step.id === nextStep?.id
-                      ? cn("border-opacity-60 shadow-md", isDiscoveryMode ? "bg-amber-500/10 border-amber-500/40" : "bg-vendeur-emerald/10 border-vendeur-emerald/40")
-                      : "bg-white/5 border-white/5 hover:border-white/20"
+                      ? cn("border-opacity-60 shadow-sm", isDiscoveryMode ? "bg-amber-500/10 border-amber-500/40" : "bg-emerald-500/10 border-emerald-500/40")
+                      : "bg-slate-50 dark:bg-white/5 border-slate-200 dark:border-white/5 hover:border-slate-300 dark:hover:border-white/20"
                 );
 
                 if (isWhatsAppInteractive) {
@@ -530,18 +530,18 @@ export function SmartAssistantCard({ dashboard, onOpenTestIA, onOpenShare, onCon
           Affiché quand la boutique a des articles pour encourager le partage
         */}
         {hasProducts && (
-          <div className="pt-6 border-t border-white/5 space-y-4">
-            <div className="bg-gradient-to-r from-blue-500/10 via-blue-500/5 to-transparent border border-blue-500/20 p-4 sm:p-6 rounded-3xl flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 relative overflow-hidden group/showcase shadow-xl">
+          <div className="pt-6 border-t border-slate-200 dark:border-white/5 space-y-4">
+            <div className="bg-blue-50/70 dark:bg-gradient-to-r dark:from-blue-500/10 dark:via-blue-500/5 dark:to-transparent border border-blue-200 dark:border-blue-500/20 p-4 sm:p-6 rounded-3xl flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 relative overflow-hidden group/showcase shadow-md dark:shadow-xl">
               <div className="space-y-2 relative z-10 flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                   <div className="h-8 w-8 rounded-xl bg-blue-500/20 text-blue-400 flex items-center justify-center shrink-0 shadow-inner">
+                   <div className="h-8 w-8 rounded-xl bg-blue-500/20 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0 shadow-inner">
                     <Package size={16} />
                   </div>
-                  <h4 className="text-sm sm:text-base font-black uppercase tracking-tight text-white">
+                  <h4 className="text-sm sm:text-base font-black uppercase tracking-tight text-slate-900 dark:text-white">
                     Votre Vitrine est en ligne ! 🚀
                   </h4>
                 </div>
-                <p className="text-xs sm:text-sm text-white/70 font-medium leading-relaxed max-w-lg">
+                <p className="text-xs sm:text-sm text-slate-600 dark:text-white/70 font-medium leading-relaxed max-w-lg">
                   Attirez vos premiers clients en diffusant votre lien ou vérifiez le rendu de vos articles côté acheteur.
                 </p>
               </div>
@@ -551,9 +551,9 @@ export function SmartAssistantCard({ dashboard, onOpenTestIA, onOpenShare, onCon
                   <button
                     type="button"
                     onClick={onOpenShare}
-                    className="h-12 sm:h-14 px-6 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 text-white font-black uppercase tracking-wider text-xs sm:text-sm flex items-center justify-center gap-2.5 transition-all active:scale-95 cursor-pointer"
+                    className="h-12 sm:h-14 px-6 rounded-2xl bg-white hover:bg-slate-50 dark:bg-white/5 dark:hover:bg-white/10 border border-slate-200 dark:border-white/10 text-slate-800 dark:text-white font-black uppercase tracking-wider text-xs sm:text-sm flex items-center justify-center gap-2.5 transition-all active:scale-95 cursor-pointer shadow-sm"
                   >
-                    <Share2 size={18} className="text-vendeur-emerald" />
+                    <Share2 size={18} className="text-emerald-600 dark:text-vendeur-emerald" />
                     <span>Propulser ma Boutique</span>
                   </button>
                 )}

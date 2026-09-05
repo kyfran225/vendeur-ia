@@ -64,7 +64,7 @@ export function PackProModal({ isOpen, onClose }: PackProModalProps) {
               "Support VIP prioritaire 24h/7"
             ].map((text, i) => (
               <div key={i} className={cn("flex items-center gap-2.5 p-2.5 bg-slate-50 dark:bg-white/[0.03] rounded-xl border border-slate-200 dark:border-white/5", i === 4 && "sm:col-span-2")}>
-                <div className="h-5 w-5 rounded-full bg-emerald-500 text-slate-950 flex items-center justify-center shrink-0">
+                <div className="h-5 w-5 rounded-full bg-emerald-500 text-white flex items-center justify-center shrink-0">
                   <Check size={12} className="font-bold" />
                 </div>
                 <span className="text-[11px] font-medium text-slate-800 dark:text-white/80">{text}</span>
@@ -83,7 +83,7 @@ export function PackProModal({ isOpen, onClose }: PackProModalProps) {
 
           <button
             onClick={handleBuy}
-            className="w-full h-11 sm:h-12 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black uppercase tracking-wider text-xs rounded-xl flex items-center justify-center gap-2 hover:brightness-110 active:scale-[0.98] transition-all shadow-lg shadow-emerald-500/20 cursor-pointer"
+            className="w-full h-11 sm:h-12 bg-emerald-500 hover:bg-emerald-400 text-white font-black uppercase tracking-wider text-xs rounded-xl flex items-center justify-center gap-2 hover:brightness-110 active:scale-[0.98] transition-all shadow-lg shadow-emerald-500/20 cursor-pointer"
           >
             <Rocket size={16} />
             Activer mon Pack Pro

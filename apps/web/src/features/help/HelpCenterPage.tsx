@@ -269,7 +269,7 @@ export function HelpCenterPage() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <button
             onClick={() => openCopilot("Comment configurer mon Vendeur IA ?")}
-            className="flex items-start gap-4 p-5 rounded-2xl bg-gradient-to-br from-vendeur-emerald/15 to-transparent border border-vendeur-emerald/30 hover:border-vendeur-emerald text-left transition-all group shadow-lg"
+            className="flex items-start gap-4 p-5 rounded-2xl bg-gradient-to-br from-vendeur-emerald/15 to-transparent border border-vendeur-emerald/30 hover:border-vendeur-emerald text-left transition-all group shadow-sm hover:shadow-md dark:shadow-xl cursor-pointer"
           >
             <div className="h-12 w-12 rounded-xl bg-vendeur-emerald/20 flex items-center justify-center text-vendeur-emerald shrink-0 group-hover:scale-110 transition-transform">
               <Bot size={24} />
@@ -286,7 +286,7 @@ export function HelpCenterPage() {
 
           <Link
             to="/settings?tab=connexions"
-            className="flex items-start gap-4 p-5 rounded-2xl bg-white/5 border border-white/10 hover:border-white/20 text-left transition-all group shadow-lg"
+            className="flex items-start gap-4 p-5 rounded-2xl bg-white/5 border border-white/10 hover:border-white/20 text-left transition-all group shadow-sm hover:shadow-md dark:shadow-xl"
           >
             <div className="h-12 w-12 rounded-xl bg-white/10 flex items-center justify-center text-white/80 shrink-0 group-hover:scale-110 transition-transform">
               <MessageCircle size={24} />
@@ -303,7 +303,7 @@ export function HelpCenterPage() {
 
           <Link
             to="/offers"
-            className="flex items-start gap-4 p-5 rounded-2xl bg-white/5 border border-white/10 hover:border-white/20 text-left transition-all group shadow-lg"
+            className="flex items-start gap-4 p-5 rounded-2xl bg-white/5 border border-white/10 hover:border-white/20 text-left transition-all group shadow-sm hover:shadow-md dark:shadow-xl"
           >
             <div className="h-12 w-12 rounded-xl bg-white/10 flex items-center justify-center text-amber-400 shrink-0 group-hover:scale-110 transition-transform">
               <Zap size={24} />

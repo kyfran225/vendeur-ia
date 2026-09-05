@@ -260,43 +260,43 @@ export function OrderManager() {
 
       {/* Top KPI Statistics Bar */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
-        <div className="p-4 md:p-5 rounded-2xl bg-white/[0.02] border border-white/5 flex flex-col justify-between">
-          <div className="flex items-center justify-between text-emerald-400 mb-2">
-            <span className="text-[10px] md:text-xs font-black uppercase tracking-wider text-white/40">Encaissé</span>
+        <div className="p-4 md:p-5 rounded-2xl bg-white dark:bg-vendeur-coal border border-slate-200 dark:border-white/10 shadow-sm hover:shadow-md dark:shadow-xl transition-all flex flex-col justify-between">
+          <div className="flex items-center justify-between text-emerald-600 dark:text-emerald-400 mb-2">
+            <span className="text-[10px] md:text-xs font-black uppercase tracking-wider text-slate-500 dark:text-white/40">Encaissé</span>
             <Banknote size={18} />
           </div>
-          <div className="text-xl md:text-2xl font-black text-emerald-400">
-            {stats.totalPaid.toLocaleString()} <span className="text-xs font-normal text-white/50">{merchantCurrency}</span>
+          <div className="text-xl md:text-2xl font-black text-emerald-600 dark:text-emerald-400">
+            {stats.totalPaid.toLocaleString()} <span className="text-xs font-normal text-slate-500 dark:text-white/50">{merchantCurrency}</span>
           </div>
         </div>
 
-        <div className="p-4 md:p-5 rounded-2xl bg-white/[0.02] border border-white/5 flex flex-col justify-between">
-          <div className="flex items-center justify-between text-amber-400 mb-2">
-            <span className="text-[10px] md:text-xs font-black uppercase tracking-wider text-white/40">À Encaisser</span>
+        <div className="p-4 md:p-5 rounded-2xl bg-white dark:bg-vendeur-coal border border-slate-200 dark:border-white/10 shadow-sm hover:shadow-md dark:shadow-xl transition-all flex flex-col justify-between">
+          <div className="flex items-center justify-between text-amber-600 dark:text-amber-400 mb-2">
+            <span className="text-[10px] md:text-xs font-black uppercase tracking-wider text-slate-500 dark:text-white/40">À Encaisser</span>
             <Clock size={18} />
           </div>
-          <div className="text-xl md:text-2xl font-black text-amber-400">
-            {stats.totalPending.toLocaleString()} <span className="text-xs font-normal text-white/50">{merchantCurrency}</span>
+          <div className="text-xl md:text-2xl font-black text-amber-600 dark:text-amber-400">
+            {stats.totalPending.toLocaleString()} <span className="text-xs font-normal text-slate-500 dark:text-white/50">{merchantCurrency}</span>
           </div>
         </div>
 
-        <div className="p-4 md:p-5 rounded-2xl bg-white/[0.02] border border-white/5 flex flex-col justify-between">
-          <div className="flex items-center justify-between text-purple-400 mb-2">
-            <span className="text-[10px] md:text-xs font-black uppercase tracking-wider text-white/40">En Course</span>
+        <div className="p-4 md:p-5 rounded-2xl bg-white dark:bg-vendeur-coal border border-slate-200 dark:border-white/10 shadow-sm hover:shadow-md dark:shadow-xl transition-all flex flex-col justify-between">
+          <div className="flex items-center justify-between text-purple-600 dark:text-purple-400 mb-2">
+            <span className="text-[10px] md:text-xs font-black uppercase tracking-wider text-slate-500 dark:text-white/40">En Course</span>
             <Truck size={18} />
           </div>
-          <div className="text-xl md:text-2xl font-black text-purple-400">
-            {stats.dispatchedCount} <span className="text-xs font-normal text-white/50">colis</span>
+          <div className="text-xl md:text-2xl font-black text-purple-600 dark:text-purple-400">
+            {stats.dispatchedCount} <span className="text-xs font-normal text-slate-500 dark:text-white/50">colis</span>
           </div>
         </div>
 
-        <div className="p-4 md:p-5 rounded-2xl bg-white/[0.02] border border-white/5 flex flex-col justify-between">
-          <div className="flex items-center justify-between text-blue-400 mb-2">
-            <span className="text-[10px] md:text-xs font-black uppercase tracking-wider text-white/40">Total Ventes</span>
+        <div className="p-4 md:p-5 rounded-2xl bg-white dark:bg-vendeur-coal border border-slate-200 dark:border-white/10 shadow-sm hover:shadow-md dark:shadow-xl transition-all flex flex-col justify-between">
+          <div className="flex items-center justify-between text-blue-600 dark:text-blue-400 mb-2">
+            <span className="text-[10px] md:text-xs font-black uppercase tracking-wider text-slate-500 dark:text-white/40">Total Ventes</span>
             <Package size={18} />
           </div>
-          <div className="text-xl md:text-2xl font-black text-white">
-            {stats.totalOrders} <span className="text-xs font-normal text-white/50">{config.ordersLabel.toLowerCase()}</span>
+          <div className="text-xl md:text-2xl font-black text-slate-900 dark:text-white">
+            {stats.totalOrders} <span className="text-xs font-normal text-slate-500 dark:text-white/50">{config.ordersLabel.toLowerCase()}</span>
           </div>
         </div>
       </div>
@@ -403,7 +403,7 @@ export function OrderManager() {
           </div>
         ) : (
           filteredOrders.map((order: any) => (
-            <div key={order._id} className="bg-vendeur-coal/40 border border-white/5 rounded-2xl lg:rounded-[2rem] p-4 lg:p-6 hover:border-white/10 transition-all group shadow-lg">
+            <div key={order._id} className="bg-white dark:bg-vendeur-coal/80 border border-slate-200 dark:border-white/10 rounded-2xl lg:rounded-[2rem] p-4 lg:p-6 hover:border-emerald-500/40 dark:hover:border-white/20 transition-all group shadow-sm hover:shadow-md dark:shadow-xl text-slate-900 dark:text-white">
               <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 lg:gap-8">
                 
                 {/* 1. Client & Delivery Meta Info */}

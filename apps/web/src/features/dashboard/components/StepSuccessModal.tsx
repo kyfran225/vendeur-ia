@@ -103,7 +103,7 @@ export function StepSuccessModal({
                 initial={{ scale: 0, rotate: -20 }}
                 animate={{ scale: 1, rotate: 0 }}
                 transition={{ type: "spring", stiffness: 400, damping: 20, delay: 0.1 }}
-                className="h-20 w-20 rounded-3xl bg-emerald-500 flex items-center justify-center text-slate-950 shadow-xl shadow-emerald-500/30"
+                className="h-20 w-20 rounded-3xl bg-emerald-500 flex items-center justify-center text-white shadow-xl shadow-emerald-500/30"
               >
                 {STEP_ICONS[completedStepId] || <CheckCircle2 size={32} />}
               </motion.div>
@@ -113,7 +113,7 @@ export function StepSuccessModal({
                 transition={{ delay: 0.3 }}
                 className="absolute -top-2 -right-2 h-7 w-7 rounded-full bg-emerald-500 border-2 border-white dark:border-vendeur-coal flex items-center justify-center"
               >
-                <CheckCircle2 size={14} className="text-slate-950 fill-slate-950" />
+                <CheckCircle2 size={14} className="text-white fill-emerald-500" />
               </motion.div>
             </div>
 
@@ -137,7 +137,7 @@ export function StepSuccessModal({
                 <Link
                   to={nextLink}
                   onClick={onClose}
-                  className="w-full flex items-center justify-center gap-2.5 min-h-[52px] px-6 py-3.5 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black uppercase text-xs tracking-wider active:scale-95 transition-all shadow-lg shadow-emerald-500/20 cursor-pointer"
+                  className="w-full flex items-center justify-center gap-2.5 min-h-[52px] px-6 py-3.5 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-white font-black uppercase text-xs tracking-wider active:scale-95 transition-all shadow-lg shadow-emerald-500/20 cursor-pointer"
                 >
                   <Zap size={16} fill="currentColor" className="animate-pulse shrink-0" />
                   <span>{nextCTA}</span>

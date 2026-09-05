@@ -825,7 +825,7 @@ export function MarketingHub() {
                   const isCampScheduled = c.status === "scheduled" || (c.scheduledAt && new Date(c.scheduledAt) > new Date());
 
                   return (
-                    <div key={c._id} className="bg-white dark:bg-[#0c0f0d] border border-slate-200/80 dark:border-white/5 p-4 sm:p-5 rounded-2xl flex flex-col gap-3 group hover:border-slate-300 dark:hover:border-white/10 transition-all shadow-md dark:shadow-xl">
+                    <div key={c._id} className="bg-white dark:bg-vendeur-coal border border-slate-200 dark:border-white/10 p-4 sm:p-5 rounded-2xl flex flex-col gap-3 group hover:border-slate-300 dark:hover:border-white/20 transition-all shadow-sm hover:shadow-md dark:shadow-xl">
                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                           <div className="flex items-center gap-3">
                              <div className={cn(

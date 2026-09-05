@@ -66,7 +66,7 @@ export function SetupCompletionModal({
               <motion.div
                 animate={{ rotate: [0, -6, 6, -6, 0], scale: [1, 1.05, 1] }}
                 transition={{ duration: 2.5, repeat: Infinity, repeatDelay: 0.5 }}
-                className="h-14 w-14 sm:h-16 sm:w-16 rounded-2xl bg-emerald-500 flex items-center justify-center text-slate-950 shadow-lg shadow-emerald-500/30 relative"
+                className="h-14 w-14 sm:h-16 sm:w-16 rounded-2xl bg-emerald-500 flex items-center justify-center text-white shadow-lg shadow-emerald-500/30 relative"
               >
                 <Trophy size={30} />
                 <div className="absolute -top-1.5 -right-1.5 bg-amber-400 text-black p-1 rounded-full shadow-md animate-pulse">
@@ -127,7 +127,7 @@ export function SetupCompletionModal({
                 onClick={onClose}
                 className="flex flex-col items-center justify-center gap-1 p-3 rounded-2xl bg-emerald-50 hover:bg-emerald-100/70 dark:bg-vendeur-emerald/10 border border-emerald-200 dark:border-vendeur-emerald/30 hover:border-emerald-500 dark:hover:border-vendeur-emerald transition-all group cursor-pointer text-center"
               >
-                <div className="h-8 w-8 rounded-xl bg-emerald-500 flex items-center justify-center text-slate-950 font-bold shrink-0 shadow-sm">
+                <div className="h-8 w-8 rounded-xl bg-emerald-500 flex items-center justify-center text-white font-bold shrink-0 shadow-sm">
                   <Play size={14} className="fill-current" />
                 </div>
                 <div className="text-[11px] font-black text-slate-900 dark:text-white uppercase group-hover:text-emerald-700 dark:group-hover:text-vendeur-emerald transition-colors">
@@ -156,7 +156,7 @@ export function SetupCompletionModal({
               <button
                 type="button"
                 onClick={onClose}
-                className="w-full h-11 sm:h-12 rounded-xl sm:rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-black uppercase tracking-wider active:scale-95 transition-all shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2 cursor-pointer"
+                className="w-full h-11 sm:h-12 rounded-xl sm:rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-white text-xs font-black uppercase tracking-wider active:scale-95 transition-all shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2 cursor-pointer"
               >
                 <LayoutDashboard size={16} />
                 <span>Voir mon Tableau de Bord</span>

@@ -251,11 +251,11 @@ export function MarketingHub() {
     <div className="p-3.5 sm:p-6 md:p-10 space-y-6 sm:space-y-10 pb-24 md:pb-12 max-w-[1600px] mx-auto animate-in fade-in duration-700">
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-3 sm:gap-6">
         <div>
-          <h1 className="text-2xl sm:text-3xl md:text-5xl font-black tracking-tighter text-slate-900 dark:text-white uppercase flex items-center gap-3">
-            <Megaphone className="text-sky-500 dark:text-sky-400" size={28} />
-            Hub Marketing
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight text-slate-900 dark:text-white flex items-center gap-2.5 sm:gap-3">
+            <Megaphone className="text-sky-500 dark:text-sky-400 shrink-0" size={24} />
+            <span>Hub Marketing</span>
           </h1>
-          <p className="text-slate-500 dark:text-white/40 text-xs sm:text-sm md:text-base mt-0.5">Faites savoir à vos clients que vous avez du nouveau.</p>
+          <p className="text-slate-500 dark:text-white/50 text-xs sm:text-sm mt-1 font-normal">Faites savoir à vos clients que vous avez du nouveau.</p>
         </div>
       </header>
 

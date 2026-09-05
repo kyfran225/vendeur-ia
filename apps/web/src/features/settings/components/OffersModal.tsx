@@ -286,7 +286,7 @@ export function OffersModal({ isOpen, onClose }: OffersModalProps) {
                   "w-full h-11 sm:h-14 min-h-[44px] rounded-xl sm:rounded-2xl font-black uppercase tracking-wider text-xs flex items-center justify-center gap-2 transition-all shadow-lg cursor-pointer",
                   isUnderVerification
                     ? "bg-slate-100 dark:bg-white/5 text-slate-400 dark:text-white/40 border border-slate-200 dark:border-white/10 cursor-not-allowed shadow-none"
-                    : "bg-slate-900 hover:bg-emerald-500 text-white hover:text-slate-950 dark:bg-white dark:hover:bg-vendeur-emerald dark:text-vendeur-coal font-black hover:scale-[1.02] active:scale-95 shadow-md"
+                    : "bg-emerald-600 hover:bg-emerald-500 text-white dark:bg-white dark:hover:bg-vendeur-emerald dark:text-vendeur-coal font-black hover:scale-[1.02] active:scale-95 shadow-md shadow-emerald-600/20"
                 )}
               >
                 {isRedirecting === "pro" ? (

@@ -412,13 +412,13 @@ function OverviewPanel({ stats, failedJobs, statsLoading }: { stats: any; failed
 
   return (
     <div className="space-y-6 md:space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-700">
-      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 md:gap-4">
-        <StatCard label="Global Merchants" value={stats?.totalMerchants || 0} icon={<Users className="text-vendeur-emerald" />} />
-        <StatCard label="Active Sessions" value={stats?.activeSessions || 0} icon={<Smartphone className="text-vendeur-emerald" />} />
-        <StatCard label="Total Ledger" value={`${(stats?.totalRevenue || 0).toLocaleString()} F`} icon={<Banknote className="text-vendeur-emerald" />} />
-        <StatCard label="Platform GMV" value={`${(stats?.totalGMV || 0).toLocaleString()} F`} icon={<ShoppingBag className="text-vendeur-emerald" />} />
-        <StatCard label="AI Interactions" value={stats?.totalConversations || 0} icon={<MessageSquare className="text-vendeur-emerald" />} />
-        <StatCard label="AI Net Costs" value={`$${(stats?.totalAiCost || 0).toFixed(2)}`} icon={<AssistantIcon size={20} color="#10B981" />} />
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 md:gap-4">
+        <StatCard label="Marchands" value={stats?.totalMerchants || 0} icon={<Users className="text-vendeur-emerald" size={18} />} />
+        <StatCard label="Sessions Actives" value={stats?.activeSessions || 0} icon={<Smartphone className="text-vendeur-emerald" size={18} />} />
+        <StatCard label="Ledger Total" value={`${(stats?.totalRevenue || 0).toLocaleString()} F`} icon={<Banknote className="text-vendeur-emerald" size={18} />} />
+        <StatCard label="Volume GMV" value={`${(stats?.totalGMV || 0).toLocaleString()} F`} icon={<ShoppingBag className="text-vendeur-emerald" size={18} />} />
+        <StatCard label="Échanges IA" value={stats?.totalConversations || 0} icon={<MessageSquare className="text-vendeur-emerald" size={18} />} />
+        <StatCard label="Coûts IA" value={`$${(stats?.totalAiCost || 0).toFixed(2)}`} icon={<AssistantIcon size={18} color="#10B981" />} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8 items-stretch">
@@ -440,11 +440,11 @@ function OverviewPanel({ stats, failedJobs, statsLoading }: { stats: any; failed
               </div>
 
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 md:gap-4">
-                <QueueStat label="Waiting" value={stats?.queue?.waiting} icon={<Clock size={12}/>} color="emerald" />
-                <QueueStat label="Active" value={stats?.queue?.active} icon={<Zap size={12}/>} color="vendeur" />
-                <QueueStat label="Completed" value={stats?.queue?.completed} icon={<CheckCircle2 size={12}/>} color="emerald" />
-                <QueueStat label="Failed" value={stats?.queue?.failed} icon={<XCircle size={12}/>} color="rose" />
-                <QueueStat label="Delayed" value={stats?.queue?.delayed} icon={<ExternalLink size={12}/>} color="emerald" />
+                <QueueStat label="En attente" value={stats?.queue?.waiting} icon={<Clock size={14}/>} color="emerald" />
+                <QueueStat label="Actifs" value={stats?.queue?.active} icon={<Zap size={14}/>} color="vendeur" />
+                <QueueStat label="Terminés" value={stats?.queue?.completed} icon={<CheckCircle2 size={14}/>} color="emerald" />
+                <QueueStat label="Échecs" value={stats?.queue?.failed} icon={<XCircle size={14}/>} color="rose" />
+                <QueueStat label="Différés" value={stats?.queue?.delayed} icon={<ExternalLink size={14}/>} color="emerald" />
               </div>
 
               <div className="mt-4 pt-4 md:mt-6 md:pt-6 border-t border-white/5">
@@ -1027,16 +1027,16 @@ function QueueStat({ label, value, icon, color }: any) {
   const colors: any = {
     emerald: "text-emerald-400 bg-emerald-500/10 border-emerald-500/20",
     sky: "text-sky-400 bg-sky-500/10 border-sky-500/20",
-    amber: "text-vendeur-emerald bg-vendeur-emerald/10 border-vendeur-emerald/20",
+    amber: "text-amber-400 bg-amber-500/10 border-amber-500/20",
     rose: "text-rose-500 bg-rose-500/10 border-rose-500/20",
     purple: "text-purple-400 bg-purple-500/10 border-purple-500/20",
     vendeur: "text-vendeur-emerald bg-vendeur-emerald/10 border-vendeur-emerald/20",
   };
   return (
-    <div className={cn("p-4 rounded-2xl border text-center space-y-1", color === 'emerald' ? colors.vendeur : colors[color])}>
-       <div className="flex justify-center opacity-40">{icon}</div>
-       <p className="text-xl font-black leading-none">{value || 0}</p>
-       <p className="text-[8px] font-black uppercase tracking-tighter opacity-60">{label}</p>
+    <div className={cn("p-3 sm:p-4 rounded-2xl border text-center space-y-1 min-w-0 shadow-sm", color === 'emerald' ? colors.vendeur : colors[color])}>
+       <div className="flex justify-center opacity-60">{icon}</div>
+       <p className="text-lg sm:text-xl font-black leading-none font-mono">{value || 0}</p>
+       <p className="text-[9px] font-black uppercase tracking-wider opacity-70 truncate">{label}</p>
     </div>
   );
 }
@@ -1055,7 +1055,7 @@ function HealthCheckGrid() {
   });
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
       <HealthItem
         label="Base de Données"
         status={health?.infrastructure?.database?.status === 'operational' ? "operational" : "down"}
@@ -1077,15 +1077,15 @@ function HealthCheckGrid() {
 
 function HealthItem({ label, status, latency, info }: { label: string; status: "operational" | "degraded" | "down"; latency?: string; info?: string }) {
     return (
-        <div className="flex items-center justify-between p-4 bg-black/40 rounded-2xl border border-white/5 group hover:border-vendeur-emerald/30 transition-all">
-            <div className="space-y-0.5">
-              <span className="text-[10px] font-black uppercase tracking-widest text-white/40">{label}</span>
+        <div className="flex items-center justify-between p-3.5 sm:p-4 bg-black/40 rounded-2xl border border-white/5 group hover:border-vendeur-emerald/30 transition-all gap-3 min-w-0">
+            <div className="space-y-0.5 min-w-0 flex-1">
+              <span className="text-[10px] sm:text-xs font-black uppercase tracking-wider text-white/50 truncate block">{label}</span>
               {(latency || info) && (
-                <p className="text-[9px] font-mono text-vendeur-emerald/40 uppercase">{latency || info}</p>
+                <p className="text-[9px] font-mono text-vendeur-emerald/60 uppercase truncate">{latency || info}</p>
               )}
             </div>
-            <div className="flex items-center gap-2">
-                <div className={cn("h-2 w-2 rounded-full", status === 'operational' ? "bg-vendeur-emerald animate-pulse" : "bg-rose-500")} />
+            <div className="flex items-center gap-2 shrink-0">
+                <div className={cn("h-2 w-2 rounded-full shrink-0", status === 'operational' ? "bg-vendeur-emerald animate-pulse" : "bg-rose-500")} />
                 <span className={cn("text-[9px] font-black uppercase tracking-[0.1em]", status === 'operational' ? "text-vendeur-emerald" : "text-rose-500")}>
                   {status === 'operational' ? "OK" : "ERREUR"}
                 </span>
@@ -1324,13 +1324,26 @@ function ChannelToggle({ label, active, onClick }: { label: string; active: bool
   );
 }
 
-function StatCard({ label, value, icon }: { label: string; value: number | string; icon: React.ReactNode }) {
+function StatCard({ label, value, icon, subtitle }: { label: string; value: number | string; icon: React.ReactNode; subtitle?: string }) {
   return (
-    <div className="bg-vendeur-coal border border-white/10 p-5 md:p-8 rounded-[2rem] md:rounded-[2.5rem] space-y-3 md:space-y-4 group hover:border-white/20 transition-all">
-      <div className="h-10 w-10 md:h-14 md:w-14 bg-white/5 rounded-xl md:rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform shrink-0">{icon}</div>
+    <div className="bg-vendeur-coal/90 border border-white/10 p-3.5 sm:p-4.5 rounded-2xl md:rounded-3xl flex flex-col justify-between group hover:border-vendeur-emerald/40 transition-all shadow-lg min-w-0">
+      <div className="flex items-center justify-between gap-1.5 mb-2">
+        <span className="text-[10px] sm:text-[10.5px] xl:text-[11px] font-black uppercase tracking-wider text-white/60 whitespace-nowrap">
+          {label}
+        </span>
+        <div className="h-7 w-7 sm:h-8 sm:w-8 bg-white/5 rounded-xl flex items-center justify-center text-vendeur-emerald group-hover:scale-110 transition-transform shrink-0">
+          {icon}
+        </div>
+      </div>
       <div>
-        <p className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] text-white/40">{label}</p>
-        <p className="text-2xl md:text-4xl font-black mt-1 break-words">{value}</p>
+        <p className="text-lg sm:text-xl lg:text-[1.3rem] font-black text-white font-mono tracking-tight whitespace-nowrap truncate leading-tight" title={String(value)}>
+          {value}
+        </p>
+        {subtitle && (
+          <p className="text-[10px] font-semibold text-white/40 truncate mt-1">
+            {subtitle}
+          </p>
+        )}
       </div>
     </div>
   );

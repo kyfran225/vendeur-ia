@@ -71,16 +71,16 @@ export function ConfirmationModal({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 100, scale: 0.95 }}
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            className="relative w-full max-w-md overflow-hidden rounded-t-[2.5rem] sm:rounded-[2.5rem] border border-white/10 bg-vendeur-coal p-6 sm:p-8 shadow-2xl z-10"
+            className="relative w-full max-w-md overflow-hidden rounded-t-[2.5rem] sm:rounded-[2.5rem] border border-slate-200 dark:border-white/10 bg-white dark:bg-vendeur-coal p-6 sm:p-8 shadow-2xl z-10 text-slate-900 dark:text-white"
           >
             {/* Mobile Drag Indicator Pill */}
-            <div className="sm:hidden w-12 h-1.5 bg-white/20 rounded-full mx-auto mb-6" />
+            <div className="sm:hidden w-12 h-1.5 bg-slate-300 dark:bg-white/20 rounded-full mx-auto mb-6" />
 
             {/* Close Button */}
             <button
               onClick={onClose}
               disabled={isLoading}
-              className="absolute right-5 top-5 sm:right-6 sm:top-6 text-white/30 hover:text-white transition-colors p-2 rounded-xl hover:bg-white/5 disabled:opacity-30"
+              className="absolute right-5 top-5 sm:right-6 sm:top-6 text-slate-400 hover:text-slate-900 dark:text-white/30 dark:hover:text-white transition-colors p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-white/5 disabled:opacity-30 cursor-pointer"
             >
               <X size={20} />
             </button>
@@ -92,10 +92,10 @@ export function ConfirmationModal({
 
             {/* Text */}
             <div className="mb-8 space-y-2 text-left">
-              <h3 className="text-xl sm:text-2xl font-black text-white leading-tight uppercase tracking-tight">
+              <h3 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white leading-tight uppercase tracking-tight">
                 {title}
               </h3>
-              <p className="text-xs sm:text-sm font-medium leading-relaxed text-white/60">
+              <p className="text-xs sm:text-sm font-medium leading-relaxed text-slate-600 dark:text-white/60">
                 {message}
               </p>
             </div>
@@ -105,14 +105,14 @@ export function ConfirmationModal({
               <button
                 disabled={isLoading}
                 onClick={handleConfirm}
-                className={`flex h-14 w-full sm:flex-1 items-center justify-center gap-2 rounded-2xl text-xs sm:text-sm font-black uppercase tracking-wider transition-all active:scale-95 disabled:opacity-50 shrink-0 ${getConfirmButtonStyle()}`}
+                className={`flex h-14 w-full sm:flex-1 items-center justify-center gap-2 rounded-2xl text-xs sm:text-sm font-black uppercase tracking-wider transition-all active:scale-95 disabled:opacity-50 shrink-0 cursor-pointer ${getConfirmButtonStyle()}`}
               >
                 {isLoading ? <Loader2 className="animate-spin" size={18} /> : confirmLabel}
               </button>
               <button
                 disabled={isLoading}
                 onClick={onClose}
-                className="flex h-14 w-full sm:flex-1 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-xs sm:text-sm font-black uppercase tracking-wider text-white/70 hover:bg-white/10 hover:text-white transition-all active:scale-95 disabled:opacity-50 shrink-0"
+                className="flex h-14 w-full sm:flex-1 items-center justify-center rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/5 text-xs sm:text-sm font-black uppercase tracking-wider text-slate-700 dark:text-white/70 hover:bg-slate-200 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white transition-all active:scale-95 disabled:opacity-50 shrink-0 cursor-pointer"
               >
                 {cancelLabel}
               </button>

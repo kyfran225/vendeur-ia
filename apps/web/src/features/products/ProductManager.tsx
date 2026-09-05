@@ -941,8 +941,8 @@ export function ProductManager() {
       {/* Main Header */}
       <header id="tour-products-catalog" className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-6">
         <div className="min-w-0">
-          <h1 className="text-2xl sm:text-3xl md:text-5xl font-black tracking-tighter text-slate-900 dark:text-white uppercase truncate">{config.title}</h1>
-          <p className="text-slate-500 dark:text-white/40 mt-1 text-sm md:text-lg">Gérez vos {config.itemLabel.toLowerCase()}s et laissez le Vendeur IA conclure les transactions.</p>
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight text-slate-900 dark:text-white truncate">{config.title}</h1>
+          <p className="text-slate-500 dark:text-white/50 mt-1 text-xs sm:text-sm font-normal">Gérez vos {config.itemLabel.toLowerCase()}s et laissez le Vendeur IA conclure les transactions.</p>
         </div>
         <div className="flex flex-row gap-3 shrink-0">
           {config.showScanner && (

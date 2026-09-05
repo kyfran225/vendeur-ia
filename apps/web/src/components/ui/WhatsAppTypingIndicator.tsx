@@ -42,12 +42,12 @@ export function WhatsAppTypingIndicator({
   // 2. Variante Pill (Badge flottant moderne)
   if (variant === "pill") {
     return (
-      <div className={cn("inline-flex items-center gap-2.5 bg-[#1f2c34]/95 border border-emerald-500/30 px-3.5 py-1.5 rounded-full shadow-xl backdrop-blur-md animate-in fade-in zoom-in-95 duration-300", className)}>
-        <span className="text-xs font-bold text-emerald-400 tracking-wider uppercase">{label || "En train d'écrire..."}</span>
+      <div className={cn("inline-flex items-center gap-2.5 bg-white/95 dark:bg-[#1f2c34]/95 border border-emerald-500/30 px-3.5 py-1.5 rounded-full shadow-lg dark:shadow-xl backdrop-blur-md animate-in fade-in zoom-in-95 duration-300", className)}>
+        <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 tracking-wider uppercase">{label || "En train d'écrire..."}</span>
         <span className="inline-flex items-center gap-1.5 pt-1">
-          <span className="h-2 w-2 rounded-full bg-emerald-400 animate-typing-compact-1 shadow-[0_0_8px_rgba(52,211,153,0.8)]" />
-          <span className="h-2 w-2 rounded-full bg-emerald-400 animate-typing-compact-2 shadow-[0_0_8px_rgba(52,211,153,0.8)]" />
-          <span className="h-2 w-2 rounded-full bg-emerald-400 animate-typing-compact-3 shadow-[0_0_8px_rgba(52,211,153,0.8)]" />
+          <span className="h-2 w-2 rounded-full bg-emerald-500 dark:bg-emerald-400 animate-typing-compact-1 shadow-[0_0_8px_rgba(52,211,153,0.8)]" />
+          <span className="h-2 w-2 rounded-full bg-emerald-500 dark:bg-emerald-400 animate-typing-compact-2 shadow-[0_0_8px_rgba(52,211,153,0.8)]" />
+          <span className="h-2 w-2 rounded-full bg-emerald-500 dark:bg-emerald-400 animate-typing-compact-3 shadow-[0_0_8px_rgba(52,211,153,0.8)]" />
         </span>
       </div>
     );
@@ -60,7 +60,7 @@ export function WhatsAppTypingIndicator({
         <div className="w-8 h-8 flex items-center justify-center shrink-0 select-none pointer-events-none">
           <AssistantIcon size={28} color="#10B981" withBackground={false} className="shrink-0 animate-pulse" />
         </div>
-        <div className="bg-slate-100 dark:bg-[#182229] border border-slate-200 dark:border-white/10 rounded-2xl px-4 py-3 text-sm text-slate-800 dark:text-white/80 flex items-center gap-3 min-w-0 shadow-sm">
+        <div className="bg-white dark:bg-[#182229] border border-slate-200 dark:border-white/10 rounded-2xl px-4 py-3 text-sm text-slate-800 dark:text-white/80 flex items-center gap-3 min-w-0 shadow-sm">
           <div className="flex items-center gap-1.5 shrink-0 pt-2 pb-1 px-1">
             <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-typing-dot-1" />
             <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-typing-dot-2" />
@@ -81,13 +81,13 @@ export function WhatsAppTypingIndicator({
         <div className="h-8 w-8 rounded-xl flex items-center justify-center shrink-0">
           <AssistantIcon size="100%" color="#10B981" withBackground={false} />
         </div>
-        <div className="p-3.5 sm:p-4 rounded-2xl bg-[#1f2c34]/90 border border-white/10 text-white/70 text-xs flex items-center gap-3 rounded-tl-none shadow-lg">
+        <div className="p-3.5 sm:p-4 rounded-2xl bg-white dark:bg-[#1f2c34]/90 border border-slate-200 dark:border-white/10 text-slate-700 dark:text-white/70 text-xs flex items-center gap-3 rounded-tl-none shadow-sm dark:shadow-lg">
           <div className="flex items-center gap-1.5 shrink-0 pt-2 pb-1 px-1">
-            <span className="h-2.5 w-2.5 rounded-full bg-emerald-400 animate-typing-dot-1" />
-            <span className="h-2.5 w-2.5 rounded-full bg-emerald-400 animate-typing-dot-2" />
-            <span className="h-2.5 w-2.5 rounded-full bg-emerald-400 animate-typing-dot-3" />
+            <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 dark:bg-emerald-400 animate-typing-dot-1" />
+            <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 dark:bg-emerald-400 animate-typing-dot-2" />
+            <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 dark:bg-emerald-400 animate-typing-dot-3" />
           </div>
-          <span className="italic text-[11px] sm:text-xs text-white/70 font-medium">
+          <span className="italic text-[11px] sm:text-xs text-slate-500 dark:text-white/70 font-medium">
             {label || "Le Vendeur IA compose sa réponse..."}
           </span>
         </div>
@@ -99,13 +99,13 @@ export function WhatsAppTypingIndicator({
   if (variant === "storefront") {
     return (
       <div className={cn("flex justify-start animate-in fade-in slide-in-from-bottom-2 duration-300", className)}>
-        <div className="bg-white/5 border border-white/10 px-4 py-3 rounded-2xl flex items-center gap-3 shadow-lg">
+        <div className="bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 px-4 py-3 rounded-2xl flex items-center gap-3 shadow-sm dark:shadow-lg">
           <div className="flex items-center gap-1.5 shrink-0 pt-2 pb-1 px-1">
-            <span className="h-2.5 w-2.5 rounded-full bg-vendeur-emerald animate-typing-dot-1" />
-            <span className="h-2.5 w-2.5 rounded-full bg-vendeur-emerald animate-typing-dot-2" />
-            <span className="h-2.5 w-2.5 rounded-full bg-vendeur-emerald animate-typing-dot-3" />
+            <span className="h-2.5 w-2.5 rounded-full bg-emerald-600 dark:bg-vendeur-emerald animate-typing-dot-1" />
+            <span className="h-2.5 w-2.5 rounded-full bg-emerald-600 dark:bg-vendeur-emerald animate-typing-dot-2" />
+            <span className="h-2.5 w-2.5 rounded-full bg-emerald-600 dark:bg-vendeur-emerald animate-typing-dot-3" />
           </div>
-          <span className="text-[11px] font-bold text-vendeur-emerald tracking-wide">
+          <span className="text-[11px] font-bold text-emerald-700 dark:text-vendeur-emerald tracking-wide">
             {label || "Vendeur IA réfléchit..."}
           </span>
         </div>
@@ -116,14 +116,14 @@ export function WhatsAppTypingIndicator({
   // 6. Défaut : Bulle de chat WhatsApp (Left-aligned AI Bubble haute visibilité pour Démo & Inbox)
   return (
     <div className={cn("flex justify-start mb-3 animate-in fade-in slide-in-from-bottom-2 duration-300", className)}>
-      <div className="bg-[#202c33] border border-white/10 text-white px-4 py-3.5 rounded-2xl rounded-tl-none shadow-xl flex items-center gap-3">
+      <div className="bg-white dark:bg-[#202c33] border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white px-4 py-3.5 rounded-2xl rounded-tl-none shadow-sm dark:shadow-xl flex items-center gap-3">
         <span className="flex items-center gap-1.5 pt-2 pb-1 px-1">
-          <span className="h-2.5 w-2.5 rounded-full bg-emerald-400 animate-typing-dot-1" />
-          <span className="h-2.5 w-2.5 rounded-full bg-emerald-400 animate-typing-dot-2" />
-          <span className="h-2.5 w-2.5 rounded-full bg-emerald-400 animate-typing-dot-3" />
+          <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 dark:bg-emerald-400 animate-typing-dot-1" />
+          <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 dark:bg-emerald-400 animate-typing-dot-2" />
+          <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 dark:bg-emerald-400 animate-typing-dot-3" />
         </span>
         {label && (
-          <span className="text-xs text-white/60 font-medium italic pr-1">
+          <span className="text-xs text-slate-500 dark:text-white/60 font-medium italic pr-1">
             {label}
           </span>
         )}

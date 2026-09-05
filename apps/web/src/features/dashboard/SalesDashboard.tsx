@@ -208,12 +208,12 @@ export function SalesDashboard() {
   return (
     <main className="max-w-6xl mx-auto p-4 md:p-10 space-y-8 pb-24 md:pb-8 animate-in fade-in duration-700">
       <header className="flex flex-col md:flex-row md:items-end justify-between gap-5 mb-2">
-        <div className="space-y-1.5">
-          <h1 className="text-2xl sm:text-3xl md:text-5xl font-black tracking-tighter uppercase text-white flex items-center gap-3 sm:gap-4">
-            <LayoutDashboard className="text-vendeur-emerald shrink-0" size={32} />
+        <div className="space-y-1">
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight text-white flex items-center gap-2.5 sm:gap-3">
+            <LayoutDashboard className="text-vendeur-emerald shrink-0" size={24} />
             <span>Tableau de Bord</span>
           </h1>
-          <p className="text-white/50 text-xs sm:text-sm md:text-base font-medium">Gérez votre croissance et suivez vos performances en direct.</p>
+          <p className="text-white/50 text-xs sm:text-sm font-normal mt-1">Gérez votre croissance et suivez vos performances en direct.</p>
           {activeWhatsApp && (
             <div className="pt-1 w-full sm:w-auto">
               <button

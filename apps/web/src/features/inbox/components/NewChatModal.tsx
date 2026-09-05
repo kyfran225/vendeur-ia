@@ -122,7 +122,7 @@ export function NewChatModal({ isOpen, onClose, onChatCreated }: NewChatModalPro
                 <ShieldCheck size={18} className={senderChannel === "system" ? "text-emerald-600 dark:text-[#00a884]" : "text-slate-400 dark:text-[#8696a0]"} />
                 <div>
                   <div className="text-xs font-bold text-slate-900 dark:text-white">Numéro Système</div>
-                  <div className="text-[10px] text-slate-500 dark:text-[#8696a0]">0505111157 (Admin)</div>
+                  <div className="text-[10px] text-slate-500 dark:text-[#8696a0]">0505111157 (Ligne Officielle)</div>
                 </div>
               </button>
             </div>

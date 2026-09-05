@@ -121,27 +121,27 @@ export function DeliveryDispatchModal({ isOpen, onClose, order }: DeliveryDispat
   if (!isOpen || !order) return null;
 
   return createPortal(
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in duration-300">
-      <div className="bg-[#0B1512] border border-white/10 w-full max-w-md rounded-[2.5rem] overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300 flex flex-col">
-        <header className="p-6 border-b border-white/5 flex items-center justify-between bg-white/[0.02]">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 dark:bg-black/85 backdrop-blur-md animate-in fade-in duration-300">
+      <div className="bg-white dark:bg-[#0B1512] border border-slate-200 dark:border-white/10 w-full max-w-md rounded-[2.5rem] overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300 flex flex-col text-slate-900 dark:text-white">
+        <header className="p-6 border-b border-slate-100 dark:border-white/5 flex items-center justify-between bg-slate-50/50 dark:bg-white/[0.02]">
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-2xl bg-purple-500/10 flex items-center justify-center border border-purple-500/30 text-purple-400">
+            <div className="h-10 w-10 rounded-2xl bg-purple-500/10 flex items-center justify-center border border-purple-500/30 text-purple-600 dark:text-purple-400">
               <Truck size={20} />
             </div>
             <div>
-              <h2 className="text-lg font-black text-white">Assigner un Livreur</h2>
-              <p className="text-xs text-white/40 font-medium">Commande #{order._id.toString().slice(-6).toUpperCase()}</p>
+              <h2 className="text-lg font-black text-slate-900 dark:text-white">Assigner un Livreur</h2>
+              <p className="text-xs text-slate-500 dark:text-white/40 font-medium">Commande #{order._id.toString().slice(-6).toUpperCase()}</p>
             </div>
           </div>
-          <button onClick={onClose} className="p-2 text-white/40 hover:text-white rounded-xl hover:bg-white/5 transition-colors">
+          <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-700 dark:text-white/40 dark:hover:text-white rounded-xl hover:bg-slate-100 dark:hover:bg-white/5 transition-colors">
             <X size={20} />
           </button>
         </header>
 
         <div className="p-6 space-y-4">
           {/* Order Summary Reminder */}
-          <div className="p-4 rounded-2xl bg-white/5 border border-white/5 space-y-2.5 text-xs">
-            <div className="flex items-center gap-2.5 pb-2 border-b border-white/5">
+          <div className="p-4 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/5 space-y-2.5 text-xs">
+            <div className="flex items-center gap-2.5 pb-2 border-b border-slate-200 dark:border-white/5">
               <CustomerAvatar
                 name={order.customerId?.name}
                 phone={order.customerId?.phone}
@@ -151,23 +151,23 @@ export function DeliveryDispatchModal({ isOpen, onClose, order }: DeliveryDispat
                 showPlatformBadge={false}
               />
               <div className="min-w-0 flex-1">
-                <div className="text-white font-bold truncate">
+                <div className="text-slate-900 dark:text-white font-bold truncate">
                   {order.customerId?.name || formatDisplayPhone(order.customerId?.phone, "CI") || "Client"}
                 </div>
                 {order.customerId?.phone && (
-                  <div className="text-[10px] text-white/50 font-mono">
+                  <div className="text-[10px] text-slate-500 dark:text-white/50 font-mono">
                     {formatDisplayPhone(order.customerId?.phone, "CI")}
                   </div>
                 )}
               </div>
             </div>
             <div className="flex justify-between">
-              <span className="text-white/40 font-medium">Lieu de livraison :</span>
-              <span className="text-emerald-400 font-bold">{order.shippingAddress || "Non spécifié"}</span>
+              <span className="text-slate-500 dark:text-white/40 font-medium">Lieu de livraison :</span>
+              <span className="text-emerald-600 dark:text-emerald-400 font-bold">{order.shippingAddress || "Non spécifié"}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-white/40 font-medium">Montant à encaisser :</span>
-              <span className="text-white font-black">
+              <span className="text-slate-500 dark:text-white/40 font-medium">Montant à encaisser :</span>
+              <span className="text-slate-900 dark:text-white font-black">
                 {order.status === "paid" ? "0 FCFA (Déjà Payé ✅)" : `${order.totalAmount.toLocaleString()} ${order.currency || "XOF"}`}
               </span>
             </div>
@@ -176,8 +176,8 @@ export function DeliveryDispatchModal({ isOpen, onClose, order }: DeliveryDispat
           {/* Quick select saved couriers */}
           {savedCouriers.length > 0 && (
             <div>
-              <label className="text-[10px] font-black uppercase tracking-widest text-white/40 flex items-center gap-1.5 mb-1.5">
-                <Clock size={11} className="text-purple-400" />
+              <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-white/40 flex items-center gap-1.5 mb-1.5">
+                <Clock size={11} className="text-purple-600 dark:text-purple-400" />
                 Livreurs récents
               </label>
               <div className="flex flex-wrap gap-1.5">
@@ -191,12 +191,12 @@ export function DeliveryDispatchModal({ isOpen, onClose, order }: DeliveryDispat
                     }}
                     className={`px-2.5 py-1 rounded-xl text-[10px] font-bold border transition-colors flex items-center gap-1 ${
                       cleanPhone === courier.phone
-                        ? "bg-purple-500/20 border-purple-500 text-purple-300"
-                        : "bg-white/5 border-white/10 text-white/60 hover:text-white hover:bg-white/10"
+                        ? "bg-purple-500/20 border-purple-500 text-purple-700 dark:text-purple-300"
+                        : "bg-slate-100 dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-600 dark:text-white/60 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-white/10"
                     }`}
                   >
                     <span>{courier.name}</span>
-                    <span className="text-white/30 font-mono text-[9px]">({courier.phone.slice(-4)})</span>
+                    <span className="text-slate-400 dark:text-white/30 font-mono text-[9px]">({courier.phone.slice(-4)})</span>
                   </button>
                 ))}
               </div>
@@ -205,8 +205,8 @@ export function DeliveryDispatchModal({ isOpen, onClose, order }: DeliveryDispat
 
           <div className="space-y-3">
             <div>
-              <label className="text-[10px] font-black uppercase tracking-widest text-white/40 flex items-center gap-1.5 mb-1.5">
-                <User size={12} className="text-purple-400" />
+              <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-white/40 flex items-center gap-1.5 mb-1.5">
+                <User size={12} className="text-purple-600 dark:text-purple-400" />
                 Nom du coursier (optionnel)
               </label>
               <input
@@ -214,13 +214,13 @@ export function DeliveryDispatchModal({ isOpen, onClose, order }: DeliveryDispat
                 value={deliveryGuyName}
                 onChange={(e) => setDeliveryGuyName(e.target.value)}
                 placeholder="Ex: Moussa Express"
-                className="w-full bg-vendeur-bg border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white outline-none focus:border-purple-500"
+                className="w-full bg-slate-50 dark:bg-vendeur-bg border border-slate-200 dark:border-white/10 rounded-xl px-3 py-2.5 text-xs text-slate-900 dark:text-white outline-none focus:border-purple-500"
               />
             </div>
 
             <div>
-              <label className="text-[10px] font-black uppercase tracking-widest text-white/40 flex items-center gap-1.5 mb-1.5">
-                <Phone size={12} className="text-purple-400" />
+              <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-white/40 flex items-center gap-1.5 mb-1.5">
+                <Phone size={12} className="text-purple-600 dark:text-purple-400" />
                 Numéro WhatsApp du Livreur *
               </label>
               <input
@@ -228,13 +228,13 @@ export function DeliveryDispatchModal({ isOpen, onClose, order }: DeliveryDispat
                 value={deliveryGuyPhone}
                 onChange={(e) => setDeliveryGuyPhone(e.target.value)}
                 placeholder="Ex: +225 07 00 00 00 00 ou 0700000000"
-                className="w-full bg-vendeur-bg border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white outline-none focus:border-purple-500 font-mono"
+                className="w-full bg-slate-50 dark:bg-vendeur-bg border border-slate-200 dark:border-white/10 rounded-xl px-3 py-2.5 text-xs text-slate-900 dark:text-white outline-none focus:border-purple-500 font-mono"
               />
             </div>
 
             <div>
-              <label className="text-[10px] font-black uppercase tracking-widest text-white/40 flex items-center gap-1.5 mb-1.5">
-                <MapPin size={12} className="text-purple-400" />
+              <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-white/40 flex items-center gap-1.5 mb-1.5">
+                <MapPin size={12} className="text-purple-600 dark:text-purple-400" />
                 Instructions / Remarques pour la course
               </label>
               <textarea
@@ -242,18 +242,18 @@ export function DeliveryDispatchModal({ isOpen, onClose, order }: DeliveryDispat
                 onChange={(e) => setDeliveryNotes(e.target.value)}
                 placeholder="Ex: Appeler avant d'arriver au carrefour..."
                 rows={2}
-                className="w-full bg-vendeur-bg border border-white/10 rounded-xl p-3 text-xs text-white outline-none focus:border-purple-500 resize-none"
+                className="w-full bg-slate-50 dark:bg-vendeur-bg border border-slate-200 dark:border-white/10 rounded-xl p-3 text-xs text-slate-900 dark:text-white outline-none focus:border-purple-500 resize-none"
               />
             </div>
           </div>
 
           <div className="space-y-2 pt-1">
-            {/* Direct WhatsApp Button (Guaranteed 100% Delivery) */}
+            {/* Direct WhatsApp Button */}
             <button
               type="button"
               disabled={!deliveryGuyPhone.trim()}
               onClick={handleOpenWhatsAppDirect}
-              className="w-full h-12 bg-emerald-500 hover:bg-emerald-600 text-black font-black uppercase tracking-wider text-xs rounded-xl flex items-center justify-center gap-2 hover:scale-[1.01] active:scale-98 transition-all shadow-lg shadow-emerald-500/20 disabled:opacity-20"
+              className="w-full h-12 bg-emerald-500 hover:bg-emerald-600 text-white dark:text-black font-black uppercase tracking-wider text-xs rounded-xl flex items-center justify-center gap-2 hover:scale-[1.01] active:scale-98 transition-all shadow-lg shadow-emerald-500/20 disabled:opacity-20"
             >
               <ExternalLink size={16} />
               Ouvrir & Envoyer sur WhatsApp
@@ -264,7 +264,7 @@ export function DeliveryDispatchModal({ isOpen, onClose, order }: DeliveryDispat
               type="button"
               disabled={!deliveryGuyPhone.trim() || dispatchMutation.isPending}
               onClick={() => dispatchMutation.mutate()}
-              className="w-full h-10 bg-purple-500/15 hover:bg-purple-500/25 text-purple-300 border border-purple-500/30 font-bold uppercase tracking-wider text-[11px] rounded-xl flex items-center justify-center gap-2 hover:scale-[1.01] active:scale-98 transition-all disabled:opacity-20"
+              className="w-full h-10 bg-purple-500/10 dark:bg-purple-500/15 hover:bg-purple-500/20 dark:hover:bg-purple-500/25 text-purple-700 dark:text-purple-300 border border-purple-500/30 font-bold uppercase tracking-wider text-[11px] rounded-xl flex items-center justify-center gap-2 hover:scale-[1.01] active:scale-98 transition-all disabled:opacity-20"
             >
               {dispatchMutation.isPending ? <Loader2 className="animate-spin" size={16} /> : <Send size={14} />}
               Envoi automatique en arrière-plan

@@ -44,11 +44,11 @@ export function FacebookConnectionModal({ isOpen, onClose, merchant, onRefresh, 
 
   return createPortal(
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-4">
-      <div className="fixed inset-0 bg-black/80 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative w-full max-w-lg bg-vendeur-bg border border-white/10 rounded-2xl sm:rounded-3xl p-4 sm:p-6 space-y-3.5 sm:space-y-4 shadow-2xl animate-in zoom-in-95 duration-200 max-h-[92vh] overflow-y-auto">
+      <div className="fixed inset-0 bg-black/60 dark:bg-black/80 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative w-full max-w-lg bg-white dark:bg-vendeur-bg border border-slate-200 dark:border-white/10 rounded-2xl sm:rounded-3xl p-4 sm:p-6 space-y-3.5 sm:space-y-4 shadow-2xl animate-in zoom-in-95 duration-200 max-h-[92vh] overflow-y-auto text-slate-900 dark:text-white">
         <button 
           onClick={onClose} 
-          className="absolute top-3.5 right-3.5 sm:top-5 sm:right-5 p-1 rounded-lg text-white/30 hover:text-white hover:bg-white/5 transition-colors"
+          className="absolute top-3.5 right-3.5 sm:top-5 sm:right-5 p-1 rounded-lg text-slate-400 hover:text-slate-700 dark:text-white/30 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 transition-colors"
           aria-label="Fermer"
         >
           <X size={20} />
@@ -58,15 +58,15 @@ export function FacebookConnectionModal({ isOpen, onClose, merchant, onRefresh, 
           <div className="h-12 w-12 bg-[#1877F2] rounded-2xl flex items-center justify-center mx-auto shadow-lg shadow-[#1877F2]/30 text-white">
             <FacebookIcon size={24} color="#FFFFFF" />
           </div>
-          <h2 className="text-xl sm:text-2xl font-black text-white uppercase tracking-tight">Lier Facebook Pro</h2>
-          <p className="text-white/40 text-xs">Automatisez votre Page et Marketplace Business.</p>
+          <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Lier Facebook Pro</h2>
+          <p className="text-slate-500 dark:text-white/40 text-xs">Automatisez votre Page et Marketplace Business.</p>
         </div>
 
         <div className="space-y-3">
           <div className="space-y-1">
-            <label className="text-[10px] font-black uppercase text-white/40 ml-1 tracking-wider">Page ID</label>
+            <label className="text-[10px] font-black uppercase text-slate-500 dark:text-white/40 ml-1 tracking-wider">Page ID</label>
             <input
-              className="w-full h-10 sm:h-11 bg-vendeur-coal border border-white/10 rounded-xl px-3.5 text-xs text-white focus:border-blue-500 outline-none transition-all font-mono"
+              className="w-full h-10 sm:h-11 bg-slate-50 dark:bg-vendeur-coal border border-slate-200 dark:border-white/10 rounded-xl px-3.5 text-xs text-slate-900 dark:text-white focus:border-blue-500 outline-none transition-all font-mono"
               value={config.pageId}
               onChange={e => setConfig({ ...config, pageId: e.target.value })}
               placeholder="Ex: 102394857..."
@@ -74,9 +74,9 @@ export function FacebookConnectionModal({ isOpen, onClose, merchant, onRefresh, 
           </div>
 
           <div className="space-y-1">
-            <label className="text-[10px] font-black uppercase text-white/40 ml-1 tracking-wider">Access Token (Page)</label>
+            <label className="text-[10px] font-black uppercase text-slate-500 dark:text-white/40 ml-1 tracking-wider">Access Token (Page)</label>
             <textarea
-              className="w-full h-16 sm:h-20 bg-vendeur-coal border border-white/10 rounded-xl p-3 text-[11px] text-white focus:border-blue-500 outline-none transition-all font-mono resize-none"
+              className="w-full h-16 sm:h-20 bg-slate-50 dark:bg-vendeur-coal border border-slate-200 dark:border-white/10 rounded-xl p-3 text-[11px] text-slate-900 dark:text-white focus:border-blue-500 outline-none transition-all font-mono resize-none"
               value={config.accessToken}
               onChange={e => setConfig({ ...config, accessToken: e.target.value })}
               placeholder="EAAG..."
@@ -93,20 +93,20 @@ export function FacebookConnectionModal({ isOpen, onClose, merchant, onRefresh, 
           </button>
         </div>
 
-        <div className="pt-2 border-t border-white/5">
-          <div className="bg-vendeur-emerald/5 border border-vendeur-emerald/20 p-3 sm:p-3.5 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5">
+        <div className="pt-2 border-t border-slate-100 dark:border-white/5">
+          <div className="bg-emerald-50 dark:bg-vendeur-emerald/5 border border-emerald-200 dark:border-vendeur-emerald/20 p-3 sm:p-3.5 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5">
             <div className="space-y-0.5">
               <div className="flex items-center gap-1.5">
-                <Rocket className="text-vendeur-emerald shrink-0" size={14} />
-                <h4 className="font-black text-white text-[11px] sm:text-xs uppercase tracking-tight">Besoin d'aide pour votre Page ?</h4>
+                <Rocket className="text-emerald-600 dark:text-vendeur-emerald shrink-0" size={14} />
+                <h4 className="font-black text-slate-900 dark:text-white text-[11px] sm:text-xs uppercase tracking-tight">Besoin d'aide pour votre Page ?</h4>
               </div>
-              <p className="text-[10px] text-white/50 leading-tight">
+              <p className="text-[10px] text-slate-600 dark:text-white/50 leading-tight">
                 Vente sur compte Marketplace personnel ou configuration clé en main.
               </p>
             </div>
             <button
               onClick={onOpenMarketplaceGuide}
-              className="w-full sm:w-auto px-3 py-1.5 bg-vendeur-emerald/10 hover:bg-vendeur-emerald/20 border border-vendeur-emerald/30 text-vendeur-emerald text-[10px] sm:text-[11px] font-black uppercase tracking-wider rounded-xl flex items-center justify-center gap-1.5 shrink-0 transition-all active:scale-95"
+              className="w-full sm:w-auto px-3 py-1.5 bg-emerald-100 dark:bg-vendeur-emerald/10 hover:bg-emerald-200 dark:hover:bg-vendeur-emerald/20 border border-emerald-300 dark:border-vendeur-emerald/30 text-emerald-700 dark:text-vendeur-emerald text-[10px] sm:text-[11px] font-black uppercase tracking-wider rounded-xl flex items-center justify-center gap-1.5 shrink-0 transition-all active:scale-95"
             >
               Pack Pro & Guide <HelpCircle size={13} />
             </button>

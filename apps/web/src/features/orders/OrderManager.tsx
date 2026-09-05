@@ -229,12 +229,12 @@ export function OrderManager() {
   return (
     <div className="p-4 md:p-10 space-y-6 md:space-y-8 max-w-6xl mx-auto animate-in fade-in duration-700 pb-24 md:pb-12">
       <header id="tour-orders-management" className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div className="space-y-2">
-          <h1 className="text-3xl md:text-5xl font-black tracking-tighter uppercase text-white flex items-center gap-4">
-            <ShoppingCart className="text-vendeur-emerald shrink-0" size={32} />
-            {config.ordersLabel}
+        <div className="space-y-1">
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight text-white flex items-center gap-2.5 sm:gap-3">
+            <ShoppingCart className="text-vendeur-emerald shrink-0" size={24} />
+            <span>{config.ordersLabel}</span>
           </h1>
-          <p className="text-white/40 text-sm md:text-lg">Suivez vos ventes et gérez le cycle de vie de vos {config.ordersLabel.toLowerCase()}.</p>
+          <p className="text-white/50 text-xs sm:text-sm font-normal mt-1">Suivez vos ventes et gérez le cycle de vie de vos {config.ordersLabel.toLowerCase()}.</p>
         </div>
 
         <div className="flex items-center gap-3">

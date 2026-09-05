@@ -241,35 +241,35 @@ export function SettingsPage() {
 
   return (
     <div className="p-3.5 sm:p-6 md:p-10 max-w-6xl mx-auto space-y-6 md:space-y-8 animate-in fade-in duration-700 pb-24 relative w-full max-w-full box-border">
-      <header id="tour-settings-branding" className="space-y-1.5">
-        <h1 className="text-2xl md:text-5xl font-black tracking-tighter uppercase text-white flex items-center gap-3 md:gap-4">
-          <Settings className="text-vendeur-emerald shrink-0" size={32} />
+      <header id="tour-settings-branding" className="space-y-1">
+        <h1 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight text-slate-900 dark:text-white flex items-center gap-2.5 sm:gap-3">
+          <Settings className="text-emerald-600 dark:text-vendeur-emerald shrink-0" size={24} />
           <span className="truncate">Centre de Contrôle</span>
         </h1>
-        <p className="text-white/40 text-xs sm:text-sm md:text-lg">Pilotez votre machine de vente et configurez votre Vendeur IA.</p>
+        <p className="text-slate-500 dark:text-white/50 text-xs sm:text-sm font-normal mt-1">Pilotez votre machine de vente et configurez votre Vendeur IA.</p>
       </header>
 
       {/* Sticky Navigation Tabs Bar (Responsive: Drawer on Mobile, Tabs on Desktop) */}
-      <div className="sticky top-0 z-40 bg-vendeur-bg/95 backdrop-blur-2xl border-b border-white/10 -mx-3.5 sm:-mx-6 md:-mx-10 px-3.5 sm:px-6 md:px-10 py-2 md:py-2.5 shadow-lg">
+      <div className="sticky top-0 z-40 bg-slate-50/95 dark:bg-vendeur-bg/95 backdrop-blur-2xl border-b border-slate-200 dark:border-white/10 -mx-3.5 sm:-mx-6 md:-mx-10 px-3.5 sm:px-6 md:px-10 py-2 md:py-2.5 shadow-sm dark:shadow-lg">
         <div className="relative max-w-full w-full">
 
           {/* Mobile Tab Trigger */}
           <button
             onClick={() => setIsMobileMenuOpen(true)}
-            className="md:hidden w-full h-13 min-h-[52px] flex items-center justify-between px-4 py-2.5 bg-white/5 rounded-2xl border border-white/10 text-white/80 active:scale-[0.98] transition-all shrink-0 cursor-pointer"
+            className="md:hidden w-full h-13 min-h-[52px] flex items-center justify-between px-4 py-2.5 bg-white dark:bg-white/5 rounded-2xl border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white/80 active:scale-[0.98] transition-all shrink-0 cursor-pointer shadow-sm dark:shadow-none"
           >
             <div className="flex items-center gap-3">
-              <div className="h-9 w-9 rounded-xl bg-vendeur-emerald/10 flex items-center justify-center text-vendeur-emerald border border-vendeur-emerald/20 shrink-0">
+              <div className="h-9 w-9 rounded-xl bg-vendeur-emerald/15 dark:bg-vendeur-emerald/10 flex items-center justify-center text-emerald-800 dark:text-vendeur-emerald border border-vendeur-emerald/30 shrink-0">
                 {React.createElement(SETTINGS_TABS.find(t => t.id === activeTab)?.icon || Settings, { size: 18 })}
               </div>
               <div className="flex flex-col items-start">
-                <span className="text-[8px] font-black uppercase tracking-widest text-vendeur-emerald/60 leading-none">Réglages</span>
-                <span className="text-xs font-black uppercase tracking-tight">
+                <span className="text-[8px] font-black uppercase tracking-widest text-emerald-700 dark:text-vendeur-emerald/60 leading-none">Réglages</span>
+                <span className="text-xs font-black uppercase tracking-tight text-slate-900 dark:text-white">
                   {SETTINGS_TABS.find(t => t.id === activeTab)?.label}
                 </span>
               </div>
             </div>
-            <div className="flex items-center gap-2 px-3 py-2 bg-white/5 rounded-xl border border-white/5 text-white/40 shrink-0">
+            <div className="flex items-center gap-2 px-3 py-2 bg-slate-100 dark:bg-white/5 rounded-xl border border-slate-200 dark:border-white/5 text-slate-600 dark:text-white/40 shrink-0">
               <Menu size={18} />
             </div>
           </button>
@@ -281,7 +281,7 @@ export function SettingsPage() {
               <button
                 type="button"
                 onClick={() => scrollTabs("left")}
-                className="absolute -left-3 top-1/2 -translate-y-1/2 z-30 h-8 w-8 min-h-[32px] rounded-full bg-vendeur-coal/95 border border-white/20 text-white hover:text-vendeur-emerald hover:border-vendeur-emerald flex items-center justify-center shadow-xl transition-all cursor-pointer hover:scale-105 active:scale-95 shrink-0"
+                className="absolute -left-3 top-1/2 -translate-y-1/2 z-30 h-8 w-8 min-h-[32px] rounded-full bg-white/95 dark:bg-vendeur-coal/95 border border-slate-300 dark:border-white/20 text-slate-700 dark:text-white hover:text-emerald-700 dark:hover:text-vendeur-emerald hover:border-emerald-500 dark:hover:border-vendeur-emerald flex items-center justify-center shadow-md dark:shadow-xl transition-all cursor-pointer hover:scale-105 active:scale-95 shrink-0"
                 title="Défiler vers la gauche"
               >
                 <ChevronLeft size={16} />
@@ -293,7 +293,7 @@ export function SettingsPage() {
               <button
                 type="button"
                 onClick={() => scrollTabs("right")}
-                className="absolute -right-3 top-1/2 -translate-y-1/2 z-30 h-8 w-8 min-h-[32px] rounded-full bg-vendeur-coal/95 border border-white/20 text-white hover:text-vendeur-emerald hover:border-vendeur-emerald flex items-center justify-center shadow-xl transition-all cursor-pointer hover:scale-105 active:scale-95 shrink-0"
+                className="absolute -right-3 top-1/2 -translate-y-1/2 z-30 h-8 w-8 min-h-[32px] rounded-full bg-white/95 dark:bg-vendeur-coal/95 border border-slate-300 dark:border-white/20 text-slate-700 dark:text-white hover:text-emerald-700 dark:hover:text-vendeur-emerald hover:border-emerald-500 dark:hover:border-vendeur-emerald flex items-center justify-center shadow-md dark:shadow-xl transition-all cursor-pointer hover:scale-105 active:scale-95 shrink-0"
                 title="Défiler vers la droite"
               >
                 <ChevronRight size={16} />
@@ -301,11 +301,11 @@ export function SettingsPage() {
             )}
 
             <div className={cn(
-              "absolute left-0 top-0 bottom-0 w-8 z-10 bg-gradient-to-r from-vendeur-bg to-transparent pointer-events-none transition-opacity duration-300",
+              "absolute left-0 top-0 bottom-0 w-8 z-10 bg-gradient-to-r from-slate-50 dark:from-vendeur-bg to-transparent pointer-events-none transition-opacity duration-300",
               showLeftScroll ? "opacity-100" : "opacity-0"
             )} />
             <div className={cn(
-              "absolute right-0 top-0 bottom-0 w-8 z-10 bg-gradient-to-l from-vendeur-bg to-transparent pointer-events-none transition-opacity duration-300",
+              "absolute right-0 top-0 bottom-0 w-8 z-10 bg-gradient-to-l from-slate-50 dark:from-vendeur-bg to-transparent pointer-events-none transition-opacity duration-300",
               showRightScroll ? "opacity-100" : "opacity-0"
             )} />
 
@@ -331,7 +331,7 @@ export function SettingsPage() {
                       "flex items-center gap-2 px-4 h-10 md:h-11 min-h-[40px] md:min-h-[44px] rounded-xl text-xs font-black uppercase tracking-tight transition-all shrink-0 whitespace-nowrap active:scale-95 cursor-pointer",
                       isActive
                         ? "bg-vendeur-emerald text-slate-950 shadow-md shadow-vendeur-emerald/20 font-black"
-                        : "bg-white/[0.03] text-white/60 hover:text-white hover:bg-white/[0.08] border border-white/5 font-bold"
+                        : "bg-white dark:bg-white/[0.03] text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-white/60 dark:hover:text-white dark:hover:bg-white/[0.08] border border-slate-200 dark:border-white/5 font-bold shadow-xs dark:shadow-none"
                     )}
                   >
                     <Icon size={16} className="shrink-0" />
@@ -352,28 +352,28 @@ export function SettingsPage() {
         )}
       >
         <div
-          className="fixed inset-0 bg-black/90 backdrop-blur-md transition-opacity"
+          className="fixed inset-0 bg-black/70 backdrop-blur-md transition-opacity"
           onClick={() => setIsMobileMenuOpen(false)}
         />
         <aside
           className={cn(
-            "fixed top-0 left-0 bottom-0 w-[300px] bg-vendeur-coal border-r border-white/10 shadow-2xl transition-transform duration-300 ease-out flex flex-col",
+            "fixed top-0 left-0 bottom-0 w-[300px] bg-white dark:bg-vendeur-coal border-r border-slate-200 dark:border-white/10 shadow-2xl transition-transform duration-300 ease-out flex flex-col",
             isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"
           )}
         >
-          <div className="p-6 border-b border-white/5 flex items-center justify-between">
+          <div className="p-6 border-b border-slate-200 dark:border-white/5 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="h-10 w-10 rounded-xl bg-vendeur-emerald/10 flex items-center justify-center border border-vendeur-emerald/20">
-                <Settings className="text-vendeur-emerald" size={24} />
+                <Settings className="text-emerald-700 dark:text-vendeur-emerald" size={24} />
               </div>
               <div>
-                <h3 className="text-sm font-black uppercase tracking-wider">Réglages</h3>
-                <p className="text-[10px] text-vendeur-emerald font-bold tracking-widest uppercase">Configuration IA</p>
+                <h3 className="text-sm font-black uppercase tracking-wider text-slate-900 dark:text-white">Réglages</h3>
+                <p className="text-[10px] text-emerald-700 dark:text-vendeur-emerald font-bold tracking-widest uppercase">Configuration IA</p>
               </div>
             </div>
             <button
               onClick={() => setIsMobileMenuOpen(false)}
-              className="h-8 w-8 rounded-full bg-white/5 flex items-center justify-center text-white/40"
+              className="h-8 w-8 rounded-full bg-slate-100 dark:bg-white/5 flex items-center justify-center text-slate-500 dark:text-white/40 hover:text-slate-800 dark:hover:text-white transition-colors"
             >
               <X size={18} />
             </button>
@@ -391,13 +391,13 @@ export function SettingsPage() {
                   "w-full flex items-center justify-between p-4 rounded-2xl border transition-all cursor-pointer active:scale-[0.98]",
                   activeTab === tab.id
                     ? "bg-vendeur-emerald border-vendeur-emerald text-slate-950 font-black shadow-lg shadow-vendeur-emerald/20"
-                    : "bg-white/[0.02] border-white/5 text-white/60 hover:bg-white/5 hover:text-white"
+                    : "bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100 dark:bg-white/[0.02] dark:border-white/5 dark:text-white/60 dark:hover:bg-white/5 dark:hover:text-white"
                 )}
               >
                 <div className="flex items-center gap-4">
                   <div className={cn(
                     "h-10 w-10 rounded-xl flex items-center justify-center transition-all shrink-0",
-                    activeTab === tab.id ? "bg-slate-950 text-vendeur-emerald shadow-sm" : "bg-white/5 text-vendeur-emerald"
+                    activeTab === tab.id ? "bg-slate-950 text-vendeur-emerald shadow-sm" : "bg-slate-200/80 dark:bg-white/5 text-emerald-700 dark:text-vendeur-emerald"
                   )}>
                     <tab.icon size={20} />
                   </div>
@@ -408,10 +408,10 @@ export function SettingsPage() {
             ))}
           </nav>
 
-          <div className="p-6 border-t border-white/5">
+          <div className="p-6 border-t border-slate-200 dark:border-white/5">
             <button
               onClick={() => setShowLogoutModal(true)}
-              className="w-full flex items-center gap-4 p-4 rounded-2xl bg-red-500/5 border border-red-500/10 text-red-400 hover:bg-red-500/10 transition-all active:scale-95 group"
+              className="w-full flex items-center gap-4 p-4 rounded-2xl bg-red-500/5 border border-red-500/10 text-red-600 dark:text-red-400 hover:bg-red-500/10 transition-all active:scale-95 group"
             >
               <div className="h-10 w-10 rounded-xl bg-red-500/10 flex items-center justify-center text-red-500 group-hover:scale-110 transition-transform">
                 <LogOut size={20} />

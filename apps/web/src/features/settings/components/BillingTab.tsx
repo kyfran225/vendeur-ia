@@ -120,22 +120,22 @@ export function BillingTab({ merchant }: { merchant: any }) {
   if (isFounder) {
     return (
       <div className="space-y-6 sm:space-y-8 animate-in slide-in-from-bottom-2 duration-500 pb-16">
-        <section className="bg-gradient-to-br from-emerald-950/40 via-vendeur-coal to-black border border-vendeur-emerald/30 p-6 sm:p-8 md:p-10 rounded-2xl sm:rounded-3xl md:rounded-[2.5rem] relative overflow-hidden shadow-2xl space-y-6">
+        <section className="bg-gradient-to-br from-emerald-50 via-white to-slate-50 dark:from-emerald-950/40 dark:via-vendeur-coal dark:to-black border border-emerald-300 dark:border-vendeur-emerald/30 p-6 sm:p-8 md:p-10 rounded-2xl sm:rounded-3xl md:rounded-[2.5rem] relative overflow-hidden shadow-xl dark:shadow-2xl space-y-6">
           <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
             <div className="space-y-4">
               <div className="flex flex-wrap items-center gap-2.5">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-vendeur-emerald/15 text-vendeur-emerald border border-vendeur-emerald/30">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-vendeur-emerald/15 text-emerald-800 dark:text-vendeur-emerald border border-vendeur-emerald/30">
                   <span className="w-2.5 h-2.5 rounded-full bg-vendeur-emerald animate-pulse" />
                   Accès Maître Fondateur
                 </span>
-                <span className="text-xs text-white/50 font-mono font-bold">
+                <span className="text-xs text-slate-500 dark:text-white/50 font-mono font-bold">
                   Licence Illimitée Plateforme
                 </span>
               </div>
-              <h2 className="text-2xl sm:text-3xl font-black uppercase tracking-tight text-white">
+              <h2 className="text-2xl sm:text-3xl font-black uppercase tracking-tight text-slate-900 dark:text-white">
                 Compte Administrateur & Fondateur
               </h2>
-              <p className="text-sm text-white/70 font-medium max-w-xl leading-relaxed">
+              <p className="text-sm text-slate-600 dark:text-white/70 font-medium max-w-xl leading-relaxed">
                 Ce compte bénéficie d'un accès intégral et permanent à toutes les fonctionnalités système (Vendeur IA 24h/24, Meta Cloud API, PaymentShield OCR, Studio Créatif et Cockpit Administrateur).
               </p>
             </div>
@@ -149,20 +149,20 @@ export function BillingTab({ merchant }: { merchant: any }) {
             </button>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
-            <div className="p-4 rounded-2xl bg-black/40 border border-white/5 space-y-1">
-              <div className="text-[10px] font-black uppercase tracking-widest text-white/40">Statut Forfait</div>
-              <div className="text-sm font-bold text-vendeur-emerald flex items-center gap-1.5">
+            <div className="p-4 rounded-2xl bg-white dark:bg-black/40 border border-slate-200 dark:border-white/5 space-y-1 shadow-sm dark:shadow-none">
+              <div className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-white/40">Statut Forfait</div>
+              <div className="text-sm font-bold text-emerald-600 dark:text-vendeur-emerald flex items-center gap-1.5">
                 <CheckCircle2 size={16} />
                 <span>Illimité & Actif</span>
               </div>
             </div>
-            <div className="p-4 rounded-2xl bg-black/40 border border-white/5 space-y-1">
-              <div className="text-[10px] font-black uppercase tracking-widest text-white/40">Ligne Système</div>
-              <div className="text-sm font-mono font-bold text-white">+225 05 05 11 11 57</div>
+            <div className="p-4 rounded-2xl bg-white dark:bg-black/40 border border-slate-200 dark:border-white/5 space-y-1 shadow-sm dark:shadow-none">
+              <div className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-white/40">Ligne Système</div>
+              <div className="text-sm font-mono font-bold text-slate-900 dark:text-white">+225 05 05 11 11 57</div>
             </div>
-            <div className="p-4 rounded-2xl bg-black/40 border border-white/5 space-y-1">
-              <div className="text-[10px] font-black uppercase tracking-widest text-white/40">Canal WhatsApp</div>
-              <div className="text-sm font-bold text-sky-400">Meta Cloud API (Officiel)</div>
+            <div className="p-4 rounded-2xl bg-white dark:bg-black/40 border border-slate-200 dark:border-white/5 space-y-1 shadow-sm dark:shadow-none">
+              <div className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-white/40">Canal WhatsApp</div>
+              <div className="text-sm font-bold text-sky-600 dark:text-sky-400">Meta Cloud API (Officiel)</div>
             </div>
           </div>
         </section>
@@ -174,54 +174,54 @@ export function BillingTab({ merchant }: { merchant: any }) {
     <div className="space-y-6 sm:space-y-8 animate-in slide-in-from-bottom-2 duration-500 pb-16">
       {/* 0. Carte Dédiée : Paiement / Virement en cours d'approbation */}
       {isUnderVerification && latestPaymentIntent && (
-        <section className="bg-gradient-to-br from-emerald-950/40 via-[#0c1611] to-black border border-emerald-500/40 p-5 sm:p-7 md:p-8 rounded-2xl sm:rounded-3xl md:rounded-[2.5rem] relative overflow-hidden shadow-2xl space-y-5 animate-in fade-in zoom-in-95 duration-300">
+        <section className="bg-gradient-to-br from-emerald-50 via-white to-slate-50 dark:from-emerald-950/40 dark:via-[#0c1611] dark:to-black border border-emerald-400/60 dark:border-emerald-500/40 p-5 sm:p-7 md:p-8 rounded-2xl sm:rounded-3xl md:rounded-[2.5rem] relative overflow-hidden shadow-xl dark:shadow-2xl space-y-5 animate-in fade-in zoom-in-95 duration-300">
           <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-5">
             <div className="space-y-3 flex-1">
               <div className="flex flex-wrap items-center gap-2.5">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
-                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-400" />
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border border-emerald-500/30">
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
                   Vérification du paiement en cours
                 </span>
-                <span className="text-xs text-white/50 font-bold">
+                <span className="text-xs text-slate-500 dark:text-white/50 font-bold">
                   (Délai estimé : 10 à 30 min)
                 </span>
               </div>
 
-              <h2 className="text-xl sm:text-2xl font-black uppercase tracking-tight text-white">
+              <h2 className="text-xl sm:text-2xl font-black uppercase tracking-tight text-slate-900 dark:text-white">
                 Règlement reçu & en cours de validation
               </h2>
-              <p className="text-sm text-white/70 font-medium max-w-xl leading-relaxed">
+              <p className="text-sm text-slate-600 dark:text-white/70 font-medium max-w-xl leading-relaxed">
                 Votre notification de paiement a bien été transmise. Nos équipes confirment la transaction pour activer instantanément votre Vendeur IA 24h/24.
               </p>
 
               {/* Grid Summary */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
-                <div className="p-3.5 rounded-2xl bg-black/40 border border-white/5 space-y-0.5 relative">
-                  <div className="text-[10px] font-black uppercase tracking-widest text-white/40">
+                <div className="p-3.5 rounded-2xl bg-white dark:bg-black/40 border border-slate-200 dark:border-white/5 space-y-0.5 relative shadow-sm dark:shadow-none">
+                  <div className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-white/40">
                     Référence
                   </div>
-                  <div className="text-sm font-mono font-bold text-white truncate">
+                  <div className="text-sm font-mono font-bold text-slate-900 dark:text-white truncate">
                     {latestPaymentIntent.reference}
                   </div>
                 </div>
 
-                <div className="p-3.5 rounded-2xl bg-black/40 border border-white/5 space-y-0.5">
-                  <div className="text-[10px] font-black uppercase tracking-widest text-white/40">
+                <div className="p-3.5 rounded-2xl bg-white dark:bg-black/40 border border-slate-200 dark:border-white/5 space-y-0.5 shadow-sm dark:shadow-none">
+                  <div className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-white/40">
                     Montant & Moyen
                   </div>
-                  <div className="text-sm font-bold text-emerald-400">
+                  <div className="text-sm font-bold text-emerald-600 dark:text-emerald-400">
                     {latestPaymentIntent.amount?.toLocaleString()} {latestPaymentIntent.currency || "XOF"}
-                    <span className="text-xs font-normal text-white/50 ml-1.5 capitalize">
+                    <span className="text-xs font-normal text-slate-500 dark:text-white/50 ml-1.5 capitalize">
                       ({latestPaymentIntent.paymentMethod || "Mobile Money"})
                     </span>
                   </div>
                 </div>
 
-                <div className="p-3.5 rounded-2xl bg-black/40 border border-white/5 space-y-0.5">
-                  <div className="text-[10px] font-black uppercase tracking-widest text-white/40">
+                <div className="p-3.5 rounded-2xl bg-white dark:bg-black/40 border border-slate-200 dark:border-white/5 space-y-0.5 shadow-sm dark:shadow-none">
+                  <div className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-white/40">
                     Forfait Choisi
                   </div>
-                  <div className="text-sm font-bold text-white">
+                  <div className="text-sm font-bold text-slate-900 dark:text-white">
                     {latestPaymentIntent.planName || "Vendeur IA"}
                   </div>
                 </div>
@@ -236,7 +236,7 @@ export function BillingTab({ merchant }: { merchant: any }) {
                 )}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="h-12 px-5 bg-white/10 hover:bg-[#25D366]/20 hover:border-[#25D366]/50 border border-white/10 text-white hover:text-[#25D366] font-black uppercase tracking-wider text-xs rounded-xl flex items-center justify-center gap-2 transition-all cursor-pointer"
+                className="h-12 px-5 bg-slate-100 hover:bg-[#25D366]/20 hover:border-[#25D366]/50 border border-slate-300 dark:bg-white/10 dark:hover:bg-[#25D366]/20 dark:border-white/10 text-slate-800 dark:text-white hover:text-[#25D366] font-black uppercase tracking-wider text-xs rounded-xl flex items-center justify-center gap-2 transition-all cursor-pointer shadow-sm"
               >
                 <WhatsAppIcon size={16} variant="brand" />
                 <span>Assistance WhatsApp</span>
@@ -249,7 +249,7 @@ export function BillingTab({ merchant }: { merchant: any }) {
 
       {/* 1. Plan Actuel (si actif) */}
       {isPlanActive && (
-        <section id="billing" className="bg-vendeur-coal border border-white/10 p-5 sm:p-8 md:p-10 rounded-2xl sm:rounded-3xl md:rounded-[2.5rem] relative overflow-hidden shadow-2xl space-y-6 scroll-mt-28">
+        <section id="billing" className="bg-white dark:bg-vendeur-coal border border-slate-200 dark:border-white/10 p-5 sm:p-8 md:p-10 rounded-2xl sm:rounded-3xl md:rounded-[2.5rem] relative overflow-hidden shadow-xl dark:shadow-2xl space-y-6 scroll-mt-28">
           <div className="relative z-10 flex flex-col lg:flex-row justify-between gap-6 sm:gap-8">
             <div className="space-y-5 sm:space-y-6 flex-1">
               <div className="flex items-center gap-3.5 sm:gap-4">
@@ -258,24 +258,24 @@ export function BillingTab({ merchant }: { merchant: any }) {
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2.5">
-                    <h2 className="text-xl sm:text-2xl font-black uppercase tracking-tight text-white truncate">
+                    <h2 className="text-xl sm:text-2xl font-black uppercase tracking-tight text-slate-900 dark:text-white truncate">
                       {offer?.name || 'Forfait Vendeur IA Actif'}
                     </h2>
-                    <span className="px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-vendeur-emerald/15 text-vendeur-emerald border border-vendeur-emerald/30">
+                    <span className="px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-vendeur-emerald/15 text-emerald-800 dark:text-vendeur-emerald border border-vendeur-emerald/30">
                       {currentInterval === 'yearly' ? 'Facturation Annuelle' : 'Facturation Mensuelle'}
                     </span>
                   </div>
                   <div className="flex flex-wrap items-center gap-2 mt-1.5">
                     <span className={cn(
                       "px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider border",
-                      sub?.status === 'active' ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/30" :
-                      sub?.status === 'past_due' ? "bg-amber-500/15 text-amber-400 border-amber-500/30" :
-                      "bg-rose-500/15 text-rose-400 border-rose-500/30"
+                      sub?.status === 'active' ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border-emerald-500/30" :
+                      sub?.status === 'past_due' ? "bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-500/30" :
+                      "bg-rose-500/15 text-rose-700 dark:text-rose-400 border-rose-500/30"
                     )}>
                       {sub?.status === 'active' ? "● En service 24/7" : sub?.status === 'past_due' ? "⚠️ En attente" : "❌ Expiré"}
                     </span>
                     {hasRecurring && (
-                      <span className="px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider border bg-blue-500/15 text-blue-400 border-blue-500/30">
+                      <span className="px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider border bg-blue-500/15 text-blue-700 dark:text-blue-400 border-blue-500/30">
                         Auto-Renouvellement
                       </span>
                     )}
@@ -284,22 +284,22 @@ export function BillingTab({ merchant }: { merchant: any }) {
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 pt-2">
-                <div className="p-4 sm:p-5 rounded-2xl bg-white/[0.02] border border-white/5 space-y-1">
-                  <p className="text-xs font-bold uppercase text-white/50 tracking-wider flex items-center gap-1.5">
+                <div className="p-4 sm:p-5 rounded-2xl bg-slate-50 dark:bg-white/[0.02] border border-slate-200 dark:border-white/5 space-y-1 shadow-sm dark:shadow-none">
+                  <p className="text-xs font-bold uppercase text-slate-500 dark:text-white/50 tracking-wider flex items-center gap-1.5">
                     <Calendar size={14} className="text-vendeur-emerald shrink-0" />
                     <span>{isExpired ? "Expiré le" : (hasRecurring ? "Prochain prélèvement" : "Prochaine échéance")}</span>
                   </p>
-                  <p className="text-base sm:text-lg font-black text-white font-mono">
+                  <p className="text-base sm:text-lg font-black text-slate-900 dark:text-white font-mono">
                     {nextDate ? new Date(nextDate).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) : 'N/A'}
                   </p>
                 </div>
 
-                <div className="p-4 sm:p-5 rounded-2xl bg-white/[0.02] border border-white/5 space-y-1">
-                  <p className="text-xs font-bold uppercase text-white/50 tracking-wider flex items-center gap-1.5">
+                <div className="p-4 sm:p-5 rounded-2xl bg-slate-50 dark:bg-white/[0.02] border border-slate-200 dark:border-white/5 space-y-1 shadow-sm dark:shadow-none">
+                  <p className="text-xs font-bold uppercase text-slate-500 dark:text-white/50 tracking-wider flex items-center gap-1.5">
                     {isMobileMoney ? <Smartphone size={14} className="text-vendeur-emerald shrink-0" /> : (isCard ? <CreditCard size={14} className="text-vendeur-emerald shrink-0" /> : <Banknote size={14} className="text-vendeur-emerald shrink-0" />)}
                     <span>Mode de règlement</span>
                   </p>
-                  <p className="text-base sm:text-lg font-black text-white">
+                  <p className="text-base sm:text-lg font-black text-slate-900 dark:text-white">
                     {paymentMethodLabel}
                   </p>
                 </div>
@@ -329,16 +329,16 @@ export function BillingTab({ merchant }: { merchant: any }) {
                 </button>
               ) : (
                 <div className="space-y-3">
-                  <div className="p-3.5 rounded-2xl bg-white/5 border border-white/5 flex items-center gap-3">
+                  <div className="p-3.5 rounded-2xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/5 flex items-center gap-3 shadow-sm dark:shadow-none">
                     <CheckCircle2 size={18} className="text-vendeur-emerald shrink-0" />
-                    <p className="text-xs sm:text-sm font-bold text-white/90 uppercase tracking-tight leading-tight">
+                    <p className="text-xs sm:text-sm font-bold text-slate-800 dark:text-white/90 uppercase tracking-tight leading-tight">
                       Abonnement annuel actif
                     </p>
                   </div>
                   {hasRecurring && (
                     <button
                       onClick={() => setIsCancelConfirmOpen(true)}
-                      className="w-full text-xs font-black uppercase tracking-wider text-white/40 hover:text-rose-400 transition-colors py-1.5 cursor-pointer"
+                      className="w-full text-xs font-black uppercase tracking-wider text-slate-400 dark:text-white/40 hover:text-rose-500 dark:hover:text-rose-400 transition-colors py-1.5 cursor-pointer"
                     >
                       Désactiver le renouvellement
                     </button>
@@ -350,16 +350,16 @@ export function BillingTab({ merchant }: { merchant: any }) {
 
           {/* Bannière d'incitation Annuel si forfait mensuel */}
           {isCurrentlyMonthly && (
-            <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-vendeur-emerald/15 via-vendeur-emerald/10 to-transparent border border-vendeur-emerald/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-emerald-500/10 via-emerald-500/5 to-transparent border border-emerald-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div className="flex items-center gap-3.5">
                 <div className="h-11 w-11 rounded-xl bg-vendeur-emerald/20 text-vendeur-emerald flex items-center justify-center shrink-0">
                   <Tag size={22} />
                 </div>
                 <div>
-                  <h4 className="text-sm sm:text-base font-black uppercase tracking-tight text-white">
+                  <h4 className="text-sm sm:text-base font-black uppercase tracking-tight text-slate-900 dark:text-white">
                     Passez à la facturation annuelle et économisez 2 mois !
                   </h4>
-                  <p className="text-xs sm:text-sm text-white/70 font-medium">
+                  <p className="text-xs sm:text-sm text-slate-600 dark:text-white/70 font-medium">
                     Bénéficiez de 12 mois de Vendeur IA pour le prix de 10 mois.
                   </p>
                 </div>
@@ -375,14 +375,14 @@ export function BillingTab({ merchant }: { merchant: any }) {
 
           {/* Modal de Confirmation d'annulation */}
           {isCancelConfirmOpen && (
-            <div className="absolute inset-0 z-50 bg-vendeur-coal/95 backdrop-blur-md flex items-center justify-center p-4 sm:p-6 animate-in fade-in zoom-in-95 duration-200">
-              <div className="text-center space-y-5 max-w-sm w-full p-6 rounded-3xl bg-black/60 border border-white/10 shadow-2xl">
+            <div className="absolute inset-0 z-50 bg-slate-900/60 dark:bg-vendeur-coal/95 backdrop-blur-md flex items-center justify-center p-4 sm:p-6 animate-in fade-in zoom-in-95 duration-200">
+              <div className="text-center space-y-5 max-w-sm w-full p-6 rounded-3xl bg-white dark:bg-black/60 border border-slate-200 dark:border-white/10 shadow-2xl">
                 <div className="h-14 w-14 bg-rose-500/10 rounded-2xl flex items-center justify-center mx-auto text-rose-500 border border-rose-500/20">
                   <AlertCircle size={28} />
                 </div>
                 <div className="space-y-1.5">
-                  <h3 className="text-lg font-black uppercase tracking-tight text-white">Arrêter Vendeur IA ?</h3>
-                  <p className="text-xs font-medium text-white/70 leading-relaxed">
+                  <h3 className="text-lg font-black uppercase tracking-tight text-slate-900 dark:text-white">Arrêter Vendeur IA ?</h3>
+                  <p className="text-xs font-medium text-slate-600 dark:text-white/70 leading-relaxed">
                     Votre service restera actif jusqu'au {nextDate ? new Date(nextDate).toLocaleDateString('fr-FR') : 'prochain terme'}.
                     Ensuite, l'agent IA se mettra en veille.
                   </p>
@@ -390,7 +390,7 @@ export function BillingTab({ merchant }: { merchant: any }) {
                 <div className="flex gap-2.5 pt-2">
                   <button
                     onClick={() => setIsCancelConfirmOpen(false)}
-                    className="flex-1 h-11 bg-white/10 hover:bg-white/15 rounded-xl text-xs font-black uppercase tracking-wider text-white transition-all cursor-pointer"
+                    className="flex-1 h-11 bg-slate-100 hover:bg-slate-200 dark:bg-white/10 dark:hover:bg-white/15 rounded-xl text-xs font-black uppercase tracking-wider text-slate-800 dark:text-white transition-all cursor-pointer"
                   >
                     Garder
                   </button>
@@ -413,33 +413,33 @@ export function BillingTab({ merchant }: { merchant: any }) {
 
       {/* 2. Hero d'Activation si pas de plan actif */}
       {!isPlanActive && (
-        <section className="bg-gradient-to-br from-vendeur-coal via-vendeur-coal to-black border border-vendeur-emerald/30 p-5 sm:p-8 md:p-10 rounded-2xl sm:rounded-3xl md:rounded-[2.5rem] relative overflow-hidden shadow-2xl">
+        <section className="bg-gradient-to-br from-slate-50 via-white to-emerald-50/30 dark:from-vendeur-coal dark:via-vendeur-coal dark:to-black border border-slate-200 dark:border-vendeur-emerald/30 p-5 sm:p-8 md:p-10 rounded-2xl sm:rounded-3xl md:rounded-[2.5rem] relative overflow-hidden shadow-xl dark:shadow-2xl">
           <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 sm:gap-8">
             <div className="space-y-3.5 max-w-xl">
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-black uppercase tracking-wider">
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 text-xs font-black uppercase tracking-wider">
                 <span className="h-2 w-2 rounded-full bg-amber-400" />
                 Mode Découverte Actif (Gratuit)
               </div>
 
-              <h2 className="text-2xl sm:text-3xl md:text-4xl font-black uppercase tracking-tight text-white leading-tight">
-                Activez votre <span className="text-vendeur-emerald">Vendeur IA 24h/24</span>
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-black uppercase tracking-tight text-slate-900 dark:text-white leading-tight">
+                Activez votre <span className="text-emerald-600 dark:text-vendeur-emerald">Vendeur IA 24h/24</span>
               </h2>
 
-              <p className="text-white/70 text-sm sm:text-base leading-relaxed font-medium">
+              <p className="text-slate-600 dark:text-white/70 text-sm sm:text-base leading-relaxed font-medium">
                 Votre boutique et vos articles sont configurés. Activez votre forfait pour lancer les réponses automatiques sur WhatsApp et encaisser vos commandes 24h/24.
               </p>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1">
-                <div className="flex items-center gap-2 text-xs sm:text-sm font-bold text-white/90">
-                  <CheckCircle2 size={16} className="text-vendeur-emerald shrink-0" />
+                <div className="flex items-center gap-2 text-xs sm:text-sm font-bold text-slate-700 dark:text-white/90">
+                  <CheckCircle2 size={16} className="text-emerald-500 dark:text-vendeur-emerald shrink-0" />
                   <span>Réponses 24h/24</span>
                 </div>
-                <div className="flex items-center gap-2 text-xs sm:text-sm font-bold text-white/90">
-                  <CheckCircle2 size={16} className="text-vendeur-emerald shrink-0" />
+                <div className="flex items-center gap-2 text-xs sm:text-sm font-bold text-slate-700 dark:text-white/90">
+                  <CheckCircle2 size={16} className="text-emerald-500 dark:text-vendeur-emerald shrink-0" />
                   <span>Commandes Auto</span>
                 </div>
-                <div className="flex items-center gap-2 text-xs sm:text-sm font-bold text-white/90">
-                  <CheckCircle2 size={16} className="text-vendeur-emerald shrink-0" />
+                <div className="flex items-center gap-2 text-xs sm:text-sm font-bold text-slate-700 dark:text-white/90">
+                  <CheckCircle2 size={16} className="text-emerald-500 dark:text-vendeur-emerald shrink-0" />
                   <span>Scan IA Vision</span>
                 </div>
               </div>
@@ -454,7 +454,7 @@ export function BillingTab({ merchant }: { merchant: any }) {
                 <span>Activer mon Forfait</span>
                 <ArrowRight size={16} />
               </a>
-              <p className="text-xs text-center text-white/50 font-bold uppercase tracking-wider">
+              <p className="text-xs text-center text-slate-500 dark:text-white/50 font-bold uppercase tracking-wider">
                 Mobile Money (Wave, OM, MTN, Moov) &amp; Carte
               </p>
             </div>
@@ -468,24 +468,24 @@ export function BillingTab({ merchant }: { merchant: any }) {
       <section id="plans-section" className="space-y-6 scroll-mt-24">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="space-y-1">
-            <h3 className="text-lg sm:text-2xl font-black text-white uppercase tracking-tight">
+            <h3 className="text-lg sm:text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight">
               {isPlanActive ? "Changer de forfait ou passer à l'Annuel" : "Forfaits Vendeur IA"}
             </h3>
-            <p className="text-xs sm:text-sm text-white/60 font-medium">
+            <p className="text-xs sm:text-sm text-slate-500 dark:text-white/60 font-medium">
               Tarifs en {activeBillingCurrency} (sans engagement, modifiable à tout moment).
             </p>
           </div>
 
           {/* Toggle Mensuel / Annuel */}
-          <div className="inline-flex items-center p-1 rounded-2xl bg-black/40 border border-white/10 self-start sm:self-auto">
+          <div className="inline-flex items-center p-1 rounded-2xl bg-slate-100 dark:bg-black/40 border border-slate-200 dark:border-white/10 self-start sm:self-auto">
             <button
               type="button"
               onClick={() => setBillingInterval("monthly")}
               className={cn(
                 "px-4 py-2 rounded-xl text-xs sm:text-sm font-black uppercase tracking-wider transition-all cursor-pointer",
                 billingInterval === "monthly"
-                  ? "bg-white text-vendeur-coal shadow"
-                  : "text-white/50 hover:text-white"
+                  ? "bg-white text-slate-950 shadow dark:bg-white dark:text-vendeur-coal"
+                  : "text-slate-500 hover:text-slate-900 dark:text-white/50 dark:hover:text-white"
               )}
             >
               Mensuel
@@ -497,7 +497,7 @@ export function BillingTab({ merchant }: { merchant: any }) {
                 "px-4 py-2 rounded-xl text-xs sm:text-sm font-black uppercase tracking-wider flex items-center gap-1.5 transition-all cursor-pointer",
                 billingInterval === "yearly"
                   ? "bg-vendeur-emerald text-vendeur-coal shadow-lg shadow-vendeur-emerald/20"
-                  : "text-white/50 hover:text-white"
+                  : "text-slate-500 hover:text-slate-900 dark:text-white/50 dark:hover:text-white"
               )}
             >
               <span>Annuel</span>
@@ -530,13 +530,13 @@ export function BillingTab({ merchant }: { merchant: any }) {
               <div
                 key={offerItem._id || offerItem.slug}
                 className={cn(
-                  "relative bg-vendeur-coal border rounded-2xl sm:rounded-3xl p-5 sm:p-7 md:p-8 flex flex-col justify-between group transition-all duration-300",
-                  isPro ? "border-vendeur-emerald/50 shadow-xl shadow-vendeur-emerald/10" : "border-white/10 hover:border-white/20",
-                  isCurrentActiveAndInterval && "ring-2 ring-vendeur-emerald/40 bg-vendeur-emerald/[0.02]"
+                  "relative bg-white dark:bg-vendeur-coal border rounded-2xl sm:rounded-3xl p-5 sm:p-7 md:p-8 flex flex-col justify-between group transition-all duration-300 shadow-sm dark:shadow-none",
+                  isPro ? "border-emerald-400 dark:border-vendeur-emerald/50 shadow-xl shadow-emerald-500/10" : "border-slate-200 dark:border-white/10 hover:border-slate-300 dark:hover:border-white/20",
+                  isCurrentActiveAndInterval && "ring-2 ring-vendeur-emerald/40 bg-emerald-50/20 dark:bg-vendeur-emerald/[0.02]"
                 )}
               >
                 {isCurrentActiveAndInterval ? (
-                  <div className="absolute -top-3 left-6 sm:left-8 bg-white/10 text-white border border-white/20 text-xs font-black uppercase px-3.5 py-1 rounded-full tracking-wider shadow-lg">
+                  <div className="absolute -top-3 left-6 sm:left-8 bg-slate-900 text-white dark:bg-white/10 dark:text-white border border-slate-700 dark:border-white/20 text-xs font-black uppercase px-3.5 py-1 rounded-full tracking-wider shadow-lg">
                     ✓ Votre forfait actuel
                   </div>
                 ) : isPro ? (
@@ -549,13 +549,13 @@ export function BillingTab({ merchant }: { merchant: any }) {
                   <div className="flex items-center gap-3.5">
                     <div className={cn(
                       "h-12 w-12 sm:h-14 sm:w-14 rounded-2xl flex items-center justify-center shrink-0 shadow-md",
-                      isPro ? "bg-vendeur-emerald text-vendeur-coal" : "bg-white/5 text-white/40 border border-white/5"
+                      isPro ? "bg-vendeur-emerald text-vendeur-coal" : "bg-slate-100 dark:bg-white/5 text-slate-500 dark:text-white/40 border border-slate-200 dark:border-white/5"
                     )}>
                       {isPro ? <Rocket size={24} /> : <Zap size={24} />}
                     </div>
                     <div className="min-w-0 flex-1">
-                      <h4 className="text-lg sm:text-2xl font-black uppercase tracking-tight text-white truncate">{offerItem.name}</h4>
-                      <p className="text-xs sm:text-sm font-bold uppercase text-white/50 tracking-wider truncate">{offerItem.slug === 'pro' ? 'Expérience complète & illimitée' : 'Lancement rapide'}</p>
+                      <h4 className="text-lg sm:text-2xl font-black uppercase tracking-tight text-slate-900 dark:text-white truncate">{offerItem.name}</h4>
+                      <p className="text-xs sm:text-sm font-bold uppercase text-slate-500 dark:text-white/50 tracking-wider truncate">{offerItem.slug === 'pro' ? 'Expérience complète & illimitée' : 'Lancement rapide'}</p>
                     </div>
                   </div>
 
@@ -564,38 +564,38 @@ export function BillingTab({ merchant }: { merchant: any }) {
                       <div key={i} className="flex items-start gap-3">
                         <div className={cn(
                           "h-5 w-5 rounded-full flex items-center justify-center shrink-0 mt-0.5",
-                          isPro ? "bg-vendeur-emerald/15 text-vendeur-emerald border border-vendeur-emerald/25" : "bg-white/5 text-white/50 border border-white/10"
+                          isPro ? "bg-vendeur-emerald/15 text-vendeur-emerald border border-vendeur-emerald/25" : "bg-slate-100 dark:bg-white/5 text-slate-500 dark:text-white/50 border border-slate-200 dark:border-white/10"
                         )}>
                           <CheckCircle2 size={14} />
                         </div>
-                        <span className="text-sm sm:text-[15px] font-medium text-white/90 leading-snug">{feature}</span>
+                        <span className="text-sm sm:text-[15px] font-medium text-slate-700 dark:text-white/90 leading-snug">{feature}</span>
                       </div>
                     ))}
                   </div>
                 </div>
 
-                <div className="pt-6 mt-6 border-t border-white/5 space-y-4">
+                <div className="pt-6 mt-6 border-t border-slate-200 dark:border-white/5 space-y-4">
                   <div className="space-y-1">
                     <div className="flex items-baseline gap-2">
-                      <span className="text-3xl sm:text-4xl font-black italic tracking-tight text-white font-mono">
+                      <span className="text-3xl sm:text-4xl font-black italic tracking-tight text-slate-900 dark:text-white font-mono">
                         {monthlyEquivalent.toLocaleString()}
                       </span>
-                      <span className="text-xs sm:text-sm font-black uppercase text-white/50 tracking-wider">
+                      <span className="text-xs sm:text-sm font-black uppercase text-slate-500 dark:text-white/50 tracking-wider">
                         {offerItem.currency || activeBillingCurrency} / MOIS
                       </span>
                     </div>
 
                     {isYearly ? (
-                      <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm font-bold text-white/60">
+                      <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm font-bold text-slate-500 dark:text-white/60">
                         <span>Facturé {yearlyPrice.toLocaleString()} {offerItem.currency || activeBillingCurrency} / an</span>
                         {savingsAmount > 0 && (
-                          <span className="text-xs text-vendeur-emerald font-black uppercase bg-vendeur-emerald/10 px-2 py-0.5 rounded border border-vendeur-emerald/20">
+                          <span className="text-xs text-emerald-700 dark:text-vendeur-emerald font-black uppercase bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
                             2 mois gratuits
                           </span>
                         )}
                       </div>
                     ) : (
-                      <p className="text-xs sm:text-sm font-medium text-white/50">Sans engagement</p>
+                      <p className="text-xs sm:text-sm font-medium text-slate-500 dark:text-white/50">Sans engagement</p>
                     )}
                   </div>
 
@@ -605,12 +605,12 @@ export function BillingTab({ merchant }: { merchant: any }) {
                     className={cn(
                       "w-full h-12 sm:h-14 min-h-[48px] rounded-xl sm:rounded-2xl font-black uppercase tracking-wider text-xs sm:text-sm flex items-center justify-center gap-2 transition-all shadow-xl",
                       isUnderVerification
-                        ? "bg-white/5 border border-white/10 text-white/40 cursor-not-allowed shadow-none"
+                        ? "bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-400 dark:text-white/40 cursor-not-allowed shadow-none"
                         : isCurrentActiveAndInterval
-                        ? "bg-white/10 hover:bg-white/15 text-white border border-white/10 active:scale-95 cursor-pointer"
+                        ? "bg-slate-100 hover:bg-slate-200 text-slate-800 border-slate-300 dark:bg-white/10 dark:hover:bg-white/15 dark:text-white dark:border-white/10 active:scale-95 cursor-pointer"
                         : isPro
                         ? "bg-vendeur-emerald text-vendeur-coal hover:scale-[1.02] shadow-vendeur-emerald/20 font-black active:scale-95 cursor-pointer"
-                        : "bg-white text-vendeur-coal hover:bg-vendeur-emerald hover:text-vendeur-coal font-bold active:scale-95 cursor-pointer"
+                        : "bg-slate-900 text-white dark:bg-white dark:text-vendeur-coal hover:bg-vendeur-emerald hover:text-vendeur-coal font-bold active:scale-95 cursor-pointer"
                     )}
                   >
                     <span>
@@ -633,22 +633,22 @@ export function BillingTab({ merchant }: { merchant: any }) {
         </div>
 
         {/* 3.1 Pack Pro Expert Clé en Main */}
-        <div className="bg-gradient-to-r from-vendeur-coal via-vendeur-coal to-black border border-white/10 hover:border-vendeur-emerald/30 p-6 sm:p-8 rounded-2xl sm:rounded-3xl flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative overflow-hidden transition-all shadow-2xl">
+        <div className="bg-gradient-to-r from-emerald-50 via-white to-slate-50 dark:from-vendeur-coal dark:via-vendeur-coal dark:to-black border border-emerald-300 dark:border-white/10 hover:border-emerald-500/50 dark:hover:border-vendeur-emerald/30 p-6 sm:p-8 rounded-2xl sm:rounded-3xl flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative overflow-hidden transition-all shadow-xl dark:shadow-2xl">
           <div className="space-y-3 relative z-10 text-left max-w-xl">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/25 text-[11px] sm:text-xs font-black uppercase tracking-wider whitespace-nowrap shadow-sm">
-              <Sparkles size={13} className="shrink-0 text-emerald-400" />
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/25 text-[11px] sm:text-xs font-black uppercase tracking-wider whitespace-nowrap shadow-sm">
+              <Sparkles size={13} className="shrink-0 text-emerald-600 dark:text-emerald-400" />
               <span>Pack Pro Expert · VIP</span>
             </div>
-            <h4 className="text-xl sm:text-2xl font-black uppercase tracking-tight text-white leading-tight">
+            <h4 className="text-xl sm:text-2xl font-black uppercase tracking-tight text-slate-900 dark:text-white leading-tight">
               Besoin d'une installation clé en main par notre équipe ?
             </h4>
-            <p className="text-white/70 text-sm sm:text-base font-medium leading-relaxed">
+            <p className="text-slate-600 dark:text-white/70 text-sm sm:text-base font-medium leading-relaxed">
               Nous configurons votre compte Meta Cloud WhatsApp API, créons votre page professionnelle, intégrons votre catalogue et paramétrons votre Vendeur IA pour un résultat prêt à vendre.
             </p>
             <div className="flex flex-wrap gap-2 pt-1">
-              <span className="text-xs sm:text-sm font-bold px-3 py-1 rounded-full bg-white/5 text-white/80 border border-white/10">✓ Configuration Meta WhatsApp</span>
-              <span className="text-xs sm:text-sm font-bold px-3 py-1 rounded-full bg-white/5 text-white/80 border border-white/10">✓ Import Catalogue</span>
-              <span className="text-xs sm:text-sm font-bold px-3 py-1 rounded-full bg-white/5 text-white/80 border border-white/10">✓ Support VIP Dédié</span>
+              <span className="text-xs sm:text-sm font-bold px-3 py-1 rounded-full bg-white dark:bg-white/5 text-slate-700 dark:text-white/80 border border-slate-200 dark:border-white/10 shadow-sm">✓ Configuration Meta WhatsApp</span>
+              <span className="text-xs sm:text-sm font-bold px-3 py-1 rounded-full bg-white dark:bg-white/5 text-slate-700 dark:text-white/80 border border-slate-200 dark:border-white/10 shadow-sm">✓ Import Catalogue</span>
+              <span className="text-xs sm:text-sm font-bold px-3 py-1 rounded-full bg-white dark:bg-white/5 text-slate-700 dark:text-white/80 border border-slate-200 dark:border-white/10 shadow-sm">✓ Support VIP Dédié</span>
             </div>
           </div>
 
@@ -659,14 +659,14 @@ export function BillingTab({ merchant }: { merchant: any }) {
               className={cn(
                 "w-full md:w-auto h-12 sm:h-14 px-6 sm:px-8 rounded-2xl font-black uppercase tracking-wider text-xs sm:text-sm flex items-center justify-center gap-2.5 transition-all shadow-xl",
                 isUnderVerification
-                  ? "bg-white/5 border border-white/10 text-white/40 cursor-not-allowed shadow-none"
-                  : "bg-white hover:bg-vendeur-emerald text-vendeur-coal active:scale-95 cursor-pointer hover:scale-105"
+                  ? "bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-400 dark:text-white/40 cursor-not-allowed shadow-none"
+                  : "bg-slate-900 text-white dark:bg-white dark:text-vendeur-coal hover:bg-vendeur-emerald hover:text-vendeur-coal active:scale-95 cursor-pointer hover:scale-105"
               )}
             >
               <span>{isUnderVerification ? "Paiement en attente de validation ⏳" : "Commander le Pack Pro"}</span>
               {!isUnderVerification && <ArrowRight size={16} />}
             </button>
-            <p className="text-xs text-center text-white/50 font-bold uppercase tracking-wider">
+            <p className="text-xs text-center text-slate-500 dark:text-white/50 font-bold uppercase tracking-wider">
               Installation + Forfait Pro
             </p>
           </div>
@@ -676,15 +676,15 @@ export function BillingTab({ merchant }: { merchant: any }) {
       </section>
 
       {/* 4. Préférence de Devise de Paiement de l'Abonnement */}
-      <section className="bg-vendeur-coal border border-white/10 p-5 sm:p-7 md:p-8 rounded-2xl sm:rounded-3xl shadow-2xl space-y-5">
+      <section className="bg-white dark:bg-vendeur-coal border border-slate-200 dark:border-white/10 p-5 sm:p-7 md:p-8 rounded-2xl sm:rounded-3xl shadow-xl dark:shadow-2xl space-y-5">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3.5">
             <div className="h-12 w-12 sm:h-14 sm:w-14 rounded-2xl bg-vendeur-emerald/10 border border-vendeur-emerald/20 flex items-center justify-center text-vendeur-emerald shrink-0">
               <Coins size={24} />
             </div>
             <div>
-              <h3 className="text-lg sm:text-xl font-black text-white uppercase tracking-tight">Devise de Facturation Vendeur IA</h3>
-              <p className="text-xs sm:text-sm text-white/60 font-medium">Monnaie utilisée pour régler vos abonnements.</p>
+              <h3 className="text-lg sm:text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Devise de Facturation Vendeur IA</h3>
+              <p className="text-xs sm:text-sm text-slate-500 dark:text-white/60 font-medium">Monnaie utilisée pour régler vos abonnements.</p>
             </div>
           </div>
         </div>
@@ -692,7 +692,7 @@ export function BillingTab({ merchant }: { merchant: any }) {
         <div className="max-w-md">
           <div className="relative">
             <select
-              className="w-full h-12 sm:h-14 bg-black/40 border border-white/10 rounded-2xl px-4 text-sm sm:text-base text-white focus:border-vendeur-emerald outline-none transition-all appearance-none cursor-pointer font-bold"
+              className="w-full h-12 sm:h-14 bg-slate-50 dark:bg-black/40 border border-slate-200 dark:border-white/10 rounded-2xl px-4 text-sm sm:text-base text-slate-900 dark:text-white focus:border-vendeur-emerald outline-none transition-all appearance-none cursor-pointer font-bold shadow-sm"
               value={merchant?.billingCurrency || merchant?.currency || "XOF"}
               onChange={async (e) => {
                 const newBillingCurrency = e.target.value;
@@ -721,43 +721,43 @@ export function BillingTab({ merchant }: { merchant: any }) {
               <option value="EUR">Euro (€) - Carte Visa / Mastercard</option>
               <option value="USD">Dollar ($) - Carte Internationale</option>
             </select>
-            <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-white/30 pointer-events-none" size={18} />
+            <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-white/30 pointer-events-none" size={18} />
           </div>
-          <p className="text-xs text-white/50 mt-2 font-medium">
+          <p className="text-xs text-slate-500 dark:text-white/50 mt-2 font-medium">
             💡 N'impacte pas les prix de vos produits sur WhatsApp ni sur votre vitrine (ceux-ci restent en {merchant?.currency || "XOF"}).
           </p>
         </div>
       </section>
 
       {/* 5. Historique des transactions */}
-      <section className="bg-vendeur-coal border border-white/10 p-5 sm:p-7 md:p-8 rounded-2xl sm:rounded-3xl shadow-2xl space-y-5">
-        <h3 className="text-lg sm:text-xl font-black text-white uppercase tracking-tight flex items-center gap-2.5">
-          <Clock size={20} className="text-white/50" />
+      <section className="bg-white dark:bg-vendeur-coal border border-slate-200 dark:border-white/10 p-5 sm:p-7 md:p-8 rounded-2xl sm:rounded-3xl shadow-xl dark:shadow-2xl space-y-5">
+        <h3 className="text-lg sm:text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight flex items-center gap-2.5">
+          <Clock size={20} className="text-slate-400 dark:text-white/50" />
           <span>Dernières Transactions</span>
         </h3>
 
         <div className="space-y-2.5">
           {billingHistory?.map((t: any) => (
-            <div key={t._id} className="flex items-center justify-between p-4 bg-black/20 rounded-2xl border border-white/5 group hover:border-white/10 transition-all gap-3">
+            <div key={t._id} className="flex items-center justify-between p-4 bg-slate-50 dark:bg-black/20 rounded-2xl border border-slate-200 dark:border-white/5 group hover:border-slate-300 dark:hover:border-white/10 transition-all gap-3 shadow-sm dark:shadow-none">
               <div className="flex items-center gap-3.5 min-w-0">
-                <div className="h-10 w-10 sm:h-11 sm:w-11 rounded-xl bg-white/5 flex items-center justify-center text-white/50 shrink-0">
+                <div className="h-10 w-10 sm:h-11 sm:w-11 rounded-xl bg-slate-200/60 dark:bg-white/5 flex items-center justify-center text-slate-600 dark:text-white/50 shrink-0">
                   <Banknote size={18} />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-black uppercase text-white tracking-tight truncate">{t.type?.replace('_', ' ')}</p>
-                  <p className="text-xs text-white/50 uppercase font-bold">{new Date(t.paidAt || t.createdAt).toLocaleDateString('fr-FR')}</p>
+                  <p className="text-sm font-black uppercase text-slate-900 dark:text-white tracking-tight truncate">{t.type?.replace('_', ' ')}</p>
+                  <p className="text-xs text-slate-500 dark:text-white/50 uppercase font-bold">{new Date(t.paidAt || t.createdAt).toLocaleDateString('fr-FR')}</p>
                 </div>
               </div>
               <div className="text-right shrink-0">
-                <p className="text-sm sm:text-base font-black text-vendeur-emerald font-mono">+{t.amount.toLocaleString()} {t.currency}</p>
-                <p className="text-[10px] sm:text-xs text-white/40 uppercase font-black tracking-wider">{t.paymentMethod || 'Paystack'}</p>
+                <p className="text-sm sm:text-base font-black text-emerald-600 dark:text-vendeur-emerald font-mono">+{t.amount.toLocaleString()} {t.currency}</p>
+                <p className="text-[10px] sm:text-xs text-slate-400 dark:text-white/40 uppercase font-black tracking-wider">{t.paymentMethod || 'Paystack'}</p>
               </div>
             </div>
           ))}
           {(!billingHistory || billingHistory.length === 0) && (
-            <div className="text-center py-10 border-2 border-dashed border-white/5 rounded-2xl">
-              <AlertCircle size={32} className="mx-auto text-white/20 mb-2" />
-              <p className="text-xs sm:text-sm font-black uppercase text-white/40 tracking-wider">Aucun historique de paiement</p>
+            <div className="text-center py-10 border-2 border-dashed border-slate-200 dark:border-white/5 rounded-2xl">
+              <AlertCircle size={32} className="mx-auto text-slate-300 dark:text-white/20 mb-2" />
+              <p className="text-xs sm:text-sm font-black uppercase text-slate-400 dark:text-white/40 tracking-wider">Aucun historique de paiement</p>
             </div>
           )}
         </div>

@@ -663,7 +663,7 @@ class WhatsAppService {
   }
 
   isSessionConnected(userId: string): boolean {
-    const sock = this.activeSessions.get(userId);
+    const sock = this.getLiveSocket(userId);
     if (!sock) return false;
     const hasLiveUser = !!(sock.user && (sock.user.id || (sock.user as any).lid));
     const isSocketOpen = sock.ws ? sock.ws.readyState === 1 : true;
@@ -1126,6 +1126,13 @@ class WhatsAppService {
     if (!merchant) {
       console.warn(`[WhatsApp] No merchant found for incoming message (userId: ${userId}, from: ${from})`);
       return;
+    }
+
+    // Auto-sync session keys so outbound messaging immediately finds the active socket
+    const currentLiveSock = this.activeSessions.get(userId);
+    if (currentLiveSock) {
+      if (merchant.ownerId) this.activeSessions.set(merchant.ownerId.toString(), currentLiveSock);
+      if (merchant._id) this.activeSessions.set(merchant._id.toString(), currentLiveSock);
     }
 
     const isAudioMsg = Boolean(audioMsg);
@@ -2304,20 +2311,70 @@ class WhatsAppService {
     await this.handleIncomingMessage(merchant.ownerId, msg);
   }
 
+  getLiveSocket(userId?: string, merchant?: any): any {
+    const uIdStr = userId?.toString();
+    const ownerIdStr = merchant?.ownerId?.toString();
+    const merchantIdStr = merchant?._id?.toString();
+    const merchantPhone = (merchant?.whatsappNumber || merchant?.phone || '').replace(/\D/g, '');
+
+    // 1. Direct Map lookup by known IDs
+    if (uIdStr && this.activeSessions.has(uIdStr)) {
+      const s = this.activeSessions.get(uIdStr);
+      if (s && s.user) return s;
+    }
+    if (ownerIdStr && this.activeSessions.has(ownerIdStr)) {
+      const s = this.activeSessions.get(ownerIdStr);
+      if (s && s.user) return s;
+    }
+    if (merchantIdStr && this.activeSessions.has(merchantIdStr)) {
+      const s = this.activeSessions.get(merchantIdStr);
+      if (s && s.user) return s;
+    }
+
+    // 2. Lookup across all active sessions in memory
+    for (const [sId, s] of this.activeSessions.entries()) {
+      if (!s || !s.user) continue;
+
+      const sockDigits = (s.user.id || '').split('@')[0].split(':')[0].replace(/\D/g, '');
+
+      // Match by socket user phone
+      if (merchantPhone && sockDigits) {
+        if (
+          merchantPhone === sockDigits ||
+          (merchantPhone.length >= 8 && sockDigits.endsWith(merchantPhone.slice(-8))) ||
+          (sockDigits.length >= 8 && merchantPhone.endsWith(sockDigits.slice(-8)))
+        ) {
+          if (uIdStr) this.activeSessions.set(uIdStr, s);
+          if (ownerIdStr) this.activeSessions.set(ownerIdStr, s);
+          if (merchantIdStr) this.activeSessions.set(merchantIdStr, s);
+          return s;
+        }
+      }
+
+      // Match by sessionId
+      if (sId === uIdStr || sId === ownerIdStr || sId === merchantIdStr) {
+        return s;
+      }
+    }
+
+    // 3. Single active session fallback
+    if (this.activeSessions.size === 1) {
+      const singleSock = this.activeSessions.values().next().value;
+      if (singleSock && singleSock.user) {
+        if (uIdStr) this.activeSessions.set(uIdStr, singleSock);
+        if (ownerIdStr) this.activeSessions.set(ownerIdStr, singleSock);
+        return singleSock;
+      }
+    }
+
+    return null;
+  }
+
   async subscribePresence(userId: string, remoteJidOrPhone: string) {
     const { jid } = formatToWhatsAppRecipient(remoteJidOrPhone);
     if (!jid) return;
 
-    let sock = this.activeSessions.get(userId);
-    if (!sock) {
-      for (const [sId, s] of this.activeSessions.entries()) {
-        if (s && s.user?.id) {
-          sock = s;
-          break;
-        }
-      }
-    }
-
+    let sock = this.getLiveSocket(userId);
     if (sock && sock.user && typeof sock.presenceSubscribe === "function") {
       try {
         await sock.presenceSubscribe(jid);
@@ -2331,31 +2388,7 @@ class WhatsAppService {
     const { jid } = formatToWhatsAppRecipient(remoteJid);
     if (!jid) return;
 
-    let sock = this.activeSessions.get(userId);
-    if (!sock) {
-      try {
-        const merchant = await CommerceMerchantModel.findOne({
-          $or: [
-            { ownerId: userId },
-            ...(mongoose.isValidObjectId(userId) ? [{ _id: new mongoose.Types.ObjectId(userId) }, { ownerId: new mongoose.Types.ObjectId(userId) }] : []),
-            { whatsappNumber: { $regex: '5111157' } }
-          ]
-        });
-        if (merchant?.ownerId) {
-          sock = this.activeSessions.get(merchant.ownerId.toString());
-        }
-      } catch (e) {}
-    }
-
-    if (!sock && this.activeSessions.size > 0) {
-      for (const s of this.activeSessions.values()) {
-        if (s && s.user) {
-          sock = s;
-          break;
-        }
-      }
-    }
-
+    let sock = this.getLiveSocket(userId);
     if (sock && sock.user && typeof sock.sendPresenceUpdate === "function") {
       try {
         if (typeof sock.presenceSubscribe === "function") {
@@ -2405,7 +2438,7 @@ class WhatsAppService {
 
       // Ignore self-presence updates (when merchant types on mobile)
       const merchantPhoneDigits = (merchant.whatsappNumber || merchant.phone || "").replace(/\D/g, "");
-      const sock = this.activeSessions.get(userId);
+      const sock = this.getLiveSocket(userId, merchant);
       const sockUserDigits = (sock?.user?.id || "").split("@")[0].split(":")[0].replace(/\D/g, "");
 
       if ((merchantPhoneDigits && cleanDigits.length >= 8 && merchantPhoneDigits.includes(cleanDigits.slice(-8))) ||
@@ -2646,15 +2679,7 @@ class WhatsAppService {
 
   async markConversationAsRead(userId: string, remoteJid: string, messageKeys?: any[]) {
     const { jid, cleanPhone } = formatToWhatsAppRecipient(remoteJid);
-    let sock = this.activeSessions.get(userId);
-    if (!sock) {
-      for (const [sId, s] of this.activeSessions.entries()) {
-        if (s && s.user?.id) {
-          sock = s;
-          break;
-        }
-      }
-    }
+    let sock = this.getLiveSocket(userId);
 
     if (sock && sock.user && messageKeys && messageKeys.length > 0 && typeof sock.readMessages === "function") {
       try {
@@ -2722,27 +2747,15 @@ class WhatsAppService {
     this.subscribePresence(userId, to).catch(() => {});
 
     const merchantOwnerId = merchant.ownerId?.toString() || userId?.toString();
-    let sock = this.activeSessions.get(userId?.toString()) || this.activeSessions.get(merchantOwnerId);
-
-    if (!sock) {
-      for (const [sId, s] of this.activeSessions.entries()) {
-        if (s && s.user?.id) {
-          const userDigits = (s.user.id || '').replace(/\D/g, '');
-          if (userDigits.includes('5111157') || sId === userId || sId === merchantOwnerId) {
-            sock = s;
-            break;
-          }
-        }
-      }
-    }
+    let sock = this.getLiveSocket(userId, merchant);
 
     const sendWithPresence = async (socket: any, targetJid: string, payload: any) => {
       try {
-        if (socket.sendPresenceUpdate) {
-          await socket.sendPresenceUpdate("composing", targetJid);
-          const typingDelay = Math.min(Math.max((text?.length || 20) * 15, 600), 1800);
+        if (typeof socket.sendPresenceUpdate === "function") {
+          await socket.sendPresenceUpdate("composing", targetJid).catch(() => {});
+          const typingDelay = Math.min(Math.max((text?.length || 20) * 12, 400), 1200);
           await new Promise(r => setTimeout(r, typingDelay));
-          await socket.sendPresenceUpdate("paused", targetJid);
+          await socket.sendPresenceUpdate("paused", targetJid).catch(() => {});
         }
       } catch (e) {}
       return await socket.sendMessage(targetJid, payload);
@@ -2789,12 +2802,15 @@ class WhatsAppService {
       return await sendWithPresence(socket, jid, { text });
     };
 
+    let sendErrorLast: Error | null = null;
+
     // 1. Direct active Baileys socket delivery
     if (sock && sock.user) {
       try {
         return await dispatchBaileys(sock);
       } catch (baileysErr: any) {
         console.warn(`[WhatsApp Baileys] Failed to send via socket for ${userId}:`, baileysErr.message);
+        sendErrorLast = baileysErr;
       }
     }
 
@@ -2836,28 +2852,31 @@ class WhatsAppService {
     }
 
     // 3. Auto-recover pending or stored Baileys socket if needed
-    const pending = this.pendingInitializations.get(userId?.toString()) || this.pendingInitializations.get(merchantOwnerId);
-    if (pending && !sock) {
-      console.log(`[WhatsApp] Waiting for pending session init for ${userId}...`);
-      await Promise.race([
-        pending,
-        new Promise(resolve => setTimeout(resolve, 10000))
-      ]).catch(() => {});
-      sock = this.activeSessions.get(userId?.toString()) || this.activeSessions.get(merchantOwnerId);
-    }
-
-    if (!sock && (merchant.whatsappConfig?.status === 'connected' || merchant.whatsappConfig?.status === 'error')) {
-      console.log(`[WhatsApp] On-demand session init for ${merchantOwnerId}`);
-      try {
-        await this.initSession(merchantOwnerId);
-        sock = this.activeSessions.get(userId?.toString()) || this.activeSessions.get(merchantOwnerId);
-      } catch (initErr) {
-        console.warn(`[WhatsApp] On-demand session init failed:`, initErr);
+    const targetInitId = merchantOwnerId || userId?.toString();
+    if (targetInitId) {
+      const pending = this.pendingInitializations.get(targetInitId);
+      if (pending) {
+        await Promise.race([
+          pending,
+          new Promise(resolve => setTimeout(resolve, 8000))
+        ]).catch(() => {});
+      } else {
+        const hasSavedCreds = await this.hasStoredSession(targetInitId);
+        if (hasSavedCreds || merchant.whatsappConfig?.status === 'connected' || merchant.whatsappConfig?.status === 'error') {
+          console.log(`[WhatsApp] Auto-recovering session on-demand for ${targetInitId}...`);
+          await this.initSession(targetInitId).catch(err => console.warn("[WhatsApp] On-demand init failed:", err));
+        }
       }
-    }
 
-    if (sock && sock.user) {
-      return await dispatchBaileys(sock);
+      sock = this.getLiveSocket(userId, merchant);
+      if (sock && sock.user) {
+        try {
+          return await dispatchBaileys(sock);
+        } catch (retryErr: any) {
+          console.warn(`[WhatsApp Baileys] Retry send failed for ${userId}:`, retryErr.message);
+          sendErrorLast = retryErr;
+        }
+      }
     }
 
     // 4. Meta fallback if not tried yet
@@ -2868,15 +2887,19 @@ class WhatsAppService {
       }
     }
 
-    throw new Error("WhatsApp n'est pas connecté. Veuillez scanner le QR Code ou lier votre appareil dans les Paramètres WhatsApp.");
+    if (sendErrorLast) {
+      throw new Error(`Échec de transmission WhatsApp (${sendErrorLast.message || "délai réseau"}). Reconnexion en cours...`);
+    }
+
+    throw new Error("Ligne WhatsApp non active. Veuillez vérifier la connexion de votre boutique.");
   }
 
   getActiveSocket(userId: string) {
-    return this.activeSessions.get(userId);
+    return this.getLiveSocket(userId);
   }
 
   async postStatus(userId: string, content: { text?: string; imageBuffer?: Buffer; caption?: string }) {
-    const sock = this.activeSessions.get(userId);
+    const sock = this.getLiveSocket(userId);
     if (!sock) {
       throw new Error("Session WhatsApp non connectée");
     }

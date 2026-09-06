@@ -82,8 +82,10 @@ self.addEventListener('notificationclick', (event: NotificationEvent) => {
   const notifData = event.notification.data || {};
   let targetUrl = notifData.url || '/inbox';
 
-  if (event.action === 'inspect' && notifData.reference) {
-    targetUrl = notifData.url || '/admin';
+  if (notifData.intentId) {
+    targetUrl = notifData.url || `/admin?tab=payments&intentId=${notifData.intentId}`;
+  } else if (event.action === 'inspect' && notifData.reference) {
+    targetUrl = notifData.url || `/admin?tab=payments&reference=${notifData.reference}`;
   } else if (event.action === 'open_chat' && notifData.conversationId) {
     targetUrl = notifData.messageId
       ? `/inbox?chat=${notifData.conversationId}&messageId=${notifData.messageId}`

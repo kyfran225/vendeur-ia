@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useSocket } from "./useSocket";
 import { playWhatsAppIncomingChime, sendDesktopNotification } from "@/lib/sound";
+import { playPaymentNotificationChime } from "@/lib/audioUtils";
 import { toast } from "sonner";
 
 export function useGlobalNotifications() {
@@ -83,10 +84,51 @@ export function useGlobalNotifications() {
       });
     };
 
+    const handleIncomingAdminPayment = (data: any) => {
+      const targetIntentId = data?.intentId || data?.data?.intentId || "";
+      const targetReference = data?.reference || data?.data?.reference || "";
+      const targetUrl = `/admin?tab=payments${targetIntentId ? `&intentId=${targetIntentId}` : (targetReference ? `&reference=${targetReference}` : "")}`;
+
+      const amountFormatted = data?.amount ? `${Number(data.amount).toLocaleString("fr-FR")} ${data.currency || "XOF"}` : "";
+      const intervalLabel = data?.billingInterval === "yearly" ? "Annuel (-17%)" : "Mensuel";
+      const merchantLabel = data?.merchantName || data?.senderPhone || "Un marchand";
+      const title = `💰 Nouveau Paiement Reçu${amountFormatted ? ` • ${amountFormatted}` : ""}`;
+      const desc = `${merchantLabel} (${data?.planName || "Formule"} • ${intervalLabel})`;
+
+      playPaymentNotificationChime(0.7);
+
+      if (typeof document !== "undefined" && document.hidden) {
+        sendDesktopNotification({
+          title,
+          body: `${desc}\n👉 Cliquez pour inspecter & valider le reçu.`,
+          tag: targetIntentId ? `payment-${targetIntentId}` : "admin-payment",
+          onClick: () => {
+            window.focus();
+            navigate(targetUrl);
+          }
+        });
+      }
+
+      toast.success(title, {
+        description: `${desc} — Cliquez pour ouvrir le dossier et valider`,
+        duration: 8000,
+        action: {
+          label: "⚡ Inspecter & Valider",
+          onClick: () => {
+            navigate(targetUrl);
+          }
+        }
+      });
+    };
+
     socket.on("notification:new", handleNewNotification);
+    socket.on("admin:payment_incoming", handleIncomingAdminPayment);
+    socket.on("payment:pending_review", handleIncomingAdminPayment);
 
     return () => {
       socket.off("notification:new", handleNewNotification);
+      socket.off("admin:payment_incoming", handleIncomingAdminPayment);
+      socket.off("payment:pending_review", handleIncomingAdminPayment);
     };
   }, [socket, navigate, location.pathname, location.search]);
 }

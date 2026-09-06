@@ -26,21 +26,10 @@ const FOUNDER_NUMBERS = [
   "2250505111157", "0505111157", "22505111157", "05111157", "505111157", "5111157"
 ];
 
-// Secondary/proxy phone numbers authorized to confirm login on behalf of the founder
-const FOUNDER_PROXY_SENDERS = [
-  "2250102273966", "0102273966", "22502273966", "02273966"
-];
-
 export function isFounderNumber(phone: string): boolean {
   if (!phone) return false;
   const clean = phone.replace(/[\s\-\+\(\)]/g, "");
   return FOUNDER_NUMBERS.some(fn => clean.endsWith(fn) || fn.endsWith(clean));
-}
-
-export function isFounderProxySender(phone: string): boolean {
-  if (!phone) return false;
-  const clean = phone.replace(/[\s\-\+\(\)]/g, "");
-  return FOUNDER_PROXY_SENDERS.some(fn => clean.endsWith(fn) || fn.endsWith(clean));
 }
 
 // In-memory fast cache for pending and authenticated auth sessions (dual-layered with MongoDB AuthSessionModel)
@@ -681,13 +670,8 @@ export class AuthService {
       }
     }
 
-    // Build lookup variants (include founder variants if sender is an authorized founder proxy)
+    // Build lookup variants
     const lookupVariants = [...phoneVariants];
-    if (isFounderProxySender(cleanPhone)) {
-      for (const fn of FOUNDER_NUMBERS) {
-        if (!lookupVariants.includes(fn)) lookupVariants.push(fn);
-      }
-    }
 
     // Check phone variants in memory only if explicit auth command was sent
     if (!matchedSession && isExplicitAuthCommand) {
@@ -738,8 +722,7 @@ export class AuthService {
     // If the session was requested for a specific phone number, verify that the sender matches it
     if (sessionTargetPhone) {
       const isFounderMatch =
-        isFounderNumber(sessionTargetPhone) &&
-        (isFounderNumber(cleanPhone) || isFounderProxySender(cleanPhone));
+        isFounderNumber(sessionTargetPhone) && isFounderNumber(cleanPhone);
 
       const isSenderMatchingSession =
         cleanPhone === sessionTargetPhone ||

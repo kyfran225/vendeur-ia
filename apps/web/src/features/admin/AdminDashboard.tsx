@@ -34,7 +34,7 @@ import {
 } from "lucide-react";
 import { VendeurIALoader } from "@/components/ui/VendeurIALoader";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuthStore } from "@/stores/authStore";
 import { useFounderRole } from "@/hooks/useFounderRole";
 import { AssistantIcon } from "@/components/ui/AssistantIcon";
@@ -52,13 +52,41 @@ function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+const VALID_ADMIN_TABS = ["overview", "vip", "payments", "merchants", "tickets", "broadcast", "settings", "ai", "billing"] as const;
+type AdminTabType = (typeof VALID_ADMIN_TABS)[number];
+
 export function AdminDashboard() {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<"overview" | "vip" | "payments" | "merchants" | "tickets" | "broadcast" | "settings" | "ai" | "billing">("overview");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tabFromUrl = searchParams.get("tab") as AdminTabType | null;
+  const initialTab: AdminTabType = (tabFromUrl && VALID_ADMIN_TABS.includes(tabFromUrl)) ? tabFromUrl : "overview";
+
+  const [activeTab, setActiveTab] = useState<AdminTabType>(initialTab);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { accessToken } = useAuthStore();
   const { isFounder } = useFounderRole();
   const queryClient = useQueryClient();
+
+  // Sync activeTab when URL search params change
+  useEffect(() => {
+    const currentTabParam = searchParams.get("tab") as AdminTabType | null;
+    if (currentTabParam && VALID_ADMIN_TABS.includes(currentTabParam) && currentTabParam !== activeTab) {
+      setActiveTab(currentTabParam);
+    }
+  }, [searchParams, activeTab]);
+
+  const handleTabSelect = (tabId: AdminTabType) => {
+    setActiveTab(tabId);
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.set("tab", tabId);
+      if (tabId !== "payments") {
+        next.delete("intentId");
+        next.delete("reference");
+      }
+      return next;
+    }, { replace: true });
+  };
 
   useEffect(() => {
     if (!isFounder) {
@@ -70,12 +98,12 @@ export function AdminDashboard() {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
         e.preventDefault();
-        setActiveTab('overview');
+        handleTabSelect('overview');
         toast.info("Nexus System Activated");
       }
       if ((e.metaKey || e.ctrlKey) && e.key === 'b') {
         e.preventDefault();
-        setActiveTab('broadcast');
+        handleTabSelect('broadcast');
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -228,7 +256,7 @@ export function AdminDashboard() {
               <AdminTabButton
                 key={tab.id}
                 active={activeTab === tab.id}
-                onClick={() => setActiveTab(tab.id as any)}
+                onClick={() => handleTabSelect(tab.id as any)}
                 icon={tab.icon}
                 label={tab.label}
                 badge={tab.badge && tab.badge > 0 ? tab.badge : undefined}
@@ -278,7 +306,7 @@ export function AdminDashboard() {
               <button
                 key={tab.id}
                 onClick={() => {
-                  setActiveTab(tab.id as any);
+                  handleTabSelect(tab.id as any);
                   setIsMobileMenuOpen(false);
                 }}
                 className={cn(

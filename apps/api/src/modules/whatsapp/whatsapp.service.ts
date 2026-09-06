@@ -61,10 +61,10 @@ class WhatsAppService {
   }
 
   async sendDirectMessageToPhone(phone: string, text: string): Promise<boolean> {
-    const { jid, cleanPhone } = formatToWhatsAppRecipient(phone);
+    const { cleanPhone } = formatToWhatsAppRecipient(phone);
     const recipient = cleanPhone;
 
-    // 1. Try sending via Meta Cloud API (Official System Channel from 0505111157)
+    // Try sending via Meta Cloud API (Official System Channel from 0505111157)
     try {
       const settings = await SystemSettingsModel.findOne();
       const config = settings?.metaConfig?.whatsappDefaults;
@@ -93,19 +93,6 @@ class WhatsAppService {
       }
     } catch (err: any) {
       console.warn("[WhatsApp Auth] Failed to send via Meta Cloud API:", err.response?.data || err.message);
-    }
-
-    // 2. Try sending via active Baileys socket if available
-    for (const [_, sock] of this.activeSessions.entries()) {
-      if (this.isSocketAlive(sock)) {
-        try {
-          await sock.sendMessage(jid, { text });
-          console.log(`[WhatsApp Auth] Direct message sent via Baileys socket to Merchant (${recipient})`);
-          return true;
-        } catch (err) {
-          console.warn("[WhatsApp] Failed sending direct message via active socket:", err);
-        }
-      }
     }
     return false;
   }
@@ -1939,23 +1926,16 @@ class WhatsAppService {
     const cleanTo = to.replace(/[\s\-\+\(\)]/g, "");
     const text = `✨ *Connexion Vendeur IA*\n\nPour accéder directement à votre boutique :\n\n🔗 *Accéder à votre boutique :*\n${loginUrl}\n\n🔢 *Code de vérification :* *${otpCode}*\n\n💡 _Cliquez sur le lien ou saisissez directement votre code._`;
 
-    // If attempting to send to the system number itself, Meta rejects self-messaging.
-    // Forward the notification to founder backup phone (2250102273966)
-    const isSelfSystemNumber = cleanTo.endsWith("0505111157") || cleanTo.endsWith("05111157");
-    const targetRecipient = isSelfSystemNumber ? "2250102273966" : cleanTo;
-
     try {
       await axios.post(
         `https://graph.facebook.com/v20.0/${phoneNumberId}/messages`,
         {
           messaging_product: "whatsapp",
           recipient_type: "individual",
-          to: targetRecipient,
+          to: cleanTo,
           type: "text",
           text: { 
-            body: isSelfSystemNumber 
-              ? `👑 *[Accès Co-Fondateur Vendeur IA]*\nConnexion initiée pour le compte système *${cleanTo}*.\n\nCode de vérification : *${otpCode}*\nLien direct : ${loginUrl}`
-              : text 
+            body: text 
           },
         },
         {
@@ -1965,12 +1945,10 @@ class WhatsAppService {
           },
         }
       );
-      console.log(`[WhatsApp Auth] Magic Link sent to ${targetRecipient} (Original: ${to})`);
+      console.log(`[WhatsApp Auth] Magic Link sent to ${cleanTo}`);
     } catch (error: any) {
       console.error("[WhatsApp Auth] Failed to send Magic Link:", error.response?.data || error.message);
-      if (!isSelfSystemNumber) {
-        throw new Error("Échec de l'envoi du message WhatsApp. Vérifiez que votre numéro est correct.");
-      }
+      throw new Error("Échec de l'envoi du message WhatsApp. Vérifiez que votre numéro est correct.");
     }
   }
 
@@ -2389,20 +2367,8 @@ class WhatsAppService {
       }
 
       // Match by sessionId
-      if (sId === uIdStr || sId === ownerIdStr || sId === merchantIdStr) {
+      if ((uIdStr && sId === uIdStr) || (ownerIdStr && sId === ownerIdStr) || (merchantIdStr && sId === merchantIdStr)) {
         return s;
-      }
-    }
-
-    // 3. Single active session fallback
-    if (this.activeSessions.size === 1) {
-      const [singleKey, singleSock] = Array.from(this.activeSessions.entries())[0];
-      if (this.isSocketAlive(singleSock)) {
-        if (uIdStr) this.activeSessions.set(uIdStr, singleSock);
-        if (ownerIdStr) this.activeSessions.set(ownerIdStr, singleSock);
-        return singleSock;
-      } else {
-        this.activeSessions.delete(singleKey);
       }
     }
 
@@ -2791,12 +2757,18 @@ class WhatsAppService {
       $or: [
         { ownerId: userId },
         ...(userId && mongoose.isValidObjectId(userId) ? [{ ownerId: new mongoose.Types.ObjectId(userId) }] : []),
-        ...(userId && mongoose.isValidObjectId(userId) ? [{ _id: new mongoose.Types.ObjectId(userId) }] : []),
-        { whatsappNumber: { $regex: '5111157' } },
-        { phone: { $regex: '5111157' } },
-        { businessName: "Vendeur IA" }
+        ...(userId && mongoose.isValidObjectId(userId) ? [{ _id: new mongoose.Types.ObjectId(userId) }] : [])
       ]
     });
+    if (!merchant && !userId) {
+      merchant = await CommerceMerchantModel.findOne({
+        $or: [
+          { whatsappNumber: { $regex: '5111157' } },
+          { phone: { $regex: '5111157' } },
+          { businessName: "Vendeur IA" }
+        ]
+      });
+    }
     if (!merchant) throw new Error("Marchand non trouvé");
 
     const { jid, cleanPhone } = formatToWhatsAppRecipient(to);
@@ -2804,6 +2776,47 @@ class WhatsAppService {
 
     // Subscribe to presence so we receive typing indicator when recipient types
     this.subscribePresence(userId, to).catch(() => {});
+
+    const isMetaMerchant = merchant.whatsappConfig?.provider === 'meta' || 
+      isFounderNumber(merchant.whatsappNumber || merchant.phone || '') || 
+      merchant.businessName === "Vendeur IA";
+
+    // 1. If provider is Meta Cloud API / System Official Channel, prioritize Meta
+    if (isMetaMerchant) {
+      let metaResult: any = null;
+      const mediaBuf = options?.fileBuffer || options?.audioBuffer;
+
+      if (mediaBuf) {
+        const mType = (options?.type === 'audio' || options?.audioBuffer) ? 'audio' :
+                      (options?.type === 'video') ? 'video' :
+                      (options?.type === 'document' || options?.type === 'file') ? 'document' : 'image';
+        try {
+          metaResult = await this.sendMetaMedia(merchant, cleanPhone, mediaBuf, mType as any, {
+            fileName: options?.fileName,
+            mimeType: options?.mimeType,
+            caption: text
+          });
+        } catch (err) {
+          console.warn(`[WhatsApp Meta] Failed media send (${mType}), falling back to text:`, err);
+        }
+      } else if (options?.type === 'audio' || (merchant.aiSettings?.voiceMode && text && text.length < 300)) {
+        try {
+          const audioBuffer = await aiProvider.generateSpeech(text);
+          metaResult = await this.sendMetaAudio(merchant, cleanPhone, audioBuffer);
+        } catch (err) {
+          console.warn("[WhatsApp Meta] Failed audio speech gen, falling back to text:", err);
+        }
+      }
+
+      if (!metaResult || !metaResult.success) {
+        metaResult = await this.sendMetaMessage(merchant, cleanPhone, text);
+      }
+
+      if (metaResult && (metaResult.success || metaResult.messageId)) {
+        return { ...metaResult, provider: 'meta' };
+      }
+      console.log(`[WhatsApp] Meta send unsuccessful for ${cleanPhone}, attempting Baileys fallback if session exists...`);
+    }
 
     const merchantOwnerId = merchant.ownerId?.toString() || userId?.toString();
     let sock = this.getLiveSocket(userId, merchant);
@@ -2875,7 +2888,7 @@ class WhatsAppService {
 
     let sendErrorLast: Error | null = null;
 
-    // 1. Direct active Baileys socket delivery
+    // 2. Direct active Baileys socket delivery
     if (sock && this.isSocketAlive(sock)) {
       try {
         return await dispatchBaileys(sock);
@@ -2889,46 +2902,9 @@ class WhatsAppService {
       }
     }
 
-    // 2. If provider is Meta Cloud API
-    if (merchant.whatsappConfig?.provider === 'meta') {
-      let metaResult: any = null;
-      const mediaBuf = options?.fileBuffer || options?.audioBuffer;
-
-      if (mediaBuf) {
-        const mType = (options?.type === 'audio' || options?.audioBuffer) ? 'audio' :
-                      (options?.type === 'video') ? 'video' :
-                      (options?.type === 'document' || options?.type === 'file') ? 'document' : 'image';
-        try {
-          metaResult = await this.sendMetaMedia(merchant, cleanPhone, mediaBuf, mType as any, {
-            fileName: options?.fileName,
-            mimeType: options?.mimeType,
-            caption: text
-          });
-        } catch (err) {
-          console.warn(`[WhatsApp Meta] Failed media send (${mType}), falling back to text:`, err);
-        }
-      } else if (options?.type === 'audio' || (merchant.aiSettings?.voiceMode && text && text.length < 300)) {
-        try {
-          const audioBuffer = await aiProvider.generateSpeech(text);
-          metaResult = await this.sendMetaAudio(merchant, cleanPhone, audioBuffer);
-        } catch (err) {
-          console.warn("[WhatsApp Meta] Failed audio speech gen, falling back to text:", err);
-        }
-      }
-
-      if (!metaResult || !metaResult.success) {
-        metaResult = await this.sendMetaMessage(merchant, cleanPhone, text);
-      }
-
-      if (metaResult && (metaResult.success || metaResult.messageId)) {
-        return { ...metaResult, provider: 'meta' };
-      }
-      console.log(`[WhatsApp] Meta send unsuccessful, attempting fallback to Baileys socket for ${cleanPhone}...`);
-    }
-
     // 3. Auto-recover pending or stored Baileys socket if needed
     const targetInitId = merchantOwnerId || userId?.toString();
-    if (targetInitId) {
+    if (targetInitId && !isMetaMerchant) {
       const pending = this.pendingInitializations.get(targetInitId);
       if (pending) {
         await Promise.race([
@@ -2955,7 +2931,7 @@ class WhatsAppService {
     }
 
     // 4. Meta fallback if not tried yet
-    if (merchant.whatsappConfig?.provider !== 'meta') {
+    if (!isMetaMerchant) {
       const metaFallback = await this.sendMetaMessage(merchant, cleanPhone, text);
       if (metaFallback && (metaFallback.success || metaFallback.messageId)) {
         return { ...metaFallback, provider: 'meta_fallback' };

@@ -712,6 +712,26 @@ router.get("/payments", authenticate, isAdmin, async (req, res) => {
   }
 });
 
+// GET /api/commerce/admin/payments/:id - Fetch single payment intent by id or reference
+router.get("/payments/:id", authenticate, isAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    let intent = null;
+    if (mongoose.Types.ObjectId.isValid(id)) {
+      intent = await PaymentIntentModel.findById(id).populate("merchantId", "businessName phone whatsappNumber");
+    }
+    if (!intent) {
+      intent = await PaymentIntentModel.findOne({ reference: id }).populate("merchantId", "businessName phone whatsappNumber");
+    }
+    if (!intent) {
+      return res.status(404).json({ error: "Intention de paiement introuvable." });
+    }
+    res.json(intent);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // POST /api/commerce/admin/payments/:id/decision - Approve, Reject or Request Rescan for a payment intent
 router.post("/payments/:id/decision", authenticate, isAdmin, async (req, res) => {
   try {

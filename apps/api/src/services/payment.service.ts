@@ -594,7 +594,7 @@ export class PaymentService {
           icon: "/android-chrome-192x192.png",
           badge: "/favicon-32x32.png",
           data: {
-            url: "/admin",
+            url: `/admin?tab=payments&intentId=${intent._id.toString()}`,
             intentId: intent._id.toString(),
             reference: intent.reference
           },

@@ -346,25 +346,30 @@ html:not(.dark) {
     .bg-rose-600 *,
     .bg-amber-500 *,
     .bg-slate-950 *,
-    .bg-black *
+    .bg-black *,
+    .bg-\[\#0b141a\] *,
+    .bg-\[\#202c33\] *,
+    .bg-\[\#005c4b\] *,
+    .bg-\[\#111b21\] *,
+    .bg-\[\#182229\] *
   ) {
     color: var(--text-primary);
   }
 
-  .text-white\/90,
-  .text-white\/80,
-  .text-white\/70 {
+  .text-white\/90:not(.bg-slate-950 *, .bg-black *, .bg-\[\#0b141a\] *, .bg-\[\#202c33\] *, .bg-\[\#111b21\] *, .bg-\[\#182229\] *),
+  .text-white\/80:not(.bg-slate-950 *, .bg-black *, .bg-\[\#0b141a\] *, .bg-\[\#202c33\] *, .bg-\[\#111b21\] *, .bg-\[\#182229\] *),
+  .text-white\/70:not(.bg-slate-950 *, .bg-black *, .bg-\[\#0b141a\] *, .bg-\[\#202c33\] *, .bg-\[\#111b21\] *, .bg-\[\#182229\] *) {
     color: var(--text-primary) !important;
   }
 
-  .text-white\/60,
-  .text-white\/50,
-  .text-white\/40 {
+  .text-white\/60:not(.bg-slate-950 *, .bg-black *, .bg-\[\#0b141a\] *, .bg-\[\#202c33\] *, .bg-\[\#111b21\] *, .bg-\[\#182229\] *),
+  .text-white\/50:not(.bg-slate-950 *, .bg-black *, .bg-\[\#0b141a\] *, .bg-\[\#202c33\] *, .bg-\[\#111b21\] *, .bg-\[\#182229\] *),
+  .text-white\/40:not(.bg-slate-950 *, .bg-black *, .bg-\[\#0b141a\] *, .bg-\[\#202c33\] *, .bg-\[\#111b21\] *, .bg-\[\#182229\] *) {
     color: var(--text-secondary) !important;
   }
 
-  .text-white\/30,
-  .text-white\/20 {
+  .text-white\/30:not(.bg-slate-950 *, .bg-black *, .bg-\[\#0b141a\] *, .bg-\[\#202c33\] *, .bg-\[\#111b21\] *, .bg-\[\#182229\] *),
+  .text-white\/20:not(.bg-slate-950 *, .bg-black *, .bg-\[\#0b141a\] *, .bg-\[\#202c33\] *, .bg-\[\#111b21\] *, .bg-\[\#182229\] *) {
     color: var(--text-muted) !important;
   }
 

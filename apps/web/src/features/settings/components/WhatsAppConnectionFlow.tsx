@@ -25,13 +25,11 @@ import { useNavigate } from "react-router-dom";
 import { StepMilestoneModal } from "@/components/ui/StepMilestoneModal";
 import { formatDisplayPhone, parsePhoneNumber } from "@/features/onboarding/components/CountrySelector";
 import { QRCodeSVG } from "qrcode.react";
-import { io, Socket } from "socket.io-client";
 import { useAuthStore } from "@/stores/authStore";
 import { useFounderRole } from "@/hooks/useFounderRole";
+import { useSocket } from "@/hooks/useSocket";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
-
-const API_URL = (import.meta as any).env.VITE_API_URL || "http://localhost:3001";
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -42,6 +40,7 @@ export function WhatsAppConnectionFlow() {
   const queryClient = useQueryClient();
   const { user } = useAuthStore();
   const { isFounder } = useFounderRole();
+  const socket = useSocket();
 
   const [activeTab, setActiveTab] = useState<"pairing_code" | "qr_code" | "meta">("pairing_code");
   const [storeWhatsApp, setStoreWhatsApp] = useState("");
@@ -145,22 +144,7 @@ export function WhatsAppConnectionFlow() {
 
   // Socket.io Realtime event listeners for live pairing
   useEffect(() => {
-    const s: Socket = io(API_URL, {
-      reconnection: true,
-      reconnectionAttempts: Infinity,
-      reconnectionDelay: 1000,
-    });
-
-    const joinRoom = () => {
-      if (user?.id) {
-        s.emit("join", user.id);
-      }
-    };
-
-    s.on("connect", joinRoom);
-    if (s.connected) {
-      joinRoom();
-    }
+    if (!socket) return;
 
     const handlePairingCode = (data: { code: string }) => {
       if (data?.code) {
@@ -196,11 +180,20 @@ export function WhatsAppConnectionFlow() {
       }
     };
 
-    s.on("whatsapp:pairing_code", handlePairingCode);
-    s.on("whatsapp:qr", handleQrCode);
-    s.on("whatsapp:connected", handleConnected);
-    s.on("whatsapp:disconnected", handleDisconnected);
+    socket.on("whatsapp:pairing_code", handlePairingCode);
+    socket.on("whatsapp:qr", handleQrCode);
+    socket.on("whatsapp:connected", handleConnected);
+    socket.on("whatsapp:disconnected", handleDisconnected);
 
+    return () => {
+      socket.off("whatsapp:pairing_code", handlePairingCode);
+      socket.off("whatsapp:qr", handleQrCode);
+      socket.off("whatsapp:connected", handleConnected);
+      socket.off("whatsapp:disconnected", handleDisconnected);
+    };
+  }, [socket, refetch, queryClient]);
+
+  useEffect(() => {
     const handleVisibilityOrFocus = () => {
       if (document.visibilityState === "visible") {
         refetch();
@@ -212,15 +205,10 @@ export function WhatsAppConnectionFlow() {
     window.addEventListener("focus", handleVisibilityOrFocus);
 
     return () => {
-      s.off("whatsapp:pairing_code", handlePairingCode);
-      s.off("whatsapp:qr", handleQrCode);
-      s.off("whatsapp:connected", handleConnected);
-      s.off("whatsapp:disconnected", handleDisconnected);
       document.removeEventListener("visibilitychange", handleVisibilityOrFocus);
       window.removeEventListener("focus", handleVisibilityOrFocus);
-      s.disconnect();
     };
-  }, [user?.id, refetch, queryClient]);
+  }, [refetch, queryClient]);
 
   // Fetch pairing data on mount if any active session is pending
   useEffect(() => {

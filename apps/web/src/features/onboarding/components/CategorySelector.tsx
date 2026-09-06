@@ -65,24 +65,24 @@ export function CategorySelector({
         type="button"
         onClick={() => setOpen(!open)}
         className={cn(
-          "w-full h-12 md:h-10 rounded-xl bg-black/40 border border-white/25 px-3.5 text-white flex items-center justify-between text-sm md:text-xs font-semibold outline-none transition-all hover:border-emerald-400/50 focus:border-emerald-400 cursor-pointer shadow-inner",
+          "w-full h-11 sm:h-12 rounded-xl sm:rounded-2xl bg-slate-50 dark:bg-black/40 border border-slate-200 dark:border-white/25 px-3.5 text-slate-900 dark:text-white flex items-center justify-between text-sm outline-none transition-all hover:border-emerald-500/50 focus:border-emerald-500 cursor-pointer shadow-inner",
           buttonClassName,
-          open && "border-emerald-400 ring-1 ring-emerald-400/20"
+          open && "border-emerald-500 ring-1 ring-emerald-500/20"
         )}
       >
         <span className="flex items-center gap-2.5 truncate">
           <span className="text-base shrink-0">{selectedCategory.icon}</span>
-          <span className="truncate text-white font-semibold">{selectedCategory.name}</span>
+          <span className="truncate text-slate-900 dark:text-white font-semibold">{selectedCategory.name}</span>
         </span>
         <ChevronDown
           size={16}
-          className={cn("text-white/40 transition-transform duration-200 shrink-0 ml-2", open && "rotate-180 text-emerald-400")}
+          className={cn("text-slate-400 dark:text-white/40 transition-transform duration-200 shrink-0 ml-2", open && "rotate-180 text-emerald-500 dark:text-emerald-400")}
         />
       </button>
 
       {open && (
         <div className={cn(
-          "absolute left-0 z-[120] w-full max-h-72 overflow-y-auto rounded-2xl border border-white/15 bg-[#0e1411] shadow-2xl animate-in fade-in zoom-in-95 duration-150 p-2 space-y-1 custom-scrollbar backdrop-blur-xl",
+          "absolute left-0 z-[120] w-full max-h-72 overflow-y-auto rounded-2xl border border-slate-200 dark:border-white/15 bg-white dark:bg-[#0e1411] shadow-2xl animate-in fade-in zoom-in-95 duration-150 p-2 space-y-1 custom-scrollbar backdrop-blur-xl",
           dropdownPosition === "top" ? "bottom-full mb-2" : "top-full mt-2"
         )}>
           {CATEGORIES.map((cat) => {
@@ -98,18 +98,18 @@ export function CategorySelector({
                 className={cn(
                   "w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-left transition-all cursor-pointer",
                   isSelected
-                    ? "bg-emerald-400/15 text-emerald-300 font-bold border border-emerald-400/20"
-                    : "text-white/85 hover:bg-white/8 hover:text-white"
+                    ? "bg-emerald-50 dark:bg-emerald-400/15 text-emerald-700 dark:text-emerald-300 font-bold border border-emerald-200 dark:border-emerald-400/20"
+                    : "text-slate-700 dark:text-white/85 hover:bg-slate-100 dark:hover:bg-white/8 hover:text-slate-900 dark:hover:text-white"
                 )}
               >
                 <div className="flex items-center gap-3 min-w-0">
                   <span className="text-lg shrink-0">{cat.icon}</span>
                   <div className="min-w-0">
                     <p className="text-sm font-semibold truncate leading-tight">{cat.name}</p>
-                    <p className="text-xs text-white/45 truncate mt-0.5">{cat.desc}</p>
+                    <p className="text-xs text-slate-400 dark:text-white/45 truncate mt-0.5">{cat.desc}</p>
                   </div>
                 </div>
-                {isSelected && <Check size={16} className="text-emerald-400 shrink-0 ml-2" />}
+                {isSelected && <Check size={16} className="text-emerald-600 dark:text-emerald-400 shrink-0 ml-2" />}
               </button>
             );
           })}

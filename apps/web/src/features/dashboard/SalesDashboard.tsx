@@ -157,13 +157,21 @@ export function SalesDashboard() {
   }, [dashboard?.setupStatus?.steps, dashboard?.merchant?._id, dashboard?.setupStatus?.isFullyOperational, isFounder]);
 
 
+  const lastConnectedToastRef = useRef<number>(0);
+
   useEffect(() => {
     if (socket) {
-      socket.on("whatsapp:connected", () => {
-        toast.success("WhatsApp connecté avec succès !");
+      const handleConnected = () => {
+        const now = Date.now();
+        if (now - lastConnectedToastRef.current > 15000) {
+          lastConnectedToastRef.current = now;
+          toast.success("WhatsApp connecté avec succès !");
+          setIsOffersModalOpen(true);
+        }
         queryClient.invalidateQueries({ queryKey: ["dashboard"] });
-        setIsOffersModalOpen(true);
-      });
+      };
+
+      socket.on("whatsapp:connected", handleConnected);
       socket.on("payment:confirmed", (data: any) => {
         toast.success(`🎉 Paiement validé ! Votre forfait ${data?.planName || "Vendeur IA"} est désormais actif.`);
         queryClient.invalidateQueries({ queryKey: ["dashboard"] });
@@ -173,12 +181,13 @@ export function SalesDashboard() {
       socket.on("payment:update", () => {
         queryClient.invalidateQueries({ queryKey: ["dashboard"] });
       });
+
+      return () => {
+        socket.off("whatsapp:connected", handleConnected);
+        socket.off("payment:confirmed");
+        socket.off("payment:update");
+      };
     }
-    return () => {
-      socket?.off("whatsapp:connected");
-      socket?.off("payment:confirmed");
-      socket?.off("payment:update");
-    };
   }, [socket, queryClient]);
 
   if (isLoading) {

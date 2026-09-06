@@ -40,10 +40,13 @@ class WhatsAppService {
   }
 
   isSocketAlive(sock: any): boolean {
-    if (!sock || !sock.user) return false;
+    if (!sock) return false;
     if (sock.ws) {
-      // readyState 1 = WebSocket.OPEN
-      return sock.ws.readyState === 1;
+      // readyState: 0 = CONNECTING, 1 = OPEN, 2 = CLOSING, 3 = CLOSED
+      // Only treat as dead if explicitly closing or closed
+      if (sock.ws.readyState === 2 || sock.ws.readyState === 3) {
+        return false;
+      }
     }
     return true;
   }
@@ -51,7 +54,7 @@ class WhatsAppService {
   private startHeartbeat() {
     if (this.heartbeatInterval) return;
 
-    // Check sessions every 60 seconds to quickly recover from hibernation or transient network cuts
+    // Check sessions every 60 seconds to safely recover dead sockets
     this.heartbeatInterval = setInterval(async () => {
       await this.checkSessionsHealth();
     }, 60 * 1000);
@@ -122,6 +125,7 @@ class WhatsAppService {
 
         if (!isAlive) {
           console.warn(`[WhatsApp Heartbeat] Socket for ${userId} is closed or dead. Triggering background auto-repair.`);
+          try { sock?.end?.(undefined); } catch (e) {}
           this.activeSessions.delete(userId);
           this.repairSession(userId).catch(() => {});
         }
@@ -132,8 +136,8 @@ class WhatsAppService {
   }
 
   async repairSession(userId: string) {
+    if (this.pendingInitializations.has(userId) || this.activeSessions.has(userId)) return;
     console.log(`[WhatsApp Repair] Attempting to fix session for ${userId}...`);
-    this.activeSessions.delete(userId);
     try {
       await this.initSession(userId);
       console.log(`[WhatsApp Repair] Session for ${userId} restored successfully.`);
@@ -393,6 +397,9 @@ class WhatsAppService {
             this.lastQrMap.delete(userId);
             this.reconnectAttempts.delete(userId);
 
+            const merchant = await CommerceMerchantModel.findOne({ ownerId: userId }).lean();
+            const wasAlreadyConnected = merchant?.whatsappConfig?.status === 'connected';
+
             await CommerceMerchantModel.findOneAndUpdate(
               { ownerId: userId },
               {
@@ -417,8 +424,12 @@ class WhatsAppService {
               { upsert: true }
             );
 
-            emitToUser(userId, "whatsapp:connected", {});
-            console.log(`[WhatsApp] User ${userId} connected`);
+            if (!wasAlreadyConnected) {
+              emitToUser(userId, "whatsapp:connected", {});
+              console.log(`[WhatsApp] User ${userId} connected (status transitioned to connected)`);
+            } else {
+              console.log(`[WhatsApp] User ${userId} connection open (already marked connected)`);
+            }
           }
 
           if (connection === "close") {

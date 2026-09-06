@@ -104,15 +104,15 @@ function WhatsAppBubble({ role, text, time }: { role: string; text: string; time
         initial={{ opacity: 0, scale: 0.9, y: 10 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         className={cn(
-          "p-2.5 px-3 rounded-xl shadow-sm relative text-[14px] leading-[1.4] max-w-[85%]",
+          "p-2.5 px-3 rounded-xl shadow-sm relative text-[14px] leading-[1.4] max-w-[85%] !text-white",
           isAi
-            ? "bg-[#202c33] text-white rounded-tl-none border border-white/5"
-            : "bg-[#005c4b] text-white rounded-tr-none"
+            ? "bg-[#202c33] rounded-tl-none border border-white/5"
+            : "bg-[#005c4b] rounded-tr-none"
         )}
       >
-        <p className="whitespace-pre-wrap">{stripActionTags(text)}</p>
+        <p className="whitespace-pre-wrap !text-white font-normal">{stripActionTags(text)}</p>
         <div className="flex items-center justify-end gap-1 mt-1">
-           <span className="text-[10px] opacity-50">{time}</span>
+           <span className="text-[10px] !text-white/70 font-medium">{time}</span>
            {role !== "ai" && (
              <div className="flex items-center text-[#53bdeb]">
                <svg width="16" height="11" viewBox="0 0 16 11" fill="none" xmlns="http://www.w3.org/2000/svg" className="scale-[0.85] origin-right">
@@ -912,7 +912,7 @@ function LandingHero({
                         </div>
                         <div>
                           <p className="text-xs font-black uppercase tracking-wider text-emerald-400">Démonstration terminée ({MAX_DEMO_REPLIES}/{MAX_DEMO_REPLIES})</p>
-                          <p className="text-[11px] text-white/70 mt-1 leading-snug">
+                          <p className="text-[11px] text-slate-300 mt-1 leading-snug">
                             Vous avez testé le potentiel de Vendeur IA. Lancez votre boutique pour vendre 24h/7 sur votre propre WhatsApp.
                           </p>
                         </div>
@@ -936,7 +936,7 @@ function LandingHero({
                               ? "Limite démo atteinte (0 restant)"
                               : `Message (${Math.max(0, MAX_DEMO_REPLIES - aiResponseCount)} restant${MAX_DEMO_REPLIES - aiResponseCount > 1 ? "s" : ""})...`
                           }
-                          className="w-full h-11 sm:h-12 bg-[#2a3942] text-white text-[15px] sm:text-base rounded-xl px-4 py-2.5 outline-none placeholder:text-[#8696a0] placeholder:text-[13px] sm:placeholder:text-[14px] disabled:opacity-50 shadow-inner"
+                          className="w-full h-11 sm:h-12 !bg-[#2a3942] !text-white !border-transparent text-[15px] sm:text-base rounded-xl px-4 py-2.5 outline-none placeholder:!text-[#8696a0] placeholder:text-[13px] sm:placeholder:text-[14px] disabled:opacity-50 shadow-inner"
                        />
                      </div>
                      <button
@@ -955,7 +955,7 @@ function LandingHero({
                   {/* Activation Sheet - more spacious & informative */}
                   <div className="p-4 bg-[#111b21] border-t border-white/10 shadow-[0_-10px_30px_rgba(0,0,0,0.5)] z-10 space-y-2.5 shrink-0">
                      <div className="flex items-center justify-between px-0.5 text-[9px] font-black uppercase tracking-wider">
-                       <span className="text-white/40">Démo Interactive</span>
+                       <span className="text-slate-400">Démo Interactive</span>
                        <span className={aiResponseCount >= MAX_DEMO_REPLIES ? "text-amber-400 font-black" : "text-emerald-400 font-bold"}>
                          {aiResponseCount}/{MAX_DEMO_REPLIES} réponses IA
                        </span>
@@ -973,11 +973,11 @@ function LandingHero({
 
                      <button
                         onClick={handleActivate}
-                        className="w-full h-12 md:h-12 rounded-xl bg-emerald-400 text-vendeur-coal font-black uppercase tracking-widest text-xs md:text-sm flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all shadow-2xl cursor-pointer"
+                        className="w-full h-12 md:h-12 rounded-xl bg-emerald-400 !text-slate-950 font-black uppercase tracking-widest text-xs md:text-sm flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all shadow-2xl cursor-pointer"
                       >
                         Créer mon Vendeur IA <Rocket size={18} />
                       </button>
-                      <button onClick={() => setStep("form")} className="w-full text-[10px] md:text-[10px] font-black uppercase tracking-widest text-white/30 hover:text-white transition-colors cursor-pointer">
+                      <button onClick={() => setStep("form")} className="w-full text-[10px] md:text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-white transition-colors cursor-pointer">
                         Modifier les infos
                       </button>
                   </div>

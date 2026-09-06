@@ -2378,11 +2378,11 @@ class WhatsAppService {
     return null;
   }
 
-  async subscribePresence(userId: string, remoteJidOrPhone: string) {
+  async subscribePresence(userId: string, remoteJidOrPhone: string, merchant?: any) {
     const { jid } = formatToWhatsAppRecipient(remoteJidOrPhone);
     if (!jid) return;
 
-    let sock = this.getLiveSocket(userId);
+    let sock = this.getLiveSocket(userId, merchant);
     if (!sock) {
       // If socket is dead/missing, try initializing in background
       this.hasStoredSession(userId).then(hasCreds => {
@@ -2400,11 +2400,11 @@ class WhatsAppService {
     }
   }
 
-  async sendPresence(userId: string, remoteJid: string, presence: 'composing' | 'available' | 'paused') {
+  async sendPresence(userId: string, remoteJid: string, presence: 'composing' | 'available' | 'paused', merchant?: any) {
     const { jid } = formatToWhatsAppRecipient(remoteJid);
     if (!jid) return;
 
-    let sock = this.getLiveSocket(userId);
+    let sock = this.getLiveSocket(userId, merchant);
     if (!sock) {
       // Trigger background auto-repair if session is saved
       this.hasStoredSession(userId).then(hasCreds => {
@@ -2419,7 +2419,6 @@ class WhatsAppService {
           await sock.presenceSubscribe(jid).catch(() => {});
         }
         await sock.sendPresenceUpdate(presence, jid);
-        console.log(`[WhatsApp Presence] Sent "${presence}" to ${jid} (User: ${userId})`);
       } catch (err: any) {
         console.warn(`[WhatsApp Presence] Failed to send presence for user ${userId}:`, err.message);
         if (err?.message?.includes("Connection Closed") || err?.output?.statusCode === 428) {
@@ -2438,7 +2437,12 @@ class WhatsAppService {
       const { cleanPhone, jid } = formatToWhatsAppRecipient(remoteJid);
       const presences = presenceUpdate.presences || {};
       let lastKnown = "";
-      if (remoteJid && presences[remoteJid]?.lastKnownPresence) {
+
+      if (presenceUpdate?.presence) {
+        lastKnown = presenceUpdate.presence;
+      } else if (presenceUpdate?.lastKnownPresence) {
+        lastKnown = presenceUpdate.lastKnownPresence;
+      } else if (remoteJid && presences[remoteJid]?.lastKnownPresence) {
         lastKnown = presences[remoteJid].lastKnownPresence;
       } else {
         for (const pVal of Object.values(presences) as any[]) {
@@ -2455,18 +2459,17 @@ class WhatsAppService {
         $or: [
           { ownerId: userId },
           ...(userId && mongoose.isValidObjectId(userId) ? [{ ownerId: new mongoose.Types.ObjectId(userId) }] : []),
-          { whatsappNumber: { $regex: '5111157' } }
+          { _id: userId },
+          ...(userId && mongoose.isValidObjectId(userId) ? [{ _id: new mongoose.Types.ObjectId(userId) }] : [])
         ]
       });
 
       if (!merchant) {
-        merchant = await CommerceMerchantModel.findOne({
-          $or: [
-            { businessName: "Vendeur IA" },
-            { whatsappNumber: { $regex: '5111157' } },
-            { phone: { $regex: '5111157' } }
-          ]
-        });
+        const { UserModel } = await import("../auth/user.model.js");
+        const userObj = await UserModel.findById(userId);
+        if (userObj) {
+          merchant = await CommerceMerchantModel.findOne({ ownerId: userObj._id });
+        }
       }
 
       if (!merchant) return;
@@ -2485,7 +2488,7 @@ class WhatsAppService {
 
       const phoneVariants = generatePhoneVariants(cleanPhone);
 
-      const customer = await CommerceCustomerModel.findOne({
+      let customer = await CommerceCustomerModel.findOne({
         merchantId: merchant._id,
         $or: [
           { phone: { $in: phoneVariants } },
@@ -2496,12 +2499,30 @@ class WhatsAppService {
         ]
       });
 
+      if (!customer) {
+        customer = await CommerceCustomerModel.create({
+          merchantId: merchant._id,
+          phone: cleanPhone || remoteJid,
+          name: cleanPhone ? `Client ${cleanPhone}` : "Client WhatsApp",
+          tags: ["whatsapp"]
+        }).catch(() => null);
+      }
+
       if (!customer) return;
 
-      const conversation = await CommerceConversationModel.findOne({
+      let conversation = await CommerceConversationModel.findOne({
         merchantId: merchant._id,
         customerId: customer._id
       });
+
+      if (!conversation) {
+        conversation = await CommerceConversationModel.create({
+          merchantId: merchant._id,
+          customerId: customer._id,
+          platform: "whatsapp",
+          unreadCount: 0
+        }).catch(() => null);
+      }
 
       if (!conversation) return;
 

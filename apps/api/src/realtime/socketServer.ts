@@ -91,25 +91,95 @@ export function initSocketServer(httpServer: HttpServer) {
           senderSocketId: socket.id,
           senderUserId: payload.userId
         };
-        // Broadcast ONLY to other clients in this specific conversation room (never to the sender themselves)
+        // 1. Broadcast to other clients viewing this specific conversation
         socket.to(`conv:${payload.conversationId}`).emit("conversation:typing", typingData);
 
-        // Propagate typing state directly to WhatsApp recipient's device
         try {
-          const { CommerceConversationModel, CommerceMerchantModel } = await import("../modules/commerce/commerce.model.js");
+          const { CommerceConversationModel, CommerceMerchantModel, CommerceCustomerModel } = await import("../modules/commerce/commerce.model.js");
+          const { UserModel } = await import("../modules/auth/user.model.js");
           const { whatsappService } = await import("../modules/whatsapp/whatsapp.service.js");
+
           const conv = await CommerceConversationModel.findById(payload.conversationId).populate("customerId");
+          if (!conv) return;
+
+          const merchant = await CommerceMerchantModel.findById(conv.merchantId);
+          const ownerId = payload.userId || merchant?.ownerId?.toString() || conv.merchantId?.toString();
           const customerPhone = (conv?.customerId as any)?.phone || (conv?.customerId as any)?.platformId;
           const isWhatsApp = !conv?.platform || conv?.platform === "whatsapp";
-          if (conv && isWhatsApp && customerPhone && customerPhone !== "WEB_VISITOR") {
-            const merchant = await CommerceMerchantModel.findById(conv.merchantId);
-            const ownerId = payload.userId || merchant?.ownerId?.toString() || conv.merchantId?.toString();
-            if (ownerId) {
-              await whatsappService.sendPresence(ownerId, customerPhone, 'composing');
+
+          // 2. Propagate typing state directly to WhatsApp recipient's physical device
+          if (isWhatsApp && customerPhone && customerPhone !== "WEB_VISITOR" && ownerId) {
+            await whatsappService.sendPresence(ownerId, customerPhone, 'composing', merchant).catch(() => {});
+          }
+
+          // 3. Propagate to Web Inbox recipient if the target is another user/merchant on the platform
+          if (customerPhone && customerPhone !== "WEB_VISITOR") {
+            const cleanDigits = customerPhone.replace(/\D/g, "");
+            if (cleanDigits.length >= 8) {
+              const last8 = cleanDigits.slice(-8);
+              const recipientUser = await UserModel.findOne({
+                $or: [
+                  { whatsappNumber: customerPhone },
+                  { whatsappNumber: { $regex: last8 } }
+                ]
+              });
+
+              const recipientMerchant = await CommerceMerchantModel.findOne({
+                $or: [
+                  ...(recipientUser ? [{ ownerId: recipientUser._id }] : []),
+                  { phone: customerPhone },
+                  { phone: { $regex: last8 } },
+                  { whatsappNumber: customerPhone },
+                  { whatsappNumber: { $regex: last8 } }
+                ]
+              });
+
+              const senderPhone = (merchant?.whatsappNumber || merchant?.phone || "").replace(/\D/g, "");
+              const senderUser = payload.userId ? await UserModel.findById(payload.userId) : null;
+              const senderUserPhone = (senderUser?.whatsappNumber || "").replace(/\D/g, "");
+              const senderDigits = senderPhone || senderUserPhone;
+
+              if (recipientMerchant && senderDigits && senderDigits.length >= 8) {
+                const senderLast8 = senderDigits.slice(-8);
+                const recipientCustomer = await CommerceCustomerModel.findOne({
+                  merchantId: recipientMerchant._id,
+                  $or: [
+                    { phone: senderDigits },
+                    { phone: { $regex: senderLast8 } }
+                  ]
+                });
+
+                let reciprocalConv: any = null;
+                if (recipientCustomer) {
+                  reciprocalConv = await CommerceConversationModel.findOne({
+                    merchantId: recipientMerchant._id,
+                    customerId: recipientCustomer._id
+                  });
+                }
+
+                const reciprocalTypingPayload = {
+                  conversationId: reciprocalConv ? reciprocalConv._id.toString() : payload.conversationId,
+                  customerPhone: senderDigits,
+                  isTyping: true,
+                  participant: "customer",
+                  senderSocketId: socket.id,
+                  senderUserId: payload.userId
+                };
+
+                if (reciprocalConv) {
+                  io?.to(`conv:${reciprocalConv._id.toString()}`).emit("conversation:typing", reciprocalTypingPayload);
+                }
+                if (recipientMerchant.ownerId) {
+                  io?.to(`user:${recipientMerchant.ownerId.toString()}`).emit("conversation:typing", reciprocalTypingPayload);
+                }
+                if (recipientUser) {
+                  io?.to(`user:${recipientUser._id.toString()}`).emit("conversation:typing", reciprocalTypingPayload);
+                }
+              }
             }
           }
         } catch (err) {
-          console.warn("[Socket typing:start] Failed to propagate presence to WhatsApp:", err);
+          console.warn("[Socket typing:start] Failed to propagate typing:", err);
         }
       }
     });
@@ -123,25 +193,95 @@ export function initSocketServer(httpServer: HttpServer) {
           senderSocketId: socket.id,
           senderUserId: payload.userId
         };
-        // Broadcast ONLY to other clients in this specific conversation room
+        // 1. Broadcast to other clients viewing this specific conversation
         socket.to(`conv:${payload.conversationId}`).emit("conversation:typing", typingData);
 
-        // Propagate pause state directly to WhatsApp recipient's device
         try {
-          const { CommerceConversationModel, CommerceMerchantModel } = await import("../modules/commerce/commerce.model.js");
+          const { CommerceConversationModel, CommerceMerchantModel, CommerceCustomerModel } = await import("../modules/commerce/commerce.model.js");
+          const { UserModel } = await import("../modules/auth/user.model.js");
           const { whatsappService } = await import("../modules/whatsapp/whatsapp.service.js");
+
           const conv = await CommerceConversationModel.findById(payload.conversationId).populate("customerId");
+          if (!conv) return;
+
+          const merchant = await CommerceMerchantModel.findById(conv.merchantId);
+          const ownerId = payload.userId || merchant?.ownerId?.toString() || conv.merchantId?.toString();
           const customerPhone = (conv?.customerId as any)?.phone || (conv?.customerId as any)?.platformId;
           const isWhatsApp = !conv?.platform || conv?.platform === "whatsapp";
-          if (conv && isWhatsApp && customerPhone && customerPhone !== "WEB_VISITOR") {
-            const merchant = await CommerceMerchantModel.findById(conv.merchantId);
-            const ownerId = payload.userId || merchant?.ownerId?.toString() || conv.merchantId?.toString();
-            if (ownerId) {
-              await whatsappService.sendPresence(ownerId, customerPhone, 'paused');
+
+          // 2. Propagate pause state directly to WhatsApp recipient's physical device
+          if (isWhatsApp && customerPhone && customerPhone !== "WEB_VISITOR" && ownerId) {
+            await whatsappService.sendPresence(ownerId, customerPhone, 'paused', merchant).catch(() => {});
+          }
+
+          // 3. Propagate to Web Inbox recipient if the target is another user/merchant on the platform
+          if (customerPhone && customerPhone !== "WEB_VISITOR") {
+            const cleanDigits = customerPhone.replace(/\D/g, "");
+            if (cleanDigits.length >= 8) {
+              const last8 = cleanDigits.slice(-8);
+              const recipientUser = await UserModel.findOne({
+                $or: [
+                  { whatsappNumber: customerPhone },
+                  { whatsappNumber: { $regex: last8 } }
+                ]
+              });
+
+              const recipientMerchant = await CommerceMerchantModel.findOne({
+                $or: [
+                  ...(recipientUser ? [{ ownerId: recipientUser._id }] : []),
+                  { phone: customerPhone },
+                  { phone: { $regex: last8 } },
+                  { whatsappNumber: customerPhone },
+                  { whatsappNumber: { $regex: last8 } }
+                ]
+              });
+
+              const senderPhone = (merchant?.whatsappNumber || merchant?.phone || "").replace(/\D/g, "");
+              const senderUser = payload.userId ? await UserModel.findById(payload.userId) : null;
+              const senderUserPhone = (senderUser?.whatsappNumber || "").replace(/\D/g, "");
+              const senderDigits = senderPhone || senderUserPhone;
+
+              if (recipientMerchant && senderDigits && senderDigits.length >= 8) {
+                const senderLast8 = senderDigits.slice(-8);
+                const recipientCustomer = await CommerceCustomerModel.findOne({
+                  merchantId: recipientMerchant._id,
+                  $or: [
+                    { phone: senderDigits },
+                    { phone: { $regex: senderLast8 } }
+                  ]
+                });
+
+                let reciprocalConv: any = null;
+                if (recipientCustomer) {
+                  reciprocalConv = await CommerceConversationModel.findOne({
+                    merchantId: recipientMerchant._id,
+                    customerId: recipientCustomer._id
+                  });
+                }
+
+                const reciprocalTypingPayload = {
+                  conversationId: reciprocalConv ? reciprocalConv._id.toString() : payload.conversationId,
+                  customerPhone: senderDigits,
+                  isTyping: false,
+                  participant: "customer",
+                  senderSocketId: socket.id,
+                  senderUserId: payload.userId
+                };
+
+                if (reciprocalConv) {
+                  io?.to(`conv:${reciprocalConv._id.toString()}`).emit("conversation:typing", reciprocalTypingPayload);
+                }
+                if (recipientMerchant.ownerId) {
+                  io?.to(`user:${recipientMerchant.ownerId.toString()}`).emit("conversation:typing", reciprocalTypingPayload);
+                }
+                if (recipientUser) {
+                  io?.to(`user:${recipientUser._id.toString()}`).emit("conversation:typing", reciprocalTypingPayload);
+                }
+              }
             }
           }
         } catch (err) {
-          console.warn("[Socket typing:stop] Failed to propagate presence to WhatsApp:", err);
+          console.warn("[Socket typing:stop] Failed to propagate typing:", err);
         }
       }
     });

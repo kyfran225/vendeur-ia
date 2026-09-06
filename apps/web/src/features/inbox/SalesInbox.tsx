@@ -340,22 +340,48 @@ export function SalesInbox() {
       conversationId: string;
       isTyping: boolean;
       participant?: "customer" | "ai" | "human";
+      customerPhone?: string;
+      senderPhone?: string;
       senderSocketId?: string;
       senderUserId?: string;
     }) => {
-      if (!data?.conversationId) return;
+      if (!data) return;
 
       // Filter out self-events: current active socket MUST NEVER see typing for itself
       if (data.senderSocketId && socket?.id && data.senderSocketId === socket.id) return;
+      if (data.senderUserId && user?.id && String(data.senderUserId) === String(user.id)) return;
 
-      setTypingMap(prev => ({
-        ...prev,
-        [String(data.conversationId)]: {
-          isTyping: !!data.isTyping,
-          participant: data.participant || "customer",
-          lastUpdated: Date.now()
+      const keysToUpdate = new Set<string>();
+      if (data.conversationId) {
+        keysToUpdate.add(String(data.conversationId));
+      }
+
+      // Also match by customer phone / sender phone across active conversations list
+      const phoneToMatch = data.customerPhone || data.senderPhone;
+      if (phoneToMatch && conversations && Array.isArray(conversations)) {
+        const cleanTarget = phoneToMatch.replace(/\D/g, "");
+        if (cleanTarget.length >= 8) {
+          const last8 = cleanTarget.slice(-8);
+          conversations.forEach((conv: any) => {
+            const cPhone = (conv.customerId?.phone || "").replace(/\D/g, "");
+            if (cPhone && cPhone.includes(last8)) {
+              keysToUpdate.add(String(conv._id));
+            }
+          });
         }
-      }));
+      }
+
+      setTypingMap(prev => {
+        const next = { ...prev };
+        keysToUpdate.forEach(k => {
+          next[k] = {
+            isTyping: !!data.isTyping,
+            participant: data.participant || "customer",
+            lastUpdated: Date.now()
+          };
+        });
+        return next;
+      });
     };
 
     // Real-time message status updates (sent / delivered / read)
@@ -544,6 +570,13 @@ export function SalesInbox() {
     }
   }, [selectedChat, targetMessageId, messageIdFromUrl, scrollToBottom]);
 
+  // Auto-scroll when typing bubble appears
+  useEffect(() => {
+    if (selectedChat && typingMap[selectedChat]?.isTyping && isNearBottom) {
+      scrollToBottom(true);
+    }
+  }, [selectedChat, typingMap, isNearBottom, scrollToBottom]);
+
   // Mark conversation read mutation
   const markReadMutation = useMutation({
     mutationFn: async (id: string) => {
@@ -688,13 +721,22 @@ export function SalesInbox() {
   };
 
   const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setManualMessage(e.target.value);
+    const val = e.target.value;
+    setManualMessage(val);
     if (!socket || !selectedChat) return;
+
+    if (!val.trim()) {
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+        typingTimeoutRef.current = null;
+      }
+      socket.emit("typing:stop", { conversationId: selectedChat, participant: "human", userId: user?.id });
+      return;
+    }
 
     if (!typingTimeoutRef.current) {
       socket.emit("typing:start", { conversationId: selectedChat, participant: "human", userId: user?.id });
-    }
-    if (typingTimeoutRef.current) {
+    } else {
       clearTimeout(typingTimeoutRef.current);
     }
 

@@ -193,20 +193,24 @@ class WhatsAppService {
 
     console.log(`[WhatsApp Connection Close] User: ${userId}, StatusCode: ${statusCode}, Error: ${errMessage}`);
 
-    // Codes that indicate an absolute unlinking / logged out / auth failure
+    // Codes that indicate an absolute unlinking / logged out / auth failure / banned / rejected
     const isLoggedOut = statusCode === DisconnectReason.loggedOut;
     const isBadSession = statusCode === DisconnectReason.badSession;
     const isReplaced = statusCode === DisconnectReason.connectionReplaced || statusCode === 440;
+    const isAuthFailure = statusCode === 401 || statusCode === 403 || errMessage.includes("Connection Failure");
 
-    // Only clean memory maps, NEVER wipe MongoDB persistent credentials on connection drops / transient 401 conflicts
+    // Clean in-memory session maps
     this.activeSessions.delete(userId);
     this.pendingInitializations.delete(userId);
     this.lastPairingCodeMap.delete(userId);
     this.lastQrMap.delete(userId);
 
-    if (isLoggedOut || isBadSession) {
-      console.log(`[WhatsApp] Session explicitement déconnectée pour ${userId} (Code ${statusCode}, Error: ${errMessage}).`);
+    if (isLoggedOut || isBadSession || isAuthFailure) {
+      console.warn(`[WhatsApp Security] Session fermée ou rejetée par WhatsApp pour ${userId} (Code ${statusCode}, Error: ${errMessage}). Arrêt immédiat des reconnexions anti-ban.`);
       this.reconnectAttempts.delete(userId);
+
+      // Clear invalid MongoDB session state to prevent retry loops on reboot
+      await clearMongoAuthState(userId);
 
       await CommerceMerchantModel.findOneAndUpdate(
         { ownerId: userId },
@@ -225,17 +229,23 @@ class WhatsAppService {
           $set: {
             status: 'DISCONNECTED',
             disconnectedAt: new Date(),
-            lastError: isLoggedOut ? "Session déconnectée depuis le téléphone" : "Session expirée ou invalide"
+            lastError: isLoggedOut 
+              ? "Session déconnectée depuis le téléphone" 
+              : isAuthFailure 
+              ? "Session refusée par WhatsApp (Appareil dissocié ou expiré)" 
+              : "Session expirée ou invalide"
           }
         },
         { upsert: true }
       );
 
       const payload = {
-        reason: isLoggedOut ? "logged_out" : "bad_session",
+        reason: isLoggedOut ? "logged_out" : isAuthFailure ? "auth_rejected" : "bad_session",
         statusCode,
         message: isLoggedOut 
           ? "Votre session WhatsApp a été déconnectée depuis votre téléphone." 
+          : isAuthFailure
+          ? "La session WhatsApp a expiré ou été dissociée. Veuillez reconnecter votre appareil."
           : "Session WhatsApp expirée.",
         shouldReconnect: false
       };

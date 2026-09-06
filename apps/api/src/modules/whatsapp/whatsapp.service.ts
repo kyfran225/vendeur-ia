@@ -39,14 +39,22 @@ class WhatsAppService {
     this.startHeartbeat();
   }
 
+  isSocketAlive(sock: any): boolean {
+    if (!sock || !sock.user) return false;
+    if (sock.ws) {
+      // readyState 1 = WebSocket.OPEN
+      return sock.ws.readyState === 1;
+    }
+    return true;
+  }
+
   private startHeartbeat() {
     if (this.heartbeatInterval) return;
 
-    // Check sessions every 30 minutes
+    // Check sessions every 60 seconds to quickly recover from hibernation or transient network cuts
     this.heartbeatInterval = setInterval(async () => {
-      console.log("[WhatsApp Heartbeat] Checking session health...");
       await this.checkSessionsHealth();
-    }, 30 * 60 * 1000);
+    }, 60 * 1000);
   }
 
   async sendDirectMessageToPhone(phone: string, text: string): Promise<boolean> {
@@ -86,7 +94,7 @@ class WhatsAppService {
 
     // 2. Try sending via active Baileys socket if available
     for (const [_, sock] of this.activeSessions.entries()) {
-      if (sock && sock.user?.id) {
+      if (this.isSocketAlive(sock)) {
         try {
           await sock.sendMessage(jid, { text });
           console.log(`[WhatsApp Auth] Direct message sent via Baileys socket to Merchant (${recipient})`);
@@ -110,13 +118,12 @@ class WhatsAppService {
           continue;
         }
 
-        // Passive socket state verification (zero network probe spam to WhatsApp servers)
-        const isSocketOpen = sock?.ws ? sock.ws.readyState === 1 : false;
-        const hasLiveUser = Boolean(sock?.user && (sock.user.id || (sock.user as any).lid));
+        const isAlive = this.isSocketAlive(sock);
 
-        if (!isSocketOpen || !hasLiveUser) {
-          console.warn(`[WhatsApp Heartbeat] Socket for ${userId} is closed or unauthenticated. Cleaning stale reference.`);
+        if (!isAlive) {
+          console.warn(`[WhatsApp Heartbeat] Socket for ${userId} is closed or dead. Triggering background auto-repair.`);
           this.activeSessions.delete(userId);
+          this.repairSession(userId).catch(() => {});
         }
       } catch (err: any) {
         console.error(`[WhatsApp Heartbeat] Error checking session for ${userId}:`, err.message);
@@ -2315,23 +2322,34 @@ class WhatsAppService {
     const merchantIdStr = merchant?._id?.toString();
     const merchantPhone = (merchant?.whatsappNumber || merchant?.phone || '').replace(/\D/g, '');
 
+    // Helper to validate and cleanup dead socket
+    const validate = (s: any, key?: string) => {
+      if (!s) return null;
+      if (this.isSocketAlive(s)) return s;
+      if (key) this.activeSessions.delete(key);
+      return null;
+    };
+
     // 1. Direct Map lookup by known IDs
     if (uIdStr && this.activeSessions.has(uIdStr)) {
-      const s = this.activeSessions.get(uIdStr);
-      if (s && s.user) return s;
+      const s = validate(this.activeSessions.get(uIdStr), uIdStr);
+      if (s) return s;
     }
     if (ownerIdStr && this.activeSessions.has(ownerIdStr)) {
-      const s = this.activeSessions.get(ownerIdStr);
-      if (s && s.user) return s;
+      const s = validate(this.activeSessions.get(ownerIdStr), ownerIdStr);
+      if (s) return s;
     }
     if (merchantIdStr && this.activeSessions.has(merchantIdStr)) {
-      const s = this.activeSessions.get(merchantIdStr);
-      if (s && s.user) return s;
+      const s = validate(this.activeSessions.get(merchantIdStr), merchantIdStr);
+      if (s) return s;
     }
 
     // 2. Lookup across all active sessions in memory
-    for (const [sId, s] of this.activeSessions.entries()) {
-      if (!s || !s.user) continue;
+    for (const [sId, s] of Array.from(this.activeSessions.entries())) {
+      if (!this.isSocketAlive(s)) {
+        this.activeSessions.delete(sId);
+        continue;
+      }
 
       const sockDigits = (s.user.id || '').split('@')[0].split(':')[0].replace(/\D/g, '');
 
@@ -2357,11 +2375,13 @@ class WhatsAppService {
 
     // 3. Single active session fallback
     if (this.activeSessions.size === 1) {
-      const singleSock = this.activeSessions.values().next().value;
-      if (singleSock && singleSock.user) {
+      const [singleKey, singleSock] = Array.from(this.activeSessions.entries())[0];
+      if (this.isSocketAlive(singleSock)) {
         if (uIdStr) this.activeSessions.set(uIdStr, singleSock);
         if (ownerIdStr) this.activeSessions.set(ownerIdStr, singleSock);
         return singleSock;
+      } else {
+        this.activeSessions.delete(singleKey);
       }
     }
 
@@ -2373,6 +2393,14 @@ class WhatsAppService {
     if (!jid) return;
 
     let sock = this.getLiveSocket(userId);
+    if (!sock) {
+      // If socket is dead/missing, try initializing in background
+      this.hasStoredSession(userId).then(hasCreds => {
+        if (hasCreds) this.initSession(userId).catch(() => {});
+      }).catch(() => {});
+      return;
+    }
+
     if (sock && sock.user && typeof sock.presenceSubscribe === "function") {
       try {
         await sock.presenceSubscribe(jid);
@@ -2387,6 +2415,14 @@ class WhatsAppService {
     if (!jid) return;
 
     let sock = this.getLiveSocket(userId);
+    if (!sock) {
+      // Trigger background auto-repair if session is saved
+      this.hasStoredSession(userId).then(hasCreds => {
+        if (hasCreds) this.initSession(userId).catch(() => {});
+      }).catch(() => {});
+      return;
+    }
+
     if (sock && sock.user && typeof sock.sendPresenceUpdate === "function") {
       try {
         if (typeof sock.presenceSubscribe === "function") {
@@ -2396,6 +2432,10 @@ class WhatsAppService {
         console.log(`[WhatsApp Presence] Sent "${presence}" to ${jid} (User: ${userId})`);
       } catch (err: any) {
         console.warn(`[WhatsApp Presence] Failed to send presence for user ${userId}:`, err.message);
+        if (err?.message?.includes("Connection Closed") || err?.output?.statusCode === 428) {
+          this.activeSessions.delete(userId);
+          this.repairSession(userId).catch(() => {});
+        }
       }
     }
   }
@@ -2803,12 +2843,16 @@ class WhatsAppService {
     let sendErrorLast: Error | null = null;
 
     // 1. Direct active Baileys socket delivery
-    if (sock && sock.user) {
+    if (sock && this.isSocketAlive(sock)) {
       try {
         return await dispatchBaileys(sock);
       } catch (baileysErr: any) {
         console.warn(`[WhatsApp Baileys] Failed to send via socket for ${userId}:`, baileysErr.message);
         sendErrorLast = baileysErr;
+        if (baileysErr.message?.includes("Connection Closed") || baileysErr.output?.statusCode === 428) {
+          this.activeSessions.delete(userId);
+          this.repairSession(userId).catch(() => {});
+        }
       }
     }
 
@@ -2867,7 +2911,7 @@ class WhatsAppService {
       }
 
       sock = this.getLiveSocket(userId, merchant);
-      if (sock && sock.user) {
+      if (sock && this.isSocketAlive(sock)) {
         try {
           return await dispatchBaileys(sock);
         } catch (retryErr: any) {

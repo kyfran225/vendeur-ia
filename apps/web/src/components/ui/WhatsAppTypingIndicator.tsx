@@ -116,14 +116,14 @@ export function WhatsAppTypingIndicator({
   // 6. Défaut : Bulle de chat WhatsApp (Left-aligned AI Bubble haute visibilité pour Démo & Inbox)
   return (
     <div className={cn("flex justify-start mb-3 animate-in fade-in slide-in-from-bottom-2 duration-300", className)}>
-      <div className="bg-[#202c33] border border-white/5 text-white px-4 py-3.5 rounded-2xl rounded-tl-none shadow-sm dark:shadow-xl flex items-center gap-3">
+      <div className="bg-white dark:bg-[#202c33] border border-slate-200/80 dark:border-white/5 text-slate-900 dark:text-white px-4 py-3.5 rounded-2xl rounded-tl-none shadow-sm dark:shadow-xl flex items-center gap-3">
         <span className="flex items-center gap-1.5 pt-2 pb-1 px-1">
-          <span className="h-2.5 w-2.5 rounded-full bg-emerald-400 animate-typing-dot-1" />
-          <span className="h-2.5 w-2.5 rounded-full bg-emerald-400 animate-typing-dot-2" />
-          <span className="h-2.5 w-2.5 rounded-full bg-emerald-400 animate-typing-dot-3" />
+          <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 dark:bg-emerald-400 animate-typing-dot-1" />
+          <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 dark:bg-emerald-400 animate-typing-dot-2" />
+          <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 dark:bg-emerald-400 animate-typing-dot-3" />
         </span>
         {label && (
-          <span className="text-xs text-white/70 font-medium italic pr-1">
+          <span className="text-xs text-slate-500 dark:text-white/70 font-medium italic pr-1">
             {label}
           </span>
         )}

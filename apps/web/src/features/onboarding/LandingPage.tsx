@@ -104,15 +104,15 @@ function WhatsAppBubble({ role, text, time }: { role: string; text: string; time
         initial={{ opacity: 0, scale: 0.9, y: 10 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         className={cn(
-          "p-2.5 px-3 rounded-xl shadow-sm relative text-[14px] leading-[1.4] max-w-[85%] !text-white",
+          "p-2.5 px-3 rounded-xl shadow-sm relative text-[14px] leading-[1.4] max-w-[85%]",
           isAi
-            ? "bg-[#202c33] rounded-tl-none border border-white/5"
-            : "bg-[#005c4b] rounded-tr-none"
+            ? "bg-white dark:bg-[#202c33] text-slate-900 dark:text-white rounded-tl-none border border-slate-200/80 dark:border-white/5"
+            : "bg-[#d9fdd3] dark:bg-[#005c4b] text-slate-900 dark:text-white rounded-tr-none border border-emerald-200/50 dark:border-transparent"
         )}
       >
-        <p className="whitespace-pre-wrap !text-white font-normal">{stripActionTags(text)}</p>
+        <p className="whitespace-pre-wrap font-normal text-slate-900 dark:text-white">{stripActionTags(text)}</p>
         <div className="flex items-center justify-end gap-1 mt-1">
-           <span className="text-[10px] !text-white/70 font-medium">{time}</span>
+           <span className="text-[10px] text-slate-500 dark:text-white/70 font-medium">{time}</span>
            {role !== "ai" && (
              <div className="flex items-center text-[#53bdeb]">
                <svg width="16" height="11" viewBox="0 0 16 11" fill="none" xmlns="http://www.w3.org/2000/svg" className="scale-[0.85] origin-right">
@@ -763,24 +763,24 @@ function LandingHero({
             </AnimatePresence>
 
             {/* Phone Frame Mockup */}
-            <div className="relative w-full h-[640px] sm:h-[700px] md:h-[620px] lg:h-[640px] rounded-[2.8rem] border-[7px] border-[#1a1c1e] bg-black shadow-[0_25px_60px_rgba(0,0,0,0.35)] dark:shadow-[0_30px_70px_rgba(0,0,0,0.65)] overflow-hidden ring-4 ring-white/5 transition-all duration-500">
+            <div className="relative w-full h-[640px] sm:h-[700px] md:h-[620px] lg:h-[640px] rounded-[2.8rem] border-[7px] border-slate-800 dark:border-[#1a1c1e] bg-slate-950 dark:bg-black shadow-[0_25px_60px_rgba(0,0,0,0.15)] dark:shadow-[0_30px_70px_rgba(0,0,0,0.65)] overflow-hidden ring-4 ring-slate-900/10 dark:ring-white/5 transition-all duration-500">
               {/* Camera Notch */}
-              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-6 bg-[#1a1c1e] rounded-b-2xl z-[5] flex items-center justify-center">
-                <div className="w-10 h-1 bg-white/10 rounded-full" />
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-6 bg-slate-800 dark:bg-[#1a1c1e] rounded-b-2xl z-[5] flex items-center justify-center">
+                <div className="w-10 h-1 bg-white/20 dark:bg-white/10 rounded-full" />
               </div>
 
               {step === "form" ? (
-                <div className="h-full w-full bg-[#0c0f0d] p-5 pt-8 pb-4 flex flex-col justify-between no-scrollbar overflow-y-auto">
+                <div className="h-full w-full bg-white dark:bg-[#0c0f0d] p-5 pt-8 pb-4 flex flex-col justify-between no-scrollbar overflow-y-auto">
                   <div className="mb-2.5 space-y-0.5 shrink-0">
                     <div className="flex items-center justify-between">
-                      <h2 className="text-xl md:text-2xl font-black text-white uppercase tracking-tighter">Lancez Vendeur IA.</h2>
+                      <h2 className="text-xl md:text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">Lancez Vendeur IA.</h2>
                       {user && (
-                        <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-400">
+                        <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400">
                           Connecté ✅
                         </span>
                       )}
                     </div>
-                    <p className="text-[10px] md:text-[11px] text-white/40 font-medium">
+                    <p className="text-[10px] md:text-[11px] text-slate-500 dark:text-white/40 font-medium">
                       {user ? "WhatsApp relié ! Nommez et configurez votre boutique." : "Configurez votre boutique en quelques secondes."}
                     </p>
                   </div>
@@ -788,10 +788,10 @@ function LandingHero({
                   <div className="flex-1 flex flex-col justify-between min-h-0">
                     <div className="space-y-2.5">
                       <div className="space-y-1">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Nom du commerce</label>
+                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-white/40 ml-1">Nom du commerce</label>
                         <input
                           id="business-name-input"
-                          className="w-full h-11 sm:h-12 rounded-xl sm:rounded-2xl bg-black/40 border border-white/25 px-3.5 text-white outline-none focus:border-emerald-400 transition-all text-sm shadow-inner"
+                          className="w-full h-11 sm:h-12 rounded-xl sm:rounded-2xl bg-slate-50 dark:bg-black/40 border border-slate-200 dark:border-white/25 px-3.5 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-white/30 outline-none focus:border-emerald-500 dark:focus:border-emerald-400 transition-all text-sm shadow-inner"
                           value={form.businessName}
                           onChange={(e) => setForm({ ...form, businessName: e.target.value })}
                           placeholder="Ex: Ma Boutique Chic"
@@ -799,7 +799,7 @@ function LandingHero({
                       </div>
 
                       <div className="space-y-1">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Catégorie</label>
+                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-white/40 ml-1">Catégorie</label>
                         <CategorySelector
                           value={form.category}
                           onChange={(catId) => setForm({ ...form, category: catId as any })}
@@ -807,7 +807,7 @@ function LandingHero({
                       </div>
 
                       <div className="space-y-1">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Numéro WhatsApp</label>
+                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-white/40 ml-1">Numéro WhatsApp</label>
                         <div className="flex gap-2 items-center w-full min-w-0">
                           <CountrySelector
                             selected={selectedCountry}
@@ -815,7 +815,7 @@ function LandingHero({
                             className="h-11 sm:h-12"
                           />
                           <input
-                            className="flex-1 min-w-0 w-full h-11 sm:h-12 rounded-xl sm:rounded-2xl bg-black/40 border border-white/10 px-3.5 text-white font-mono text-sm outline-none focus:border-emerald-400 shadow-inner"
+                            className="flex-1 min-w-0 w-full h-11 sm:h-12 rounded-xl sm:rounded-2xl bg-slate-50 dark:bg-black/40 border border-slate-200 dark:border-white/10 px-3.5 text-slate-900 dark:text-white font-mono text-sm outline-none focus:border-emerald-500 dark:focus:border-emerald-400 placeholder:text-slate-400 dark:placeholder:text-white/30 shadow-inner"
                             value={localPhone}
                             onChange={(e) => setLocalPhone(e.target.value.replace(/\D/g, ""))}
                             placeholder="0700000000"
@@ -824,7 +824,7 @@ function LandingHero({
                       </div>
 
                       <div className="space-y-1">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Adresse / Ville</label>
+                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-white/40 ml-1">Adresse / Ville</label>
                         <AddressAutocomplete value={form.address} onChange={(v) => setForm({ ...form, address: v })} onSelectSuggestion={(s) => {
                           const city = s.context?.place?.name || s.place_formatted?.split(',')[1]?.trim();
                           setForm(prev => ({ ...prev, city: city || "" }));
@@ -833,17 +833,17 @@ function LandingHero({
 
                       <div className="space-y-1">
                         <div className="flex items-center justify-between px-1">
-                          <label className="text-[10px] font-black uppercase tracking-widest text-white/40">Votre offre (produits, services...)</label>
+                          <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-white/40">Votre offre (produits, services...)</label>
                           <span className={cn(
                             "text-[9px] font-bold tracking-wider",
-                            (form.description?.length || 0) >= 280 ? "text-amber-400 font-black" : "text-white/30"
+                            (form.description?.length || 0) >= 280 ? "text-amber-500 font-black" : "text-slate-400 dark:text-white/30"
                           )}>
                             {form.description?.length || 0}/300
                           </span>
                         </div>
                         <textarea
                           maxLength={300}
-                          className="w-full h-16 sm:h-20 rounded-xl bg-black/40 border border-white/25 p-3 text-sm resize-none outline-none focus:border-emerald-400 placeholder:text-white/20 leading-relaxed shadow-inner"
+                          className="w-full h-16 sm:h-20 rounded-xl bg-slate-50 dark:bg-black/40 border border-slate-200 dark:border-white/25 p-3 text-sm text-slate-900 dark:text-white resize-none outline-none focus:border-emerald-500 dark:focus:border-emerald-400 placeholder:text-slate-400 dark:placeholder:text-white/20 leading-relaxed shadow-inner"
                           value={form.description}
                           onChange={(e) => setForm({ ...form, description: e.target.value })}
                           placeholder="Ex: Articles, prestations de service, tarifs ou livraison..."
@@ -854,23 +854,23 @@ function LandingHero({
                     <button
                       onClick={handleCreateVendeur}
                       disabled={!form.businessName || !form.address}
-                      className="w-full h-11 sm:h-12 rounded-xl bg-emerald-400 text-vendeur-coal font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all shadow-xl shadow-emerald-500/20 disabled:opacity-30 shrink-0 cursor-pointer mt-3 mb-2"
+                      className="w-full h-11 sm:h-12 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all shadow-xl shadow-emerald-500/20 disabled:opacity-30 shrink-0 cursor-pointer mt-3 mb-2"
                     >
                       Démarrer Vendeur IA <ChevronRight size={18} />
                     </button>
                   </div>
                 </div>
               ) : (
-                <div className="h-full w-full bg-[#0b141a] flex flex-col relative">
+                <div className="h-full w-full bg-[#efeae2] dark:bg-[#0b141a] flex flex-col relative">
                   {/* WhatsApp UI Inside Frame */}
-                  <div className="bg-[#202c33] px-3.5 pt-8 pb-3 flex items-center justify-between border-b border-white/5 shrink-0">
+                  <div className="bg-[#f0f2f5] dark:bg-[#202c33] px-3.5 pt-8 pb-3 flex items-center justify-between border-b border-slate-200 dark:border-white/5 shrink-0">
                     <div className="flex items-center gap-2.5 min-w-0">
-                      <div className="h-9 w-9 rounded-full bg-emerald-700/80 border border-emerald-400/40 flex items-center justify-center text-white font-black text-sm shrink-0 shadow-inner">
+                      <div className="h-9 w-9 rounded-full bg-emerald-600 dark:bg-emerald-700/80 border border-emerald-400/40 flex items-center justify-center text-white font-black text-sm shrink-0 shadow-inner">
                         {form.businessName ? form.businessName.charAt(0).toUpperCase() : "V"}
                       </div>
                       <div className="min-w-0">
-                        <p className="text-xs font-bold text-white leading-tight truncate">{form.businessName || "Votre Boutique"}</p>
-                        <p className="text-[10px] font-medium text-emerald-400/90 leading-none mt-0.5">
+                        <p className="text-xs font-bold text-slate-900 dark:text-white leading-tight truncate">{form.businessName || "Votre Boutique"}</p>
+                        <p className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400/90 leading-none mt-0.5">
                           {isReplying ? "en train d'écrire..." : "en ligne"}
                         </p>
                       </div>
@@ -880,10 +880,10 @@ function LandingHero({
                     <div className={cn(
                       "flex items-center gap-1 px-2.5 py-1 rounded-full border shadow-sm shrink-0",
                       aiResponseCount >= MAX_DEMO_REPLIES
-                        ? "bg-amber-500/10 border-amber-500/30 text-amber-400"
-                        : "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
+                        ? "bg-amber-500/10 border-amber-500/30 text-amber-600 dark:text-amber-400"
+                        : "bg-emerald-500/15 border-emerald-500/30 text-emerald-700 dark:bg-emerald-500/10 dark:border-emerald-500/20 dark:text-emerald-400"
                     )}>
-                      <Zap size={11} className={aiResponseCount >= MAX_DEMO_REPLIES ? "text-amber-400" : "text-emerald-400"} />
+                      <Zap size={11} className={aiResponseCount >= MAX_DEMO_REPLIES ? "text-amber-500 dark:text-amber-400" : "text-emerald-600 dark:text-emerald-400"} />
                       <span className="text-[10px] font-black tracking-wider uppercase">
                         {Math.max(0, MAX_DEMO_REPLIES - aiResponseCount)} / {MAX_DEMO_REPLIES} {MAX_DEMO_REPLIES - aiResponseCount <= 1 ? "essai" : "essais"}
                       </span>
@@ -905,18 +905,18 @@ function LandingHero({
                       <motion.div
                         initial={{ opacity: 0, scale: 0.95, y: 8 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
-                        className="my-3 p-4 rounded-2xl bg-gradient-to-b from-[#182229] to-[#111b21] border border-emerald-500/25 text-white shadow-xl space-y-2.5 text-center"
+                        className="my-3 p-4 rounded-2xl bg-white dark:bg-gradient-to-b dark:from-[#182229] dark:to-[#111b21] border border-emerald-500/30 dark:border-emerald-500/25 text-slate-900 dark:text-white shadow-xl space-y-2.5 text-center"
                       >
-                        <div className="w-10 h-10 mx-auto rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 shadow-sm">
+                        <div className="w-10 h-10 mx-auto rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shadow-sm">
                           <CheckCircle2 size={22} />
                         </div>
                         <div>
-                          <p className="text-xs font-black uppercase tracking-wider text-emerald-400">Démonstration terminée ({MAX_DEMO_REPLIES}/{MAX_DEMO_REPLIES})</p>
-                          <p className="text-[11px] text-slate-300 mt-1 leading-snug">
+                          <p className="text-xs font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-400">Démonstration terminée ({MAX_DEMO_REPLIES}/{MAX_DEMO_REPLIES})</p>
+                          <p className="text-[11px] text-slate-600 dark:text-slate-300 mt-1 leading-snug">
                             Vous avez testé le potentiel de Vendeur IA. Lancez votre boutique pour vendre 24h/7 sur votre propre WhatsApp.
                           </p>
                         </div>
-                        <div className="pt-0.5 flex items-center justify-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-emerald-400">
+                        <div className="pt-0.5 flex items-center justify-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
                           <span>Cliquez ci-dessous pour continuer</span>
                           <ArrowRight size={12} className="rotate-90 animate-bounce" />
                         </div>
@@ -924,7 +924,7 @@ function LandingHero({
                     )}
                   </div>
 
-                  <div className="bg-[#202c33] p-2.5 sm:p-3 flex items-center gap-2.5 border-t border-white/5 shrink-0">
+                  <div className="bg-[#f0f2f5] dark:bg-[#202c33] p-2.5 sm:p-3 flex items-center gap-2.5 border-t border-slate-200 dark:border-white/5 shrink-0">
                      <div className="flex-1 relative">
                        <input
                           value={testMessage}
@@ -936,7 +936,7 @@ function LandingHero({
                               ? "Limite démo atteinte (0 restant)"
                               : `Message (${Math.max(0, MAX_DEMO_REPLIES - aiResponseCount)} restant${MAX_DEMO_REPLIES - aiResponseCount > 1 ? "s" : ""})...`
                           }
-                          className="w-full h-11 sm:h-12 !bg-[#2a3942] !text-white !border-transparent text-[15px] sm:text-base rounded-xl px-4 py-2.5 outline-none placeholder:!text-[#8696a0] placeholder:text-[13px] sm:placeholder:text-[14px] disabled:opacity-50 shadow-inner"
+                          className="w-full h-11 sm:h-12 bg-white dark:bg-[#2a3942] text-slate-900 dark:text-white border border-slate-200 dark:border-transparent text-[15px] sm:text-base rounded-xl px-4 py-2.5 outline-none placeholder:text-slate-400 dark:placeholder:text-[#8696a0] placeholder:text-[13px] sm:placeholder:text-[14px] disabled:opacity-50 shadow-inner"
                        />
                      </div>
                      <button
@@ -953,18 +953,18 @@ function LandingHero({
                   </div>
 
                   {/* Activation Sheet - more spacious & informative */}
-                  <div className="p-4 bg-[#111b21] border-t border-white/10 shadow-[0_-10px_30px_rgba(0,0,0,0.5)] z-10 space-y-2.5 shrink-0">
+                  <div className="p-4 bg-white dark:bg-[#111b21] border-t border-slate-200 dark:border-white/10 shadow-[0_-10px_30px_rgba(0,0,0,0.05)] dark:shadow-[0_-10px_30px_rgba(0,0,0,0.5)] z-10 space-y-2.5 shrink-0">
                      <div className="flex items-center justify-between px-0.5 text-[9px] font-black uppercase tracking-wider">
-                       <span className="text-slate-400">Démo Interactive</span>
-                       <span className={aiResponseCount >= MAX_DEMO_REPLIES ? "text-amber-400 font-black" : "text-emerald-400 font-bold"}>
+                       <span className="text-slate-500 dark:text-slate-400">Démo Interactive</span>
+                       <span className={aiResponseCount >= MAX_DEMO_REPLIES ? "text-amber-500 dark:text-amber-400 font-black" : "text-emerald-600 dark:text-emerald-400 font-bold"}>
                          {aiResponseCount}/{MAX_DEMO_REPLIES} réponses IA
                        </span>
                      </div>
 
                      {/* Progress bar */}
-                     <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
+                     <div className="w-full h-1.5 bg-slate-100 dark:bg-white/10 rounded-full overflow-hidden">
                        <motion.div
-                         className="h-full bg-gradient-to-r from-emerald-500 to-teal-300 rounded-full"
+                         className="h-full bg-gradient-to-r from-emerald-500 to-teal-400 rounded-full"
                          initial={{ width: 0 }}
                          animate={{ width: `${Math.min(100, (aiResponseCount / MAX_DEMO_REPLIES) * 100)}%` }}
                          transition={{ duration: 0.3 }}
@@ -973,11 +973,11 @@ function LandingHero({
 
                      <button
                         onClick={handleActivate}
-                        className="w-full h-12 md:h-12 rounded-xl bg-emerald-400 !text-slate-950 font-black uppercase tracking-widest text-xs md:text-sm flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all shadow-2xl cursor-pointer"
+                        className="w-full h-12 md:h-12 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black uppercase tracking-widest text-xs md:text-sm flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all shadow-xl shadow-emerald-500/20 cursor-pointer"
                       >
                         Créer mon Vendeur IA <Rocket size={18} />
                       </button>
-                      <button onClick={() => setStep("form")} className="w-full text-[10px] md:text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-white transition-colors cursor-pointer">
+                      <button onClick={() => setStep("form")} className="w-full text-[10px] md:text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-colors cursor-pointer">
                         Modifier les infos
                       </button>
                   </div>

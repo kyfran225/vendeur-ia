@@ -688,11 +688,25 @@ router.post("/conversations/:id/refresh-avatar", authenticate, async (req, res) 
   }
 });
 
-// START DIRECT CONVERSATION / NEW CONTACT CHAT
+// START DIRECT CONVERSATION / NEW CONTACT CHAT (ADMIN ONLY)
 router.post("/conversations/start", authenticate, async (req, res) => {
   try {
-    const ownerId = (req as any).user.id;
-    const { phone, name, initialMessage, senderChannel = "merchant" } = req.body;
+    const user = (req as any).user;
+    const ownerId = user?.id || user?._id?.toString();
+    const userDoc = await UserModel.findById(ownerId);
+
+    const isFounder = (userDoc?.whatsappNumber && isFounderNumber(userDoc.whatsappNumber)) ||
+                      (userDoc?.email && isFounderNumber(userDoc.email)) ||
+                      (userDoc?.roles && (userDoc.roles.includes("admin") || userDoc.roles.includes("creator"))) ||
+                      (user?.roles && (user.roles.includes("admin") || user.roles.includes("creator"))) ||
+                      user?.email === "franck@vendeur-ia.com" ||
+                      user?.email === "kyfran6@gmail.com";
+
+    if (!isFounder) {
+      return res.status(403).json({ error: "Action réservée exclusivement à l'administrateur système." });
+    }
+
+    const { phone, name, initialMessage, senderChannel = "system" } = req.body;
 
     if (!phone || !phone.trim()) {
       return res.status(400).json({ error: "Le numéro de téléphone est requis" });
@@ -703,9 +717,9 @@ router.post("/conversations/start", authenticate, async (req, res) => {
       return res.status(400).json({ error: "Numéro de téléphone invalide" });
     }
 
-    // Determine merchant (System Vendeur IA or Merchant's own store)
+    // Determine merchant (System Vendeur IA or Admin's store)
     let merchant: any = null;
-    if (senderChannel === "system") {
+    if (senderChannel === "system" || isFounder) {
       merchant = await CommerceMerchantModel.findOne({
         $or: [
           { businessName: "Vendeur IA" },
@@ -717,16 +731,16 @@ router.post("/conversations/start", authenticate, async (req, res) => {
     }
 
     if (!merchant) {
-      merchant = await CommerceMerchantModel.findOne({ ownerId });
+      merchant = await CommerceMerchantModel.findOne({
+        $or: [
+          { ownerId },
+          ...(ownerId && mongoose.isValidObjectId(ownerId) ? [{ ownerId: new mongoose.Types.ObjectId(ownerId) }] : [])
+        ]
+      });
     }
 
     if (!merchant) {
-      merchant = await CommerceMerchantModel.findOne({
-        $or: [
-          { businessName: "Vendeur IA" },
-          { whatsappNumber: { $regex: '5111157' } }
-        ]
-      });
+      merchant = await CommerceMerchantModel.findOne();
     }
 
     if (!merchant) return res.status(404).json({ error: "Aucun profil marchand configuré" });
@@ -763,6 +777,9 @@ router.post("/conversations/start", authenticate, async (req, res) => {
         unreadCount: 0,
         lastMessageAt: new Date()
       });
+    } else {
+      conversation.lastMessageAt = new Date();
+      await conversation.save();
     }
 
     let createdMessage: any = null;
@@ -794,13 +811,38 @@ router.post("/conversations/start", authenticate, async (req, res) => {
       }
     }
 
-    // Emit realtime socket event
-    emitToUser(ownerId, "conversation:update", {
-      conversationId: conversation._id,
+    // Target users for socket emit: ownerId + merchant ownerId + all admin users
+    const targetUserIds = new Set<string>([ownerId.toString()]);
+    if (merchant.ownerId) targetUserIds.add(merchant.ownerId.toString());
+
+    try {
+      const adminUsers = await UserModel.find({
+        $or: [
+          { roles: { $in: ["admin", "creator"] } },
+          { whatsappNumber: { $regex: "5111157" } },
+          { email: { $regex: "5111157" } }
+        ]
+      }).select("_id").lean();
+      adminUsers.forEach(u => targetUserIds.add(u._id.toString()));
+    } catch (e) {}
+
+    const convIdStr = conversation._id.toString();
+    const outgoingPayload = {
+      conversationId: convIdStr,
       message: createdMessage,
       status: conversation.status,
       unreadCount: 0
+    };
+
+    targetUserIds.forEach(tId => {
+      emitToUser(tId, "conversation:update", outgoingPayload);
     });
+
+    const io = getSocketServer();
+    if (io) {
+      io.to(`conv:${convIdStr}`).emit("conversation:update", outgoingPayload);
+      io.emit("conversation:update", outgoingPayload);
+    }
 
     res.status(201).json({
       success: true,

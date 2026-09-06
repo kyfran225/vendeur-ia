@@ -28,6 +28,7 @@ import { twMerge } from "tailwind-merge";
 import { stripActionTags } from "@/lib/utils";
 
 import { useMerchant } from "@/hooks/useMerchant";
+import { useFounderRole } from "@/hooks/useFounderRole";
 import { VendeurIALoader } from "@/components/ui/VendeurIALoader";
 import { WhatsAppTypingIndicator } from "@/components/ui/WhatsAppTypingIndicator";
 import { OrderCreationModal } from "@/features/orders/OrderCreationModal";
@@ -112,6 +113,7 @@ function formatMessageTime(dateStr?: string | Date): string {
 
 export function SalesInbox() {
   const { accessToken, user } = useAuthStore();
+  const { isAdmin } = useFounderRole();
   const socket = useSocket();
   const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -875,14 +877,16 @@ export function SalesInbox() {
                 </button>
               )}
 
-              <button
-                type="button"
-                onClick={() => setIsNewChatModalOpen(true)}
-                className="p-2.5 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/30 hover:text-emerald-950 dark:hover:text-white transition-all cursor-pointer shadow-sm"
-                title="Nouvelle discussion (Démarrer avec un numéro WhatsApp)"
-              >
-                <Plus size={18} />
-              </button>
+              {isAdmin && (
+                <button
+                  type="button"
+                  onClick={() => setIsNewChatModalOpen(true)}
+                  className="p-2.5 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/30 hover:text-emerald-950 dark:hover:text-white transition-all cursor-pointer shadow-sm"
+                  title="Nouvelle discussion WhatsApp (Admin uniquement)"
+                >
+                  <Plus size={18} />
+                </button>
+              )}
 
               <button
                 type="button"
@@ -1577,30 +1581,36 @@ export function SalesInbox() {
             <div className="max-w-md space-y-2">
               <h3 className="text-lg font-black text-slate-900 dark:text-white">WhatsApp Vendeur IA • Inbox Pro</h3>
               <p className="text-xs text-slate-500 dark:text-white/50 leading-relaxed">
-                Sélectionnez une discussion à gauche ou cliquez sur <span className="text-emerald-600 dark:text-[#00a884] font-bold">+</span> pour démarrer une nouvelle conversation directe avec un numéro WhatsApp.
+                {isAdmin
+                  ? "Sélectionnez une discussion à gauche ou cliquez sur le bouton ci-dessous pour initier un contact avec un numéro WhatsApp."
+                  : "Sélectionnez une discussion à gauche pour consulter et répondre aux messages de vos clients."}
               </p>
-              <button
-                type="button"
-                onClick={() => setIsNewChatModalOpen(true)}
-                className="mt-2 px-4 py-2 rounded-xl bg-emerald-500 text-slate-950 font-bold text-xs hover:bg-emerald-400 transition-all inline-flex items-center gap-1.5 shadow-md shadow-emerald-500/20"
-              >
-                <Plus size={15} />
-                <span>Nouvelle discussion</span>
-              </button>
+              {isAdmin && (
+                <button
+                  type="button"
+                  onClick={() => setIsNewChatModalOpen(true)}
+                  className="mt-2 px-4 py-2 rounded-xl bg-emerald-500 text-slate-950 font-bold text-xs hover:bg-emerald-400 transition-all inline-flex items-center gap-1.5 shadow-md shadow-emerald-500/20 cursor-pointer"
+                >
+                  <Plus size={15} />
+                  <span>Nouvelle discussion</span>
+                </button>
+              )}
             </div>
           </div>
         )}
       </main>
 
-      {/* New Direct Chat Modal */}
-      <NewChatModal
-        isOpen={isNewChatModalOpen}
-        onClose={() => setIsNewChatModalOpen(false)}
-        onChatCreated={(newChatId) => {
-          queryClient.invalidateQueries({ queryKey: ["conversations"] });
-          handleChatSelect(newChatId);
-        }}
-      />
+      {/* New Direct Chat Modal (Admin Only) */}
+      {isAdmin && (
+        <NewChatModal
+          isOpen={isNewChatModalOpen}
+          onClose={() => setIsNewChatModalOpen(false)}
+          onChatCreated={(newChatId) => {
+            queryClient.invalidateQueries({ queryKey: ["conversations"] });
+            handleChatSelect(newChatId);
+          }}
+        />
+      )}
 
       {/* Media Uploader Modal */}
       {selectedFileForUpload && selectedChat && (

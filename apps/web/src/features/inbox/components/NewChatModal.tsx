@@ -3,7 +3,7 @@ import { MessageCircle, X, Send, User, Phone, Sparkles, ShieldCheck, Store, Load
 import { toast } from "sonner";
 import { apiClient } from "@/lib/apiClient";
 import { CountrySelector, COUNTRIES, Country } from "@/features/onboarding/components/CountrySelector";
-import { useAuthStore } from "@/stores/authStore";
+import { useFounderRole } from "@/hooks/useFounderRole";
 
 interface NewChatModalProps {
   isOpen: boolean;
@@ -12,28 +12,33 @@ interface NewChatModalProps {
 }
 
 export function NewChatModal({ isOpen, onClose, onChatCreated }: NewChatModalProps) {
-  const { user } = useAuthStore();
+  const { isAdmin } = useFounderRole();
   const [selectedCountry, setSelectedCountry] = useState<Country>(
     COUNTRIES.find((c) => c.code === "CI") || COUNTRIES[0]
   );
   const [rawPhone, setRawPhone] = useState("");
   const [customerName, setCustomerName] = useState("");
   const [initialMessage, setInitialMessage] = useState("");
-  const [senderChannel, setSenderChannel] = useState<"merchant" | "system">("merchant");
+  const [senderChannel, setSenderChannel] = useState<"system" | "merchant">("system");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  if (!isOpen) return null;
+  if (!isOpen || !isAdmin) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const cleanDigits = rawPhone.replace(/\D/g, "");
-    if (!cleanDigits || cleanDigits.length < 8) {
+    const digitsOnly = rawPhone.replace(/\D/g, "");
+    if (!digitsOnly || digitsOnly.length < 8) {
       toast.error("Veuillez saisir un numéro de téléphone valide.");
       return;
     }
 
-    // Build full E.164 phone string
-    const fullPhone = `${selectedCountry.dialCode}${cleanDigits}`;
+    const dialDigits = selectedCountry.dialCode.replace(/\D/g, "");
+    let fullPhone = "";
+    if (digitsOnly.startsWith(dialDigits)) {
+      fullPhone = `+${digitsOnly}`;
+    } else {
+      fullPhone = `${selectedCountry.dialCode}${digitsOnly}`;
+    }
 
     setIsSubmitting(true);
     try {

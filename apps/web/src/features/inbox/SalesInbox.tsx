@@ -345,15 +345,13 @@ export function SalesInbox() {
     }) => {
       if (!data?.conversationId) return;
 
-      // Filter out self-events & human actions: sender/merchant MUST NEVER see typing for themselves
-      if (data.participant === "human") return;
+      // Filter out self-events: current active socket MUST NEVER see typing for itself
       if (data.senderSocketId && socket?.id && data.senderSocketId === socket.id) return;
-      if (data.senderUserId && user?.id && String(data.senderUserId) === String(user.id)) return;
 
       setTypingMap(prev => ({
         ...prev,
         [String(data.conversationId)]: {
-          isTyping: data.isTyping,
+          isTyping: !!data.isTyping,
           participant: data.participant || "customer",
           lastUpdated: Date.now()
         }

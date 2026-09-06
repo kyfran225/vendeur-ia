@@ -10,7 +10,7 @@ import { CommerceMerchantModel, CommerceConversationModel, CommerceMessageModel,
 import { UserModel } from "../auth/user.model.js";
 import { SubscriptionModel } from "../commerce/subscription.model.js";
 import { WhatsAppConnectionModel } from "../commerce/whatsapp-connection.model.js";
-import { emitToUser, emitToSession, emitToAuth, getSocketServer } from "../../realtime/socketServer.js";
+import { emitToUser, emitToSession, emitToAuth, emitToConversation, getSocketServer } from "../../realtime/socketServer.js";
 import axios from "axios";
 import { addAIJob } from "../../services/ai-queue.service.js";
 import { scheduleRecovery } from "../../services/marketing-queue.service.js";
@@ -2440,8 +2440,17 @@ class WhatsAppService {
 
       const { cleanPhone, jid } = formatToWhatsAppRecipient(remoteJid);
       const presences = presenceUpdate.presences || {};
-      const participantInfo = presences[remoteJid] || Object.values(presences)[0] as any;
-      const lastKnown = participantInfo?.lastKnownPresence;
+      let lastKnown = "";
+      if (remoteJid && presences[remoteJid]?.lastKnownPresence) {
+        lastKnown = presences[remoteJid].lastKnownPresence;
+      } else {
+        for (const pVal of Object.values(presences) as any[]) {
+          if (pVal?.lastKnownPresence) {
+            lastKnown = pVal.lastKnownPresence;
+            break;
+          }
+        }
+      }
 
       const isTyping = lastKnown === "composing" || lastKnown === "recording";
 
@@ -2513,10 +2522,7 @@ class WhatsAppService {
         emitToUser(tId, "conversation:typing", typingPayload);
       });
 
-      const io = getSocketServer();
-      if (io) {
-        io.to(`conv:${conversation._id.toString()}`).emit("conversation:typing", typingPayload);
-      }
+      emitToConversation(conversation._id.toString(), "conversation:typing", typingPayload);
     } catch (err) {
       console.warn("[WhatsApp Presence] Error handling presence update:", err);
     }

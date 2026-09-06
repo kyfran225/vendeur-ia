@@ -11,7 +11,7 @@ import {
   MarketingCampaignModel
 } from '../modules/commerce/commerce.model.js';
 import mongoose from 'mongoose';
-import { emitToUser } from '../realtime/socketServer.js';
+import { emitToUser, emitToConversation } from '../realtime/socketServer.js';
 import { whatsappService } from '../modules/whatsapp/whatsapp.service.js';
 import { pushService } from './push.service.js';
 import { aiProvider } from './ai-provider.js';
@@ -228,6 +228,11 @@ Réponds UNIQUEMENT avec le texte final du message.`;
         isTyping: true,
         participant: 'ai'
       });
+      emitToConversation(conversationId, 'conversation:typing', {
+        conversationId,
+        isTyping: true,
+        participant: 'ai'
+      });
 
       // Generate AI response
       const aiResponse = await aiAgentService.generateResponse({ ...context, platform } as any);
@@ -376,6 +381,11 @@ Réponds UNIQUEMENT avec le texte final du message.`;
       return reply;
     } finally {
       emitToUser(userId, 'conversation:typing', {
+        conversationId,
+        isTyping: false,
+        participant: 'ai'
+      });
+      emitToConversation(conversationId, 'conversation:typing', {
         conversationId,
         isTyping: false,
         participant: 'ai'

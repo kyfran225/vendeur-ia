@@ -164,6 +164,12 @@ export function emitToUser(userId: string, event: string, data: any) {
   }
 }
 
+export function emitToConversation(conversationId: string, event: string, data: any) {
+  if (io && conversationId) {
+    io.to(`conv:${conversationId}`).emit(event, data);
+  }
+}
+
 export function emitToSession(sessionId: string, event: string, data: any) {
   if (io) {
     io.to(`session:${sessionId}`).emit(event, data);

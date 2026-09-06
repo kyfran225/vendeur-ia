@@ -221,7 +221,7 @@ router.post("/webhook", async (req, res) => {
           if (value?.statuses) {
             for (const statusObj of value.statuses) {
               const phoneId = value.metadata?.phone_number_id;
-              console.log(`[Webhook Status] Message ${statusObj.id} -> ${statusObj.status} for recipient ${statusObj.recipient_id}`);
+              console.log(`[Webhook Status] Message ${statusObj.id} -> ${statusObj.status} for recipient ${statusObj.recipient_id}`, statusObj.errors ? JSON.stringify(statusObj.errors) : "");
               whatsappService.handleMetaStatusUpdate(statusObj, phoneId).catch(err => {
                 console.error("[Webhook] Error in async handleMetaStatusUpdate:", err);
               });

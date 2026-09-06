@@ -688,178 +688,6 @@ router.post("/conversations/:id/refresh-avatar", authenticate, async (req, res) 
   }
 });
 
-// START DIRECT CONVERSATION / NEW CONTACT CHAT (ADMIN ONLY)
-router.post("/conversations/start", authenticate, async (req, res) => {
-  try {
-    const user = (req as any).user;
-    const ownerId = user?.id || user?._id?.toString();
-    const userDoc = await UserModel.findById(ownerId);
-
-    const isFounder = (userDoc?.whatsappNumber && isFounderNumber(userDoc.whatsappNumber)) ||
-                      (userDoc?.email && isFounderNumber(userDoc.email)) ||
-                      (userDoc?.roles && (userDoc.roles.includes("admin") || userDoc.roles.includes("creator"))) ||
-                      (user?.roles && (user.roles.includes("admin") || user.roles.includes("creator"))) ||
-                      user?.email === "franck@vendeur-ia.com" ||
-                      user?.email === "kyfran6@gmail.com";
-
-    if (!isFounder) {
-      return res.status(403).json({ error: "Action réservée exclusivement à l'administrateur système." });
-    }
-
-    const { phone, name, initialMessage, senderChannel = "system" } = req.body;
-
-    if (!phone || !phone.trim()) {
-      return res.status(400).json({ error: "Le numéro de téléphone est requis" });
-    }
-
-    const { cleanPhone, jid } = formatToWhatsAppRecipient(phone);
-    if (!cleanPhone || cleanPhone.length < 8) {
-      return res.status(400).json({ error: "Numéro de téléphone invalide" });
-    }
-
-    // Determine merchant (System Vendeur IA or Admin's store)
-    let merchant: any = null;
-    if (senderChannel === "system" || isFounder) {
-      merchant = await CommerceMerchantModel.findOne({
-        $or: [
-          { businessName: "Vendeur IA" },
-          { whatsappNumber: { $regex: '5111157' } },
-          { phone: { $regex: '5111157' } },
-          { "whatsappConfig.phoneNumberId": env.WHATSAPP_PHONE_ID }
-        ]
-      });
-    }
-
-    if (!merchant) {
-      merchant = await CommerceMerchantModel.findOne({
-        $or: [
-          { ownerId },
-          ...(ownerId && mongoose.isValidObjectId(ownerId) ? [{ ownerId: new mongoose.Types.ObjectId(ownerId) }] : [])
-        ]
-      });
-    }
-
-    if (!merchant) {
-      merchant = await CommerceMerchantModel.findOne();
-    }
-
-    if (!merchant) return res.status(404).json({ error: "Aucun profil marchand configuré" });
-
-    // 1. Find or create Customer
-    let customer = await CommerceCustomerModel.findOne({
-      merchantId: merchant._id,
-      phone: cleanPhone
-    });
-
-    if (!customer) {
-      customer = await CommerceCustomerModel.create({
-        merchantId: merchant._id,
-        phone: cleanPhone,
-        name: name?.trim() || undefined
-      });
-    } else if (name && name.trim() && !customer.name) {
-      customer.name = name.trim();
-      await customer.save();
-    }
-
-    // 2. Find or create Conversation
-    let conversation = await CommerceConversationModel.findOne({
-      merchantId: merchant._id,
-      customerId: customer._id
-    });
-
-    if (!conversation) {
-      conversation = await CommerceConversationModel.create({
-        merchantId: merchant._id,
-        customerId: customer._id,
-        platform: "whatsapp",
-        status: "needs_human",
-        unreadCount: 0,
-        lastMessageAt: new Date()
-      });
-    } else {
-      conversation.lastMessageAt = new Date();
-      await conversation.save();
-    }
-
-    let createdMessage: any = null;
-
-    // 3. Send initial message if provided
-    if (initialMessage && initialMessage.trim()) {
-      createdMessage = await CommerceMessageModel.create({
-        conversationId: conversation._id,
-        sender: "human",
-        type: "text",
-        content: initialMessage.trim(),
-        status: "sent",
-        timestamp: new Date()
-      });
-
-      conversation.lastMessageAt = new Date();
-      await conversation.save();
-
-      // Send via WhatsApp
-      try {
-        const sendRes: any = await messagingService.sendMessage(merchant, "whatsapp", cleanPhone, initialMessage.trim());
-        const msgId = sendRes?.key?.id || sendRes?.messageId || sendRes?.id;
-        if (msgId) {
-          createdMessage.whatsappMessageId = msgId;
-          await createdMessage.save();
-        }
-      } catch (err: any) {
-        console.warn("[Start Chat] Initial message send failed:", err.message);
-      }
-    }
-
-    // Target users for socket emit: ownerId + merchant ownerId + all admin users
-    const targetUserIds = new Set<string>([ownerId.toString()]);
-    if (merchant.ownerId) targetUserIds.add(merchant.ownerId.toString());
-
-    try {
-      const adminUsers = await UserModel.find({
-        $or: [
-          { roles: { $in: ["admin", "creator"] } },
-          { whatsappNumber: { $regex: "5111157" } },
-          { email: { $regex: "5111157" } }
-        ]
-      }).select("_id").lean();
-      adminUsers.forEach(u => targetUserIds.add(u._id.toString()));
-    } catch (e) {}
-
-    const convIdStr = conversation._id.toString();
-    const outgoingPayload = {
-      conversationId: convIdStr,
-      message: createdMessage,
-      status: conversation.status,
-      unreadCount: 0
-    };
-
-    targetUserIds.forEach(tId => {
-      emitToUser(tId, "conversation:update", outgoingPayload);
-    });
-
-    const io = getSocketServer();
-    if (io) {
-      io.to(`conv:${convIdStr}`).emit("conversation:update", outgoingPayload);
-      io.emit("conversation:update", outgoingPayload);
-    }
-
-    res.status(201).json({
-      success: true,
-      conversationId: conversation._id,
-      conversation: {
-        ...conversation.toObject(),
-        customerId: customer.toObject()
-      },
-      customer,
-      message: createdMessage
-    });
-  } catch (error: any) {
-    console.error("[Start Conversation Error]:", error);
-    res.status(500).json({ error: error.message });
-  }
-});
-
 // MEDIA UPLOAD & DISPATCH (Images, Videos, Audio, Documents/PDF)
 router.post("/conversations/:id/media", authenticate, upload.single("file"), async (req, res) => {
   try {
@@ -1042,11 +870,21 @@ router.post("/conversations/:id/messages", authenticate, async (req, res) => {
     const { content, quotedMessageId } = req.body;
     if (!content || !content.trim()) return res.status(400).json({ error: "Message content is required" });
 
-    const merchant = await CommerceMerchantModel.findOne({ ownerId });
-    if (!merchant) return res.status(404).json({ error: "Marchand non trouvé" });
-
     const conversation = await CommerceConversationModel.findById(req.params.id).populate("customerId");
     if (!conversation) return res.status(404).json({ error: "Conversation non trouvée" });
+
+    let merchant = await CommerceMerchantModel.findById(conversation.merchantId);
+    if (!merchant) {
+      merchant = await CommerceMerchantModel.findOne({
+        $or: [
+          { ownerId },
+          ...(ownerId && mongoose.isValidObjectId(ownerId) ? [{ ownerId: new mongoose.Types.ObjectId(ownerId) }] : []),
+          { whatsappNumber: { $regex: '5111157' } },
+          { businessName: "Vendeur IA" }
+        ]
+      });
+    }
+    if (!merchant) return res.status(404).json({ error: "Marchand non trouvé" });
 
     // Populate Quoted Message if provided
     let quotedMessage: any = undefined;
@@ -1279,19 +1117,25 @@ router.post("/conversations/:id/fast-pay", authenticate, async (req, res) => {
 router.post("/conversations/:id/voice", authenticate, upload.single("audio"), async (req, res) => {
   try {
     const ownerId = (req as any).user.id;
-    const merchant = await CommerceMerchantModel.findOne({ ownerId });
-    if (!merchant) return res.status(404).json({ error: "Marchand non trouvé" });
-
     if (!req.file || !req.file.buffer) {
       return res.status(400).json({ error: "Fichier audio manquant" });
     }
 
-    const conversation = await CommerceConversationModel.findOne({
-      _id: req.params.id,
-      merchantId: merchant._id
-    }).populate("customerId");
-
+    const conversation = await CommerceConversationModel.findById(req.params.id).populate("customerId");
     if (!conversation) return res.status(404).json({ error: "Conversation non trouvée" });
+
+    let merchant = await CommerceMerchantModel.findById(conversation.merchantId);
+    if (!merchant) {
+      merchant = await CommerceMerchantModel.findOne({
+        $or: [
+          { ownerId },
+          ...(ownerId && mongoose.isValidObjectId(ownerId) ? [{ ownerId: new mongoose.Types.ObjectId(ownerId) }] : []),
+          { whatsappNumber: { $regex: '5111157' } },
+          { businessName: "Vendeur IA" }
+        ]
+      });
+    }
+    if (!merchant) return res.status(404).json({ error: "Marchand non trouvé" });
 
     // 1. Transcribe Voice using AI Provider
     let transcription = "";

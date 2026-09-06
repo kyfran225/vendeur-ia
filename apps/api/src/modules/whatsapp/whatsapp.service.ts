@@ -2361,7 +2361,7 @@ class WhatsAppService {
         continue;
       }
 
-      const sockDigits = (s.user.id || '').split('@')[0].split(':')[0].replace(/\D/g, '');
+      const sockDigits = (s.user?.id || '').split('@')[0].split(':')[0].replace(/\D/g, '');
 
       // Match by socket user phone
       if (merchantPhone && sockDigits) {
@@ -2797,16 +2797,28 @@ class WhatsAppService {
     const merchantOwnerId = merchant.ownerId?.toString() || userId?.toString();
     let sock = this.getLiveSocket(userId, merchant);
 
-    const sendWithPresence = async (socket: any, targetJid: string, payload: any) => {
+    let targetJid = jid;
+    if (sock && typeof sock.onWhatsApp === "function") {
       try {
-        if (typeof socket.sendPresenceUpdate === "function") {
-          await socket.sendPresenceUpdate("composing", targetJid).catch(() => {});
-          const typingDelay = Math.min(Math.max((text?.length || 20) * 12, 400), 1200);
-          await new Promise(r => setTimeout(r, typingDelay));
-          await socket.sendPresenceUpdate("paused", targetJid).catch(() => {});
+        const variants = generatePhoneVariants(cleanPhone);
+        const checkResults = await sock.onWhatsApp(...variants.map((v: string) => v.replace(/\D/g, "")));
+        const validMatch = checkResults?.find((r: any) => r.exists && r.jid);
+        if (validMatch?.jid) {
+          targetJid = validMatch.jid;
         }
       } catch (e) {}
-      return await socket.sendMessage(targetJid, payload);
+    }
+
+    const sendWithPresence = async (socket: any, tJid: string, payload: any) => {
+      try {
+        if (typeof socket.sendPresenceUpdate === "function") {
+          await socket.sendPresenceUpdate("composing", tJid).catch(() => {});
+          const typingDelay = Math.min(Math.max((text?.length || 20) * 12, 400), 1200);
+          await new Promise(r => setTimeout(r, typingDelay));
+          await socket.sendPresenceUpdate("paused", tJid).catch(() => {});
+        }
+      } catch (e) {}
+      return await socket.sendMessage(tJid, payload);
     };
 
     const dispatchBaileys = async (socket: any) => {
@@ -2815,14 +2827,14 @@ class WhatsAppService {
         const payload = options?.fileBuffer
           ? { image: options.fileBuffer, caption: text }
           : { image: { url: options.mediaUrl! }, caption: text };
-        return await sendWithPresence(socket, jid, payload);
+        return await sendWithPresence(socket, targetJid, payload);
       }
 
       // 2. Audio / Voice note
       if (options?.type === 'audio' || options?.audioBuffer || (options?.fileBuffer && options?.mimeType?.startsWith('audio/')) || (merchant.aiSettings?.voiceMode && text && text.length < 300 && !options?.mediaUrl)) {
         const audioBuffer = options?.audioBuffer || options?.fileBuffer || await aiProvider.generateSpeech(text).catch(() => null);
         if (audioBuffer) {
-          return await socket.sendMessage(jid, {
+          return await socket.sendMessage(targetJid, {
             audio: audioBuffer,
             mimetype: options?.mimeType || 'audio/mp4',
             ptt: true
@@ -2835,7 +2847,7 @@ class WhatsAppService {
         const payload = options?.fileBuffer
           ? { video: options.fileBuffer, caption: text, mimetype: options?.mimeType || 'video/mp4' }
           : { video: { url: options.mediaUrl! }, caption: text, mimetype: options?.mimeType || 'video/mp4' };
-        return await sendWithPresence(socket, jid, payload);
+        return await sendWithPresence(socket, targetJid, payload);
       }
 
       // 4. Document / PDF / File
@@ -2843,11 +2855,11 @@ class WhatsAppService {
         const payload = options?.fileBuffer
           ? { document: options.fileBuffer, fileName: options?.fileName || 'document.pdf', mimetype: options?.mimeType || 'application/pdf', caption: text }
           : { document: { url: options.mediaUrl! }, fileName: options?.fileName || 'document.pdf', mimetype: options?.mimeType || 'application/pdf', caption: text };
-        return await sendWithPresence(socket, jid, payload);
+        return await sendWithPresence(socket, targetJid, payload);
       }
 
       // 5. Default Text
-      return await sendWithPresence(socket, jid, { text });
+      return await sendWithPresence(socket, targetJid, { text });
     };
 
     let sendErrorLast: Error | null = null;

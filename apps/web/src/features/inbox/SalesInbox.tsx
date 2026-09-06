@@ -37,7 +37,6 @@ import { VoiceRecorder } from "./components/VoiceRecorder";
 import { CustomerAvatar } from "./components/CustomerAvatar";
 import { CustomerProfileModal } from "./components/CustomerProfileModal";
 import { PauseConfirmationModal } from "@/components/modals/PauseConfirmationModal";
-import { NewChatModal } from "./components/NewChatModal";
 import { EmojiPickerPopover } from "./components/EmojiPickerPopover";
 import { MediaUploaderModal } from "./components/MediaUploaderModal";
 import { MediaLightboxModal } from "./components/MediaLightboxModal";
@@ -136,7 +135,6 @@ export function SalesInbox() {
   const [isPauseModalOpen, setIsPauseModalOpen] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
-  const [isNewChatModalOpen, setIsNewChatModalOpen] = useState(false);
   const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
   const [selectedFileForUpload, setSelectedFileForUpload] = useState<File | null>(null);
   const [isMediaUploaderOpen, setIsMediaUploaderOpen] = useState(false);
@@ -877,17 +875,6 @@ export function SalesInbox() {
                 </button>
               )}
 
-              {isAdmin && (
-                <button
-                  type="button"
-                  onClick={() => setIsNewChatModalOpen(true)}
-                  className="p-2.5 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/30 hover:text-emerald-950 dark:hover:text-white transition-all cursor-pointer shadow-sm"
-                  title="Nouvelle discussion WhatsApp (Admin uniquement)"
-                >
-                  <Plus size={18} />
-                </button>
-              )}
-
               <button
                 type="button"
                 onClick={() => refetchConvs()}
@@ -1581,36 +1568,12 @@ export function SalesInbox() {
             <div className="max-w-md space-y-2">
               <h3 className="text-lg font-black text-slate-900 dark:text-white">WhatsApp Vendeur IA • Inbox Pro</h3>
               <p className="text-xs text-slate-500 dark:text-white/50 leading-relaxed">
-                {isAdmin
-                  ? "Sélectionnez une discussion à gauche ou cliquez sur le bouton ci-dessous pour initier un contact avec un numéro WhatsApp."
-                  : "Sélectionnez une discussion à gauche pour consulter et répondre aux messages de vos clients."}
+                Sélectionnez une discussion à gauche pour consulter et répondre aux messages de vos clients.
               </p>
-              {isAdmin && (
-                <button
-                  type="button"
-                  onClick={() => setIsNewChatModalOpen(true)}
-                  className="mt-2 px-4 py-2 rounded-xl bg-emerald-500 text-slate-950 font-bold text-xs hover:bg-emerald-400 transition-all inline-flex items-center gap-1.5 shadow-md shadow-emerald-500/20 cursor-pointer"
-                >
-                  <Plus size={15} />
-                  <span>Nouvelle discussion</span>
-                </button>
-              )}
             </div>
           </div>
         )}
       </main>
-
-      {/* New Direct Chat Modal (Admin Only) */}
-      {isAdmin && (
-        <NewChatModal
-          isOpen={isNewChatModalOpen}
-          onClose={() => setIsNewChatModalOpen(false)}
-          onChatCreated={(newChatId) => {
-            queryClient.invalidateQueries({ queryKey: ["conversations"] });
-            handleChatSelect(newChatId);
-          }}
-        />
-      )}
 
       {/* Media Uploader Modal */}
       {selectedFileForUpload && selectedChat && (

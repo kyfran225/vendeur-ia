@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { VendeurIALoader } from "@/components/ui/VendeurIALoader";
 import { apiClient } from "@/lib/apiClient";
@@ -64,6 +65,10 @@ export function AdminPaymentsTab() {
   const { accessToken } = useAuthStore();
   const { isFounder } = useFounderRole();
 
+  const [searchParams, setSearchParams] = useSearchParams();
+  const targetIntentId = searchParams.get("intentId") || searchParams.get("id");
+  const targetReference = searchParams.get("reference");
+
   const [filterStatus, setFilterStatus] = useState<string>("under_verification");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -92,6 +97,54 @@ export function AdminPaymentsTab() {
     enabled: !!accessToken && isFounder,
     refetchInterval: 10000
   });
+
+  // Auto-inspect target payment intent when directed by notification URL
+  useEffect(() => {
+    if (!targetIntentId && !targetReference) return;
+
+    // Check if matching intent exists in current payments list
+    const found = payments.find((p: any) =>
+      (targetIntentId && p._id === targetIntentId) ||
+      (targetReference && p.reference === targetReference)
+    );
+
+    if (found) {
+      if (!selectedIntent || selectedIntent._id !== found._id) {
+        setSelectedIntent(found);
+      }
+      if (found.status && filterStatus !== "all" && filterStatus !== found.status) {
+        setFilterStatus(found.status);
+      }
+    } else if (accessToken && isFounder) {
+      // If not yet in list or in different status tab, fetch single intent directly
+      const lookupKey = targetIntentId || targetReference;
+      apiClient.get(`/api/admin/payments/${lookupKey}`)
+        .then((res) => {
+          if (res.data) {
+            setSelectedIntent(res.data);
+            if (res.data.status && filterStatus !== "all" && filterStatus !== res.data.status) {
+              setFilterStatus(res.data.status);
+            }
+          }
+        })
+        .catch((err) => {
+          console.warn("[AdminPaymentsTab] Target payment not found:", err);
+        });
+    }
+  }, [targetIntentId, targetReference, payments, accessToken, isFounder, filterStatus, selectedIntent]);
+
+  const handleCloseModal = () => {
+    setSelectedIntent(null);
+    setZoomLevel(1);
+    setRotationAngle(0);
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.delete("intentId");
+      next.delete("id");
+      next.delete("reference");
+      return next;
+    }, { replace: true });
+  };
 
   // 2. Fetch Manual Payment Config
   const { data: configData } = useQuery({
@@ -179,7 +232,7 @@ export function AdminPaymentsTab() {
       } else {
         toast.success("Paiement rejeté et motif notifié au commerçant.");
       }
-      setSelectedIntent(null);
+      handleCloseModal();
       setIsRejectModalOpen(false);
       queryClient.invalidateQueries({ queryKey: ["admin:payments"] });
       queryClient.invalidateQueries({ queryKey: ["admin:payments:pendingCount"] });
@@ -236,39 +289,39 @@ export function AdminPaymentsTab() {
   };
 
   return (
-    <div className="space-y-6 md:space-y-8 animate-in fade-in duration-300">
+    <div className="space-y-6 md:space-y-8 animate-in fade-in duration-300 text-slate-900 dark:text-white">
       {/* Header Stats - Clear & Readable */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
-        <div className="p-4 md:p-6 rounded-2xl md:rounded-3xl bg-vendeur-coal/90 border border-amber-500/30 space-y-2 shadow-sm hover:shadow-md dark:shadow-xl transition-all">
-          <div className="flex items-center justify-between text-amber-400/90 text-xs md:text-sm font-black uppercase tracking-wider">
+        <div className="p-4 md:p-6 rounded-2xl md:rounded-3xl bg-white dark:bg-vendeur-coal/90 border border-amber-500/30 space-y-2 shadow-sm hover:shadow-md dark:shadow-xl transition-all">
+          <div className="flex items-center justify-between text-amber-500 dark:text-amber-400/90 text-xs md:text-sm font-black uppercase tracking-wider">
             <span>À Vérifier</span>
-            <Clock size={18} className="text-amber-400" />
+            <Clock size={18} className="text-amber-500 dark:text-amber-400" />
           </div>
-          <div className="text-3xl md:text-4xl font-black font-mono text-amber-400">{pendingCount}</div>
+          <div className="text-3xl md:text-4xl font-black font-mono text-amber-500 dark:text-amber-400">{pendingCount}</div>
         </div>
 
-        <div className="p-4 md:p-6 rounded-2xl md:rounded-3xl bg-vendeur-coal/90 border border-vendeur-emerald/30 space-y-2 shadow-sm hover:shadow-md dark:shadow-xl transition-all">
-          <div className="flex items-center justify-between text-vendeur-emerald/90 text-xs md:text-sm font-black uppercase tracking-wider">
+        <div className="p-4 md:p-6 rounded-2xl md:rounded-3xl bg-white dark:bg-vendeur-coal/90 border border-emerald-500/30 dark:border-vendeur-emerald/30 space-y-2 shadow-sm hover:shadow-md dark:shadow-xl transition-all">
+          <div className="flex items-center justify-between text-emerald-600 dark:text-vendeur-emerald/90 text-xs md:text-sm font-black uppercase tracking-wider">
             <span>Validés</span>
-            <CheckCircle2 size={18} className="text-vendeur-emerald" />
+            <CheckCircle2 size={18} className="text-emerald-600 dark:text-vendeur-emerald" />
           </div>
-          <div className="text-3xl md:text-4xl font-black font-mono text-vendeur-emerald">{confirmedCount}</div>
+          <div className="text-3xl md:text-4xl font-black font-mono text-emerald-600 dark:text-vendeur-emerald">{confirmedCount}</div>
         </div>
 
-        <div className="p-4 md:p-6 rounded-2xl md:rounded-3xl bg-vendeur-coal/90 border border-rose-500/30 space-y-2 shadow-sm hover:shadow-md dark:shadow-xl transition-all">
-          <div className="flex items-center justify-between text-rose-400/90 text-xs md:text-sm font-black uppercase tracking-wider">
+        <div className="p-4 md:p-6 rounded-2xl md:rounded-3xl bg-white dark:bg-vendeur-coal/90 border border-rose-500/30 space-y-2 shadow-sm hover:shadow-md dark:shadow-xl transition-all">
+          <div className="flex items-center justify-between text-rose-500 dark:text-rose-400/90 text-xs md:text-sm font-black uppercase tracking-wider">
             <span>Alertes Fraude</span>
-            <ShieldAlert size={18} className="text-rose-400" />
+            <ShieldAlert size={18} className="text-rose-500 dark:text-rose-400" />
           </div>
-          <div className="text-3xl md:text-4xl font-black font-mono text-rose-400">{fraudFlaggedCount}</div>
+          <div className="text-3xl md:text-4xl font-black font-mono text-rose-500 dark:text-rose-400">{fraudFlaggedCount}</div>
         </div>
 
-        <div className="p-4 md:p-6 rounded-2xl md:rounded-3xl bg-vendeur-coal/90 border border-sky-500/30 space-y-2 shadow-sm hover:shadow-md dark:shadow-xl transition-all">
-          <div className="flex items-center justify-between text-sky-400/90 text-xs md:text-sm font-black uppercase tracking-wider">
+        <div className="p-4 md:p-6 rounded-2xl md:rounded-3xl bg-white dark:bg-vendeur-coal/90 border border-sky-500/30 space-y-2 shadow-sm hover:shadow-md dark:shadow-xl transition-all">
+          <div className="flex items-center justify-between text-sky-600 dark:text-sky-400/90 text-xs md:text-sm font-black uppercase tracking-wider">
             <span>Brouillons / Clics</span>
-            <Smartphone size={18} className="text-sky-400" />
+            <Smartphone size={18} className="text-sky-600 dark:text-sky-400" />
           </div>
-          <div className="text-3xl md:text-4xl font-black font-mono text-sky-400">{draftsCount}</div>
+          <div className="text-3xl md:text-4xl font-black font-mono text-sky-600 dark:text-sky-400">{draftsCount}</div>
         </div>
       </div>
 
@@ -276,13 +329,13 @@ export function AdminPaymentsTab() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8 items-start">
         {/* Left: Pending Payments List (7 cols) */}
         <div className="lg:col-span-7 space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-vendeur-coal/90 p-4 md:p-5 rounded-2xl border border-white/10 shadow-sm hover:shadow-md dark:shadow-xl transition-all">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white dark:bg-vendeur-coal/90 p-4 md:p-5 rounded-2xl border border-slate-200 dark:border-white/10 shadow-sm hover:shadow-md dark:shadow-xl transition-all">
             <div className="flex items-center gap-3 flex-1">
-              <Search size={18} className="text-white/40" />
+              <Search size={18} className="text-slate-400 dark:text-white/40" />
               <input
                 type="text"
                 placeholder="Rechercher Réf, TID, Téléphone, Marchand..."
-                className="bg-transparent text-sm md:text-base text-white placeholder:text-white/40 outline-none w-full"
+                className="bg-transparent text-sm md:text-base text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-white/40 outline-none w-full"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
@@ -303,8 +356,8 @@ export function AdminPaymentsTab() {
                   className={cn(
                     "px-3.5 py-2 rounded-xl text-xs md:text-sm font-black uppercase tracking-wider transition-all cursor-pointer whitespace-nowrap",
                     filterStatus === tab.id
-                      ? "bg-vendeur-emerald text-vendeur-coal shadow-lg shadow-vendeur-emerald/20 font-black scale-105"
-                      : "bg-white/10 text-white/70 hover:text-white hover:bg-white/15"
+                      ? "bg-vendeur-emerald text-slate-950 shadow-lg shadow-vendeur-emerald/20 font-black scale-105"
+                      : "bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-white/70 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-white/15"
                   )}
                 >
                   {tab.label}
@@ -312,7 +365,7 @@ export function AdminPaymentsTab() {
               ))}
               <button
                 onClick={() => refetch()}
-                className="p-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white/70 hover:text-white transition-all cursor-pointer"
+                className="p-2.5 rounded-xl bg-slate-100 dark:bg-white/10 hover:bg-slate-200 dark:hover:bg-white/20 text-slate-600 dark:text-white/70 hover:text-slate-900 dark:hover:text-white transition-all cursor-pointer"
                 title="Actualiser"
               >
                 <RefreshCw size={16} className={isLoading ? "animate-spin" : ""} />
@@ -325,7 +378,7 @@ export function AdminPaymentsTab() {
               <VendeurIALoader size="md" label="Chargement des paiements..." />
             </div>
           ) : filteredPayments.length === 0 ? (
-            <div className="p-12 text-center rounded-2xl md:rounded-3xl bg-vendeur-coal/90 border border-white/10 text-white/60 text-sm md:text-base uppercase font-black tracking-wider shadow-sm hover:shadow-md dark:shadow-xl transition-all">
+            <div className="p-12 text-center rounded-2xl md:rounded-3xl bg-white dark:bg-vendeur-coal/90 border border-slate-200 dark:border-white/10 text-slate-500 dark:text-white/60 text-sm md:text-base uppercase font-black tracking-wider shadow-sm hover:shadow-md dark:shadow-xl transition-all">
               Aucun paiement dans cette catégorie
             </div>
           ) : (
@@ -337,6 +390,11 @@ export function AdminPaymentsTab() {
                 const isRejected = p.status === "rejected";
                 const hasFraudAlert = Boolean(p.forensics?.isPhotoshopTampered || p.forensics?.isAiGenerated);
                 const isYearly = p.billingInterval === "yearly";
+                const isTargeted = Boolean(
+                  (targetIntentId && (p._id === targetIntentId || p.transactionId === targetIntentId)) ||
+                  (targetReference && p.reference === targetReference) ||
+                  (selectedIntent && selectedIntent._id === p._id)
+                );
 
                 const formattedDate = p.createdAt
                   ? `${new Date(p.createdAt).toLocaleDateString("fr-FR", { day: "2-digit", month: "short" })} à ${new Date(p.createdAt).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}`
@@ -345,35 +403,37 @@ export function AdminPaymentsTab() {
                 return (
                   <div
                     key={p._id}
+                    id={`payment-${p._id}`}
                     className={cn(
                       "p-5 md:p-6 rounded-2xl md:rounded-3xl border transition-all space-y-4 relative group shadow-sm hover:shadow-md dark:shadow-xl",
+                      isTargeted && "ring-4 ring-vendeur-emerald/80 border-vendeur-emerald shadow-2xl shadow-vendeur-emerald/30 scale-[1.01]",
                       hasFraudAlert
-                        ? "bg-[#1a0e0e] border-rose-500/50"
+                        ? "bg-rose-50/80 dark:bg-[#1a0e0e] border-rose-300 dark:border-rose-500/50"
                         : isUnderReview
-                        ? "bg-[#111915] border-amber-500/50 ring-2 ring-amber-500/20"
+                        ? "bg-amber-50/70 dark:bg-[#111915] border-amber-300 dark:border-amber-500/50 ring-2 ring-amber-400/20"
                         : isConfirmed
-                        ? "bg-[#0c0f0d] border-vendeur-emerald/30"
+                        ? "bg-white dark:bg-[#0c0f0d] border-emerald-300/60 dark:border-vendeur-emerald/30"
                         : isInitiated
-                        ? "bg-[#0c0f0d] border-white/10 opacity-80"
-                        : "bg-[#0c0f0d] border-white/10 opacity-60"
+                        ? "bg-white dark:bg-[#0c0f0d] border-slate-200 dark:border-white/10 opacity-90"
+                        : "bg-white dark:bg-[#0c0f0d] border-slate-200 dark:border-white/10 opacity-70"
                     )}
                   >
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-white/10">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-white/10">
                       <div className="flex items-center gap-2.5 flex-wrap">
-                        <div className="font-mono text-sm md:text-base font-black text-white">{p.reference}</div>
+                        <div className="font-mono text-sm md:text-base font-black text-slate-900 dark:text-white">{p.reference}</div>
                         
                         <span
                           className={cn(
                             "px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider",
                             hasFraudAlert
-                              ? "bg-rose-500/20 text-rose-400 border border-rose-500/40 animate-pulse"
+                              ? "bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/40 animate-pulse"
                               : isUnderReview
-                              ? "bg-amber-400/20 text-amber-300 border border-amber-400/40 font-black"
+                              ? "bg-amber-400/20 text-amber-700 dark:text-amber-300 border border-amber-400/40 font-black"
                               : isConfirmed
-                              ? "bg-vendeur-emerald/20 text-vendeur-emerald border border-vendeur-emerald/40 font-black"
+                              ? "bg-emerald-500/20 text-emerald-700 dark:text-vendeur-emerald border border-emerald-500/40 font-black"
                               : isInitiated
-                              ? "bg-sky-500/15 text-sky-300 border border-sky-500/30 font-bold"
-                              : "bg-rose-500/15 text-rose-300 border border-rose-500/30"
+                              ? "bg-sky-500/15 text-sky-700 dark:text-sky-300 border border-sky-500/30 font-bold"
+                              : "bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/30"
                           )}
                         >
                           {hasFraudAlert
@@ -392,25 +452,25 @@ export function AdminPaymentsTab() {
                           className={cn(
                             "px-2.5 py-1 rounded-lg text-xs font-black uppercase tracking-wider",
                             isYearly
-                              ? "bg-amber-400/20 text-amber-300 border border-amber-400/40"
-                              : "bg-white/10 text-white/80 border border-white/15"
+                              ? "bg-amber-400/20 text-amber-700 dark:text-amber-300 border border-amber-400/40"
+                              : "bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-white/80 border border-slate-200 dark:border-white/15"
                           )}
                         >
                           {isYearly ? "Annuel (-17%)" : "Mensuel"}
                         </span>
 
                         {formattedDate && (
-                          <span className="text-xs text-white/50 font-mono flex items-center gap-1.5 ml-1">
+                          <span className="text-xs text-slate-500 dark:text-white/50 font-mono flex items-center gap-1.5 ml-1">
                             <Clock size={13} /> {formattedDate}
                           </span>
                         )}
                       </div>
 
-                      <div className="flex items-center gap-2 text-base md:text-lg font-mono font-black text-vendeur-emerald">
+                      <div className="flex items-center gap-2 text-base md:text-lg font-mono font-black text-emerald-600 dark:text-vendeur-emerald">
                         <span>
                           {p.amount?.toLocaleString("fr-FR")} {p.currency}
                         </span>
-                        <span className="text-xs md:text-sm text-white/60 uppercase font-sans font-bold">
+                        <span className="text-xs md:text-sm text-slate-500 dark:text-white/60 uppercase font-sans font-bold">
                           ({p.planName})
                         </span>
                       </div>
@@ -419,30 +479,30 @@ export function AdminPaymentsTab() {
                     {/* Metadata & Signals - Big & Bold */}
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs md:text-sm">
                       <div className="space-y-1 col-span-2 md:col-span-1">
-                        <span className="text-[11px] font-black uppercase text-white/40 tracking-wider">Commerçant</span>
-                        <div className="font-black text-white text-sm md:text-base truncate">
+                        <span className="text-[11px] font-black uppercase text-slate-500 dark:text-white/40 tracking-wider">Commerçant</span>
+                        <div className="font-black text-slate-900 dark:text-white text-sm md:text-base truncate">
                           {p.senderName || p.merchantId?.businessName || "Commerçant"}
                         </div>
-                        <div className="text-white/70 font-mono text-xs">{p.senderPhoneNumber || "Numéro non renseigné"}</div>
+                        <div className="text-slate-600 dark:text-white/70 font-mono text-xs">{p.senderPhoneNumber || "Numéro non renseigné"}</div>
                       </div>
 
                       <div className="space-y-1">
-                        <span className="text-[11px] font-black uppercase text-white/40 tracking-wider">Réseau & TID</span>
-                        <div className="font-black text-sky-400 text-sm md:text-base uppercase">{p.paymentMethod || "Wave"}</div>
-                        <div className="font-mono text-white/80 truncate text-xs">
+                        <span className="text-[11px] font-black uppercase text-slate-500 dark:text-white/40 tracking-wider">Réseau & TID</span>
+                        <div className="font-black text-sky-600 dark:text-sky-400 text-sm md:text-base uppercase">{p.paymentMethod || "Wave"}</div>
+                        <div className="font-mono text-slate-700 dark:text-white/80 truncate text-xs">
                           {p.transactionId ? `TID: ${p.transactionId}` : "TID: Non fourni"}
                         </div>
                       </div>
 
                       <div className="space-y-1">
-                        <span className="text-[11px] font-black uppercase text-white/40 tracking-wider">Preuve Reçu</span>
+                        <span className="text-[11px] font-black uppercase text-slate-500 dark:text-white/40 tracking-wider">Preuve Reçu</span>
                         <div className="pt-0.5">
                           {p.proofImageUrl ? (
-                            <span className="text-xs md:text-sm font-black text-emerald-400 flex items-center gap-1.5 bg-emerald-500/10 px-2.5 py-1 rounded-lg border border-emerald-500/20">
+                            <span className="text-xs md:text-sm font-black text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5 bg-emerald-500/10 px-2.5 py-1 rounded-lg border border-emerald-500/20">
                               <ImageIcon size={14} /> Reçu HD joint
                             </span>
                           ) : (
-                            <span className="text-xs text-white/40">
+                            <span className="text-xs text-slate-400 dark:text-white/40">
                               Sans capture
                             </span>
                           )}
@@ -450,16 +510,16 @@ export function AdminPaymentsTab() {
                       </div>
 
                       <div className="space-y-1">
-                        <span className="text-[11px] font-black uppercase text-white/40 tracking-wider">Signal IA</span>
+                        <span className="text-[11px] font-black uppercase text-slate-500 dark:text-white/40 tracking-wider">Signal IA</span>
                         <div className="flex items-center gap-2 pt-0.5">
                           <span
                             className={cn(
                               "font-mono font-black text-base md:text-lg",
                               p.confidenceScore >= 80
-                                ? "text-vendeur-emerald"
+                                ? "text-emerald-600 dark:text-vendeur-emerald"
                                 : p.confidenceScore >= 50
-                                ? "text-amber-400"
-                                : "text-rose-400"
+                                ? "text-amber-500 dark:text-amber-400"
+                                : "text-rose-500 dark:text-rose-400"
                             )}
                           >
                             {p.confidenceScore || 0}%
@@ -469,7 +529,7 @@ export function AdminPaymentsTab() {
                     </div>
 
                     {/* Action Bar */}
-                    <div className="pt-3 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 border-t border-white/10">
+                    <div className="pt-3 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 border-t border-slate-100 dark:border-white/10">
                       <button
                         type="button"
                         onClick={() => {
@@ -477,7 +537,7 @@ export function AdminPaymentsTab() {
                           setZoomLevel(1);
                           setRotationAngle(0);
                         }}
-                        className="w-full sm:w-auto h-11 sm:h-auto min-h-[44px] px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs md:text-sm font-black uppercase flex items-center justify-center gap-2 transition-all cursor-pointer shrink-0"
+                        className="w-full sm:w-auto h-11 sm:h-auto min-h-[44px] px-4 py-2.5 rounded-xl bg-slate-100 dark:bg-white/10 hover:bg-slate-200 dark:hover:bg-white/20 text-slate-900 dark:text-white text-xs md:text-sm font-black uppercase flex items-center justify-center gap-2 transition-all cursor-pointer shrink-0 border border-slate-200 dark:border-white/10"
                       >
                         <Eye size={16} className="shrink-0" />
                         <span>Inspecter</span>
@@ -492,7 +552,7 @@ export function AdminPaymentsTab() {
                                 setSelectedIntent(p);
                                 setIsRejectModalOpen(true);
                               }}
-                              className="flex-1 sm:flex-none h-11 sm:h-auto min-h-[44px] px-4 py-2.5 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 text-xs md:text-sm font-black uppercase transition-all cursor-pointer flex items-center justify-center gap-1.5 shrink-0"
+                              className="flex-1 sm:flex-none h-11 sm:h-auto min-h-[44px] px-4 py-2.5 rounded-xl bg-rose-500/15 hover:bg-rose-500/25 text-rose-600 dark:text-rose-300 text-xs md:text-sm font-black uppercase transition-all cursor-pointer flex items-center justify-center gap-1.5 shrink-0 border border-rose-500/20"
                             >
                               <XCircle size={15} className="shrink-0" />
                               <span>Rejeter</span>
@@ -501,7 +561,7 @@ export function AdminPaymentsTab() {
                               type="button"
                               onClick={() => decisionMutation.mutate({ id: p._id, action: "approve" })}
                               disabled={decisionMutation.isPending}
-                              className="flex-1 sm:flex-none h-11 sm:h-auto min-h-[44px] px-5 py-2.5 rounded-xl bg-vendeur-emerald hover:bg-emerald-400 text-vendeur-coal text-xs md:text-sm font-black uppercase flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-vendeur-emerald/20 cursor-pointer disabled:opacity-50 shrink-0"
+                              className="flex-1 sm:flex-none h-11 sm:h-auto min-h-[44px] px-5 py-2.5 rounded-xl bg-vendeur-emerald hover:bg-emerald-400 text-slate-950 text-xs md:text-sm font-black uppercase flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-vendeur-emerald/20 cursor-pointer disabled:opacity-50 shrink-0"
                             >
                               {decisionMutation.isPending ? <Loader2 size={16} className="animate-spin shrink-0" /> : <Check size={16} className="shrink-0" />}
                               <span>Valider & Activer</span>
@@ -509,7 +569,7 @@ export function AdminPaymentsTab() {
                           </>
                         )}
                         {isInitiated && (
-                          <span className="text-xs md:text-sm text-white/50 italic text-center sm:text-right">
+                          <span className="text-xs md:text-sm text-slate-500 dark:text-white/50 italic text-center sm:text-right">
                             En attente de confirmation par le client...
                           </span>
                         )}
@@ -523,11 +583,11 @@ export function AdminPaymentsTab() {
         </div>
 
         {/* Right: Multi-Country Corridors Config (5 cols) - Flattened */}
-        <div className="lg:col-span-5 bg-vendeur-coal/90 border border-white/10 p-5 md:p-7 rounded-2xl md:rounded-3xl space-y-6 lg:sticky lg:top-6 shadow-sm hover:shadow-md dark:shadow-xl transition-all">
-          <div className="flex items-center justify-between pb-3 border-b border-white/10">
+        <div className="lg:col-span-5 bg-white dark:bg-vendeur-coal/90 border border-slate-200 dark:border-white/10 p-5 md:p-7 rounded-2xl md:rounded-3xl space-y-6 lg:sticky lg:top-6 shadow-sm hover:shadow-md dark:shadow-xl transition-all">
+          <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-white/10">
             <div className="flex items-center gap-2.5">
               <Globe size={20} className="text-vendeur-emerald" />
-              <h3 className="text-sm md:text-base font-black uppercase tracking-wider text-white">
+              <h3 className="text-sm md:text-base font-black uppercase tracking-wider text-slate-900 dark:text-white">
                 Passerelles de Paiement
               </h3>
             </div>
@@ -535,16 +595,16 @@ export function AdminPaymentsTab() {
 
           {/* Country Selector Dropdown */}
           <div className="space-y-2">
-            <label className="text-xs font-black uppercase tracking-widest text-white/60 ml-1">
+            <label className="text-xs font-black uppercase tracking-widest text-slate-600 dark:text-white/60 ml-1">
               Pays Cible de la Configuration
             </label>
             <select
               value={selectedCountryCode}
               onChange={(e) => setSelectedCountryCode(e.target.value)}
-              className="w-full h-12 bg-black/60 border border-white/15 rounded-xl px-4 text-sm text-white font-bold outline-none focus:border-vendeur-emerald cursor-pointer"
+              className="w-full h-12 bg-slate-50 dark:bg-black/60 border border-slate-200 dark:border-white/15 rounded-xl px-4 text-sm text-slate-900 dark:text-white font-bold outline-none focus:border-vendeur-emerald cursor-pointer"
             >
               {COUNTRIES.map((c) => (
-                <option key={c.code} value={c.code} className="bg-[#121212] text-white">
+                <option key={c.code} value={c.code} className="bg-white dark:bg-[#121212] text-slate-900 dark:text-white">
                   {c.name} ({c.currency})
                 </option>
               ))}
@@ -554,27 +614,27 @@ export function AdminPaymentsTab() {
           {paymentConfig && (
             <div className="space-y-6">
               <div className="space-y-2">
-                <label className="text-xs font-black uppercase tracking-widest text-white/60 ml-1">
+                <label className="text-xs font-black uppercase tracking-widest text-slate-600 dark:text-white/60 ml-1">
                   Nom du Bénéficiaire Officiel
                 </label>
                 <input
                   type="text"
                   value={paymentConfig.recipientName || ""}
                   onChange={(e) => setPaymentConfig({ ...paymentConfig, recipientName: e.target.value })}
-                  className="w-full h-12 bg-black/50 border border-white/15 rounded-xl px-4 text-sm text-white outline-none focus:border-vendeur-emerald font-bold"
+                  className="w-full h-12 bg-slate-50 dark:bg-black/50 border border-slate-200 dark:border-white/15 rounded-xl px-4 text-sm text-slate-900 dark:text-white outline-none focus:border-vendeur-emerald font-bold"
                   placeholder="Vendeur IA SAS"
                 />
               </div>
 
               {/* Dynamic Providers */}
               <div className="space-y-4">
-                <div className="text-xs md:text-sm font-black uppercase tracking-widest text-vendeur-emerald flex items-center justify-between border-b border-vendeur-emerald/20 pb-2">
+                <div className="text-xs md:text-sm font-black uppercase tracking-widest text-emerald-600 dark:text-vendeur-emerald flex items-center justify-between border-b border-emerald-500/20 dark:border-vendeur-emerald/20 pb-2">
                   <span>Numéros pour {activeCountryData.name}</span>
                 </div>
 
                 <div className="grid grid-cols-1 gap-4">
                   <div className="space-y-1.5">
-                    <label className="text-xs font-black uppercase tracking-widest text-[#1dc5d8] ml-1">Numéro Wave</label>
+                    <label className="text-xs font-black uppercase tracking-widest text-[#008ba3] dark:text-[#1dc5d8] ml-1">Numéro Wave</label>
                     <input
                       type="text"
                       value={activeRegionalConfig.waveNumber || (selectedCountryCode === "CI" ? paymentConfig.waveNumber : "") || ""}
@@ -585,13 +645,13 @@ export function AdminPaymentsTab() {
                           handleUpdateRegionalField("waveNumber", e.target.value);
                         }
                       }}
-                      className="w-full h-12 bg-black/50 border border-white/15 rounded-xl px-4 text-sm font-mono text-white outline-none focus:border-[#1dc5d8]"
+                      className="w-full h-12 bg-slate-50 dark:bg-black/50 border border-slate-200 dark:border-white/15 rounded-xl px-4 text-sm font-mono text-slate-900 dark:text-white outline-none focus:border-[#1dc5d8]"
                       placeholder="+225..."
                     />
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-xs font-black uppercase tracking-widest text-[#ff7900] ml-1">Numéro Orange Money</label>
+                    <label className="text-xs font-black uppercase tracking-widest text-[#d85800] dark:text-[#ff7900] ml-1">Numéro Orange Money</label>
                     <input
                       type="text"
                       value={activeRegionalConfig.orangeMoneyNumber || (selectedCountryCode === "CI" ? paymentConfig.orangeMoneyNumber : "") || ""}
@@ -602,13 +662,13 @@ export function AdminPaymentsTab() {
                           handleUpdateRegionalField("orangeMoneyNumber", e.target.value);
                         }
                       }}
-                      className="w-full h-12 bg-black/50 border border-white/15 rounded-xl px-4 text-sm font-mono text-white outline-none focus:border-[#ff7900]"
+                      className="w-full h-12 bg-slate-50 dark:bg-black/50 border border-slate-200 dark:border-white/15 rounded-xl px-4 text-sm font-mono text-slate-900 dark:text-white outline-none focus:border-[#ff7900]"
                       placeholder="+225..."
                     />
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-xs font-black uppercase tracking-widest text-[#ffcc00] ml-1">Numéro MTN MoMo</label>
+                    <label className="text-xs font-black uppercase tracking-widest text-[#cc9900] dark:text-[#ffcc00] ml-1">Numéro MTN MoMo</label>
                     <input
                       type="text"
                       value={activeRegionalConfig.mtnNumber || (selectedCountryCode === "CI" ? paymentConfig.mtnNumber : "") || ""}
@@ -619,33 +679,33 @@ export function AdminPaymentsTab() {
                           handleUpdateRegionalField("mtnNumber", e.target.value);
                         }
                       }}
-                      className="w-full h-12 bg-black/50 border border-white/15 rounded-xl px-4 text-sm font-mono text-white outline-none focus:border-[#ffcc00]"
+                      className="w-full h-12 bg-slate-50 dark:bg-black/50 border border-slate-200 dark:border-white/15 rounded-xl px-4 text-sm font-mono text-slate-900 dark:text-white outline-none focus:border-[#ffcc00]"
                       placeholder="+225..."
                     />
                   </div>
                 </div>
 
                 <div className="space-y-2 pt-2">
-                  <label className="text-xs font-black uppercase tracking-widest text-white/60 ml-1">
+                  <label className="text-xs font-black uppercase tracking-widest text-slate-600 dark:text-white/60 ml-1">
                     Instructions au Checkout
                   </label>
                   <textarea
                     rows={3}
                     value={activeRegionalConfig.instructions || ""}
                     onChange={(e) => handleUpdateRegionalField("instructions", e.target.value)}
-                    className="w-full bg-black/50 border border-white/15 rounded-xl p-4 text-sm text-white outline-none focus:border-vendeur-emerald resize-none font-medium"
+                    className="w-full bg-slate-50 dark:bg-black/50 border border-slate-200 dark:border-white/15 rounded-xl p-4 text-sm text-slate-900 dark:text-white outline-none focus:border-vendeur-emerald resize-none font-medium"
                     placeholder="Instructions spécifiques..."
                   />
                 </div>
               </div>
 
               {/* Auto-Approval Slider */}
-              <div className="p-5 rounded-2xl bg-black/50 border border-white/15 space-y-3">
-                <div className="flex items-center justify-between text-xs md:text-sm font-bold text-white uppercase">
-                  <span className="flex items-center gap-2 text-sky-400">
+              <div className="p-5 rounded-2xl bg-slate-50 dark:bg-black/50 border border-slate-200 dark:border-white/15 space-y-3">
+                <div className="flex items-center justify-between text-xs md:text-sm font-bold text-slate-900 dark:text-white uppercase">
+                  <span className="flex items-center gap-2 text-sky-600 dark:text-sky-400">
                     <Sliders size={16} /> Seuil d'Auto-Validation IA
                   </span>
-                  <span className="font-mono text-vendeur-emerald font-black text-base">
+                  <span className="font-mono text-emerald-600 dark:text-vendeur-emerald font-black text-base">
                     {paymentConfig.autoApproveConfidenceThreshold || 95}%
                   </span>
                 </div>
@@ -669,7 +729,7 @@ export function AdminPaymentsTab() {
                 type="button"
                 onClick={() => updateConfigMutation.mutate(paymentConfig)}
                 disabled={updateConfigMutation.isPending}
-                className="w-full h-14 bg-vendeur-emerald hover:bg-emerald-400 text-vendeur-coal font-black uppercase tracking-widest text-xs md:text-sm rounded-xl flex items-center justify-center gap-2 transition-all disabled:opacity-50 shadow-xl shadow-vendeur-emerald/20 cursor-pointer"
+                className="w-full h-14 bg-vendeur-emerald hover:bg-emerald-400 text-slate-950 font-black uppercase tracking-widest text-xs md:text-sm rounded-xl flex items-center justify-center gap-2 transition-all disabled:opacity-50 shadow-xl shadow-vendeur-emerald/20 cursor-pointer"
               >
                 {updateConfigMutation.isPending ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />}
                 <span>Enregistrer la Passerelle</span>
@@ -683,19 +743,19 @@ export function AdminPaymentsTab() {
       {/* --- MODAL 1: HD FORENSIC RECEIPT INSPECTION & AI DIAGNOSTIC MODAL --- */}
       {/* ========================================================================= */}
       {selectedIntent && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/85 backdrop-blur-md animate-in fade-in duration-200">
-          <div className="bg-[#0b100d] border border-white/15 rounded-3xl max-w-5xl w-full max-h-[92vh] overflow-hidden flex flex-col shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/60 dark:bg-black/85 backdrop-blur-md animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-[#0b100d] border border-slate-200 dark:border-white/15 rounded-3xl max-w-5xl w-full max-h-[92vh] overflow-hidden flex flex-col shadow-2xl text-slate-900 dark:text-white">
             {/* Modal Header */}
-            <div className="p-5 sm:p-6 border-b border-white/10 flex items-center justify-between bg-black/40">
+            <div className="p-5 sm:p-6 border-b border-slate-100 dark:border-white/10 flex items-center justify-between bg-slate-50 dark:bg-black/40">
               <div className="flex items-center gap-3">
-                <div className="h-11 w-11 rounded-2xl bg-vendeur-emerald/15 text-vendeur-emerald border border-vendeur-emerald/30 flex items-center justify-center">
+                <div className="h-11 w-11 rounded-2xl bg-emerald-500/15 text-emerald-600 dark:text-vendeur-emerald border border-emerald-500/30 flex items-center justify-center">
                   <ShieldCheck size={22} />
                 </div>
                 <div>
-                  <h3 className="text-base sm:text-lg font-black text-white uppercase tracking-tight">
+                  <h3 className="text-base sm:text-lg font-black text-slate-900 dark:text-white uppercase tracking-tight">
                     Inspection Médico-Légale du Reçu • {selectedIntent.reference}
                   </h3>
-                  <p className="text-xs sm:text-sm text-white/60 mt-0.5">
+                  <p className="text-xs sm:text-sm text-slate-500 dark:text-white/60 mt-0.5">
                     Formule {selectedIntent.planName} • {selectedIntent.amount?.toLocaleString()} {selectedIntent.currency} ({selectedIntent.billingInterval === "yearly" ? "Annuel" : "Mensuel"})
                   </p>
                 </div>
@@ -703,8 +763,8 @@ export function AdminPaymentsTab() {
 
               <button
                 type="button"
-                onClick={() => setSelectedIntent(null)}
-                className="h-10 w-10 rounded-xl bg-white/5 hover:bg-white/10 text-white/60 hover:text-white flex items-center justify-center transition-all cursor-pointer"
+                onClick={handleCloseModal}
+                className="h-10 w-10 rounded-xl bg-slate-200/60 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 text-slate-700 dark:text-white/60 hover:text-slate-900 dark:hover:text-white flex items-center justify-center transition-all cursor-pointer"
               >
                 <X size={20} />
               </button>
@@ -713,9 +773,9 @@ export function AdminPaymentsTab() {
             {/* Modal Body: Split Screen */}
             <div className="grid grid-cols-1 lg:grid-cols-12 flex-1 overflow-y-auto min-h-0">
               {/* Left: HD Screenshot Viewer (6 cols) */}
-              <div className="lg:col-span-6 bg-black p-5 flex flex-col items-center justify-between border-b lg:border-b-0 lg:border-r border-white/10 relative">
+              <div className="lg:col-span-6 bg-slate-100 dark:bg-black p-5 flex flex-col items-center justify-between border-b lg:border-b-0 lg:border-r border-slate-200 dark:border-white/10 relative">
                 {selectedIntent.proofImageUrl ? (
-                  <div className="flex-1 w-full flex items-center justify-center overflow-hidden min-h-[340px] max-h-[500px] relative rounded-2xl bg-[#050806] border border-white/5">
+                  <div className="flex-1 w-full flex items-center justify-center overflow-hidden min-h-[340px] max-h-[500px] relative rounded-2xl bg-white dark:bg-[#050806] border border-slate-200 dark:border-white/5 shadow-inner">
                     <img
                       src={selectedIntent.proofImageUrl}
                       alt="Capture de reçu de paiement"
@@ -726,7 +786,7 @@ export function AdminPaymentsTab() {
                     />
                   </div>
                 ) : (
-                  <div className="flex-1 w-full flex flex-col items-center justify-center text-white/40 text-sm p-8 text-center">
+                  <div className="flex-1 w-full flex flex-col items-center justify-center text-slate-400 dark:text-white/40 text-sm p-8 text-center">
                     <ImageIcon size={52} className="mb-3 opacity-40" />
                     <span>Aucune capture d'écran fournie par le commerçant.</span>
                   </div>
@@ -738,16 +798,16 @@ export function AdminPaymentsTab() {
                     <button
                       type="button"
                       onClick={() => setZoomLevel((z) => Math.max(0.75, z - 0.25))}
-                      className="p-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white transition-all cursor-pointer"
+                      className="p-2.5 rounded-xl bg-white dark:bg-white/10 hover:bg-slate-200 dark:hover:bg-white/20 text-slate-800 dark:text-white transition-all cursor-pointer border border-slate-200 dark:border-transparent shadow-sm"
                       title="Zoom Arrière"
                     >
                       <ZoomOut size={16} />
                     </button>
-                    <span className="font-mono text-sm text-white/80 px-2">{Math.round(zoomLevel * 100)}%</span>
+                    <span className="font-mono text-sm text-slate-700 dark:text-white/80 px-2 font-bold">{Math.round(zoomLevel * 100)}%</span>
                     <button
                       type="button"
                       onClick={() => setZoomLevel((z) => Math.min(3, z + 0.25))}
-                      className="p-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white transition-all cursor-pointer"
+                      className="p-2.5 rounded-xl bg-white dark:bg-white/10 hover:bg-slate-200 dark:hover:bg-white/20 text-slate-800 dark:text-white transition-all cursor-pointer border border-slate-200 dark:border-transparent shadow-sm"
                       title="Zoom Avant"
                     >
                       <ZoomIn size={16} />
@@ -755,7 +815,7 @@ export function AdminPaymentsTab() {
                     <button
                       type="button"
                       onClick={() => setRotationAngle((r) => (r + 90) % 360)}
-                      className="p-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white transition-all cursor-pointer ml-2"
+                      className="p-2.5 rounded-xl bg-white dark:bg-white/10 hover:bg-slate-200 dark:hover:bg-white/20 text-slate-800 dark:text-white transition-all cursor-pointer ml-2 border border-slate-200 dark:border-transparent shadow-sm"
                       title="Pivoter de 90°"
                     >
                       <RotateCw size={16} />
@@ -764,7 +824,7 @@ export function AdminPaymentsTab() {
                       href={selectedIntent.proofImageUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="p-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white transition-all cursor-pointer ml-2"
+                      className="p-2.5 rounded-xl bg-white dark:bg-white/10 hover:bg-slate-200 dark:hover:bg-white/20 text-slate-800 dark:text-white transition-all cursor-pointer ml-2 border border-slate-200 dark:border-transparent shadow-sm"
                       title="Ouvrir dans un nouvel onglet"
                     >
                       <ExternalLink size={16} />
@@ -774,25 +834,25 @@ export function AdminPaymentsTab() {
               </div>
 
               {/* Right: AI Vision & Forensic Audit Breakdown (6 cols) */}
-              <div className="lg:col-span-6 p-5 sm:p-7 space-y-6 overflow-y-auto bg-[#0b100d]">
+              <div className="lg:col-span-6 p-5 sm:p-7 space-y-6 overflow-y-auto bg-white dark:bg-[#0b100d]">
                 {/* Score & Platform Header */}
-                <div className="p-4 sm:p-5 rounded-2xl bg-black/40 border border-white/10 flex items-center justify-between">
+                <div className="p-4 sm:p-5 rounded-2xl bg-slate-50 dark:bg-black/40 border border-slate-200 dark:border-white/10 flex items-center justify-between">
                   <div className="space-y-1">
-                    <span className="text-xs font-black uppercase tracking-wider text-white/50">Score de Confiance IA</span>
+                    <span className="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-white/50">Score de Confiance IA</span>
                     <div className="flex items-center gap-2.5">
                       <span
                         className={cn(
                           "font-mono font-black text-3xl",
                           selectedIntent.confidenceScore >= 80
-                            ? "text-vendeur-emerald"
+                            ? "text-emerald-600 dark:text-vendeur-emerald"
                             : selectedIntent.confidenceScore >= 50
-                            ? "text-amber-400"
-                            : "text-rose-400"
+                            ? "text-amber-500 dark:text-amber-400"
+                            : "text-rose-500 dark:text-rose-400"
                         )}
                       >
                         {selectedIntent.confidenceScore || 0}%
                       </span>
-                      <span className="text-sm font-bold text-white/70">
+                      <span className="text-sm font-bold text-slate-700 dark:text-white/70">
                         {selectedIntent.confidenceScore >= 80
                           ? "Authenticité Élevée"
                           : selectedIntent.confidenceScore >= 50
@@ -802,36 +862,36 @@ export function AdminPaymentsTab() {
                     </div>
                   </div>
 
-                  <span className="px-3.5 py-1.5 rounded-xl bg-sky-500/15 text-sky-400 border border-sky-500/30 text-xs md:text-sm font-black uppercase">
+                  <span className="px-3.5 py-1.5 rounded-xl bg-sky-500/15 text-sky-700 dark:text-sky-400 border border-sky-500/30 text-xs md:text-sm font-black uppercase">
                     {selectedIntent.paymentMethod || "Mobile Money"}
                   </span>
                 </div>
 
                 {/* Side-by-Side Comparison */}
                 <div className="space-y-2.5">
-                  <span className="text-xs font-black uppercase tracking-widest text-white/50">
+                  <span className="text-xs font-black uppercase tracking-widest text-slate-500 dark:text-white/50">
                     Comparaison : Déclaré vs Extrait par IA Vision
                   </span>
 
                   <div className="grid grid-cols-2 gap-3 text-xs md:text-sm">
                     {/* Declared */}
-                    <div className="p-4 rounded-xl bg-white/5 border border-white/10 space-y-2">
-                      <div className="text-xs font-black uppercase text-white/60">Déclaré par Marchand</div>
+                    <div className="p-4 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 space-y-2">
+                      <div className="text-xs font-black uppercase text-slate-600 dark:text-white/60">Déclaré par Marchand</div>
                       <div>
-                        <span className="text-white/40 block text-xs">Montant :</span>
-                        <span className="font-mono font-bold text-white text-sm">
+                        <span className="text-slate-400 dark:text-white/40 block text-xs">Montant :</span>
+                        <span className="font-mono font-bold text-slate-900 dark:text-white text-sm">
                           {selectedIntent.amount?.toLocaleString()} {selectedIntent.currency}
                         </span>
                       </div>
                       <div>
-                        <span className="text-white/40 block text-xs">ID Transaction :</span>
-                        <span className="font-mono font-bold text-white truncate block text-sm">
+                        <span className="text-slate-400 dark:text-white/40 block text-xs">ID Transaction :</span>
+                        <span className="font-mono font-bold text-slate-900 dark:text-white truncate block text-sm">
                           {selectedIntent.transactionId || "Non fourni"}
                         </span>
                       </div>
                       <div>
-                        <span className="text-white/40 block text-xs">Expéditeur :</span>
-                        <span className="font-mono font-bold text-white truncate block text-sm">
+                        <span className="text-slate-400 dark:text-white/40 block text-xs">Expéditeur :</span>
+                        <span className="font-mono font-bold text-slate-900 dark:text-white truncate block text-sm">
                           {selectedIntent.senderPhoneNumber || "Non fourni"}
                         </span>
                       </div>
@@ -839,24 +899,24 @@ export function AdminPaymentsTab() {
 
                     {/* Extracted */}
                     <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 space-y-2">
-                      <div className="text-xs font-black uppercase text-emerald-400 flex items-center gap-1.5">
+                      <div className="text-xs font-black uppercase text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5">
                         <Sparkles size={13} /> Extrait par IA Vision
                       </div>
                       <div>
-                        <span className="text-white/40 block text-xs">Montant Détecté :</span>
-                        <span className="font-mono font-bold text-emerald-300 text-sm">
+                        <span className="text-slate-400 dark:text-white/40 block text-xs">Montant Détecté :</span>
+                        <span className="font-mono font-bold text-emerald-700 dark:text-emerald-300 text-sm">
                           {selectedIntent.amount?.toLocaleString()} {selectedIntent.currency}
                         </span>
                       </div>
                       <div>
-                        <span className="text-white/40 block text-xs">ID Détecté :</span>
-                        <span className="font-mono font-bold text-white truncate block text-sm">
+                        <span className="text-slate-400 dark:text-white/40 block text-xs">ID Détecté :</span>
+                        <span className="font-mono font-bold text-slate-900 dark:text-white truncate block text-sm">
                           {selectedIntent.transactionId || "N/A"}
                         </span>
                       </div>
                       <div>
-                        <span className="text-white/40 block text-xs">Expéditeur OCR :</span>
-                        <span className="font-mono font-bold text-white truncate block text-sm">
+                        <span className="text-slate-400 dark:text-white/40 block text-xs">Expéditeur OCR :</span>
+                        <span className="font-mono font-bold text-slate-900 dark:text-white truncate block text-sm">
                           {selectedIntent.senderPhoneNumber || "N/A"}
                         </span>
                       </div>
@@ -866,47 +926,47 @@ export function AdminPaymentsTab() {
 
                 {/* Forensic Anti-Fraud Flags */}
                 <div className="space-y-2.5">
-                  <span className="text-xs font-black uppercase tracking-widest text-white/50">
+                  <span className="text-xs font-black uppercase tracking-widest text-slate-500 dark:text-white/50">
                     Contrôles Médico-Légaux & Sécurité
                   </span>
 
                   <div className="grid grid-cols-2 gap-2.5 text-xs md:text-sm">
-                    <div className="p-3 rounded-xl bg-black/40 border border-white/5 flex items-center justify-between">
-                      <span className="text-white/70">Retouche Photoshop :</span>
+                    <div className="p-3 rounded-xl bg-slate-50 dark:bg-black/40 border border-slate-200 dark:border-white/5 flex items-center justify-between">
+                      <span className="text-slate-600 dark:text-white/70">Retouche Photoshop :</span>
                       {selectedIntent.forensics?.isPhotoshopTampered ? (
-                        <span className="text-rose-400 font-bold">⚠️ Détectée</span>
+                        <span className="text-rose-500 dark:text-rose-400 font-bold">⚠️ Détectée</span>
                       ) : (
-                        <span className="text-vendeur-emerald font-bold">✓ Intègre</span>
+                        <span className="text-emerald-600 dark:text-vendeur-emerald font-bold">✓ Intègre</span>
                       )}
                     </div>
 
-                    <div className="p-3 rounded-xl bg-black/40 border border-white/5 flex items-center justify-between">
-                      <span className="text-white/70">Génération IA :</span>
+                    <div className="p-3 rounded-xl bg-slate-50 dark:bg-black/40 border border-slate-200 dark:border-white/5 flex items-center justify-between">
+                      <span className="text-slate-600 dark:text-white/70">Génération IA :</span>
                       {selectedIntent.forensics?.isAiGenerated ? (
-                        <span className="text-rose-400 font-bold">⚠️ Synthétique</span>
+                        <span className="text-rose-500 dark:text-rose-400 font-bold">⚠️ Synthétique</span>
                       ) : (
-                        <span className="text-vendeur-emerald font-bold">✓ Authentique</span>
+                        <span className="text-emerald-600 dark:text-vendeur-emerald font-bold">✓ Authentique</span>
                       )}
                     </div>
 
-                    <div className="p-3 rounded-xl bg-black/40 border border-white/5 flex items-center justify-between">
-                      <span className="text-white/70">Typographie :</span>
+                    <div className="p-3 rounded-xl bg-slate-50 dark:bg-black/40 border border-slate-200 dark:border-white/5 flex items-center justify-between">
+                      <span className="text-slate-600 dark:text-white/70">Typographie :</span>
                       {selectedIntent.forensics?.fontMismatchDetected ? (
-                        <span className="text-amber-400 font-bold">⚠️ Altérée</span>
+                        <span className="text-amber-500 dark:text-amber-400 font-bold">⚠️ Altérée</span>
                       ) : (
-                        <span className="text-vendeur-emerald font-bold">✓ Conforme</span>
+                        <span className="text-emerald-600 dark:text-vendeur-emerald font-bold">✓ Conforme</span>
                       )}
                     </div>
 
-                    <div className="p-3 rounded-xl bg-black/40 border border-white/5 flex items-center justify-between">
-                      <span className="text-white/70">Anti-Rejeu (Hash) :</span>
-                      <span className="text-vendeur-emerald font-bold">✓ Unique</span>
+                    <div className="p-3 rounded-xl bg-slate-50 dark:bg-black/40 border border-slate-200 dark:border-white/5 flex items-center justify-between">
+                      <span className="text-slate-600 dark:text-white/70">Anti-Rejeu (Hash) :</span>
+                      <span className="text-emerald-600 dark:text-vendeur-emerald font-bold">✓ Unique</span>
                     </div>
                   </div>
 
                   {selectedIntent.forensics?.analysisSummary && (
-                    <div className="p-3.5 rounded-xl bg-white/5 border border-white/10 text-xs md:text-sm text-white/80 leading-relaxed">
-                      <span className="font-bold text-white">Diagnostic IA : </span>
+                    <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-xs md:text-sm text-slate-700 dark:text-white/80 leading-relaxed">
+                      <span className="font-bold text-slate-900 dark:text-white">Diagnostic IA : </span>
                       {selectedIntent.forensics.analysisSummary}
                     </div>
                   )}
@@ -922,7 +982,7 @@ export function AdminPaymentsTab() {
                       )}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="w-full h-12 rounded-xl bg-[#25D366]/15 hover:bg-[#25D366]/25 text-[#25D366] border border-[#25D366]/30 text-xs md:text-sm font-black uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer"
+                      className="w-full h-12 rounded-xl bg-[#25D366]/15 hover:bg-[#25D366]/25 text-[#1b9a4b] dark:text-[#25D366] border border-[#25D366]/30 text-xs md:text-sm font-black uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer shadow-sm"
                     >
                       <MessageSquare size={18} />
                       <span>Contacter le Marchand sur WhatsApp</span>
@@ -941,7 +1001,7 @@ export function AdminPaymentsTab() {
                         })
                       }
                       disabled={decisionMutation.isPending}
-                      className="h-12 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 text-xs md:text-sm font-black uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                      className="h-12 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-700 dark:text-amber-300 text-xs md:text-sm font-black uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1.5 border border-amber-500/20"
                     >
                       <Camera size={16} />
                       <span>Demander Photo</span>
@@ -951,7 +1011,7 @@ export function AdminPaymentsTab() {
                       type="button"
                       onClick={() => setIsRejectModalOpen(true)}
                       disabled={decisionMutation.isPending}
-                      className="h-12 rounded-xl bg-rose-500/15 hover:bg-rose-500/25 text-rose-300 text-xs md:text-sm font-black uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                      className="h-12 rounded-xl bg-rose-500/15 hover:bg-rose-500/25 text-rose-700 dark:text-rose-300 text-xs md:text-sm font-black uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1.5 border border-rose-500/20"
                     >
                       <XCircle size={16} />
                       <span>Rejeter</span>
@@ -961,7 +1021,7 @@ export function AdminPaymentsTab() {
                       type="button"
                       onClick={() => decisionMutation.mutate({ id: selectedIntent._id, action: "approve" })}
                       disabled={decisionMutation.isPending}
-                      className="h-12 rounded-xl bg-vendeur-emerald hover:bg-emerald-400 text-vendeur-coal text-xs md:text-sm font-black uppercase tracking-wider transition-all active:scale-98 cursor-pointer flex items-center justify-center gap-1.5 shadow-lg shadow-vendeur-emerald/20"
+                      className="h-12 rounded-xl bg-vendeur-emerald hover:bg-emerald-400 text-slate-950 text-xs md:text-sm font-black uppercase tracking-wider transition-all active:scale-98 cursor-pointer flex items-center justify-center gap-1.5 shadow-lg shadow-vendeur-emerald/20"
                     >
                       {decisionMutation.isPending ? (
                         <Loader2 className="animate-spin" size={16} />
@@ -982,26 +1042,26 @@ export function AdminPaymentsTab() {
       {/* --- MODAL 2: STRUCTURED REJECTION WITH REASON SELECTOR --- */}
       {/* ========================================================================= */}
       {isRejectModalOpen && selectedIntent && (
-        <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in duration-200">
-          <div className="bg-[#0e1411] border border-rose-500/30 rounded-3xl max-w-md w-full p-6 sm:p-7 space-y-5 shadow-2xl">
-            <div className="flex items-center justify-between pb-3 border-b border-white/10">
-              <div className="flex items-center gap-2.5 text-rose-400">
+        <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-black/60 dark:bg-black/85 backdrop-blur-md animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-[#0e1411] border border-rose-300 dark:border-rose-500/30 rounded-3xl max-w-md w-full p-6 sm:p-7 space-y-5 shadow-2xl text-slate-900 dark:text-white">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-white/10">
+              <div className="flex items-center gap-2.5 text-rose-500 dark:text-rose-400">
                 <AlertCircle size={22} />
-                <h3 className="text-sm md:text-base font-black uppercase tracking-tight text-white">
+                <h3 className="text-sm md:text-base font-black uppercase tracking-tight text-slate-900 dark:text-white">
                   Rejeter le Paiement • {selectedIntent.reference}
                 </h3>
               </div>
               <button
                 type="button"
                 onClick={() => setIsRejectModalOpen(false)}
-                className="text-white/50 hover:text-white transition-colors cursor-pointer"
+                className="text-slate-400 hover:text-slate-700 dark:text-white/50 dark:hover:text-white transition-colors cursor-pointer"
               >
                 <X size={20} />
               </button>
             </div>
 
             <div className="space-y-3">
-              <label className="text-xs font-black uppercase tracking-widest text-white/50">
+              <label className="text-xs font-black uppercase tracking-widest text-slate-500 dark:text-white/50">
                 Sélectionner le Motif du Rejet
               </label>
               <div className="space-y-2">
@@ -1013,18 +1073,18 @@ export function AdminPaymentsTab() {
                     className={cn(
                       "w-full text-left p-3.5 rounded-xl text-xs md:text-sm font-bold transition-all flex items-center justify-between cursor-pointer",
                       selectedRejectReasonCode === r.code
-                        ? "bg-rose-500/20 border border-rose-500/50 text-white shadow-md"
-                        : "bg-black/50 border border-white/10 text-white/70 hover:text-white"
+                        ? "bg-rose-500/20 border border-rose-500/50 text-rose-700 dark:text-white shadow-md font-black"
+                        : "bg-slate-50 dark:bg-black/50 border border-slate-200 dark:border-white/10 text-slate-700 dark:text-white/70 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5"
                     )}
                   >
                     <span>{r.label}</span>
-                    {selectedRejectReasonCode === r.code && <Check size={16} className="text-rose-400 shrink-0" />}
+                    {selectedRejectReasonCode === r.code && <Check size={16} className="text-rose-500 dark:text-rose-400 shrink-0" />}
                   </button>
                 ))}
               </div>
 
               <div className="space-y-1.5 pt-2">
-                <label className="text-xs font-black uppercase tracking-widest text-white/50">
+                <label className="text-xs font-black uppercase tracking-widest text-slate-500 dark:text-white/50">
                   Commentaire pour le Marchand (Optionnel)
                 </label>
                 <textarea
@@ -1032,7 +1092,7 @@ export function AdminPaymentsTab() {
                   value={rejectNotes}
                   onChange={(e) => setRejectNotes(e.target.value)}
                   placeholder="Ex: Merci de renvoyer le complément ou la capture du SMS..."
-                  className="w-full bg-black/50 border border-white/15 rounded-xl p-3.5 text-xs md:text-sm text-white outline-none focus:border-rose-400 resize-none"
+                  className="w-full bg-slate-50 dark:bg-black/50 border border-slate-200 dark:border-white/15 rounded-xl p-3.5 text-xs md:text-sm text-slate-900 dark:text-white outline-none focus:border-rose-400 resize-none placeholder:text-slate-400 dark:placeholder:text-white/40"
                 />
               </div>
             </div>
@@ -1041,7 +1101,7 @@ export function AdminPaymentsTab() {
               <button
                 type="button"
                 onClick={() => setIsRejectModalOpen(false)}
-                className="w-1/2 h-12 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs md:text-sm font-black uppercase tracking-wider transition-all cursor-pointer"
+                className="w-1/2 h-12 rounded-xl bg-slate-100 dark:bg-white/10 hover:bg-slate-200 dark:hover:bg-white/20 text-slate-700 dark:text-white text-xs md:text-sm font-black uppercase tracking-wider transition-all cursor-pointer border border-slate-200 dark:border-transparent"
               >
                 Annuler
               </button>

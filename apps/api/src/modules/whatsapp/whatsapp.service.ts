@@ -179,16 +179,38 @@ class WhatsAppService {
   }
 
   private async handleConnectionClose(userId: string, lastDisconnect: any) {
-    const statusCode = (lastDisconnect?.error as Boom)?.output?.statusCode;
-    const errMessage = (lastDisconnect?.error as Error)?.message || "";
+    const rawError = lastDisconnect?.error;
+    const statusCode = Number(
+      (rawError as Boom)?.output?.statusCode ??
+      (rawError as any)?.statusCode ??
+      (rawError as any)?.output?.statusCode ??
+      (rawError as any)?.code ??
+      (rawError as any)?.status ??
+      (rawError as any)?.data?.status
+    ) || 0;
+    const errMessage = (rawError as Error)?.message || String(rawError || "");
 
     console.log(`[WhatsApp Connection Close] User: ${userId}, StatusCode: ${statusCode}, Error: ${errMessage}`);
 
-    // Codes that indicate an absolute unlinking / logged out / auth failure / banned / rejected
-    const isLoggedOut = statusCode === DisconnectReason.loggedOut;
-    const isBadSession = statusCode === DisconnectReason.badSession;
-    const isReplaced = statusCode === DisconnectReason.connectionReplaced || statusCode === 440;
-    const isAuthFailure = statusCode === 401 || statusCode === 403 || errMessage.includes("Connection Failure");
+    // Codes and messages that indicate an absolute unlinking / logged out / auth failure / banned / rejected / replaced
+    const isLoggedOut = statusCode === DisconnectReason.loggedOut 
+      || statusCode === 401 
+      || /logged\s*out/i.test(errMessage) 
+      || /device\s*unlinked/i.test(errMessage)
+      || /device\s*removed/i.test(errMessage);
+
+    const isBadSession = statusCode === DisconnectReason.badSession 
+      || statusCode === 500 
+      || /bad\s*session/i.test(errMessage);
+
+    const isReplaced = statusCode === DisconnectReason.connectionReplaced 
+      || statusCode === 440 
+      || /replaced|conflict/i.test(errMessage);
+
+    const isAuthFailure = statusCode === 401 
+      || statusCode === 403 
+      || statusCode === DisconnectReason.forbidden 
+      || /connection failure|unauthorized|forbidden/i.test(errMessage);
 
     // Clean in-memory session maps
     this.activeSessions.delete(userId);
@@ -196,14 +218,8 @@ class WhatsAppService {
     this.lastPairingCodeMap.delete(userId);
     this.lastQrMap.delete(userId);
 
-    if (isReplaced) {
-      console.warn(`[WhatsApp Security] Session remplacée ou connectée sur une autre instance pour ${userId} (Code ${statusCode}). Arrêt des reconnexions locales pour éviter tout conflit de flux.`);
-      this.reconnectAttempts.delete(userId);
-      return;
-    }
-
-    if (isLoggedOut || isBadSession || isAuthFailure) {
-      console.warn(`[WhatsApp Security] Session fermée ou rejetée par WhatsApp pour ${userId} (Code ${statusCode}, Error: ${errMessage}). Arrêt immédiat des reconnexions anti-ban.`);
+    if (isLoggedOut || isBadSession || isAuthFailure || isReplaced) {
+      console.warn(`[WhatsApp Security] Session fermée ou rejetée par WhatsApp pour ${userId} (Code ${statusCode}, Error: ${errMessage}). Arrêt immédiat des reconnexions.`);
       this.reconnectAttempts.delete(userId);
 
       // Clear invalid MongoDB session state to prevent retry loops on reboot
@@ -228,6 +244,8 @@ class WhatsAppService {
             disconnectedAt: new Date(),
             lastError: isLoggedOut 
               ? "Session déconnectée depuis le téléphone" 
+              : isReplaced
+              ? "Session remplacée sur un autre appareil"
               : isAuthFailure 
               ? "Session refusée par WhatsApp (Appareil dissocié ou expiré)" 
               : "Session expirée ou invalide"
@@ -237,10 +255,12 @@ class WhatsAppService {
       );
 
       const payload = {
-        reason: isLoggedOut ? "logged_out" : isAuthFailure ? "auth_rejected" : "bad_session",
+        reason: isLoggedOut ? "logged_out" : isReplaced ? "replaced" : isAuthFailure ? "auth_rejected" : "bad_session",
         statusCode,
         message: isLoggedOut 
           ? "Votre session WhatsApp a été déconnectée depuis votre téléphone." 
+          : isReplaced
+          ? "Session WhatsApp remplacée ou connectée sur un autre appareil."
           : isAuthFailure
           ? "La session WhatsApp a expiré ou été dissociée. Veuillez reconnecter votre appareil."
           : "Session WhatsApp expirée.",
@@ -850,35 +870,12 @@ class WhatsAppService {
 
         // If session was already established and migrated to a real userId, delegate to handleConnectionClose
         if (currentOwnerId !== authSessionId) {
-          const isExplicitLogout = statusCode === DisconnectReason.loggedOut || statusCode === 401 || statusCode === 403;
-          const isBadSession = statusCode === DisconnectReason.badSession || (statusCode === 500 && errMessage.includes("Bad Session"));
-
-          if (isExplicitLogout || isBadSession) {
-            console.log(`[WhatsApp Onboarding] Explicit logout / restricted session for ${currentOwnerId} (Code ${statusCode}, Error: ${errMessage}). Cleaning session.`);
-            this.activeSessions.delete(currentOwnerId);
-            this.activeSessions.delete(authSessionId);
-            this.pendingInitializations.delete(authSessionId);
-            this.onboardingAttempts.delete(authSessionId);
-            this.lastPairingCodeMap.delete(authSessionId);
-            this.lastQrMap.delete(authSessionId);
-
-            await clearMongoAuthState(authSessionId);
-            if (currentOwnerId !== authSessionId) {
-              await clearMongoAuthState(currentOwnerId);
-            }
-
-            const errorPayload = {
-              status: "error",
-              code: statusCode,
-              error: isExplicitLogout
-                ? "Numéro déconnecté ou temporairement restreint par WhatsApp."
-                : "Session WhatsApp expirée ou invalide."
-            };
-            emitToSession(authSessionId, "whatsapp:pairing_error", errorPayload);
-            emitToAuth(cleanNumber, "whatsapp:pairing_error", errorPayload);
-            return;
-          }
-
+          this.activeSessions.delete(authSessionId);
+          this.pendingInitializations.delete(authSessionId);
+          this.onboardingAttempts.delete(authSessionId);
+          this.lastPairingCodeMap.delete(authSessionId);
+          this.lastQrMap.delete(authSessionId);
+          await clearMongoAuthState(authSessionId).catch(() => {});
           await this.handleConnectionClose(currentOwnerId, lastDisconnect);
           return;
         }

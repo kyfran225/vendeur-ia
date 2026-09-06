@@ -121,14 +121,34 @@ export function useGlobalNotifications() {
       });
     };
 
+    const handleWhatsAppDisconnect = (data: any) => {
+      // Don't show redundant popup toast if already on settings page
+      if (location.pathname.includes("/settings") || location.pathname.includes("/connexions")) {
+        return;
+      }
+
+      toast.error("⚠️ Ligne WhatsApp déconnectée", {
+        description: data?.message || "Votre session WhatsApp a été fermée depuis votre téléphone. Reconnectez-vous pour maintenir vos ventes automatiques.",
+        duration: 9000,
+        action: {
+          label: "⚡ Reconnecter",
+          onClick: () => {
+            navigate("/settings?tab=connexions");
+          }
+        }
+      });
+    };
+
     socket.on("notification:new", handleNewNotification);
     socket.on("admin:payment_incoming", handleIncomingAdminPayment);
     socket.on("payment:pending_review", handleIncomingAdminPayment);
+    socket.on("whatsapp:disconnected", handleWhatsAppDisconnect);
 
     return () => {
       socket.off("notification:new", handleNewNotification);
       socket.off("admin:payment_incoming", handleIncomingAdminPayment);
       socket.off("payment:pending_review", handleIncomingAdminPayment);
+      socket.off("whatsapp:disconnected", handleWhatsAppDisconnect);
     };
   }, [socket, navigate, location.pathname, location.search]);
 }

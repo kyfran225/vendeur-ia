@@ -50,6 +50,23 @@ export function ShellHeader({ isVisible = true }: ShellHeaderProps) {
     if (!socket) return;
 
     const handleDisconnect = () => {
+      queryClient.setQueryData(["dashboard"], (old: any) => {
+        if (!old) return old;
+        return {
+          ...old,
+          merchant: old.merchant ? {
+            ...old.merchant,
+            whatsappConfig: {
+              ...old.merchant.whatsappConfig,
+              status: "disconnected"
+            }
+          } : old.merchant,
+          whatsappConnection: old.whatsappConnection ? {
+            ...old.whatsappConnection,
+            status: "DISCONNECTED"
+          } : old.whatsappConnection
+        };
+      });
       queryClient.invalidateQueries({ queryKey: ["dashboard"] });
     };
 

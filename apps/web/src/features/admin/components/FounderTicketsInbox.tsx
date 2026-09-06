@@ -163,68 +163,68 @@ export function FounderTicketsInbox() {
   };
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-300">
+    <div className="space-y-6 animate-in fade-in duration-300 text-slate-900 dark:text-white">
       
       {/* 1. Header & Quick KPIs - Flattened */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
         
-        <div className="p-4 rounded-2xl bg-vendeur-coal/80 border border-white/10 space-y-1 shadow-sm hover:shadow-md dark:shadow-xl transition-all">
+        <div className="p-4 rounded-2xl bg-white dark:bg-vendeur-coal/80 border border-slate-200 dark:border-white/10 space-y-1 shadow-sm hover:shadow-md dark:shadow-xl transition-all">
           <div className="flex items-center justify-between">
-            <span className="text-[9px] font-black uppercase tracking-wider text-white/40">Registry</span>
-            <MessageSquare size={14} className="text-white/30" />
+            <span className="text-[9px] font-black uppercase tracking-wider text-slate-500 dark:text-white/40">Registry</span>
+            <MessageSquare size={14} className="text-slate-400 dark:text-white/30" />
           </div>
-          <p className="text-xl font-black text-white">{totalCount}</p>
+          <p className="text-xl font-black text-slate-900 dark:text-white">{totalCount}</p>
         </div>
 
-        <div className="p-4 rounded-2xl bg-emerald-500/[0.06] border border-emerald-500/30 space-y-1 shadow-sm hover:shadow-md dark:shadow-xl transition-all">
+        <div className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-500/[0.06] border border-emerald-300 dark:border-emerald-500/30 space-y-1 shadow-sm hover:shadow-md dark:shadow-xl transition-all">
           <div className="flex items-center justify-between">
-            <span className="text-[9px] font-black uppercase tracking-wider text-emerald-400">Unread</span>
+            <span className="text-[9px] font-black uppercase tracking-wider text-emerald-700 dark:text-emerald-400">Unread</span>
           </div>
-          <p className="text-xl font-black text-emerald-400">{unreadCount}</p>
+          <p className="text-xl font-black text-emerald-700 dark:text-emerald-400">{unreadCount}</p>
         </div>
 
-        <div className="p-4 rounded-2xl bg-amber-500/[0.06] border border-amber-500/30 space-y-1 shadow-sm hover:shadow-md dark:shadow-xl transition-all">
+        <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-500/[0.06] border border-amber-300 dark:border-amber-500/30 space-y-1 shadow-sm hover:shadow-md dark:shadow-xl transition-all">
           <div className="flex items-center justify-between">
-            <span className="text-[9px] font-black uppercase tracking-wider text-amber-400">Ops</span>
-            <Clock size={14} className="text-amber-400" />
+            <span className="text-[9px] font-black uppercase tracking-wider text-amber-700 dark:text-amber-400">Ops</span>
+            <Clock size={14} className="text-amber-600 dark:text-amber-400" />
           </div>
-          <p className="text-xl font-black text-amber-400">{inProgressCount}</p>
+          <p className="text-xl font-black text-amber-700 dark:text-amber-400">{inProgressCount}</p>
         </div>
 
-        <div className="p-4 rounded-2xl bg-blue-500/[0.06] border border-blue-500/30 space-y-1 shadow-sm hover:shadow-md dark:shadow-xl transition-all">
+        <div className="p-4 rounded-2xl bg-blue-50 dark:bg-blue-500/[0.06] border border-blue-300 dark:border-blue-500/30 space-y-1 shadow-sm hover:shadow-md dark:shadow-xl transition-all">
           <div className="flex items-center justify-between">
-            <span className="text-[9px] font-black uppercase tracking-wider text-blue-400">Solved</span>
+            <span className="text-[9px] font-black uppercase tracking-wider text-blue-700 dark:text-blue-400">Solved</span>
           </div>
-          <p className="text-xl font-black text-blue-400">{resolvedCount}</p>
+          <p className="text-xl font-black text-blue-700 dark:text-blue-400">{resolvedCount}</p>
         </div>
 
-        <div className="p-4 rounded-2xl bg-rose-500/[0.06] border border-rose-500/30 space-y-1 shadow-sm hover:shadow-md dark:shadow-xl transition-all">
+        <div className="p-4 rounded-2xl bg-rose-50 dark:bg-rose-500/[0.06] border border-rose-300 dark:border-rose-500/30 space-y-1 shadow-sm hover:shadow-md dark:shadow-xl transition-all">
           <div className="flex items-center justify-between">
-            <span className="text-[9px] font-black uppercase tracking-wider text-rose-400">Urgent</span>
-            <AlertTriangle size={14} className="text-rose-400" />
+            <span className="text-[9px] font-black uppercase tracking-wider text-rose-700 dark:text-rose-400">Urgent</span>
+            <AlertTriangle size={14} className="text-rose-600 dark:text-rose-400" />
           </div>
-          <p className="text-xl font-black text-rose-400">{urgentCount}</p>
+          <p className="text-xl font-black text-rose-700 dark:text-rose-400">{urgentCount}</p>
         </div>
 
       </div>
 
       {/* 2. Filters & Search Bar - Flattened */}
-      <div className="p-3 md:p-4 rounded-2xl bg-vendeur-coal/80 border border-white/10 space-y-4 shadow-sm hover:shadow-md dark:shadow-xl transition-all">
+      <div className="p-3 md:p-4 rounded-2xl bg-white dark:bg-vendeur-coal/80 border border-slate-200 dark:border-white/10 space-y-4 shadow-sm hover:shadow-md dark:shadow-xl transition-all">
         <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3 justify-between">
           <div className="relative flex-1">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/30" size={16} />
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-white/30" size={16} />
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search Subject, Merchant, Phone..."
-              className="w-full h-11 bg-black/30 border border-white/10 rounded-xl pl-10 pr-4 text-xs text-white focus:border-emerald-500/50 outline-none"
+              className="w-full h-11 bg-slate-50 dark:bg-black/30 border border-slate-200 dark:border-white/10 rounded-xl pl-10 pr-4 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-white/40 focus:border-emerald-500 outline-none"
             />
           </div>
 
           <button
             onClick={() => refetch()}
-            className="h-11 px-4 rounded-xl bg-white/5 text-white/70 text-xs font-black uppercase tracking-widest flex items-center justify-center gap-2 border border-white/10 hover:bg-white/10 transition-all cursor-pointer"
+            className="h-11 px-4 rounded-xl bg-slate-100 dark:bg-white/5 text-slate-700 dark:text-white/70 text-xs font-black uppercase tracking-widest flex items-center justify-center gap-2 border border-slate-200 dark:border-white/10 hover:bg-slate-200 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white transition-all cursor-pointer"
           >
             <RefreshCw size={14} className={isLoading ? "animate-spin" : ""} />
             <span className="hidden md:inline">Sync Pulse</span>
@@ -233,14 +233,14 @@ export function FounderTicketsInbox() {
 
         {/* Filter Badges & Selectors */}
         <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-1 bg-black/40 p-1 rounded-xl border border-white/5 overflow-x-auto no-scrollbar">
+          <div className="flex items-center gap-1 bg-slate-100 dark:bg-black/40 p-1 rounded-xl border border-slate-200 dark:border-white/5 overflow-x-auto no-scrollbar">
             {[{ id: "all", label: "All" }, { id: "unread", label: "Unread" }, { id: "in_progress", label: "Ops" }, { id: "resolved", label: "Solved" }].map(s => (
               <button
                 key={s.id}
                 onClick={() => setStatusFilter(s.id)}
                 className={cn(
                   "px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all cursor-pointer",
-                  statusFilter === s.id ? "bg-emerald-500 text-black font-black" : "text-white/40 hover:text-white"
+                  statusFilter === s.id ? "bg-emerald-500 text-slate-950 font-black shadow-sm" : "text-slate-600 dark:text-white/40 hover:text-slate-900 dark:hover:text-white"
                 )}
               >
                 {s.label}
@@ -251,12 +251,12 @@ export function FounderTicketsInbox() {
           <select
             value={categoryFilter}
             onChange={(e) => setCategoryFilter(e.target.value)}
-            className="h-9 bg-black/40 border border-white/10 rounded-xl px-3 text-[10px] font-black uppercase text-white outline-none focus:border-emerald-500 cursor-pointer"
+            className="h-9 bg-slate-50 dark:bg-black/40 border border-slate-200 dark:border-white/10 rounded-xl px-3 text-[10px] font-black uppercase text-slate-900 dark:text-white outline-none focus:border-emerald-500 cursor-pointer"
           >
-            <option value="all">Category: All</option>
-            <option value="founder_message">Founder Direct</option>
-            <option value="bug">Bug Protocol</option>
-            <option value="suggestion">Insight</option>
+            <option value="all" className="bg-white dark:bg-[#121212] text-slate-900 dark:text-white">Category: All</option>
+            <option value="founder_message" className="bg-white dark:bg-[#121212] text-slate-900 dark:text-white">Founder Direct</option>
+            <option value="bug" className="bg-white dark:bg-[#121212] text-slate-900 dark:text-white">Bug Protocol</option>
+            <option value="suggestion" className="bg-white dark:bg-[#121212] text-slate-900 dark:text-white">Insight</option>
           </select>
         </div>
       </div>
@@ -267,8 +267,8 @@ export function FounderTicketsInbox() {
           <VendeurIALoader size="md" label="Chargement des messages & tickets..." />
         </div>
       ) : filteredTickets.length === 0 ? (
-        <div className="p-12 text-center rounded-2xl md:rounded-3xl bg-vendeur-coal/80 border border-white/10 space-y-2 shadow-sm hover:shadow-md dark:shadow-xl transition-all">
-          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40">No active signals detected</p>
+        <div className="p-12 text-center rounded-2xl md:rounded-3xl bg-white dark:bg-vendeur-coal/80 border border-slate-200 dark:border-white/10 space-y-2 shadow-sm hover:shadow-md dark:shadow-xl transition-all">
+          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 dark:text-white/40">No active signals detected</p>
         </div>
       ) : (
         <div className="space-y-4">
@@ -285,13 +285,13 @@ export function FounderTicketsInbox() {
                 key={ticket._id}
                 className={cn(
                   "p-4 md:p-6 rounded-2xl md:rounded-3xl border transition-all space-y-4 shadow-sm hover:shadow-md dark:shadow-xl",
-                  isUnread ? "bg-emerald-500/[0.04] border-emerald-500/40" : "bg-vendeur-coal/90 border-white/10 opacity-90"
+                  isUnread ? "bg-emerald-50/70 dark:bg-emerald-500/[0.04] border-emerald-300 dark:border-emerald-500/40" : "bg-white dark:bg-vendeur-coal/90 border-slate-200 dark:border-white/10"
                 )}
               >
-                <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-white/5 pb-4">
+                <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-slate-100 dark:border-white/5 pb-4">
                   <div className="space-y-2 flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-black text-sm uppercase tracking-tight text-white">{ticket.merchantName}</span>
+                      <span className="font-black text-sm uppercase tracking-tight text-slate-900 dark:text-white">{ticket.merchantName}</span>
                       <span className={cn("px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest border", cat.color)}>
                         <CatIcon size={10} className="shrink-0" /> {cat.label}
                       </span>
@@ -299,8 +299,8 @@ export function FounderTicketsInbox() {
                         {prio.label}
                       </span>
                     </div>
-                    <div className="flex items-center gap-3 text-[10px] font-bold text-white/40 uppercase tracking-widest">
-                       <span className="flex items-center gap-1 font-mono text-emerald-400/60"><Smartphone size={10}/> {ticket.userPhone}</span>
+                    <div className="flex items-center gap-3 text-[10px] font-bold text-slate-500 dark:text-white/40 uppercase tracking-widest">
+                       <span className="flex items-center gap-1 font-mono text-emerald-600 dark:text-emerald-400/80"><Smartphone size={10}/> {ticket.userPhone}</span>
                        <span className="truncate max-w-[150px]">{ticket.userEmail}</span>
                     </div>
                   </div>
@@ -309,7 +309,7 @@ export function FounderTicketsInbox() {
                       <a
                         href={`https://wa.me/${phoneClean}?text=${encodeURIComponent(`Founder Connect Protocol: Re: ${ticket.subject}`)}`}
                         target="_blank"
-                        className="w-full md:w-auto h-10 min-h-[40px] px-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-black uppercase text-[10px] tracking-widest flex items-center justify-center gap-2 transition-all shadow-xl shadow-emerald-500/10 shrink-0 cursor-pointer"
+                        className="w-full md:w-auto h-10 min-h-[40px] px-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black uppercase text-[10px] tracking-widest flex items-center justify-center gap-2 transition-all shadow-xl shadow-emerald-500/10 shrink-0 cursor-pointer"
                       >
                         <Send size={14} className="shrink-0" />
                         <span>CONNECT</span>
@@ -318,11 +318,11 @@ export function FounderTicketsInbox() {
                   </div>
                 </div>
 
-                <div className="space-y-2 bg-black/40 p-4 rounded-xl border border-white/5">
-                  <h4 className="font-black text-xs text-white uppercase tracking-wider flex items-center gap-2">
-                    <Sparkles size={14} className="text-emerald-400" /> {ticket.subject}
+                <div className="space-y-2 bg-slate-50 dark:bg-black/40 p-4 rounded-xl border border-slate-200 dark:border-white/5">
+                  <h4 className="font-black text-xs text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
+                    <Sparkles size={14} className="text-emerald-600 dark:text-emerald-400" /> {ticket.subject}
                   </h4>
-                  <p className="text-[13px] text-white/70 whitespace-pre-wrap leading-relaxed">{ticket.message}</p>
+                  <p className="text-[13px] text-slate-700 dark:text-white/70 whitespace-pre-wrap leading-relaxed">{ticket.message}</p>
                 </div>
 
                 <div className="pt-2 flex flex-col md:flex-row gap-4 items-stretch md:items-center">
@@ -332,24 +332,24 @@ export function FounderTicketsInbox() {
                         value={currentNotes}
                         onChange={(e) => handleNotesChange(ticket._id, e.target.value)}
                         placeholder="INTERNAL FOUNDER NOTES..."
-                        className="flex-1 h-10 bg-black/40 border border-white/10 rounded-xl px-4 text-[11px] font-bold text-white outline-none focus:border-emerald-500/50"
+                        className="flex-1 h-10 bg-slate-50 dark:bg-black/40 border border-slate-200 dark:border-white/10 rounded-xl px-4 text-[11px] font-bold text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-white/30 outline-none focus:border-emerald-500/50"
                       />
-                      <button onClick={() => handleSaveNotes(ticket._id)} className="h-10 px-3 rounded-xl bg-white/5 hover:bg-white/10 text-white transition-all"><Save size={16}/></button>
+                      <button onClick={() => handleSaveNotes(ticket._id)} className="h-10 px-3 rounded-xl bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 text-slate-700 dark:text-white transition-all border border-slate-200 dark:border-transparent"><Save size={16}/></button>
                    </div>
-                   <div className="flex items-center gap-1 bg-black/20 p-1 rounded-xl border border-white/5 overflow-x-auto no-scrollbar">
+                   <div className="flex items-center gap-1 bg-slate-100 dark:bg-black/20 p-1 rounded-xl border border-slate-200 dark:border-white/5 overflow-x-auto no-scrollbar">
                       {["unread", "in_progress", "resolved"].map(st => (
                         <button
                           key={st}
                           onClick={() => updateMutation.mutate({ ticketId: ticket._id, status: st })}
                           className={cn(
                             "px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest",
-                            ticket.status === st ? "bg-white/10 text-white" : "text-white/20"
+                            ticket.status === st ? "bg-white dark:bg-white/10 text-slate-900 dark:text-white font-black shadow-sm" : "text-slate-500 dark:text-white/40 hover:text-slate-900 dark:hover:text-white"
                           )}
                         >
                           {st.replace('_', ' ')}
                         </button>
                       ))}
-                      <button onClick={() => { if(window.confirm('Delete signal?')) deleteMutation.mutate(ticket._id); }} className="p-2 text-rose-500/40 hover:text-rose-500 transition-colors"><Trash2 size={16}/></button>
+                      <button onClick={() => { if(window.confirm('Delete signal?')) deleteMutation.mutate(ticket._id); }} className="p-2 text-rose-500/60 hover:text-rose-600 dark:text-rose-500/40 dark:hover:text-rose-500 transition-colors"><Trash2 size={16}/></button>
                    </div>
                 </div>
               </div>

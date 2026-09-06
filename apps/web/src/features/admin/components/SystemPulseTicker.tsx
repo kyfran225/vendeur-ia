@@ -54,13 +54,13 @@ export function SystemPulseTicker() {
   }, [socket]);
 
   return (
-    <div className="bg-vendeur-coal/90 border border-white/10 rounded-2xl md:rounded-3xl overflow-hidden flex flex-col h-[400px] shadow-sm hover:shadow-md dark:shadow-xl transition-all">
-      <div className="p-5 border-b border-white/5 flex items-center justify-between bg-black/20">
-        <h3 className="text-sm font-black uppercase tracking-widest flex items-center gap-2">
-          <Activity size={16} className="text-vendeur-emerald animate-pulse" />
+    <div className="bg-white dark:bg-vendeur-coal/90 border border-slate-200 dark:border-white/10 rounded-2xl md:rounded-3xl overflow-hidden flex flex-col h-[400px] shadow-sm hover:shadow-md dark:shadow-xl transition-all text-slate-900 dark:text-white">
+      <div className="p-5 border-b border-slate-100 dark:border-white/5 flex items-center justify-between bg-slate-50 dark:bg-black/20">
+        <h3 className="text-sm font-black uppercase tracking-widest flex items-center gap-2 text-slate-900 dark:text-white">
+          <Activity size={16} className="text-emerald-600 dark:text-vendeur-emerald animate-pulse" />
           Live System Pulse
         </h3>
-        <span className="text-[10px] font-black text-vendeur-emerald/60 uppercase">Real-time Stream</span>
+        <span className="text-[10px] font-black text-emerald-600 dark:text-vendeur-emerald/60 uppercase">Real-time Stream</span>
       </div>
 
       <div
@@ -68,7 +68,7 @@ export function SystemPulseTicker() {
         className="flex-1 overflow-y-auto p-4 space-y-2 no-scrollbar"
       >
         {logs.length === 0 ? (
-          <div className="h-full flex items-center justify-center text-white/10 text-[10px] font-black uppercase tracking-widest italic">
+          <div className="h-full flex items-center justify-center text-slate-400 dark:text-white/20 text-[10px] font-black uppercase tracking-widest italic">
             Waiting for system events...
           </div>
         ) : logs.map((log) => (
@@ -90,9 +90,9 @@ function PulseItem({ log }: { log: AuditLog }) {
   };
 
   const colors: any = {
-    info: "text-blue-400 bg-blue-500/10 border-blue-500/20",
-    warning: "text-amber-400 bg-amber-500/10 border-amber-500/20",
-    error: "text-rose-500 bg-rose-500/10 border-rose-500/20",
+    info: "text-blue-700 bg-blue-50 border-blue-200 dark:text-blue-400 dark:bg-blue-500/10 dark:border-blue-500/20",
+    warning: "text-amber-800 bg-amber-50 border-amber-200 dark:text-amber-400 dark:bg-amber-500/10 dark:border-amber-500/20",
+    error: "text-rose-700 bg-rose-50 border-rose-200 dark:text-rose-500 dark:bg-rose-500/10 dark:border-rose-500/20",
     critical: "text-white bg-rose-600 border-rose-700 animate-bounce"
   };
 

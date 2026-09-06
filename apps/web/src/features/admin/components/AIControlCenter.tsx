@@ -168,13 +168,13 @@ export function AIControlCenter() {
       {/* 1. PROVIDER STATUS GRID - Flattened */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
         {aiStatus?.map((p: any) => (
-          <div key={p.name} className="bg-vendeur-coal/80 border border-white/10 p-4 rounded-2xl space-y-3 shadow-sm hover:shadow-md dark:shadow-xl transition-all">
+          <div key={p.name} className="bg-white dark:bg-vendeur-coal/80 border border-slate-200 dark:border-white/10 p-4 rounded-2xl space-y-3 shadow-sm hover:shadow-md dark:shadow-xl transition-all">
             <div className="flex items-center justify-between">
-              <h3 className="font-black uppercase tracking-tighter text-[11px] text-white/60">{p.name}</h3>
+              <h3 className="font-black uppercase tracking-tighter text-[11px] text-slate-700 dark:text-white/60">{p.name}</h3>
               <button
                 onClick={() => testProviderMutation.mutate(p.name)}
                 disabled={testProviderMutation.isPending}
-                className="p-1.5 hover:bg-white/5 rounded-lg transition-colors text-white/20 hover:text-white"
+                className="p-1.5 hover:bg-slate-100 dark:hover:bg-white/5 rounded-lg transition-colors text-slate-400 dark:text-white/20 hover:text-slate-800 dark:hover:text-white"
               >
                 <RefreshCw size={12} className={testProviderMutation.isPending ? "animate-spin" : ""} />
               </button>
@@ -186,7 +186,7 @@ export function AIControlCenter() {
               ) : (
                 <div className="h-1.5 w-1.5 rounded-full bg-rose-500" />
               )}
-              <span className={cn("text-[9px] font-black uppercase tracking-widest", p.success ? "text-emerald-400" : "text-rose-400")}>
+              <span className={cn("text-[9px] font-black uppercase tracking-widest", p.success ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400")}>
                 {p.success ? "Online" : "Error"}
               </span>
             </div>
@@ -195,27 +195,27 @@ export function AIControlCenter() {
       </div>
 
       {/* 2. CONFIGURATION PANEL - Flattened */}
-      <div className="bg-vendeur-coal/90 border border-white/10 rounded-2xl md:rounded-3xl overflow-hidden shadow-sm hover:shadow-md dark:shadow-xl transition-all">
-        <div className="p-4 md:p-8 border-b border-white/5 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="bg-white dark:bg-vendeur-coal/90 border border-slate-200 dark:border-white/10 rounded-2xl md:rounded-3xl overflow-hidden shadow-sm hover:shadow-md dark:shadow-xl transition-all text-slate-900 dark:text-white">
+        <div className="p-4 md:p-8 border-b border-slate-100 dark:border-white/5 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <div className="h-10 w-10 md:h-12 md:w-12 bg-vendeur-emerald/10 rounded-xl md:rounded-2xl flex items-center justify-center text-vendeur-emerald border border-vendeur-emerald/20 shrink-0">
               <Shield size={20} />
             </div>
             <div>
               <h2 className="text-lg md:text-xl font-black uppercase tracking-tighter leading-none">AI Governance Layer</h2>
-              <p className="text-[10px] text-white/40 uppercase tracking-widest font-black mt-1">Core Neural Routing</p>
+              <p className="text-[10px] text-slate-500 dark:text-white/40 uppercase tracking-widest font-black mt-1">Core Neural Routing</p>
             </div>
           </div>
           <div className="flex items-center gap-2 w-full md:w-auto">
             <button
               onClick={() => emergencyStopMutation.mutate('pause')}
-              className="flex-1 md:flex-none px-4 py-2.5 bg-rose-500/10 hover:bg-rose-500 text-rose-500 hover:text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 border border-rose-500/20"
+              className="flex-1 md:flex-none px-4 py-2.5 bg-rose-500/10 hover:bg-rose-500 text-rose-600 dark:text-rose-500 hover:text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 border border-rose-500/20"
             >
               <Skull size={14} /> STOP
             </button>
             <button
               onClick={handleEditClick}
-              className="flex-1 md:flex-none px-5 py-2.5 bg-white/5 hover:bg-white/10 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border border-white/10"
+              className="flex-1 md:flex-none px-5 py-2.5 bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 text-slate-700 dark:text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border border-slate-200 dark:border-white/10"
             >
               {isEditing ? "Cancel" : "Modify"}
             </button>
@@ -251,13 +251,13 @@ export function AIControlCenter() {
           {/* Providers List - Flattened */}
           <div className="space-y-3">
             {(isEditing ? localAiConfig?.providers : aiConfig.providers).map((p: any, idx: number) => (
-              <div key={p.name} className="flex flex-col md:flex-row items-center gap-3 p-3 md:p-5 bg-black/40 rounded-2xl border border-white/5 group">
+              <div key={p.name} className="flex flex-col md:flex-row items-center gap-3 p-3 md:p-5 bg-slate-50 dark:bg-black/40 rounded-2xl border border-slate-200 dark:border-white/5 group">
                 <div className="flex items-center gap-3 w-full md:w-40 shrink-0">
-                  <span className="font-black uppercase tracking-widest text-[10px] text-white/60">{p.name}</span>
+                  <span className="font-black uppercase tracking-widest text-[10px] text-slate-700 dark:text-white/60">{p.name}</span>
                 </div>
 
                 <div className="flex-1 w-full relative">
-                  <Key size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" />
+                  <Key size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-white/20" />
                   <input
                     type={visibleKeys[p.name] ? "text" : "password"}
                     disabled={!isEditing}
@@ -269,18 +269,18 @@ export function AIControlCenter() {
                       setLocalAiConfig({ ...localAiConfig, providers: newProviders });
                     }}
                     placeholder="sk-••••••••"
-                    className="w-full h-10 md:h-11 bg-black/20 border border-white/10 rounded-xl pl-10 pr-20 text-[10px] font-mono text-white/60 focus:border-vendeur-emerald outline-none"
+                    className="w-full h-10 md:h-11 bg-white dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-xl pl-10 pr-20 text-[10px] font-mono text-slate-900 dark:text-white/60 focus:border-vendeur-emerald outline-none"
                   />
                   <div className="absolute right-1.5 top-1/2 -translate-y-1/2 flex items-center">
                     <button
                       onClick={() => toggleKeyVisibility(p.name)}
-                      className="p-1.5 text-white/30 hover:text-white"
+                      className="p-1.5 text-slate-400 dark:text-white/30 hover:text-slate-800 dark:hover:text-white"
                     >
                       {visibleKeys[p.name] ? <EyeOff size={14} /> : <Eye size={14} />}
                     </button>
                     <button
                       onClick={() => copyToClipboard(p.apiKey)}
-                      className="p-1.5 text-white/30 hover:text-white"
+                      className="p-1.5 text-slate-400 dark:text-white/30 hover:text-slate-800 dark:hover:text-white"
                     >
                       <Copy size={14} />
                     </button>
@@ -288,7 +288,7 @@ export function AIControlCenter() {
                 </div>
 
                 <div className="flex items-center gap-3 w-full md:w-auto justify-end">
-                  <label className="flex items-center gap-2 cursor-pointer bg-white/5 px-3 py-1.5 rounded-lg border border-white/5">
+                  <label className="flex items-center gap-2 cursor-pointer bg-slate-100 dark:bg-white/5 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-white/5">
                     <input
                       type="checkbox"
                       disabled={!isEditing}
@@ -299,9 +299,9 @@ export function AIControlCenter() {
                         newProviders[idx] = { ...newProviders[idx], isActive: e.target.checked };
                         setLocalAiConfig({ ...localAiConfig, providers: newProviders });
                       }}
-                      className="w-3.5 h-3.5 rounded border-white/10 bg-black/40 text-vendeur-emerald"
+                      className="w-3.5 h-3.5 rounded border-slate-300 dark:border-white/10 bg-white dark:bg-black/40 text-vendeur-emerald"
                     />
-                    <span className="text-[9px] font-black uppercase text-white/40">Active</span>
+                    <span className="text-[9px] font-black uppercase text-slate-500 dark:text-white/40">Active</span>
                   </label>
                 </div>
               </div>
@@ -325,7 +325,7 @@ export function AIControlCenter() {
 
       {/* 3. PERFORMANCE & QUOTA - Flattened */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
-          <div className="bg-vendeur-coal/90 border border-white/10 p-4 md:p-8 rounded-2xl md:rounded-3xl space-y-6 shadow-sm hover:shadow-md dark:shadow-xl transition-all">
+          <div className="bg-white dark:bg-vendeur-coal/90 border border-slate-200 dark:border-white/10 p-4 md:p-8 rounded-2xl md:rounded-3xl space-y-6 shadow-sm hover:shadow-md dark:shadow-xl transition-all text-slate-900 dark:text-white">
             <h2 className="text-lg md:text-xl font-black uppercase tracking-tighter flex items-center gap-3">
               <Activity className="text-vendeur-emerald" size={20} />
               Token Economics Matrix
@@ -362,13 +362,13 @@ export function AIControlCenter() {
             </div>
           </div>
 
-          <div className="bg-vendeur-coal/90 border border-white/10 p-4 md:p-8 rounded-2xl md:rounded-3xl space-y-6 shadow-sm hover:shadow-md dark:shadow-xl transition-all">
+          <div className="bg-white dark:bg-vendeur-coal/90 border border-slate-200 dark:border-white/10 p-4 md:p-8 rounded-2xl md:rounded-3xl space-y-6 shadow-sm hover:shadow-md dark:shadow-xl transition-all text-slate-900 dark:text-white">
              <div className="flex items-center justify-between">
                 <h2 className="text-lg md:text-xl font-black uppercase tracking-tighter flex items-center gap-3">
                   <Zap className="text-vendeur-emerald" size={20} />
                   Live Error Registry
                 </h2>
-                <span className="text-[10px] font-black text-white/40 uppercase tracking-widest">Master Logs</span>
+                <span className="text-[10px] font-black text-slate-400 dark:text-white/40 uppercase tracking-widest">Master Logs</span>
              </div>
              <div className="space-y-2 md:space-y-3 max-h-[350px] overflow-y-auto pr-1 no-scrollbar">
                 {settings?.aiConfig?.lastErrors?.length > 0 ? (
@@ -381,7 +381,7 @@ export function AIControlCenter() {
                     />
                   ))
                 ) : (
-                  <div className="text-center py-12 text-white/20 uppercase text-[10px] font-black tracking-widest italic border border-dashed border-white/10 rounded-2xl">
+                  <div className="text-center py-12 text-slate-400 dark:text-white/20 uppercase text-[10px] font-black tracking-widest italic border border-dashed border-slate-200 dark:border-white/10 rounded-2xl">
                     Clear Skies - No errors ✨
                   </div>
                 )}
@@ -390,20 +390,20 @@ export function AIControlCenter() {
       </div>
 
       {/* 4. NOTIFICATION SETTINGS - Flattened */}
-      <div className="bg-vendeur-coal/90 border border-white/10 rounded-2xl md:rounded-3xl p-4 md:p-8 space-y-8 shadow-sm hover:shadow-md dark:shadow-xl transition-all">
+      <div className="bg-white dark:bg-vendeur-coal/90 border border-slate-200 dark:border-white/10 rounded-2xl md:rounded-3xl p-4 md:p-8 space-y-8 shadow-sm hover:shadow-md dark:shadow-xl transition-all text-slate-900 dark:text-white">
         <div className="flex items-center gap-4">
-          <div className="h-10 w-10 md:h-12 md:w-12 bg-indigo-500/10 rounded-xl md:rounded-2xl flex items-center justify-center text-indigo-400 border border-indigo-500/20 shrink-0">
+          <div className="h-10 w-10 md:h-12 md:w-12 bg-indigo-500/10 rounded-xl md:rounded-2xl flex items-center justify-center text-indigo-500 dark:text-indigo-400 border border-indigo-500/20 shrink-0">
             <Sparkles size={20} />
           </div>
           <div>
             <h2 className="text-lg md:text-xl font-black uppercase tracking-tighter leading-none">Alerte Protocol</h2>
-            <p className="text-[10px] text-white/40 uppercase tracking-widest font-black mt-1">Foundation Supervision</p>
+            <p className="text-[10px] text-slate-500 dark:text-white/40 uppercase tracking-widest font-black mt-1">Foundation Supervision</p>
           </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
           <div className="space-y-3">
-            <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-white/30 mb-2">Transmission Channels</h3>
+            <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-white/30 mb-2">Transmission Channels</h3>
 
             <NotificationToggle
               label="Push Infrastructure"
@@ -429,8 +429,8 @@ export function AIControlCenter() {
           </div>
 
           <div className="space-y-3">
-            <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-white/30 mb-2">Pulse Frequency</h3>
-            <div className="p-4 md:p-6 bg-black/40 rounded-2xl border border-white/5 space-y-4">
+            <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-white/30 mb-2">Pulse Frequency</h3>
+            <div className="p-4 md:p-6 bg-slate-50 dark:bg-black/40 rounded-2xl border border-slate-200 dark:border-white/5 space-y-4">
                <select
                  disabled={!isEditing}
                  value={isEditing ? localAiConfig?.notificationSettings?.alertThreshold : settings?.aiConfig?.notificationSettings?.alertThreshold}
@@ -438,12 +438,12 @@ export function AIControlCenter() {
                    ...localAiConfig,
                    notificationSettings: { ...localAiConfig.notificationSettings, alertThreshold: e.target.value }
                  })}
-                 className="w-full h-11 bg-black/20 border border-white/10 rounded-xl px-4 text-xs font-bold text-white outline-none focus:border-vendeur-emerald transition-all"
+                 className="w-full h-11 bg-white dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-xl px-4 text-xs font-bold text-slate-900 dark:text-white outline-none focus:border-vendeur-emerald transition-all cursor-pointer"
                >
                  <option value="always">Continuous (Every Signal)</option>
                  <option value="high_frequency">Threshold Pattern Only</option>
                </select>
-               <p className="text-[9px] text-white/20 uppercase font-bold leading-relaxed italic">
+               <p className="text-[9px] text-slate-400 dark:text-white/20 uppercase font-bold leading-relaxed italic">
                  Web-Push requires active handshake permission in Master browser.
                </p>
             </div>
@@ -456,10 +456,10 @@ export function AIControlCenter() {
 
 function NotificationToggle({ label, description, checked, onChange, disabled }: any) {
   return (
-    <div className="flex items-center justify-between p-6 bg-black/40 rounded-3xl border border-white/5 group">
+    <div className="flex items-center justify-between p-6 bg-slate-50 dark:bg-black/40 rounded-3xl border border-slate-200 dark:border-white/5 group">
       <div className="space-y-1">
-        <p className="text-xs font-black uppercase tracking-tight text-white/80 group-hover:text-white transition-colors">{label}</p>
-        <p className="text-[10px] text-white/30 font-medium leading-tight max-w-[200px]">{description}</p>
+        <p className="text-xs font-black uppercase tracking-tight text-slate-800 dark:text-white/80 group-hover:text-slate-950 dark:group-hover:text-white transition-colors">{label}</p>
+        <p className="text-[10px] text-slate-500 dark:text-white/30 font-medium leading-tight max-w-[200px]">{description}</p>
       </div>
       <label className="relative inline-flex items-center cursor-pointer">
         <input
@@ -469,7 +469,7 @@ function NotificationToggle({ label, description, checked, onChange, disabled }:
           onChange={(e) => onChange(e.target.checked)}
           disabled={disabled}
         />
-        <div className="w-11 h-6 bg-white/5 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white/20 after:border-transparent after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-vendeur-emerald peer-checked:after:bg-white"></div>
+        <div className="w-11 h-6 bg-slate-200 dark:bg-white/5 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white dark:after:bg-white/20 after:border-transparent after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-vendeur-emerald peer-checked:after:bg-white"></div>
       </label>
     </div>
   );
@@ -478,17 +478,17 @@ function NotificationToggle({ label, description, checked, onChange, disabled }:
 function RoutingSelect({ label, value, onChange, options, disabled }: any) {
   return (
     <div className="space-y-2">
-      <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">{label}</label>
+      <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-white/40 ml-1">{label}</label>
       <div className="relative">
         <select
           disabled={disabled}
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="w-full h-14 bg-black/40 border border-white/10 rounded-2xl px-6 text-xs font-black uppercase tracking-widest text-white outline-none focus:border-vendeur-emerald appearance-none disabled:opacity-50 cursor-pointer"
+          className="w-full h-14 bg-slate-50 dark:bg-black/40 border border-slate-200 dark:border-white/10 rounded-2xl px-6 text-xs font-black uppercase tracking-widest text-slate-900 dark:text-white outline-none focus:border-vendeur-emerald appearance-none disabled:opacity-50 cursor-pointer"
         >
           {options.map((o: string) => <option key={o} value={o}>{o}</option>)}
         </select>
-        <ChevronDown size={16} className="absolute right-4 top-1/2 -translate-y-1/2 text-white/20 pointer-events-none" />
+        <ChevronDown size={16} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-white/20 pointer-events-none" />
       </div>
     </div>
   );
@@ -509,16 +509,16 @@ function RealUsageBar({ label, provider, usageData, total, color }: any) {
   return (
     <div className="space-y-2">
       <div className="flex justify-between text-[10px] font-black uppercase tracking-widest">
-        <span className="text-white/40">{label}</span>
-        <span className="text-white">{Math.round(percent)}%</span>
+        <span className="text-slate-500 dark:text-white/40">{label}</span>
+        <span className="text-slate-900 dark:text-white">{Math.round(percent)}%</span>
       </div>
-      <div className="h-2 bg-white/5 rounded-full overflow-hidden">
+      <div className="h-2 bg-slate-100 dark:bg-white/5 rounded-full overflow-hidden">
         <div
           className={cn("h-full transition-all duration-1000", colors[color])}
           style={{ width: `${percent}%` }}
         />
       </div>
-      <div className="flex justify-between text-[8px] font-bold text-white/20 uppercase">
+      <div className="flex justify-between text-[8px] font-bold text-slate-400 dark:text-white/20 uppercase">
         <span>{Math.round(used).toLocaleString()} tokens used</span>
         <span>{total.toLocaleString()} limit</span>
       </div>
@@ -537,16 +537,16 @@ function UsageBar({ label, used, total, color }: any) {
   return (
     <div className="space-y-2">
       <div className="flex justify-between text-[10px] font-black uppercase tracking-widest">
-        <span className="text-white/40">{label}</span>
-        <span className="text-white">{Math.round(percent)}%</span>
+        <span className="text-slate-500 dark:text-white/40">{label}</span>
+        <span className="text-slate-900 dark:text-white">{Math.round(percent)}%</span>
       </div>
-      <div className="h-2 bg-white/5 rounded-full overflow-hidden">
+      <div className="h-2 bg-slate-100 dark:bg-white/5 rounded-full overflow-hidden">
         <div
           className={cn("h-full transition-all duration-1000", colors[color])}
           style={{ width: `${percent}%` }}
         />
       </div>
-      <div className="flex justify-between text-[8px] font-bold text-white/20 uppercase">
+      <div className="flex justify-between text-[8px] font-bold text-slate-400 dark:text-white/20 uppercase">
         <span>{used.toLocaleString()} used</span>
         <span>{total.toLocaleString()} limit</span>
       </div>
@@ -556,11 +556,11 @@ function UsageBar({ label, used, total, color }: any) {
 
 function ErrorLog({ time, provider, error }: any) {
   return (
-    <div className="flex items-start gap-4 p-4 bg-black/40 rounded-2xl border border-white/5 hover:border-rose-500/20 transition-colors group">
-      <div className="text-[10px] font-black text-white/20 group-hover:text-rose-500/40 mt-0.5">{time}</div>
+    <div className="flex items-start gap-4 p-4 bg-slate-50 dark:bg-black/40 rounded-2xl border border-slate-200 dark:border-white/5 hover:border-rose-500/20 transition-colors group">
+      <div className="text-[10px] font-black text-slate-400 dark:text-white/20 group-hover:text-rose-500/40 mt-0.5">{time}</div>
       <div className="flex-1 min-w-0">
-        <p className="text-[10px] font-black uppercase text-white/60 tracking-tight">{provider}</p>
-        <p className="text-[11px] font-medium text-rose-400/80 break-words leading-normal">{error}</p>
+        <p className="text-[10px] font-black uppercase text-slate-700 dark:text-white/60 tracking-tight">{provider}</p>
+        <p className="text-[11px] font-medium text-rose-600 dark:text-rose-400/80 break-words leading-normal">{error}</p>
       </div>
       <AlertTriangle size={14} className="text-rose-500/40 shrink-0 mt-0.5" />
     </div>

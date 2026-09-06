@@ -297,7 +297,7 @@ export class AuthService {
       };
     }
 
-    // 2. Check if user already exists (unless forcePairing is explicitly requested)
+    // 2. Check if user already exists AND has an active, live WhatsApp connection
     if (!forcePairing) {
       const existingUser = await UserModel.findOne({
         $or: [
@@ -307,18 +307,25 @@ export class AuthService {
       });
 
       if (existingUser) {
-        const magicResult = await this.requestWhatsAppMagicLink(cleanNumber, env.CLIENT_URL || "http://localhost:5173", authSessionId);
-        return {
-          mode: "otp" as const,
-          authSessionId: magicResult.authSessionId || authSessionId,
-          phoneNumber: cleanNumber,
-          sessionCode: magicResult.sessionCode,
-          systemWhatsAppNumber: magicResult.systemWhatsAppNumber,
-          dispatched: magicResult.dispatched,
-          message: magicResult.dispatched
-            ? "Un code de confirmation à 6 chiffres a été envoyé sur votre WhatsApp."
-            : "Code généré. Saisissez votre code ou validez via WhatsApp."
-        };
+        const merchant = await CommerceMerchantModel.findOne({ ownerId: existingUser._id }).lean();
+        const isConnectedInDb = merchant?.whatsappConfig?.status === "connected" && merchant?.whatsappConfig?.provider === "baileys";
+        const liveSock = whatsappService.getLiveSocket(existingUser._id.toString(), merchant);
+
+        // Only send OTP if merchant WhatsApp device is genuinely connected and reachable
+        if (isConnectedInDb && liveSock) {
+          const magicResult = await this.requestWhatsAppMagicLink(cleanNumber, env.CLIENT_URL || "http://localhost:5173", authSessionId);
+          if (magicResult.dispatched) {
+            return {
+              mode: "otp" as const,
+              authSessionId: magicResult.authSessionId || authSessionId,
+              phoneNumber: cleanNumber,
+              sessionCode: magicResult.sessionCode,
+              systemWhatsAppNumber: magicResult.systemWhatsAppNumber,
+              dispatched: true,
+              message: "Un code de confirmation à 6 chiffres a été envoyé sur votre WhatsApp."
+            };
+          }
+        }
       }
     }
 

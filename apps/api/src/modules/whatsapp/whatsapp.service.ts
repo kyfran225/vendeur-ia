@@ -196,6 +196,12 @@ class WhatsAppService {
     this.lastPairingCodeMap.delete(userId);
     this.lastQrMap.delete(userId);
 
+    if (isReplaced) {
+      console.warn(`[WhatsApp Security] Session remplacée ou connectée sur une autre instance pour ${userId} (Code ${statusCode}). Arrêt des reconnexions locales pour éviter tout conflit de flux.`);
+      this.reconnectAttempts.delete(userId);
+      return;
+    }
+
     if (isLoggedOut || isBadSession || isAuthFailure) {
       console.warn(`[WhatsApp Security] Session fermée ou rejetée par WhatsApp pour ${userId} (Code ${statusCode}, Error: ${errMessage}). Arrêt immédiat des reconnexions anti-ban.`);
       this.reconnectAttempts.delete(userId);

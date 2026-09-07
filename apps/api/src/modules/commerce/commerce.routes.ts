@@ -1192,22 +1192,34 @@ router.post("/conversations/:id/send-product-card", authenticate, async (req, re
     }
 
     const formattedMessage = lines.join("\n");
-    const imageUrl = product.images?.[0] || product.imageUrl;
+    let publicImageUrl: string | undefined = product.images?.[0] || product.imageUrl;
+    if (publicImageUrl && typeof publicImageUrl === "string") {
+      publicImageUrl = publicImageUrl.trim();
+      if (publicImageUrl.startsWith("/")) {
+        const baseUrl = env.CLIENT_URL || "https://vendeuria.com";
+        publicImageUrl = `${baseUrl.replace(/\/+$/, "")}${publicImageUrl}`;
+      }
+      if (!publicImageUrl.startsWith("http://") && !publicImageUrl.startsWith("https://")) {
+        publicImageUrl = undefined;
+      }
+    } else {
+      publicImageUrl = undefined;
+    }
 
     // Save message in DB
     const message = await CommerceMessageModel.create({
       conversationId: conversation._id,
       sender: "human",
-      type: imageUrl ? "image" : "text",
+      type: publicImageUrl ? "image" : "text",
       content: formattedMessage,
-      mediaUrl: imageUrl || undefined,
+      mediaUrl: publicImageUrl || undefined,
       metadata: {
         type: "product_card",
         productId: product._id.toString(),
         productName: product.name,
         price: finalPrice,
         currency,
-        imageUrl: imageUrl || undefined,
+        imageUrl: publicImageUrl || undefined,
         actionType,
         actionUrl: productDirectUrl
       },
@@ -1257,7 +1269,7 @@ router.post("/conversations/:id/send-product-card", authenticate, async (req, re
       const buttonTitle = actionType === "order" ? "🛒 Commander" : actionType === "pay" ? "💳 Payer" : "🔎 Voir les détails";
       const interactivePayload = {
         type: "cta_url" as const,
-        header: imageUrl ? { type: "image" as const, imageUrl } : { type: "text" as const, text: `🛍️ ${product.name.toUpperCase()}` },
+        header: publicImageUrl ? { type: "image" as const, imageUrl: publicImageUrl } : { type: "text" as const, text: `🛍️ ${product.name.toUpperCase()}` },
         body: formattedMessage,
         footer: `${merchant.businessName || "Boutique"} • Commande 1-Clic`,
         ctaUrl: {
@@ -1266,10 +1278,10 @@ router.post("/conversations/:id/send-product-card", authenticate, async (req, re
         }
       };
 
-      if (imageUrl) {
+      if (publicImageUrl) {
         sendRes = await messagingService.sendMessage(merchant, platform, remoteId, formattedMessage, {
           type: "image",
-          mediaUrl: imageUrl,
+          mediaUrl: publicImageUrl,
           interactive: interactivePayload
         });
       } else {

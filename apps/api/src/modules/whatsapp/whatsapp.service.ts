@@ -2084,44 +2084,57 @@ class WhatsAppService {
     const { cleanPhone } = formatToWhatsAppRecipient(to);
 
     const interactiveObj: any = {
-      body: { text: interactivePayload.body }
+      body: { text: (interactivePayload.body || "").substring(0, 1024) }
     };
 
     if (interactivePayload.header) {
-      if (interactivePayload.header.type === "image" && interactivePayload.header.imageUrl) {
+      const imgUrl = interactivePayload.header.imageUrl?.trim();
+      const isValidHttpUrl = imgUrl && (imgUrl.startsWith("http://") || imgUrl.startsWith("https://"));
+
+      if (interactivePayload.header.type === "image" && isValidHttpUrl) {
         interactiveObj.header = {
           type: "image",
-          image: { link: interactivePayload.header.imageUrl }
+          image: { link: imgUrl }
         };
-      } else if (interactivePayload.header.type === "text" && interactivePayload.header.text) {
-        interactiveObj.header = {
-          type: "text",
-          text: interactivePayload.header.text
-        };
+      } else if (interactivePayload.header.text || (interactivePayload.header.type === "image" && !isValidHttpUrl)) {
+        const headerText = (interactivePayload.header.text || "🛍️ Produit").trim().substring(0, 60);
+        if (headerText) {
+          interactiveObj.header = {
+            type: "text",
+            text: headerText
+          };
+        }
       }
     }
 
     if (interactivePayload.footer) {
-      interactiveObj.footer = { text: interactivePayload.footer };
+      const footerText = interactivePayload.footer.trim().substring(0, 60);
+      if (footerText) {
+        interactiveObj.footer = { text: footerText };
+      }
     }
 
     if (interactivePayload.type === "cta_url" && interactivePayload.ctaUrl) {
-      interactiveObj.type = "cta_url";
-      interactiveObj.action = {
-        name: "cta_url",
-        parameters: {
-          display_text: interactivePayload.ctaUrl.displayText,
-          url: interactivePayload.ctaUrl.url
-        }
-      };
+      const ctaUrlStr = interactivePayload.ctaUrl.url?.trim();
+      const isValidCtaUrl = ctaUrlStr && (ctaUrlStr.startsWith("http://") || ctaUrlStr.startsWith("https://"));
+      if (isValidCtaUrl) {
+        interactiveObj.type = "cta_url";
+        interactiveObj.action = {
+          name: "cta_url",
+          parameters: {
+            display_text: (interactivePayload.ctaUrl.displayText || "Voir").trim().substring(0, 20),
+            url: ctaUrlStr
+          }
+        };
+      }
     } else if (interactivePayload.buttons && interactivePayload.buttons.length > 0) {
       interactiveObj.type = "button";
       interactiveObj.action = {
         buttons: interactivePayload.buttons.slice(0, 3).map((btn) => ({
           type: "reply",
           reply: {
-            id: btn.id,
-            title: btn.title.substring(0, 20)
+            id: btn.id.substring(0, 256),
+            title: btn.title.trim().substring(0, 20)
           }
         }))
       };

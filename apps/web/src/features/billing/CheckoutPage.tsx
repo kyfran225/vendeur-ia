@@ -582,17 +582,9 @@ export function CheckoutPage() {
 
               {/* Country Picker Pills */}
               <div className="space-y-2 text-left">
-                <div className="flex items-center justify-between">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-white/40 ml-1">
-                    Pays de facturation
-                  </label>
-                  {isCI && isPaystackConfigured && !forceManualMode && (
-                    <span className="text-[10px] font-black uppercase tracking-wider text-emerald-600 dark:text-vendeur-emerald bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full flex items-center gap-1">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                      Paiement Local 100% Automatique
-                    </span>
-                  )}
-                </div>
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-white/40 ml-1">
+                  Pays de facturation
+                </label>
                 <div className="flex flex-wrap gap-2">
                   {countries.map((c) => (
                     <button
@@ -616,133 +608,58 @@ export function CheckoutPage() {
                 </div>
               </div>
 
-              {/* AUTOMATED PAYSTACK FLOW (ACTIVE FOR CÔTE D'IVOIRE OR CARD CHECKOUT) */}
+              {/* AUTOMATED PAYSTACK FLOW (CLEAN & MINIMALIST) */}
               {isAutoPaystackMode ? (
                 <div className="space-y-4 text-left">
-                  {/* Super Card Paystack */}
-                  <div className="bg-gradient-to-br from-white via-slate-50/80 to-emerald-50/30 dark:from-[#0c1410] dark:via-[#090f0c] dark:to-[#07130c] border-2 border-emerald-500/30 rounded-2xl sm:rounded-3xl p-4.5 sm:p-6 space-y-5 shadow-lg relative overflow-hidden text-slate-900 dark:text-white">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200/80 dark:border-white/5 pb-4">
-                      <div className="flex items-center gap-3">
-                        <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-2xl bg-emerald-500/15 text-emerald-600 dark:text-vendeur-emerald border border-emerald-500/30 flex items-center justify-center shrink-0 shadow-inner">
-                          <Zap size={22} className="animate-pulse" />
-                        </div>
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <h3 className="text-sm sm:text-base font-black uppercase text-slate-900 dark:text-white tracking-tight">
-                              Paiement Automatique Sécurisé
-                            </h3>
-                            <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-emerald-500 text-slate-950 shadow-sm">
-                              Instantané ⚡
-                            </span>
-                          </div>
-                          <p className="text-xs text-slate-500 dark:text-white/50 mt-0.5">
-                            Validation et activation immédiate en 5 secondes · Aucun reçu à téléverser
-                          </p>
-                        </div>
+                  <div className="bg-white dark:bg-[#0c1410] border border-slate-200 dark:border-white/10 rounded-2xl sm:rounded-3xl p-5 sm:p-7 space-y-5 shadow-md dark:shadow-xl text-slate-900 dark:text-white">
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs sm:text-sm font-black uppercase tracking-tight text-slate-900 dark:text-white">
+                          Règlement sécurisé
+                        </span>
+                        <span className="text-[11px] font-mono text-slate-500 dark:text-white/50">
+                          Paystack
+                        </span>
                       </div>
-
-                      <div className="flex items-center gap-1.5 self-start sm:self-center px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-white/5 text-[10px] font-mono font-bold text-slate-600 dark:text-white/60">
-                        <Lock size={12} className="text-emerald-500" />
-                        <span>Paystack PCI-DSS 256-bit</span>
-                      </div>
+                      <p className="text-xs text-slate-500 dark:text-white/50">
+                        Wave · Orange Money · MTN MoMo · Moov · Carte Bancaire
+                      </p>
                     </div>
 
-                    {/* Supported operator pills */}
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-white/40 ml-1">
-                        Moyens acceptés pour la Côte d'Ivoire & International
-                      </label>
-                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
-                        <div className="p-3 rounded-xl bg-white dark:bg-black/40 border border-slate-200 dark:border-white/10 flex flex-col justify-between gap-1 shadow-sm">
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs font-black text-slate-900 dark:text-white">Wave CI</span>
-                            <div className="w-2 h-2 rounded-full bg-[#1dc5d8]" />
-                          </div>
-                          <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold">Sans frais 0%</span>
-                        </div>
+                    {/* Pay Button */}
+                    <button
+                      type="button"
+                      onClick={handlePaystackCheckout}
+                      disabled={isPaystackLoading}
+                      className="w-full h-14 min-h-[56px] bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black uppercase tracking-wider text-xs sm:text-sm rounded-2xl flex items-center justify-center gap-2 transition-all active:scale-98 shadow-lg shadow-emerald-500/20 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed shrink-0"
+                    >
+                      {isPaystackLoading ? (
+                        <>
+                          <Loader2 className="animate-spin shrink-0" size={18} />
+                          <span>Connexion sécurisée...</span>
+                        </>
+                      ) : (
+                        <>
+                          <span>Payer {totalToday.toLocaleString()} {activeCurrencySymbol}</span>
+                          <ChevronRight size={18} className="shrink-0" />
+                        </>
+                      )}
+                    </button>
 
-                        <div className="p-3 rounded-xl bg-white dark:bg-black/40 border border-slate-200 dark:border-white/10 flex flex-col justify-between gap-1 shadow-sm">
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs font-black text-slate-900 dark:text-white">Orange Money</span>
-                            <div className="w-2 h-2 rounded-full bg-[#ff7900]" />
-                          </div>
-                          <span className="text-[10px] text-slate-500 dark:text-white/50 font-bold">Code OTP / Push</span>
-                        </div>
-
-                        <div className="p-3 rounded-xl bg-white dark:bg-black/40 border border-slate-200 dark:border-white/10 flex flex-col justify-between gap-1 shadow-sm">
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs font-black text-slate-900 dark:text-white">MTN MoMo</span>
-                            <div className="w-2 h-2 rounded-full bg-[#ffcc00]" />
-                          </div>
-                          <span className="text-[10px] text-slate-500 dark:text-white/50 font-bold">Approbation MoMo</span>
-                        </div>
-
-                        <div className="p-3 rounded-xl bg-white dark:bg-black/40 border border-slate-200 dark:border-white/10 flex flex-col justify-between gap-1 shadow-sm">
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs font-black text-slate-900 dark:text-white">Moov Money</span>
-                            <div className="w-2 h-2 rounded-full bg-[#0066b2]" />
-                          </div>
-                          <span className="text-[10px] text-slate-500 dark:text-white/50 font-bold">Moov CI</span>
-                        </div>
-
-                        <div className="p-3 rounded-xl bg-white dark:bg-black/40 border border-slate-200 dark:border-white/10 flex flex-col justify-between gap-1 shadow-sm col-span-2 sm:col-span-1">
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs font-black text-slate-900 dark:text-white">Carte Bancaire</span>
-                            <CreditCard size={13} className="text-indigo-500" />
-                          </div>
-                          <span className="text-[10px] text-slate-500 dark:text-white/50 font-bold">Visa / Mastercard</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Features checklist */}
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1 text-[11px] text-slate-600 dark:text-white/70">
-                      <div className="flex items-center gap-1.5">
-                        <CheckCircle2 size={14} className="text-emerald-500 shrink-0" />
-                        <span>Activation IA immédiate 24/7</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <CheckCircle2 size={14} className="text-emerald-500 shrink-0" />
-                        <span>Reçu fiscal par email</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <CheckCircle2 size={14} className="text-emerald-500 shrink-0" />
-                        <span>Paiement certifié Paystack</span>
-                      </div>
-                    </div>
-
-                    {/* Main CTA Paystack */}
-                    <div className="pt-2">
-                      <button
-                        type="button"
-                        onClick={handlePaystackCheckout}
-                        disabled={isPaystackLoading}
-                        className="w-full h-14 min-h-[56px] bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black uppercase tracking-wider text-xs sm:text-sm rounded-2xl flex items-center justify-center gap-2 transition-all active:scale-98 shadow-xl shadow-emerald-500/25 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed shrink-0"
-                      >
-                        {isPaystackLoading ? (
-                          <>
-                            <Loader2 className="animate-spin shrink-0" size={18} />
-                            <span>Ouverture de Paystack sécurisé...</span>
-                          </>
-                        ) : (
-                          <>
-                            <Zap size={18} className="shrink-0 text-slate-950 fill-slate-950" />
-                            <span>Payer {totalToday.toLocaleString()} {activeCurrencySymbol} · Activation Instantanée</span>
-                            <ChevronRight size={18} className="shrink-0" />
-                          </>
-                        )}
-                      </button>
+                    <div className="flex items-center justify-center gap-1.5 text-[11px] text-slate-500 dark:text-white/40 pt-1">
+                      <Lock size={12} className="text-emerald-500 shrink-0" />
+                      <span>Crypté SSL 256-bit · Validation et activation immédiate</span>
                     </div>
                   </div>
 
                   {/* Switch to manual transfer */}
-                  <div className="text-center pt-1">
+                  <div className="text-center">
                     <button
                       type="button"
                       onClick={() => setForceManualMode(true)}
-                      className="text-[11px] font-bold text-slate-500 hover:text-slate-800 dark:text-white/50 dark:hover:text-white transition-colors cursor-pointer underline underline-offset-4"
+                      className="text-xs font-bold text-slate-500 hover:text-slate-800 dark:text-white/50 dark:hover:text-white transition-colors cursor-pointer"
                     >
-                      Vous préférez faire un virement manuel direct vers un numéro ? Passer en mode manuel →
+                      Effectuer un virement manuel →
                     </button>
                   </div>
                 </div>
@@ -750,19 +667,14 @@ export function CheckoutPage() {
                 /* MANUAL / REGIONAL TRANSFERS MODE */
                 <div className="space-y-4 text-left">
                   {isCI && isPaystackConfigured && (
-                    <div className="p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-between gap-3 text-xs">
-                      <div className="flex items-center gap-2">
-                        <Zap size={16} className="text-emerald-600 dark:text-vendeur-emerald shrink-0" />
-                        <span className="font-bold text-slate-900 dark:text-white">
-                          En Côte d'Ivoire, Paystack permet une activation 100% automatique en 5 secondes.
-                        </span>
-                      </div>
+                    <div className="flex items-center justify-between p-3 rounded-xl bg-slate-100 dark:bg-white/5 text-xs">
+                      <span className="text-slate-600 dark:text-white/70">Mode virement manuel actif</span>
                       <button
                         type="button"
                         onClick={() => setForceManualMode(false)}
-                        className="px-3 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-black uppercase tracking-wider whitespace-nowrap cursor-pointer shadow"
+                        className="text-emerald-600 dark:text-vendeur-emerald font-bold hover:underline cursor-pointer"
                       >
-                        Payer via Paystack ⚡
+                        Payer en ligne par Paystack
                       </button>
                     </div>
                   )}

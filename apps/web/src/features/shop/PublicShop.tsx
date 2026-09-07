@@ -33,7 +33,10 @@ import {
   Instagram,
   Facebook,
   Sun,
-  Moon
+  Moon,
+  Eye,
+  ZoomIn,
+  Maximize2
 } from "lucide-react";
 import { getShopTheme, type ShopTheme } from "./lib/theme";
 
@@ -251,6 +254,7 @@ export function PublicShop() {
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedProduct, setSelectedProduct] = useState<any | null>(null);
+  const [zoomedProduct, setZoomedProduct] = useState<any | null>(null);
   
   // New State additions for Interactive Shopping & Story Engine
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
@@ -740,16 +744,40 @@ export function PublicShop() {
                       </div>
                     )}
 
-                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
+                    {/* Mobile accessible Quick-View button */}
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedProduct(p);
+                      }}
+                      className="md:hidden absolute top-2.5 right-2.5 h-8 w-8 rounded-xl bg-black/60 backdrop-blur-md border border-white/20 text-white flex items-center justify-center shadow-lg active:scale-90 transition-transform z-10"
+                      title="Aperçu rapide"
+                      aria-label="Aperçu rapide"
+                    >
+                      <Eye size={15} />
+                    </button>
+
+                    <div className="hidden md:flex absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity items-center justify-center gap-2.5">
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
                           setSelectedProduct(p);
                         }}
                         className="h-11 w-11 rounded-2xl bg-white text-slate-950 flex items-center justify-center hover:scale-110 active:scale-95 transition-all shadow-lg cursor-pointer"
-                        title="Voir le détail"
+                        title="Aperçu rapide"
                       >
-                        <Search size={18} />
+                        <Eye size={18} />
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setZoomedProduct(p);
+                        }}
+                        className="h-11 w-11 rounded-2xl bg-slate-900/90 text-white border border-white/20 flex items-center justify-center hover:scale-110 active:scale-95 transition-all shadow-lg cursor-pointer"
+                        title="Zoomer la photo"
+                      >
+                        <ZoomIn size={18} />
                       </button>
                       <button
                         onClick={(e) => {
@@ -945,14 +973,23 @@ export function PublicShop() {
             </button>
 
             {/* Product Image / Poster Container */}
-            <div className="w-full md:flex-1 h-48 sm:h-64 md:h-auto min-h-0 bg-slate-900/5 dark:bg-black/50 shrink-0 flex items-center justify-center p-3 md:p-6 overflow-hidden relative border-b md:border-b-0 md:border-r border-slate-200/80 dark:border-white/10">
+            <div className="w-full md:w-1/2 min-h-[300px] sm:min-h-[380px] md:min-h-[480px] bg-slate-900/5 dark:bg-black/50 shrink-0 flex items-center justify-center p-3 sm:p-5 md:p-6 overflow-hidden relative border-b md:border-b-0 md:border-r border-slate-200/80 dark:border-white/10 group/img">
               {selectedProduct.images?.[0] || selectedProduct.imageUrl ? (
-                <div className="relative w-full h-full flex items-center justify-center">
+                <div
+                  className="relative w-full h-full flex items-center justify-center cursor-zoom-in"
+                  onClick={() => setZoomedProduct(selectedProduct)}
+                  title="Cliquer pour afficher en plein écran (Zoom HD)"
+                >
                   <img
                     src={selectedProduct.images?.[0] || selectedProduct.imageUrl}
-                    className="max-w-full max-h-full w-auto h-auto object-contain rounded-2xl shadow-md transition-all"
+                    className="max-w-full max-h-[45vh] sm:max-h-[55vh] md:max-h-[70vh] w-auto h-auto object-contain rounded-2xl shadow-md group-hover/img:scale-[1.03] transition-transform duration-300"
                     alt={selectedProduct.name}
                   />
+                  {/* Floating Zoom HD trigger badge */}
+                  <div className="absolute bottom-3 right-3 sm:bottom-4 sm:right-4 px-3 py-1.5 rounded-xl bg-black/75 backdrop-blur-md border border-white/20 text-white text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 shadow-xl group-hover/img:bg-black/90 transition-all pointer-events-none">
+                    <ZoomIn size={14} className="text-white" />
+                    <span>Zoom HD</span>
+                  </div>
                 </div>
               ) : (
                 <div className="w-full h-full flex items-center justify-center opacity-20">
@@ -1070,6 +1107,85 @@ export function PublicShop() {
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Fullscreen HD Image Lightbox / Zoom Modal */}
+      {zoomedProduct && (
+        <div
+          className="fixed inset-0 z-[150] flex flex-col items-center justify-between p-3 sm:p-6 bg-black/95 backdrop-blur-2xl animate-in fade-in duration-300 select-none"
+          onClick={() => setZoomedProduct(null)}
+        >
+          {/* Header Bar */}
+          <div
+            className="w-full max-w-5xl flex items-center justify-between z-10 pt-2 sm:pt-0"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="space-y-0.5">
+              <span className={cn("text-[9px] font-black uppercase tracking-widest", theme.textClass)}>
+                {zoomedProduct.category || "Article"}
+              </span>
+              <h3 className="text-base sm:text-xl font-black uppercase text-white tracking-tight line-clamp-1">
+                {zoomedProduct.name}
+              </h3>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <span className="hidden sm:inline-block px-3 py-1.5 rounded-full bg-white/10 border border-white/20 text-white font-black text-xs">
+                {zoomedProduct.price.toLocaleString()} {zoomedProduct.currency || merchant.currency || "XOF"}
+              </span>
+              <button
+                onClick={() => setZoomedProduct(null)}
+                className="h-10 sm:h-12 w-10 sm:w-12 rounded-2xl bg-white/10 hover:bg-white/25 border border-white/20 text-white flex items-center justify-center transition-all cursor-pointer shadow-xl active:scale-95"
+                aria-label="Fermer le zoom"
+              >
+                <X size={20} />
+              </button>
+            </div>
+          </div>
+
+          {/* Full Resolution Photo Container */}
+          <div
+            className="flex-1 w-full max-w-5xl flex items-center justify-center p-2 sm:p-4 min-h-0 overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {zoomedProduct.images?.[0] || zoomedProduct.imageUrl ? (
+              <img
+                src={zoomedProduct.images?.[0] || zoomedProduct.imageUrl}
+                alt={zoomedProduct.name}
+                className="max-w-full max-h-[75vh] sm:max-h-[80vh] w-auto h-auto object-contain rounded-2xl sm:rounded-3xl shadow-2xl animate-in zoom-in-95 duration-200"
+              />
+            ) : (
+              <div className="text-white/30 text-center">
+                <Package size={64} className="mx-auto mb-2" />
+                <p className="text-xs uppercase font-bold">Aucune image disponible</p>
+              </div>
+            )}
+          </div>
+
+          {/* Bottom Fast Action Bar */}
+          <div
+            className="w-full max-w-md flex items-center gap-3 pb-2 sm:pb-0 z-10"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={() => {
+                handleAddToCart(zoomedProduct);
+                setZoomedProduct(null);
+              }}
+              className="flex-1 h-12 sm:h-14 rounded-2xl bg-white/10 hover:bg-white/20 border border-white/20 text-white font-black uppercase text-xs tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer active:scale-95 shadow-lg"
+            >
+              <ShoppingCart size={16} />
+              <span>+ Panier</span>
+            </button>
+            <button
+              onClick={() => handleWhatsAppCTA(zoomedProduct)}
+              className={cn("flex-1 h-12 sm:h-14 text-slate-950 font-black uppercase text-xs tracking-wider rounded-2xl flex items-center justify-center gap-2 shadow-xl hover:scale-[1.02] active:scale-95 transition-all cursor-pointer", theme.bgClass, theme.hoverBgClass, theme.shadowClass)}
+            >
+              <MessageCircle size={16} />
+              <span>WhatsApp</span>
+            </button>
           </div>
         </div>
       )}

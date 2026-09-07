@@ -1959,25 +1959,33 @@ function WhatsAppBubble({
         )}
 
         {/* Product Card Interactive Badge & CTA Button */}
-        {(msg.metadata?.type === "product_card" || msg.content?.includes("FICHE ARTICLE :")) && (
-          <div className="mt-2.5 pt-2 border-t border-emerald-600/20 dark:border-white/10 space-y-2">
-            <div className="flex items-center gap-1.5 text-[10px] font-black uppercase text-emerald-800 dark:text-[#00a884]">
-              <ShoppingBag size={12} />
-              <span>Fiche Article Interactive WhatsApp</span>
+        {(() => {
+          const isCard = msg.metadata?.type === "product_card" || msg.content?.includes("FICHE ARTICLE :") || msg.content?.includes("👉 *Pour commander");
+          if (!isCard) return null;
+
+          const urlMatch = msg.metadata?.actionUrl || msg.content?.match(/https?:\/\/[^\s\n\r\)]+/)?.[0];
+          const actionType = msg.metadata?.actionType || (msg.content?.includes("Payer") || msg.content?.includes("régler") ? "pay" : "order");
+
+          return (
+            <div className="mt-2.5 pt-2 border-t border-emerald-600/20 dark:border-white/10 space-y-2">
+              <div className="flex items-center gap-1.5 text-[10px] font-black uppercase text-emerald-800 dark:text-[#00a884]">
+                <ShoppingBag size={12} />
+                <span>Fiche Article Interactive WhatsApp</span>
+              </div>
+              {urlMatch && (
+                <a
+                  href={urlMatch}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center justify-center gap-2 w-full py-2 px-3 rounded-xl bg-white hover:bg-slate-50 dark:bg-black/40 dark:hover:bg-black/60 border border-emerald-500/40 text-emerald-700 dark:text-[#00a884] font-black text-xs uppercase tracking-wider shadow-sm transition-all active:scale-95 cursor-pointer"
+                >
+                  <span>{actionType === "order" ? "🛒 Commander en 1 clic" : actionType === "pay" ? "💳 Payer Wave / OM" : "🔎 Ouvrir la vitrine"}</span>
+                  <ExternalLink size={12} />
+                </a>
+              )}
             </div>
-            {msg.metadata?.actionUrl && (
-              <a
-                href={msg.metadata.actionUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center justify-center gap-2 w-full py-2 px-3 rounded-xl bg-white hover:bg-slate-50 dark:bg-black/40 dark:hover:bg-black/60 border border-emerald-500/40 text-emerald-700 dark:text-[#00a884] font-black text-xs uppercase tracking-wider shadow-sm transition-all active:scale-95 cursor-pointer"
-              >
-                <span>{msg.metadata?.actionType === "order" ? "🛒 Commander en 1 clic" : msg.metadata?.actionType === "pay" ? "💳 Payer Wave / OM" : "🔎 Ouvrir la vitrine"}</span>
-                <ExternalLink size={12} />
-              </a>
-            )}
-          </div>
-        )}
+          );
+        })()}
 
         {/* Message Reactions Badges */}
         {msg.reactions && msg.reactions.length > 0 && (

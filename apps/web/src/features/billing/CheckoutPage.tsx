@@ -66,6 +66,8 @@ export function CheckoutPage() {
   const [activeIntent, setActiveIntent] = useState<any>(null);
   const [transactionIdInput, setTransactionIdInput] = useState("");
   const [userCountry, setUserCountry] = useState<string>("CI");
+  const [forceManualMode, setForceManualMode] = useState(false);
+  const [isPaystackLoading, setIsPaystackLoading] = useState(false);
 
   const countries = [
     { code: "CI", name: "Côte d'Ivoire", currency: "XOF" },
@@ -231,13 +233,13 @@ export function CheckoutPage() {
 
   if (!offer && !isLoading) {
     return (
-      <div className="min-h-[100dvh] bg-black text-white flex flex-col items-center justify-center p-6 text-center">
+      <div className="min-h-[100dvh] bg-slate-50 dark:bg-[#070c09] text-slate-900 dark:text-white flex flex-col items-center justify-center p-6 text-center">
         <div className="h-16 w-16 rounded-2xl bg-amber-500/10 flex items-center justify-center text-amber-500 mb-6">
           <AlertCircle size={32} />
         </div>
         <h2 className="text-2xl font-black uppercase mb-2">Offre Introuvable</h2>
-        <p className="text-white/40 mb-8 max-w-sm">L'offre "{offerSlug}" n'existe plus ou est momentanément indisponible.</p>
-        <button onClick={() => navigate("/offers")} className="px-8 py-3 bg-vendeur-emerald text-vendeur-coal font-black uppercase rounded-xl">Voir les offres disponibles</button>
+        <p className="text-slate-500 dark:text-white/40 mb-8 max-w-sm">L'offre "{offerSlug}" n'existe plus ou est momentanément indisponible.</p>
+        <button onClick={() => navigate("/offers")} className="px-8 py-3 bg-vendeur-emerald text-vendeur-coal font-black uppercase rounded-xl cursor-pointer">Voir les offres disponibles</button>
       </div>
     );
   }
@@ -373,6 +375,62 @@ export function CheckoutPage() {
       toast.error(err.response?.data?.error || "Erreur lors de la soumission");
     } finally {
       setSubmittingProof(false);
+    }
+  };
+
+  const isCI = userCountry === "CI";
+  const isPaystackConfigured = Boolean(paymentConfig?.paystack?.enabled);
+  const isAutoPaystackMode = isPaystackConfigured && (isCI || selectedMethod === "card") && !forceManualMode;
+
+  const handlePaystackCheckout = async () => {
+    if (!user) {
+      toast.info("Veuillez vous identifier pour préparer votre accès Vendeur IA.");
+      setIsAuthOpen(true);
+      return;
+    }
+
+    setIsPaystackLoading(true);
+    try {
+      const res = await apiClient.post("/api/commerce/payments/paystack/initialize", {
+        offerSlug,
+        billingInterval,
+        setupOption,
+        country: userCountry,
+        email: user.email,
+        senderPhoneNumber: fullSenderPhone
+      });
+
+      const { authorization_url, access_code, reference } = res.data;
+
+      // Try inline popup if loaded in window
+      if (typeof (window as any).PaystackPop !== "undefined" && access_code) {
+        try {
+          const popup = new (window as any).PaystackPop();
+          popup.resumeTransaction(access_code, {
+            onSuccess: (transaction: any) => {
+              toast.success("Paiement validé avec succès ! 🎉");
+              navigate(`/payment/callback?reference=${transaction.reference || reference}`);
+            },
+            onCancel: () => {
+              setIsPaystackLoading(false);
+              toast.info("Paiement interrompu. Vous pouvez reprendre à tout moment.");
+            }
+          });
+          return;
+        } catch (popupErr) {
+          console.warn("Paystack Inline fallback to redirect:", popupErr);
+        }
+      }
+
+      if (authorization_url) {
+        window.location.href = authorization_url;
+      } else {
+        throw new Error("Lien de paiement Paystack indisponible");
+      }
+    } catch (err: any) {
+      console.error("Paystack checkout error:", err);
+      toast.error(err.response?.data?.error || "Erreur lors de l'initialisation du paiement Paystack.");
+      setIsPaystackLoading(false);
     }
   };
 
@@ -518,15 +576,23 @@ export function CheckoutPage() {
                   1. Comment souhaitez-vous payer ?
                 </h1>
                 <p className="text-xs sm:text-sm text-slate-500 dark:text-white/50">
-                  Sélectionnez votre pays et votre moyen de règlement privilégié.
+                  Sélectionnez votre pays et votre moyen de règlement.
                 </p>
               </div>
 
               {/* Country Picker Pills */}
               <div className="space-y-2 text-left">
-                <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-white/40 ml-1">
-                  Pays de facturation
-                </label>
+                <div className="flex items-center justify-between">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-white/40 ml-1">
+                    Pays de facturation
+                  </label>
+                  {isCI && isPaystackConfigured && !forceManualMode && (
+                    <span className="text-[10px] font-black uppercase tracking-wider text-emerald-600 dark:text-vendeur-emerald bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                      Paiement Local 100% Automatique
+                    </span>
+                  )}
+                </div>
                 <div className="flex flex-wrap gap-2">
                   {countries.map((c) => (
                     <button
@@ -550,80 +616,224 @@ export function CheckoutPage() {
                 </div>
               </div>
 
-              {/* Payment Methods Grid */}
-              <div className="space-y-2.5 text-left">
-                <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-white/40 ml-1">
-                  Moyen de paiement
-                </label>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-3">
-                  {paymentConfig?.methods?.map((method: any) => {
-                    const isSelected = selectedMethod === method.id;
-                    return (
-                      <button
-                        key={method.id}
-                        type="button"
-                        onClick={() => setSelectedMethod(method.id)}
-                        className={cn(
-                          "p-3.5 sm:p-4 rounded-2xl border text-left flex flex-col justify-between gap-2.5 transition-all cursor-pointer relative overflow-hidden",
-                          isSelected
-                            ? "bg-emerald-500/10 border-emerald-500 ring-1 ring-emerald-500/30 shadow-md"
-                            : "bg-white dark:bg-[#0b120f] border-slate-200 dark:border-white/10 hover:border-slate-300 dark:hover:border-white/20 text-slate-900 dark:text-white"
-                        )}
-                      >
-                        <div className="flex items-center justify-between w-full">
-                          <span className="text-xs sm:text-sm font-black uppercase tracking-tight text-slate-900 dark:text-white">{method.name.split(" ")[0]}</span>
-                          <div
-                            className="w-2.5 h-2.5 rounded-full"
-                            style={{ backgroundColor: method.color }}
-                          />
+              {/* AUTOMATED PAYSTACK FLOW (ACTIVE FOR CÔTE D'IVOIRE OR CARD CHECKOUT) */}
+              {isAutoPaystackMode ? (
+                <div className="space-y-4 text-left">
+                  {/* Super Card Paystack */}
+                  <div className="bg-gradient-to-br from-white via-slate-50/80 to-emerald-50/30 dark:from-[#0c1410] dark:via-[#090f0c] dark:to-[#07130c] border-2 border-emerald-500/30 rounded-2xl sm:rounded-3xl p-4.5 sm:p-6 space-y-5 shadow-lg relative overflow-hidden text-slate-900 dark:text-white">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200/80 dark:border-white/5 pb-4">
+                      <div className="flex items-center gap-3">
+                        <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-2xl bg-emerald-500/15 text-emerald-600 dark:text-vendeur-emerald border border-emerald-500/30 flex items-center justify-center shrink-0 shadow-inner">
+                          <Zap size={22} className="animate-pulse" />
                         </div>
-                        <span className="text-[10px] sm:text-[11px] text-slate-500 dark:text-white/50 font-medium truncate">
-                          {method.badge || method.name}
-                        </span>
-                      </button>
-                    );
-                  })}
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <h3 className="text-sm sm:text-base font-black uppercase text-slate-900 dark:text-white tracking-tight">
+                              Paiement Automatique Sécurisé
+                            </h3>
+                            <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-emerald-500 text-slate-950 shadow-sm">
+                              Instantané ⚡
+                            </span>
+                          </div>
+                          <p className="text-xs text-slate-500 dark:text-white/50 mt-0.5">
+                            Validation et activation immédiate en 5 secondes · Aucun reçu à téléverser
+                          </p>
+                        </div>
+                      </div>
 
-                  {/* Carte Bancaire (Bientôt disponible) */}
-                  <div
-                    onClick={() => {
-                      toast.info("💳 Le paiement par Carte Bancaire (Visa / Mastercard) sera bientôt disponible ! Pour une activation instantanée, choisissez Wave, MTN MoMo ou Orange Money. 🚀");
-                    }}
-                    className="p-3.5 sm:p-4 rounded-2xl border text-left flex flex-col justify-between gap-2.5 transition-all cursor-pointer bg-slate-50/60 dark:bg-[#0b120f]/60 border-slate-200 dark:border-white/10 opacity-70 hover:opacity-100 hover:border-slate-300 dark:hover:border-white/20 relative overflow-hidden group text-slate-900 dark:text-white"
-                  >
-                    <div className="flex items-center justify-between w-full">
-                      <span className="text-xs sm:text-sm font-black uppercase tracking-tight text-slate-800 dark:text-white/80">Carte Bancaire</span>
-                      <CreditCard size={16} className="text-slate-400 dark:text-white/40 group-hover:text-slate-700 dark:group-hover:text-white/70" />
+                      <div className="flex items-center gap-1.5 self-start sm:self-center px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-white/5 text-[10px] font-mono font-bold text-slate-600 dark:text-white/60">
+                        <Lock size={12} className="text-emerald-500" />
+                        <span>Paystack PCI-DSS 256-bit</span>
+                      </div>
                     </div>
-                    <div className="flex items-center justify-between gap-1">
-                      <span className="text-[10px] sm:text-[11px] text-slate-500 dark:text-white/40 font-medium">Visa, Mastercard</span>
-                      <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30">
-                        Bientôt dispo
-                      </span>
+
+                    {/* Supported operator pills */}
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-white/40 ml-1">
+                        Moyens acceptés pour la Côte d'Ivoire & International
+                      </label>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
+                        <div className="p-3 rounded-xl bg-white dark:bg-black/40 border border-slate-200 dark:border-white/10 flex flex-col justify-between gap-1 shadow-sm">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-black text-slate-900 dark:text-white">Wave CI</span>
+                            <div className="w-2 h-2 rounded-full bg-[#1dc5d8]" />
+                          </div>
+                          <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold">Sans frais 0%</span>
+                        </div>
+
+                        <div className="p-3 rounded-xl bg-white dark:bg-black/40 border border-slate-200 dark:border-white/10 flex flex-col justify-between gap-1 shadow-sm">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-black text-slate-900 dark:text-white">Orange Money</span>
+                            <div className="w-2 h-2 rounded-full bg-[#ff7900]" />
+                          </div>
+                          <span className="text-[10px] text-slate-500 dark:text-white/50 font-bold">Code OTP / Push</span>
+                        </div>
+
+                        <div className="p-3 rounded-xl bg-white dark:bg-black/40 border border-slate-200 dark:border-white/10 flex flex-col justify-between gap-1 shadow-sm">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-black text-slate-900 dark:text-white">MTN MoMo</span>
+                            <div className="w-2 h-2 rounded-full bg-[#ffcc00]" />
+                          </div>
+                          <span className="text-[10px] text-slate-500 dark:text-white/50 font-bold">Approbation MoMo</span>
+                        </div>
+
+                        <div className="p-3 rounded-xl bg-white dark:bg-black/40 border border-slate-200 dark:border-white/10 flex flex-col justify-between gap-1 shadow-sm">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-black text-slate-900 dark:text-white">Moov Money</span>
+                            <div className="w-2 h-2 rounded-full bg-[#0066b2]" />
+                          </div>
+                          <span className="text-[10px] text-slate-500 dark:text-white/50 font-bold">Moov CI</span>
+                        </div>
+
+                        <div className="p-3 rounded-xl bg-white dark:bg-black/40 border border-slate-200 dark:border-white/10 flex flex-col justify-between gap-1 shadow-sm col-span-2 sm:col-span-1">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-black text-slate-900 dark:text-white">Carte Bancaire</span>
+                            <CreditCard size={13} className="text-indigo-500" />
+                          </div>
+                          <span className="text-[10px] text-slate-500 dark:text-white/50 font-bold">Visa / Mastercard</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Features checklist */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1 text-[11px] text-slate-600 dark:text-white/70">
+                      <div className="flex items-center gap-1.5">
+                        <CheckCircle2 size={14} className="text-emerald-500 shrink-0" />
+                        <span>Activation IA immédiate 24/7</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <CheckCircle2 size={14} className="text-emerald-500 shrink-0" />
+                        <span>Reçu fiscal par email</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <CheckCircle2 size={14} className="text-emerald-500 shrink-0" />
+                        <span>Paiement certifié Paystack</span>
+                      </div>
+                    </div>
+
+                    {/* Main CTA Paystack */}
+                    <div className="pt-2">
+                      <button
+                        type="button"
+                        onClick={handlePaystackCheckout}
+                        disabled={isPaystackLoading}
+                        className="w-full h-14 min-h-[56px] bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black uppercase tracking-wider text-xs sm:text-sm rounded-2xl flex items-center justify-center gap-2 transition-all active:scale-98 shadow-xl shadow-emerald-500/25 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed shrink-0"
+                      >
+                        {isPaystackLoading ? (
+                          <>
+                            <Loader2 className="animate-spin shrink-0" size={18} />
+                            <span>Ouverture de Paystack sécurisé...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Zap size={18} className="shrink-0 text-slate-950 fill-slate-950" />
+                            <span>Payer {totalToday.toLocaleString()} {activeCurrencySymbol} · Activation Instantanée</span>
+                            <ChevronRight size={18} className="shrink-0" />
+                          </>
+                        )}
+                      </button>
                     </div>
                   </div>
-                </div>
-              </div>
 
-              {/* Bottom Step 1 Action */}
-              <div className="pt-3">
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (!user) {
-                      toast.info("Veuillez vous identifier pour préparer votre accès Vendeur IA.");
-                      setIsAuthOpen(true);
-                      return;
-                    }
-                    if (isStep1Ready) setCurrentStep(2);
-                  }}
-                  disabled={!isStep1Ready}
-                  className="w-full h-14 min-h-[56px] bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black uppercase tracking-wider text-xs sm:text-sm rounded-2xl flex items-center justify-center gap-2 transition-all active:scale-98 shadow-lg shadow-emerald-500/20 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-emerald-500 disabled:shadow-none shrink-0"
-                >
-                  <span>Continuer le paiement</span>
-                  <ChevronRight size={18} className="shrink-0" />
-                </button>
-              </div>
+                  {/* Switch to manual transfer */}
+                  <div className="text-center pt-1">
+                    <button
+                      type="button"
+                      onClick={() => setForceManualMode(true)}
+                      className="text-[11px] font-bold text-slate-500 hover:text-slate-800 dark:text-white/50 dark:hover:text-white transition-colors cursor-pointer underline underline-offset-4"
+                    >
+                      Vous préférez faire un virement manuel direct vers un numéro ? Passer en mode manuel →
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                /* MANUAL / REGIONAL TRANSFERS MODE */
+                <div className="space-y-4 text-left">
+                  {isCI && isPaystackConfigured && (
+                    <div className="p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-between gap-3 text-xs">
+                      <div className="flex items-center gap-2">
+                        <Zap size={16} className="text-emerald-600 dark:text-vendeur-emerald shrink-0" />
+                        <span className="font-bold text-slate-900 dark:text-white">
+                          En Côte d'Ivoire, Paystack permet une activation 100% automatique en 5 secondes.
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setForceManualMode(false)}
+                        className="px-3 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-black uppercase tracking-wider whitespace-nowrap cursor-pointer shadow"
+                      >
+                        Payer via Paystack ⚡
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Payment Methods Grid */}
+                  <div className="space-y-2.5 text-left">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-white/40 ml-1">
+                      Moyen de paiement
+                    </label>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-3">
+                      {paymentConfig?.methods?.map((method: any) => {
+                        const isSelected = selectedMethod === method.id;
+                        return (
+                          <button
+                            key={method.id}
+                            type="button"
+                            onClick={() => {
+                              if (method.id === "card" && isPaystackConfigured) {
+                                handlePaystackCheckout();
+                                return;
+                              }
+                              setSelectedMethod(method.id);
+                            }}
+                            className={cn(
+                              "p-3.5 sm:p-4 rounded-2xl border text-left flex flex-col justify-between gap-2.5 transition-all cursor-pointer relative overflow-hidden",
+                              isSelected
+                                ? "bg-emerald-500/10 border-emerald-500 ring-1 ring-emerald-500/30 shadow-md"
+                                : "bg-white dark:bg-[#0b120f] border-slate-200 dark:border-white/10 hover:border-slate-300 dark:hover:border-white/20 text-slate-900 dark:text-white"
+                            )}
+                          >
+                            <div className="flex items-center justify-between w-full">
+                              <span className="text-xs sm:text-sm font-black uppercase tracking-tight text-slate-900 dark:text-white">{method.name.split(" ")[0]}</span>
+                              <div
+                                className="w-2.5 h-2.5 rounded-full"
+                                style={{ backgroundColor: method.color }}
+                              />
+                            </div>
+                            <span className="text-[10px] sm:text-[11px] text-slate-500 dark:text-white/50 font-medium truncate">
+                              {method.badge || method.name}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Bottom Step 1 Action */}
+                  <div className="pt-3">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (!user) {
+                          toast.info("Veuillez vous identifier pour préparer votre accès Vendeur IA.");
+                          setIsAuthOpen(true);
+                          return;
+                        }
+                        if (selectedMethod === "card" && isPaystackConfigured) {
+                          handlePaystackCheckout();
+                          return;
+                        }
+                        if (isStep1Ready) setCurrentStep(2);
+                      }}
+                      disabled={!isStep1Ready}
+                      className="w-full h-14 min-h-[56px] bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black uppercase tracking-wider text-xs sm:text-sm rounded-2xl flex items-center justify-center gap-2 transition-all active:scale-98 shadow-lg shadow-emerald-500/20 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-emerald-500 disabled:shadow-none shrink-0"
+                    >
+                      <span>Continuer le virement manuel</span>
+                      <ChevronRight size={18} className="shrink-0" />
+                    </button>
+                  </div>
+                </div>
+              )}
             </motion.div>
           )}
 

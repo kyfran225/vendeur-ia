@@ -199,7 +199,7 @@ export function GrowthTab({ merchant }: { merchant: any }) {
           <button
             onClick={() => updateMutation.mutate()}
             disabled={updateMutation.isPending}
-            className="w-full sm:w-auto h-12 sm:h-14 min-h-[48px] px-8 bg-slate-900 hover:bg-vendeur-emerald text-white hover:text-vendeur-coal dark:bg-white dark:hover:bg-vendeur-emerald dark:text-vendeur-coal font-black uppercase tracking-wider text-xs rounded-2xl flex items-center justify-center gap-2.5 transition-all shadow-xl active:scale-95 disabled:opacity-50 cursor-pointer"
+            className="w-full sm:w-auto h-12 sm:h-14 min-h-[48px] px-8 bg-vendeur-emerald hover:bg-emerald-400 text-white dark:text-slate-950 font-black uppercase tracking-wider text-xs rounded-2xl flex items-center justify-center gap-2.5 transition-all shadow-xl active:scale-95 disabled:opacity-50 cursor-pointer"
           >
             {updateMutation.isPending ? <Loader2 className="animate-spin" size={16} /> : <Save size={16} />}
             <span>Enregistrer la Fidélité</span>
@@ -213,7 +213,7 @@ export function GrowthTab({ merchant }: { merchant: any }) {
         className="bg-white dark:bg-vendeur-coal border border-slate-200 dark:border-white/10 p-5 sm:p-7 md:p-8 rounded-2xl sm:rounded-3xl md:rounded-[2.5rem] shadow-sm hover:shadow-md dark:shadow-xl transition-all space-y-5 scroll-mt-24"
       >
         <div className="flex items-start gap-3.5">
-          <div className="h-12 w-12 sm:h-14 sm:w-14 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 shrink-0 shadow-lg">
+          <div className="h-12 w-12 sm:h-14 sm:w-14 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-500 dark:text-blue-400 shrink-0 shadow-lg">
             <Share2 size={24} />
           </div>
           <div className="min-w-0 flex-1">
@@ -221,7 +221,7 @@ export function GrowthTab({ merchant }: { merchant: any }) {
               <h2 className="text-lg sm:text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight truncate">
                 Catalogue Meta (Facebook &amp; Instagram Shop)
               </h2>
-              <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-blue-500/15 text-blue-400 border border-blue-500/30 shrink-0">
+              <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-500/30 shrink-0">
                 Croissance Ads
               </span>
             </div>
@@ -245,9 +245,9 @@ export function GrowthTab({ merchant }: { merchant: any }) {
             />
             <button
               onClick={handleCopyFeedUrl}
-              className="h-12 px-5 bg-slate-900 hover:bg-slate-800 text-white dark:bg-white/10 dark:hover:bg-white/20 dark:text-white rounded-xl text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 transition-all active:scale-95 shrink-0 cursor-pointer"
+              className="h-12 px-5 bg-slate-100 hover:bg-slate-200 text-slate-900 border border-slate-300 dark:bg-white/10 dark:hover:bg-white/20 dark:text-white dark:border-white/10 rounded-xl text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 transition-all active:scale-95 shrink-0 cursor-pointer shadow-sm"
             >
-              {copiedFeed ? <Check size={16} className="text-vendeur-emerald" /> : <Copy size={16} />}
+              {copiedFeed ? <Check size={16} className="text-emerald-600 dark:text-vendeur-emerald" /> : <Copy size={16} />}
               <span>{copiedFeed ? "Copié !" : "Copier le lien"}</span>
             </button>
           </div>

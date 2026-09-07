@@ -227,7 +227,7 @@ html:not(.dark) {
     border-color: var(--border-card) !important;
   }
 
-  /* Universal Rule: All solid green, blue & sky buttons, badges, and controls MUST have crisp pure white text in light theme */
+  /* Universal Rule: All solid green, blue, sky, red, rose & dark buttons, badges, and controls MUST have crisp pure white text in light theme */
   .bg-vendeur-emerald,
   .bg-vendeur-emerald:hover,
   .bg-emerald-500,
@@ -255,6 +255,13 @@ html:not(.dark) {
   .bg-blue-700,
   .bg-indigo-500,
   .bg-indigo-600,
+  .bg-slate-900,
+  .bg-slate-900:hover,
+  .bg-slate-800,
+  .bg-slate-800:hover,
+  .bg-slate-950,
+  .bg-slate-950:hover,
+  .bg-black,
   button.bg-vendeur-emerald,
   button.bg-emerald-500,
   button.bg-emerald-600,
@@ -267,6 +274,10 @@ html:not(.dark) {
   button.bg-blue-600,
   button.bg-indigo-500,
   button.bg-indigo-600,
+  button.bg-slate-900,
+  button.bg-slate-800,
+  button.bg-slate-950,
+  button.bg-black,
   a.bg-vendeur-emerald,
   a.bg-emerald-500,
   a.bg-emerald-600,
@@ -276,12 +287,18 @@ html:not(.dark) {
   a.bg-sky-600,
   a.bg-blue-500,
   a.bg-blue-600,
+  a.bg-slate-900,
+  a.bg-slate-800,
+  a.bg-slate-950,
   [role="button"].bg-vendeur-emerald,
   [role="button"].bg-emerald-500,
   [role="button"].bg-\[\#00a884\],
   [role="button"].bg-sky-400,
   [role="button"].bg-sky-500,
-  [role="button"].bg-blue-500 {
+  [role="button"].bg-blue-500,
+  [role="button"].bg-slate-900,
+  [role="button"].bg-slate-800,
+  [role="button"].bg-slate-950 {
     color: #ffffff !important;
   }
 
@@ -300,7 +317,11 @@ html:not(.dark) {
   .bg-blue-600 *,
   .bg-blue-700 *,
   .bg-indigo-500 *,
-  .bg-indigo-600 * {
+  .bg-indigo-600 *,
+  .bg-slate-900 *,
+  .bg-slate-800 *,
+  .bg-slate-950 *,
+  .bg-black * {
     color: #ffffff !important;
   }
 
@@ -317,7 +338,11 @@ html:not(.dark) {
   .bg-blue-500 svg,
   .bg-blue-600 svg,
   .bg-indigo-500 svg,
-  .bg-indigo-600 svg {
+  .bg-indigo-600 svg,
+  .bg-slate-900 svg,
+  .bg-slate-800 svg,
+  .bg-slate-950 svg,
+  .bg-black svg {
     color: #ffffff !important;
     stroke: currentColor;
   }
@@ -345,6 +370,8 @@ html:not(.dark) {
     .bg-rose-500 *,
     .bg-rose-600 *,
     .bg-amber-500 *,
+    .bg-slate-900 *,
+    .bg-slate-800 *,
     .bg-slate-950 *,
     .bg-black *,
     .bg-\[\#0b141a\] *,
@@ -356,20 +383,140 @@ html:not(.dark) {
     color: var(--text-primary);
   }
 
-  .text-white\/90:not(.bg-slate-950 *, .bg-black *, .bg-\[\#0b141a\] *, .bg-\[\#202c33\] *, .bg-\[\#111b21\] *, .bg-\[\#182229\] *),
-  .text-white\/80:not(.bg-slate-950 *, .bg-black *, .bg-\[\#0b141a\] *, .bg-\[\#202c33\] *, .bg-\[\#111b21\] *, .bg-\[\#182229\] *),
-  .text-white\/70:not(.bg-slate-950 *, .bg-black *, .bg-\[\#0b141a\] *, .bg-\[\#202c33\] *, .bg-\[\#111b21\] *, .bg-\[\#182229\] *) {
+  .text-white\/90:not(
+    .bg-emerald-500 *,
+    .bg-vendeur-emerald *,
+    .bg-blue-500 *,
+    .bg-sky-500 *,
+    .bg-rose-500 *,
+    .bg-amber-500 *,
+    .bg-slate-900 *,
+    .bg-slate-800 *,
+    .bg-slate-950 *,
+    .bg-black *,
+    .bg-\[\#0b141a\] *,
+    .bg-\[\#202c33\] *,
+    .bg-\[\#111b21\] *,
+    .bg-\[\#182229\] *
+  ),
+  .text-white\/80:not(
+    .bg-emerald-500 *,
+    .bg-vendeur-emerald *,
+    .bg-blue-500 *,
+    .bg-sky-500 *,
+    .bg-rose-500 *,
+    .bg-amber-500 *,
+    .bg-slate-900 *,
+    .bg-slate-800 *,
+    .bg-slate-950 *,
+    .bg-black *,
+    .bg-\[\#0b141a\] *,
+    .bg-\[\#202c33\] *,
+    .bg-\[\#111b21\] *,
+    .bg-\[\#182229\] *
+  ),
+  .text-white\/70:not(
+    .bg-emerald-500 *,
+    .bg-vendeur-emerald *,
+    .bg-blue-500 *,
+    .bg-sky-500 *,
+    .bg-rose-500 *,
+    .bg-amber-500 *,
+    .bg-slate-900 *,
+    .bg-slate-800 *,
+    .bg-slate-950 *,
+    .bg-black *,
+    .bg-\[\#0b141a\] *,
+    .bg-\[\#202c33\] *,
+    .bg-\[\#111b21\] *,
+    .bg-\[\#182229\] *
+  ) {
     color: var(--text-primary) !important;
   }
 
-  .text-white\/60:not(.bg-slate-950 *, .bg-black *, .bg-\[\#0b141a\] *, .bg-\[\#202c33\] *, .bg-\[\#111b21\] *, .bg-\[\#182229\] *),
-  .text-white\/50:not(.bg-slate-950 *, .bg-black *, .bg-\[\#0b141a\] *, .bg-\[\#202c33\] *, .bg-\[\#111b21\] *, .bg-\[\#182229\] *),
-  .text-white\/40:not(.bg-slate-950 *, .bg-black *, .bg-\[\#0b141a\] *, .bg-\[\#202c33\] *, .bg-\[\#111b21\] *, .bg-\[\#182229\] *) {
+  .text-white\/60:not(
+    .bg-emerald-500 *,
+    .bg-vendeur-emerald *,
+    .bg-blue-500 *,
+    .bg-sky-500 *,
+    .bg-rose-500 *,
+    .bg-amber-500 *,
+    .bg-slate-900 *,
+    .bg-slate-800 *,
+    .bg-slate-950 *,
+    .bg-black *,
+    .bg-\[\#0b141a\] *,
+    .bg-\[\#202c33\] *,
+    .bg-\[\#111b21\] *,
+    .bg-\[\#182229\] *
+  ),
+  .text-white\/50:not(
+    .bg-emerald-500 *,
+    .bg-vendeur-emerald *,
+    .bg-blue-500 *,
+    .bg-sky-500 *,
+    .bg-rose-500 *,
+    .bg-amber-500 *,
+    .bg-slate-900 *,
+    .bg-slate-800 *,
+    .bg-slate-950 *,
+    .bg-black *,
+    .bg-\[\#0b141a\] *,
+    .bg-\[\#202c33\] *,
+    .bg-\[\#111b21\] *,
+    .bg-\[\#182229\] *
+  ),
+  .text-white\/40:not(
+    .bg-emerald-500 *,
+    .bg-vendeur-emerald *,
+    .bg-blue-500 *,
+    .bg-sky-500 *,
+    .bg-rose-500 *,
+    .bg-amber-500 *,
+    .bg-slate-900 *,
+    .bg-slate-800 *,
+    .bg-slate-950 *,
+    .bg-black *,
+    .bg-\[\#0b141a\] *,
+    .bg-\[\#202c33\] *,
+    .bg-\[\#111b21\] *,
+    .bg-\[\#182229\] *
+  ) {
     color: var(--text-secondary) !important;
   }
 
-  .text-white\/30:not(.bg-slate-950 *, .bg-black *, .bg-\[\#0b141a\] *, .bg-\[\#202c33\] *, .bg-\[\#111b21\] *, .bg-\[\#182229\] *),
-  .text-white\/20:not(.bg-slate-950 *, .bg-black *, .bg-\[\#0b141a\] *, .bg-\[\#202c33\] *, .bg-\[\#111b21\] *, .bg-\[\#182229\] *) {
+  .text-white\/30:not(
+    .bg-emerald-500 *,
+    .bg-vendeur-emerald *,
+    .bg-blue-500 *,
+    .bg-sky-500 *,
+    .bg-rose-500 *,
+    .bg-amber-500 *,
+    .bg-slate-900 *,
+    .bg-slate-800 *,
+    .bg-slate-950 *,
+    .bg-black *,
+    .bg-\[\#0b141a\] *,
+    .bg-\[\#202c33\] *,
+    .bg-\[\#111b21\] *,
+    .bg-\[\#182229\] *
+  ),
+  .text-white\/20:not(
+    .bg-emerald-500 *,
+    .bg-vendeur-emerald *,
+    .bg-blue-500 *,
+    .bg-sky-500 *,
+    .bg-rose-500 *,
+    .bg-amber-500 *,
+    .bg-slate-900 *,
+    .bg-slate-800 *,
+    .bg-slate-950 *,
+    .bg-black *,
+    .bg-\[\#0b141a\] *,
+    .bg-\[\#202c33\] *,
+    .bg-\[\#111b21\] *,
+    .bg-\[\#182229\] *
+  ) {
     color: var(--text-muted) !important;
   }
 

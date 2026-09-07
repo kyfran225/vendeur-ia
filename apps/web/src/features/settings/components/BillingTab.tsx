@@ -484,7 +484,7 @@ export function BillingTab({ merchant }: { merchant: any }) {
               className={cn(
                 "px-4 py-2 rounded-xl text-xs sm:text-sm font-black uppercase tracking-wider transition-all cursor-pointer",
                 billingInterval === "monthly"
-                  ? "bg-white text-slate-950 shadow dark:bg-white dark:text-vendeur-coal"
+                  ? "bg-white text-slate-950 shadow dark:bg-white dark:text-slate-950"
                   : "text-slate-500 hover:text-slate-900 dark:text-white/50 dark:hover:text-white"
               )}
             >
@@ -496,7 +496,7 @@ export function BillingTab({ merchant }: { merchant: any }) {
               className={cn(
                 "px-4 py-2 rounded-xl text-xs sm:text-sm font-black uppercase tracking-wider flex items-center gap-1.5 transition-all cursor-pointer",
                 billingInterval === "yearly"
-                  ? "bg-vendeur-emerald text-vendeur-coal shadow-lg shadow-vendeur-emerald/20"
+                  ? "bg-vendeur-emerald text-white dark:text-slate-950 shadow-lg shadow-vendeur-emerald/20 font-black"
                   : "text-slate-500 hover:text-slate-900 dark:text-white/50 dark:hover:text-white"
               )}
             >
@@ -504,8 +504,8 @@ export function BillingTab({ merchant }: { merchant: any }) {
               <span className={cn(
                 "text-[10px] sm:text-xs px-2 py-0.5 rounded-full font-black uppercase",
                 billingInterval === "yearly"
-                  ? "bg-vendeur-coal text-vendeur-emerald"
-                  : "bg-vendeur-emerald/20 text-vendeur-emerald"
+                  ? "bg-emerald-900 text-emerald-100 dark:bg-slate-950 dark:text-vendeur-emerald"
+                  : "bg-emerald-500/20 text-emerald-800 dark:text-vendeur-emerald"
               )}>
                 2 mois offerts
               </span>
@@ -536,11 +536,11 @@ export function BillingTab({ merchant }: { merchant: any }) {
                 )}
               >
                 {isCurrentActiveAndInterval ? (
-                  <div className="absolute -top-3 left-6 sm:left-8 bg-slate-900 text-white dark:bg-white/10 dark:text-white border border-slate-700 dark:border-white/20 text-xs font-black uppercase px-3.5 py-1 rounded-full tracking-wider shadow-lg">
+                  <div className="absolute -top-3 left-6 sm:left-8 bg-slate-100 text-slate-800 dark:bg-white/10 dark:text-white border border-slate-300 dark:border-white/20 text-xs font-black uppercase px-3.5 py-1 rounded-full tracking-wider shadow-md">
                     ✓ Votre forfait actuel
                   </div>
                 ) : isPro ? (
-                  <div className="absolute -top-3 left-6 sm:left-8 bg-vendeur-emerald text-vendeur-coal text-xs font-black uppercase px-3.5 py-1 rounded-full tracking-wider shadow-lg">
+                  <div className="absolute -top-3 left-6 sm:left-8 bg-vendeur-emerald text-white dark:text-slate-950 text-xs font-black uppercase px-3.5 py-1 rounded-full tracking-wider shadow-lg">
                     ⭐ Recommandé
                   </div>
                 ) : null}
@@ -549,7 +549,7 @@ export function BillingTab({ merchant }: { merchant: any }) {
                   <div className="flex items-center gap-3.5">
                     <div className={cn(
                       "h-12 w-12 sm:h-14 sm:w-14 rounded-2xl flex items-center justify-center shrink-0 shadow-md",
-                      isPro ? "bg-vendeur-emerald text-vendeur-coal" : "bg-slate-100 dark:bg-white/5 text-slate-500 dark:text-white/40 border border-slate-200 dark:border-white/5"
+                      isPro ? "bg-vendeur-emerald text-white dark:text-slate-950" : "bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-white/50 border border-slate-200 dark:border-white/5"
                     )}>
                       {isPro ? <Rocket size={24} /> : <Zap size={24} />}
                     </div>
@@ -564,7 +564,7 @@ export function BillingTab({ merchant }: { merchant: any }) {
                       <div key={i} className="flex items-start gap-3">
                         <div className={cn(
                           "h-5 w-5 rounded-full flex items-center justify-center shrink-0 mt-0.5",
-                          isPro ? "bg-vendeur-emerald/15 text-vendeur-emerald border border-vendeur-emerald/25" : "bg-slate-100 dark:bg-white/5 text-slate-500 dark:text-white/50 border border-slate-200 dark:border-white/10"
+                          isPro ? "bg-vendeur-emerald/15 text-emerald-700 dark:text-vendeur-emerald border border-vendeur-emerald/25" : "bg-slate-100 dark:bg-white/5 text-slate-500 dark:text-white/50 border border-slate-200 dark:border-white/10"
                         )}>
                           <CheckCircle2 size={14} />
                         </div>
@@ -609,8 +609,8 @@ export function BillingTab({ merchant }: { merchant: any }) {
                         : isCurrentActiveAndInterval
                         ? "bg-slate-100 hover:bg-slate-200 text-slate-800 border-slate-300 dark:bg-white/10 dark:hover:bg-white/15 dark:text-white dark:border-white/10 active:scale-95 cursor-pointer"
                         : isPro
-                        ? "bg-vendeur-emerald text-vendeur-coal hover:scale-[1.02] shadow-vendeur-emerald/20 font-black active:scale-95 cursor-pointer"
-                        : "bg-slate-900 text-white dark:bg-white dark:text-vendeur-coal hover:bg-vendeur-emerald hover:text-vendeur-coal font-bold active:scale-95 cursor-pointer"
+                        ? "bg-vendeur-emerald text-white dark:text-slate-950 hover:bg-emerald-400 hover:scale-[1.02] shadow-vendeur-emerald/20 font-black active:scale-95 cursor-pointer"
+                        : "bg-emerald-600 hover:bg-emerald-500 text-white font-bold active:scale-95 cursor-pointer hover:scale-[1.02]"
                     )}
                   >
                     <span>
@@ -660,7 +660,7 @@ export function BillingTab({ merchant }: { merchant: any }) {
                 "w-full md:w-auto h-12 sm:h-14 px-6 sm:px-8 rounded-2xl font-black uppercase tracking-wider text-xs sm:text-sm flex items-center justify-center gap-2.5 transition-all shadow-xl",
                 isUnderVerification
                   ? "bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-400 dark:text-white/40 cursor-not-allowed shadow-none"
-                  : "bg-slate-900 text-white dark:bg-white dark:text-vendeur-coal hover:bg-vendeur-emerald hover:text-vendeur-coal active:scale-95 cursor-pointer hover:scale-105"
+                  : "bg-emerald-600 hover:bg-emerald-500 text-white dark:bg-vendeur-emerald dark:hover:bg-emerald-400 dark:text-slate-950 active:scale-95 cursor-pointer hover:scale-105 font-black"
               )}
             >
               <span>{isUnderVerification ? "Paiement en attente de validation ⏳" : "Commander le Pack Pro"}</span>

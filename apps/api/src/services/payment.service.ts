@@ -15,6 +15,7 @@ import { emitToUser } from "../realtime/socketServer.js";
 import { paymentShieldService, ForensicExtractionResult } from "./payment-shield.service.js";
 import { storageService } from "./storage.service.js";
 import { auditLogService } from "./audit-log.service.js";
+import { env } from "../config/env.js";
 
 export class PaymentService {
   public static readonly RATES: Record<string, { rate: number; round: number; symbol: string }> = {
@@ -137,12 +138,28 @@ export class PaymentService {
         currencySymbol = PaymentService.RATES[targetCurrency]?.symbol || "CFA";
     }
 
+    const isPaystackEnabled = Boolean(env.PAYSTACK_SECRET_KEY);
+
     return {
+      paystack: {
+        enabled: isPaystackEnabled,
+        publicKey: env.PAYSTACK_PUBLIC_KEY || "",
+        supportedCountries: ["CI", "GH", "NG", "KE", "ZA"],
+        isPreferredForCountry: isLocal || countryKey === "CI",
+        autoMethods: [
+          { id: "paystack_wave", name: "Wave CI", badge: "Automatique ⚡", icon: "wave", color: "#1dc5d8" },
+          { id: "paystack_om", name: "Orange Money CI", badge: "Automatique ⚡", icon: "orange", color: "#ff7900" },
+          { id: "paystack_mtn", name: "MTN MoMo CI", badge: "Automatique ⚡", icon: "mtn", color: "#ffcc00" },
+          { id: "paystack_moov", name: "Moov Money CI", badge: "Automatique ⚡", icon: "moov", color: "#0066b2" },
+          { id: "paystack_card", name: "Carte Bancaire (Visa / Mastercard)", badge: "International", icon: "card", color: "#4f46e5" }
+        ]
+      },
       manualPaymentsEnabled: cfg.enabled ?? true,
       recipientName: cfg.recipientName || "Vendeur IA Trésorerie",
       targetCurrency,
       currencySymbol,
       localAmount,
+      isLocal,
       methods: [
         {
           id: "wave",
@@ -200,11 +217,11 @@ export class PaymentService {
         {
           id: "card",
           name: "Carte Bancaire (Visa / Mastercard)",
-          number: "Paiement en ligne",
+          number: "Paiement en ligne sécurisé",
           color: "#4f46e5",
-          badge: "Bientôt disponible",
-          instructions: "Le règlement par carte bancaire internationale Visa / Mastercard est en cours de finalisation et sera disponible très prochainement.",
-          visible: false
+          badge: "Paystack Sécurisé",
+          instructions: "Règlement par carte bancaire internationale Visa / Mastercard / Apple Pay sécurisé par Paystack.",
+          visible: true
         }
       ].filter(m => m.visible),
       supportWhatsApp: settings.supportWhatsApp || "+2250700000000"

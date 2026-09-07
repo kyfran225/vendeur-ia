@@ -402,17 +402,17 @@ export function StorefrontBrandingTab({ merchant }: StorefrontBrandingTabProps) 
     <div className="space-y-6 sm:space-y-8 animate-in fade-in duration-300 pb-28">
       
       {/* ─── Hero Information & Quick Actions Bar ─── */}
-      <div className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-gradient-to-r from-white/[0.05] via-white/[0.02] to-transparent border border-white/10 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 shadow-xl">
+      <div className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-slate-50 dark:bg-gradient-to-r dark:from-white/[0.05] dark:via-white/[0.02] dark:to-transparent border border-slate-200 dark:border-white/10 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 shadow-sm dark:shadow-xl">
         <div className="space-y-1">
           <div className="flex items-center gap-2.5">
             <div className="h-9 w-9 rounded-xl bg-vendeur-emerald/20 text-vendeur-emerald flex items-center justify-center shrink-0 border border-vendeur-emerald/30 shadow-md">
               <Palette size={20} className="shrink-0" />
             </div>
-            <h3 className="text-base sm:text-lg font-black uppercase tracking-tight text-white leading-tight">
+            <h3 className="text-base sm:text-lg font-black uppercase tracking-tight text-slate-900 dark:text-white leading-tight">
               Studio Apparence &amp; Vitrine Web
             </h3>
           </div>
-          <p className="text-xs text-white/50 leading-relaxed mt-1">
+          <p className="text-xs text-slate-500 dark:text-white/50 leading-relaxed mt-1">
             Personnalisez le logo de votre boutique, votre palette de couleurs, vos bannières et vos coordonnées.
           </p>
         </div>
@@ -436,10 +436,10 @@ export function StorefrontBrandingTab({ merchant }: StorefrontBrandingTabProps) 
               navigator.clipboard.writeText(shopUrl);
               toast.success("Lien de la vitrine copié ! 📋");
             }}
-            className="h-11 sm:h-12 px-3.5 sm:px-4 rounded-xl sm:rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 text-white font-black uppercase text-xs tracking-wider flex items-center justify-center gap-1.5 transition-all active:scale-95 cursor-pointer"
+            className="h-11 sm:h-12 px-3.5 sm:px-4 rounded-xl sm:rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-white/5 dark:hover:bg-white/10 border border-slate-200 dark:border-white/10 text-slate-700 dark:text-white font-black uppercase text-xs tracking-wider flex items-center justify-center gap-1.5 transition-all active:scale-95 cursor-pointer"
             title="Copier le lien de la vitrine"
           >
-            <Copy size={15} className="text-white/60 shrink-0" />
+            <Copy size={15} className="text-slate-500 dark:text-white/60 shrink-0" />
             <span className="hidden sm:inline">Copier</span>
           </button>
 
@@ -447,7 +447,7 @@ export function StorefrontBrandingTab({ merchant }: StorefrontBrandingTabProps) 
             href={shopUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="h-11 sm:h-12 px-4 sm:px-5 rounded-xl sm:rounded-2xl bg-white/10 hover:bg-white/15 border border-white/10 text-white font-black uppercase text-xs tracking-wider flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all shrink-0"
+            className="h-11 sm:h-12 px-4 sm:px-5 rounded-xl sm:rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white dark:bg-white/10 dark:hover:bg-white/15 dark:text-white border border-emerald-600 dark:border-white/10 font-black uppercase text-xs tracking-wider flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all shrink-0"
           >
             <Eye size={16} className="shrink-0" />
             <span>Ouvrir la Vitrine</span>
@@ -636,14 +636,14 @@ export function StorefrontBrandingTab({ merchant }: StorefrontBrandingTabProps) 
       {/* ─── 2. THÈME D'AFFICHAGE DE LA VITRINE ─── */}
       <div id="storefront-theme" className="p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl md:rounded-[2.5rem] bg-white dark:bg-vendeur-coal border border-slate-200 dark:border-white/10 space-y-4 sm:space-y-6 scroll-mt-28 shadow-sm hover:shadow-md dark:shadow-xl transition-all">
         <div className="flex items-start gap-2.5">
-          <div className="h-8 w-8 rounded-lg bg-white/5 flex items-center justify-center shrink-0 mt-0.5 border border-white/10">
-            <Sun size={16} className="text-amber-400 shrink-0" />
+          <div className="h-8 w-8 rounded-lg bg-amber-500/10 flex items-center justify-center shrink-0 mt-0.5 border border-amber-500/20">
+            <Sun size={16} className="text-amber-500 dark:text-amber-400 shrink-0" />
           </div>
           <div className="min-w-0 flex-1">
-            <h4 className="text-xs sm:text-sm font-black uppercase tracking-wider text-white leading-tight">
+            <h4 className="text-xs sm:text-sm font-black uppercase tracking-wider text-slate-900 dark:text-white leading-tight">
               2. Ambiance Visuelle par Défaut (Clair / Sombre / Adaptatif)
             </h4>
-            <p className="text-[11px] sm:text-xs text-white/40 leading-relaxed mt-0.5">
+            <p className="text-[11px] sm:text-xs text-slate-500 dark:text-white/40 leading-relaxed mt-0.5">
               Choisissez comment votre vitrine s'ouvre pour vos clients. Vos visiteurs pourront aussi basculer en 1 clic grâce au bouton de thème.
             </p>
           </div>
@@ -656,21 +656,21 @@ export function StorefrontBrandingTab({ merchant }: StorefrontBrandingTabProps) 
               name: "Sombre Élégant",
               subtitle: "Fond nuit profond, idéal pour l'électronique et le luxe",
               icon: Moon,
-              iconColor: "text-emerald-400"
+              iconColor: "text-emerald-500 dark:text-emerald-400"
             },
             {
               id: "light",
               name: "Clair & Épuré",
               subtitle: "Fond blanc lumineux, idéal pour la mode, cosmétique et food",
               icon: Sun,
-              iconColor: "text-amber-400"
+              iconColor: "text-amber-500 dark:text-amber-400"
             },
             {
               id: "system",
               name: "Adaptatif Automatique",
               subtitle: "S'adapte automatiquement au smartphone du visiteur",
               icon: Laptop,
-              iconColor: "text-sky-400"
+              iconColor: "text-sky-500 dark:text-sky-400"
             }
           ].map((mode) => {
             const isSelected = storefrontTheme === mode.id;
@@ -682,12 +682,12 @@ export function StorefrontBrandingTab({ merchant }: StorefrontBrandingTabProps) 
                 onClick={() => setStorefrontTheme(mode.id as any)}
                 className={`p-4 rounded-2xl border text-left flex flex-col justify-between gap-3 transition-all cursor-pointer ${
                   isSelected
-                    ? "bg-white/[0.08] border-vendeur-emerald ring-2 ring-vendeur-emerald/30 shadow-xl"
-                    : "bg-white/[0.02] border-white/5 hover:border-white/20 hover:bg-white/[0.04]"
+                    ? "bg-slate-50 dark:bg-white/[0.08] border-vendeur-emerald ring-2 ring-vendeur-emerald/30 shadow-md"
+                    : "bg-slate-50/50 hover:bg-slate-100 border-slate-200 dark:bg-white/[0.02] dark:border-white/5 dark:hover:border-white/20 dark:hover:bg-white/[0.04]"
                 }`}
               >
                 <div className="flex items-center justify-between w-full">
-                  <div className="h-10 w-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center shrink-0">
+                  <div className="h-10 w-10 rounded-xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 flex items-center justify-center shrink-0">
                     <Icon size={20} className={mode.iconColor} />
                   </div>
                   {isSelected && (
@@ -698,10 +698,10 @@ export function StorefrontBrandingTab({ merchant }: StorefrontBrandingTabProps) 
                 </div>
 
                 <div>
-                  <p className="text-xs sm:text-sm font-black uppercase tracking-tight text-white leading-tight">
+                  <p className="text-xs sm:text-sm font-black uppercase tracking-tight text-slate-900 dark:text-white leading-tight">
                     {mode.name}
                   </p>
-                  <p className="text-[10px] text-white/40 leading-relaxed mt-1">
+                  <p className="text-[10px] text-slate-500 dark:text-white/40 leading-relaxed mt-1">
                     {mode.subtitle}
                   </p>
                 </div>
@@ -730,26 +730,26 @@ export function StorefrontBrandingTab({ merchant }: StorefrontBrandingTabProps) 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
           
           {/* ── Logo Card & Dropzone ── */}
-          <div className="space-y-3 p-4 sm:p-5 rounded-2xl bg-white/[0.02] border border-white/5 flex flex-col justify-between">
+          <div className="space-y-3 p-4 sm:p-5 rounded-2xl bg-slate-50/70 dark:bg-white/[0.02] border border-slate-200 dark:border-white/5 flex flex-col justify-between">
             <div className="space-y-1">
               <div className="flex items-center justify-between">
-                <label className="block text-[11px] sm:text-xs font-black uppercase tracking-wider text-white/90">
+                <label className="block text-[11px] sm:text-xs font-black uppercase tracking-wider text-slate-800 dark:text-white/90">
                   Logo de la Boutique
                 </label>
                 {logoUrl && (
-                  <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-wider text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">
+                  <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">
                     <Check size={11} strokeWidth={3} />
                     <span>Logo prêt</span>
                   </span>
                 )}
               </div>
-              <p className="text-[10px] text-white/40">Affiché dans le header de l'app, votre vitrine et votre photo de profil.</p>
+              <p className="text-[10px] text-slate-500 dark:text-white/40">Affiché dans le header de l'app, votre vitrine et votre photo de profil.</p>
             </div>
 
             {/* Logo Preview or Dropzone */}
             {logoUrl ? (
               <div className="relative p-4 rounded-2xl border border-emerald-500/30 bg-emerald-500/5 flex flex-col sm:flex-row items-center gap-4 transition-all">
-                <div className="h-24 w-24 rounded-2xl bg-black/60 border border-white/10 overflow-hidden flex items-center justify-center shrink-0 shadow-xl relative group">
+                <div className="h-24 w-24 rounded-2xl bg-slate-200 dark:bg-black/60 border border-slate-300 dark:border-white/10 overflow-hidden flex items-center justify-center shrink-0 shadow-sm dark:shadow-xl relative group">
                   <img src={logoUrl} alt="Logo de la boutique" className="w-full h-full object-cover" />
                   {isUploadingLogo && (
                     <div className="absolute inset-0 bg-black/70 flex flex-col items-center justify-center gap-1">
@@ -760,8 +760,8 @@ export function StorefrontBrandingTab({ merchant }: StorefrontBrandingTabProps) 
 
                 <div className="flex-1 min-w-0 space-y-2 text-center sm:text-left">
                   <div>
-                    <p className="text-xs font-black text-white uppercase tracking-tight truncate">Logo Actif</p>
-                    <p className="text-[10px] text-white/50">
+                    <p className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-tight truncate">Logo Actif</p>
+                    <p className="text-[10px] text-slate-500 dark:text-white/50">
                       {isUploadingLogo ? "Optimisation et envoi..." : "Prêt à être publié sur votre vitrine."}
                     </p>
                   </div>
@@ -770,7 +770,7 @@ export function StorefrontBrandingTab({ merchant }: StorefrontBrandingTabProps) 
                       type="button"
                       disabled={isUploadingLogo}
                       onClick={() => logoInputRef.current?.click()}
-                      className="h-8 px-3 rounded-lg bg-white/10 hover:bg-white/20 text-white font-bold text-[10px] uppercase tracking-wider flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer"
+                      className="h-8 px-3 rounded-lg bg-slate-200 hover:bg-slate-300 dark:bg-white/10 dark:hover:bg-white/20 text-slate-800 dark:text-white font-bold text-[10px] uppercase tracking-wider flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer"
                     >
                       <UploadCloud size={13} />
                       <span>Changer</span>
@@ -781,7 +781,7 @@ export function StorefrontBrandingTab({ merchant }: StorefrontBrandingTabProps) 
                         setLogoUrl("");
                         toast.info("Logo retiré. Pensez à enregistrer.");
                       }}
-                      className="h-8 px-3 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 border border-rose-500/30 text-rose-300 font-bold text-[10px] uppercase tracking-wider flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer"
+                      className="h-8 px-3 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-600 dark:text-rose-300 font-bold text-[10px] uppercase tracking-wider flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer"
                     >
                       <Trash2 size={13} />
                       <span>Supprimer</span>
@@ -803,22 +803,22 @@ export function StorefrontBrandingTab({ merchant }: StorefrontBrandingTabProps) 
                 className={`p-6 rounded-2xl border-2 border-dashed transition-all cursor-pointer flex flex-col items-center justify-center gap-3 text-center ${
                   isLogoDragging
                     ? "border-vendeur-emerald bg-vendeur-emerald/10 scale-[1.02]"
-                    : "border-white/15 bg-black/20 hover:border-white/30 hover:bg-black/40"
+                    : "border-slate-300 bg-slate-100/60 hover:border-slate-400 hover:bg-slate-100 dark:border-white/15 dark:bg-black/20 dark:hover:border-white/30 dark:hover:bg-black/40"
                 }`}
               >
-                <div className="h-16 w-16 rounded-2xl bg-black/60 border border-white/10 flex items-center justify-center shrink-0 shadow-inner">
+                <div className="h-16 w-16 rounded-2xl bg-white dark:bg-black/60 border border-slate-200 dark:border-white/10 flex items-center justify-center shrink-0 shadow-inner">
                   {isUploadingLogo ? (
                     <Loader2 size={24} className="animate-spin text-vendeur-emerald" />
                   ) : (
-                    <Store size={28} className="text-white/40" />
+                    <Store size={28} className="text-slate-400 dark:text-white/40" />
                   )}
                 </div>
 
                 <div className="space-y-1">
-                  <p className="text-xs font-black text-white uppercase tracking-tight">
+                  <p className="text-xs font-black text-slate-800 dark:text-white uppercase tracking-tight">
                     {isUploadingLogo ? "Optimisation en cours..." : "Glissez votre logo ici ou cliquez"}
                   </p>
-                  <p className="text-[10px] text-white/40 font-mono">PNG, JPG, WebP (Format carré recommandé)</p>
+                  <p className="text-[10px] text-slate-500 dark:text-white/40 font-mono">PNG, JPG, WebP (Format carré recommandé)</p>
                 </div>
               </div>
             )}
@@ -839,7 +839,7 @@ export function StorefrontBrandingTab({ merchant }: StorefrontBrandingTabProps) 
               <button
                 type="button"
                 onClick={() => setShowLogoUrlInput(!showLogoUrlInput)}
-                className="text-[11px] font-bold text-white/50 hover:text-white flex items-center gap-1 cursor-pointer"
+                className="text-[11px] font-bold text-slate-500 hover:text-slate-900 dark:text-white/50 dark:hover:text-white flex items-center gap-1 cursor-pointer"
               >
                 <LinkIcon size={12} />
                 <span>{showLogoUrlInput ? "Masquer l'URL" : "Saisir une URL directe"}</span>
@@ -852,26 +852,26 @@ export function StorefrontBrandingTab({ merchant }: StorefrontBrandingTabProps) 
                 placeholder="https://monsite.com/logo.png"
                 value={logoUrl}
                 onChange={(e) => setLogoUrl(e.target.value)}
-                className="w-full h-10 bg-white/5 border border-white/10 rounded-xl px-3 text-xs text-white outline-none focus:border-vendeur-emerald font-mono animate-in fade-in"
+                className="w-full h-10 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-3 text-xs text-slate-900 dark:text-white outline-none focus:border-vendeur-emerald font-mono animate-in fade-in"
               />
             )}
           </div>
 
           {/* ── Cover Banner Card & Dropzone ── */}
-          <div id="cover" className="space-y-3 p-4 sm:p-5 rounded-2xl bg-white/[0.02] border border-white/5 flex flex-col justify-between">
+          <div id="cover" className="space-y-3 p-4 sm:p-5 rounded-2xl bg-slate-50/70 dark:bg-white/[0.02] border border-slate-200 dark:border-white/5 flex flex-col justify-between">
             <div className="space-y-1">
               <div className="flex items-center justify-between">
-                <label className="block text-[11px] sm:text-xs font-black uppercase tracking-wider text-white/90">
+                <label className="block text-[11px] sm:text-xs font-black uppercase tracking-wider text-slate-800 dark:text-white/90">
                   Bannière de Couverture
                 </label>
                 {coverUrl && (
-                  <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-wider text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">
+                  <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">
                     <Check size={11} strokeWidth={3} />
                     <span>Bannière prête</span>
                   </span>
                 )}
               </div>
-              <p className="text-[10px] text-white/40">Bannière panoramique en haut de votre boutique et sur WhatsApp.</p>
+              <p className="text-[10px] text-slate-500 dark:text-white/40">Bannière panoramique en haut de votre boutique et sur WhatsApp.</p>
             </div>
 
             {/* Cover Preview or Dropzone */}
@@ -914,7 +914,7 @@ export function StorefrontBrandingTab({ merchant }: StorefrontBrandingTabProps) 
                   </div>
                 </div>
 
-                <p className="text-[10px] text-white/50 leading-relaxed font-medium bg-white/[0.02] p-2 rounded-xl border border-white/5">
+                <p className="text-[10px] text-slate-500 dark:text-white/50 leading-relaxed font-medium bg-slate-100/80 dark:bg-white/[0.02] p-2 rounded-xl border border-slate-200 dark:border-white/5">
                   💡 S'affiche en arrière-plan dans la section d'accueil de votre vitrine web et habille vos partages.
                 </p>
               </div>
@@ -932,22 +932,22 @@ export function StorefrontBrandingTab({ merchant }: StorefrontBrandingTabProps) 
                 className={`p-6 rounded-2xl border-2 border-dashed transition-all cursor-pointer flex flex-col items-center justify-center gap-3 text-center ${
                   isCoverDragging
                     ? "border-vendeur-emerald bg-vendeur-emerald/10 scale-[1.02]"
-                    : "border-white/15 bg-black/20 hover:border-white/30 hover:bg-black/40"
+                    : "border-slate-300 bg-slate-100/60 hover:border-slate-400 hover:bg-slate-100 dark:border-white/15 dark:bg-black/20 dark:hover:border-white/30 dark:hover:bg-black/40"
                 }`}
               >
-                <div className="h-16 w-28 rounded-2xl bg-black/60 border border-white/10 flex items-center justify-center shrink-0 shadow-inner">
+                <div className="h-16 w-28 rounded-2xl bg-white dark:bg-black/60 border border-slate-200 dark:border-white/10 flex items-center justify-center shrink-0 shadow-inner">
                   {isUploadingCover ? (
                     <Loader2 size={24} className="animate-spin text-vendeur-emerald" />
                   ) : (
-                    <ImageIcon size={28} className="text-white/40" />
+                    <ImageIcon size={28} className="text-slate-400 dark:text-white/40" />
                   )}
                 </div>
 
                 <div className="space-y-1">
-                  <p className="text-xs font-black text-white uppercase tracking-tight">
+                  <p className="text-xs font-black text-slate-800 dark:text-white uppercase tracking-tight">
                     {isUploadingCover ? "Optimisation en cours..." : "Glissez votre bannière ici ou cliquez"}
                   </p>
-                  <p className="text-[10px] text-white/40 font-mono">Format panoramique 16:9 recommandé (Ex: 1200x400)</p>
+                  <p className="text-[10px] text-slate-500 dark:text-white/40 font-mono">Format panoramique 16:9 recommandé (Ex: 1200x400)</p>
                 </div>
               </div>
             )}
@@ -968,7 +968,7 @@ export function StorefrontBrandingTab({ merchant }: StorefrontBrandingTabProps) 
               <button
                 type="button"
                 onClick={() => setShowCoverUrlInput(!showCoverUrlInput)}
-                className="text-[11px] font-bold text-white/50 hover:text-white flex items-center gap-1 cursor-pointer"
+                className="text-[11px] font-bold text-slate-500 hover:text-slate-900 dark:text-white/50 dark:hover:text-white flex items-center gap-1 cursor-pointer"
               >
                 <LinkIcon size={12} />
                 <span>{showCoverUrlInput ? "Masquer l'URL" : "Saisir une URL directe"}</span>
@@ -981,7 +981,7 @@ export function StorefrontBrandingTab({ merchant }: StorefrontBrandingTabProps) 
                 placeholder="https://monsite.com/banniere.jpg"
                 value={coverUrl}
                 onChange={(e) => setCoverUrl(e.target.value)}
-                className="w-full h-10 bg-white/5 border border-white/10 rounded-xl px-3 text-xs text-white outline-none focus:border-vendeur-emerald font-mono animate-in fade-in"
+                className="w-full h-10 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-3 text-xs text-slate-900 dark:text-white outline-none focus:border-vendeur-emerald font-mono animate-in fade-in"
               />
             )}
           </div>
@@ -993,7 +993,7 @@ export function StorefrontBrandingTab({ merchant }: StorefrontBrandingTabProps) 
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-start gap-2.5 min-w-0 flex-1">
             <div className="h-8 w-8 rounded-lg bg-amber-500/10 flex items-center justify-center shrink-0 mt-0.5 border border-amber-500/20">
-              <Megaphone size={16} className="text-amber-400 shrink-0" />
+              <Megaphone size={16} className="text-amber-500 dark:text-amber-400 shrink-0" />
             </div>
             <div className="min-w-0 flex-1">
               <h4 className="text-xs sm:text-sm font-black uppercase tracking-wider text-slate-900 dark:text-white leading-tight">
@@ -1067,8 +1067,8 @@ export function StorefrontBrandingTab({ merchant }: StorefrontBrandingTabProps) 
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 sm:gap-4">
           <div className="space-y-1.5">
-            <label className="text-[10px] font-black uppercase tracking-widest text-white/60 flex items-center gap-1.5">
-              <Instagram size={14} className="text-rose-400 shrink-0" />
+            <label className="text-[10px] font-black uppercase tracking-widest text-slate-700 dark:text-white/60 flex items-center gap-1.5">
+              <Instagram size={14} className="text-rose-500 dark:text-rose-400 shrink-0" />
               <span>Instagram (Lien ou @pseudo)</span>
             </label>
             <input
@@ -1076,13 +1076,13 @@ export function StorefrontBrandingTab({ merchant }: StorefrontBrandingTabProps) 
               placeholder="Ex: @maboutique ou https://instagram.com/maboutique"
               value={instagram}
               onChange={(e) => setInstagram(e.target.value)}
-              className="w-full h-11 bg-white/5 border border-white/10 rounded-xl px-3.5 text-xs text-white outline-none focus:border-vendeur-emerald transition-all font-medium"
+              className="w-full h-11 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-3.5 text-xs text-slate-900 dark:text-white outline-none focus:border-vendeur-emerald transition-all font-medium"
             />
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-[10px] font-black uppercase tracking-widest text-white/60 flex items-center gap-1.5">
-              <TikTokIcon size={14} className="text-cyan-400 shrink-0" />
+            <label className="text-[10px] font-black uppercase tracking-widest text-slate-700 dark:text-white/60 flex items-center gap-1.5">
+              <TikTokIcon size={14} className="text-cyan-500 dark:text-cyan-400 shrink-0" />
               <span>TikTok (Lien ou @pseudo)</span>
             </label>
             <input
@@ -1090,13 +1090,13 @@ export function StorefrontBrandingTab({ merchant }: StorefrontBrandingTabProps) 
               placeholder="Ex: @maboutique ou https://tiktok.com/@maboutique"
               value={tiktok}
               onChange={(e) => setTiktok(e.target.value)}
-              className="w-full h-11 bg-white/5 border border-white/10 rounded-xl px-3.5 text-xs text-white outline-none focus:border-vendeur-emerald transition-all font-medium"
+              className="w-full h-11 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-3.5 text-xs text-slate-900 dark:text-white outline-none focus:border-vendeur-emerald transition-all font-medium"
             />
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-[10px] font-black uppercase tracking-widest text-white/60 flex items-center gap-1.5">
-              <Facebook size={14} className="text-blue-400 shrink-0" />
+            <label className="text-[10px] font-black uppercase tracking-widest text-slate-700 dark:text-white/60 flex items-center gap-1.5">
+              <Facebook size={14} className="text-blue-500 dark:text-blue-400 shrink-0" />
               <span>Page Facebook</span>
             </label>
             <input
@@ -1104,13 +1104,13 @@ export function StorefrontBrandingTab({ merchant }: StorefrontBrandingTabProps) 
               placeholder="Ex: https://facebook.com/maboutique"
               value={facebook}
               onChange={(e) => setFacebook(e.target.value)}
-              className="w-full h-11 bg-white/5 border border-white/10 rounded-xl px-3.5 text-xs text-white outline-none focus:border-vendeur-emerald transition-all font-medium"
+              className="w-full h-11 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-3.5 text-xs text-slate-900 dark:text-white outline-none focus:border-vendeur-emerald transition-all font-medium"
             />
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-[10px] font-black uppercase tracking-widest text-white/60 flex items-center gap-1.5">
-              <Clock size={14} className="text-amber-400 shrink-0" />
+            <label className="text-[10px] font-black uppercase tracking-widest text-slate-700 dark:text-white/60 flex items-center gap-1.5">
+              <Clock size={14} className="text-amber-500 dark:text-amber-400 shrink-0" />
               <span>Horaires de Prise de Commande</span>
             </label>
             <input
@@ -1118,7 +1118,7 @@ export function StorefrontBrandingTab({ merchant }: StorefrontBrandingTabProps) 
               placeholder="Ex: 08:30 - 20:00 (Lun - Sam)"
               value={openingHours}
               onChange={(e) => setOpeningHours(e.target.value)}
-              className="w-full h-11 bg-white/5 border border-white/10 rounded-xl px-3.5 text-xs text-white outline-none focus:border-vendeur-emerald transition-all font-medium"
+              className="w-full h-11 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-3.5 text-xs text-slate-900 dark:text-white outline-none focus:border-vendeur-emerald transition-all font-medium"
             />
             <div className="flex flex-wrap gap-1 pt-1">
               {HOURS_PRESETS.map((preset, idx) => (
@@ -1126,7 +1126,7 @@ export function StorefrontBrandingTab({ merchant }: StorefrontBrandingTabProps) 
                   key={idx}
                   type="button"
                   onClick={() => setOpeningHours(preset)}
-                  className="px-2 py-0.5 rounded-md bg-white/5 hover:bg-white/10 border border-white/5 text-[9px] text-white/60 transition-all active:scale-95"
+                  className="px-2 py-0.5 rounded-md bg-slate-100 hover:bg-slate-200 dark:bg-white/5 dark:hover:bg-white/10 border border-slate-200 dark:border-white/5 text-[9px] text-slate-700 dark:text-white/60 transition-all active:scale-95 cursor-pointer"
                 >
                   {preset}
                 </button>

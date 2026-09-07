@@ -2774,6 +2774,86 @@ router.get("/payments/config", async (req, res) => {
   }
 });
 
+// POST /api/commerce/payments/paystack/initialize - Initialize automated Paystack checkout session
+router.post("/payments/paystack/initialize", authenticate, async (req, res) => {
+  try {
+    const userId = (req as any).user.id;
+    const { offerSlug, billingInterval, setupOption, email, country, senderPhoneNumber } = req.body;
+
+    const user = await UserModel.findById(userId);
+    const merchant = await CommerceMerchantModel.findOne({ ownerId: userId });
+    const userEmail = email || user?.email || (req as any).user?.email || "billing@vendeur-ia.com";
+
+    // 1. Resolve offer
+    const offer = await OfferModel.findOne({ slug: offerSlug || "essential" });
+    const isYearly = billingInterval === "yearly";
+
+    let baseAmount = 5000;
+    if (offer) {
+      baseAmount = isYearly ? (offer.yearlyPrice || offer.monthlyPrice * 10) : offer.monthlyPrice;
+    } else if (offerSlug === "pro") {
+      baseAmount = isYearly ? 250000 : 25000;
+    }
+
+    // 2. Setup option fee if EXPERT pack
+    let setupFee = 0;
+    if (setupOption === "EXPERT") {
+      setupFee = 25000;
+    }
+
+    const totalAmount = baseAmount + setupFee;
+    const currency = "XOF";
+
+    // 3. Initialize Paystack
+    const data = await paystackService.initializeSubscription(userEmail, totalAmount, {
+      type: setupOption === "EXPERT" && offerSlug === "pro" ? "pack_pro" : "subscription",
+      offerSlug: offerSlug || "essential",
+      billingInterval: isYearly ? "yearly" : "monthly",
+      setupOption: setupOption || null,
+      userId,
+      country: country || "CI",
+      senderPhoneNumber: senderPhoneNumber || user?.whatsappNumber || merchant?.whatsappNumber,
+      currency
+    });
+
+    // 4. Pre-create payment intent with reference for audit trail
+    if (data?.reference) {
+      await PaymentIntentModel.create({
+        userId,
+        merchantId: merchant?._id,
+        reference: data.reference,
+        offerSlug: offerSlug || "essential",
+        planName: offer?.name || (offerSlug === "pro" ? "Pro" : "Essentiel"),
+        billingInterval: isYearly ? "yearly" : "monthly",
+        amount: totalAmount,
+        currency,
+        provider: "paystack",
+        paymentMethod: "card",
+        senderPhoneNumber: senderPhoneNumber || user?.whatsappNumber || merchant?.whatsappNumber || "",
+        status: "initiated",
+        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+        metadata: {
+          setupOption,
+          country: country || "CI",
+          paystackAccessCode: data.access_code
+        }
+      }).catch(err => console.warn("[Paystack Intent create warning]", err.message));
+    }
+
+    res.json({
+      authorization_url: data.authorization_url,
+      access_code: data.access_code,
+      reference: data.reference,
+      publicKey: env.PAYSTACK_PUBLIC_KEY || "",
+      amount: totalAmount,
+      currency
+    });
+  } catch (error: any) {
+    logger.error(`[Paystack Initialize] Error: ${error.message}`);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // POST /api/commerce/payments/intent - Create a new payment intent
 router.post("/payments/intent", authenticate, async (req, res) => {
   try {

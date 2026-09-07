@@ -9,6 +9,7 @@ import {
   Sparkles,
   Zap,
   Share2,
+  QrCode,
   ExternalLink,
   Play,
   PauseCircle,
@@ -529,11 +530,10 @@ function HomePanel({
                 type="button"
                 onClick={onOpenShare}
                 className="flex items-center justify-center gap-2 min-h-[44px] sm:min-h-[48px] h-11 sm:h-12 px-3 sm:px-5 rounded-2xl bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-800 dark:bg-white/5 dark:hover:bg-white/10 dark:border-white/10 dark:text-white text-[11px] sm:text-xs font-black uppercase tracking-wider transition-all cursor-pointer active:scale-95 group shadow-sm whitespace-nowrap"
-                title="Propulser & Obtenir le QR Code"
+                title="Afficher le QR Code & Partager"
               >
-                <Share2 size={15} className="text-vendeur-emerald group-hover:scale-110 transition-transform shrink-0" />
-                <span className="hidden xs:inline sm:inline">Propulser / QR Code</span>
-                <span className="xs:hidden sm:hidden">Partager</span>
+                <QrCode size={15} className="text-vendeur-emerald group-hover:scale-110 transition-transform shrink-0" />
+                <span>QR Code</span>
               </button>
 
               <Link

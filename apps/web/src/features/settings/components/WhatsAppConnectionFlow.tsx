@@ -373,17 +373,17 @@ export function WhatsAppConnectionFlow() {
     <div className="space-y-6 w-full max-w-full box-border">
       {/* 1. Header Statut WhatsApp */}
       <div id="whatsapp" className="scroll-mt-28 bg-white dark:bg-vendeur-coal border border-slate-200 dark:border-white/10 rounded-2xl sm:rounded-3xl md:rounded-[2.5rem] p-4 sm:p-6 md:p-8 space-y-5 text-left shadow-sm hover:shadow-md dark:shadow-xl transition-all w-full max-w-full box-border">
-        <div className="flex flex-col gap-4 border-b border-white/5 pb-5 w-full">
+        <div className="flex flex-col gap-4 border-b border-slate-200 dark:border-white/5 pb-5 w-full">
           <div className="flex items-start sm:items-center gap-3.5 min-w-0 flex-1 w-full">
             <div className={cn(
               "h-12 w-12 sm:h-14 sm:w-14 rounded-2xl flex items-center justify-center font-black shrink-0 border",
               isConnectedLive && isPaidActive && !isPaused
                 ? "bg-vendeur-emerald/10 border-vendeur-emerald/20 text-vendeur-emerald"
                 : isConnectedLive && isPaused
-                  ? "bg-sky-500/10 border-sky-500/20 text-sky-400"
+                  ? "bg-sky-500/10 border-sky-500/20 text-sky-500 dark:text-sky-400"
                   : isConnectedLive
-                    ? "bg-amber-500/10 border-amber-500/20 text-amber-400"
-                    : "bg-white/5 border-white/10 text-white/40"
+                    ? "bg-amber-500/10 border-amber-500/20 text-amber-500 dark:text-amber-400"
+                    : "bg-slate-100 dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-400 dark:text-white/40"
             )}>
               <ShieldCheck size={26} className="shrink-0" />
             </div>
@@ -393,22 +393,22 @@ export function WhatsAppConnectionFlow() {
                 <span className={cn(
                   "inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full border text-[9px] font-black uppercase tracking-widest",
                   isConnectedLive && isPaidActive && !isPaused
-                    ? "bg-vendeur-emerald/15 border-vendeur-emerald/30 text-vendeur-emerald"
+                    ? "bg-vendeur-emerald/15 border-vendeur-emerald/30 text-emerald-700 dark:text-vendeur-emerald"
                     : isConnectedLive && isPaused
-                      ? "bg-sky-500/15 border-sky-500/30 text-sky-300"
+                      ? "bg-sky-500/15 border-sky-500/30 text-sky-700 dark:text-sky-300"
                       : isConnectedLive
-                        ? "bg-amber-500/15 border-amber-500/30 text-amber-300"
-                        : "bg-white/5 border-white/10 text-white/50"
+                        ? "bg-amber-500/15 border-amber-500/30 text-amber-700 dark:text-amber-300"
+                        : "bg-slate-100 border-slate-200 text-slate-600 dark:bg-white/5 dark:border-white/10 dark:text-white/50"
                 )}>
                   <span className={cn(
                     "h-1.5 w-1.5 rounded-full shrink-0",
                     isConnectedLive && isPaidActive && !isPaused
                       ? "bg-vendeur-emerald animate-pulse"
                       : isConnectedLive && isPaused
-                        ? "bg-sky-400"
+                        ? "bg-sky-500"
                         : isConnectedLive
-                          ? "bg-amber-400"
-                          : "bg-white/30"
+                          ? "bg-amber-500"
+                          : "bg-slate-400 dark:bg-white/30"
                   )} />
                   <span>
                     {isConnectedLive
@@ -422,23 +422,23 @@ export function WhatsAppConnectionFlow() {
                       : "Ligne Non Connectée"}
                   </span>
                 </span>
-                <h3 className="text-base sm:text-lg md:text-xl font-black text-white uppercase tracking-tight">
+                <h3 className="text-base sm:text-lg md:text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight">
                   {isFounder ? "Ligne Officielle Vendeur IA" : "Ligne WhatsApp de Vente"}
                 </h3>
               </div>
 
-              <p className="text-xs text-white/60 font-medium mt-1 break-words">
-                Numéro associé : <strong className="font-bold font-mono text-white">
+              <p className="text-xs text-slate-600 dark:text-white/60 font-medium mt-1 break-words">
+                Numéro associé : <strong className="font-bold font-mono text-slate-900 dark:text-white">
                   {formatDisplayPhone(activeNumber, merchant?.country || "CI") || "Non configuré"}
                 </strong>
                 {isConnectedLive ? (
-                  <span className="block text-[11px] text-vendeur-emerald font-semibold mt-0.5">
+                  <span className="block text-[11px] text-emerald-600 dark:text-vendeur-emerald font-semibold mt-0.5">
                     {isFounder 
                       ? "✅ Ligne officielle connectée via Meta Cloud API. Les clients sont servis 24h/24 sans interruption."
                       : "✅ Votre Vendeur IA intercepte et répond aux messages envoyés à ce numéro."}
                   </span>
                 ) : (
-                  <span className="block text-[11px] text-white/40 mt-0.5">
+                  <span className="block text-[11px] text-slate-500 dark:text-white/40 mt-0.5">
                     Liez votre numéro ci-dessous pour que l'IA commence à répondre à vos clients.
                   </span>
                 )}
@@ -453,7 +453,7 @@ export function WhatsAppConnectionFlow() {
                 type="button"
                 onClick={handleDisconnect}
                 disabled={isDisconnecting}
-                className="h-9 px-3.5 rounded-xl bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 font-black uppercase tracking-wider text-[10px] sm:text-[11px] flex items-center justify-center gap-1.5 transition-all cursor-pointer active:scale-95 disabled:opacity-50 shrink-0 whitespace-nowrap shadow-sm"
+                className="h-9 px-3.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-600 dark:text-rose-400 font-black uppercase tracking-wider text-[10px] sm:text-[11px] flex items-center justify-center gap-1.5 transition-all cursor-pointer active:scale-95 disabled:opacity-50 shrink-0 whitespace-nowrap shadow-sm"
               >
                 {isDisconnecting ? <Loader2 size={13} className="animate-spin shrink-0" /> : <LogOut size={13} className="shrink-0" />}
                 <span>Déconnecter</span>
@@ -463,7 +463,7 @@ export function WhatsAppConnectionFlow() {
             <button
               type="button"
               onClick={() => navigate("/dashboard?test_ia=true")}
-              className="h-9 px-3.5 rounded-xl bg-white/5 border border-white/10 text-white font-black uppercase tracking-wider text-[10px] sm:text-[11px] hover:bg-white/10 transition-all flex items-center justify-center gap-1.5 cursor-pointer active:scale-[0.98] shrink-0 whitespace-nowrap shadow-sm"
+              className="h-9 px-3.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-white/5 dark:hover:bg-white/10 border border-slate-200 dark:border-white/10 text-slate-800 dark:text-white font-black uppercase tracking-wider text-[10px] sm:text-[11px] transition-all flex items-center justify-center gap-1.5 cursor-pointer active:scale-[0.98] shrink-0 whitespace-nowrap shadow-sm"
             >
               <AssistantIcon size={14} color="#10B981" />
               <span>Simulateur IA</span>
@@ -478,14 +478,14 @@ export function WhatsAppConnectionFlow() {
             {liveStatusData?.hasSavedSession && (
               <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 animate-in fade-in">
                 <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
+                  <div className="h-10 w-10 rounded-xl bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
                     <RefreshCw size={20} className={cn(isReconnecting && "animate-spin")} />
                   </div>
                   <div>
-                    <h4 className="text-sm font-black text-white">
+                    <h4 className="text-sm font-black text-slate-900 dark:text-white">
                       Session WhatsApp Enregistrée Détectée
                     </h4>
-                    <p className="text-xs text-white/60">
+                    <p className="text-xs text-slate-600 dark:text-white/60">
                       Votre compte est déjà appairé. Reconnectez-le instantanément sans re-jumeler.
                     </p>
                   </div>
@@ -503,7 +503,7 @@ export function WhatsAppConnectionFlow() {
             )}
 
             {/* Tab Selector (Ergonomique Mobile-First) */}
-            <div className="grid grid-cols-2 gap-1.5 p-1 bg-black/60 border border-white/10 rounded-2xl w-full">
+            <div className="grid grid-cols-2 gap-1.5 p-1 bg-slate-100 dark:bg-black/60 border border-slate-200 dark:border-white/10 rounded-2xl w-full">
               <button
                 type="button"
                 onClick={() => {
@@ -513,8 +513,8 @@ export function WhatsAppConnectionFlow() {
                 className={cn(
                   "min-h-[46px] sm:min-h-[48px] px-2.5 sm:px-4 rounded-xl font-black uppercase tracking-wider text-[11px] sm:text-xs flex items-center justify-center gap-1.5 sm:gap-2 transition-all cursor-pointer text-center",
                   activeTab === "pairing_code"
-                    ? "bg-vendeur-emerald text-slate-950 shadow-lg shadow-emerald-500/20 font-black"
-                    : "text-white/60 hover:text-white hover:bg-white/5"
+                    ? "bg-vendeur-emerald text-slate-950 shadow-md font-black"
+                    : "text-slate-600 dark:text-white/60 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-white/5"
                 )}
               >
                 <Smartphone size={15} className="shrink-0" />
@@ -530,8 +530,8 @@ export function WhatsAppConnectionFlow() {
                 className={cn(
                   "min-h-[46px] sm:min-h-[48px] px-2.5 sm:px-4 rounded-xl font-black uppercase tracking-wider text-[11px] sm:text-xs flex items-center justify-center gap-1.5 sm:gap-2 transition-all cursor-pointer text-center",
                   activeTab === "qr_code"
-                    ? "bg-vendeur-emerald text-slate-950 shadow-lg shadow-emerald-500/20 font-black"
-                    : "text-white/60 hover:text-white hover:bg-white/5"
+                    ? "bg-vendeur-emerald text-slate-950 shadow-md font-black"
+                    : "text-slate-600 dark:text-white/60 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-white/5"
                 )}
               >
                 <QrCode size={15} className="shrink-0" />
@@ -542,13 +542,13 @@ export function WhatsAppConnectionFlow() {
             {/* CONTENU TAB 1 : CODE DE JUMELAGE MOBILE (100% Facile) */}
             {activeTab === "pairing_code" && (
               <div className="space-y-4 pt-1 animate-in fade-in duration-300">
-                <div className="p-4 sm:p-5 rounded-2xl bg-white/[0.03] border border-white/10 space-y-4">
+                <div className="p-4 sm:p-5 rounded-2xl bg-slate-50/70 dark:bg-white/[0.03] border border-slate-200 dark:border-white/10 space-y-4">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div>
-                      <h4 className="text-sm sm:text-base font-black text-white tracking-tight">
+                      <h4 className="text-sm sm:text-base font-black text-slate-900 dark:text-white tracking-tight">
                         Lier votre numéro WhatsApp en 5 secondes
                       </h4>
-                      <p className="text-xs text-white/50 font-medium mt-0.5">
+                      <p className="text-xs text-slate-500 dark:text-white/50 font-medium mt-0.5">
                         Aucun deuxième écran requis. Générez le code et collez-le directement dans WhatsApp.
                       </p>
                     </div>
@@ -557,7 +557,7 @@ export function WhatsAppConnectionFlow() {
                       type="button"
                       onClick={handleRequestPairingCode}
                       disabled={isRequestingPairing}
-                      className="h-11 px-4 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-50 shrink-0"
+                      className="h-11 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-white/5 dark:hover:bg-white/10 border border-slate-200 dark:border-white/10 text-slate-800 dark:text-white text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-50 shrink-0"
                     >
                       {isRequestingPairing ? <Loader2 size={14} className="animate-spin shrink-0" /> : <RefreshCw size={14} className="shrink-0" />}
                       <span>{pairingCode ? "Régénérer le Code" : "Obtenir le Code"}</span>
@@ -565,10 +565,10 @@ export function WhatsAppConnectionFlow() {
                   </div>
 
                   {/* Modification du numéro si besoin */}
-                  <div className="flex items-center justify-between gap-2 border-t border-b border-white/5 py-3">
+                  <div className="flex items-center justify-between gap-2 border-t border-b border-slate-200 dark:border-white/5 py-3">
                     <div className="flex items-center gap-2">
                       <Phone size={14} className="text-vendeur-emerald shrink-0" />
-                      <span className="text-xs font-mono font-bold text-white">
+                      <span className="text-xs font-mono font-bold text-slate-900 dark:text-white">
                         {storeWhatsApp || activeNumber || "Aucun numéro"}
                       </span>
                     </div>
@@ -576,7 +576,7 @@ export function WhatsAppConnectionFlow() {
                       <button
                         type="button"
                         onClick={() => setIsEditingPhone(true)}
-                        className="text-[11px] font-black uppercase text-vendeur-emerald hover:underline cursor-pointer"
+                        className="text-[11px] font-black uppercase text-emerald-600 dark:text-vendeur-emerald hover:underline cursor-pointer"
                       >
                         Modifier le numéro
                       </button>
@@ -586,7 +586,7 @@ export function WhatsAppConnectionFlow() {
                           type="tel"
                           value={storeWhatsApp}
                           onChange={(e) => setStoreWhatsApp(e.target.value)}
-                          className="h-9 px-2 bg-black/50 border border-white/20 rounded-lg text-xs font-mono text-white"
+                          className="h-9 px-2 bg-white dark:bg-black/50 border border-slate-300 dark:border-white/20 rounded-lg text-xs font-mono text-slate-900 dark:text-white"
                         />
                         <button
                           type="button"
@@ -603,12 +603,12 @@ export function WhatsAppConnectionFlow() {
                   {/* Affichage du Code de Jumelage */}
                   {pairingCode ? (
                     <div className="space-y-4 pt-2">
-                      <div className="p-4 sm:p-6 rounded-2xl bg-black/60 border border-vendeur-emerald/30 text-center space-y-2 shadow-inner">
+                      <div className="p-4 sm:p-6 rounded-2xl bg-slate-100 dark:bg-black/60 border border-emerald-500/30 text-center space-y-2 shadow-inner">
                         <div className="flex items-center justify-center gap-1.5 text-[10px] font-bold uppercase tracking-wider">
                           {timeLeft <= 0 ? (
-                            <span className="text-amber-400 font-black">⚠️ Code expiré</span>
+                            <span className="text-amber-600 dark:text-amber-400 font-black">⚠️ Code expiré</span>
                           ) : (
-                            <span className="text-vendeur-emerald flex items-center gap-1">
+                            <span className="text-emerald-600 dark:text-vendeur-emerald flex items-center gap-1 font-bold">
                               <Clock size={11} />
                               <span>Expire dans {Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, "0")}</span>
                             </span>
@@ -616,13 +616,13 @@ export function WhatsAppConnectionFlow() {
                         </div>
 
                         <div className={cn(
-                          "text-3xl sm:text-4xl md:text-5xl font-black font-mono tracking-widest text-white select-all transition-opacity",
+                          "text-3xl sm:text-4xl md:text-5xl font-black font-mono tracking-widest text-slate-900 dark:text-white select-all transition-opacity",
                           timeLeft <= 0 && "opacity-40 line-through"
                         )}>
                           {pairingCode}
                         </div>
 
-                        <p className="text-[11px] text-white/50 font-medium">
+                        <p className="text-[11px] text-slate-500 dark:text-white/50 font-medium">
                           Entrez ce code sur votre téléphone pour valider la liaison sans scanner de QR code.
                         </p>
                       </div>
@@ -651,21 +651,21 @@ export function WhatsAppConnectionFlow() {
 
                       {/* Instructions pas à pas */}
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 text-left">
-                        <div className="p-3.5 rounded-xl bg-white/[0.02] border border-white/5 space-y-1">
-                          <span className="text-[10px] font-black text-vendeur-emerald uppercase tracking-widest">Étape 1</span>
-                          <p className="text-xs text-white/80 font-medium leading-snug">
+                        <div className="p-3.5 rounded-xl bg-white dark:bg-white/[0.02] border border-slate-200 dark:border-white/5 space-y-1">
+                          <span className="text-[10px] font-black text-emerald-600 dark:text-vendeur-emerald uppercase tracking-widest">Étape 1</span>
+                          <p className="text-xs text-slate-700 dark:text-white/80 font-medium leading-snug">
                             Ouvrez WhatsApp sur votre smartphone.
                           </p>
                         </div>
-                        <div className="p-3.5 rounded-xl bg-white/[0.02] border border-white/5 space-y-1">
-                          <span className="text-[10px] font-black text-vendeur-emerald uppercase tracking-widest">Étape 2</span>
-                          <p className="text-xs text-white/80 font-medium leading-snug">
+                        <div className="p-3.5 rounded-xl bg-white dark:bg-white/[0.02] border border-slate-200 dark:border-white/5 space-y-1">
+                          <span className="text-[10px] font-black text-emerald-600 dark:text-vendeur-emerald uppercase tracking-widest">Étape 2</span>
+                          <p className="text-xs text-slate-700 dark:text-white/80 font-medium leading-snug">
                             Allez dans <strong>Réglages / Menu</strong> &gt; <strong>Appareils connectés</strong>.
                           </p>
                         </div>
-                        <div className="p-3.5 rounded-xl bg-white/[0.02] border border-white/5 space-y-1">
-                          <span className="text-[10px] font-black text-vendeur-emerald uppercase tracking-widest">Étape 3</span>
-                          <p className="text-xs text-white/80 font-medium leading-snug">
+                        <div className="p-3.5 rounded-xl bg-white dark:bg-white/[0.02] border border-slate-200 dark:border-white/5 space-y-1">
+                          <span className="text-[10px] font-black text-emerald-600 dark:text-vendeur-emerald uppercase tracking-widest">Étape 3</span>
+                          <p className="text-xs text-slate-700 dark:text-white/80 font-medium leading-snug">
                             Appuyez sur <strong>Lier avec un numéro</strong> et collez le code.
                           </p>
                         </div>
@@ -673,8 +673,8 @@ export function WhatsAppConnectionFlow() {
                     </div>
                   ) : (
                     <div className="py-6 text-center space-y-3">
-                      <p className="text-xs text-white/60">
-                        Numéro de vente : <strong className="text-white font-mono">{activeNumber || "Veuillez renseigner votre numéro"}</strong>
+                      <p className="text-xs text-slate-600 dark:text-white/60">
+                        Numéro de vente : <strong className="text-slate-900 dark:text-white font-mono">{activeNumber || "Veuillez renseigner votre numéro"}</strong>
                       </p>
                       <button
                         type="button"
@@ -694,31 +694,31 @@ export function WhatsAppConnectionFlow() {
             {/* CONTENU TAB 2 : SCANNER UN QR CODE (WhatsApp Web) */}
             {activeTab === "qr_code" && (
               <div className="space-y-4 pt-1 animate-in fade-in duration-300">
-                <div className="p-4 sm:p-6 rounded-2xl bg-white/[0.03] border border-white/10 flex flex-col items-center text-center space-y-4">
+                <div className="p-4 sm:p-6 rounded-2xl bg-slate-50/70 dark:bg-white/[0.03] border border-slate-200 dark:border-white/10 flex flex-col items-center text-center space-y-4">
                   <div className="space-y-1">
-                    <h4 className="text-sm sm:text-base font-black text-white tracking-tight">
+                    <h4 className="text-sm sm:text-base font-black text-slate-900 dark:text-white tracking-tight">
                       Scanner le QR Code avec WhatsApp
                     </h4>
-                    <p className="text-xs text-white/50 font-medium">
+                    <p className="text-xs text-slate-500 dark:text-white/50 font-medium">
                       Ouvrez WhatsApp sur votre téléphone &gt; <strong>Appareils connectés</strong> &gt; <strong>Lier un appareil</strong>.
                     </p>
                   </div>
 
                   {qrCodeData ? (
-                    <div className="p-4 bg-white rounded-2xl shadow-2xl">
+                    <div className="p-4 bg-white rounded-2xl shadow-xl border border-slate-200">
                       <QRCodeSVG value={qrCodeData} size={220} level="M" />
                     </div>
                   ) : (
-                    <div className="h-[220px] w-[220px] rounded-2xl bg-black/40 border border-white/10 flex flex-col items-center justify-center gap-3 p-4">
+                    <div className="h-[220px] w-[220px] rounded-2xl bg-slate-100 dark:bg-black/40 border border-slate-200 dark:border-white/10 flex flex-col items-center justify-center gap-3 p-4">
                       {isRequestingQr ? (
                         <>
                           <Loader2 size={28} className="text-vendeur-emerald animate-spin shrink-0" />
-                          <span className="text-xs text-white/60">Génération du QR Code...</span>
+                          <span className="text-xs text-slate-600 dark:text-white/60">Génération du QR Code...</span>
                         </>
                       ) : (
                         <>
-                          <QrCode size={32} className="text-white/30" />
-                          <span className="text-xs text-white/40">En attente du flux WhatsApp</span>
+                          <QrCode size={32} className="text-slate-400 dark:text-white/30" />
+                          <span className="text-xs text-slate-500 dark:text-white/40">En attente du flux WhatsApp</span>
                         </>
                       )}
                     </div>
@@ -728,7 +728,7 @@ export function WhatsAppConnectionFlow() {
                     type="button"
                     onClick={handleRequestQrCode}
                     disabled={isRequestingQr}
-                    className="h-11 px-5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-50"
+                    className="h-11 px-5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-white/5 dark:hover:bg-white/10 border border-slate-200 dark:border-white/10 text-slate-800 dark:text-white text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-50"
                   >
                     {isRequestingQr ? <Loader2 size={14} className="animate-spin shrink-0" /> : <RefreshCw size={14} className="shrink-0" />}
                     <span>Actualiser le QR Code</span>
@@ -745,10 +745,10 @@ export function WhatsAppConnectionFlow() {
                 <CheckCircle2 size={20} />
               </div>
               <div>
-                <h4 className="text-sm font-black text-white tracking-tight">
+                <h4 className="text-sm font-black text-slate-900 dark:text-white tracking-tight">
                   {isFounder ? "Ligne Officielle Meta Cloud Active" : "Ligne WhatsApp Live Active"}
                 </h4>
-                <p className="text-xs text-white/60">
+                <p className="text-xs text-slate-600 dark:text-white/60">
                   {isFounder 
                     ? "Connectée directement aux serveurs Meta Cloud API (ID: 1283754474826620). Votre IA répond 24h/24 sans nécessiter de jumelage QR."
                     : "Votre Vendeur IA répond aux messages entrants sur votre numéro en temps réel."}

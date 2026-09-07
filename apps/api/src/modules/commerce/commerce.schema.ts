@@ -94,6 +94,7 @@ export const UpdateMerchantSchema = z.object({
       logoUrl: z.string().optional(),
       coverUrl: z.string().optional(),
       accentColor: z.string().optional(),
+      storefrontTheme: z.enum(["dark", "light", "system"]).optional(),
       announcement: z.object({
         enabled: z.boolean().optional(),
         text: z.string().optional()

@@ -481,7 +481,18 @@ function BoutiqueTab({
   highlightedSection?: string | null;
 }) {
   const queryClient = useQueryClient();
-  const [localMerchant, setLocalMerchant] = useState<any>(merchant);
+
+  const normalizeMerchant = (m: any) => {
+    if (!m) return null;
+    const copy = JSON.parse(JSON.stringify(m));
+    if (!copy.whatsappNumber && (copy.phone || copy.whatsappConfig?.phoneNumberId)) {
+      copy.whatsappNumber = copy.phone || copy.whatsappConfig?.phoneNumberId || "";
+    }
+    return copy;
+  };
+
+  const [savedMerchant, setSavedMerchant] = useState<any>(() => normalizeMerchant(merchant));
+  const [localMerchant, setLocalMerchant] = useState<any>(() => normalizeMerchant(merchant));
   const [payments, setPayments] = useState<any[]>(initialKnowledge?.businessRules?.paymentMethods || []);
   const [deliveryFees, setDeliveryFees] = useState<any[]>(initialKnowledge?.businessRules?.deliveryFees || []);
   const [pushStatus, setPushStatus] = useState<'default' | 'granted' | 'denied'>('default');
@@ -518,11 +529,9 @@ function BoutiqueTab({
 
   useEffect(() => {
     if (merchant) {
-      const copy = JSON.parse(JSON.stringify(merchant));
-      if (!copy.whatsappNumber && (copy.phone || copy.whatsappConfig?.phoneNumberId)) {
-        copy.whatsappNumber = copy.phone || copy.whatsappConfig?.phoneNumberId || "";
-      }
-      setLocalMerchant(copy);
+      const normalized = normalizeMerchant(merchant);
+      setSavedMerchant(normalized);
+      setLocalMerchant(normalized);
     }
     if (initialKnowledge?.businessRules?.paymentMethods) {
       setPayments(JSON.parse(JSON.stringify(initialKnowledge.businessRules.paymentMethods)));
@@ -546,13 +555,9 @@ function BoutiqueTab({
   }, []);
 
   const handleCancel = () => {
-    if (merchant) {
-      const copy = JSON.parse(JSON.stringify(merchant));
-      if (!copy.whatsappNumber && (copy.phone || copy.whatsappConfig?.phoneNumberId)) {
-        copy.whatsappNumber = copy.phone || copy.whatsappConfig?.phoneNumberId || "";
-      }
-      setLocalMerchant(copy);
-    }
+    const normalized = normalizeMerchant(merchant);
+    setSavedMerchant(normalized);
+    setLocalMerchant(normalized);
     if (initialKnowledge?.businessRules?.paymentMethods) {
       setPayments(JSON.parse(JSON.stringify(initialKnowledge.businessRules.paymentMethods)));
     } else {
@@ -571,11 +576,13 @@ function BoutiqueTab({
   const initialFees = initialKnowledge?.businessRules?.deliveryFees || [];
   const isPaymentsModified = JSON.stringify(payments) !== JSON.stringify(initialPayments);
   const isDeliveryModified = JSON.stringify(deliveryFees) !== JSON.stringify(initialFees);
+  const isMerchantModified = isDirty || (JSON.stringify(localMerchant) !== JSON.stringify(savedMerchant));
+  const hasChanges = isMerchantModified || isPaymentsModified || isDeliveryModified;
 
   const [showMilestoneModal, setShowMilestoneModal] = useState(false);
   const [savedSectionType, setSavedSectionType] = useState<"delivery" | "payments" | "all">("all");
 
-  const isModified = JSON.stringify(localMerchant) !== JSON.stringify(merchant);
+  const isModified = hasChanges;
 
   const updateMutation = useMutation({
     mutationFn: async (targetType?: "delivery" | "payments" | "all") => {
@@ -620,6 +627,7 @@ function BoutiqueTab({
     },
     onSuccess: (effectiveType) => {
       setIsDirty(false);
+      setSavedMerchant(JSON.parse(JSON.stringify(localMerchant)));
       setCategoryChangeWarning(null);
       setSavedSectionType(effectiveType || "all");
       if (effectiveType === "delivery") {

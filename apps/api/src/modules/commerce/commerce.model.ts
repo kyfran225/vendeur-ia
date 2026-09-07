@@ -98,6 +98,7 @@ const MerchantSchema = new Schema({
     logoUrl: { type: String, default: "" },
     coverUrl: { type: String, default: "" },
     accentColor: { type: String, default: "emerald" }, // emerald | gold | amber | violet | rose | sky
+    storefrontTheme: { type: String, default: "dark" }, // dark | light | system
     announcement: {
       enabled: { type: Boolean, default: false },
       text: { type: String, default: "" }

@@ -609,10 +609,10 @@ export function PublicShop() {
               <img
                 src={merchant.branding.coverUrl}
                 alt="Bannière de couverture"
-                className="w-full h-full object-cover opacity-20 dark:opacity-25 scale-105 group-hover:scale-100 transition-transform duration-1000"
+                className="w-full h-full object-cover opacity-35 dark:opacity-40 scale-105 group-hover:scale-100 transition-transform duration-1000"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-white dark:from-[#0d1f18] via-white/80 dark:via-[#0d1f18]/80 to-transparent" />
-              <div className="absolute inset-0 bg-gradient-to-r from-white dark:from-[#0d1f18] via-white/90 dark:via-[#0d1f18]/90 to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-t from-white/90 dark:from-[#0d1f18] via-white/70 dark:via-[#0d1f18]/70 to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-r from-white/95 dark:from-[#0d1f18] via-white/80 dark:via-[#0d1f18]/80 to-transparent" />
             </div>
           )}
 

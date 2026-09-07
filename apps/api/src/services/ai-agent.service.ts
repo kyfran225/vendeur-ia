@@ -395,7 +395,17 @@ RÈGLES D'OR :
 - Réponds DIRECTEMENT, AVEC PRÉCISION et DYNAMISME au message du client ou prospect. Enchaîne immédiatement sur son besoin, son choix d'offre ou son inscription.`
       : `🌟 ÉTAT DU DIALOGUE (PREMIER MESSAGE D'OUVERTURE) :
 - Salue chaleureusement avec énergie et prestige : "Bonjour et bienvenue chez Vendeur IA ! 🚀 Je suis l'assistante officielle de la plateforme."
-- Présente brièvement notre proposition de valeur : "Nous transformons votre WhatsApp en une véritable machine de vente autonome 24h/24 ! Comment puis-je vous aider aujourd'hui ?"`;
+    const customKnowledgeStr = context.knowledge?.customInstructions
+      ? `\n📌 CONSIGNES PARTICULIÈRES DE LA DIRECTION :\n${context.knowledge.customInstructions}\n`
+      : "";
+
+    const faqStr = context.knowledge?.faq && context.knowledge.faq.length > 0
+      ? `\n❓ QUESTIONS FRÉQUENTES & RÉPONSES OFFICIELLES :\n` + context.knowledge.faq.map(f => `Q: ${f.question}\nR: ${f.answer}`).join("\n") + "\n"
+      : "";
+
+    const dynamicProductsStr = context.products && context.products.length > 0
+      ? `\n📦 CATALOGUE PRODUITS & SERVICES ADDITIONNELS (Boutique) :\n` + context.products.map(p => `- ${p.name}: ${p.price} ${p.currency || "XOF"} (${p.description || "Disponible"})`).join("\n") + "\n"
+      : "";
 
     return `Tu es la CONSEILLÈRE COMMERCIALE & SUPPORT OFFICIELLE DE LA PLATEFORME "VENDEUR IA" (${clientBaseUrl}).
 Tu opères sur le numéro WhatsApp officiel de l'entreprise (+2250505111157).
@@ -428,14 +438,15 @@ ${stateInstruction}
 3. 🚀 OPTION PACK PRO EXPERT (Installation Clé en main) :
    • +25 000 F CFA (frais unique de mise en service).
    • Notre équipe d'ingénieurs s'occupe de tout : configuration complète de l'IA, saisie du catalogue de produits/services, intégration WhatsApp et tests en direct.
-
+${dynamicProductsStr}${customKnowledgeStr}${faqStr}
 💳 MOYENS DE RÈGLEMENT OFFICIELS (ABONNEMENTS) :
 - Règlements Mobile Money directs sur le numéro officiel Vendeur IA :
   • Wave Côte d'Ivoire : 0505111157 (ou +2250505111157)
   • MTN Mobile Money CI : 0505111157 (ou +2250505111157)
   • Orange Money CI : 0505111157 (ou +2250505111157)
   • Depuis l'international (Sénégal, Burkina Faso, Bénin, Mali, Togo, Cameroun, Diaspora Europe/USA, etc.) : Transfert Wave International, MTN MoMo ou TapTap Send vers le +2250505111157.
-  • Carte Bancaire (Visa / Mastercard) & Google Play : Directement en ligne sur ${clientBaseUrl}/offers.
+  • Carte Bancaire (Visa / Mastercard) : Actuellement en cours d'intégration technique et sera BIENTÔT DISPONIBLE (non disponible immédiatement pour le moment).
+  • RÈGLE STRICTE SUR GOOGLE PLAY : Google Play a été totalement retiré et n'est PAS un moyen de paiement accepté. Ne JAMAIS mentionner Google Play.
 - Procédure d'activation : Le prospect effectue son transfert et envoie simplement la capture d'écran du reçu ici même sur ce WhatsApp. L'accès est validé immédiatement.
 
 🔗 LIENS UTILES À PARTAGER :

@@ -29,7 +29,8 @@ import {
   Copy,
   Sun,
   Moon,
-  Laptop
+  Laptop,
+  Loader2
 } from "lucide-react";
 import { toast } from "sonner";
 import { apiClient } from "@/lib/apiClient";
@@ -286,6 +287,20 @@ export function StorefrontBrandingTab({ merchant }: StorefrontBrandingTabProps) 
     }
   });
 
+  const handleReset = () => {
+    setAccentColor(savedBranding.accentColor);
+    setStorefrontTheme(savedBranding.storefrontTheme);
+    setLogoUrl(savedBranding.logoUrl);
+    setCoverUrl(savedBranding.coverUrl);
+    setAnnouncementEnabled(savedBranding.announcementEnabled);
+    setAnnouncementText(savedBranding.announcementText);
+    setInstagram(savedBranding.instagram);
+    setTiktok(savedBranding.tiktok);
+    setFacebook(savedBranding.facebook);
+    setOpeningHours(savedBranding.openingHours);
+    toast.info("Modifications annulées 🔄");
+  };
+
   // Client-side image compression & multi-tier upload handler
   const processAndUploadImage = async (file: File, type: "logo" | "cover") => {
     if (!file.type.startsWith("image/")) {
@@ -311,6 +326,13 @@ export function StorefrontBrandingTab({ merchant }: StorefrontBrandingTabProps) 
         reader.onerror = reject;
         reader.readAsDataURL(file);
       });
+
+      // ⚡ INSTANT OPTIMISTIC PREVIEW: Display image in preview & dropzone immediately
+      if (type === "logo") {
+        setLogoUrl(dataUrl);
+      } else {
+        setCoverUrl(dataUrl);
+      }
 
       // 2. Client-side Compression: Logo (600px square), Cover (1600px wide banner)
       const maxDim = type === "logo" ? 600 : 1600;
@@ -372,19 +394,6 @@ export function StorefrontBrandingTab({ merchant }: StorefrontBrandingTabProps) 
     }
   };
 
-  const handleReset = () => {
-    setAccentColor(savedBranding.accentColor);
-    setLogoUrl(savedBranding.logoUrl);
-    setCoverUrl(savedBranding.coverUrl);
-    setAnnouncementEnabled(savedBranding.announcementEnabled);
-    setAnnouncementText(savedBranding.announcementText);
-    setInstagram(savedBranding.instagram);
-    setTiktok(savedBranding.tiktok);
-    setFacebook(savedBranding.facebook);
-    setOpeningHours(savedBranding.openingHours);
-    toast.info("Modifications réinitialisées 🔄");
-  };
-
   const currentPalette = THEME_PALETTES.find((p) => p.id === accentColor) || THEME_PALETTES[0];
   const shopUrl = getMerchantShopUrl(merchant);
   const businessName = merchant?.businessName || "Ma Boutique";
@@ -408,14 +417,26 @@ export function StorefrontBrandingTab({ merchant }: StorefrontBrandingTabProps) 
           </p>
         </div>
 
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex flex-wrap items-center gap-2 shrink-0">
+          {isDirty && (
+            <button
+              type="button"
+              onClick={() => saveMutation.mutate()}
+              disabled={saveMutation.isPending}
+              className="h-11 sm:h-12 px-4 sm:px-6 rounded-xl sm:rounded-2xl bg-vendeur-emerald hover:bg-emerald-400 text-vendeur-coal font-black uppercase text-xs tracking-wider flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-vendeur-emerald/30 shrink-0 cursor-pointer animate-pulse"
+            >
+              {saveMutation.isPending ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} className="shrink-0" />}
+              <span>{saveMutation.isPending ? "Enregistrement..." : "Enregistrer"}</span>
+            </button>
+          )}
+
           <button
             type="button"
             onClick={() => {
               navigator.clipboard.writeText(shopUrl);
               toast.success("Lien de la vitrine copié ! 📋");
             }}
-            className="h-11 sm:h-12 px-3.5 sm:px-4 rounded-xl sm:rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 text-white font-black uppercase text-xs tracking-wider flex items-center justify-center gap-1.5 transition-all active:scale-95"
+            className="h-11 sm:h-12 px-3.5 sm:px-4 rounded-xl sm:rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 text-white font-black uppercase text-xs tracking-wider flex items-center justify-center gap-1.5 transition-all active:scale-95 cursor-pointer"
             title="Copier le lien de la vitrine"
           >
             <Copy size={15} className="text-white/60 shrink-0" />
@@ -426,7 +447,7 @@ export function StorefrontBrandingTab({ merchant }: StorefrontBrandingTabProps) 
             href={shopUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="h-11 sm:h-12 px-4 sm:px-5 rounded-xl sm:rounded-2xl bg-vendeur-emerald hover:bg-emerald-400 text-vendeur-coal font-black uppercase text-xs tracking-wider flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-vendeur-emerald/20 shrink-0"
+            className="h-11 sm:h-12 px-4 sm:px-5 rounded-xl sm:rounded-2xl bg-white/10 hover:bg-white/15 border border-white/10 text-white font-black uppercase text-xs tracking-wider flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all shrink-0"
           >
             <Eye size={16} className="shrink-0" />
             <span>Ouvrir la Vitrine</span>
@@ -479,9 +500,11 @@ export function StorefrontBrandingTab({ merchant }: StorefrontBrandingTabProps) 
         {/* Preview Viewport Container */}
         <div className="flex justify-center items-center py-2 sm:py-4">
           <div
-            className={`w-full transition-all duration-300 rounded-3xl overflow-hidden border border-slate-200 dark:border-white/15 shadow-md dark:shadow-2xl bg-[#0b1210] ${
-              activePreviewMode === "phone" ? "max-w-sm" : "max-w-3xl"
-            }`}
+            className={`w-full transition-all duration-300 rounded-3xl overflow-hidden border shadow-md dark:shadow-2xl ${
+              storefrontTheme === "light"
+                ? "bg-[#f8fafc] text-slate-900 border-slate-300 shadow-slate-200"
+                : "bg-[#0b1210] text-white border-slate-200 dark:border-white/15"
+            } ${activePreviewMode === "phone" ? "max-w-sm" : "max-w-3xl"}`}
           >
             {/* Mock Announcement Bar */}
             {announcementEnabled && announcementText && (
@@ -498,15 +521,15 @@ export function StorefrontBrandingTab({ merchant }: StorefrontBrandingTabProps) 
             {coverUrl && (
               <div className="h-28 sm:h-36 w-full relative overflow-hidden bg-black/50">
                 <img src={coverUrl} alt="Bannière" className="w-full h-full object-cover" />
-                <div className="absolute inset-0 bg-gradient-to-t from-[#0b1210] via-transparent to-black/30" />
+                <div className={`absolute inset-0 ${storefrontTheme === "light" ? "bg-gradient-to-t from-[#f8fafc] via-transparent to-black/30" : "bg-gradient-to-t from-[#0b1210] via-transparent to-black/30"}`} />
               </div>
             )}
 
             {/* Mock Header Navigation */}
-            <div className={`p-4 flex items-center justify-between border-b border-white/5 ${coverUrl ? "-mt-8 relative z-10" : ""}`}>
+            <div className={`p-4 flex items-center justify-between ${storefrontTheme === "light" ? "border-b border-slate-200" : "border-b border-white/5"} ${coverUrl ? "-mt-8 relative z-10" : ""}`}>
               <div className="flex items-center gap-3">
                 <div
-                  className="h-12 w-12 rounded-2xl flex items-center justify-center shadow-xl overflow-hidden shrink-0 border border-white/10"
+                  className="h-12 w-12 rounded-2xl flex items-center justify-center shadow-xl overflow-hidden shrink-0 border border-black/10"
                   style={{ backgroundColor: currentPalette.primary }}
                 >
                   {logoUrl ? (
@@ -516,17 +539,17 @@ export function StorefrontBrandingTab({ merchant }: StorefrontBrandingTabProps) 
                   )}
                 </div>
                 <div>
-                  <h5 className="text-sm font-black uppercase tracking-tight text-white leading-tight">
+                  <h5 className={`text-sm font-black uppercase tracking-tight leading-tight ${storefrontTheme === "light" ? "text-slate-900" : "text-white"}`}>
                     {businessName}
                   </h5>
                   <div className="flex items-center gap-2 mt-0.5">
-                    <span className="text-[9px] font-bold uppercase tracking-widest text-emerald-400 flex items-center gap-1">
-                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                    <span className="text-[9px] font-bold uppercase tracking-widest text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
                       {openingHours ? openingHours.split("(")[0] : "Ouvert"}
                     </span>
-                    {instagram && <Instagram size={11} className="text-rose-400" />}
-                    {tiktok && <TikTokIcon size={11} className="text-cyan-400" />}
-                    {facebook && <Facebook size={11} className="text-blue-400" />}
+                    {instagram && <Instagram size={11} className="text-rose-500" />}
+                    {tiktok && <TikTokIcon size={11} className="text-cyan-500" />}
+                    {facebook && <Facebook size={11} className="text-blue-500" />}
                   </div>
                 </div>
               </div>
@@ -542,10 +565,10 @@ export function StorefrontBrandingTab({ merchant }: StorefrontBrandingTabProps) 
 
             {/* Mock Store Body */}
             <div className="p-4 space-y-3">
-              <div className="p-3 rounded-2xl bg-white/[0.03] border border-white/5 flex items-center justify-between">
+              <div className={`p-3 rounded-2xl flex items-center justify-between ${storefrontTheme === "light" ? "bg-white border border-slate-200/80 shadow-sm" : "bg-white/[0.03] border border-white/5"}`}>
                 <div>
-                  <p className="text-[10px] text-white/40 font-bold uppercase tracking-wider">Catalogue Actif</p>
-                  <p className="text-xs font-black text-white">Articles &amp; Commandes WhatsApp 24/7</p>
+                  <p className={`text-[10px] font-bold uppercase tracking-wider ${storefrontTheme === "light" ? "text-slate-500" : "text-white/40"}`}>Catalogue Actif</p>
+                  <p className={`text-xs font-black ${storefrontTheme === "light" ? "text-slate-900" : "text-white"}`}>Articles &amp; Commandes WhatsApp 24/7</p>
                 </div>
                 <div
                   className="px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider"
@@ -709,85 +732,118 @@ export function StorefrontBrandingTab({ merchant }: StorefrontBrandingTabProps) 
           {/* ── Logo Card & Dropzone ── */}
           <div className="space-y-3 p-4 sm:p-5 rounded-2xl bg-white/[0.02] border border-white/5 flex flex-col justify-between">
             <div className="space-y-1">
-              <label className="block text-[11px] sm:text-xs font-black uppercase tracking-wider text-white/90">
-                Logo de la Boutique (Carré recommandé)
-              </label>
-              <p className="text-[10px] text-white/40">Affiché dans le header de l'app et sur la boutique en ligne.</p>
-            </div>
-
-            {/* Dropzone Container */}
-            <div
-              onDragOver={(e) => { e.preventDefault(); setIsLogoDragging(true); }}
-              onDragLeave={() => setIsLogoDragging(false)}
-              onDrop={(e) => {
-                e.preventDefault();
-                setIsLogoDragging(false);
-                const file = e.dataTransfer.files?.[0];
-                if (file) processAndUploadImage(file, "logo");
-              }}
-              onClick={() => logoInputRef.current?.click()}
-              className={`p-4 rounded-2xl border-2 border-dashed transition-all cursor-pointer flex flex-col items-center justify-center gap-3 text-center ${
-                isLogoDragging
-                  ? "border-vendeur-emerald bg-vendeur-emerald/10 scale-[1.02]"
-                  : "border-white/15 bg-black/20 hover:border-white/30 hover:bg-black/40"
-              }`}
-            >
-              <div className="h-20 w-20 rounded-2xl bg-black/60 border border-white/10 overflow-hidden flex items-center justify-center shrink-0 shadow-inner relative group">
-                {logoUrl ? (
-                  <>
-                    <img src={logoUrl} alt="Logo" className="w-full h-full object-cover" />
-                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-                      <UploadCloud size={20} className="text-vendeur-emerald" />
-                    </div>
-                  </>
-                ) : (
-                  <Store size={32} className="text-white/20 shrink-0" />
+              <div className="flex items-center justify-between">
+                <label className="block text-[11px] sm:text-xs font-black uppercase tracking-wider text-white/90">
+                  Logo de la Boutique
+                </label>
+                {logoUrl && (
+                  <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-wider text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">
+                    <Check size={11} strokeWidth={3} />
+                    <span>Logo prêt</span>
+                  </span>
                 )}
               </div>
+              <p className="text-[10px] text-white/40">Affiché dans le header de l'app, votre vitrine et votre photo de profil.</p>
+            </div>
 
-              <div className="space-y-1">
-                <p className="text-xs font-black text-white uppercase tracking-tight">
-                  {isUploadingLogo ? "Téléversement en cours..." : "Glissez votre logo ici ou cliquez"}
-                </p>
-                <p className="text-[10px] text-white/40 font-mono">PNG, JPG, WebP (Optimisé automatiquement)</p>
+            {/* Logo Preview or Dropzone */}
+            {logoUrl ? (
+              <div className="relative p-4 rounded-2xl border border-emerald-500/30 bg-emerald-500/5 flex flex-col sm:flex-row items-center gap-4 transition-all">
+                <div className="h-24 w-24 rounded-2xl bg-black/60 border border-white/10 overflow-hidden flex items-center justify-center shrink-0 shadow-xl relative group">
+                  <img src={logoUrl} alt="Logo de la boutique" className="w-full h-full object-cover" />
+                  {isUploadingLogo && (
+                    <div className="absolute inset-0 bg-black/70 flex flex-col items-center justify-center gap-1">
+                      <Loader2 size={20} className="animate-spin text-vendeur-emerald" />
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex-1 min-w-0 space-y-2 text-center sm:text-left">
+                  <div>
+                    <p className="text-xs font-black text-white uppercase tracking-tight truncate">Logo Actif</p>
+                    <p className="text-[10px] text-white/50">
+                      {isUploadingLogo ? "Optimisation et envoi..." : "Prêt à être publié sur votre vitrine."}
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
+                    <button
+                      type="button"
+                      disabled={isUploadingLogo}
+                      onClick={() => logoInputRef.current?.click()}
+                      className="h-8 px-3 rounded-lg bg-white/10 hover:bg-white/20 text-white font-bold text-[10px] uppercase tracking-wider flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer"
+                    >
+                      <UploadCloud size={13} />
+                      <span>Changer</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setLogoUrl("");
+                        toast.info("Logo retiré. Pensez à enregistrer.");
+                      }}
+                      className="h-8 px-3 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 border border-rose-500/30 text-rose-300 font-bold text-[10px] uppercase tracking-wider flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer"
+                    >
+                      <Trash2 size={13} />
+                      <span>Supprimer</span>
+                    </button>
+                  </div>
+                </div>
               </div>
-
-              <input
-                ref={logoInputRef}
-                type="file"
-                accept="image/png,image/jpeg,image/webp,image/svg+xml"
-                className="hidden"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
+            ) : (
+              <div
+                onDragOver={(e) => { e.preventDefault(); setIsLogoDragging(true); }}
+                onDragLeave={() => setIsLogoDragging(false)}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  setIsLogoDragging(false);
+                  const file = e.dataTransfer.files?.[0];
                   if (file) processAndUploadImage(file, "logo");
                 }}
-              />
-            </div>
+                onClick={() => logoInputRef.current?.click()}
+                className={`p-6 rounded-2xl border-2 border-dashed transition-all cursor-pointer flex flex-col items-center justify-center gap-3 text-center ${
+                  isLogoDragging
+                    ? "border-vendeur-emerald bg-vendeur-emerald/10 scale-[1.02]"
+                    : "border-white/15 bg-black/20 hover:border-white/30 hover:bg-black/40"
+                }`}
+              >
+                <div className="h-16 w-16 rounded-2xl bg-black/60 border border-white/10 flex items-center justify-center shrink-0 shadow-inner">
+                  {isUploadingLogo ? (
+                    <Loader2 size={24} className="animate-spin text-vendeur-emerald" />
+                  ) : (
+                    <Store size={28} className="text-white/40" />
+                  )}
+                </div>
+
+                <div className="space-y-1">
+                  <p className="text-xs font-black text-white uppercase tracking-tight">
+                    {isUploadingLogo ? "Optimisation en cours..." : "Glissez votre logo ici ou cliquez"}
+                  </p>
+                  <p className="text-[10px] text-white/40 font-mono">PNG, JPG, WebP (Format carré recommandé)</p>
+                </div>
+              </div>
+            )}
+
+            <input
+              ref={logoInputRef}
+              type="file"
+              accept="image/png,image/jpeg,image/webp,image/svg+xml"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) processAndUploadImage(file, "logo");
+              }}
+            />
 
             {/* Actions for Logo */}
             <div className="flex items-center justify-between gap-2 pt-1">
               <button
                 type="button"
                 onClick={() => setShowLogoUrlInput(!showLogoUrlInput)}
-                className="text-[11px] font-bold text-white/50 hover:text-white flex items-center gap-1"
+                className="text-[11px] font-bold text-white/50 hover:text-white flex items-center gap-1 cursor-pointer"
               >
                 <LinkIcon size={12} />
-                <span>{showLogoUrlInput ? "Masquer l'URL" : "Saisir une URL"}</span>
+                <span>{showLogoUrlInput ? "Masquer l'URL" : "Saisir une URL directe"}</span>
               </button>
-
-              {logoUrl && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setLogoUrl("");
-                    toast.info("Logo retiré. N'oubliez pas d'enregistrer !");
-                  }}
-                  className="text-[11px] font-bold text-red-400 hover:text-red-300 flex items-center gap-1"
-                >
-                  <Trash2 size={12} />
-                  <span>Supprimer le logo</span>
-                </button>
-              )}
             </div>
 
             {showLogoUrlInput && (
@@ -804,85 +860,119 @@ export function StorefrontBrandingTab({ merchant }: StorefrontBrandingTabProps) 
           {/* ── Cover Banner Card & Dropzone ── */}
           <div id="cover" className="space-y-3 p-4 sm:p-5 rounded-2xl bg-white/[0.02] border border-white/5 flex flex-col justify-between">
             <div className="space-y-1">
-              <label className="block text-[11px] sm:text-xs font-black uppercase tracking-wider text-white/90">
-                Image de Couverture / Bannière (Optionnel)
-              </label>
-              <p className="text-[10px] text-white/40">Bannière panoramique en haut de votre boutique.</p>
-            </div>
-
-            {/* Dropzone Container */}
-            <div
-              onDragOver={(e) => { e.preventDefault(); setIsCoverDragging(true); }}
-              onDragLeave={() => setIsCoverDragging(false)}
-              onDrop={(e) => {
-                e.preventDefault();
-                setIsCoverDragging(false);
-                const file = e.dataTransfer.files?.[0];
-                if (file) processAndUploadImage(file, "cover");
-              }}
-              onClick={() => coverInputRef.current?.click()}
-              className={`p-4 rounded-2xl border-2 border-dashed transition-all cursor-pointer flex flex-col items-center justify-center gap-3 text-center ${
-                isCoverDragging
-                  ? "border-vendeur-emerald bg-vendeur-emerald/10 scale-[1.02]"
-                  : "border-white/15 bg-black/20 hover:border-white/30 hover:bg-black/40"
-              }`}
-            >
-              <div className="h-20 w-36 rounded-2xl bg-black/60 border border-white/10 overflow-hidden flex items-center justify-center shrink-0 shadow-inner relative group">
-                {coverUrl ? (
-                  <>
-                    <img src={coverUrl} alt="Bannière" className="w-full h-full object-cover" />
-                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-                      <UploadCloud size={20} className="text-vendeur-emerald" />
-                    </div>
-                  </>
-                ) : (
-                  <ImageIcon size={32} className="text-white/20 shrink-0" />
+              <div className="flex items-center justify-between">
+                <label className="block text-[11px] sm:text-xs font-black uppercase tracking-wider text-white/90">
+                  Bannière de Couverture
+                </label>
+                {coverUrl && (
+                  <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-wider text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">
+                    <Check size={11} strokeWidth={3} />
+                    <span>Bannière prête</span>
+                  </span>
                 )}
               </div>
+              <p className="text-[10px] text-white/40">Bannière panoramique en haut de votre boutique et sur WhatsApp.</p>
+            </div>
 
-              <div className="space-y-1">
-                <p className="text-xs font-black text-white uppercase tracking-tight">
-                  {isUploadingCover ? "Téléversement en cours..." : "Glissez votre bannière ici ou cliquez"}
+            {/* Cover Preview or Dropzone */}
+            {coverUrl ? (
+              <div className="space-y-2">
+                <div className="relative w-full h-32 sm:h-36 rounded-2xl overflow-hidden border border-emerald-500/30 bg-black/60 shadow-lg group">
+                  <img src={coverUrl} alt="Bannière de couverture" className="w-full h-full object-cover" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent flex flex-col justify-between p-3">
+                    <div className="flex items-center justify-end">
+                      {isUploadingCover && (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-sky-500 text-white font-bold text-[10px] uppercase tracking-wider shadow-md animate-pulse">
+                          <Loader2 size={12} className="animate-spin" />
+                          <span>Optimisation...</span>
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        disabled={isUploadingCover}
+                        onClick={() => coverInputRef.current?.click()}
+                        className="h-8 px-3 rounded-lg bg-white/20 hover:bg-white/30 backdrop-blur-md text-white font-bold text-[10px] uppercase tracking-wider flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer"
+                      >
+                        <UploadCloud size={13} />
+                        <span>Remplacer</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setCoverUrl("");
+                          toast.info("Bannière retirée. Pensez à enregistrer.");
+                        }}
+                        className="h-8 px-3 rounded-lg bg-rose-500/80 hover:bg-rose-600 text-white font-bold text-[10px] uppercase tracking-wider flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer"
+                      >
+                        <Trash2 size={13} />
+                        <span>Supprimer</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <p className="text-[10px] text-white/50 leading-relaxed font-medium bg-white/[0.02] p-2 rounded-xl border border-white/5">
+                  💡 S'affiche en arrière-plan dans la section d'accueil de votre vitrine web et habille vos partages.
                 </p>
-                <p className="text-[10px] text-white/40 font-mono">Format 16:9 recommandé (Ex: 1200x400)</p>
               </div>
-
-              <input
-                ref={coverInputRef}
-                type="file"
-                accept="image/png,image/jpeg,image/webp"
-                className="hidden"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
+            ) : (
+              <div
+                onDragOver={(e) => { e.preventDefault(); setIsCoverDragging(true); }}
+                onDragLeave={() => setIsCoverDragging(false)}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  setIsCoverDragging(false);
+                  const file = e.dataTransfer.files?.[0];
                   if (file) processAndUploadImage(file, "cover");
                 }}
-              />
-            </div>
+                onClick={() => coverInputRef.current?.click()}
+                className={`p-6 rounded-2xl border-2 border-dashed transition-all cursor-pointer flex flex-col items-center justify-center gap-3 text-center ${
+                  isCoverDragging
+                    ? "border-vendeur-emerald bg-vendeur-emerald/10 scale-[1.02]"
+                    : "border-white/15 bg-black/20 hover:border-white/30 hover:bg-black/40"
+                }`}
+              >
+                <div className="h-16 w-28 rounded-2xl bg-black/60 border border-white/10 flex items-center justify-center shrink-0 shadow-inner">
+                  {isUploadingCover ? (
+                    <Loader2 size={24} className="animate-spin text-vendeur-emerald" />
+                  ) : (
+                    <ImageIcon size={28} className="text-white/40" />
+                  )}
+                </div>
+
+                <div className="space-y-1">
+                  <p className="text-xs font-black text-white uppercase tracking-tight">
+                    {isUploadingCover ? "Optimisation en cours..." : "Glissez votre bannière ici ou cliquez"}
+                  </p>
+                  <p className="text-[10px] text-white/40 font-mono">Format panoramique 16:9 recommandé (Ex: 1200x400)</p>
+                </div>
+              </div>
+            )}
+
+            <input
+              ref={coverInputRef}
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) processAndUploadImage(file, "cover");
+              }}
+            />
 
             {/* Actions for Cover */}
             <div className="flex items-center justify-between gap-2 pt-1">
               <button
                 type="button"
                 onClick={() => setShowCoverUrlInput(!showCoverUrlInput)}
-                className="text-[11px] font-bold text-white/50 hover:text-white flex items-center gap-1"
+                className="text-[11px] font-bold text-white/50 hover:text-white flex items-center gap-1 cursor-pointer"
               >
                 <LinkIcon size={12} />
-                <span>{showCoverUrlInput ? "Masquer l'URL" : "Saisir une URL"}</span>
+                <span>{showCoverUrlInput ? "Masquer l'URL" : "Saisir une URL directe"}</span>
               </button>
-
-              {coverUrl && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setCoverUrl("");
-                    toast.info("Bannière retirée. N'oubliez pas d'enregistrer !");
-                  }}
-                  className="text-[11px] font-bold text-red-400 hover:text-red-300 flex items-center gap-1"
-                >
-                  <Trash2 size={12} />
-                  <span>Supprimer la bannière</span>
-                </button>
-              )}
             </div>
 
             {showCoverUrlInput && (

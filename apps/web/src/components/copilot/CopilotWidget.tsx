@@ -613,7 +613,7 @@ export function CopilotWidget() {
                 )}
 
               {/* Messages Stream */}
-              <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-4 scroll-smooth min-w-0 bg-slate-50/50 dark:bg-transparent">
+              <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-4 scroll-smooth min-w-0 bg-slate-50/50 dark:bg-transparent touch-pan-y overscroll-contain">
                 {messages.map((msg) => {
                   const isAssistant = msg.role === "assistant";
                   return (

@@ -198,13 +198,13 @@ export class PaymentService {
           visible: isLocal
         },
         {
-          id: "google_play",
-          name: "Google Play / Carte",
-          number: "In-App Purchase",
-          color: "#4285F4",
-          badge: "International / Cartes",
-          instructions: "Utilisez le bouton 'Payer avec Google Play' pour régler par carte bancaire internationale en toute sécurité.",
-          visible: true
+          id: "card",
+          name: "Carte Bancaire (Visa / Mastercard)",
+          number: "Paiement en ligne",
+          color: "#4f46e5",
+          badge: "Bientôt disponible",
+          instructions: "Le règlement par carte bancaire internationale Visa / Mastercard est en cours de finalisation et sera disponible très prochainement.",
+          visible: false
         }
       ].filter(m => m.visible),
       supportWhatsApp: settings.supportWhatsApp || "+2250700000000"

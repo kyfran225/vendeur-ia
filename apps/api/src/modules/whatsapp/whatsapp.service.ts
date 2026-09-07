@@ -1112,13 +1112,24 @@ class WhatsAppService {
                    msg.message ||
                    {};
 
-    const imageMsg = rawMsg.imageMessage;
+    const imageMsg = rawMsg.imageMessage || rawMsg.interactiveMessage?.header?.imageMessage || rawMsg.templateMessage?.hydratedTemplate?.imageMessage || rawMsg.templateMessage?.hydratedFourRowTemplate?.imageMessage;
     const audioMsg = rawMsg.audioMessage;
-    const videoMsg = rawMsg.videoMessage;
-    const docMsg = rawMsg.documentMessage || rawMsg.documentWithCaptionMessage?.message?.documentMessage;
+    const videoMsg = rawMsg.videoMessage || rawMsg.interactiveMessage?.header?.videoMessage || rawMsg.templateMessage?.hydratedTemplate?.videoMessage || rawMsg.templateMessage?.hydratedFourRowTemplate?.videoMessage;
+    const docMsg = rawMsg.documentMessage || rawMsg.documentWithCaptionMessage?.message?.documentMessage || rawMsg.interactiveMessage?.header?.documentMessage || rawMsg.templateMessage?.hydratedTemplate?.documentMessage || rawMsg.templateMessage?.hydratedFourRowTemplate?.documentMessage;
     const stickerMsg = rawMsg.stickerMessage;
 
-    let text = rawMsg.conversation || rawMsg.extendedTextMessage?.text || imageMsg?.caption || videoMsg?.caption || docMsg?.caption || "";
+    // Support standard text, interactive messages (header/body), template messages, and button responses
+    const interactiveText = rawMsg.interactiveMessage?.body?.text ||
+                            rawMsg.interactiveMessage?.header?.text ||
+                            rawMsg.templateMessage?.hydratedTemplate?.hydratedContentText ||
+                            rawMsg.templateMessage?.hydratedFourRowTemplate?.hydratedContentText ||
+                            rawMsg.buttonsResponseMessage?.selectedDisplayText ||
+                            rawMsg.templateButtonReplyMessage?.selectedDisplayText ||
+                            rawMsg.listResponseMessage?.title ||
+                            rawMsg.interactiveResponseMessage?.body?.text ||
+                            "";
+
+    let text = rawMsg.conversation || rawMsg.extendedTextMessage?.text || imageMsg?.caption || videoMsg?.caption || docMsg?.caption || interactiveText || "";
     let mediaUrl: string | undefined = msg._savedMediaUrl;
     let mediaMetadata: any = msg._savedMediaMetadata;
     let messageType: "text" | "image" | "audio" | "video" | "document" | "file" = "text";

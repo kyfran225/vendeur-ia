@@ -246,6 +246,15 @@ router.post("/webhook", async (req, res) => {
                 mediaId = msg.audio?.id;
                 mediaType = "audio";
                 text = "[Vocal]";
+              } else if (msg.type === "interactive") {
+                // Meta Cloud API interactive button or list reply
+                text = msg.interactive?.button_reply?.title ||
+                       msg.interactive?.list_reply?.title ||
+                       msg.interactive?.nfm_reply?.response_json ||
+                       msg.interactive?.button_reply?.id ||
+                       "[Action Interactive]";
+              } else if (msg.type === "button") {
+                text = msg.button?.text || msg.button?.payload || "[Bouton]";
               }
 
               if ((text || mediaId) && from) {

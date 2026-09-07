@@ -443,6 +443,30 @@ class WhatsAppService {
             } else {
               console.log(`[WhatsApp] User ${userId} connection open (already marked connected)`);
             }
+
+            // Auto-subscribe to presence for recent active contacts
+            try {
+              const merchant = await CommerceMerchantModel.findOne({
+                $or: [
+                  { ownerId: userId },
+                  ...(userId && mongoose.isValidObjectId(userId) ? [{ ownerId: new mongoose.Types.ObjectId(userId) }] : []),
+                  { _id: userId }
+                ]
+              });
+              if (merchant) {
+                const recentCustomers = await CommerceCustomerModel.find({
+                  merchantId: merchant._id,
+                  phone: { $exists: true, $ne: "" }
+                }).sort({ updatedAt: -1 }).limit(50).select("phone");
+                for (const cust of recentCustomers) {
+                  if (cust.phone) {
+                    this.subscribePresence(userId, cust.phone, merchant).catch(() => {});
+                  }
+                }
+              }
+            } catch (e) {
+              // Non-blocking
+            }
           }
 
           if (connection === "close") {

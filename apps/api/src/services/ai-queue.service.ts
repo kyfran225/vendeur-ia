@@ -220,13 +220,18 @@ Réponds UNIQUEMENT avec le texte final du message.`;
 
     try {
       // Native Typing Indicator to recipient on WhatsApp & merchant inbox
+      const targetUserIds = new Set<string>([userId.toString()]);
+      if (merchantData?.ownerId) targetUserIds.add(merchantData.ownerId.toString());
+
       if (platform === 'whatsapp') {
-        await whatsappService.sendPresence(userId, remoteJid, 'composing');
+        await whatsappService.sendPresence(userId, remoteJid, 'composing', merchantData).catch(() => {});
       }
-      emitToUser(userId, 'conversation:typing', {
-        conversationId,
-        isTyping: true,
-        participant: 'ai'
+      targetUserIds.forEach(tId => {
+        emitToUser(tId, 'conversation:typing', {
+          conversationId,
+          isTyping: true,
+          participant: 'ai'
+        });
       });
       emitToConversation(conversationId, 'conversation:typing', {
         conversationId,
@@ -380,10 +385,15 @@ Réponds UNIQUEMENT avec le texte final du message.`;
 
       return reply;
     } finally {
-      emitToUser(userId, 'conversation:typing', {
-        conversationId,
-        isTyping: false,
-        participant: 'ai'
+      const targetUserIds = new Set<string>([userId.toString()]);
+      if (merchantData?.ownerId) targetUserIds.add(merchantData.ownerId.toString());
+
+      targetUserIds.forEach(tId => {
+        emitToUser(tId, 'conversation:typing', {
+          conversationId,
+          isTyping: false,
+          participant: 'ai'
+        });
       });
       emitToConversation(conversationId, 'conversation:typing', {
         conversationId,
@@ -391,7 +401,7 @@ Réponds UNIQUEMENT avec le texte final du message.`;
         participant: 'ai'
       });
       if (platform === 'whatsapp') {
-        await whatsappService.sendPresence(userId, remoteJid, 'paused').catch(() => {});
+        await whatsappService.sendPresence(userId, remoteJid, 'paused', merchantData).catch(() => {});
       }
     }
   } catch (error) {

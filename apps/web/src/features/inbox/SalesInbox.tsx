@@ -1082,7 +1082,7 @@ export function SalesInbox() {
                           <span className="inline-flex items-center gap-1">
                             <span className="h-2 w-2 rounded-full bg-emerald-500 animate-ping shrink-0" />
                             <span className="italic font-semibold">
-                              {typingMap[chat._id]?.participant === "ai" ? "Vendeur IA répond..." : "En train d'écrire..."}
+                              {typingMap[chat._id]?.participant === "ai" ? "Vendeur IA écrit..." : "écrit..."}
                             </span>
                           </span>
                         </div>
@@ -1171,8 +1171,8 @@ export function SalesInbox() {
                       variant="header"
                       label={
                         typingMap[selectedChat]?.participant === "ai"
-                          ? "Vendeur IA prépare sa réponse..."
-                          : `${formatCustomerDisplayName(activeChatData?.customerId, merchant?.businessName, user?.displayName)} est en train d'écrire`
+                          ? "Vendeur IA écrit..."
+                          : "écrit..."
                       }
                       className="mt-0.5"
                     />

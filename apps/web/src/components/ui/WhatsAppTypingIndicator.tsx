@@ -25,11 +25,11 @@ export function WhatsAppTypingIndicator({
   label,
   className
 }: WhatsAppTypingIndicatorProps) {
-  // 1. Variante Header (en-tête de conversation dans l'inbox)
+  // 1. Variante Header (en-tête de conversation dans l'inbox - style natif WhatsApp)
   if (variant === "header") {
     return (
       <div className={cn("inline-flex items-center gap-1.5 text-emerald-500 dark:text-emerald-400 text-xs sm:text-[13px] font-semibold tracking-wide", className)}>
-        <span className="italic">{label || "Vendeur IA est en train d'écrire"}</span>
+        <span className="italic">{label || "écrit..."}</span>
         <span className="inline-flex items-center gap-1.5 ml-1 pt-1">
           <span className="h-2 w-2 rounded-full bg-emerald-400 animate-typing-compact-1 shadow-[0_0_8px_rgba(52,211,153,0.8)]" />
           <span className="h-2 w-2 rounded-full bg-emerald-400 animate-typing-compact-2 shadow-[0_0_8px_rgba(52,211,153,0.8)]" />

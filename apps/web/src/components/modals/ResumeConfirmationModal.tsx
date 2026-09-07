@@ -1,11 +1,10 @@
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  PauseCircle,
-  X,
-  MessageSquare,
-  ShieldCheck,
   Zap,
+  X,
+  ShoppingBag,
+  RotateCcw,
   Loader2,
   PlayCircle
 } from "lucide-react";
@@ -19,19 +18,19 @@ function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-interface PauseConfirmationModalProps {
+interface ResumeConfirmationModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess?: () => void;
 }
 
-export function PauseConfirmationModal({ isOpen, onClose, onSuccess }: PauseConfirmationModalProps) {
+export function ResumeConfirmationModal({ isOpen, onClose, onSuccess }: ResumeConfirmationModalProps) {
   const queryClient = useQueryClient();
 
-  const pauseMutation = useMutation({
+  const resumeMutation = useMutation({
     mutationFn: async () => {
       const res = await apiClient.patch("/api/commerce/ai-settings", {
-        autoReply: false
+        autoReply: true
       });
       return res.data;
     },
@@ -46,7 +45,7 @@ export function PauseConfirmationModal({ isOpen, onClose, onSuccess }: PauseConf
             ...old.merchant,
             aiSettings: {
               ...old.merchant?.aiSettings,
-              autoReply: false
+              autoReply: true
             }
           }
         };
@@ -54,7 +53,7 @@ export function PauseConfirmationModal({ isOpen, onClose, onSuccess }: PauseConf
       return { previousDashboard };
     },
     onSuccess: (data) => {
-      toast.info("Vendeur IA mis en pause. Vous gérez désormais manuellement vos discussions WhatsApp.");
+      toast.success("Vendeur IA réactivé ! Vos ventes reprennent 24h/24 🚀");
       queryClient.setQueryData(["dashboard"], (old: any) => {
         if (!old) return old;
         return {
@@ -65,7 +64,7 @@ export function PauseConfirmationModal({ isOpen, onClose, onSuccess }: PauseConf
             aiSettings: {
               ...old.merchant?.aiSettings,
               ...(data?.aiSettings || {}),
-              autoReply: false
+              autoReply: true
             }
           }
         };
@@ -79,7 +78,7 @@ export function PauseConfirmationModal({ isOpen, onClose, onSuccess }: PauseConf
       if (context?.previousDashboard) {
         queryClient.setQueryData(["dashboard"], context.previousDashboard);
       }
-      toast.error("Impossible de mettre l'IA en pause. Veuillez réessayer.");
+      toast.error("Impossible de réactiver le Vendeur IA. Veuillez réessayer.");
     }
   });
 
@@ -103,10 +102,10 @@ export function PauseConfirmationModal({ isOpen, onClose, onSuccess }: PauseConf
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 15 }}
           transition={{ type: "spring", duration: 0.4 }}
-          className="relative w-full max-w-md bg-white dark:bg-[#0e161b] border border-slate-200 dark:border-sky-500/30 rounded-3xl p-6 sm:p-7 shadow-2xl text-slate-900 dark:text-white z-10 overflow-hidden"
+          className="relative w-full max-w-md bg-white dark:bg-[#0e161b] border border-slate-200 dark:border-emerald-500/30 rounded-3xl p-6 sm:p-7 shadow-2xl text-slate-900 dark:text-white z-10 overflow-hidden"
         >
           {/* Subtle Ambient Glow */}
-          <div className="absolute top-0 right-0 w-64 h-64 bg-sky-500/10 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20" />
+          <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20" />
 
           {/* Close Button */}
           <button
@@ -119,16 +118,16 @@ export function PauseConfirmationModal({ isOpen, onClose, onSuccess }: PauseConf
 
           {/* Icon & Header */}
           <div className="flex flex-col items-center text-center space-y-3 pt-2">
-            <div className="h-16 w-16 rounded-2xl bg-sky-500/15 border border-sky-500/30 flex items-center justify-center text-sky-600 dark:text-sky-400 shadow-lg shadow-sky-500/20">
-              <PauseCircle size={36} />
+            <div className="h-16 w-16 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-600 dark:text-vendeur-emerald shadow-lg shadow-emerald-500/20">
+              <PlayCircle size={36} />
             </div>
 
             <div className="space-y-1">
-              <span className="inline-block px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-sky-500/15 text-sky-700 dark:text-sky-300 border border-sky-500/30">
-                Prise de contrôle manuelle
+              <span className="inline-block px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-emerald-500/15 text-emerald-700 dark:text-vendeur-emerald border border-emerald-500/30">
+                Ventes Automatiques 24h/24
               </span>
               <h3 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight">
-                Mettre le Vendeur IA en pause ?
+                Réactiver le Vendeur IA ?
               </h3>
             </div>
           </div>
@@ -136,29 +135,29 @@ export function PauseConfirmationModal({ isOpen, onClose, onSuccess }: PauseConf
           {/* Explanation Points */}
           <div className="my-6 space-y-3 bg-slate-50 dark:bg-black/40 border border-slate-200/80 dark:border-white/5 p-4 rounded-2xl">
             <div className="flex items-start gap-3 text-left">
-              <div className="h-6 w-6 rounded-lg bg-sky-400/10 text-sky-600 dark:text-sky-400 flex items-center justify-center shrink-0 mt-0.5">
-                <MessageSquare size={14} />
+              <div className="h-6 w-6 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-vendeur-emerald flex items-center justify-center shrink-0 mt-0.5">
+                <Zap size={14} />
               </div>
               <p className="text-xs text-slate-600 dark:text-white/80 leading-relaxed font-medium">
-                <strong className="text-slate-900 dark:text-white">WhatsApp reste connecté :</strong> Vos clients continuent de vous écrire normalement.
-              </p>
-            </div>
-
-            <div className="flex items-start gap-3 text-left">
-              <div className="h-6 w-6 rounded-lg bg-sky-400/10 text-sky-600 dark:text-sky-400 flex items-center justify-center shrink-0 mt-0.5">
-                <ShieldCheck size={14} />
-              </div>
-              <p className="text-xs text-slate-600 dark:text-white/80 leading-relaxed font-medium">
-                <strong className="text-slate-900 dark:text-white">Réponses manuelles :</strong> L'IA cesse de répondre automatiquement afin que vous gardiez 100% la main sur vos échanges.
+                <strong className="text-slate-900 dark:text-white">Réponses instantanées :</strong> L'IA répondra immédiatement à tous vos clients sur WhatsApp dès réception de leurs messages.
               </p>
             </div>
 
             <div className="flex items-start gap-3 text-left">
               <div className="h-6 w-6 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-vendeur-emerald flex items-center justify-center shrink-0 mt-0.5">
-                <Zap size={14} />
+                <ShoppingBag size={14} />
               </div>
               <p className="text-xs text-slate-600 dark:text-white/80 leading-relaxed font-medium">
-                <strong className="text-slate-900 dark:text-white">Reprise en 1 clic :</strong> Vous pourrez réactiver les ventes 24h/24 à tout moment depuis le tableau de bord.
+                <strong className="text-slate-900 dark:text-white">Présentation & Commandes :</strong> Présentation du catalogue, négociation et encaissement automatiques.
+              </p>
+            </div>
+
+            <div className="flex items-start gap-3 text-left">
+              <div className="h-6 w-6 rounded-lg bg-sky-400/10 text-sky-600 dark:text-sky-400 flex items-center justify-center shrink-0 mt-0.5">
+                <RotateCcw size={14} />
+              </div>
+              <p className="text-xs text-slate-600 dark:text-white/80 leading-relaxed font-medium">
+                <strong className="text-slate-900 dark:text-white">Mise en pause réversible :</strong> Vous gardez le contrôle et pouvez repasser en manuel à tout instant.
               </p>
             </div>
           </div>
@@ -170,24 +169,24 @@ export function PauseConfirmationModal({ isOpen, onClose, onSuccess }: PauseConf
               onClick={onClose}
               className="w-full sm:flex-1 h-12 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-200 dark:bg-white/5 dark:hover:bg-white/10 text-slate-700 hover:text-slate-900 dark:text-white/80 dark:hover:text-white dark:border-white/10 text-xs font-bold uppercase tracking-wider transition-all cursor-pointer order-2 sm:order-1"
             >
-              Laisser Actif 24h/24
+              Laisser en Pause
             </button>
 
             <button
               type="button"
-              disabled={pauseMutation.isPending}
-              onClick={() => pauseMutation.mutate()}
-              className="w-full sm:flex-1 h-12 rounded-xl bg-sky-500 hover:bg-sky-400 text-slate-950 text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 shadow-lg shadow-sky-500/20 active:scale-95 cursor-pointer order-1 sm:order-2"
+              disabled={resumeMutation.isPending}
+              onClick={() => resumeMutation.mutate()}
+              className="w-full sm:flex-1 h-12 rounded-xl bg-vendeur-emerald hover:bg-emerald-400 text-slate-950 text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 active:scale-95 cursor-pointer order-1 sm:order-2"
             >
-              {pauseMutation.isPending ? (
+              {resumeMutation.isPending ? (
                 <>
                   <Loader2 size={16} className="animate-spin" />
-                  <span>Mise en pause...</span>
+                  <span>Activation...</span>
                 </>
               ) : (
                 <>
-                  <PauseCircle size={16} />
-                  <span>Oui, Mettre en Pause</span>
+                  <Zap size={16} />
+                  <span>Oui, Activer l'IA</span>
                 </>
               )}
             </button>

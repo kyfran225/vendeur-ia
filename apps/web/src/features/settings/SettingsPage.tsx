@@ -48,6 +48,8 @@ import { WhatsAppConnectionFlow } from "./components/WhatsAppConnectionFlow";
 import { FacebookConnectionModal } from "./components/fb/FacebookConnectionModal";
 import { MarketplaceGuideModal } from "./components/fb/MarketplaceGuideModal";
 import { PackProModal } from "../dashboard/components/PackProModal";
+import { PauseConfirmationModal } from "@/components/modals/PauseConfirmationModal";
+import { ResumeConfirmationModal } from "@/components/modals/ResumeConfirmationModal";
 import { VendeurIALoader } from "@/components/ui/VendeurIALoader";
 import { BillingTab } from "./components/BillingTab";
 import { ReferralCard } from "./components/ReferralCard";
@@ -1644,6 +1646,8 @@ function SavoirTab({ initialKnowledge }: { initialKnowledge: any }) {
 function PersonnaliteTab({ merchant }: { merchant: any }) {
   const queryClient = useQueryClient();
   const [aiSettings, setAiSettings] = useState(merchant?.aiSettings || {});
+  const [isPauseModalOpen, setIsPauseModalOpen] = useState(false);
+  const [isResumeModalOpen, setIsResumeModalOpen] = useState(false);
 
   useEffect(() => {
     if (merchant?.aiSettings) setAiSettings(merchant.aiSettings);
@@ -1658,6 +1662,14 @@ function PersonnaliteTab({ merchant }: { merchant: any }) {
       queryClient.invalidateQueries({ queryKey: ["dashboard"] });
     }
   });
+
+  const handleToggleAutoReply = () => {
+    if (aiSettings.autoReply !== false) {
+      setIsPauseModalOpen(true);
+    } else {
+      setIsResumeModalOpen(true);
+    }
+  };
 
   return (
     <div className="space-y-6 sm:space-y-8 animate-in slide-in-from-bottom-2 duration-500 w-full max-w-full box-border">
@@ -1717,7 +1729,7 @@ function PersonnaliteTab({ merchant }: { merchant: any }) {
                 <div className="flex justify-end sm:justify-center shrink-0 self-end sm:self-center">
                   <ToggleButton
                     active={aiSettings.autoReply !== false}
-                    onToggle={() => setAiSettings({ ...aiSettings, autoReply: aiSettings.autoReply === false ? true : false })}
+                    onToggle={handleToggleAutoReply}
                     color="bg-vendeur-emerald"
                   />
                 </div>
@@ -1832,9 +1844,21 @@ function PersonnaliteTab({ merchant }: { merchant: any }) {
                      <p className="text-xs text-slate-500 dark:text-white/40 mt-1">Poste automatiquement 1 produit en statut chaque matin.</p>
                    </div>
                 </div>
-            </div>
-         </div>
-      </section>
+             </div>
+          </div>
+       </section>
+
+       {/* Modals de confirmation pour la mise en pause et la réactivation sécurisée */}
+       <PauseConfirmationModal
+         isOpen={isPauseModalOpen}
+         onClose={() => setIsPauseModalOpen(false)}
+         onSuccess={() => setAiSettings((prev: any) => ({ ...prev, autoReply: false }))}
+       />
+       <ResumeConfirmationModal
+         isOpen={isResumeModalOpen}
+         onClose={() => setIsResumeModalOpen(false)}
+         onSuccess={() => setAiSettings((prev: any) => ({ ...prev, autoReply: true }))}
+       />
     </div>
   );
 }

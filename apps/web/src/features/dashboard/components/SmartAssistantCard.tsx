@@ -21,6 +21,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { PackProModal } from "./PackProModal";
+import { ResumeConfirmationModal } from "@/components/modals/ResumeConfirmationModal";
 import { AssistantIcon } from "@/components/ui/AssistantIcon";
 import { WhatsAppIcon } from "@/components/ui/WhatsAppIcon";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -42,6 +43,7 @@ export function SmartAssistantCard({ dashboard, onOpenTestIA, onOpenShare, onCon
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [isPackProModalOpen, setIsPackProModalOpen] = useState(false);
+  const [isResumeModalOpen, setIsResumeModalOpen] = useState(false);
 
   const merchant = dashboard?.merchant;
   const setupStatus = dashboard?.setupStatus || { score: 0, steps: [], isFullyOperational: false };
@@ -206,6 +208,7 @@ export function SmartAssistantCard({ dashboard, onOpenTestIA, onOpenShare, onCon
   return (
     <>
       <PackProModal isOpen={isPackProModalOpen} onClose={() => setIsPackProModalOpen(false)} />
+      <ResumeConfirmationModal isOpen={isResumeModalOpen} onClose={() => setIsResumeModalOpen(false)} />
 
       <motion.section
         initial={{ opacity: 0, y: 15 }}
@@ -361,12 +364,11 @@ export function SmartAssistantCard({ dashboard, onOpenTestIA, onOpenShare, onCon
                 ) : isPaused ? (
                   <button
                     type="button"
-                    onClick={() => resumeSalesMutation.mutate()}
-                    disabled={resumeSalesMutation.isPending}
+                    onClick={() => setIsResumeModalOpen(true)}
                     className="flex-1 flex items-center justify-center gap-2.5 min-h-[52px] sm:min-h-[56px] px-6 py-3.5 rounded-2xl bg-sky-500 hover:bg-sky-400 text-white font-black uppercase text-xs sm:text-sm tracking-wider transition-all shadow-lg shadow-sky-500/20 active:scale-95 cursor-pointer shrink-0"
                   >
                     <PlayCircle size={18} />
-                    <span>{resumeSalesMutation.isPending ? "Réactivation..." : "Reprendre les Ventes 24h/24"}</span>
+                    <span>Reprendre les Ventes 24h/24</span>
                   </button>
                 ) : (
                   <>

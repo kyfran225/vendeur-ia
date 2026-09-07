@@ -1,6 +1,7 @@
-import React from "react";
+import React, { useState } from "react";
 import { AlertTriangle, ArrowRight, Zap, Sparkles, PauseCircle, PlayCircle } from "lucide-react";
 import { AssistantIcon } from "@/components/ui/AssistantIcon";
+import { ResumeConfirmationModal } from "@/components/modals/ResumeConfirmationModal";
 import { Link } from "react-router-dom";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
@@ -17,6 +18,7 @@ interface SubscriptionBannerProps {
 }
 
 export function SubscriptionBanner({ status, expiresAt, autoReply = true, onOpenTestIA }: SubscriptionBannerProps) {
+  const [isResumeModalOpen, setIsResumeModalOpen] = useState(false);
   const isPaidActive = status === "active";
   const now = new Date();
   const expirationDate = expiresAt ? new Date(expiresAt) : null;
@@ -94,14 +96,20 @@ export function SubscriptionBanner({ status, expiresAt, autoReply = true, onOpen
             </div>
           </div>
 
-          <Link
-            to="/settings?tab=personnalite"
-            className="h-11 px-5 rounded-xl bg-sky-400 text-vendeur-coal font-black uppercase text-[11px] tracking-wider hover:bg-sky-300 transition-all shadow-lg shadow-sky-400/20 flex items-center gap-2 active:scale-95 whitespace-nowrap"
+          <button
+            type="button"
+            onClick={() => setIsResumeModalOpen(true)}
+            className="h-11 px-5 rounded-xl bg-sky-400 text-vendeur-coal font-black uppercase text-[11px] tracking-wider hover:bg-sky-300 transition-all shadow-lg shadow-sky-400/20 flex items-center gap-2 active:scale-95 whitespace-nowrap cursor-pointer"
           >
             <PlayCircle size={15} />
             <span>Reprendre les Ventes 24h/24</span>
-          </Link>
+          </button>
         </div>
+
+        <ResumeConfirmationModal
+          isOpen={isResumeModalOpen}
+          onClose={() => setIsResumeModalOpen(false)}
+        />
       </div>
     );
   }

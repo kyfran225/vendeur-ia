@@ -26,6 +26,8 @@ import { useFounderRole } from "@/hooks/useFounderRole";
 import { Logo } from "@/components/ui/Logo";
 import { PackProModal } from "@/features/dashboard/components/PackProModal";
 import { ConfirmationModal } from "@/components/ui/ConfirmationModal";
+import { PauseConfirmationModal } from "@/components/modals/PauseConfirmationModal";
+import { ResumeConfirmationModal } from "@/components/modals/ResumeConfirmationModal";
 import { useSocket } from "@/hooks/useSocket";
 import { formatDisplayPhone } from "@/features/onboarding/components/CountrySelector";
 import { useThemeStore } from "@/stores/themeStore";
@@ -51,6 +53,8 @@ export function ShellHeader({ isVisible = true }: ShellHeaderProps) {
   const isExpertParam = searchParams.get("expert") === "true";
 
   const [isPackProOpen, setIsPackProOpen] = useState(false);
+  const [isPauseModalOpen, setIsPauseModalOpen] = useState(false);
+  const [isResumeModalOpen, setIsResumeModalOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [selectedLanguage, setSelectedLanguage] = useState<"fr" | "en">("fr");
@@ -215,7 +219,11 @@ export function ShellHeader({ isVisible = true }: ShellHeaderProps) {
   });
 
   const handleToggleAutoReply = () => {
-    toggleAutoReplyMutation.mutate(!isAutoReplyOn);
+    if (isAutoReplyOn) {
+      setIsPauseModalOpen(true);
+    } else {
+      setIsResumeModalOpen(true);
+    }
   };
 
   // Détection absolue du Pack Pro / Formule Clé en Main / Expert
@@ -590,6 +598,15 @@ export function ShellHeader({ isVisible = true }: ShellHeaderProps) {
           </Link>
         </div>
       )}
+      {/* Modals de confirmation pour la mise en pause et la réactivation sécurisée */}
+      <PauseConfirmationModal
+        isOpen={isPauseModalOpen}
+        onClose={() => setIsPauseModalOpen(false)}
+      />
+      <ResumeConfirmationModal
+        isOpen={isResumeModalOpen}
+        onClose={() => setIsResumeModalOpen(false)}
+      />
     </div>
   );
 }

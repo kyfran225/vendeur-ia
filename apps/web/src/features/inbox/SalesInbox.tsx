@@ -38,6 +38,7 @@ import { VoiceRecorder } from "./components/VoiceRecorder";
 import { CustomerAvatar } from "./components/CustomerAvatar";
 import { CustomerProfileModal } from "./components/CustomerProfileModal";
 import { PauseConfirmationModal } from "@/components/modals/PauseConfirmationModal";
+import { ResumeConfirmationModal } from "@/components/modals/ResumeConfirmationModal";
 import { EmojiPickerPopover } from "./components/EmojiPickerPopover";
 import { MediaUploaderModal } from "./components/MediaUploaderModal";
 import { MediaLightboxModal } from "./components/MediaLightboxModal";
@@ -135,6 +136,7 @@ export function SalesInbox() {
   const [isFastPayModalOpen, setIsFastPayModalOpen] = useState(false);
   const [isProductCardModalOpen, setIsProductCardModalOpen] = useState(false);
   const [isPauseModalOpen, setIsPauseModalOpen] = useState(false);
+  const [isResumeModalOpen, setIsResumeModalOpen] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
@@ -1332,11 +1334,10 @@ export function SalesInbox() {
                   </span>
                 </div>
                 <button
-                  onClick={() => resumeGlobalSalesMutation.mutate()}
-                  disabled={resumeGlobalSalesMutation.isPending}
+                  onClick={() => setIsResumeModalOpen(true)}
                   className="text-[10px] font-black uppercase text-slate-950 bg-sky-400 hover:bg-sky-300 px-3 py-1 rounded-lg transition-all active:scale-95 cursor-pointer shrink-0 ml-2 shadow-sm"
                 >
-                  {resumeGlobalSalesMutation.isPending ? "..." : "Reprendre 24/7"}
+                  Reprendre 24/7
                 </button>
               </div>
             )}
@@ -1695,10 +1696,14 @@ export function SalesInbox() {
         />
       )}
 
-      {/* Pause Mode Modal */}
+      {/* Pause & Resume Mode Modals */}
       <PauseConfirmationModal
         isOpen={isPauseModalOpen}
         onClose={() => setIsPauseModalOpen(false)}
+      />
+      <ResumeConfirmationModal
+        isOpen={isResumeModalOpen}
+        onClose={() => setIsResumeModalOpen(false)}
       />
 
       {/* Customer Profile & Avatar Lightbox Modal */}

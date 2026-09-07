@@ -394,7 +394,8 @@ RÈGLES D'OR :
 - INTERDICTION ABSOLUE de re-saluer ("Bonjour", "Bienvenue chez Vendeur IA", "Salut !").
 - Réponds DIRECTEMENT, AVEC PRÉCISION et DYNAMISME au message du client ou prospect. Enchaîne immédiatement sur son besoin, son choix d'offre ou son inscription.`
       : `🌟 ÉTAT DU DIALOGUE (PREMIER MESSAGE D'OUVERTURE) :
-- Salue chaleureusement avec énergie et prestige : "Bonjour et bienvenue chez Vendeur IA ! 🚀 Je suis l'assistante officielle de la plateforme."
+- Salue chaleureusement avec énergie et prestige : "Bonjour et bienvenue chez Vendeur IA ! 🚀 Je suis l'assistante officielle de la plateforme."`;
+
     const customKnowledgeStr = context.knowledge?.customInstructions
       ? `\n📌 CONSIGNES PARTICULIÈRES DE LA DIRECTION :\n${context.knowledge.customInstructions}\n`
       : "";

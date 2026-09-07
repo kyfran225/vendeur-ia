@@ -48,6 +48,16 @@ vi.mock('../../config/env.js', () => ({
 }));
 
 // Mock other services
+vi.mock('axios', () => ({
+  default: {
+    post: vi.fn().mockResolvedValue({
+      data: {
+        messages: [{ id: 'wamid.test_12345' }]
+      }
+    }),
+    get: vi.fn().mockResolvedValue({ data: {} })
+  }
+}));
 vi.mock('./whatsapp-media.service.js', () => ({
   whatsappMediaService: {},
 }));
@@ -156,6 +166,32 @@ describe('WhatsAppService Multi-Tenant Config', () => {
 
       expect(CommerceMerchantModel.findById).toHaveBeenCalledWith('merchant-456');
       expect(spy).toHaveBeenCalledWith('user-456', expect.anything());
+    });
+  });
+
+  describe('sendMetaInteractive (Native Buttons & CTA URL)', () => {
+    it('should format and dispatch interactive cta_url message', async () => {
+      const mockMerchant = {
+        ownerId: 'user-789',
+        businessName: 'Super Shop',
+        whatsappConfig: {
+          meta: { phoneNumberId: 'phone-789', accessToken: 'token-789' }
+        }
+      };
+
+      const result = await whatsappService.sendMetaInteractive(mockMerchant, '22507070707', {
+        type: 'cta_url',
+        header: { type: 'image', imageUrl: 'https://cdn.example.com/item.jpg' },
+        body: 'Fiche Article: Chaussure VIP',
+        footer: 'Super Shop • Commande 1-Clic',
+        ctaUrl: {
+          displayText: '🛒 Commander',
+          url: 'https://vendeur-ia.com/shop/super-shop?prod=123&buy=1'
+        }
+      });
+
+      expect(result.success).toBe(true);
+      expect(result.messageId).toBeDefined();
     });
   });
 });

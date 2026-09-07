@@ -2061,6 +2061,99 @@ class WhatsAppService {
     return this.sendMetaMedia(merchant, to, audioBuffer, 'audio', { mimeType: 'audio/ogg' });
   }
 
+  async sendMetaInteractive(
+    merchant: any,
+    to: string,
+    interactivePayload: {
+      type: "button" | "cta_url";
+      header?: { type: "image" | "text"; imageUrl?: string; text?: string };
+      body: string;
+      footer?: string;
+      buttons?: Array<{ id: string; title: string }>;
+      ctaUrl?: { displayText: string; url: string };
+    }
+  ): Promise<{ success: boolean; messageId?: string; id?: string; key?: { id: string } }> {
+    if (env.AI_MOCK_MODE) {
+      console.log(`[AI_MOCK_MODE] Skip Meta Interactive Message to ${to}`);
+      const mockId = `mock_${Date.now()}`;
+      return { success: true, messageId: mockId, id: mockId, key: { id: mockId } };
+    }
+    const config = await this.getMetaConfig(merchant);
+    if (!config.phoneNumberId || !config.accessToken) return { success: false };
+
+    const { cleanPhone } = formatToWhatsAppRecipient(to);
+
+    const interactiveObj: any = {
+      body: { text: interactivePayload.body }
+    };
+
+    if (interactivePayload.header) {
+      if (interactivePayload.header.type === "image" && interactivePayload.header.imageUrl) {
+        interactiveObj.header = {
+          type: "image",
+          image: { link: interactivePayload.header.imageUrl }
+        };
+      } else if (interactivePayload.header.type === "text" && interactivePayload.header.text) {
+        interactiveObj.header = {
+          type: "text",
+          text: interactivePayload.header.text
+        };
+      }
+    }
+
+    if (interactivePayload.footer) {
+      interactiveObj.footer = { text: interactivePayload.footer };
+    }
+
+    if (interactivePayload.type === "cta_url" && interactivePayload.ctaUrl) {
+      interactiveObj.type = "cta_url";
+      interactiveObj.action = {
+        name: "cta_url",
+        parameters: {
+          display_text: interactivePayload.ctaUrl.displayText,
+          url: interactivePayload.ctaUrl.url
+        }
+      };
+    } else if (interactivePayload.buttons && interactivePayload.buttons.length > 0) {
+      interactiveObj.type = "button";
+      interactiveObj.action = {
+        buttons: interactivePayload.buttons.slice(0, 3).map((btn) => ({
+          type: "reply",
+          reply: {
+            id: btn.id,
+            title: btn.title.substring(0, 20)
+          }
+        }))
+      };
+    }
+
+    try {
+      const res = await axios.post(
+        `https://graph.facebook.com/v20.0/${config.phoneNumberId}/messages`,
+        {
+          messaging_product: "whatsapp",
+          recipient_type: "individual",
+          to: cleanPhone,
+          type: "interactive",
+          interactive: interactiveObj,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${config.accessToken}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      const metaMsgId = res.data?.messages?.[0]?.id || `wamid.meta_${Date.now()}`;
+      console.log(`[Meta WhatsApp] Interactive message sent to ${cleanPhone} (MsgID: ${metaMsgId})`);
+      return { success: true, messageId: metaMsgId, id: metaMsgId, key: { id: metaMsgId } };
+    } catch (error: any) {
+      console.error("[Meta WhatsApp] Error sending interactive message:", error.response?.data || error.message);
+      return { success: false };
+    }
+  }
+
   async handleMetaIncomingMessage(from: string, text: string, phoneId: string, media?: { mediaId: string, mediaType: string }, messageId?: string, pushName?: string) {
     // 0. Deduplication to prevent processing retries or duplicate webhook events
     const cleanPhone = from ? from.replace(/[\s\-\+\(\)]/g, "") : "";
@@ -2810,7 +2903,27 @@ class WhatsAppService {
     }
   }
 
-  async sendMessage(userId: string, to: string, text: string, options?: { type?: string; mediaUrl?: string; audioBuffer?: Buffer; fileBuffer?: Buffer; fileName?: string; mimeType?: string }) {
+  async sendMessage(
+    userId: string,
+    to: string,
+    text: string,
+    options?: {
+      type?: string;
+      mediaUrl?: string;
+      audioBuffer?: Buffer;
+      fileBuffer?: Buffer;
+      fileName?: string;
+      mimeType?: string;
+      interactive?: {
+        type: "button" | "cta_url";
+        header?: { type: "image" | "text"; imageUrl?: string; text?: string };
+        body: string;
+        footer?: string;
+        buttons?: Array<{ id: string; title: string }>;
+        ctaUrl?: { displayText: string; url: string };
+      };
+    }
+  ) {
     let merchant = await CommerceMerchantModel.findOne({
       $or: [
         { ownerId: userId },
@@ -2842,27 +2955,39 @@ class WhatsAppService {
     // 1. If provider is Meta Cloud API / System Official Channel, prioritize Meta
     if (isMetaMerchant) {
       let metaResult: any = null;
+
+      // Handle interactive CTA / Button messages if provided
+      if (options?.interactive) {
+        try {
+          metaResult = await this.sendMetaInteractive(merchant, cleanPhone, options.interactive);
+        } catch (interactiveErr) {
+          console.warn("[WhatsApp Meta] Interactive send failed, falling back to standard media/text:", interactiveErr);
+        }
+      }
+
       const mediaBuf = options?.fileBuffer || options?.audioBuffer;
 
-      if (mediaBuf) {
-        const mType = (options?.type === 'audio' || options?.audioBuffer) ? 'audio' :
-                      (options?.type === 'video') ? 'video' :
-                      (options?.type === 'document' || options?.type === 'file') ? 'document' : 'image';
-        try {
-          metaResult = await this.sendMetaMedia(merchant, cleanPhone, mediaBuf, mType as any, {
-            fileName: options?.fileName,
-            mimeType: options?.mimeType,
-            caption: text
-          });
-        } catch (err) {
-          console.warn(`[WhatsApp Meta] Failed media send (${mType}), falling back to text:`, err);
-        }
-      } else if (options?.type === 'audio' || (merchant.aiSettings?.voiceMode && text && text.length < 300)) {
-        try {
-          const audioBuffer = await aiProvider.generateSpeech(text);
-          metaResult = await this.sendMetaAudio(merchant, cleanPhone, audioBuffer);
-        } catch (err) {
-          console.warn("[WhatsApp Meta] Failed audio speech gen, falling back to text:", err);
+      if (!metaResult || !metaResult.success) {
+        if (mediaBuf) {
+          const mType = (options?.type === 'audio' || options?.audioBuffer) ? 'audio' :
+                        (options?.type === 'video') ? 'video' :
+                        (options?.type === 'document' || options?.type === 'file') ? 'document' : 'image';
+          try {
+            metaResult = await this.sendMetaMedia(merchant, cleanPhone, mediaBuf, mType as any, {
+              fileName: options?.fileName,
+              mimeType: options?.mimeType,
+              caption: text
+            });
+          } catch (err) {
+            console.warn(`[WhatsApp Meta] Failed media send (${mType}), falling back to text:`, err);
+          }
+        } else if (options?.type === 'audio' || (merchant.aiSettings?.voiceMode && text && text.length < 300)) {
+          try {
+            const audioBuffer = await aiProvider.generateSpeech(text);
+            metaResult = await this.sendMetaAudio(merchant, cleanPhone, audioBuffer);
+          } catch (err) {
+            console.warn("[WhatsApp Meta] Failed audio speech gen, falling back to text:", err);
+          }
         }
       }
 

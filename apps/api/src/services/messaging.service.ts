@@ -5,7 +5,28 @@ import { formatToWhatsAppRecipient } from '@vendeur-ia/core';
 import axios from 'axios';
 
 export class MessagingService {
-  async sendMessage(merchant: any, platform: string, remoteId: string, content: string, options: { type?: string; mediaUrl?: string; audioBuffer?: Buffer; fileBuffer?: Buffer; fileName?: string; mimeType?: string } = {}) {
+  async sendMessage(
+    merchant: any,
+    platform: string,
+    remoteId: string,
+    content: string,
+    options: {
+      type?: string;
+      mediaUrl?: string;
+      audioBuffer?: Buffer;
+      fileBuffer?: Buffer;
+      fileName?: string;
+      mimeType?: string;
+      interactive?: {
+        type: "button" | "cta_url";
+        header?: { type: "image" | "text"; imageUrl?: string; text?: string };
+        body: string;
+        footer?: string;
+        buttons?: Array<{ id: string; title: string }>;
+        ctaUrl?: { displayText: string; url: string };
+      };
+    } = {}
+  ) {
     console.log(`[MessagingService] Sending to ${platform}:${remoteId}`);
 
     switch (platform) {

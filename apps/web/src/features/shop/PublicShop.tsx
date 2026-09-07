@@ -298,6 +298,18 @@ export function PublicShop() {
     }
   }, [data?.merchant?.branding?.storefrontTheme, merchantId]);
 
+  // Lock body scroll when quick view modal or story modal is open on mobile/desktop
+  useEffect(() => {
+    if (selectedProduct || isStoryModalOpen || isShareModalOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "unset";
+    }
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, [selectedProduct, isStoryModalOpen, isShareModalOpen]);
+
   if (isLoading) {
     return (
       <VendeurIALoader fullscreen size="xl" label="Chargement de la vitrine..." />
@@ -706,7 +718,10 @@ export function PublicShop() {
                   key={p._id}
                   className="group bg-white dark:bg-[#0d1f18] border border-slate-200/80 dark:border-white/5 rounded-3xl overflow-hidden hover:border-slate-300 dark:hover:border-white/20 transition-all flex flex-col shadow-sm hover:shadow-xl"
                 >
-                  <div className="relative aspect-square overflow-hidden bg-slate-100 dark:bg-black/40">
+                  <div
+                    className="relative aspect-square overflow-hidden bg-slate-100 dark:bg-black/40 cursor-pointer"
+                    onClick={() => setSelectedProduct(p)}
+                  >
                     {p.images?.[0] || p.imageUrl ? (
                       <img
                         src={p.images?.[0] || p.imageUrl}
@@ -727,14 +742,20 @@ export function PublicShop() {
 
                     <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
                       <button
-                        onClick={() => setSelectedProduct(p)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedProduct(p);
+                        }}
                         className="h-11 w-11 rounded-2xl bg-white text-slate-950 flex items-center justify-center hover:scale-110 active:scale-95 transition-all shadow-lg cursor-pointer"
                         title="Voir le détail"
                       >
                         <Search size={18} />
                       </button>
                       <button
-                        onClick={() => handleAddToCart(p)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleAddToCart(p);
+                        }}
                         className={cn("h-11 w-11 rounded-2xl text-slate-950 flex items-center justify-center hover:scale-110 active:scale-95 transition-all shadow-lg cursor-pointer", theme.bgClass, theme.shadowClass)}
                         title="Ajouter au panier"
                       >
@@ -907,22 +928,29 @@ export function PublicShop() {
 
       {/* Product Quick View Modal */}
       {selectedProduct && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-2 md:p-4 bg-black/80 backdrop-blur-2xl animate-in fade-in duration-300">
-          <div className="relative w-full max-w-4xl bg-white dark:bg-[#0d1f18] border border-slate-200 dark:border-white/10 rounded-3xl md:rounded-[3rem] overflow-hidden shadow-2xl flex flex-col md:flex-row animate-in zoom-in-95 duration-300">
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-4 md:p-6 bg-black/80 backdrop-blur-2xl overflow-y-auto animate-in fade-in duration-300"
+          onClick={() => setSelectedProduct(null)}
+        >
+          <div
+            className="relative w-full max-w-4xl max-h-[90dvh] sm:max-h-[85dvh] bg-white dark:bg-[#0d1f18] border border-slate-200 dark:border-white/10 rounded-3xl md:rounded-[3rem] shadow-2xl flex flex-col md:flex-row overflow-hidden animate-in zoom-in-95 duration-300 my-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
             <button
               onClick={() => setSelectedProduct(null)}
-              className="absolute top-4 right-4 md:top-6 md:right-6 z-20 h-10 w-10 bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-950 dark:bg-black/40 dark:text-white/40 dark:hover:text-white rounded-full flex items-center justify-center backdrop-blur-xl border border-slate-200 dark:border-white/10 transition-colors cursor-pointer shadow-md"
+              className="absolute top-3 right-3 md:top-6 md:right-6 z-30 h-10 w-10 bg-slate-900/70 hover:bg-slate-900 text-white dark:bg-black/60 dark:hover:bg-black/80 rounded-full flex items-center justify-center backdrop-blur-xl border border-white/20 transition-all cursor-pointer shadow-lg active:scale-95"
+              aria-label="Fermer"
             >
               <X size={20} />
             </button>
 
             {/* Product Image / Poster Container */}
-            <div className="flex-1 bg-slate-900/5 dark:bg-black/50 aspect-auto min-h-[320px] sm:min-h-[400px] md:h-[540px] flex items-center justify-center p-3 md:p-6 overflow-hidden relative border-b md:border-b-0 md:border-r border-slate-200/80 dark:border-white/10">
+            <div className="w-full md:flex-1 h-48 sm:h-64 md:h-auto min-h-0 bg-slate-900/5 dark:bg-black/50 shrink-0 flex items-center justify-center p-3 md:p-6 overflow-hidden relative border-b md:border-b-0 md:border-r border-slate-200/80 dark:border-white/10">
               {selectedProduct.images?.[0] || selectedProduct.imageUrl ? (
                 <div className="relative w-full h-full flex items-center justify-center">
                   <img
                     src={selectedProduct.images?.[0] || selectedProduct.imageUrl}
-                    className="max-w-full max-h-full w-auto h-auto object-contain rounded-2xl shadow-xl transition-all"
+                    className="max-w-full max-h-full w-auto h-auto object-contain rounded-2xl shadow-md transition-all"
                     alt={selectedProduct.name}
                   />
                 </div>
@@ -934,13 +962,13 @@ export function PublicShop() {
             </div>
 
             {/* Product Details */}
-            <div className="flex-1 p-5 md:p-8 space-y-5 flex flex-col justify-between overflow-y-auto">
-              <div className="space-y-4">
-                <div className="space-y-1.5">
+            <div className="flex-1 p-4 sm:p-6 md:p-8 space-y-4 md:space-y-5 flex flex-col justify-between overflow-y-auto min-h-0">
+              <div className="space-y-3 sm:space-y-4">
+                <div className="space-y-1 sm:space-y-1.5">
                   <span className={cn("text-[10px] font-black uppercase tracking-[0.3em]", theme.textClass)}>
-                    {selectedProduct.category}
+                    {selectedProduct.category || "Article"}
                   </span>
-                  <h2 className="text-2xl md:text-3xl font-black uppercase tracking-tighter leading-none text-slate-900 dark:text-white">
+                  <h2 className="text-xl sm:text-2xl md:text-3xl font-black uppercase tracking-tighter leading-tight text-slate-900 dark:text-white">
                     {selectedProduct.name}
                   </h2>
                 </div>
@@ -953,7 +981,7 @@ export function PublicShop() {
                 <div className="space-y-2.5">
                   <div>
                     <p className="text-[9px] font-black text-slate-400 dark:text-white/20 uppercase tracking-widest mb-0.5">Prix</p>
-                    <p className="text-2xl font-black text-slate-950 dark:text-white">
+                    <p className="text-xl sm:text-2xl font-black text-slate-950 dark:text-white">
                       {selectedProduct.price.toLocaleString()}{" "}
                       <span className="text-xs text-slate-500 dark:text-white/40">
                         {selectedProduct.currency || merchant.currency || "XOF"}
@@ -1020,22 +1048,22 @@ export function PublicShop() {
               </div>
 
               {/* Modal Action Buttons */}
-              <div className="pt-4 border-t border-slate-100 dark:border-white/10 grid grid-cols-2 gap-3 md:gap-4">
+              <div className="pt-3 md:pt-4 border-t border-slate-100 dark:border-white/10 grid grid-cols-2 gap-2.5 sm:gap-3 md:gap-4 shrink-0 mt-3">
                 <button
                   type="button"
                   onClick={() => {
                     handleAddToCart(selectedProduct);
                     setSelectedProduct(null);
                   }}
-                  className="h-14 md:h-16 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-white/10 dark:hover:bg-white/15 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white font-black uppercase text-xs md:text-sm tracking-wider flex items-center justify-center gap-2.5 transition-all shadow-sm active:scale-95 cursor-pointer"
+                  className="h-12 sm:h-14 md:h-16 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-white/10 dark:hover:bg-white/15 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white font-black uppercase text-xs md:text-sm tracking-wider flex items-center justify-center gap-2 sm:gap-2.5 transition-all shadow-sm active:scale-95 cursor-pointer"
                 >
-                  <ShoppingCart size={20} className="text-slate-900 dark:text-white" />
+                  <ShoppingCart size={18} className="text-slate-900 dark:text-white" />
                   <span>+ Panier</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => handleWhatsAppCTA(selectedProduct)}
-                  className={cn("h-14 md:h-16 text-slate-950 font-black uppercase text-xs md:text-sm tracking-wider flex items-center justify-center gap-2.5 shadow-xl hover:scale-[1.02] active:scale-95 transition-all cursor-pointer", theme.bgClass, theme.hoverBgClass, theme.shadowClass)}
+                  className={cn("h-12 sm:h-14 md:h-16 text-slate-950 font-black uppercase text-xs md:text-sm tracking-wider flex items-center justify-center gap-2 sm:gap-2.5 shadow-xl hover:scale-[1.02] active:scale-95 transition-all cursor-pointer", theme.bgClass, theme.hoverBgClass, theme.shadowClass)}
                 >
                   {getCtaIcon(merchant.category)}
                   <span>WhatsApp</span>

@@ -1239,7 +1239,6 @@ router.post("/conversations/:id/send-product-card", authenticate, async (req, re
     const io = getSocketServer();
     if (io) {
       io.to(`conv:${convIdStr}`).emit("conversation:update", updatePayload);
-      io.emit("conversation:update", updatePayload);
     }
 
     // Dispatch to WhatsApp
@@ -1253,13 +1252,30 @@ router.post("/conversations/:id/send-product-card", authenticate, async (req, re
     let deliveryError: string | undefined;
     try {
       let sendRes: any;
+
+      // Define native interactive payload for Meta WhatsApp Cloud API
+      const buttonTitle = actionType === "order" ? "🛒 Commander" : actionType === "pay" ? "💳 Payer" : "🔎 Voir les détails";
+      const interactivePayload = {
+        type: "cta_url" as const,
+        header: imageUrl ? { type: "image" as const, imageUrl } : { type: "text" as const, text: `🛍️ ${product.name.toUpperCase()}` },
+        body: formattedMessage,
+        footer: `${merchant.businessName || "Boutique"} • Commande 1-Clic`,
+        ctaUrl: {
+          displayText: buttonTitle,
+          url: productDirectUrl
+        }
+      };
+
       if (imageUrl) {
         sendRes = await messagingService.sendMessage(merchant, platform, remoteId, formattedMessage, {
           type: "image",
-          mediaUrl: imageUrl
+          mediaUrl: imageUrl,
+          interactive: interactivePayload
         });
       } else {
-        sendRes = await messagingService.sendMessage(merchant, platform, remoteId, formattedMessage);
+        sendRes = await messagingService.sendMessage(merchant, platform, remoteId, formattedMessage, {
+          interactive: interactivePayload
+        });
       }
       const msgId = sendRes?.key?.id || sendRes?.messageId || sendRes?.id;
       if (msgId) {

@@ -50,11 +50,11 @@ export function ShareShopModal({ isOpen, onClose, merchant, shopUrl }: ShareShop
         </button>
 
         <div className="space-y-2">
-          <div className="h-12 w-12 mx-auto rounded-2xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center">
+          <div className="h-12 w-12 mx-auto rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shadow-sm">
             <Share2 size={24} />
           </div>
-          <h3 className="text-xl font-black uppercase tracking-tight text-slate-900 dark:text-white">Partager la boutique</h3>
-          <p className="text-xs text-slate-600 dark:text-white/40 font-medium">Partagez votre boutique avec vos clients ou téléchargez le QR Code pour votre magasin.</p>
+          <h3 className="text-xl font-black uppercase tracking-tight text-slate-900 dark:text-white">Recommander la boutique</h3>
+          <p className="text-xs text-slate-600 dark:text-white/50 font-medium">Partagez ce catalogue à vos proches ou scannez le QR Code pour commander directement.</p>
         </div>
 
         {/* QR Code Frame */}

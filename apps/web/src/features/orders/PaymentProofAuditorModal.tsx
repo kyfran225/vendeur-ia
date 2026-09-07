@@ -92,8 +92,8 @@ export function PaymentProofAuditorModal({ isOpen, onClose }: PaymentProofAudito
   const proofs = data?.proofs || [];
 
   return createPortal(
-    <div className="fixed inset-0 z-[100] flex flex-col justify-end sm:justify-center items-center p-0 sm:p-4 bg-black/60 dark:bg-black/85 backdrop-blur-md animate-in fade-in">
-      <div className="bg-white dark:bg-[#0B1512] border-t sm:border border-slate-200 dark:border-white/10 w-full max-w-4xl h-[94vh] sm:h-auto sm:max-h-[90vh] rounded-t-[2.5rem] sm:rounded-3xl flex flex-col shadow-2xl overflow-hidden animate-in slide-in-from-bottom duration-300 text-slate-900 dark:text-white">
+    <div className="fixed inset-0 z-[100] flex flex-col justify-end sm:justify-center items-center p-0 sm:p-4 bg-slate-950/60 dark:bg-black/80 backdrop-blur-md animate-in fade-in">
+      <div className="bg-slate-50 dark:bg-[#0c1612] border-t sm:border border-slate-200/90 dark:border-white/10 w-full max-w-4xl h-[94vh] sm:h-auto sm:max-h-[90vh] rounded-t-[2.5rem] sm:rounded-3xl flex flex-col shadow-2xl overflow-hidden animate-in slide-in-from-bottom duration-300 text-slate-900 dark:text-white">
         
         {/* Mobile Pull Handle */}
         <div className="sm:hidden w-full flex items-center justify-center pt-3 pb-1">

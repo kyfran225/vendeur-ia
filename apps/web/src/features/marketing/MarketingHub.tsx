@@ -305,8 +305,8 @@ export function MarketingHub() {
                     selectedProduct?._id === p._id ? "border-sky-400 ring-2 ring-sky-400/20 shadow-md" : "border-slate-200/80 dark:border-white/5 grayscale hover:grayscale-0 hover:border-slate-300 dark:hover:border-white/20"
                   )}
                 >
-                  {p.images?.[0] ? (
-                    <img src={p.images[0]} className="w-full h-full object-cover" alt={p.name} />
+                  {p.images?.[0] || p.imageUrl ? (
+                    <img src={p.images?.[0] || p.imageUrl} className="w-full h-full object-cover" alt={p.name} />
                   ) : (
                     <div className="w-full h-full bg-slate-100 dark:bg-white/5 flex items-center justify-center"><ShoppingBag className="text-slate-300 dark:text-white/10" /></div>
                   )}

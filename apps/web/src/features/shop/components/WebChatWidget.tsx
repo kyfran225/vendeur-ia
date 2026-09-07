@@ -157,37 +157,37 @@ export function WebChatWidget({ merchant }: { merchant: any }) {
       {/* Chat Window */}
       {isOpen && (
         <div className={cn(
-          "fixed z-[200] bg-slate-950 text-white flex flex-col overflow-hidden transition-all animate-in slide-in-from-bottom-8 duration-500",
+          "fixed z-[200] bg-white dark:bg-slate-950 text-slate-900 dark:text-white flex flex-col overflow-hidden transition-all animate-in slide-in-from-bottom-8 duration-500 shadow-2xl",
           // Mobile: Full screen
           "inset-0 w-full h-full rounded-none",
           // Desktop: Floating bubble
-          "md:inset-auto md:bottom-8 md:right-8 md:w-[400px] md:h-[600px] md:max-h-[80vh] md:rounded-[2.5rem] md:border md:border-white/10 md:shadow-2xl",
+          "md:inset-auto md:bottom-8 md:right-8 md:w-[400px] md:h-[600px] md:max-h-[80vh] md:rounded-[2.5rem] md:border md:border-slate-200/90 md:dark:border-white/10",
           isMinimized && "h-20 md:h-20"
         )}>
            {/* Header */}
-           <header className="p-3 md:p-5 bg-slate-900/90 backdrop-blur-xl border-b border-white/10 flex items-center justify-between">
+           <header className="p-3 md:p-5 bg-slate-50/90 dark:bg-slate-900/90 backdrop-blur-xl border-b border-slate-200 dark:border-white/10 flex items-center justify-between">
               <div className="flex items-center gap-3">
-                 <div className="h-10 w-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+                 <div className="h-10 w-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shadow-sm">
                     <AssistantIcon size={22} color="#10B981" />
                  </div>
                  <div>
-                    <h3 className="text-sm font-black uppercase tracking-tight text-white">Assistant {merchant.businessName}</h3>
+                    <h3 className="text-sm font-black uppercase tracking-tight text-slate-900 dark:text-white">Assistant {merchant.businessName}</h3>
                     <div className="flex items-center gap-1.5">
-                       <div className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                       <p className="text-[9px] font-black uppercase text-emerald-400 tracking-widest">IA en ligne</p>
+                       <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                       <p className="text-[9px] font-black uppercase text-emerald-600 dark:text-emerald-400 tracking-widest">IA en ligne</p>
                     </div>
                  </div>
               </div>
               <div className="flex items-center gap-1">
                  <button
                    onClick={() => setIsMinimized(!isMinimized)}
-                   className="hidden md:block p-2 text-white/40 hover:text-white transition-colors cursor-pointer"
+                   className="hidden md:block p-2 text-slate-400 hover:text-slate-900 dark:text-white/40 dark:hover:text-white transition-colors cursor-pointer"
                  >
                     {isMinimized ? <Maximize2 size={18} /> : <Minimize2 size={18} />}
                  </button>
                  <button
                    onClick={toggleChat}
-                   className="p-2 text-white/40 hover:text-rose-500 transition-colors cursor-pointer"
+                   className="p-2 text-slate-400 hover:text-rose-500 dark:text-white/40 dark:hover:text-rose-400 transition-colors cursor-pointer"
                  >
                     <X size={18} />
                  </button>
@@ -199,7 +199,7 @@ export function WebChatWidget({ merchant }: { merchant: any }) {
                {/* Messages Area */}
                <div
                  ref={scrollRef}
-                 className="flex-1 overflow-y-auto p-3 md:p-6 space-y-3 md:space-y-6 scrollbar-hide bg-slate-900/50"
+                 className="flex-1 overflow-y-auto p-3 md:p-6 space-y-3 md:space-y-6 scrollbar-hide bg-slate-50/50 dark:bg-slate-900/50"
                >
                    {messages.map((msg) => (
                     <div
@@ -210,10 +210,10 @@ export function WebChatWidget({ merchant }: { merchant: any }) {
                       )}
                     >
                        <div className={cn(
-                         "px-3 py-2 md:p-4 rounded-2xl md:rounded-3xl text-sm font-medium leading-relaxed",
+                         "px-3.5 py-2.5 md:p-4 rounded-2xl md:rounded-3xl text-sm font-medium leading-relaxed shadow-sm",
                          msg.role === 'customer'
                            ? "bg-emerald-500 text-slate-950 font-semibold rounded-tr-none shadow-md"
-                           : "bg-white/10 border border-white/10 text-white rounded-tl-none"
+                           : "bg-white dark:bg-white/10 border border-slate-200/80 dark:border-white/10 text-slate-900 dark:text-white rounded-tl-none"
                        )}>
                           {stripActionTags(msg.text)}
                        </div>
@@ -227,15 +227,15 @@ export function WebChatWidget({ merchant }: { merchant: any }) {
                                const text = encodeURIComponent(`Bonjour ${merchant.businessName}, je discute sur votre boutique en ligne et j'aimerais commander !`);
                                window.open(`https://wa.me/${cleanPhone}?text=${text}`, "_blank");
                              }}
-                             className="px-3 py-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all shadow-sm active:scale-95 cursor-pointer"
+                             className="px-3 py-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all shadow-sm active:scale-95 cursor-pointer"
                            >
-                             <MessageCircle size={13} className="text-emerald-400" />
+                             <MessageCircle size={13} className="text-emerald-600 dark:text-emerald-400" />
                              Ouvrir WhatsApp direct
                            </button>
                          </div>
                        )}
 
-                       <span className="text-[8px] font-black uppercase text-white/30 mt-1 tracking-widest">
+                       <span className="text-[8px] font-black uppercase text-slate-400 dark:text-white/30 mt-1 tracking-widest">
                           {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                        </span>
                     </div>
@@ -246,10 +246,10 @@ export function WebChatWidget({ merchant }: { merchant: any }) {
                </div>
 
                {/* Footer / Input */}
-               <footer className="p-3 md:p-6 bg-slate-900 border-t border-white/10 space-y-3 md:space-y-4">
-                  <div className="flex items-center gap-3 bg-white/5 border border-white/10 rounded-2xl px-4 h-12 md:h-14 focus-within:border-emerald-400 transition-all shadow-inner">
+               <footer className="p-3 md:p-6 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-white/10 space-y-3 md:space-y-4">
+                  <div className="flex items-center gap-3 bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl px-4 h-12 md:h-14 focus-within:border-emerald-500 transition-all shadow-inner">
                      <input
-                       className="flex-1 bg-transparent outline-none text-sm text-white placeholder:text-white/40"
+                       className="flex-1 bg-transparent outline-none text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-white/40"
                        placeholder="Posez votre question..."
                        value={input}
                        onChange={e => setInput(e.target.value)}
@@ -263,7 +263,7 @@ export function WebChatWidget({ merchant }: { merchant: any }) {
                         <Send size={18} />
                      </button>
                   </div>
-                  <div className="flex items-center justify-center gap-2 text-[8px] font-black uppercase text-white/30 tracking-widest">
+                  <div className="flex items-center justify-center gap-2 text-[8px] font-black uppercase text-slate-400 dark:text-white/30 tracking-widest">
                      <ShieldCheck size={10} /> Propulsé par Vendeur IA Omnicanal
                   </div>
                </footer>

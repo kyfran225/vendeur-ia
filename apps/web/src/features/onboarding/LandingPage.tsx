@@ -1005,6 +1005,7 @@ export function LandingPage() {
   const [isSubscribingNewsletter, setIsSubscribingNewsletter] = useState(false);
   const [newsletterSuccess, setNewsletterSuccess] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const headerRef = useRef<HTMLElement>(null);
   const { user } = useAuthStore();
   const { isFounder } = useFounderRole();
 
@@ -1087,6 +1088,41 @@ export function LandingPage() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // Close mobile menu on outside click, Escape key, or screen resize
+  useEffect(() => {
+    if (!mobileMenuOpen) return;
+
+    const handleOutsideClick = (e: MouseEvent | TouchEvent) => {
+      if (headerRef.current && !headerRef.current.contains(e.target as Node)) {
+        setMobileMenuOpen(false);
+      }
+    };
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setMobileMenuOpen(false);
+      }
+    };
+
+    const handleResize = () => {
+      if (window.innerWidth >= 1024) {
+        setMobileMenuOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleOutsideClick);
+    document.addEventListener("touchstart", handleOutsideClick);
+    document.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("resize", handleResize);
+
+    return () => {
+      document.removeEventListener("mousedown", handleOutsideClick);
+      document.removeEventListener("touchstart", handleOutsideClick);
+      document.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("resize", handleResize);
+    };
+  }, [mobileMenuOpen]);
+
   useEffect(() => {
     if (user) {
       if (isFounder) {
@@ -1115,12 +1151,19 @@ export function LandingPage() {
       />
 
       {/* Modern Header / Glassmorphism Giant-Tech Nav */}
-      <header className="fixed top-0 left-0 right-0 z-[100] border-b border-slate-200/80 dark:border-white/5 bg-white/90 dark:bg-[#07100d]/90 backdrop-blur-2xl w-full h-16 md:h-20 transition-all text-slate-900 dark:text-white">
+      <header
+        ref={headerRef}
+        className="fixed top-0 left-0 right-0 z-[100] border-b border-slate-200/80 dark:border-white/5 bg-white/90 dark:bg-[#07100d]/90 backdrop-blur-2xl w-full h-16 md:h-20 transition-all text-slate-900 dark:text-white"
+      >
         <div className="mx-auto flex max-w-7xl items-center justify-between px-3.5 sm:px-6 md:px-8 h-full gap-2 sm:gap-4">
           
           {/* Logo & Dynamic Brand Name */}
           <div className="flex items-center gap-2 sm:gap-3 md:gap-4 shrink-0">
-            <Link to="/" className="flex shrink-0 items-center justify-center text-slate-900 dark:text-white transition-all hover:scale-105">
+            <Link
+              to="/"
+              onClick={() => setMobileMenuOpen(false)}
+              className="flex shrink-0 items-center justify-center text-slate-900 dark:text-white transition-all hover:scale-105"
+            >
               <Logo size={26} />
             </Link>
             <div className="min-w-0">
@@ -1261,7 +1304,10 @@ export function LandingPage() {
           {/* Right Action Buttons */}
           <div className="flex items-center gap-2.5 shrink-0">
             <button
-              onClick={handleLaunchDemo}
+              onClick={() => {
+                setMobileMenuOpen(false);
+                handleLaunchDemo();
+              }}
               className="hidden sm:flex h-9 md:h-10 px-4 md:px-5 rounded-xl md:rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-[9px] md:text-[10px] font-black uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-md items-center gap-2 cursor-pointer"
             >
               <Play size={13} fill="currentColor" />
@@ -1270,6 +1316,7 @@ export function LandingPage() {
 
             <button
               onClick={() => {
+                setMobileMenuOpen(false);
                 if (user && !user.onboardingCompleted) {
                   handleLaunchDemo();
                 } else {
@@ -1289,6 +1336,7 @@ export function LandingPage() {
             {/* Mobile Menu Hamburger */}
             <button
               onClick={() => setMobileMenuOpen(prev => !prev)}
+              aria-label="Menu principal"
               className="lg:hidden h-9 w-9 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-white/5 border border-slate-200 dark:border-white/10 flex items-center justify-center text-slate-700 dark:text-white/70 hover:text-slate-900 dark:hover:text-white transition-all cursor-pointer"
             >
               {mobileMenuOpen ? <X size={18} /> : <Menu size={18} />}
@@ -1296,64 +1344,77 @@ export function LandingPage() {
           </div>
         </div>
 
-        {/* Mobile Dropdown Drawer */}
+        {/* Mobile Dropdown Backdrop & Drawer */}
         <AnimatePresence>
           {mobileMenuOpen && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
-              className="lg:hidden border-b border-slate-200 dark:border-white/10 bg-white dark:bg-[#07100d] shadow-2xl px-5 py-4 space-y-3 text-slate-900 dark:text-white"
-            >
-              <div className="space-y-1">
-                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-white/40 px-2">Nos Produits</p>
-                <button
-                  onClick={() => openProduct("vision")}
-                  className="w-full flex items-center gap-2.5 p-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-white/5 text-left text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider"
-                >
-                  <Eye size={16} className="text-emerald-500" />
-                  <span>Vendeur IA Vision™</span>
-                </button>
-                <button
-                  onClick={() => openProduct("marketing")}
-                  className="w-full flex items-center gap-2.5 p-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-white/5 text-left text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider"
-                >
-                  <Megaphone size={16} className="text-amber-500" />
-                  <span>Marketing Hub™</span>
-                </button>
-                <button
-                  onClick={() => openProduct("api")}
-                  className="w-full flex items-center gap-2.5 p-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-white/5 text-left text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider"
-                >
-                  <Code2 size={16} className="text-sky-500" />
-                  <span>API WhatsApp & Cloud</span>
-                </button>
-                <button
-                  onClick={() => openProduct("simulator")}
-                  className="w-full flex items-center gap-2.5 p-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-white/5 text-left text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider"
-                >
-                  <Cpu size={16} className="text-purple-500" />
-                  <span>Simulateur Commercial IA</span>
-                </button>
-              </div>
+            <>
+              {/* Semi-transparent backdrop overlay to dismiss on outside click */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.15 }}
+                onClick={() => setMobileMenuOpen(false)}
+                className="fixed inset-0 top-16 bg-slate-950/40 backdrop-blur-sm -z-10 lg:hidden"
+              />
 
-              <div className="pt-2 border-t border-slate-200 dark:border-white/10 flex flex-col gap-2.5">
-                <Link
-                  to="/offers"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center gap-2 p-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-white/5 text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider"
-                >
-                  <CreditCard size={16} className="text-emerald-500" />
-                  <span>Offres & Tarifs</span>
-                </Link>
-
-                {/* Theme Switcher inside Mobile Drawer */}
-                <div className="flex items-center justify-between p-2 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10">
-                  <span className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-white/80 px-1">Thème d'affichage</span>
-                  <ThemeToggle variant="segmented" />
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.2 }}
+                className="lg:hidden border-b border-slate-200 dark:border-white/10 bg-white dark:bg-[#07100d] shadow-2xl px-5 py-4 space-y-3 text-slate-900 dark:text-white"
+              >
+                <div className="space-y-1">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-white/40 px-2">Nos Produits</p>
+                  <button
+                    onClick={() => openProduct("vision")}
+                    className="w-full flex items-center gap-2.5 p-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-white/5 text-left text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider"
+                  >
+                    <Eye size={16} className="text-emerald-500" />
+                    <span>Vendeur IA Vision™</span>
+                  </button>
+                  <button
+                    onClick={() => openProduct("marketing")}
+                    className="w-full flex items-center gap-2.5 p-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-white/5 text-left text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider"
+                  >
+                    <Megaphone size={16} className="text-amber-500" />
+                    <span>Marketing Hub™</span>
+                  </button>
+                  <button
+                    onClick={() => openProduct("api")}
+                    className="w-full flex items-center gap-2.5 p-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-white/5 text-left text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider"
+                  >
+                    <Code2 size={16} className="text-sky-500" />
+                    <span>API WhatsApp & Cloud</span>
+                  </button>
+                  <button
+                    onClick={() => openProduct("simulator")}
+                    className="w-full flex items-center gap-2.5 p-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-white/5 text-left text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider"
+                  >
+                    <Cpu size={16} className="text-purple-500" />
+                    <span>Simulateur Commercial IA</span>
+                  </button>
                 </div>
-              </div>
-            </motion.div>
+
+                <div className="pt-2 border-t border-slate-200 dark:border-white/10 flex flex-col gap-2.5">
+                  <Link
+                    to="/offers"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="flex items-center gap-2 p-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-white/5 text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider"
+                  >
+                    <CreditCard size={16} className="text-emerald-500" />
+                    <span>Offres & Tarifs</span>
+                  </Link>
+
+                  {/* Theme Switcher inside Mobile Drawer */}
+                  <div className="flex items-center justify-between p-2 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10">
+                    <span className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-white/80 px-1">Thème d'affichage</span>
+                    <ThemeToggle variant="segmented" />
+                  </div>
+                </div>
+              </motion.div>
+            </>
           )}
         </AnimatePresence>
       </header>

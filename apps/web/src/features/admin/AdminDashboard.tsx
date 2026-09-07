@@ -233,7 +233,7 @@ export function AdminDashboard() {
   return (
     <div className="min-h-full bg-vendeur-bg text-slate-900 dark:text-white pb-24">
       {/* Admin Header / Navigation */}
-      <header className="h-16 md:h-20 border-b border-slate-200 dark:border-white/5 bg-vendeur-bg/80 backdrop-blur-md flex items-center justify-between gap-4 px-4 md:px-8 sticky top-0 z-50">
+      <header className="h-16 md:h-20 border-b border-slate-200 dark:border-white/5 bg-vendeur-bg/80 backdrop-blur-md flex items-center justify-between gap-4 px-4 md:px-8 sticky top-0 z-20">
         <div className="flex-1 min-w-0">
           {/* Mobile Tab Trigger */}
           <button
@@ -274,12 +274,12 @@ export function AdminDashboard() {
         )}
       >
         <div
-          className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+          className="absolute inset-0 bg-slate-950/60 dark:bg-black/80 backdrop-blur-md transition-opacity"
           onClick={() => setIsMobileMenuOpen(false)}
         />
         <aside
           className={cn(
-            "absolute top-0 left-0 bottom-0 w-[280px] bg-white dark:bg-vendeur-coal border-r border-slate-200 dark:border-white/10 shadow-2xl transition-transform duration-300 ease-out flex flex-col",
+            "absolute top-0 left-0 bottom-0 w-[280px] bg-slate-50 dark:bg-[#0c1612] border-r border-slate-200/90 dark:border-white/10 shadow-2xl transition-transform duration-300 ease-out flex flex-col",
             isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"
           )}
         >

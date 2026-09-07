@@ -219,7 +219,7 @@ Réponds UNIQUEMENT avec le texte du message.`;
     if (productId) {
       const product = await CommerceProductModel.findById(productId);
       if (product) {
-        imageUrl = product.images?.[0] || "";
+        imageUrl = product.images?.[0] || (product as any).imageUrl || "";
         productDetails = `Produit: ${product.name}, Prix: ${product.price} ${product.currency}, Description: ${product.description}`;
       }
     }

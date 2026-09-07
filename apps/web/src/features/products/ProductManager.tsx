@@ -557,13 +557,13 @@ export function ProductManager() {
       {(editingProduct || isAddingManual) && (
         <div className="fixed inset-0 z-[150] flex items-center justify-center p-3 sm:p-6 overflow-y-auto overscroll-contain animate-in fade-in duration-200">
           <div 
-            className="fixed inset-0 bg-black/85 backdrop-blur-xl transition-opacity" 
+            className="fixed inset-0 bg-slate-950/60 dark:bg-black/80 backdrop-blur-md transition-opacity" 
             onClick={() => { setEditingProduct(null); setIsAddingManual(false); }} 
           />
           
           <form
             onSubmit={editingProduct ? handleUpdate : handleManualCreate}
-            className="relative w-full max-w-4xl bg-white dark:bg-[#0b120e] border border-slate-200 dark:border-white/10 rounded-3xl sm:rounded-[2.5rem] shadow-2xl dark:shadow-[0_25px_80px_rgba(0,0,0,0.85)] flex flex-col max-h-[92vh] overflow-hidden my-auto animate-in zoom-in-95 duration-200 text-slate-900 dark:text-white"
+            className="relative w-full max-w-4xl bg-slate-50 dark:bg-[#0c1612] border border-slate-200/90 dark:border-white/10 rounded-3xl sm:rounded-[2.5rem] shadow-2xl dark:shadow-[0_25px_80px_rgba(0,0,0,0.85)] flex flex-col max-h-[92vh] overflow-hidden my-auto animate-in zoom-in-95 duration-200 text-slate-900 dark:text-white"
           >
             {/* Modal Header */}
             <div className="px-5 py-4 sm:px-8 sm:py-5 border-b border-slate-200 dark:border-white/5 bg-slate-50 dark:bg-white/[0.02] flex items-center justify-between shrink-0">

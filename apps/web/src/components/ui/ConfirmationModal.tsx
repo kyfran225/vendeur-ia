@@ -49,13 +49,13 @@ export function ConfirmationModal({
     if (type === "danger" || type === "logout") {
       return "bg-rose-500 text-white shadow-lg shadow-rose-500/20 hover:bg-rose-600";
     }
-    return "bg-vendeur-emerald text-vendeur-coal shadow-lg shadow-vendeur-emerald/20 hover:bg-vendeur-emerald/90";
+    return "bg-vendeur-emerald text-slate-950 font-black shadow-lg shadow-vendeur-emerald/20 hover:bg-vendeur-emerald/90";
   };
 
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-[300] flex items-end sm:items-center justify-center p-0 sm:p-4">
+        <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
           {/* Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
@@ -67,15 +67,12 @@ export function ConfirmationModal({
 
           {/* Modal Content */}
           <motion.div
-            initial={{ opacity: 0, y: 100, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 100, scale: 0.95 }}
+            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.9, y: 20 }}
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            className="relative w-full max-w-md overflow-hidden rounded-t-[2.5rem] sm:rounded-[2.5rem] border border-slate-200 dark:border-white/10 bg-white dark:bg-vendeur-coal p-6 sm:p-8 shadow-2xl z-10 text-slate-900 dark:text-white"
+            className="relative w-full max-w-md overflow-hidden rounded-[2rem] sm:rounded-[2.5rem] border border-slate-200 dark:border-white/10 bg-white dark:bg-vendeur-coal p-6 sm:p-8 shadow-2xl z-10 text-slate-900 dark:text-white"
           >
-            {/* Mobile Drag Indicator Pill */}
-            <div className="sm:hidden w-12 h-1.5 bg-slate-300 dark:bg-white/20 rounded-full mx-auto mb-6" />
-
             {/* Close Button */}
             <button
               onClick={onClose}

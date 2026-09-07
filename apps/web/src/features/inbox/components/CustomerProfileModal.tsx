@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { X, Phone, Copy, Check, Sparkles, CreditCard, ShoppingCart, RefreshCw, User, ShieldCheck } from "lucide-react";
+import { X, Phone, Copy, Check, Sparkles, CreditCard, ShoppingCart, ShoppingBag, RefreshCw, User, ShieldCheck } from "lucide-react";
 import { formatDisplayPhone } from "@/features/onboarding/components/CountrySelector";
 import { toast } from "sonner";
 import { apiClient } from "@/lib/apiClient";
@@ -27,6 +27,7 @@ interface CustomerProfileModalProps {
   merchantName?: string;
   onOpenOrderModal?: () => void;
   onOpenFastPayModal?: () => void;
+  onOpenProductCardModal?: () => void;
   onTriggerFollowup?: () => void;
 }
 
@@ -38,6 +39,7 @@ export function CustomerProfileModal({
   merchantName,
   onOpenOrderModal,
   onOpenFastPayModal,
+  onOpenProductCardModal,
   onTriggerFollowup
 }: CustomerProfileModalProps) {
   const [copied, setCopied] = useState(false);
@@ -80,15 +82,15 @@ export function CustomerProfileModal({
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/60 dark:bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
       <div
-        className="relative w-full max-w-sm bg-white dark:bg-[#182229] border border-slate-200 dark:border-white/10 rounded-3xl overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200 text-slate-900 dark:text-white"
+        className="relative w-full max-w-sm bg-slate-50 dark:bg-[#0c1612] border border-slate-200/90 dark:border-white/10 rounded-3xl overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200 text-slate-900 dark:text-white"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 z-20 h-9 w-9 rounded-full bg-slate-900/60 hover:bg-slate-900/80 text-white flex items-center justify-center border border-white/20 transition-all active:scale-95 cursor-pointer shadow-md"
+          className="absolute top-4 right-4 z-20 h-9 w-9 rounded-full bg-white/90 dark:bg-slate-900/80 hover:bg-white dark:hover:bg-slate-900 text-slate-800 dark:text-white flex items-center justify-center border border-slate-200 dark:border-white/20 transition-all active:scale-95 cursor-pointer shadow-md backdrop-blur-md"
         >
           <X size={18} />
         </button>
@@ -113,10 +115,10 @@ export function CustomerProfileModal({
             <button
               onClick={() => refreshAvatarMutation.mutate()}
               disabled={refreshAvatarMutation.isPending}
-              className="absolute bottom-3 right-3 px-3 py-1.5 rounded-full bg-slate-900/80 hover:bg-slate-950 text-white border border-white/20 text-[11px] font-bold flex items-center gap-1.5 shadow-lg backdrop-blur-md transition-all active:scale-95 cursor-pointer"
+              className="absolute bottom-3 right-3 px-3.5 py-1.5 rounded-full bg-white/95 dark:bg-slate-900/90 hover:bg-white dark:hover:bg-slate-950 text-slate-800 dark:text-white border border-slate-200 dark:border-white/20 text-[11px] font-bold flex items-center gap-1.5 shadow-lg backdrop-blur-md transition-all active:scale-95 cursor-pointer"
               title="Synchroniser la photo avec WhatsApp"
             >
-              <RefreshCw size={12} className={refreshAvatarMutation.isPending ? "animate-spin text-emerald-400" : "text-emerald-400"} />
+              <RefreshCw size={12} className={refreshAvatarMutation.isPending ? "animate-spin text-emerald-600 dark:text-emerald-400" : "text-emerald-600 dark:text-emerald-400"} />
               <span>{refreshAvatarMutation.isPending ? "Sync..." : "Sync Photo WhatsApp"}</span>
             </button>
           )}
@@ -156,7 +158,21 @@ export function CustomerProfileModal({
           </div>
 
           {/* Quick Actions Grid */}
-          <div className="grid grid-cols-3 gap-2 pt-2 border-t border-slate-200 dark:border-white/10">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 border-t border-slate-200 dark:border-white/10">
+            {onOpenProductCardModal && (
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  onOpenProductCardModal();
+                }}
+                className="flex flex-col items-center justify-center p-2.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/20 active:scale-95 transition-all cursor-pointer"
+              >
+                <ShoppingBag size={16} className="mb-1" />
+                <span className="text-[10px] font-bold">Carte Article</span>
+              </button>
+            )}
+
             {onTriggerFollowup && (
               <button
                 type="button"

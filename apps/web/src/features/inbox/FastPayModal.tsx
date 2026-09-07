@@ -105,8 +105,8 @@ export function FastPayModal({
   };
 
   return (
-    <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="relative w-full max-w-lg bg-white dark:bg-vendeur-coal border border-slate-200 dark:border-white/10 rounded-3xl p-6 md:p-8 space-y-6 shadow-2xl animate-in zoom-in-95 duration-200 text-slate-900 dark:text-white">
+    <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-slate-950/60 dark:bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
+      <div className="relative w-full max-w-lg bg-slate-50 dark:bg-[#0c1612] border border-slate-200/90 dark:border-white/10 rounded-3xl p-6 md:p-8 space-y-6 shadow-2xl animate-in zoom-in-95 duration-200 text-slate-900 dark:text-white">
         
         {/* Header */}
         <div className="flex items-center justify-between border-b border-slate-200 dark:border-white/10 pb-4">

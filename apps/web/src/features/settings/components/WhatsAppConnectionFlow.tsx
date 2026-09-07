@@ -494,7 +494,7 @@ export function WhatsAppConnectionFlow() {
                   type="button"
                   onClick={handleReconnect}
                   disabled={isReconnecting}
-                  className="h-10 px-5 rounded-xl bg-vendeur-emerald text-vendeur-coal font-black text-xs uppercase tracking-wider hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-2 shrink-0 shadow-lg shadow-emerald-500/20 w-full sm:w-auto"
+                  className="h-10 px-5 rounded-xl bg-vendeur-emerald text-slate-950 font-black text-xs uppercase tracking-wider hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-2 shrink-0 shadow-lg shadow-emerald-500/20 w-full sm:w-auto cursor-pointer"
                 >
                   {isReconnecting ? <Loader2 size={15} className="animate-spin shrink-0" /> : <Zap size={15} className="shrink-0" />}
                   <span>{isReconnecting ? "Reconnexion..." : "Reconnecter Directement"}</span>
@@ -513,7 +513,7 @@ export function WhatsAppConnectionFlow() {
                 className={cn(
                   "min-h-[46px] sm:min-h-[48px] px-2.5 sm:px-4 rounded-xl font-black uppercase tracking-wider text-[11px] sm:text-xs flex items-center justify-center gap-1.5 sm:gap-2 transition-all cursor-pointer text-center",
                   activeTab === "pairing_code"
-                    ? "bg-vendeur-emerald text-vendeur-coal shadow-lg shadow-emerald-500/20 font-black"
+                    ? "bg-vendeur-emerald text-slate-950 shadow-lg shadow-emerald-500/20 font-black"
                     : "text-white/60 hover:text-white hover:bg-white/5"
                 )}
               >
@@ -530,7 +530,7 @@ export function WhatsAppConnectionFlow() {
                 className={cn(
                   "min-h-[46px] sm:min-h-[48px] px-2.5 sm:px-4 rounded-xl font-black uppercase tracking-wider text-[11px] sm:text-xs flex items-center justify-center gap-1.5 sm:gap-2 transition-all cursor-pointer text-center",
                   activeTab === "qr_code"
-                    ? "bg-vendeur-emerald text-vendeur-coal shadow-lg shadow-emerald-500/20 font-black"
+                    ? "bg-vendeur-emerald text-slate-950 shadow-lg shadow-emerald-500/20 font-black"
                     : "text-white/60 hover:text-white hover:bg-white/5"
                 )}
               >
@@ -592,7 +592,7 @@ export function WhatsAppConnectionFlow() {
                           type="button"
                           onClick={handleUpdatePhone}
                           disabled={savingPhone}
-                          className="h-9 px-3 bg-vendeur-emerald text-vendeur-coal font-bold text-xs rounded-lg cursor-pointer"
+                          className="h-9 px-3 bg-vendeur-emerald text-slate-950 font-black text-xs rounded-lg cursor-pointer"
                         >
                           {savingPhone ? "..." : "OK"}
                         </button>
@@ -621,6 +621,10 @@ export function WhatsAppConnectionFlow() {
                         )}>
                           {pairingCode}
                         </div>
+
+                        <p className="text-[11px] text-white/50 font-medium">
+                          Entrez ce code sur votre téléphone pour valider la liaison sans scanner de QR code.
+                        </p>
                       </div>
 
                       {/* Gros bouton d'action tactile (56px) : Copier OU Régénérer si expiré */}
@@ -629,7 +633,7 @@ export function WhatsAppConnectionFlow() {
                           type="button"
                           onClick={handleRequestPairingCode}
                           disabled={isRequestingPairing}
-                          className="w-full min-h-[56px] py-3.5 px-6 rounded-2xl bg-amber-500 hover:bg-amber-400 text-vendeur-coal font-black uppercase tracking-wider text-sm flex items-center justify-center gap-2.5 shadow-lg shadow-amber-500/20 transition-all cursor-pointer active:scale-[0.98]"
+                          className="w-full min-h-[56px] py-3.5 px-6 rounded-2xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black uppercase tracking-wider text-sm flex items-center justify-center gap-2.5 shadow-lg shadow-amber-500/20 transition-all cursor-pointer active:scale-[0.98]"
                         >
                           {isRequestingPairing ? <Loader2 size={18} className="animate-spin shrink-0" /> : <RefreshCw size={18} className="shrink-0" />}
                           <span>Générer un nouveau code</span>
@@ -638,7 +642,7 @@ export function WhatsAppConnectionFlow() {
                         <button
                           type="button"
                           onClick={handleCopyCodeAndOpenWhatsApp}
-                          className="w-full min-h-[56px] py-3.5 px-6 rounded-2xl bg-vendeur-emerald hover:bg-emerald-400 text-vendeur-coal font-black uppercase tracking-wider text-sm flex items-center justify-center gap-2.5 shadow-lg shadow-vendeur-emerald/20 transition-all cursor-pointer active:scale-[0.98]"
+                          className="w-full min-h-[56px] py-3.5 px-6 rounded-2xl bg-vendeur-emerald hover:bg-emerald-400 text-slate-950 font-black uppercase tracking-wider text-sm flex items-center justify-center gap-2.5 shadow-lg shadow-vendeur-emerald/20 transition-all cursor-pointer active:scale-[0.98]"
                         >
                           {copiedCode ? <Check size={18} className="shrink-0" /> : <Copy size={18} className="shrink-0" />}
                           <span>{copiedCode ? "Code Copié ! Ouverture de WhatsApp..." : "Copier le code & Ouvrir WhatsApp"}</span>
@@ -676,7 +680,7 @@ export function WhatsAppConnectionFlow() {
                         type="button"
                         onClick={handleRequestPairingCode}
                         disabled={isRequestingPairing}
-                        className="min-h-[52px] px-6 rounded-2xl bg-vendeur-emerald text-vendeur-coal font-black uppercase tracking-wider text-xs inline-flex items-center justify-center gap-2 shadow-md hover:bg-emerald-400 transition-all cursor-pointer disabled:opacity-50"
+                        className="min-h-[52px] px-6 rounded-2xl bg-vendeur-emerald text-slate-950 font-black uppercase tracking-wider text-xs inline-flex items-center justify-center gap-2 shadow-md hover:bg-emerald-400 transition-all cursor-pointer disabled:opacity-50"
                       >
                         {isRequestingPairing ? <Loader2 size={16} className="animate-spin shrink-0" /> : <Smartphone size={16} className="shrink-0" />}
                         <span>Générer mon Code de Jumelage</span>
@@ -756,7 +760,7 @@ export function WhatsAppConnectionFlow() {
               <button
                 type="button"
                 onClick={() => navigate("/offers")}
-                className="h-12 px-5 rounded-xl bg-vendeur-emerald text-vendeur-coal font-black uppercase tracking-wider text-xs hover:bg-emerald-400 transition-all flex items-center justify-center gap-1.5 shrink-0 shadow-md active:scale-95"
+                className="h-12 px-5 rounded-xl bg-vendeur-emerald text-slate-950 font-black uppercase tracking-wider text-xs hover:bg-emerald-400 transition-all flex items-center justify-center gap-1.5 shrink-0 shadow-md active:scale-95 cursor-pointer"
               >
                 <Zap size={15} fill="currentColor" className="shrink-0" />
                 <span>Activer mon Forfait pour les Ventes</span>

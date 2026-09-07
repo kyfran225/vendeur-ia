@@ -250,7 +250,7 @@ export function SettingsPage() {
       </header>
 
       {/* Sticky Navigation Tabs Bar (Responsive: Drawer on Mobile, Tabs on Desktop) */}
-      <div className="sticky top-0 z-40 bg-slate-50/95 dark:bg-vendeur-bg/95 backdrop-blur-2xl border-b border-slate-200 dark:border-white/10 -mx-3.5 sm:-mx-6 md:-mx-10 px-3.5 sm:px-6 md:px-10 py-2 md:py-2.5 shadow-sm dark:shadow-lg">
+      <div className="sticky top-0 z-20 bg-slate-50/95 dark:bg-vendeur-bg/95 backdrop-blur-2xl border-b border-slate-200 dark:border-white/10 -mx-3.5 sm:-mx-6 md:-mx-10 px-3.5 sm:px-6 md:px-10 py-2 md:py-2.5 shadow-sm dark:shadow-lg">
         <div className="relative max-w-full w-full">
 
           {/* Mobile Tab Trigger */}
@@ -352,12 +352,12 @@ export function SettingsPage() {
         )}
       >
         <div
-          className="fixed inset-0 bg-black/70 backdrop-blur-md transition-opacity"
+          className="fixed inset-0 bg-slate-950/60 dark:bg-black/80 backdrop-blur-md transition-opacity"
           onClick={() => setIsMobileMenuOpen(false)}
         />
         <aside
           className={cn(
-            "fixed top-0 left-0 bottom-0 w-[300px] bg-white dark:bg-vendeur-coal border-r border-slate-200 dark:border-white/10 shadow-2xl transition-transform duration-300 ease-out flex flex-col",
+            "fixed top-0 left-0 bottom-0 w-[300px] bg-slate-50 dark:bg-[#0c1612] border-r border-slate-200/90 dark:border-white/10 shadow-2xl transition-transform duration-300 ease-out flex flex-col",
             isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"
           )}
         >
@@ -765,31 +765,31 @@ function BoutiqueTab({
           {/* Currency Change Confirmation Modal */}
           {currencyChangeWarning && (
             <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/70 backdrop-blur-lg animate-in fade-in duration-200">
-              <div className="w-full max-w-md bg-vendeur-coal border border-white/10 rounded-3xl p-8 space-y-6 shadow-2xl animate-in zoom-in-95 duration-300">
+              <div className="w-full max-w-md bg-white dark:bg-vendeur-coal border border-slate-200 dark:border-white/10 rounded-3xl p-8 space-y-6 shadow-2xl animate-in zoom-in-95 duration-300 text-slate-900 dark:text-white">
                 <div className="space-y-2">
-                  <h3 className="text-xl font-black uppercase tracking-tight text-white">Changer la Devise Principale ?</h3>
-                  <p className="text-white/50 text-sm leading-relaxed">
+                  <h3 className="text-xl font-black uppercase tracking-tight text-slate-900 dark:text-white">Changer la Devise Principale ?</h3>
+                  <p className="text-slate-600 dark:text-white/50 text-sm leading-relaxed">
                     Cette action va convertir automatiquement les prix de vos produits, vos frais de livraison, l'affichage de vos factures et les messages de vente du Vendeur IA WhatsApp.
                   </p>
                 </div>
 
-                <div className="flex items-center gap-4 p-4 bg-white/5 rounded-2xl border border-white/5">
+                <div className="flex items-center gap-4 p-4 bg-slate-50 dark:bg-white/5 rounded-2xl border border-slate-200 dark:border-white/5">
                   <div className="flex-1 text-center">
-                    <p className="text-[9px] font-black text-white/30 uppercase tracking-widest mb-1">Actuelle</p>
-                    <p className="text-sm font-black text-white uppercase">{currencyChangeWarning.oldCurrency}</p>
-                    <p className="text-[10px] text-white/40 font-mono mt-1">Ex: 10 000 {currencyChangeWarning.oldCurrency}</p>
+                    <p className="text-[9px] font-black text-slate-400 dark:text-white/30 uppercase tracking-widest mb-1">Actuelle</p>
+                    <p className="text-sm font-black text-slate-900 dark:text-white uppercase">{currencyChangeWarning.oldCurrency}</p>
+                    <p className="text-[10px] text-slate-500 dark:text-white/40 font-mono mt-1">Ex: 10 000 {currencyChangeWarning.oldCurrency}</p>
                   </div>
-                  <div className="text-2xl text-white/20">→</div>
+                  <div className="text-2xl text-slate-300 dark:text-white/20">→</div>
                   <div className="flex-1 text-center">
-                    <p className="text-[9px] font-black text-amber-400 uppercase tracking-widest mb-1">Nouvelle</p>
-                    <p className="text-sm font-black text-amber-400 uppercase">{currencyChangeWarning.newCurrency}</p>
-                    <p className="text-[10px] text-amber-300 font-mono mt-1 font-bold">
+                    <p className="text-[9px] font-black text-amber-600 dark:text-amber-400 uppercase tracking-widest mb-1">Nouvelle</p>
+                    <p className="text-sm font-black text-amber-600 dark:text-amber-400 uppercase">{currencyChangeWarning.newCurrency}</p>
+                    <p className="text-[10px] text-amber-700 dark:text-amber-300 font-mono mt-1 font-bold">
                       ≈ {convertCurrencyAmount(10000, currencyChangeWarning.oldCurrency, currencyChangeWarning.newCurrency).toLocaleString()} {currencyChangeWarning.newCurrency}
                     </p>
                   </div>
                 </div>
 
-                <p className="text-[10px] text-white/30 font-medium">
+                <p className="text-[10px] text-slate-500 dark:text-white/30 font-medium">
                   Tous les libellés de la vitrine et de Vendeur IA WhatsApp seront instantanément mis à jour.
                 </p>
 
@@ -804,7 +804,7 @@ function BoutiqueTab({
                       setIsDirty(false);
                       setCurrencyChangeWarning(null);
                     }}
-                    className="h-12 rounded-2xl border border-white/10 text-white/60 hover:text-white hover:bg-white/5 transition-all text-[10px] font-black uppercase tracking-widest"
+                    className="h-12 rounded-2xl border border-slate-200 dark:border-white/10 text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-white/60 dark:hover:text-white dark:hover:bg-white/5 transition-all text-[10px] font-black uppercase tracking-widest cursor-pointer"
                   >
                     Annuler
                   </button>
@@ -821,7 +821,7 @@ function BoutiqueTab({
                       setIsDirty(true);
                       toast.info(`Devise changée en ${newCurr}. Pensez à enregistrer vos réglages.`);
                     }}
-                    className="h-12 rounded-2xl bg-amber-500 hover:bg-amber-400 text-vendeur-coal font-black uppercase tracking-widest text-[10px] transition-all"
+                    className="h-12 rounded-2xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black uppercase tracking-widest text-[10px] transition-all cursor-pointer shadow-lg shadow-amber-500/20"
                   >
                     Confirmer
                   </button>

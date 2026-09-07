@@ -85,10 +85,10 @@ export function Sidebar({ hideDesktop = false }: SidebarProps = {}) {
         <div className="shrink-0 mb-3">
           <NavLink
             to={isFounder ? "/admin" : "/dashboard"}
-            className="h-12 w-12 flex items-center justify-center rounded-2xl p-2 bg-transparent hover:bg-slate-100 dark:hover:bg-white/[0.06] border border-transparent hover:border-slate-200 dark:hover:border-white/10 text-slate-900 dark:text-white transition-all active:scale-95 group cursor-pointer"
+            className="h-11 w-11 flex items-center justify-center rounded-2xl bg-emerald-50 dark:bg-vendeur-emerald/10 border border-emerald-200 dark:border-vendeur-emerald/20 text-slate-900 dark:text-white shadow-sm hover:scale-105 hover:bg-emerald-100 dark:hover:bg-vendeur-emerald/20 transition-all active:scale-95 group cursor-pointer"
             title="Vendeur IA Home"
           >
-            <Logo size={28} className="group-hover:scale-105 transition-transform" />
+            <Logo size={24} className="group-hover:scale-110 transition-transform" />
           </NavLink>
         </div>
 
@@ -214,14 +214,14 @@ export function Sidebar({ hideDesktop = false }: SidebarProps = {}) {
       >
         {/* Backdrop */}
         <div
-          className="absolute inset-0 bg-black/60 dark:bg-black/70 backdrop-blur-sm transition-opacity duration-300"
+          className="absolute inset-0 bg-slate-950/60 dark:bg-black/80 backdrop-blur-md transition-opacity duration-300"
           onClick={() => setIsOpen(false)}
         />
 
         {/* Bottom Sheet Modal Container positioned right in the Thumb Zone */}
         <div
           className={cn(
-            "absolute bottom-0 left-0 right-0 bg-white dark:bg-[#121c18] border-t border-slate-200 dark:border-white/10 rounded-t-[2.5rem] p-6 pb-20 shadow-[0_-15px_50px_rgba(0,0,0,0.15)] dark:shadow-[0_-15px_50px_rgba(0,0,0,0.8)] transition-transform duration-300 ease-out max-h-[80vh] overflow-y-auto",
+            "absolute bottom-0 left-0 right-0 bg-slate-50 dark:bg-[#0c1612] border-t border-slate-200/90 dark:border-white/10 rounded-t-[2.5rem] p-5 sm:p-6 pb-28 sm:pb-32 shadow-[0_-20px_50px_rgba(0,0,0,0.2)] dark:shadow-[0_-20px_50px_rgba(0,0,0,0.8)] transition-transform duration-300 ease-out max-h-[85vh] overflow-y-auto overscroll-contain",
             isOpen ? "translate-y-0" : "translate-y-full"
           )}
         >
@@ -233,7 +233,7 @@ export function Sidebar({ hideDesktop = false }: SidebarProps = {}) {
           {/* Header */}
           <div className="flex items-center justify-between mb-5 px-1">
             <div className="flex items-center gap-2.5">
-              <div className="h-8 w-8 rounded-xl bg-emerald-50 dark:bg-vendeur-emerald/10 border border-emerald-200 dark:border-vendeur-emerald/20 flex items-center justify-center text-emerald-600 dark:text-vendeur-emerald">
+              <div className="h-8 w-8 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-600 dark:text-vendeur-emerald">
                 <Sparkles size={16} />
               </div>
               <div>
@@ -243,7 +243,7 @@ export function Sidebar({ hideDesktop = false }: SidebarProps = {}) {
             </div>
             <button
               onClick={() => setIsOpen(false)}
-              className="h-8 w-8 rounded-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 flex items-center justify-center text-slate-500 dark:text-white/40 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-white/10 transition-all"
+              className="h-8 w-8 rounded-full bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 flex items-center justify-center text-slate-500 dark:text-white/40 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10 transition-all shadow-xs"
             >
               <X size={16} />
             </button>
@@ -258,10 +258,10 @@ export function Sidebar({ hideDesktop = false }: SidebarProps = {}) {
                 onClick={() => setIsOpen(false)}
                 className={({ isActive }) =>
                   cn(
-                    "flex items-center justify-between p-4 rounded-2xl border transition-all active:scale-[0.98]",
+                    "flex items-center justify-between p-4 rounded-2xl border transition-all active:scale-[0.98] shadow-xs",
                     isActive
-                      ? "bg-emerald-50 dark:bg-vendeur-emerald/15 border-emerald-300 dark:border-vendeur-emerald/40 text-emerald-900 dark:text-white shadow-sm"
-                      : "bg-slate-50 dark:bg-white/[0.03] border-slate-200/80 dark:border-white/5 text-slate-700 dark:text-white/80 hover:bg-slate-100 dark:hover:bg-white/[0.07] hover:border-slate-300 dark:hover:border-white/10"
+                      ? "bg-emerald-500/15 border-emerald-500/40 text-emerald-900 dark:text-white shadow-sm"
+                      : "bg-white dark:bg-white/[0.04] border-slate-200/90 dark:border-white/5 text-slate-700 dark:text-white/80 hover:bg-slate-100 dark:hover:bg-white/[0.07] hover:border-slate-300 dark:hover:border-white/10"
                   )
                 }
               >
@@ -270,7 +270,7 @@ export function Sidebar({ hideDesktop = false }: SidebarProps = {}) {
                     className={cn(
                       "h-11 w-11 rounded-xl flex items-center justify-center transition-all",
                       location.pathname.startsWith(link.to)
-                        ? "bg-emerald-600 text-white dark:bg-vendeur-emerald dark:text-vendeur-coal shadow-md shadow-emerald-600/20 dark:shadow-vendeur-emerald/20 font-bold"
+                        ? "bg-emerald-600 text-white dark:bg-vendeur-emerald dark:text-slate-950 font-black shadow-md shadow-emerald-600/20 dark:shadow-vendeur-emerald/20"
                         : "bg-slate-200/60 dark:bg-white/5 text-emerald-600 dark:text-vendeur-emerald border border-slate-200 dark:border-white/5"
                     )}
                   >
@@ -288,24 +288,27 @@ export function Sidebar({ hideDesktop = false }: SidebarProps = {}) {
             ))}
 
             {/* Mobile Logout Button in More Menu */}
-            <button
-              onClick={() => {
-                setIsOpen(false);
-                setShowLogoutModal(true);
-              }}
-              className="flex items-center justify-between p-4 rounded-2xl border border-red-500/10 bg-red-500/5 text-red-400 transition-all active:scale-[0.98] mt-2"
-            >
-              <div className="flex items-center gap-3.5">
-                <div className="h-11 w-11 rounded-xl flex items-center justify-center bg-red-500/10 text-red-500">
-                  <LogOut size={20} />
+            <div className="pt-2 pb-6">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsOpen(false);
+                  setShowLogoutModal(true);
+                }}
+                className="w-full flex items-center justify-between p-4 rounded-2xl border border-rose-500/20 bg-rose-500/10 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 transition-all active:scale-[0.98] cursor-pointer shadow-sm"
+              >
+                <div className="flex items-center gap-3.5">
+                  <div className="h-11 w-11 rounded-xl flex items-center justify-center bg-rose-500/15 text-rose-600 dark:text-rose-400 shrink-0">
+                    <LogOut size={20} />
+                  </div>
+                  <div className="text-left">
+                    <p className="text-xs font-black uppercase tracking-wider text-rose-600 dark:text-rose-400">Déconnexion</p>
+                    <p className="text-[10px] text-rose-500/80 dark:text-rose-400/60 font-medium mt-0.5">Fermer votre session</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-xs font-black uppercase tracking-wider text-white">Déconnexion</p>
-                  <p className="text-[10px] text-red-400/60 font-medium mt-0.5">Fermer votre session</p>
-                </div>
-              </div>
-              <ChevronRight size={18} className="opacity-40" />
-            </button>
+                <ChevronRight size={18} className="opacity-60 text-rose-500" />
+              </button>
+            </div>
           </div>
         </div>
       </div>

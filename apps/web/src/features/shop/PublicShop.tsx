@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -259,6 +259,26 @@ export function PublicShop() {
   const [isStoryModalOpen, setIsStoryModalOpen] = useState(false);
   const [selectedStoryIndex, setSelectedStoryIndex] = useState(0);
 
+  // Storefront Adaptive Theme Engine (Merchant default + Visitor 1-click override)
+  const [shopThemeMode, setShopThemeMode] = useState<"light" | "dark">(() => {
+    if (typeof window === "undefined") return "dark";
+    const localPref = merchantId ? localStorage.getItem(`shop_theme_${merchantId}`) : null;
+    if (localPref === "light" || localPref === "dark") return localPref;
+    return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  });
+
+  // Keep html element class synchronized with shop theme for subcomponents and portals
+  useEffect(() => {
+    const root = document.documentElement;
+    if (shopThemeMode === "dark") {
+      root.classList.add("dark");
+      root.classList.remove("light");
+    } else {
+      root.classList.remove("dark");
+      root.classList.add("light");
+    }
+  }, [shopThemeMode]);
+
   const { data, isLoading, error } = useQuery({
     queryKey: ["public-shop", merchantId],
     queryFn: async () => {
@@ -267,6 +287,16 @@ export function PublicShop() {
     },
     enabled: !!merchantId
   });
+
+  // Sync theme preference when merchant data is loaded if no local override exists
+  useEffect(() => {
+    if (data?.merchant?.branding?.storefrontTheme && merchantId) {
+      const localPref = localStorage.getItem(`shop_theme_${merchantId}`);
+      if (!localPref) {
+        setShopThemeMode(data.merchant.branding.storefrontTheme);
+      }
+    }
+  }, [data?.merchant?.branding?.storefrontTheme, merchantId]);
 
   if (isLoading) {
     return (
@@ -363,17 +393,6 @@ export function PublicShop() {
   const merchantSlug = merchant?.slug || (merchant?.businessName ? slugify(merchant.businessName) : merchantId);
   const shopUrl = `${window.location.origin}/shop/${merchantSlug}`;
   const theme = getShopTheme(merchant?.branding?.accentColor);
-
-  // Storefront Adaptive Theme Engine (Merchant default + Visitor 1-click override)
-  const defaultStorefrontMode = merchant?.branding?.storefrontTheme || "dark";
-  const [shopThemeMode, setShopThemeMode] = useState<"light" | "dark">(() => {
-    if (typeof window === "undefined") return "dark";
-    const localPref = localStorage.getItem(`shop_theme_${merchantId}`);
-    if (localPref === "light" || localPref === "dark") return localPref;
-    if (defaultStorefrontMode === "light") return "light";
-    if (defaultStorefrontMode === "dark") return "dark";
-    return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-  });
 
   const toggleShopTheme = () => {
     const next = shopThemeMode === "dark" ? "light" : "dark";
@@ -504,12 +523,12 @@ export function PublicShop() {
             {/* Floating Cart Trigger in Header */}
             <button
               onClick={() => setIsCartOpen(true)}
-              className="relative h-10 md:h-12 px-4 md:px-5 rounded-2xl bg-slate-900 text-white dark:bg-white dark:text-slate-950 font-black uppercase text-xs tracking-wider flex items-center gap-2.5 hover:scale-105 active:scale-95 transition-all shadow-xl cursor-pointer"
+              className="relative h-10 md:h-12 px-3.5 md:px-5 rounded-2xl bg-white hover:bg-slate-50 dark:bg-white/10 dark:hover:bg-white/15 border border-slate-200/90 dark:border-white/15 text-slate-900 dark:text-white font-black uppercase text-xs tracking-wider flex items-center gap-2.5 hover:scale-105 active:scale-95 transition-all shadow-sm hover:shadow-md cursor-pointer"
             >
-              <ShoppingCart size={18} />
+              <ShoppingCart size={18} className={theme.textClass} />
               <span className="hidden sm:inline">Panier</span>
               {totalCartCount > 0 && (
-                <span className={cn("h-5 w-5 rounded-full text-slate-950 text-[10px] font-black flex items-center justify-center shadow", theme.bgClass)}>
+                <span className={cn("h-5 min-w-[20px] px-1 rounded-full text-slate-950 text-[10px] font-black flex items-center justify-center shadow", theme.bgClass)}>
                   {totalCartCount}
                 </span>
               )}
@@ -654,8 +673,8 @@ export function PublicShop() {
                   className={cn(
                     "px-5 h-11 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap border cursor-pointer",
                     selectedCategory === cat
-                      ? "bg-slate-900 text-white dark:bg-white dark:text-slate-950 border-slate-900 dark:border-white shadow-xl"
-                      : "bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-white/40 border-slate-200 dark:border-white/5 hover:bg-slate-200/80 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white"
+                      ? cn(theme.bgClass, theme.shadowClass, "text-slate-950 border-transparent shadow-lg scale-105")
+                      : "bg-white dark:bg-white/5 text-slate-700 dark:text-white/60 border-slate-200/90 dark:border-white/5 hover:bg-slate-100 dark:hover:bg-white/10 hover:text-slate-950 dark:hover:text-white shadow-sm"
                   )}
                 >
                   {cat === "all" ? "Tous les articles" : cat}
@@ -871,6 +890,11 @@ export function PublicShop() {
         onAddToCart={handleAddToCart}
         onDirectWhatsApp={handleWhatsAppCTA}
         merchant={merchant}
+        themeClasses={{
+          primaryBgClass: cn(theme.bgClass, theme.hoverBgClass),
+          textClass: theme.textClass,
+          accentGlow: theme.shadowClass,
+        }}
       />
 
       {/* Share & QR Code Modal */}
@@ -892,14 +916,16 @@ export function PublicShop() {
               <X size={20} />
             </button>
 
-            {/* Product Image */}
-            <div className="flex-1 bg-slate-100 dark:bg-black/40 aspect-square md:aspect-auto h-[260px] md:h-[500px] overflow-hidden">
+            {/* Product Image / Poster Container */}
+            <div className="flex-1 bg-slate-900/5 dark:bg-black/50 aspect-auto min-h-[320px] sm:min-h-[400px] md:h-[540px] flex items-center justify-center p-3 md:p-6 overflow-hidden relative border-b md:border-b-0 md:border-r border-slate-200/80 dark:border-white/10">
               {selectedProduct.images?.[0] || selectedProduct.imageUrl ? (
-                <img
-                  src={selectedProduct.images?.[0] || selectedProduct.imageUrl}
-                  className="w-full h-full object-cover"
-                  alt={selectedProduct.name}
-                />
+                <div className="relative w-full h-full flex items-center justify-center">
+                  <img
+                    src={selectedProduct.images?.[0] || selectedProduct.imageUrl}
+                    className="max-w-full max-h-full w-auto h-auto object-contain rounded-2xl shadow-xl transition-all"
+                    alt={selectedProduct.name}
+                  />
+                </div>
               ) : (
                 <div className="w-full h-full flex items-center justify-center opacity-20">
                   {getCategoryIcon(merchant.category, 80, "text-slate-400 dark:text-white/20")}

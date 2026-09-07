@@ -181,8 +181,8 @@ export function OrderCreationModal({
   if (!isOpen) return null;
 
   return createPortal(
-    <div className="fixed inset-0 z-[100] flex flex-col justify-end sm:justify-center items-center p-0 sm:p-4 bg-black/60 dark:bg-black/85 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="bg-white dark:bg-[#0B1512] border-t sm:border border-slate-200 dark:border-white/10 w-full max-w-3xl h-[94vh] sm:h-auto sm:max-h-[90vh] rounded-t-[2.5rem] sm:rounded-3xl overflow-hidden shadow-2xl flex flex-col animate-in slide-in-from-bottom duration-300 text-slate-900 dark:text-white">
+    <div className="fixed inset-0 z-[100] flex flex-col justify-end sm:justify-center items-center p-0 sm:p-4 bg-slate-950/60 dark:bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
+      <div className="bg-slate-50 dark:bg-[#0c1612] border-t sm:border border-slate-200/90 dark:border-white/10 w-full max-w-3xl h-[94vh] sm:h-auto sm:max-h-[90vh] rounded-t-[2.5rem] sm:rounded-3xl overflow-hidden shadow-2xl flex flex-col animate-in slide-in-from-bottom duration-300 text-slate-900 dark:text-white">
         
         {/* Mobile Pull Handle */}
         <div className="sm:hidden w-full flex items-center justify-center pt-3 pb-1 shrink-0">
@@ -190,7 +190,7 @@ export function OrderCreationModal({
         </div>
 
         {/* Header */}
-        <header className="p-4 sm:p-6 border-b border-slate-100 dark:border-white/5 flex items-center justify-between shrink-0 bg-slate-50/50 dark:bg-white/[0.02] gap-3">
+        <header className="p-4 sm:p-6 border-b border-slate-200/80 dark:border-white/5 flex items-center justify-between shrink-0 bg-white/80 dark:bg-white/[0.02] gap-3">
           <div className="flex items-center gap-3 min-w-0">
             <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-2xl bg-emerald-500/10 flex items-center justify-center border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 shrink-0 shadow-[0_0_15px_rgba(16,185,129,0.2)]">
               <ShoppingCart size={22} className="shrink-0" />
@@ -478,8 +478,8 @@ export function OrderCreationModal({
                       key={p._id}
                       className="p-3 rounded-2xl bg-white dark:bg-white/5 border border-slate-200 dark:border-white/5 hover:border-emerald-500/40 transition-all flex items-center justify-between gap-3 shadow-sm dark:shadow-none"
                     >
-                      {p.images?.[0] ? (
-                        <img src={p.images[0]} className="h-11 w-11 rounded-xl object-cover shrink-0" alt="" />
+                      {p.images?.[0] || p.imageUrl ? (
+                        <img src={p.images?.[0] || p.imageUrl} className="h-11 w-11 rounded-xl object-cover shrink-0" alt="" />
                       ) : (
                         <div className="h-11 w-11 rounded-xl bg-slate-100 dark:bg-white/5 flex items-center justify-center shrink-0 border border-slate-200 dark:border-white/5">
                           <Package className="text-slate-400 dark:text-white/30 shrink-0" size={18} />
@@ -528,7 +528,7 @@ export function OrderCreationModal({
           </div>
 
           {/* Cart & Total */}
-          <div className={`p-4 sm:p-6 flex flex-col bg-slate-50 dark:bg-vendeur-coal overflow-hidden ${
+          <div className={`p-4 sm:p-6 flex flex-col bg-slate-100/70 dark:bg-[#07100d]/60 overflow-hidden ${
             mobileTab === "cart" ? "flex" : "hidden md:flex"
           }`}>
             <div className="flex items-center justify-between mb-3 shrink-0">

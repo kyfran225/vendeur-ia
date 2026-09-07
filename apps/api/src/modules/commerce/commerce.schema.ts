@@ -27,6 +27,7 @@ export const UpdateProductSchema = z.object({
     description: z.string().optional(),
     category: z.string().optional(),
     stock: z.number().int().min(0).optional(),
+    imageUrl: z.string().optional().or(z.string().length(0)),
     images: z.array(z.string()).optional(),
     availability: z.enum(["available", "limited", "sold_out", "hidden"]).optional(),
     isService: z.boolean().optional(),

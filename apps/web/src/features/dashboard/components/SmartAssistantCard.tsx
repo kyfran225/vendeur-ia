@@ -15,9 +15,7 @@ import {
   ShieldCheck,
   RefreshCw,
   Clock,
-  Share2,
-  ExternalLink,
-  Package
+  Share2
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { clsx, type ClassValue } from "clsx";
@@ -28,7 +26,6 @@ import { WhatsAppIcon } from "@/components/ui/WhatsAppIcon";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/apiClient";
 import { toast } from "sonner";
-import { getMerchantShopPath } from "@/lib/slugify";
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -379,7 +376,7 @@ export function SmartAssistantCard({ dashboard, onOpenTestIA, onOpenShare, onCon
                           <button
                             type="button"
                             onClick={onConnectWhatsApp}
-                            className="flex-1 flex items-center justify-center gap-2.5 min-h-[52px] sm:min-h-[56px] px-5 py-3.5 rounded-2xl bg-vendeur-emerald text-white font-black uppercase text-xs sm:text-sm tracking-wider hover:bg-emerald-400 active:scale-95 transition-all shadow-lg shadow-emerald-500/20 cursor-pointer shrink-0 truncate group"
+                            className="flex-1 flex items-center justify-center gap-2.5 min-h-[52px] sm:min-h-[56px] px-5 py-3.5 rounded-2xl bg-vendeur-emerald text-slate-950 font-black uppercase text-xs sm:text-sm tracking-wider hover:bg-emerald-400 active:scale-95 transition-all shadow-lg shadow-emerald-500/20 cursor-pointer shrink-0 truncate group"
                           >
                             <Zap size={17} fill="currentColor" className="shrink-0 group-hover:scale-110 transition-transform" />
                             <span className="truncate">Lier mon WhatsApp</span>
@@ -388,7 +385,7 @@ export function SmartAssistantCard({ dashboard, onOpenTestIA, onOpenShare, onCon
                         ) : (
                           <Link
                             to={getActionLink(nextStep.id)}
-                            className="flex-1 flex items-center justify-center gap-2.5 min-h-[52px] sm:min-h-[56px] px-5 py-3.5 rounded-2xl bg-vendeur-emerald text-white font-black uppercase text-xs sm:text-sm tracking-wider hover:bg-emerald-400 active:scale-95 transition-all shadow-lg shadow-emerald-500/20 cursor-pointer shrink-0 truncate group"
+                            className="flex-1 flex items-center justify-center gap-2.5 min-h-[52px] sm:min-h-[56px] px-5 py-3.5 rounded-2xl bg-vendeur-emerald text-slate-950 font-black uppercase text-xs sm:text-sm tracking-wider hover:bg-emerald-400 active:scale-95 transition-all shadow-lg shadow-emerald-500/20 cursor-pointer shrink-0 truncate group"
                           >
                             <Zap size={17} fill="currentColor" className="shrink-0 group-hover:scale-110 transition-transform" />
                             <span className="truncate">{nextStep.label}</span>
@@ -411,7 +408,7 @@ export function SmartAssistantCard({ dashboard, onOpenTestIA, onOpenShare, onCon
                         <button
                           type="button"
                           onClick={onOpenTestIA}
-                          className="flex-1 flex items-center justify-center gap-2.5 min-h-[52px] sm:min-h-[56px] px-5 py-3.5 rounded-2xl bg-vendeur-emerald text-white font-black uppercase text-xs sm:text-sm tracking-wider hover:bg-emerald-400 active:scale-95 transition-all shadow-lg shadow-emerald-500/20 cursor-pointer shrink-0 truncate"
+                          className="flex-1 flex items-center justify-center gap-2.5 min-h-[52px] sm:min-h-[56px] px-5 py-3.5 rounded-2xl bg-vendeur-emerald text-slate-950 font-black uppercase text-xs sm:text-sm tracking-wider hover:bg-emerald-400 active:scale-95 transition-all shadow-lg shadow-emerald-500/20 cursor-pointer shrink-0 truncate"
                         >
                           <Play size={17} fill="currentColor" className="shrink-0" />
                           <span>Simulateur & Test IA</span>
@@ -524,55 +521,6 @@ export function SmartAssistantCard({ dashboard, onOpenTestIA, onOpenShare, onCon
             </div>
           )}
         </div>
-
-        {/*
-          BLOC VITRINE & CROISSANCE
-          Affiché quand la boutique a des articles pour encourager le partage
-        */}
-        {hasProducts && (
-          <div className="pt-6 border-t border-slate-200 dark:border-white/5 space-y-4">
-            <div className="bg-blue-50/70 dark:bg-gradient-to-r dark:from-blue-500/10 dark:via-blue-500/5 dark:to-transparent border border-blue-200 dark:border-blue-500/20 p-4 sm:p-6 rounded-3xl flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 relative overflow-hidden group/showcase shadow-md dark:shadow-xl">
-              <div className="space-y-2 relative z-10 flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                   <div className="h-8 w-8 rounded-xl bg-blue-500/20 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0 shadow-inner">
-                    <Package size={16} />
-                  </div>
-                  <h4 className="text-sm sm:text-base font-black uppercase tracking-tight text-slate-900 dark:text-white">
-                    Votre Vitrine est en ligne ! 🚀
-                  </h4>
-                </div>
-                <p className="text-xs sm:text-sm text-slate-600 dark:text-white/70 font-medium leading-relaxed max-w-lg">
-                  Attirez vos premiers clients en diffusant votre lien ou vérifiez le rendu de vos articles côté acheteur.
-                </p>
-              </div>
-
-              <div className="flex flex-col sm:flex-row items-stretch lg:items-center gap-3 w-full lg:w-auto shrink-0 relative z-10">
-                {onOpenShare && (
-                  <button
-                    type="button"
-                    onClick={onOpenShare}
-                    className="h-12 sm:h-14 px-6 rounded-2xl bg-white hover:bg-slate-50 dark:bg-white/5 dark:hover:bg-white/10 border border-slate-200 dark:border-white/10 text-slate-800 dark:text-white font-black uppercase tracking-wider text-xs sm:text-sm flex items-center justify-center gap-2.5 transition-all active:scale-95 cursor-pointer shadow-sm"
-                  >
-                    <Share2 size={18} className="text-emerald-600 dark:text-vendeur-emerald" />
-                    <span>Propulser ma Boutique</span>
-                  </button>
-                )}
-
-                <Link
-                  to={getMerchantShopPath(merchant)}
-                  target="_blank"
-                  className="h-12 sm:h-14 px-6 rounded-2xl bg-blue-500 hover:bg-blue-400 text-white font-black uppercase tracking-wider text-xs sm:text-sm flex items-center justify-center gap-2.5 transition-all shadow-lg shadow-blue-500/20 active:scale-95 cursor-pointer"
-                >
-                  <ExternalLink size={18} />
-                  <span>Aperçu de ma Vitrine</span>
-                </Link>
-              </div>
-
-              {/* Decorative background glow */}
-              <div className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/4 h-32 w-32 bg-blue-500/20 blur-[60px] rounded-full pointer-events-none" />
-            </div>
-          </div>
-        )}
       </motion.section>
     </>
   );

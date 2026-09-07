@@ -31,7 +31,7 @@ export function SubscriptionBanner({ status, expiresAt, autoReply = true, onOpen
   // 1. Mode Découverte (Avant paiement)
   if (isDiscoveryMode) {
     return (
-      <div className="relative overflow-hidden p-5 md:p-6 rounded-[2rem] border border-amber-500/30 bg-amber-500/10 text-amber-100 animate-in fade-in slide-in-from-top-4 duration-500 mb-6 shadow-xl">
+      <div className="relative overflow-hidden p-5 md:p-6 rounded-[2rem] border border-amber-500/30 bg-amber-500/10 text-amber-900 dark:text-amber-100 animate-in fade-in slide-in-from-top-4 duration-500 mb-6 shadow-xl">
         <div className="flex flex-col md:flex-row items-start md:items-center gap-4 justify-between">
           <div className="flex items-center gap-3.5">
             <div className="h-11 w-11 md:h-12 md:w-12 rounded-2xl bg-amber-500 text-vendeur-coal flex items-center justify-center shrink-0 shadow-lg shadow-amber-500/20 font-black p-2">
@@ -40,11 +40,11 @@ export function SubscriptionBanner({ status, expiresAt, autoReply = true, onOpen
             <div>
               <div className="flex items-center gap-2">
                 <span className="inline-block w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
-                <h3 className="font-black uppercase tracking-tight text-xs md:text-sm text-white">
+                <h3 className="font-black uppercase tracking-tight text-xs md:text-sm text-slate-900 dark:text-white">
                   Mode Découverte Actif (Gratuit)
                 </h3>
               </div>
-              <p className="text-[11px] md:text-xs text-amber-200/80 font-medium mt-0.5 leading-relaxed max-w-xl">
+              <p className="text-[11px] md:text-xs text-amber-800/90 dark:text-amber-200/80 font-medium mt-0.5 leading-relaxed max-w-xl">
                 Votre Vendeur IA ne répond pas encore à vos clients sur WhatsApp. Vous gardez la main sur vos discussions tout en testant le simulateur.
               </p>
             </div>
@@ -55,9 +55,9 @@ export function SubscriptionBanner({ status, expiresAt, autoReply = true, onOpen
               <button
                 type="button"
                 onClick={onOpenTestIA}
-                className="h-11 px-4 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold uppercase text-[11px] tracking-wider transition-all flex items-center gap-1.5 cursor-pointer active:scale-95 whitespace-nowrap"
+                className="h-11 px-4 rounded-xl bg-slate-900/10 dark:bg-white/10 hover:bg-slate-900/20 dark:hover:bg-white/20 text-slate-900 dark:text-white font-bold uppercase text-[11px] tracking-wider transition-all flex items-center gap-1.5 cursor-pointer active:scale-95 whitespace-nowrap"
               >
-                <Sparkles size={14} className="text-amber-300" />
+                <Sparkles size={14} className="text-amber-600 dark:text-amber-300" />
                 <span>Tester dans le simulateur</span>
               </button>
             )}
@@ -78,17 +78,17 @@ export function SubscriptionBanner({ status, expiresAt, autoReply = true, onOpen
   // 2. Mode Pause (Abonnement payé mais mis en pause)
   if (isPaused) {
     return (
-      <div className="relative overflow-hidden p-5 md:p-6 rounded-[2rem] border border-sky-500/30 bg-sky-500/10 text-sky-100 animate-in fade-in slide-in-from-top-4 duration-500 mb-6 shadow-xl">
+      <div className="relative overflow-hidden p-5 md:p-6 rounded-[2rem] border border-sky-500/30 bg-sky-500/10 text-sky-900 dark:text-sky-100 animate-in fade-in slide-in-from-top-4 duration-500 mb-6 shadow-xl">
         <div className="flex flex-col md:flex-row items-start md:items-center gap-4 justify-between">
           <div className="flex items-center gap-3.5">
             <div className="h-11 w-11 md:h-12 md:w-12 rounded-2xl bg-sky-400 text-vendeur-coal flex items-center justify-center shrink-0 shadow-lg shadow-sky-400/20 font-black">
               <PauseCircle size={24} />
             </div>
             <div>
-              <h3 className="font-black uppercase tracking-tight text-xs md:text-sm text-white">
+              <h3 className="font-black uppercase tracking-tight text-xs md:text-sm text-slate-900 dark:text-white">
                 Vendeur IA en Pause
               </h3>
-              <p className="text-[11px] md:text-xs text-sky-200/80 font-medium mt-0.5 leading-relaxed">
+              <p className="text-[11px] md:text-xs text-sky-800/90 dark:text-sky-200/80 font-medium mt-0.5 leading-relaxed">
                 Votre WhatsApp reste connecté. Vous répondez manuellement à vos clients.
               </p>
             </div>
@@ -112,8 +112,8 @@ export function SubscriptionBanner({ status, expiresAt, autoReply = true, onOpen
       <div className={cn(
         "relative overflow-hidden p-5 md:p-6 rounded-[2rem] border animate-in fade-in slide-in-from-top-4 duration-500 mb-6 shadow-xl",
         isExpired
-          ? "bg-red-500/10 border-red-500/30 text-red-200"
-          : "bg-amber-500/10 border-amber-500/30 text-amber-200"
+          ? "bg-red-500/10 border-red-500/30 text-red-900 dark:text-red-200"
+          : "bg-amber-500/10 border-amber-500/30 text-amber-900 dark:text-amber-200"
       )}>
         <div className="flex flex-col md:flex-row items-start md:items-center gap-4 justify-between">
           <div className="flex items-center gap-3.5">
@@ -124,10 +124,13 @@ export function SubscriptionBanner({ status, expiresAt, autoReply = true, onOpen
               {isExpired ? <AlertTriangle size={24} /> : <Zap size={24} />}
             </div>
             <div>
-              <h3 className="font-black uppercase tracking-tight text-xs md:text-sm text-white">
+              <h3 className="font-black uppercase tracking-tight text-xs md:text-sm text-slate-900 dark:text-white">
                 {isExpired ? "Forfait Vendeur IA Expiré" : "Abonnement bientôt à terme"}
               </h3>
-              <p className="text-[11px] md:text-xs opacity-80 font-medium mt-0.5">
+              <p className={cn(
+                "text-[11px] md:text-xs font-medium mt-0.5",
+                isExpired ? "text-red-800/90 dark:text-red-200/90" : "text-amber-800/90 dark:text-amber-200/90"
+              )}>
                 {isExpired
                   ? "Votre Vendeur IA est en pause sur WhatsApp. Réactivez votre forfait pour relancer les ventes 24h/24."
                   : `Votre abonnement expire dans ${diffDays} jour${diffDays > 1 ? 's' : ''}. Renouvelez pour éviter toute coupure.`}

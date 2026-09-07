@@ -403,7 +403,7 @@ export function PosterGenerator({
 
         <button
           onClick={handleFinalSave}
-          className="bg-vendeur-emerald hover:bg-emerald-400 text-vendeur-coal font-black px-4 py-2 rounded-xl text-xs uppercase tracking-widest flex items-center gap-2 shadow-lg shadow-vendeur-emerald/20 active:scale-95 transition-all"
+          className="bg-vendeur-emerald hover:bg-emerald-400 text-slate-950 font-black px-4 py-2 rounded-xl text-xs uppercase tracking-widest flex items-center gap-2 shadow-lg shadow-vendeur-emerald/20 active:scale-95 transition-all cursor-pointer"
         >
           <Check size={16} />
           <span>Enregistrer</span>
@@ -436,9 +436,9 @@ export function PosterGenerator({
                 <button
                   key={fmtKey}
                   onClick={() => setFormat(fmtKey)}
-                  className={`h-11 rounded-xl border font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all ${
+                  className={`h-11 rounded-xl border font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer ${
                     format === fmtKey
-                      ? "bg-white text-vendeur-coal border-white shadow-lg"
+                      ? "bg-white text-slate-950 font-black border-white shadow-lg"
                       : "bg-white/5 border-white/10 text-white/50 hover:text-white"
                   }`}
                 >
@@ -578,7 +578,7 @@ export function PosterGenerator({
           <div className="pt-4 grid grid-cols-2 gap-3">
             <button
               onClick={handleShareWhatsApp}
-              className="h-12 sm:h-14 rounded-2xl bg-vendeur-emerald text-vendeur-coal font-black uppercase text-[10px] tracking-widest flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all shadow-xl shadow-vendeur-emerald/20 cursor-pointer"
+              className="h-12 sm:h-14 rounded-2xl bg-vendeur-emerald text-slate-950 font-black uppercase text-[10px] tracking-widest flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all shadow-xl shadow-vendeur-emerald/20 cursor-pointer"
             >
               <Share2 size={16} />
               <span>Statut WhatsApp</span>

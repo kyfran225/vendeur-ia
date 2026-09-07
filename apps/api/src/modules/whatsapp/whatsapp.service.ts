@@ -444,6 +444,8 @@ class WhatsAppService {
               console.log(`[WhatsApp] User ${userId} connection open (already marked connected)`);
             }
 
+            this.syncMerchantAvatar(userId, sock);
+
             // Auto-subscribe to presence for recent active contacts
             try {
               const merchant = await CommerceMerchantModel.findOne({
@@ -575,6 +577,7 @@ class WhatsAppService {
 
         emitToUser(userId, "whatsapp:connected", { phoneNumber: cleanNumber });
         console.log(`[WhatsApp] User ${userId} successfully connected via Pairing Code`);
+        this.syncMerchantAvatar(userId, sock, cleanNumber);
       }
 
       if (connection === "close") {
@@ -692,6 +695,7 @@ class WhatsAppService {
 
           emitToUser(userId, "whatsapp:connected", {});
           console.log(`[WhatsApp] User ${userId} successfully connected via QR Code`);
+          this.syncMerchantAvatar(userId, sock);
         }
 
         if (connection === "close") {
@@ -3235,6 +3239,14 @@ class WhatsAppService {
    * Fetches high quality WhatsApp profile picture URL from Baileys.
    * Gracefully handles privacy restrictions, missing avatars, and network timeouts.
    */
+  async getProfilePictureUrl(userId: string, jidOrPhone: string): Promise<string | null> {
+    return this.fetchCustomerAvatarUrl(userId, jidOrPhone);
+  }
+
+  /**
+   * Fetches high quality WhatsApp profile picture URL from Baileys.
+   * Gracefully handles privacy restrictions, missing avatars, and network timeouts.
+   */
   async fetchCustomerAvatarUrl(userId: string, jidOrPhone: string): Promise<string | null> {
     try {
       // Find active socket for this merchant/owner
@@ -3349,6 +3361,39 @@ class WhatsAppService {
       console.warn(`[WhatsApp] Avatar sync failed for ${customer.phone}:`, e);
     }
     return customer.avatarUrl || null;
+  }
+
+  /**
+   * Asynchronously syncs the merchant's WhatsApp profile picture to UserModel & CommerceMerchantModel
+   */
+  async syncMerchantAvatar(userId: string, sock: any, phoneNumber?: string): Promise<void> {
+    try {
+      if (!sock) return;
+      const rawJid = sock.user?.id || (phoneNumber ? `${phoneNumber.replace(/\D/g, "")}@s.whatsapp.net` : null);
+      if (!rawJid) return;
+
+      // Strip device suffix from JID if present (e.g. 22501020304:12@s.whatsapp.net -> 22501020304@s.whatsapp.net)
+      const cleanJid = rawJid.includes(":") ? `${rawJid.split(":")[0]}@s.whatsapp.net` : rawJid;
+
+      const avatarUrl = await this.getProfilePictureUrl(userId, cleanJid);
+      if (avatarUrl) {
+        await UserModel.findByIdAndUpdate(userId, { $set: { avatarUrl } });
+        await CommerceMerchantModel.findOneAndUpdate(
+          {
+            ownerId: userId,
+            $or: [
+              { "branding.logoUrl": { $exists: false } },
+              { "branding.logoUrl": null },
+              { "branding.logoUrl": "" }
+            ]
+          },
+          { $set: { "branding.logoUrl": avatarUrl } }
+        );
+        console.log(`[WhatsApp] Merchant avatar successfully synced from WhatsApp for user ${userId}`);
+      }
+    } catch (err: any) {
+      console.warn(`[WhatsApp] Could not sync merchant avatar for user ${userId}:`, err?.message || err);
+    }
   }
 }
 

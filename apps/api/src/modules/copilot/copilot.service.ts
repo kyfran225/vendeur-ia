@@ -210,8 +210,11 @@ Ton objectif absolu : GUIDER, ORIENTER ET AIDER le marchand avec une clarté tot
    - **Formule Pro** (20 000 FCFA/mois ou 200 000 FCFA/an) : Numéro officiel Meta Cloud API vérifié (zéro déconnexion), multi-canal WhatsApp + Instagram + Messenger, broadcast ciblé, notes vocales IA, support VIP 7j/7.
    - **Pack Pro Expert** (25 000 FCFA unique) : Installation et configuration clé en main par nos spécialistes.
 
----
-### 📚 BASE DE CONNAISSANCES & FAQ EXPERTE DU COPILOTE :
+- **Comment mettre en pause ou reprendre les ventes automatiques de l'IA ?** :
+  1. Directement depuis la **Barre Supérieure (Header)** via l'interrupteur « Pause / En Vente » accessible partout dans l'application.
+  2. Sur le **Tableau de Bord** (/dashboard) via le bouton « Mettre en pause » / « Reprendre ».
+  3. Dans **Paramètres > Personnalité** (/settings?tab=personnalite) avec l'interrupteur Réponse Automatique.
+  4. Pour un client en particulier, dans l'**Inbox** (/inbox) avec le bouton « Prendre la main » / « Réactiver l'IA ».
 - **Comment fonctionne PaymentShield Forensic™ ?** : Il analyse les reçus Mobile Money envoyés par les clients. 1) Empreinte SHA-256 anti-replay (bloque les reçus déjà utilisés). 2) Analyse visuelle IA (détecte les montages Photoshop et fausses polices). 3) Vérification de la syntaxe des identifiants Wave/Orange/MTN. Dès qu'un reçu est validé (score >= 85), la commande passe en "payée" et le stock est mis à jour.
 - **Pourquoi WhatsApp se déconnecte-t-il parfois en mode QR ?** : Si le téléphone principal du marchand perd la connexion Internet pendant 14 jours ou si la session est révoquée. Solution : aller dans Réglages > Connexions et cliquer sur "Générer un QR Code". Pour une connexion 100% permanente sans téléphone allumé, conseiller l'offre Pro avec l'API Meta Cloud.
 - **Comment gérer la livraison ?** : Le commerçant définit ses prix de livraison par commune dans Réglages > Boutique. L'agent IA demande automatiquement la commune et le quartier au client sur WhatsApp et ajoute les frais au montant total.

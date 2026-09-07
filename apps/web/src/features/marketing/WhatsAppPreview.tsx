@@ -59,10 +59,10 @@ export function WhatsAppPreview({
         {/* Message Bubble (Outgoing) */}
         <div className="self-end max-w-[88%] sm:max-w-[80%] bg-[#d9fdd3] dark:bg-[#005c4b] rounded-2xl rounded-tr-xs p-2 sm:p-2.5 shadow-md space-y-2 relative border border-emerald-300/60 dark:border-[#00705b]/50">
           {/* Product Image preview */}
-          {product?.images?.[0] && (
+          {(product?.images?.[0] || product?.imageUrl) && (
             <div className="relative aspect-video w-full rounded-xl overflow-hidden bg-black/10 dark:bg-black/30 border border-slate-200/50 dark:border-white/10">
               <img
-                src={product.images[0]}
+                src={product.images?.[0] || product.imageUrl}
                 alt={product.name}
                 className="w-full h-full object-cover"
               />

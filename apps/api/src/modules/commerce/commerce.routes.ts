@@ -1113,6 +1113,171 @@ router.post("/conversations/:id/fast-pay", authenticate, async (req, res) => {
   }
 });
 
+// DISPATCH RICH INTERACTIVE PRODUCT CARD TO WHATSAPP
+router.post("/conversations/:id/send-product-card", authenticate, async (req, res) => {
+  try {
+    const ownerId = (req as any).user.id;
+    const conversationId = req.params.id;
+    const { productId, actionType = "order", customText = "", customPrice } = req.body;
+
+    if (!productId) {
+      return res.status(400).json({ error: "L'article (productId) est requis." });
+    }
+
+    const conversation = await CommerceConversationModel.findById(conversationId).populate("customerId");
+    if (!conversation) return res.status(404).json({ error: "Discussion introuvable." });
+
+    let merchant = await CommerceMerchantModel.findById(conversation.merchantId);
+    if (!merchant) {
+      merchant = await CommerceMerchantModel.findOne({
+        $or: [
+          { ownerId },
+          ...(ownerId && mongoose.isValidObjectId(ownerId) ? [{ ownerId: new mongoose.Types.ObjectId(ownerId) }] : []),
+          { whatsappNumber: { $regex: "5111157" } },
+          { businessName: "Vendeur IA" }
+        ]
+      });
+    }
+    if (!merchant) return res.status(404).json({ error: "Marchand introuvable." });
+
+    const product = await CommerceProductModel.findById(productId);
+    if (!product) return res.status(404).json({ error: "Article introuvable dans le catalogue." });
+
+    const clientBaseUrl = env.CLIENT_URL || "https://vendeur-ia.com";
+    const shopSlug = merchant.slug || (merchant.businessName ? merchant.businessName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") : merchant._id);
+    const shopUrl = `${clientBaseUrl}/shop/${shopSlug}`;
+    const productDirectUrl = `${shopUrl}?prod=${product._id}&buy=1`;
+
+    const currency = product.currency || merchant.currency || "XOF";
+    const finalPrice = customPrice !== undefined && Number(customPrice) > 0 ? Number(customPrice) : product.price;
+
+    // Build aesthetic WhatsApp card message
+    const lines: string[] = [
+      `🛍️ *FICHE ARTICLE : ${product.name.toUpperCase()}*`,
+      `━━━━━━━━━━━━━━━━━━━━`,
+      `💰 *Prix* : *${finalPrice.toLocaleString()} ${currency}*`,
+      product.category ? `🏷️ *Catégorie* : ${product.category}` : "",
+      product.stock > 0 ? `✅ *Disponibilité* : En stock (${product.stock} disponible${product.stock > 1 ? "s" : ""})` : `⚡ *Disponibilité* : Commande directe`,
+      product.description ? `\n📝 *Détails* :\n${product.description.trim()}` : "",
+      customText?.trim() ? `\n✨ *Note du vendeur* : ${customText.trim()}` : ""
+    ].filter(Boolean);
+
+    // Add actionable button links based on actionType
+    if (actionType === "order") {
+      lines.push(
+        `\n━━━━━━━━━━━━━━━━━━━━`,
+        `👉 *Pour commander immédiatement en 1 clic :*`,
+        `🛒 ${productDirectUrl}`,
+        `\n💡 *Ou répondez simplement "Je commande" avec votre commune / quartier pour lancer la livraison directe !*`
+      );
+    } else if (actionType === "pay") {
+      lines.push(
+        `\n━━━━━━━━━━━━━━━━━━━━`,
+        `💳 *Pour régler directement en ligne (Wave / Orange Money / MoMo) :*`,
+        `👉 ${productDirectUrl}`,
+        `\n💵 *Paiement également accepté en espèces à la livraison.*`
+      );
+    } else if (actionType === "details") {
+      lines.push(
+        `\n━━━━━━━━━━━━━━━━━━━━`,
+        `🔎 *Consulter toutes les photos & détails sur notre vitrine :*`,
+        `👉 ${shopUrl}?prod=${product._id}`,
+        `\n✨ Avez-vous une question ou souhaitez-vous réserver cet article ?`
+      );
+    } else {
+      lines.push(
+        `\n━━━━━━━━━━━━━━━━━━━━`,
+        `👉 *Consulter ou commander :* ${productDirectUrl}`
+      );
+    }
+
+    const formattedMessage = lines.join("\n");
+    const imageUrl = product.images?.[0] || product.imageUrl;
+
+    // Save message in DB
+    const message = await CommerceMessageModel.create({
+      conversationId: conversation._id,
+      sender: "human",
+      type: imageUrl ? "image" : "text",
+      content: formattedMessage,
+      mediaUrl: imageUrl || undefined,
+      metadata: {
+        type: "product_card",
+        productId: product._id.toString(),
+        productName: product.name,
+        price: finalPrice,
+        currency,
+        imageUrl: imageUrl || undefined,
+        actionType,
+        actionUrl: productDirectUrl
+      },
+      status: "sent",
+      timestamp: new Date()
+    });
+
+    conversation.lastMessageAt = new Date();
+    conversation.status = "needs_human";
+    conversation.unreadCount = 0;
+    await conversation.save();
+
+    // Emit realtime update
+    const convIdStr = conversation._id.toString();
+    const updatePayload = {
+      conversationId: convIdStr,
+      message,
+      status: "needs_human",
+      unreadCount: 0
+    };
+
+    const targetUserIds = new Set<string>([ownerId.toString()]);
+    if (merchant.ownerId) targetUserIds.add(merchant.ownerId.toString());
+
+    targetUserIds.forEach(tId => {
+      emitToUser(tId, "conversation:update", updatePayload);
+    });
+
+    const io = getSocketServer();
+    if (io) {
+      io.to(`conv:${convIdStr}`).emit("conversation:update", updatePayload);
+      io.emit("conversation:update", updatePayload);
+    }
+
+    // Dispatch to WhatsApp
+    let customer = conversation.customerId as any;
+    if (customer && !customer.phone && !customer.platformId) {
+      customer = await CommerceCustomerModel.findById(customer);
+    }
+    const platform = conversation.platform || "whatsapp";
+    const remoteId = platform === "web" ? (customer?.platformId || "WEB_VISITOR") : (customer?.phone || customer?.platformId);
+
+    let deliveryError: string | undefined;
+    try {
+      let sendRes: any;
+      if (imageUrl) {
+        sendRes = await messagingService.sendMessage(merchant, platform, remoteId, formattedMessage, {
+          type: "image",
+          mediaUrl: imageUrl
+        });
+      } else {
+        sendRes = await messagingService.sendMessage(merchant, platform, remoteId, formattedMessage);
+      }
+      const msgId = sendRes?.key?.id || sendRes?.messageId || sendRes?.id;
+      if (msgId) {
+        message.whatsappMessageId = msgId;
+        await message.save();
+      }
+    } catch (sendErr: any) {
+      deliveryError = sendErr.message;
+      console.error("[Send Product Card Error]:", sendErr.message);
+    }
+
+    res.status(201).json({ ...message.toObject(), deliveryError, formattedText: formattedMessage });
+  } catch (error: any) {
+    console.error("[Send Product Card Route Error]:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // MERCHANT VOICE MEMO DISPATCH & AUTO TRANSCRIPTION
 router.post("/conversations/:id/voice", authenticate, upload.single("audio"), async (req, res) => {
   try {
@@ -1973,9 +2138,24 @@ router.patch("/products/:id", authenticate, validate(UpdateProductSchema), async
     const merchant = await CommerceMerchantModel.findOne({ ownerId });
     if (!merchant) return res.status(404).json({ error: "Merchant not found" });
 
+    const updateData: any = { ...req.body };
+    if (updateData.imageUrl !== undefined) {
+      if (updateData.imageUrl) {
+        if (!updateData.images || updateData.images.length === 0) {
+          updateData.images = [updateData.imageUrl];
+        }
+      } else {
+        if (!updateData.images) {
+          updateData.images = [];
+        }
+      }
+    } else if (updateData.images && updateData.images.length > 0) {
+      updateData.imageUrl = updateData.images[0];
+    }
+
     const product = await CommerceProductModel.findOneAndUpdate(
       { _id: req.params.id, merchantId: merchant._id },
-      { $set: req.body },
+      { $set: updateData },
       { new: true }
     );
     if (!product) return res.status(404).json({ error: "Product not found" });

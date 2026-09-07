@@ -29,6 +29,11 @@ interface StoryViewerModalProps {
   onAddToCart: (product: any) => void;
   onDirectWhatsApp: (product: any) => void;
   merchant: any;
+  themeClasses?: {
+    primaryBgClass?: string;
+    textClass?: string;
+    accentGlow?: string;
+  };
 }
 
 export function StoryViewerModal({
@@ -38,7 +43,8 @@ export function StoryViewerModal({
   initialIndex = 0,
   onAddToCart,
   onDirectWhatsApp,
-  merchant
+  merchant,
+  themeClasses
 }: StoryViewerModalProps) {
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [progress, setProgress] = useState(0);
@@ -80,6 +86,7 @@ export function StoryViewerModal({
   const currentStory = stories[currentIndex] || stories[0];
   const product = currentStory.product;
   const currency = product?.currency || merchant?.currency || "XOF";
+  const primaryBg = themeClasses?.primaryBgClass || "bg-emerald-500 hover:bg-emerald-400";
 
   const handlePrev = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -101,23 +108,23 @@ export function StoryViewerModal({
 
   return (
     <div
-      className="fixed inset-0 z-[120] bg-black/95 backdrop-blur-2xl flex items-center justify-center p-0 md:p-6 select-none animate-in fade-in duration-200"
+      className="fixed inset-0 z-[120] bg-slate-950/90 dark:bg-black/95 backdrop-blur-2xl flex items-center justify-center p-0 md:p-6 select-none animate-in fade-in duration-200"
       onMouseDown={() => setIsPaused(true)}
       onMouseUp={() => setIsPaused(false)}
       onTouchStart={() => setIsPaused(true)}
       onTouchEnd={() => setIsPaused(false)}
     >
-      <div className="relative w-full max-w-md h-full md:h-[88vh] md:max-h-[820px] bg-vendeur-coal md:rounded-[2.5rem] overflow-hidden flex flex-col justify-between border border-white/10 shadow-2xl">
+      <div className="relative w-full max-w-md h-full md:h-[88vh] md:max-h-[820px] bg-slate-900 dark:bg-[#07100d] md:rounded-[2.5rem] overflow-hidden flex flex-col justify-between border border-white/15 shadow-2xl">
         
         {/* Progress Bar Container */}
         <div className="absolute top-3 left-3 right-3 z-30 flex gap-1.5">
           {stories.map((story, idx) => (
             <div
               key={story.id}
-              className="h-1 flex-1 bg-white/20 rounded-full overflow-hidden"
+              className="h-1.5 flex-1 bg-white/25 rounded-full overflow-hidden shadow-sm"
             >
               <div
-                className="h-full bg-vendeur-emerald transition-all duration-75 ease-linear"
+                className={`h-full ${primaryBg.split(" ")[0]} transition-all duration-75 ease-linear`}
                 style={{
                   width:
                     idx < currentIndex
@@ -134,14 +141,14 @@ export function StoryViewerModal({
         {/* Top Header Bar */}
         <div className="absolute top-6 left-4 right-4 z-30 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="h-9 w-9 rounded-full bg-vendeur-emerald/20 border border-vendeur-emerald/40 flex items-center justify-center text-vendeur-emerald">
+            <div className="h-9 w-9 rounded-full bg-white/20 dark:bg-emerald-500/20 backdrop-blur-md border border-white/30 flex items-center justify-center text-white">
               <Sparkles size={16} />
             </div>
             <div>
-              <p className="text-xs font-black uppercase text-white tracking-tight leading-none">
+              <p className="text-xs font-black uppercase text-white tracking-tight leading-none drop-shadow-md">
                 {merchant.businessName}
               </p>
-              <span className="text-[9px] font-bold text-vendeur-emerald uppercase tracking-widest">
+              <span className="text-[9px] font-extrabold text-emerald-300 dark:text-emerald-400 uppercase tracking-widest drop-shadow-sm">
                 {currentStory.tag || "Offre Flash"}
               </span>
             </div>
@@ -153,7 +160,7 @@ export function StoryViewerModal({
                 e.stopPropagation();
                 setIsMuted(!isMuted);
               }}
-              className="h-9 w-9 rounded-full bg-black/40 text-white/60 hover:text-white flex items-center justify-center backdrop-blur-md"
+              className="h-9 w-9 rounded-full bg-black/50 text-white/80 hover:text-white flex items-center justify-center backdrop-blur-md border border-white/10 transition-colors"
             >
               {isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
             </button>
@@ -162,7 +169,7 @@ export function StoryViewerModal({
                 e.stopPropagation();
                 onClose();
               }}
-              className="h-9 w-9 rounded-full bg-black/40 text-white/80 hover:text-white flex items-center justify-center backdrop-blur-md"
+              className="h-9 w-9 rounded-full bg-black/50 text-white/90 hover:text-white flex items-center justify-center backdrop-blur-md border border-white/10 transition-colors"
             >
               <X size={18} />
             </button>
@@ -170,7 +177,7 @@ export function StoryViewerModal({
         </div>
 
         {/* Story Background / Media */}
-        <div className="relative flex-1 bg-black flex items-center justify-center overflow-hidden">
+        <div className="relative flex-1 bg-slate-950 flex items-center justify-center overflow-hidden">
           {product.images?.[0] || product.imageUrl ? (
             <img
               src={product.images?.[0] || product.imageUrl}
@@ -178,12 +185,12 @@ export function StoryViewerModal({
               className="w-full h-full object-cover"
             />
           ) : (
-            <div className="w-full h-full bg-gradient-to-tr from-vendeur-coal to-zinc-900 flex items-center justify-center">
-              <Sparkles size={64} className="text-vendeur-emerald/40 animate-pulse" />
+            <div className="w-full h-full bg-gradient-to-tr from-slate-900 to-slate-800 flex items-center justify-center">
+              <Sparkles size={64} className="text-emerald-400/40 animate-pulse" />
             </div>
           )}
 
-          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-black/60 pointer-events-none" />
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-slate-950/70 pointer-events-none" />
 
           {/* Left / Right Click Nav Zones */}
           <button
@@ -199,7 +206,7 @@ export function StoryViewerModal({
 
           {/* Floating Tag */}
           <div className="absolute top-20 left-4 z-20">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-rose-500 text-white text-[10px] font-black uppercase tracking-widest shadow-lg shadow-rose-500/30">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-rose-500 to-orange-500 text-white text-[10px] font-black uppercase tracking-widest shadow-lg shadow-rose-500/30">
               <Flame size={12} />
               <span>{currentStory.highlightText || "Tendance de la semaine"}</span>
             </div>
@@ -207,17 +214,17 @@ export function StoryViewerModal({
         </div>
 
         {/* Bottom Interactive Product Card & CTA */}
-        <div className="relative z-30 p-5 bg-gradient-to-t from-black via-black/90 to-transparent space-y-4">
-          <div className="p-4 rounded-2xl bg-white/10 backdrop-blur-xl border border-white/15 flex items-center justify-between gap-4 shadow-xl">
+        <div className="relative z-30 p-4 md:p-5 bg-gradient-to-t from-slate-950 via-slate-950/95 to-transparent space-y-3">
+          <div className="p-4 rounded-2xl bg-white/10 dark:bg-black/40 backdrop-blur-2xl border border-white/20 dark:border-white/15 flex items-center justify-between gap-4 shadow-2xl">
             <div className="flex-1 min-w-0">
-              <p className="text-[9px] font-black uppercase tracking-widest text-vendeur-emerald">
+              <p className="text-[9px] font-black uppercase tracking-widest text-emerald-300 dark:text-emerald-400">
                 {product.category || "Sélection"}
               </p>
               <h3 className="text-base font-black uppercase text-white truncate tracking-tight">
                 {product.name}
               </h3>
               <p className="text-lg font-black text-white mt-0.5">
-                {product.price.toLocaleString()} <span className="text-xs text-white/60 font-bold">{currency}</span>
+                {product.price.toLocaleString()} <span className="text-xs text-white/70 font-bold">{currency}</span>
               </p>
             </div>
 
@@ -226,22 +233,22 @@ export function StoryViewerModal({
                 e.stopPropagation();
                 onAddToCart(product);
               }}
-              className="h-12 px-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black uppercase text-[10px] tracking-widest flex items-center gap-2 hover:scale-105 active:scale-95 transition-all shrink-0 shadow-lg shadow-emerald-500/20 cursor-pointer"
+              className={`h-11 px-4 rounded-xl ${primaryBg} text-slate-950 font-black uppercase text-[10px] tracking-widest flex items-center gap-2 hover:scale-105 active:scale-95 transition-all shrink-0 shadow-lg cursor-pointer`}
             >
-              <ShoppingCart size={16} />
+              <ShoppingCart size={15} />
               <span>+ Panier</span>
             </button>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-2.5">
             <button
               onClick={(e) => {
                 e.stopPropagation();
                 onDirectWhatsApp(product);
               }}
-              className="h-14 bg-white/10 hover:bg-white/15 border border-white/10 text-white rounded-2xl font-black uppercase text-xs tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer"
+              className="h-12 bg-white/10 hover:bg-white/15 dark:bg-white/5 dark:hover:bg-white/10 border border-white/15 text-white rounded-xl font-black uppercase text-xs tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer shadow-sm"
             >
-              <MessageCircle size={18} className="text-emerald-400" />
+              <MessageCircle size={17} className="text-emerald-400" />
               <span>WhatsApp Direct</span>
             </button>
 
@@ -251,10 +258,10 @@ export function StoryViewerModal({
                 onAddToCart(product);
                 onClose();
               }}
-              className="h-14 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black uppercase text-xs tracking-wider flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all shadow-xl shadow-emerald-500/20 cursor-pointer"
+              className={`h-12 ${primaryBg} text-slate-950 rounded-xl font-black uppercase text-xs tracking-wider flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all shadow-xl cursor-pointer`}
             >
               <span>Acheter vite</span>
-              <ArrowRight size={18} />
+              <ArrowRight size={17} />
             </button>
           </div>
         </div>

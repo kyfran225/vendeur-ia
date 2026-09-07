@@ -6,7 +6,7 @@ import {
   PauseCircle, PlayCircle, Volume2, VolumeX, Bell, BellOff,
   Copy, Check, Phone, RefreshCw, Zap, Image as ImageIcon, Video,
   Mic, Paperclip, Clock, AlertTriangle, ArrowDown, ArrowLeft,
-  Smile, FileText, Reply
+  Smile, FileText, Reply, ExternalLink, ShoppingBag
 } from "lucide-react";
 
 // TikTok Icon component
@@ -33,6 +33,7 @@ import { VendeurIALoader } from "@/components/ui/VendeurIALoader";
 import { WhatsAppTypingIndicator } from "@/components/ui/WhatsAppTypingIndicator";
 import { OrderCreationModal } from "@/features/orders/OrderCreationModal";
 import { FastPayModal } from "./FastPayModal";
+import { ProductCardSenderModal } from "./components/ProductCardSenderModal";
 import { VoiceRecorder } from "./components/VoiceRecorder";
 import { CustomerAvatar } from "./components/CustomerAvatar";
 import { CustomerProfileModal } from "./components/CustomerProfileModal";
@@ -132,6 +133,7 @@ export function SalesInbox() {
   const [followupData, setFollowupData] = useState<{ text: string; isOpen: boolean }>({ text: "", isOpen: false });
   const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
   const [isFastPayModalOpen, setIsFastPayModalOpen] = useState(false);
+  const [isProductCardModalOpen, setIsProductCardModalOpen] = useState(false);
   const [isPauseModalOpen, setIsPauseModalOpen] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
@@ -1078,12 +1080,14 @@ export function SalesInbox() {
 
                     <div className="flex items-center justify-between gap-2">
                       {typingMap[chat._id]?.isTyping ? (
-                        <div className="flex items-center gap-1.5 text-xs sm:text-[13px] text-emerald-600 dark:text-emerald-400 font-bold animate-pulse truncate min-w-0">
-                          <span className="inline-flex items-center gap-1">
-                            <span className="h-2 w-2 rounded-full bg-emerald-500 animate-ping shrink-0" />
-                            <span className="italic font-semibold">
-                              {typingMap[chat._id]?.participant === "ai" ? "Vendeur IA écrit..." : "écrit..."}
-                            </span>
+                        <div className="flex items-center gap-1.5 text-xs sm:text-[13px] text-emerald-600 dark:text-emerald-400 font-semibold truncate min-w-0">
+                          <span className="inline-flex items-center gap-1 shrink-0 pt-0.5 pl-0.5">
+                            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-typing-compact-1" />
+                            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-typing-compact-2" />
+                            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-typing-compact-3" />
+                          </span>
+                          <span className="italic font-medium truncate">
+                            {typingMap[chat._id]?.participant === "ai" ? "Vendeur IA écrit..." : "écrit..."}
                           </span>
                         </div>
                       ) : (
@@ -1496,6 +1500,14 @@ export function SalesInbox() {
               <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
                 <button
                   type="button"
+                  onClick={() => setIsProductCardModalOpen(true)}
+                  className="px-3 py-1.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-xs sm:text-[13px] font-bold text-emerald-700 dark:text-emerald-300 flex items-center gap-1.5 shrink-0 cursor-pointer transition-colors"
+                >
+                  <ShoppingBag size={13} />
+                  <span>🛍️ Carte Article 1-Clic</span>
+                </button>
+                <button
+                  type="button"
                   onClick={() => setIsFastPayModalOpen(true)}
                   className="px-3 py-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-xs sm:text-[13px] font-bold text-amber-700 dark:text-amber-300 flex items-center gap-1.5 shrink-0 cursor-pointer transition-colors"
                 >
@@ -1669,6 +1681,20 @@ export function SalesInbox() {
         />
       )}
 
+      {/* Product Card Sender Modal */}
+      {isProductCardModalOpen && selectedChat && (
+        <ProductCardSenderModal
+          isOpen={isProductCardModalOpen}
+          onClose={() => setIsProductCardModalOpen(false)}
+          conversationId={selectedChat}
+          customerName={formatCustomerDisplayName(activeChatData?.customerId, merchant?.businessName, user?.displayName)}
+          customerPhone={activeChatData?.customerId?.phone}
+          customerAvatarUrl={activeChatData?.customerId?.avatarUrl}
+          customerPlatform={activeChatData?.platform || "whatsapp"}
+          currency={merchant?.currency || "XOF"}
+        />
+      )}
+
       {/* Pause Mode Modal */}
       <PauseConfirmationModal
         isOpen={isPauseModalOpen}
@@ -1684,6 +1710,7 @@ export function SalesInbox() {
         merchantName={merchant?.businessName}
         onOpenOrderModal={() => setIsOrderModalOpen(true)}
         onOpenFastPayModal={() => setIsFastPayModalOpen(true)}
+        onOpenProductCardModal={() => setIsProductCardModalOpen(true)}
         onTriggerFollowup={() => selectedChat && generateFollowupMutation.mutate(selectedChat)}
       />
     </div>
@@ -1924,6 +1951,27 @@ function WhatsAppBubble({
               ? msg.content?.replace(/^\[Message Vocal\]:\s*/, "")
               : stripActionTags(msg.content)}
           </p>
+        )}
+
+        {/* Product Card Interactive Badge & CTA Button */}
+        {(msg.metadata?.type === "product_card" || msg.content?.includes("FICHE ARTICLE :")) && (
+          <div className="mt-2.5 pt-2 border-t border-emerald-600/20 dark:border-white/10 space-y-2">
+            <div className="flex items-center gap-1.5 text-[10px] font-black uppercase text-emerald-800 dark:text-[#00a884]">
+              <ShoppingBag size={12} />
+              <span>Fiche Article Interactive WhatsApp</span>
+            </div>
+            {msg.metadata?.actionUrl && (
+              <a
+                href={msg.metadata.actionUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center gap-2 w-full py-2 px-3 rounded-xl bg-white hover:bg-slate-50 dark:bg-black/40 dark:hover:bg-black/60 border border-emerald-500/40 text-emerald-700 dark:text-[#00a884] font-black text-xs uppercase tracking-wider shadow-sm transition-all active:scale-95 cursor-pointer"
+              >
+                <span>{msg.metadata?.actionType === "order" ? "🛒 Commander en 1 clic" : msg.metadata?.actionType === "pay" ? "💳 Payer Wave / OM" : "🔎 Ouvrir la vitrine"}</span>
+                <ExternalLink size={12} />
+              </a>
+            )}
+          </div>
         )}
 
         {/* Message Reactions Badges */}

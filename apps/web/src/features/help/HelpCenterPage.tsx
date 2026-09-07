@@ -225,36 +225,36 @@ export function HelpCenterPage() {
   }, [searchQuery, selectedCategory]);
 
   return (
-    <div className="min-h-screen bg-vendeur-bg text-white pb-24">
+    <div className="min-h-screen bg-slate-50 dark:bg-vendeur-bg text-slate-900 dark:text-white pb-24 transition-colors">
       {/* Header Banner */}
-      <div className="bg-gradient-to-b from-vendeur-coal via-vendeur-coal/80 to-transparent border-b border-white/5 pt-8 pb-12 px-4 sm:px-6 lg:px-8">
+      <div className="bg-gradient-to-b from-slate-100 via-white to-transparent dark:from-vendeur-coal dark:via-vendeur-coal/80 dark:to-transparent border-b border-slate-200 dark:border-white/5 pt-8 pb-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto text-center space-y-4">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-vendeur-emerald/10 border border-vendeur-emerald/20 text-vendeur-emerald text-xs font-black uppercase tracking-widest">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-vendeur-emerald/10 border border-vendeur-emerald/20 text-emerald-700 dark:text-vendeur-emerald text-xs font-black uppercase tracking-widest">
             <HelpCircle size={14} />
             Centre d'Aide & Base de Connaissances
           </div>
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-white tracking-tight uppercase">
-            Comment pouvons-nous <span className="text-vendeur-emerald">vous aider ?</span>
+          <h1 className="text-xl sm:text-3xl md:text-5xl font-black text-slate-900 dark:text-white tracking-tight uppercase">
+            Comment <span className="whitespace-nowrap">pouvons-nous</span> <span className="text-emerald-600 dark:text-vendeur-emerald whitespace-nowrap">vous aider ?</span>
           </h1>
-          <p className="text-sm sm:text-base text-white/60 max-w-2xl mx-auto leading-relaxed">
+          <p className="text-sm sm:text-base text-slate-600 dark:text-white/60 max-w-2xl mx-auto leading-relaxed">
             Retrouvez toutes les réponses, guides pas-à-pas et solutions pour vendre efficacement sur WhatsApp avec votre agent IA.
           </p>
 
           {/* Instant Search Bar */}
           <div className="pt-4 max-w-2xl mx-auto relative">
             <div className="relative flex items-center">
-              <Search className="absolute left-4 text-white/40 pointer-events-none" size={20} />
+              <Search className="absolute left-4 text-slate-400 dark:text-white/40 pointer-events-none" size={20} />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Rechercher une solution (ex: QR code, Wave, faux reçus, stock, tarif...)"
-                className="w-full bg-white/5 border border-white/10 focus:border-vendeur-emerald focus:bg-white/10 rounded-2xl pl-12 pr-10 py-4 text-sm sm:text-base text-white placeholder-white/30 outline-none transition-all shadow-2xl"
+                className="w-full bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 focus:border-vendeur-emerald focus:bg-white dark:focus:bg-white/10 rounded-2xl pl-12 pr-10 py-4 text-sm sm:text-base text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-white/30 outline-none transition-all shadow-md dark:shadow-2xl"
               />
               {searchQuery && (
                 <button
                   onClick={() => setSearchQuery("")}
-                  className="absolute right-4 text-xs font-bold text-white/40 hover:text-white bg-white/10 px-2 py-1 rounded-lg"
+                  className="absolute right-4 text-xs font-bold text-slate-500 hover:text-slate-900 dark:text-white/40 dark:hover:text-white bg-slate-100 dark:bg-white/10 px-2 py-1 rounded-lg"
                 >
                   Effacer
                 </button>
@@ -269,16 +269,16 @@ export function HelpCenterPage() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <button
             onClick={() => openCopilot("Comment configurer mon Vendeur IA ?")}
-            className="flex items-start gap-4 p-5 rounded-2xl bg-gradient-to-br from-vendeur-emerald/15 to-transparent border border-vendeur-emerald/30 hover:border-vendeur-emerald text-left transition-all group shadow-sm hover:shadow-md dark:shadow-xl cursor-pointer"
+            className="flex items-start gap-4 p-5 rounded-2xl bg-emerald-50/80 hover:bg-emerald-50 dark:bg-gradient-to-br dark:from-vendeur-emerald/15 dark:to-transparent border border-emerald-200 dark:border-vendeur-emerald/30 hover:border-emerald-400 dark:hover:border-vendeur-emerald text-left transition-all group shadow-sm hover:shadow-md dark:shadow-xl cursor-pointer"
           >
-            <div className="h-12 w-12 rounded-xl bg-vendeur-emerald/20 flex items-center justify-center text-vendeur-emerald shrink-0 group-hover:scale-110 transition-transform">
+            <div className="h-12 w-12 rounded-xl bg-emerald-500/20 flex items-center justify-center text-emerald-600 dark:text-vendeur-emerald shrink-0 group-hover:scale-110 transition-transform">
               <Bot size={24} />
             </div>
             <div>
-              <h3 className="text-sm font-black text-white uppercase tracking-wide group-hover:text-vendeur-emerald transition-colors">
+              <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wide group-hover:text-emerald-700 dark:group-hover:text-vendeur-emerald transition-colors">
                 Copilote IA Instantané
               </h3>
-              <p className="text-xs text-white/60 mt-1 leading-relaxed">
+              <p className="text-xs text-slate-600 dark:text-white/60 mt-1 leading-relaxed">
                 Posez n'importe quelle question technique ou business à votre assistant intégré.
               </p>
             </div>
@@ -286,16 +286,16 @@ export function HelpCenterPage() {
 
           <Link
             to="/settings?tab=connexions"
-            className="flex items-start gap-4 p-5 rounded-2xl bg-white/5 border border-white/10 hover:border-white/20 text-left transition-all group shadow-sm hover:shadow-md dark:shadow-xl"
+            className="flex items-start gap-4 p-5 rounded-2xl bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 hover:border-slate-300 dark:hover:border-white/20 text-left transition-all group shadow-sm hover:shadow-md dark:shadow-xl"
           >
-            <div className="h-12 w-12 rounded-xl bg-white/10 flex items-center justify-center text-white/80 shrink-0 group-hover:scale-110 transition-transform">
+            <div className="h-12 w-12 rounded-xl bg-slate-100 dark:bg-white/10 flex items-center justify-center text-slate-700 dark:text-white/80 shrink-0 group-hover:scale-110 transition-transform">
               <MessageCircle size={24} />
             </div>
             <div>
-              <h3 className="text-sm font-black text-white uppercase tracking-wide group-hover:text-white transition-colors">
+              <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wide group-hover:text-emerald-600 dark:group-hover:text-white transition-colors">
                 Connexion WhatsApp
               </h3>
-              <p className="text-xs text-white/60 mt-1 leading-relaxed">
+              <p className="text-xs text-slate-600 dark:text-white/60 mt-1 leading-relaxed">
                 Scannez le QR Code ou vérifiez l'état de synchronisation de votre numéro.
               </p>
             </div>
@@ -303,16 +303,16 @@ export function HelpCenterPage() {
 
           <Link
             to="/offers"
-            className="flex items-start gap-4 p-5 rounded-2xl bg-white/5 border border-white/10 hover:border-white/20 text-left transition-all group shadow-sm hover:shadow-md dark:shadow-xl"
+            className="flex items-start gap-4 p-5 rounded-2xl bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 hover:border-slate-300 dark:hover:border-white/20 text-left transition-all group shadow-sm hover:shadow-md dark:shadow-xl"
           >
-            <div className="h-12 w-12 rounded-xl bg-white/10 flex items-center justify-center text-amber-400 shrink-0 group-hover:scale-110 transition-transform">
+            <div className="h-12 w-12 rounded-xl bg-slate-100 dark:bg-white/10 flex items-center justify-center text-amber-500 shrink-0 group-hover:scale-110 transition-transform">
               <Zap size={24} />
             </div>
             <div>
-              <h3 className="text-sm font-black text-white uppercase tracking-wide group-hover:text-white transition-colors">
+              <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wide group-hover:text-amber-600 dark:group-hover:text-white transition-colors">
                 Formules & Tarifs
               </h3>
-              <p className="text-xs text-white/60 mt-1 leading-relaxed">
+              <p className="text-xs text-slate-600 dark:text-white/60 mt-1 leading-relaxed">
                 Découvrez les offres Essentiel, Pro et l'installation clé en main.
               </p>
             </div>
@@ -329,16 +329,16 @@ export function HelpCenterPage() {
               <button
                 key={cat.id}
                 onClick={() => setSelectedCategory(cat.id)}
-                className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider whitespace-nowrap transition-all shrink-0 ${
+                className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider whitespace-nowrap transition-all shrink-0 cursor-pointer ${
                   isSelected
-                    ? "bg-vendeur-emerald text-vendeur-coal shadow-md shadow-vendeur-emerald/20 scale-105"
-                    : "bg-white/5 text-white/60 hover:text-white hover:bg-white/10 border border-white/5"
+                    ? "bg-vendeur-emerald text-slate-950 shadow-md shadow-vendeur-emerald/20 scale-105"
+                    : "bg-white text-slate-700 hover:text-slate-950 hover:bg-slate-50 border border-slate-200 dark:bg-white/5 dark:text-white/60 dark:hover:text-white dark:hover:bg-white/10 dark:border-white/5"
                 }`}
               >
                 <Icon size={16} />
                 <span>{cat.label}</span>
                 <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-mono ${
-                  isSelected ? "bg-vendeur-coal/20 text-vendeur-coal" : "bg-white/10 text-white/40"
+                  isSelected ? "bg-slate-950/20 text-slate-950" : "bg-slate-100 text-slate-600 dark:bg-white/10 dark:text-white/40"
                 }`}>
                   {cat.count}
                 </span>
@@ -350,30 +350,30 @@ export function HelpCenterPage() {
         {/* FAQ Accordion List */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-black text-white uppercase tracking-wide">
+            <h2 className="text-lg font-black text-slate-900 dark:text-white uppercase tracking-wide">
               Questions Fréquentes ({filteredFaqs.length})
             </h2>
             {searchQuery && (
-              <span className="text-xs text-white/40">
+              <span className="text-xs text-slate-500 dark:text-white/40">
                 Résultats pour "{searchQuery}"
               </span>
             )}
           </div>
 
           {filteredFaqs.length === 0 ? (
-            <div className="p-12 text-center rounded-3xl bg-white/5 border border-white/10 space-y-4">
-              <div className="h-14 w-14 rounded-2xl bg-white/5 mx-auto flex items-center justify-center text-white/40">
+            <div className="p-12 text-center rounded-3xl bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 space-y-4 shadow-sm">
+              <div className="h-14 w-14 rounded-2xl bg-slate-100 dark:bg-white/5 mx-auto flex items-center justify-center text-slate-400 dark:text-white/40">
                 <HelpCircle size={28} />
               </div>
-              <h3 className="text-base font-bold text-white uppercase tracking-wider">
+              <h3 className="text-base font-bold text-slate-900 dark:text-white uppercase tracking-wider">
                 Aucune réponse trouvée pour cette recherche
               </h3>
-              <p className="text-xs text-white/50 max-w-md mx-auto">
+              <p className="text-xs text-slate-500 dark:text-white/50 max-w-md mx-auto">
                 Essayez d'autres mots-clés ou posez directement votre question à notre Copilote IA en direct.
               </p>
               <button
                 onClick={() => openCopilot(`J'ai une question sur : ${searchQuery}`)}
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-vendeur-emerald text-vendeur-coal text-xs font-black uppercase tracking-wider hover:scale-105 transition-transform"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-vendeur-emerald text-slate-950 text-xs font-black uppercase tracking-wider hover:scale-105 transition-transform cursor-pointer"
               >
                 <Bot size={16} />
                 Demander au Copilote IA
@@ -389,20 +389,20 @@ export function HelpCenterPage() {
                     key={faq.id}
                     className={`rounded-2xl border transition-all overflow-hidden ${
                       isOpen
-                        ? "bg-white/[0.07] border-vendeur-emerald/40 shadow-xl"
-                        : "bg-white/5 border-white/5 hover:border-white/15"
+                        ? "bg-emerald-50/50 dark:bg-white/[0.07] border-emerald-300 dark:border-vendeur-emerald/40 shadow-md"
+                        : "bg-white dark:bg-white/5 border-slate-200 dark:border-white/5 hover:border-slate-300 dark:hover:border-white/15"
                     }`}
                   >
                     <button
                       onClick={() => toggleFaq(faq.id)}
-                      className="w-full flex items-center justify-between p-5 text-left gap-4"
+                      className="w-full flex items-center justify-between p-5 text-left gap-4 cursor-pointer"
                     >
-                      <span className="text-sm sm:text-base font-bold text-white leading-snug">
+                      <span className="text-sm sm:text-base font-bold text-slate-900 dark:text-white leading-snug">
                         {faq.question}
                       </span>
                       <div
-                        className={`h-8 w-8 rounded-lg flex items-center justify-center bg-white/5 text-white/60 shrink-0 transition-transform duration-200 ${
-                          isOpen ? "rotate-180 text-vendeur-emerald bg-vendeur-emerald/10" : ""
+                        className={`h-8 w-8 rounded-lg flex items-center justify-center bg-slate-100 dark:bg-white/5 text-slate-500 dark:text-white/60 shrink-0 transition-transform duration-200 ${
+                          isOpen ? "rotate-180 text-emerald-600 dark:text-vendeur-emerald bg-emerald-100 dark:bg-vendeur-emerald/10" : ""
                         }`}
                       >
                         <ChevronDown size={18} />
@@ -410,14 +410,14 @@ export function HelpCenterPage() {
                     </button>
 
                     {isOpen && (
-                      <div className="px-5 pb-5 pt-1 space-y-4 text-xs sm:text-sm text-white/70 leading-relaxed border-t border-white/5">
+                      <div className="px-5 pb-5 pt-1 space-y-4 text-xs sm:text-sm text-slate-700 dark:text-white/70 leading-relaxed border-t border-slate-100 dark:border-white/5">
                         <p>{faq.answer}</p>
 
                         {faq.linkTo && (
                           <div className="pt-2">
                             <Link
                               to={faq.linkTo.url}
-                              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-vendeur-emerald/15 hover:bg-vendeur-emerald/25 border border-vendeur-emerald/30 text-vendeur-emerald text-xs font-bold uppercase tracking-wider transition-colors"
+                              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-vendeur-emerald/15 hover:bg-vendeur-emerald/25 border border-vendeur-emerald/30 text-emerald-700 dark:text-vendeur-emerald text-xs font-bold uppercase tracking-wider transition-colors"
                             >
                               <span>{faq.linkTo.label}</span>
                               <ArrowRight size={14} />
@@ -434,16 +434,16 @@ export function HelpCenterPage() {
         </div>
 
         {/* Contact & Escalation Box */}
-        <div className="rounded-3xl p-6 sm:p-8 bg-gradient-to-r from-vendeur-coal via-vendeur-coal/90 to-vendeur-emerald/10 border border-vendeur-emerald/20 flex flex-col sm:flex-row items-center justify-between gap-6 shadow-2xl">
+        <div className="rounded-3xl p-6 sm:p-8 bg-white dark:bg-gradient-to-r dark:from-vendeur-coal dark:via-vendeur-coal/90 dark:to-vendeur-emerald/10 border border-slate-200 dark:border-vendeur-emerald/20 flex flex-col sm:flex-row items-center justify-between gap-6 shadow-xl">
           <div className="space-y-2 text-center sm:text-left">
-            <div className="inline-flex items-center gap-2 text-vendeur-emerald text-xs font-black uppercase tracking-wider">
+            <div className="inline-flex items-center gap-2 text-emerald-700 dark:text-vendeur-emerald text-xs font-black uppercase tracking-wider">
               <ShieldCheck size={16} />
               Assistance Dédiée aux Marchands
             </div>
-            <h3 className="text-xl font-black text-white uppercase tracking-tight">
+            <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight">
               Vous ne trouvez pas la solution ?
             </h3>
-            <p className="text-xs text-white/60 max-w-lg leading-relaxed">
+            <p className="text-xs text-slate-600 dark:text-white/60 max-w-lg leading-relaxed">
               Nos spécialistes e-commerce et ingénieurs sont disponibles pour vous guider par message et optimiser vos ventes.
             </p>
           </div>
@@ -451,7 +451,7 @@ export function HelpCenterPage() {
           <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
             <button
               onClick={() => openCopilot("J'ai besoin d'une assistance technique.")}
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-vendeur-emerald text-vendeur-coal font-black text-xs uppercase tracking-wider hover:scale-105 transition-all shadow-lg"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-vendeur-emerald text-slate-950 font-black text-xs uppercase tracking-wider hover:bg-emerald-400 hover:scale-105 transition-all shadow-lg cursor-pointer"
             >
               <Bot size={16} />
               Parler au Copilote IA
@@ -460,7 +460,7 @@ export function HelpCenterPage() {
               href="https://wa.me/2250505111157?text=Bonjour%2C%20j%27ai%20besoin%20d%27aide%20sur%20mon%20compte%20Vendeur%20IA."
               target="_blank"
               rel="noopener noreferrer"
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-white/10 hover:bg-white/15 border border-white/15 text-white font-bold text-xs uppercase tracking-wider transition-colors"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-800 dark:bg-white/10 dark:hover:bg-white/15 dark:border-white/15 dark:text-white font-bold text-xs uppercase tracking-wider transition-colors"
             >
               <PhoneCall size={16} />
               WhatsApp Support

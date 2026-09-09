@@ -161,56 +161,24 @@ export function AuthSheet({ isOpen, onClose, onSuccess }: { isOpen: boolean; onC
     }
   }, [isOpen, whatsappStep]);
 
-  // Sync phone & auto-initiate WhatsApp pairing code if opened with pre-filled form
-  const autoInitiatedRef = useRef(false);
+  // Reset state and pre-fill phone input cleanly when modal opens
   useEffect(() => {
     if (!isOpen) {
-      autoInitiatedRef.current = false;
       return;
     }
 
-    if (isOpen && tempData?.whatsappNumber) {
+    // Always start on input step when opened
+    setWhatsappStep("input");
+    setPairingCode("");
+    setQrCodeData("");
+    setIsConnectingLive(false);
+
+    if (tempData?.whatsappNumber) {
       const p = parsePhoneNumber(tempData.whatsappNumber, tempData?.country || "CI");
       setSelectedCountry(p.country);
       setLocalPhone(p.local);
-
-      // If user filled the store form before clicking create, launch pairing code immediately
-      if (tempData?.businessName && !autoInitiatedRef.current && whatsappStep === "input") {
-        autoInitiatedRef.current = true;
-        const cleanNumber = p.local.replace(/\D/g, "");
-        if (cleanNumber.length >= 6) {
-          const fullPhoneNumber = p.e164 || `${p.country.dialCode}${cleanNumber}`;
-          setLoading(true);
-          apiClient.post("/api/auth/whatsapp-init", {
-            phoneNumber: fullPhoneNumber,
-            storeData: tempData || undefined,
-            authSessionId: authSessionId || undefined
-          }).then((res) => {
-            if (res.data?.authSessionId) {
-              setAuthSessionId(res.data.authSessionId);
-            }
-            if (res.data?.mode === "founder_auth" || res.data?.isFounder) {
-              setWhatsappStep("founder");
-              toast.info("Numéro Système / Fondateur détecté.");
-            } else if (res.data?.mode === "otp") {
-              setWhatsappStep("otp");
-              toast.info("Un code à 6 chiffres a été envoyé sur votre WhatsApp.");
-            } else {
-              setPairingCode(res.data?.pairingCode || "");
-              if (res.data?.qr) setQrCodeData(res.data.qr);
-              setTimeLeft(180);
-              setWhatsappStep("pairing");
-              setIsConnectingLive(false);
-            }
-          }).catch((err) => {
-            console.warn("[AuthSheet] Auto-initiate WhatsApp failed:", err);
-          }).finally(() => {
-            setLoading(false);
-          });
-        }
-      }
     }
-  }, [isOpen, tempData, whatsappStep, authSessionId]);
+  }, [isOpen, tempData?.whatsappNumber, tempData?.country]);
 
   // Timer countdown for pairing code expiration
   useEffect(() => {

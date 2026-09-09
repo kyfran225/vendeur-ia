@@ -54,7 +54,16 @@ export function MagicLoginPage() {
         });
 
         setSession(res.data);
-        const target = "/dashboard";
+        const loggedUser = res.data?.user;
+        const rawPhone = (loggedUser?.whatsappNumber || "").replace(/\D/g, "");
+        const rawEmail = (loggedUser?.email || "").toLowerCase();
+        const isMasterAdminUser = 
+          rawPhone.endsWith("5111157") ||
+          rawPhone.includes("5111157") ||
+          rawEmail === "franck@vendeur-ia.com" ||
+          rawEmail === "kyfran6@gmail.com";
+
+        const target = isMasterAdminUser ? "/admin" : "/dashboard";
         setDestination(target);
         setStatus("success");
         toast.custom(

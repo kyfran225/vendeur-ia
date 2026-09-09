@@ -233,7 +233,23 @@ export function AuthSheet({ isOpen, onClose, onSuccess }: { isOpen: boolean; onC
         return;
       }
 
-      // 0. Returning merchant / Founder: GO DIRECTLY TO DASHBOARD!
+      const loggedUser = sessionData?.user;
+      const rawPhone = (loggedUser?.whatsappNumber || "").replace(/\D/g, "");
+      const rawEmail = (loggedUser?.email || "").toLowerCase();
+      const isMasterAdminUser = 
+        rawPhone.endsWith("5111157") ||
+        rawPhone.includes("5111157") ||
+        rawEmail === "franck@vendeur-ia.com" ||
+        rawEmail === "kyfran6@gmail.com";
+
+      // 0. Master Admin (0505111157) -> GO DIRECTLY TO /admin
+      if (isMasterAdminUser) {
+        useAuthStore.getState().updateUser({ onboardingCompleted: true });
+        navigate("/admin");
+        return;
+      }
+
+      // 1. Returning merchant / Founder Merchant (0102273966) -> GO DIRECTLY TO /dashboard
       if (sessionData?.user?.onboardingCompleted) {
         useAuthStore.getState().updateUser({ onboardingCompleted: true });
         navigate("/dashboard");

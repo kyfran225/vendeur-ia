@@ -45,7 +45,7 @@ interface ShellHeaderProps {
 }
 
 export function ShellHeader({ isVisible = true }: ShellHeaderProps) {
-  const { isFounder } = useFounderRole();
+  const { isFounder, isMasterAdmin } = useFounderRole();
   const location = useLocation();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -140,7 +140,7 @@ export function ShellHeader({ isVisible = true }: ShellHeaderProps) {
   const whatsapp = dashboard?.whatsappConnection;
   const activePhone = merchant?.whatsappNumber || merchant?.phone || whatsapp?.phoneNumber || user?.whatsappNumber || "";
 
-  const isAdmin = isFounder;
+  const isAdmin = isMasterAdmin;
 
   // Admin: Fetch pending payments count with real-time socket updates
   const { data: pendingPayments } = useQuery({
@@ -274,7 +274,7 @@ export function ShellHeader({ isVisible = true }: ShellHeaderProps) {
         {/* Brand & Business Identity */}
         <div className="flex items-center gap-2.5 sm:gap-3 md:gap-4 flex-1 min-w-0">
           <div className="h-9 w-9 sm:h-10 sm:w-10 rounded-xl sm:rounded-2xl overflow-hidden shrink-0 flex items-center justify-center bg-emerald-50 dark:bg-vendeur-emerald/10 border border-emerald-200 dark:border-vendeur-emerald/20 text-slate-900 dark:text-white shadow-sm">
-            {isFounder ? (
+            {isMasterAdmin ? (
               <Logo size={24} />
             ) : merchantAvatar ? (
               <img src={merchantAvatar} alt={merchant?.businessName || "Boutique"} className="h-full w-full object-cover" />
@@ -284,11 +284,11 @@ export function ShellHeader({ isVisible = true }: ShellHeaderProps) {
           </div>
           <div className="text-left min-w-0">
             <p className="text-sm sm:text-base md:text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight truncate leading-tight">
-              {merchant?.businessName || (isFounder ? "Boutique Franck" : "SYSTEM CORE")}
+              {isMasterAdmin ? "MASTER CONTROL" : (merchant?.businessName || "Boutique Franck")}
             </p>
             <p className="text-[8px] md:text-[10px] uppercase tracking-[0.2em] text-emerald-600 dark:text-vendeur-emerald/70 font-black leading-none truncate flex items-center gap-1 mt-0.5">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse inline-block shrink-0" />
-              <span>{isFounder ? "Boutique Active (Fondateur)" : "Boutique Active"}</span>
+              <span>{isMasterAdmin ? "FOUNDER OS v2.4-STABLE" : "Boutique Active"}</span>
             </p>
           </div>
         </div>
@@ -296,7 +296,7 @@ export function ShellHeader({ isVisible = true }: ShellHeaderProps) {
         {/* Right Header Actions */}
         <div className="flex items-center gap-1.5 sm:gap-2.5 md:gap-3 shrink-0">
           {/* Founder Master Switch / Admin Link */}
-          {isFounder && (
+          {isMasterAdmin && (
             <Link
               to="/admin"
               className={cn(

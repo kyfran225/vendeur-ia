@@ -35,7 +35,7 @@ const GOOGLE_CLIENT_ID = (import.meta as any).env.VITE_GOOGLE_CLIENT_ID;
 
 function App() {
   const { user, accessToken, _hasHydrated } = useAuthStore();
-  const { isFounder } = useFounderRole();
+  const { isMasterAdmin } = useFounderRole();
   const { tempData } = useOnboardingStore();
 
   React.useEffect(() => {
@@ -59,7 +59,7 @@ function App() {
         <Route path="/" element={<LandingPage />} />
         <Route path="/auth/magic-login" element={<MagicLoginPage />} />
 
-        <Route path="/onboarding" element={<Navigate to={user ? "/dashboard" : "/"} replace />} />
+        <Route path="/onboarding" element={<Navigate to={user ? (isMasterAdmin ? "/admin" : "/dashboard") : "/"} replace />} />
 
         <Route path="/offers" element={<OffersPage />} />
         <Route path="/checkout" element={<CheckoutPage />} />

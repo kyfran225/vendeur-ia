@@ -23,6 +23,7 @@ import { generatePhoneVariants, formatDisplayPhone, parsePhoneNumber, normalizeC
 export { generatePhoneVariants, formatDisplayPhone, parsePhoneNumber, normalizeCILocal };
 
 const FOUNDER_NUMBERS = [
+  "2250505111157", "0505111157", "22505111157", "05111157", "505111157", "5111157",
   "2250102273966", "0102273966", "22502273966", "02273966", "102273966"
 ];
 

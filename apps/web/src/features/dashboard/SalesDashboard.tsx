@@ -57,13 +57,13 @@ function formatAmount(value: number) {
 export function SalesDashboard() {
   const navigate = useNavigate();
   const { accessToken, user } = useAuthStore();
-  const { isFounder } = useFounderRole();
+  const { isFounder, isMasterAdmin } = useFounderRole();
 
   useEffect(() => {
-    if (isFounder) {
+    if (isMasterAdmin) {
       navigate("/admin", { replace: true });
     }
-  }, [isFounder, navigate]);
+  }, [isMasterAdmin, navigate]);
 
   const socket = useSocket();
   const queryClient = useQueryClient();
@@ -84,7 +84,7 @@ export function SalesDashboard() {
   }>({ isOpen: false, completedStepId: "", completedStepLabel: "", nextStep: null });
   const previousCompletedStepsRef = useRef<Set<string>>(new Set());
 
-  if (isFounder) {
+  if (isMasterAdmin) {
     return null;
   }
 
@@ -501,7 +501,7 @@ function HomePanel({
         BLOC OFFICIEL : VOTRE VITRINE EN LIGNE
         Affiché de manière unifiée et permanente dès que la boutique a des articles en ligne
       */}
-      {!isFounder && hasProducts && (
+      {hasProducts && (
         <section className="relative overflow-hidden bg-white dark:bg-vendeur-coal/90 border border-slate-200 dark:border-white/10 p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl md:rounded-[2.5rem] shadow-lg dark:shadow-2xl group space-y-4 sm:space-y-5">
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 sm:gap-5">
             <div className="flex items-start sm:items-center gap-3.5 sm:gap-4 min-w-0">

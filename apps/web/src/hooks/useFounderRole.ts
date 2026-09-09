@@ -10,19 +10,28 @@ export function useFounderRole() {
   const rawPhone = (user?.whatsappNumber || "").replace(/\D/g, "");
   const rawEmail = (user?.email || "").toLowerCase();
 
-  const isFounder = Boolean(
-    user?.roles?.includes("admin") ||
-    user?.roles?.includes("creator") ||
-    rawPhone.endsWith("0102273966") ||
-    rawPhone.endsWith("02273966") ||
-    rawPhone.endsWith("102273966") ||
+  // 0505111157: Master Admin (Tableau de bord et Menu Admin / Nexus)
+  const isMasterAdmin = Boolean(
+    rawPhone.endsWith("5111157") ||
+    rawPhone.includes("5111157") ||
     rawEmail === "franck@vendeur-ia.com" ||
     rawEmail === "kyfran6@gmail.com"
   );
 
+  // 0102273966: Marchand Fondateur (Auth Fondateur + Dashboard & Menu Marchand)
+  const isFounderMerchant = Boolean(
+    rawPhone.endsWith("0102273966") ||
+    rawPhone.endsWith("02273966") ||
+    rawPhone.endsWith("102273966")
+  );
+
+  const isFounder = isMasterAdmin || isFounderMerchant || Boolean(user?.roles?.includes("admin") || user?.roles?.includes("creator"));
+
   return {
     isFounder,
-    isAdmin: isFounder, // Alias for convenience
-    role: isFounder ? "founder" : "merchant"
+    isMasterAdmin,
+    isFounderMerchant,
+    isAdmin: isMasterAdmin,
+    role: isMasterAdmin ? "founder" : "merchant"
   };
 }

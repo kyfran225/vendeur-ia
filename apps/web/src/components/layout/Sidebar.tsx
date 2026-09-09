@@ -31,26 +31,41 @@ export function Sidebar({ hideDesktop = false }: SidebarProps = {}) {
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const location = useLocation();
   const { user, logout } = useAuthStore();
-  const { isFounder } = useFounderRole();
+  const { isMasterAdmin } = useFounderRole();
 
-  const links = [
-    { to: "/dashboard", icon: LayoutDashboard, label: "Dashboard", desc: "Vue globale des performances" },
-    { to: "/inbox", icon: MessageCircle, label: "Inbox", desc: "Conversations & Support" },
-    { to: "/orders", icon: ShoppingCart, label: "Commandes", desc: "Flux de vente & Validations" },
-    { to: "/products", icon: Package, label: "Catalogue", desc: "Gestion des stocks & offres" },
-    { to: "/marketing", icon: Megaphone, label: "Marketing", desc: "Affiches & Campagnes" },
-    ...(isFounder ? [{ to: "/admin", icon: ShieldCheck, label: "Nexus", desc: "Master Control Cockpit" }] : []),
-    { to: "/settings", icon: Settings, label: "Réglages", desc: "Configuration Boutique & Canaux" },
-    { to: "/help", icon: HelpCircle, label: "Aide", desc: "FAQ & Base de connaissances" },
-  ];
+  const links = isMasterAdmin
+    ? [
+        { to: "/admin", icon: ShieldCheck, label: "Nexus", desc: "Master Control Cockpit" },
+        { to: "/inbox", icon: MessageCircle, label: "Inbox", desc: "Conversations & Support" },
+        { to: "/orders", icon: ShoppingCart, label: "Commandes", desc: "Flux de vente & Validations" },
+        { to: "/products", icon: Package, label: "Catalogue", desc: "Gestion des stocks & offres" },
+        { to: "/marketing", icon: Megaphone, label: "Marketing", desc: "Affiches & Campagnes" },
+        { to: "/settings", icon: Settings, label: "Réglages", desc: "Configuration Système & Canaux" },
+        { to: "/help", icon: HelpCircle, label: "Aide", desc: "FAQ & Base de connaissances" },
+      ]
+    : [
+        { to: "/dashboard", icon: LayoutDashboard, label: "Dashboard", desc: "Vue globale des performances" },
+        { to: "/inbox", icon: MessageCircle, label: "Inbox", desc: "Conversations & Support" },
+        { to: "/orders", icon: ShoppingCart, label: "Commandes", desc: "Flux de vente & Validations" },
+        { to: "/products", icon: Package, label: "Catalogue", desc: "Gestion des stocks & articles" },
+        { to: "/marketing", icon: Megaphone, label: "Marketing", desc: "Affiches & Campagnes" },
+        { to: "/settings", icon: Settings, label: "Réglages", desc: "Boutique, Savoir IA & Canaux" },
+        { to: "/help", icon: HelpCircle, label: "Aide", desc: "FAQ & Base de connaissances" },
+      ];
 
-  const bottomLinks = [
-    { to: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
-    { to: "/inbox", icon: MessageCircle, label: "Inbox" },
-    { to: "/orders", icon: ShoppingCart, label: "Commandes" },
-    { to: "/products", icon: Package, label: "Catalogue" },
-    ...(isFounder ? [{ to: "/admin", icon: ShieldCheck, label: "Nexus" }] : []),
-  ];
+  const bottomLinks = isMasterAdmin
+    ? [
+        { to: "/admin", icon: ShieldCheck, label: "Nexus" },
+        { to: "/inbox", icon: MessageCircle, label: "Live" },
+        { to: "/orders", icon: ShoppingCart, label: "Flux" },
+        { to: "/settings", icon: Settings, label: "Réglages" },
+      ]
+    : [
+        { to: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
+        { to: "/inbox", icon: MessageCircle, label: "Messages" },
+        { to: "/orders", icon: ShoppingCart, label: "Commandes" },
+        { to: "/products", icon: Package, label: "Catalogue" },
+      ];
 
   const bottomLinkPaths = bottomLinks.map(l => l.to);
   const moreLinks = links.filter(l => !bottomLinkPaths.includes(l.to));
@@ -69,7 +84,7 @@ export function Sidebar({ hideDesktop = false }: SidebarProps = {}) {
         {/* Brand / Logo */}
         <div className="shrink-0 mb-3">
           <NavLink
-            to="/dashboard"
+            to={isMasterAdmin ? "/admin" : "/dashboard"}
             className="h-11 w-11 flex items-center justify-center rounded-2xl bg-emerald-50 dark:bg-vendeur-emerald/10 border border-emerald-200 dark:border-vendeur-emerald/20 text-slate-900 dark:text-white shadow-sm hover:scale-105 hover:bg-emerald-100 dark:hover:bg-vendeur-emerald/20 transition-all active:scale-95 group cursor-pointer"
             title="Vendeur IA Home"
           >

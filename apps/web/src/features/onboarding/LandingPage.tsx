@@ -583,7 +583,7 @@ function LandingHero({
       } catch (err) {
         console.warn("[Landing] Auto-create merchant error:", err);
       }
-      navigate(isFounder ? "/admin" : "/dashboard");
+      navigate("/dashboard");
     }
   };
 
@@ -1129,9 +1129,11 @@ export function LandingPage() {
     };
   }, [mobileMenuOpen]);
 
+  const { isMasterAdmin } = useFounderRole();
+
   useEffect(() => {
     if (user) {
-      if (isFounder) {
+      if (isMasterAdmin) {
         navigate("/admin", { replace: true });
         return;
       }
@@ -1147,7 +1149,7 @@ export function LandingPage() {
         }
       }
     }
-  }, [user, isFounder, navigate]);
+  }, [user, isMasterAdmin, navigate]);
 
   return (
     <div data-page="landing" className="min-h-[100dvh] bg-slate-50 dark:bg-[#07100d] text-slate-900 dark:text-white selection:bg-emerald-300/30 overflow-x-hidden pt-16 md:pt-20 lg:pt-24 w-full text-left transition-colors duration-200">

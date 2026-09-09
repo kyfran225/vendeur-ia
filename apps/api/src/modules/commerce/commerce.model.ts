@@ -223,6 +223,16 @@ const MessageSchema = new Schema({
     sender: { type: String, default: "merchant" },
     timestamp: { type: Date, default: Date.now }
   }],
+  isEdited: { type: Boolean, default: false },
+  editedAt: { type: Date, default: null },
+  editHistory: [{
+    content: String,
+    editedAt: { type: Date, default: Date.now }
+  }],
+  isDeleted: { type: Boolean, default: false },
+  deletedAt: { type: Date, default: null },
+  deletedForEveryone: { type: Boolean, default: false },
+  deletedBy: { type: String, enum: ["merchant", "customer", "ai", "system"], default: null },
   status: { type: String, enum: ["pending", "sent", "delivered", "read"], default: "sent", index: true },
   whatsappMessageId: { type: String, index: true, sparse: true },
   deliveredAt: { type: Date, default: null },

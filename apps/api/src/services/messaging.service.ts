@@ -122,6 +122,34 @@ export class MessagingService {
       throw error;
     }
   }
+
+  async editMessage(
+    merchant: any,
+    platform: string,
+    remoteId: string,
+    whatsappMessageId: string,
+    newContent: string
+  ) {
+    if (platform === 'whatsapp') {
+      const userId = merchant.ownerId?.toString() || merchant.ownerId;
+      return whatsappService.editMessage(userId, remoteId, whatsappMessageId, newContent);
+    }
+    return { success: true };
+  }
+
+  async deleteMessage(
+    merchant: any,
+    platform: string,
+    remoteId: string,
+    whatsappMessageId: string,
+    forEveryone: boolean = true
+  ) {
+    if (platform === 'whatsapp') {
+      const userId = merchant.ownerId?.toString() || merchant.ownerId;
+      return whatsappService.deleteMessage(userId, remoteId, whatsappMessageId, forEveryone);
+    }
+    return { success: true };
+  }
 }
 
 export const messagingService = new MessagingService();

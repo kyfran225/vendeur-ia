@@ -6,7 +6,7 @@ import {
   PauseCircle, PlayCircle, Volume2, VolumeX, Bell, BellOff,
   Copy, Check, Phone, RefreshCw, Zap, Image as ImageIcon, Video,
   Mic, Paperclip, Clock, AlertTriangle, ArrowDown, ArrowLeft,
-  Smile, FileText, Reply, ExternalLink, ShoppingBag
+  Smile, FileText, Reply, ExternalLink, ShoppingBag, Pencil, Trash2, Ban
 } from "lucide-react";
 
 // TikTok Icon component
@@ -37,6 +37,7 @@ import { ProductCardSenderModal } from "./components/ProductCardSenderModal";
 import { VoiceRecorder } from "./components/VoiceRecorder";
 import { CustomerAvatar } from "./components/CustomerAvatar";
 import { CustomerProfileModal } from "./components/CustomerProfileModal";
+import { ConfirmationModal } from "@/components/ui/ConfirmationModal";
 import { PauseConfirmationModal } from "@/components/modals/PauseConfirmationModal";
 import { ResumeConfirmationModal } from "@/components/modals/ResumeConfirmationModal";
 import { EmojiPickerPopover } from "./components/EmojiPickerPopover";
@@ -144,6 +145,8 @@ export function SalesInbox() {
   const [isMediaUploaderOpen, setIsMediaUploaderOpen] = useState(false);
   const [lightboxMedia, setLightboxMedia] = useState<{ url: string; caption?: string; senderName?: string; timestamp?: string | Date } | null>(null);
   const [quotedMessage, setQuotedMessage] = useState<{ id: string; content: string; sender: string; type?: string; mediaUrl?: string } | null>(null);
+  const [messageToDelete, setMessageToDelete] = useState<any | null>(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [unreadCountBelow, setUnreadCountBelow] = useState<number>(0);
   const [isNearBottom, setIsNearBottom] = useState<boolean>(true);
   const [onlineSessions, setOnlineSessions] = useState<Set<string>>(new Set());
@@ -437,6 +440,69 @@ export function SalesInbox() {
       }
     };
 
+    // Real-time message edit synchronization
+    const handleMessageEdited = (data: {
+      messageId: string;
+      conversationId: string;
+      whatsappMessageId?: string;
+      content: string;
+      isEdited: boolean;
+      editedAt: Date;
+      message?: any;
+    }) => {
+      if (data.conversationId && String(data.conversationId) === String(selectedChat)) {
+        queryClient.setQueryData(["messages", selectedChat], (old: any[] | undefined) => {
+          if (!old) return old;
+          return old.map(m => {
+            const isMatch = String(m._id) === String(data.messageId) ||
+              (data.whatsappMessageId && m.whatsappMessageId === data.whatsappMessageId);
+            if (isMatch) {
+              return {
+                ...m,
+                content: data.content,
+                isEdited: true,
+                editedAt: data.editedAt,
+                ...(data.message ? data.message : {})
+              };
+            }
+            return m;
+          });
+        });
+      }
+      queryClient.invalidateQueries({ queryKey: ["conversations"] });
+    };
+
+    // Real-time message delete / revoke synchronization
+    const handleMessageDeleted = (data: {
+      messageId: string;
+      conversationId: string;
+      whatsappMessageId?: string;
+      isDeleted: boolean;
+      deletedForEveryone: boolean;
+      deletedBy?: string;
+    }) => {
+      if (data.conversationId && String(data.conversationId) === String(selectedChat)) {
+        queryClient.setQueryData(["messages", selectedChat], (old: any[] | undefined) => {
+          if (!old) return old;
+          return old.map(m => {
+            const isMatch = String(m._id) === String(data.messageId) ||
+              (data.whatsappMessageId && m.whatsappMessageId === data.whatsappMessageId);
+            if (isMatch) {
+              return {
+                ...m,
+                isDeleted: true,
+                deletedForEveryone: data.deletedForEveryone,
+                deletedBy: data.deletedBy || "merchant",
+                content: "Ce message a été supprimé"
+              };
+            }
+            return m;
+          });
+        });
+      }
+      queryClient.invalidateQueries({ queryKey: ["conversations"] });
+    };
+
     socket.on("conversation:update", handleConvUpdate);
     socket.on("notification:new", handleNotificationNew);
     socket.on("payment:detected", handlePaymentDetected);
@@ -444,6 +510,8 @@ export function SalesInbox() {
     socket.on("conversation:typing", handleTypingStatus);
     socket.on("message:status_update", handleMessageStatusUpdate);
     socket.on("conversation:read", handleConversationRead);
+    socket.on("message:edited", handleMessageEdited);
+    socket.on("message:deleted", handleMessageDeleted);
 
     if (selectedChat) {
       socket.emit("chat:open", { conversationId: selectedChat, userId: user?.id });
@@ -460,6 +528,8 @@ export function SalesInbox() {
       socket.off("conversation:typing", handleTypingStatus);
       socket.off("message:status_update", handleMessageStatusUpdate);
       socket.off("conversation:read", handleConversationRead);
+      socket.off("message:edited", handleMessageEdited);
+      socket.off("message:deleted", handleMessageDeleted);
     };
   }, [socket, selectedChat, queryClient, merchantCurrency, user?.id]);
 
@@ -694,6 +764,66 @@ export function SalesInbox() {
       toast.error("Échec de l'envoi du message.");
     }
   });
+
+  // Edit message mutation
+  const editMessageMutation = useMutation({
+    mutationFn: async ({ conversationId, messageId, content }: { conversationId: string; messageId: string; content: string }) => {
+      const res = await apiClient.patch(`/api/commerce/conversations/${conversationId}/messages/${messageId}`, { content });
+      return res.data;
+    },
+    onSuccess: (data, variables) => {
+      queryClient.setQueryData(["messages", variables.conversationId], (old: any[] | undefined) => {
+        if (!old) return old;
+        return old.map(m => String(m._id) === String(variables.messageId) ? {
+          ...m,
+          content: variables.content,
+          isEdited: true,
+          editedAt: new Date()
+        } : m);
+      });
+      queryClient.invalidateQueries({ queryKey: ["conversations"] });
+      toast.success("Message modifié avec succès ! ✨");
+    },
+    onError: (err: any) => {
+      toast.error(err.response?.data?.error || "Erreur lors de la modification du message.");
+    }
+  });
+
+  // Delete message mutation
+  const deleteMessageMutation = useMutation({
+    mutationFn: async ({ conversationId, messageId, forEveryone = true }: { conversationId: string; messageId: string; forEveryone?: boolean }) => {
+      const res = await apiClient.delete(`/api/commerce/conversations/${conversationId}/messages/${messageId}`, {
+        data: { forEveryone }
+      });
+      return res.data;
+    },
+    onSuccess: (data, variables) => {
+      queryClient.setQueryData(["messages", variables.conversationId], (old: any[] | undefined) => {
+        if (!old) return old;
+        return old.map(m => String(m._id) === String(variables.messageId) ? {
+          ...m,
+          isDeleted: true,
+          deletedForEveryone: variables.forEveryone,
+          deletedBy: "merchant",
+          content: "Ce message a été supprimé"
+        } : m);
+      });
+      queryClient.invalidateQueries({ queryKey: ["conversations"] });
+      toast.success(variables.forEveryone ? "Message supprimé pour tous ! 🗑️" : "Message supprimé !");
+    },
+    onError: (err: any) => {
+      toast.error(err.response?.data?.error || "Erreur lors de la suppression du message.");
+    }
+  });
+
+  const handleEditMessage = async (messageId: string, content: string) => {
+    if (!selectedChat) return;
+    await editMessageMutation.mutateAsync({
+      conversationId: selectedChat,
+      messageId,
+      content
+    });
+  };
 
   const handleChatSelect = (id: string, targetMsgId?: string) => {
     setSelectedChat(id);
@@ -1392,6 +1522,11 @@ export function SalesInbox() {
                         scrollToMessage(quotedId, true);
                       }}
                       onReaction={(emoji) => handleReaction(msg._id, emoji)}
+                      onEdit={(messageId, newContent) => handleEditMessage(messageId, newContent)}
+                      onDelete={(m) => {
+                        setMessageToDelete(m);
+                        setIsDeleteModalOpen(true);
+                      }}
                     />
                   ))}
 
@@ -1718,12 +1853,38 @@ export function SalesInbox() {
         onOpenProductCardModal={() => setIsProductCardModalOpen(true)}
         onTriggerFollowup={() => selectedChat && generateFollowupMutation.mutate(selectedChat)}
       />
+
+      {/* Delete Message Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => {
+          setIsDeleteModalOpen(false);
+          setMessageToDelete(null);
+        }}
+        onConfirm={async () => {
+          if (messageToDelete && selectedChat) {
+            await deleteMessageMutation.mutateAsync({
+              conversationId: selectedChat,
+              messageId: messageToDelete._id,
+              forEveryone: true
+            });
+            setIsDeleteModalOpen(false);
+            setMessageToDelete(null);
+          }
+        }}
+        title="Supprimer le message ?"
+        message="Ce message sera supprimé pour tous les participants de la discussion et révoqué sur WhatsApp."
+        confirmLabel="Supprimer pour tous"
+        cancelLabel="Annuler"
+        type="danger"
+        isLoading={deleteMessageMutation.isPending}
+      />
     </div>
   );
 }
 
 // =========================================================================
-// WHATSAPP BUBBLE COMPONENT (With Quotes, Media, Vocals & Reactions)
+// WHATSAPP BUBBLE COMPONENT (With Quotes, Media, Vocals, Reactions, Edit & Delete)
 // =========================================================================
 function WhatsAppBubble({
   msg,
@@ -1731,7 +1892,9 @@ function WhatsAppBubble({
   onImageClick,
   onReplyClick,
   onQuotedMessageClick,
-  onReaction
+  onReaction,
+  onEdit,
+  onDelete
 }: {
   msg: any;
   isHighlighted?: boolean;
@@ -1739,10 +1902,14 @@ function WhatsAppBubble({
   onReplyClick?: (msg: any) => void;
   onQuotedMessageClick?: (quotedId: string) => void;
   onReaction?: (emoji: string) => void;
+  onEdit?: (messageId: string, newContent: string) => Promise<void> | void;
+  onDelete?: (msg: any) => void;
 }) {
   const isCustomer = msg.sender === "customer";
   const isHuman = msg.sender === "human";
   const isAI = msg.sender === "ai";
+  const isDeleted = Boolean(msg.isDeleted);
+  const isEdited = Boolean(msg.isEdited) && !isDeleted;
 
   const isPaymentValidated = msg.content?.includes("[PAIEMENT VALIDÉ AUTOMATIQUEMENT") || msg.content?.includes("[PAIEMENT SHIELD VALIDÉ");
   const isPaymentFlagged = msg.content?.includes("[PREUVE SUSPECTE") || msg.content?.includes("[PREUVE DE PAIEMENT DÉTECTÉE]");
@@ -1752,6 +1919,14 @@ function WhatsAppBubble({
   const isVideoMessage = msg.type === "video";
   const isImageMessage = msg.type === "image";
   const time = new Date(msg.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+
+  const [copied, setCopied] = useState(false);
+  const [showActionsDropdown, setShowActionsDropdown] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editValue, setEditValue] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
+  const editTextareaRef = useRef<HTMLTextAreaElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const isGenericMediaLabel = (text?: string) => {
     if (!text) return true;
@@ -1773,17 +1948,54 @@ function WhatsAppBubble({
     );
   };
 
-  const [copied, setCopied] = useState(false);
-  const [showReactionMenu, setShowReactionMenu] = useState(false);
+  const canEdit = !isCustomer && !isDeleted && (msg.type === "text" || !msg.type) && !isVoiceMessage && !isDocument && !isVideoMessage && !isImageMessage;
+  const canDelete = !isDeleted;
+
+  // Auto-close dropdown when clicking outside
+  useEffect(() => {
+    if (!showActionsDropdown) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setShowActionsDropdown(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [showActionsDropdown]);
+
+  const handleStartEdit = () => {
+    setShowActionsDropdown(false);
+    setEditValue(stripActionTags(msg.content));
+    setIsEditing(true);
+    setTimeout(() => {
+      if (editTextareaRef.current) {
+        editTextareaRef.current.focus();
+        editTextareaRef.current.setSelectionRange(editTextareaRef.current.value.length, editTextareaRef.current.value.length);
+      }
+    }, 50);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editValue.trim() || isSaving) return;
+    try {
+      setIsSaving(true);
+      await onEdit?.(msg._id, editValue.trim());
+      setIsEditing(false);
+    } catch (err) {
+      // Handled by parent toast
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   const handleCopy = () => {
+    setShowActionsDropdown(false);
     navigator.clipboard.writeText(stripActionTags(msg.content));
     setCopied(true);
     toast.success("Message copié !");
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const [showActionsDropdown, setShowActionsDropdown] = useState(false);
   const REACTION_EMOJIS = ["👍", "❤️", "😂", "😮", "😢", "🙏", "🔥"];
 
   return (
@@ -1795,216 +2007,380 @@ function WhatsAppBubble({
         isCustomer ? "justify-start" : "justify-end"
       )}
     >
-      {/* Floating Quick Action Toolbar (WhatsApp Web Style: Reactions & Reply) */}
-      <div className={cn(
-        "absolute top-0 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-all duration-150 flex items-center gap-1 z-20 bg-white/95 dark:bg-[#202c33]/95 border border-slate-200 dark:border-[#2a3942] rounded-full px-2 py-1 shadow-lg backdrop-blur-sm",
-        isCustomer ? "left-2 sm:left-4 -top-3.5" : "right-2 sm:right-4 -top-3.5"
-      )}>
-        {REACTION_EMOJIS.slice(0, 5).map((em) => (
+      {/* Floating Quick Action Toolbar (WhatsApp Web Pro Style: Reactions, Reply, Edit & Delete) */}
+      {!isDeleted && !isEditing && (
+        <div className={cn(
+          "absolute top-0 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-all duration-150 flex items-center gap-1 z-20 bg-white/95 dark:bg-[#202c33]/95 border border-slate-200 dark:border-[#2a3942] rounded-full px-2 py-1 shadow-lg backdrop-blur-sm",
+          isCustomer ? "left-2 sm:left-4 -top-3.5" : "right-2 sm:right-4 -top-3.5"
+        )}>
+          {REACTION_EMOJIS.slice(0, 5).map((em) => (
+            <button
+              key={em}
+              type="button"
+              onClick={() => onReaction?.(em)}
+              className="hover:scale-125 transition-transform text-sm sm:text-base p-0.5 cursor-pointer leading-none"
+              title={`Réagir ${em}`}
+            >
+              {em}
+            </button>
+          ))}
           <button
-            key={em}
             type="button"
-            onClick={() => onReaction?.(em)}
-            className="hover:scale-125 transition-transform text-sm sm:text-base p-0.5 cursor-pointer leading-none"
-            title={`Réagir ${em}`}
+            onClick={() => onReplyClick?.(msg)}
+            className="text-slate-500 hover:text-slate-900 dark:text-[#8696a0] dark:hover:text-white p-1 hover:bg-slate-100 dark:hover:bg-white/10 rounded-full ml-0.5 cursor-pointer transition-colors"
+            title="Répondre / Citer ce message"
           >
-            {em}
+            <Reply size={14} />
           </button>
-        ))}
-        <button
-          type="button"
-          onClick={() => onReplyClick?.(msg)}
-          className="text-slate-500 hover:text-slate-900 dark:text-[#8696a0] dark:hover:text-white p-1 hover:bg-slate-100 dark:hover:bg-white/10 rounded-full ml-0.5 cursor-pointer transition-colors"
-          title="Répondre / Citer ce message"
-        >
-          <Reply size={14} />
-        </button>
-        <button
-          type="button"
-          onClick={handleCopy}
-          className="text-slate-500 hover:text-slate-900 dark:text-[#8696a0] dark:hover:text-white p-1 hover:bg-slate-100 dark:hover:bg-white/10 rounded-full cursor-pointer transition-colors"
-          title="Copier le texte"
-        >
-          {copied ? <Check size={14} className="text-emerald-600 dark:text-emerald-400" /> : <Copy size={14} />}
-        </button>
-      </div>
+          {canEdit && (
+            <button
+              type="button"
+              onClick={handleStartEdit}
+              className="text-slate-500 hover:text-emerald-600 dark:text-[#8696a0] dark:hover:text-emerald-400 p-1 hover:bg-slate-100 dark:hover:bg-white/10 rounded-full cursor-pointer transition-colors"
+              title="Modifier ce message"
+            >
+              <Pencil size={14} />
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={handleCopy}
+            className="text-slate-500 hover:text-slate-900 dark:text-[#8696a0] dark:hover:text-white p-1 hover:bg-slate-100 dark:hover:bg-white/10 rounded-full cursor-pointer transition-colors"
+            title="Copier le texte"
+          >
+            {copied ? <Check size={14} className="text-emerald-600 dark:text-emerald-400" /> : <Copy size={14} />}
+          </button>
+          {canDelete && (
+            <button
+              type="button"
+              onClick={() => onDelete?.(msg)}
+              className="text-slate-500 hover:text-rose-600 dark:text-[#8696a0] dark:hover:text-rose-400 p-1 hover:bg-slate-100 dark:hover:bg-white/10 rounded-full cursor-pointer transition-colors"
+              title="Supprimer ce message"
+            >
+              <Trash2 size={14} />
+            </button>
+          )}
 
+          {/* More Options Dropdown */}
+          <div className="relative" ref={dropdownRef}>
+            <button
+              type="button"
+              onClick={() => setShowActionsDropdown(!showActionsDropdown)}
+              className="text-slate-500 hover:text-slate-900 dark:text-[#8696a0] dark:hover:text-white p-1 hover:bg-slate-100 dark:hover:bg-white/10 rounded-full cursor-pointer transition-colors"
+              title="Plus d'options"
+            >
+              <MoreVertical size={14} />
+            </button>
+            {showActionsDropdown && (
+              <div className={cn(
+                "absolute top-full mt-1.5 w-44 rounded-2xl bg-white dark:bg-[#202c33] border border-slate-200 dark:border-white/10 shadow-2xl py-1.5 z-30 animate-in fade-in zoom-in-95",
+                isCustomer ? "left-0" : "right-0"
+              )}>
+                {canEdit && (
+                  <button
+                    type="button"
+                    onClick={handleStartEdit}
+                    className="w-full px-3.5 py-2 text-left text-xs sm:text-sm font-bold text-slate-700 dark:text-white hover:bg-slate-100 dark:hover:bg-white/5 flex items-center gap-2.5 transition-colors cursor-pointer"
+                  >
+                    <Pencil size={14} className="text-emerald-600 dark:text-emerald-400" />
+                    <span>Modifier</span>
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowActionsDropdown(false);
+                    onReplyClick?.(msg);
+                  }}
+                  className="w-full px-3.5 py-2 text-left text-xs sm:text-sm font-bold text-slate-700 dark:text-white hover:bg-slate-100 dark:hover:bg-white/5 flex items-center gap-2.5 transition-colors cursor-pointer"
+                >
+                  <Reply size={14} />
+                  <span>Répondre</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCopy}
+                  className="w-full px-3.5 py-2 text-left text-xs sm:text-sm font-bold text-slate-700 dark:text-white hover:bg-slate-100 dark:hover:bg-white/5 flex items-center gap-2.5 transition-colors cursor-pointer"
+                >
+                  <Copy size={14} />
+                  <span>Copier</span>
+                </button>
+                {canDelete && (
+                  <>
+                    <div className="my-1 border-t border-slate-100 dark:border-white/5" />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowActionsDropdown(false);
+                        onDelete?.(msg);
+                      }}
+                      className="w-full px-3.5 py-2 text-left text-xs sm:text-sm font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-500/10 flex items-center gap-2.5 transition-colors cursor-pointer"
+                    >
+                      <Trash2 size={14} />
+                      <span>Supprimer</span>
+                    </button>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Message Bubble Container */}
       <div className={cn(
         "max-w-[88%] sm:max-w-[72%] p-3.5 sm:p-4 rounded-2xl shadow-sm md:shadow relative break-words overflow-hidden min-w-[140px] transition-all duration-300",
-        isCustomer
+        isDeleted
+          ? "bg-slate-100/90 dark:bg-[#182229]/90 border border-slate-200/80 dark:border-white/5 text-slate-500 dark:text-white/50 italic select-none"
+          : isCustomer
           ? "bg-white dark:bg-[#202c33] text-slate-900 dark:text-white rounded-tl-none border border-slate-200/80 dark:border-white/5"
           : isHuman
           ? "bg-[#d9fdd3] dark:bg-[#005c4b] text-slate-900 dark:text-white rounded-tr-none font-normal border border-emerald-300/60 dark:border-emerald-500/20"
           : "bg-[#d9fdd3] dark:bg-[#005c4b] text-slate-900 dark:text-white rounded-tr-none font-normal border border-emerald-300/60 dark:border-emerald-400/30",
         isHighlighted && "ring-4 ring-emerald-500/80 shadow-2xl scale-[1.02] bg-emerald-100 dark:bg-emerald-900/60",
-        isPaymentValidated && "ring-2 ring-emerald-500 border-emerald-500 bg-emerald-50 dark:bg-emerald-950/80",
-        isPaymentFlagged && "ring-2 ring-amber-500 border-amber-500 bg-amber-50 dark:bg-amber-950/80",
-        isFraudAlert && "ring-2 ring-rose-500 border-rose-500 bg-rose-50 dark:bg-rose-950/90 text-slate-900 dark:text-white"
+        isPaymentValidated && !isDeleted && "ring-2 ring-emerald-500 border-emerald-500 bg-emerald-50 dark:bg-emerald-950/80",
+        isPaymentFlagged && !isDeleted && "ring-2 ring-amber-500 border-amber-500 bg-amber-50 dark:bg-amber-950/80",
+        isFraudAlert && !isDeleted && "ring-2 ring-rose-500 border-rose-500 bg-rose-50 dark:bg-rose-950/90 text-slate-900 dark:text-white"
       )}>
-        {/* Quoted Message Display Inside Bubble */}
-        {msg.quotedMessage && (
-          <div
-            onClick={() => onQuotedMessageClick?.(msg.quotedMessage.id || msg.quotedMessage._id)}
-            className="mb-2.5 p-2.5 rounded-xl bg-black/5 dark:bg-black/30 border-l-4 border-emerald-600 dark:border-[#00a884] text-xs sm:text-[13px] space-y-0.5 cursor-pointer hover:bg-black/10 dark:hover:bg-black/40 transition-colors"
-            title="Aller au message cité"
-          >
-            <div className="font-bold text-emerald-700 dark:text-[#00a884] text-xs">
-              {msg.quotedMessage.sender === "customer" ? "Client" : "Boutique"}
+        {/* Deleted Message State (WhatsApp Native Style) */}
+        {isDeleted ? (
+          <div className="flex items-center gap-2 py-0.5 min-w-[170px]">
+            <Ban size={15} className="text-slate-400 dark:text-white/40 shrink-0" />
+            <span className="text-xs sm:text-[13px] text-slate-500 dark:text-white/60 font-normal">
+              {isCustomer ? "Ce message a été supprimé" : "Vous avez supprimé ce message"}
+            </span>
+          </div>
+        ) : isEditing ? (
+          /* Inline Message Editor */
+          <div className="space-y-2.5 w-full pt-0.5">
+            <div className="flex items-center gap-1.5 text-xs font-black uppercase text-emerald-800 dark:text-[#00a884]">
+              <Pencil size={13} />
+              <span>Modification du message</span>
             </div>
-            <div className="text-slate-600 dark:text-white/70 line-clamp-2 text-xs sm:text-[13px] leading-relaxed">
-              {stripActionTags(msg.quotedMessage.content)}
-            </div>
-          </div>
-        )}
-
-        {/* Shield OCR Payment Result Card */}
-        {isPaymentValidated && (
-          <div className="flex items-center gap-2 mb-2 px-3 py-2 bg-emerald-500 text-slate-950 rounded-xl text-xs font-black uppercase tracking-wider shadow-md">
-            <CheckCheck size={16} />
-            <span>Paiement Validé par Shield OCR 💰</span>
-          </div>
-        )}
-
-        {isPaymentFlagged && (
-          <div className="flex items-center gap-2 mb-2 px-3 py-2 bg-amber-500 text-slate-950 rounded-xl text-xs font-black uppercase tracking-wider shadow-md">
-            <ShieldCheck size={16} />
-            <span>Preuve Suspecte à Vérifier ⚠️</span>
-          </div>
-        )}
-
-        {isFraudAlert && (
-          <div className="flex items-center gap-2 mb-2 px-3 py-2 bg-rose-600 text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-md">
-            <AlertTriangle size={16} />
-            <span>Alerte Fausse Preuve / Fraude 🚨</span>
-          </div>
-        )}
-
-        {/* Audio / Voice Note Player */}
-        {isVoiceMessage && (
-          <div className="mb-2">
-            <AudioVoicePlayer
-              audioUrl={msg.mediaUrl}
-              isSender={!isCustomer}
+            <textarea
+              ref={editTextareaRef}
+              value={editValue}
+              onChange={(e) => setEditValue(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSaveEdit();
+                } else if (e.key === "Escape") {
+                  e.preventDefault();
+                  setIsEditing(false);
+                  setEditValue(stripActionTags(msg.content));
+                }
+              }}
+              rows={Math.max(2, Math.min(6, editValue.split("\n").length))}
+              className="w-full p-2.5 rounded-xl bg-white dark:bg-[#111b21] text-slate-900 dark:text-white text-sm border-2 border-emerald-500 outline-none resize-none leading-relaxed shadow-inner"
+              placeholder="Modifier votre message..."
+              autoFocus
             />
-          </div>
-        )}
-
-        {/* Video Player */}
-        {isVideoMessage && (
-          <div className="mb-2.5 rounded-xl overflow-hidden bg-black/90">
-            {msg.mediaUrl ? (
-              <video
-                src={msg.mediaUrl}
-                controls
-                className="max-h-72 rounded-xl w-full object-contain"
-              />
-            ) : (
-              <div className="p-3.5 text-xs sm:text-sm text-white/70 flex items-center gap-2">
-                <Video size={18} />
-                <span>Vidéo reçue</span>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Image Attachment with Lightbox */}
-        {isImageMessage && (
-          <div className="mb-2.5 rounded-xl overflow-hidden cursor-pointer group/img relative">
-            {msg.mediaUrl ? (
-              <img
-                src={msg.mediaUrl}
-                alt="Photo"
-                onClick={() => onImageClick?.(msg.mediaUrl, !isGenericMediaLabel(msg.content) ? msg.content : undefined)}
-                className="max-h-72 w-auto rounded-xl object-cover hover:scale-[1.02] transition-transform"
-                loading="lazy"
-              />
-            ) : (
-              <div className="p-4 rounded-xl bg-black/10 dark:bg-white/10 flex items-center gap-2.5 text-xs sm:text-sm text-slate-700 dark:text-white/80">
-                <ImageIcon size={20} className="text-emerald-500" />
-                <span className="font-semibold">Photo WhatsApp</span>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Document / PDF Attachment */}
-        {isDocument && (
-          <a
-            href={msg.mediaUrl || "#"}
-            target={msg.mediaUrl ? "_blank" : undefined}
-            rel="noopener noreferrer"
-            className="mb-2.5 p-3.5 rounded-xl bg-black/5 dark:bg-black/30 border border-slate-200 dark:border-white/10 flex items-center gap-3 hover:bg-black/10 dark:hover:bg-black/40 transition-colors"
-          >
-            <div className="w-11 h-11 rounded-xl bg-emerald-500/20 text-emerald-700 dark:text-[#00a884] flex items-center justify-center shrink-0">
-              <FileText size={22} />
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="text-sm font-bold text-slate-900 dark:text-white truncate">
-                {msg.mediaMetadata?.fileName || (msg.content?.startsWith("[") && msg.content?.endsWith("]") ? msg.content.slice(1, -1) : "Document PDF")}
-              </div>
-              <div className="text-xs text-slate-500 dark:text-white/50 mt-0.5">
-                {msg.mediaMetadata?.fileSize ? `${(msg.mediaMetadata.fileSize / 1024).toFixed(1)} KB` : "Télécharger"}
-              </div>
-            </div>
-          </a>
-        )}
-
-        {/* Text Message Content */}
-        {msg.content && !isGenericMediaLabel(msg.content) && (
-          <p className="text-[15px] sm:text-base leading-relaxed whitespace-pre-wrap break-words overflow-wrap-anywhere select-text text-slate-900 dark:text-white font-normal">
-            {isVoiceMessage
-              ? msg.content?.replace(/^\[Message Vocal\]:\s*/, "")
-              : stripActionTags(msg.content)}
-          </p>
-        )}
-
-        {/* Product Card Interactive Badge & CTA Button */}
-        {(() => {
-          const isCard = msg.metadata?.type === "product_card" || msg.content?.includes("FICHE ARTICLE :") || msg.content?.includes("👉 *Pour commander");
-          if (!isCard) return null;
-
-          const urlMatch = msg.metadata?.actionUrl || msg.content?.match(/https?:\/\/[^\s\n\r\)]+/)?.[0];
-          const actionType = msg.metadata?.actionType || (msg.content?.includes("Payer") || msg.content?.includes("régler") ? "pay" : "order");
-
-          return (
-            <div className="mt-2.5 pt-2 border-t border-emerald-600/20 dark:border-white/10 space-y-2">
-              <div className="flex items-center gap-1.5 text-[10px] font-black uppercase text-emerald-800 dark:text-[#00a884]">
-                <ShoppingBag size={12} />
-                <span>Fiche Article Interactive WhatsApp</span>
-              </div>
-              {urlMatch && (
-                <a
-                  href={urlMatch}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center justify-center gap-2 w-full py-2 px-3 rounded-xl bg-white hover:bg-slate-50 dark:bg-black/40 dark:hover:bg-black/60 border border-emerald-500/40 text-emerald-700 dark:text-[#00a884] font-black text-xs uppercase tracking-wider shadow-sm transition-all active:scale-95 cursor-pointer"
-                >
-                  <span>{actionType === "order" ? "🛒 Commander en 1 clic" : actionType === "pay" ? "💳 Payer Wave / OM" : "🔎 Ouvrir la vitrine"}</span>
-                  <ExternalLink size={12} />
-                </a>
-              )}
-            </div>
-          );
-        })()}
-
-        {/* Message Reactions Badges */}
-        {msg.reactions && msg.reactions.length > 0 && (
-          <div className="flex items-center gap-1.5 mt-2 flex-wrap">
-            {msg.reactions.map((r: any, idx: number) => (
-              <span
-                key={idx}
-                className="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-black/40 border border-slate-200 dark:border-white/10 text-xs sm:text-[13px] flex items-center gap-1 shadow-sm text-slate-800 dark:text-white font-medium"
-              >
-                <span>{r.emoji}</span>
+            <div className="flex items-center justify-between gap-2 text-xs pt-1 border-t border-slate-200/50 dark:border-white/10">
+              <span className="text-[11px] text-slate-500 dark:text-white/40 hidden sm:inline">
+                Entrée pour valider • Échap pour annuler
               </span>
-            ))}
+              <div className="flex items-center gap-1.5 ml-auto">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsEditing(false);
+                    setEditValue(stripActionTags(msg.content));
+                  }}
+                  disabled={isSaving}
+                  className="px-2.5 py-1 rounded-lg bg-slate-200 dark:bg-white/10 hover:bg-slate-300 dark:hover:bg-white/20 text-slate-700 dark:text-white font-bold transition-all text-xs cursor-pointer"
+                >
+                  Annuler
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSaveEdit}
+                  disabled={isSaving || !editValue.trim()}
+                  className="px-3 py-1 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black flex items-center gap-1 transition-all text-xs cursor-pointer disabled:opacity-50 shadow-sm"
+                >
+                  {isSaving ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} />}
+                  <span>Enregistrer</span>
+                </button>
+              </div>
+            </div>
           </div>
+        ) : (
+          /* Normal Message Display */
+          <>
+            {/* Quoted Message Display Inside Bubble */}
+            {msg.quotedMessage && (
+              <div
+                onClick={() => onQuotedMessageClick?.(msg.quotedMessage.id || msg.quotedMessage._id)}
+                className="mb-2.5 p-2.5 rounded-xl bg-black/5 dark:bg-black/30 border-l-4 border-emerald-600 dark:border-[#00a884] text-xs sm:text-[13px] space-y-0.5 cursor-pointer hover:bg-black/10 dark:hover:bg-black/40 transition-colors"
+                title="Aller au message cité"
+              >
+                <div className="font-bold text-emerald-700 dark:text-[#00a884] text-xs">
+                  {msg.quotedMessage.sender === "customer" ? "Client" : "Boutique"}
+                </div>
+                <div className="text-slate-600 dark:text-white/70 line-clamp-2 text-xs sm:text-[13px] leading-relaxed">
+                  {stripActionTags(msg.quotedMessage.content)}
+                </div>
+              </div>
+            )}
+
+            {/* Shield OCR Payment Result Card */}
+            {isPaymentValidated && (
+              <div className="flex items-center gap-2 mb-2 px-3 py-2 bg-emerald-500 text-slate-950 rounded-xl text-xs font-black uppercase tracking-wider shadow-md">
+                <CheckCheck size={16} />
+                <span>Paiement Validé par Shield OCR 💰</span>
+              </div>
+            )}
+
+            {isPaymentFlagged && (
+              <div className="flex items-center gap-2 mb-2 px-3 py-2 bg-amber-500 text-slate-950 rounded-xl text-xs font-black uppercase tracking-wider shadow-md">
+                <ShieldCheck size={16} />
+                <span>Preuve Suspecte à Vérifier ⚠️</span>
+              </div>
+            )}
+
+            {isFraudAlert && (
+              <div className="flex items-center gap-2 mb-2 px-3 py-2 bg-rose-600 text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-md">
+                <AlertTriangle size={16} />
+                <span>Alerte Fausse Preuve / Fraude 🚨</span>
+              </div>
+            )}
+
+            {/* Audio / Voice Note Player */}
+            {isVoiceMessage && (
+              <div className="mb-2">
+                <AudioVoicePlayer
+                  audioUrl={msg.mediaUrl}
+                  isSender={!isCustomer}
+                />
+              </div>
+            )}
+
+            {/* Video Player */}
+            {isVideoMessage && (
+              <div className="mb-2.5 rounded-xl overflow-hidden bg-black/90">
+                {msg.mediaUrl ? (
+                  <video
+                    src={msg.mediaUrl}
+                    controls
+                    className="max-h-72 rounded-xl w-full object-contain"
+                  />
+                ) : (
+                  <div className="p-3.5 text-xs sm:text-sm text-white/70 flex items-center gap-2">
+                    <Video size={18} />
+                    <span>Vidéo reçue</span>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Image Attachment with Lightbox */}
+            {isImageMessage && (
+              <div className="mb-2.5 rounded-xl overflow-hidden cursor-pointer group/img relative">
+                {msg.mediaUrl ? (
+                  <img
+                    src={msg.mediaUrl}
+                    alt="Photo"
+                    onClick={() => onImageClick?.(msg.mediaUrl, !isGenericMediaLabel(msg.content) ? msg.content : undefined)}
+                    className="max-h-72 w-auto rounded-xl object-cover hover:scale-[1.02] transition-transform"
+                    loading="lazy"
+                  />
+                ) : (
+                  <div className="p-4 rounded-xl bg-black/10 dark:bg-white/10 flex items-center gap-2.5 text-xs sm:text-sm text-slate-700 dark:text-white/80">
+                    <ImageIcon size={20} className="text-emerald-500" />
+                    <span className="font-semibold">Photo WhatsApp</span>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Document / PDF Attachment */}
+            {isDocument && (
+              <a
+                href={msg.mediaUrl || "#"}
+                target={msg.mediaUrl ? "_blank" : undefined}
+                rel="noopener noreferrer"
+                className="mb-2.5 p-3.5 rounded-xl bg-black/5 dark:bg-black/30 border border-slate-200 dark:border-white/10 flex items-center gap-3 hover:bg-black/10 dark:hover:bg-black/40 transition-colors"
+              >
+                <div className="w-11 h-11 rounded-xl bg-emerald-500/20 text-emerald-700 dark:text-[#00a884] flex items-center justify-center shrink-0">
+                  <FileText size={22} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-bold text-slate-900 dark:text-white truncate">
+                    {msg.mediaMetadata?.fileName || (msg.content?.startsWith("[") && msg.content?.endsWith("]") ? msg.content.slice(1, -1) : "Document PDF")}
+                  </div>
+                  <div className="text-xs text-slate-500 dark:text-white/50 mt-0.5">
+                    {msg.mediaMetadata?.fileSize ? `${(msg.mediaMetadata.fileSize / 1024).toFixed(1)} KB` : "Télécharger"}
+                  </div>
+                </div>
+              </a>
+            )}
+
+            {/* Text Message Content */}
+            {msg.content && !isGenericMediaLabel(msg.content) && (
+              <p className="text-[15px] sm:text-base leading-relaxed whitespace-pre-wrap break-words overflow-wrap-anywhere select-text text-slate-900 dark:text-white font-normal">
+                {isVoiceMessage
+                  ? msg.content?.replace(/^\[Message Vocal\]:\s*/, "")
+                  : stripActionTags(msg.content)}
+              </p>
+            )}
+
+            {/* Product Card Interactive Badge & CTA Button */}
+            {(() => {
+              const isCard = msg.metadata?.type === "product_card" || msg.content?.includes("FICHE ARTICLE :") || msg.content?.includes("👉 *Pour commander");
+              if (!isCard) return null;
+
+              const urlMatch = msg.metadata?.actionUrl || msg.content?.match(/https?:\/\/[^\s\n\r\)]+/)?.[0];
+              const actionType = msg.metadata?.actionType || (msg.content?.includes("Payer") || msg.content?.includes("régler") ? "pay" : "order");
+
+              return (
+                <div className="mt-2.5 pt-2 border-t border-emerald-600/20 dark:border-white/10 space-y-2">
+                  <div className="flex items-center gap-1.5 text-[10px] font-black uppercase text-emerald-800 dark:text-[#00a884]">
+                    <ShoppingBag size={12} />
+                    <span>Fiche Article Interactive WhatsApp</span>
+                  </div>
+                  {urlMatch && (
+                    <a
+                      href={urlMatch}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center justify-center gap-2 w-full py-2 px-3 rounded-xl bg-white hover:bg-slate-50 dark:bg-black/40 dark:hover:bg-black/60 border border-emerald-500/40 text-emerald-700 dark:text-[#00a884] font-black text-xs uppercase tracking-wider shadow-sm transition-all active:scale-95 cursor-pointer"
+                    >
+                      <span>{actionType === "order" ? "🛒 Commander en 1 clic" : actionType === "pay" ? "💳 Payer Wave / OM" : "🔎 Ouvrir la vitrine"}</span>
+                      <ExternalLink size={12} />
+                    </a>
+                  )}
+                </div>
+              );
+            })()}
+
+            {/* Message Reactions Badges */}
+            {msg.reactions && msg.reactions.length > 0 && (
+              <div className="flex items-center gap-1.5 mt-2 flex-wrap">
+                {msg.reactions.map((r: any, idx: number) => (
+                  <span
+                    key={idx}
+                    className="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-black/40 border border-slate-200 dark:border-white/10 text-xs sm:text-[13px] flex items-center gap-1 shadow-sm text-slate-800 dark:text-white font-medium"
+                  >
+                    <span>{r.emoji}</span>
+                  </span>
+                ))}
+              </div>
+            )}
+          </>
         )}
 
-        {/* Bubble Timestamp & Read Receipt Status Coche */}
+        {/* Bubble Timestamp, Modifié tag & Read Receipt Status Coche */}
         <div className="flex items-center justify-end gap-1.5 mt-1.5 opacity-80 select-none">
+          {isEdited && (
+            <span
+              className="text-[10px] text-slate-500 dark:text-white/60 italic font-medium"
+              title={msg.editedAt ? `Modifié à ${new Date(msg.editedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : "Modifié"}
+            >
+              modifié
+            </span>
+          )}
           <span className="text-xs font-medium text-slate-500 dark:text-white/70">{time}</span>
-          {!isCustomer && (
+          {!isCustomer && !isDeleted && (
             <span
               className="inline-flex items-center ml-0.5"
               title={

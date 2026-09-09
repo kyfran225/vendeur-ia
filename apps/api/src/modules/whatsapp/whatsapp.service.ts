@@ -1090,14 +1090,6 @@ class WhatsAppService {
       return;
     }
 
-    // Check if message already recorded in DB to prevent duplicate processing
-    if (messageId) {
-      const existingInDb = await CommerceMessageModel.findOne({ whatsappMessageId: messageId }).select("_id").lean();
-      if (existingInDb) {
-        return;
-      }
-    }
-    
     // If Baileys uses LID (@lid), try to get the real phone number (sender_pn or remoteJidAlt)
     if (msg.key?.remoteJidAlt && msg.key.remoteJidAlt.includes('@s.whatsapp.net')) {
       from = msg.key.remoteJidAlt;
@@ -1111,6 +1103,105 @@ class WhatsAppService {
                    msg.message?.documentWithCaptionMessage?.message ||
                    msg.message ||
                    {};
+
+    // Handle incoming WhatsApp Protocol Messages (Revoke / Delete & Message Edit)
+    const protocolMsg = rawMsg.protocolMessage;
+    if (protocolMsg) {
+      const targetWaMsgId = protocolMsg.key?.id;
+      // Revoke / Delete for Everyone (type 0)
+      if (protocolMsg.type === 0 || protocolMsg.type === "REVOKE" || protocolMsg.type === "revoke") {
+        if (targetWaMsgId) {
+          const deletedMsg = await CommerceMessageModel.findOneAndUpdate(
+            { whatsappMessageId: targetWaMsgId },
+            {
+              $set: {
+                isDeleted: true,
+                deletedForEveryone: true,
+                deletedAt: new Date(),
+                deletedBy: protocolMsg.key?.fromMe ? "merchant" : "customer",
+                content: "Ce message a été supprimé"
+              }
+            },
+            { new: true }
+          );
+          if (deletedMsg) {
+            const conv = await CommerceConversationModel.findById(deletedMsg.conversationId);
+            const targetUserIds = new Set<string>([userId.toString()]);
+            if (conv?.merchantId) {
+              const merch = await CommerceMerchantModel.findById(conv.merchantId);
+              if (merch?.ownerId) targetUserIds.add(merch.ownerId.toString());
+            }
+            const deletePayload = {
+              messageId: deletedMsg._id.toString(),
+              conversationId: deletedMsg.conversationId.toString(),
+              whatsappMessageId: targetWaMsgId,
+              isDeleted: true,
+              deletedForEveryone: true,
+              deletedBy: protocolMsg.key?.fromMe ? "merchant" : "customer"
+            };
+            targetUserIds.forEach(tId => {
+              emitToUser(tId, "message:deleted", deletePayload);
+            });
+            const io = getSocketServer();
+            if (io) {
+              io.to(`conv:${deletedMsg.conversationId.toString()}`).emit("message:deleted", deletePayload);
+              io.emit("message:deleted", deletePayload);
+            }
+          }
+        }
+        return;
+      }
+
+      // Message Edit (type 14)
+      if (protocolMsg.type === 14 || protocolMsg.type === "MESSAGE_EDIT" || protocolMsg.editedMessage) {
+        const editedRaw = protocolMsg.editedMessage?.conversation || protocolMsg.editedMessage?.extendedTextMessage?.text || "";
+        if (targetWaMsgId && editedRaw) {
+          const currentMsg = await CommerceMessageModel.findOne({ whatsappMessageId: targetWaMsgId });
+          if (currentMsg) {
+            const oldContent = currentMsg.content;
+            currentMsg.content = editedRaw;
+            currentMsg.isEdited = true;
+            currentMsg.editedAt = new Date();
+            (currentMsg as any).editHistory = (currentMsg as any).editHistory || [];
+            (currentMsg as any).editHistory.push({ content: oldContent, editedAt: new Date() });
+            await currentMsg.save();
+
+            const conv = await CommerceConversationModel.findById(currentMsg.conversationId);
+            const targetUserIds = new Set<string>([userId.toString()]);
+            if (conv?.merchantId) {
+              const merch = await CommerceMerchantModel.findById(conv.merchantId);
+              if (merch?.ownerId) targetUserIds.add(merch.ownerId.toString());
+            }
+            const editPayload = {
+              messageId: currentMsg._id.toString(),
+              conversationId: currentMsg.conversationId.toString(),
+              whatsappMessageId: targetWaMsgId,
+              content: editedRaw,
+              isEdited: true,
+              editedAt: currentMsg.editedAt,
+              message: currentMsg
+            };
+            targetUserIds.forEach(tId => {
+              emitToUser(tId, "message:edited", editPayload);
+            });
+            const io = getSocketServer();
+            if (io) {
+              io.to(`conv:${currentMsg.conversationId.toString()}`).emit("message:edited", editPayload);
+              io.emit("message:edited", editPayload);
+            }
+          }
+        }
+        return;
+      }
+    }
+
+    // Check if message already recorded in DB to prevent duplicate processing
+    if (messageId) {
+      const existingInDb = await CommerceMessageModel.findOne({ whatsappMessageId: messageId }).select("_id").lean();
+      if (existingInDb) {
+        return;
+      }
+    }
 
     const imageMsg = rawMsg.imageMessage || rawMsg.interactiveMessage?.header?.imageMessage || rawMsg.templateMessage?.hydratedTemplate?.imageMessage || rawMsg.templateMessage?.hydratedFourRowTemplate?.imageMessage;
     const audioMsg = rawMsg.audioMessage;
@@ -3174,6 +3265,103 @@ class WhatsAppService {
         text: content.text
       });
     }
+  }
+
+  async editMessage(
+    userId: string,
+    to: string,
+    whatsappMessageId: string,
+    newText: string
+  ) {
+    if (!whatsappMessageId || !newText?.trim()) return { success: false, error: "Missing parameters" };
+
+    let merchant = await CommerceMerchantModel.findOne({
+      $or: [
+        { ownerId: userId },
+        ...(userId && mongoose.isValidObjectId(userId) ? [{ ownerId: new mongoose.Types.ObjectId(userId) }] : []),
+        ...(userId && mongoose.isValidObjectId(userId) ? [{ _id: new mongoose.Types.ObjectId(userId) }] : [])
+      ]
+    });
+    if (!merchant && !userId) {
+      merchant = await CommerceMerchantModel.findOne({
+        $or: [
+          { whatsappNumber: { $regex: '5111157' } },
+          { phone: { $regex: '5111157' } },
+          { businessName: "Vendeur IA" }
+        ]
+      });
+    }
+
+    const { jid } = formatToWhatsAppRecipient(to);
+    if (!jid) return { success: false, error: "Invalid recipient" };
+
+    const sock = this.getLiveSocket(userId, merchant);
+    if (sock && this.isSocketAlive(sock)) {
+      try {
+        const res = await sock.sendMessage(jid, {
+          text: newText,
+          edit: {
+            remoteJid: jid,
+            fromMe: true,
+            id: whatsappMessageId
+          }
+        });
+        return { success: true, result: res };
+      } catch (err: any) {
+        console.warn(`[WhatsApp Baileys] Edit message failed:`, err.message);
+        return { success: false, error: err.message };
+      }
+    }
+
+    return { success: false, error: "Socket not active" };
+  }
+
+  async deleteMessage(
+    userId: string,
+    to: string,
+    whatsappMessageId: string,
+    forEveryone: boolean = true
+  ) {
+    if (!whatsappMessageId) return { success: false, error: "Missing message ID" };
+
+    let merchant = await CommerceMerchantModel.findOne({
+      $or: [
+        { ownerId: userId },
+        ...(userId && mongoose.isValidObjectId(userId) ? [{ ownerId: new mongoose.Types.ObjectId(userId) }] : []),
+        ...(userId && mongoose.isValidObjectId(userId) ? [{ _id: new mongoose.Types.ObjectId(userId) }] : [])
+      ]
+    });
+    if (!merchant && !userId) {
+      merchant = await CommerceMerchantModel.findOne({
+        $or: [
+          { whatsappNumber: { $regex: '5111157' } },
+          { phone: { $regex: '5111157' } },
+          { businessName: "Vendeur IA" }
+        ]
+      });
+    }
+
+    const { jid } = formatToWhatsAppRecipient(to);
+    if (!jid) return { success: false, error: "Invalid recipient" };
+
+    const sock = this.getLiveSocket(userId, merchant);
+    if (sock && this.isSocketAlive(sock)) {
+      try {
+        const res = await sock.sendMessage(jid, {
+          delete: {
+            remoteJid: jid,
+            fromMe: true,
+            id: whatsappMessageId
+          }
+        });
+        return { success: true, result: res };
+      } catch (err: any) {
+        console.warn(`[WhatsApp Baileys] Delete / Revoke message failed:`, err.message);
+        return { success: false, error: err.message };
+      }
+    }
+
+    return { success: false, error: "Socket not active" };
   }
 
   async hasStoredSession(userId: string): Promise<boolean> {

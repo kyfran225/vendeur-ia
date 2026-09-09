@@ -966,6 +966,163 @@ router.post("/conversations/:id/messages", authenticate, async (req, res) => {
   }
 });
 
+// EDIT MESSAGE
+router.patch("/conversations/:conversationId/messages/:messageId", authenticate, async (req, res) => {
+  try {
+    const ownerId = (req as any).user.id;
+    const { conversationId, messageId } = req.params;
+    const { content } = req.body;
+
+    if (!content || !content.trim()) {
+      return res.status(400).json({ error: "Le contenu du message ne peut pas être vide." });
+    }
+
+    const conversation = await CommerceConversationModel.findById(conversationId).populate("customerId");
+    if (!conversation) return res.status(404).json({ error: "Conversation non trouvée." });
+
+    const message = await CommerceMessageModel.findOne({ _id: messageId, conversationId });
+    if (!message) return res.status(404).json({ error: "Message introuvable." });
+
+    if (message.isDeleted) {
+      return res.status(400).json({ error: "Impossible de modifier un message supprimé." });
+    }
+
+    let merchant = await CommerceMerchantModel.findById(conversation.merchantId);
+    if (!merchant) {
+      merchant = await CommerceMerchantModel.findOne({ ownerId });
+    }
+
+    // Save previous version in edit history
+    const oldContent = message.content;
+    (message as any).editHistory = (message as any).editHistory || [];
+    (message as any).editHistory.push({
+      content: oldContent,
+      editedAt: new Date()
+    });
+
+    message.content = content.trim();
+    message.isEdited = true;
+    message.editedAt = new Date();
+    await message.save();
+
+    // If WhatsApp message, send WhatsApp protocol edit
+    let editError: string | undefined;
+    if (message.whatsappMessageId && conversation.platform === "whatsapp" && merchant) {
+      let customer = conversation.customerId as any;
+      if (customer && !customer.phone && !customer.platformId) {
+        customer = await CommerceCustomerModel.findById(customer);
+      }
+      const remoteId = customer?.phone || customer?.platformId;
+      if (remoteId) {
+        try {
+          await messagingService.editMessage(merchant, "whatsapp", remoteId, message.whatsappMessageId, content.trim());
+        } catch (err: any) {
+          console.warn("[WhatsApp Edit Notice]:", err.message);
+          editError = err.message;
+        }
+      }
+    }
+
+    const editPayload = {
+      messageId: message._id.toString(),
+      conversationId: conversation._id.toString(),
+      content: message.content,
+      isEdited: true,
+      editedAt: message.editedAt,
+      message
+    };
+
+    const targetUserIds = new Set<string>([ownerId.toString()]);
+    if (merchant?.ownerId) targetUserIds.add(merchant.ownerId.toString());
+
+    targetUserIds.forEach(tId => {
+      emitToUser(tId, "message:edited", editPayload);
+    });
+
+    const io = getSocketServer();
+    if (io) {
+      io.to(`conv:${conversation._id.toString()}`).emit("message:edited", editPayload);
+      io.emit("message:edited", editPayload);
+    }
+
+    res.json({ success: true, message, editError });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// DELETE / REVOKE MESSAGE
+router.delete("/conversations/:conversationId/messages/:messageId", authenticate, async (req, res) => {
+  try {
+    const ownerId = (req as any).user.id;
+    const { conversationId, messageId } = req.params;
+    const { forEveryone = true } = req.body || {};
+
+    const conversation = await CommerceConversationModel.findById(conversationId).populate("customerId");
+    if (!conversation) return res.status(404).json({ error: "Conversation non trouvée." });
+
+    const message = await CommerceMessageModel.findOne({ _id: messageId, conversationId });
+    if (!message) return res.status(404).json({ error: "Message introuvable." });
+
+    let merchant = await CommerceMerchantModel.findById(conversation.merchantId);
+    if (!merchant) {
+      merchant = await CommerceMerchantModel.findOne({ ownerId });
+    }
+
+    message.isDeleted = true;
+    message.deletedAt = new Date();
+    message.deletedForEveryone = Boolean(forEveryone);
+    message.deletedBy = "merchant";
+    message.content = "Ce message a été supprimé";
+    await message.save();
+
+    // If WhatsApp message and delete for everyone, send Baileys revoke
+    let deleteError: string | undefined;
+    if (forEveryone && message.whatsappMessageId && conversation.platform === "whatsapp" && merchant) {
+      let customer = conversation.customerId as any;
+      if (customer && !customer.phone && !customer.platformId) {
+        customer = await CommerceCustomerModel.findById(customer);
+      }
+      const remoteId = customer?.phone || customer?.platformId;
+      if (remoteId) {
+        try {
+          await messagingService.deleteMessage(merchant, "whatsapp", remoteId, message.whatsappMessageId, true);
+        } catch (err: any) {
+          console.warn("[WhatsApp Revoke Notice]:", err.message);
+          deleteError = err.message;
+        }
+      }
+    }
+
+    const deletePayload = {
+      messageId: message._id.toString(),
+      conversationId: conversation._id.toString(),
+      whatsappMessageId: message.whatsappMessageId,
+      isDeleted: true,
+      deletedForEveryone: Boolean(forEveryone),
+      deletedBy: "merchant",
+      message
+    };
+
+    const targetUserIds = new Set<string>([ownerId.toString()]);
+    if (merchant?.ownerId) targetUserIds.add(merchant.ownerId.toString());
+
+    targetUserIds.forEach(tId => {
+      emitToUser(tId, "message:deleted", deletePayload);
+    });
+
+    const io = getSocketServer();
+    if (io) {
+      io.to(`conv:${conversation._id.toString()}`).emit("message:deleted", deletePayload);
+      io.emit("message:deleted", deletePayload);
+    }
+
+    res.json({ success: true, messageId: message._id, isDeleted: true, deletedForEveryone: Boolean(forEveryone), deleteError });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // FAST PAY LINK GENERATOR & SENDER
 router.post("/conversations/:id/fast-pay", authenticate, async (req, res) => {
   try {

@@ -24,7 +24,7 @@ import { paymentShieldService } from "../../services/payment-shield.service.js";
 import { logger } from "../../services/logger.service.js";
 import { env } from "../../config/env.js";
 import { GEMINI_DEFAULT_VISION_MODEL, resolveGeminiModel } from "../../config/gemini.js";
-import { convertCurrencyAmount } from "@vendeur-ia/core";
+import { convertCurrencyAmount, parsePhoneNumber } from "@vendeur-ia/core";
 import axios from "axios";
 import crypto from "crypto";
 
@@ -50,44 +50,38 @@ export function slugify(text: string): string {
 
 export class CommerceService {
   async ensureFounderMerchantConfigured(ownerId: string, phone?: string) {
-    const canonicalPhone = "+2250505111157";
+    const rawClean = (phone || "").replace(/\D/g, "") || "2250102273966";
+    const parsed = parsePhoneNumber(rawClean, "CI");
+    const canonicalPhone = parsed.e164 || `+${rawClean}`;
     const metaPhoneId = env.WHATSAPP_PHONE_ID || "1283754474826620";
 
     let merchant = await CommerceMerchantModel.findOne({
       $or: [
         { ownerId },
-        { whatsappNumber: { $regex: "5111157" } },
-        { phone: { $regex: "5111157" } }
+        { whatsappNumber: canonicalPhone },
+        { phone: canonicalPhone }
       ]
     });
 
-    const currentStatus = merchant?.whatsappConfig?.status;
-    const isDisconnected = currentStatus === "disconnected";
-
     const merchantData = {
       ownerId,
-      businessName: "Vendeur IA",
-      slug: "vendeur-ia",
-      category: "services" as const,
-      description: "Plateforme et assistant commercial IA sur WhatsApp pour automatiser les ventes, le support et les paiements Mobile Money en Afrique.",
-      phone: canonicalPhone,
-      whatsappNumber: canonicalPhone,
-      city: "Abidjan",
-      country: "CI",
-      address: "Abidjan, Côte d'Ivoire",
-      currency: "XOF",
-      language: "fr" as const,
+      businessName: merchant?.businessName || "Boutique Franck",
+      slug: merchant?.slug || "boutique-franck",
+      category: (merchant?.category || "services") as any,
+      description: merchant?.description || "Plateforme et assistant commercial IA sur WhatsApp pour automatiser les ventes, le support et les paiements Mobile Money en Afrique.",
+      phone: merchant?.phone || canonicalPhone,
+      whatsappNumber: merchant?.whatsappNumber || canonicalPhone,
+      city: merchant?.city || "Abidjan",
+      country: merchant?.country || "CI",
+      address: merchant?.address || "Abidjan, Côte d'Ivoire",
+      currency: merchant?.currency || "XOF",
+      language: (merchant?.language || "fr") as any,
       onboardingCompleted: true,
-      whatsappConfig: {
-        provider: "meta" as const,
-        status: "connected" as const,
-        phoneNumberId: metaPhoneId,
-        meta: {
-          phoneNumberId: metaPhoneId,
-          accessToken: env.WHATSAPP_ACCESS_TOKEN || ""
-        }
+      whatsappConfig: merchant?.whatsappConfig || {
+        provider: "baileys" as const,
+        status: "connected" as const
       },
-      paymentChannels: [
+      paymentChannels: merchant?.paymentChannels?.length ? merchant.paymentChannels : [
         { provider: "wave" as const, label: "Wave", number: canonicalPhone },
         { provider: "mtn_momo" as const, label: "MTN MoMo", number: canonicalPhone }
       ],
@@ -95,18 +89,27 @@ export class CommerceService {
         personality: "premium" as const,
         responseStyle: "normal" as const,
         autoReply: true,
-        weeklyReport: true
+        weeklyReport: true,
+        ...(merchant?.aiSettings || {})
       }
     };
 
     if (!merchant) {
       merchant = await CommerceMerchantModel.create(merchantData);
     } else {
-      merchant = (await CommerceMerchantModel.findByIdAndUpdate(
-        merchant._id,
-        { $set: merchantData },
-        { new: true }
-      )) || merchant;
+      const merchantDoc = merchant as any;
+      if (!merchantDoc.ownerId || merchantDoc.ownerId.toString() !== ownerId.toString()) {
+        merchantDoc.ownerId = ownerId as any;
+      }
+      merchantDoc.onboardingCompleted = true;
+      if (!merchantDoc.subscription || merchantDoc.subscription.status !== "active") {
+        merchantDoc.subscription = {
+          ...(merchantDoc.subscription || {}),
+          plan: "enterprise",
+          status: "active"
+        } as any;
+      }
+      await merchantDoc.save();
     }
 
     // 3. Upsert & synchronize the 3 official canonical Vendeur IA products/services

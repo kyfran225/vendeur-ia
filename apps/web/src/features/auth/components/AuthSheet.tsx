@@ -233,27 +233,7 @@ export function AuthSheet({ isOpen, onClose, onSuccess }: { isOpen: boolean; onC
         return;
       }
 
-      const loggedUser = sessionData?.user;
-      const rawPhone = (loggedUser?.whatsappNumber || "").replace(/\D/g, "");
-      const rawEmail = (loggedUser?.email || "").toLowerCase();
-      const isFounderUser = 
-        loggedUser?.roles?.includes("admin") || 
-        loggedUser?.roles?.includes("creator") || 
-        rawPhone.endsWith("5111157") ||
-        rawPhone.includes("5111157") ||
-        rawEmail === "franck@vendeur-ia.com" ||
-        rawEmail === "kyfran6@gmail.com" ||
-        rawEmail.includes("admin") ||
-        rawEmail.includes("kyfran") ||
-        rawEmail.includes("franck");
-
-      if (isFounderUser) {
-        useAuthStore.getState().updateUser({ onboardingCompleted: true });
-        navigate("/admin");
-        return;
-      }
-
-      // 0. Returning merchant (already completed onboarding previously): GO DIRECTLY TO DASHBOARD!
+      // 0. Returning merchant / Founder: GO DIRECTLY TO DASHBOARD!
       if (sessionData?.user?.onboardingCompleted) {
         useAuthStore.getState().updateUser({ onboardingCompleted: true });
         navigate("/dashboard");

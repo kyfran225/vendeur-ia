@@ -59,7 +59,7 @@ function App() {
         <Route path="/" element={<LandingPage />} />
         <Route path="/auth/magic-login" element={<MagicLoginPage />} />
 
-        <Route path="/onboarding" element={<Navigate to={user ? (isFounder ? "/admin" : "/dashboard") : "/"} replace />} />
+        <Route path="/onboarding" element={<Navigate to={user ? "/dashboard" : "/"} replace />} />
 
         <Route path="/offers" element={<OffersPage />} />
         <Route path="/checkout" element={<CheckoutPage />} />

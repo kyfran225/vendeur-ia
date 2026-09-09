@@ -2129,7 +2129,10 @@ function WhatsAppBubble({
 
       {/* Message Bubble Container */}
       <div className={cn(
-        "max-w-[88%] sm:max-w-[72%] p-3.5 sm:p-4 rounded-2xl shadow-sm md:shadow relative break-words overflow-hidden min-w-[140px] transition-all duration-300",
+        "p-3.5 sm:p-4 rounded-2xl shadow-sm md:shadow relative break-words overflow-hidden transition-all duration-300",
+        isEditing
+          ? "w-full max-w-[98%] sm:max-w-[88%] md:max-w-[78%] min-w-[280px]"
+          : "max-w-[88%] sm:max-w-[72%] min-w-[140px]",
         isDeleted
           ? "bg-slate-100/90 dark:bg-[#182229]/90 border border-slate-200/80 dark:border-white/5 text-slate-500 dark:text-white/50 italic select-none"
           : isCustomer
@@ -2137,6 +2140,7 @@ function WhatsAppBubble({
           : isHuman
           ? "bg-[#d9fdd3] dark:bg-[#005c4b] text-slate-900 dark:text-white rounded-tr-none font-normal border border-emerald-300/60 dark:border-emerald-500/20"
           : "bg-[#d9fdd3] dark:bg-[#005c4b] text-slate-900 dark:text-white rounded-tr-none font-normal border border-emerald-300/60 dark:border-emerald-400/30",
+        isEditing && "ring-2 ring-emerald-500 shadow-xl bg-white dark:bg-[#1f2c34] border-emerald-500",
         isHighlighted && "ring-4 ring-emerald-500/80 shadow-2xl scale-[1.02] bg-emerald-100 dark:bg-emerald-900/60",
         isPaymentValidated && !isDeleted && "ring-2 ring-emerald-500 border-emerald-500 bg-emerald-50 dark:bg-emerald-950/80",
         isPaymentFlagged && !isDeleted && "ring-2 ring-amber-500 border-amber-500 bg-amber-50 dark:bg-amber-950/80",
@@ -2151,11 +2155,16 @@ function WhatsAppBubble({
             </span>
           </div>
         ) : isEditing ? (
-          /* Inline Message Editor */
-          <div className="space-y-2.5 w-full pt-0.5">
-            <div className="flex items-center gap-1.5 text-xs font-black uppercase text-emerald-800 dark:text-[#00a884]">
-              <Pencil size={13} />
-              <span>Modification du message</span>
+          /* Inline Message Editor - Full responsive width on mobile */
+          <div className="space-y-3 w-full pt-0.5">
+            <div className="flex items-center justify-between gap-2 text-xs font-black uppercase text-emerald-800 dark:text-[#00a884]">
+              <span className="flex items-center gap-1.5">
+                <Pencil size={13} className="animate-pulse" />
+                <span>Modifier le message</span>
+              </span>
+              <span className="text-[10px] text-slate-400 dark:text-white/40 font-normal lowercase">
+                {editValue.length} car.
+              </span>
             </div>
             <textarea
               ref={editTextareaRef}
@@ -2171,16 +2180,16 @@ function WhatsAppBubble({
                   setEditValue(stripActionTags(msg.content));
                 }
               }}
-              rows={Math.max(2, Math.min(6, editValue.split("\n").length))}
-              className="w-full p-2.5 rounded-xl bg-white dark:bg-[#111b21] text-slate-900 dark:text-white text-sm border-2 border-emerald-500 outline-none resize-none leading-relaxed shadow-inner"
-              placeholder="Modifier votre message..."
+              rows={Math.max(3, Math.min(8, editValue.split("\n").length))}
+              className="w-full min-h-[85px] sm:min-h-[90px] p-3 sm:p-3.5 rounded-xl bg-white dark:bg-[#111b21] text-slate-900 dark:text-white text-sm sm:text-base border-2 border-emerald-500/80 focus:border-emerald-500 outline-none resize-none leading-relaxed shadow-inner transition-all"
+              placeholder="Écrivez le nouveau texte du message..."
               autoFocus
             />
-            <div className="flex items-center justify-between gap-2 text-xs pt-1 border-t border-slate-200/50 dark:border-white/10">
+            <div className="flex flex-wrap items-center justify-between gap-2 text-xs pt-1.5 border-t border-slate-200/60 dark:border-white/10">
               <span className="text-[11px] text-slate-500 dark:text-white/40 hidden sm:inline">
                 Entrée pour valider • Échap pour annuler
               </span>
-              <div className="flex items-center gap-1.5 ml-auto">
+              <div className="flex items-center gap-2 ml-auto w-full sm:w-auto justify-end">
                 <button
                   type="button"
                   onClick={() => {
@@ -2188,7 +2197,7 @@ function WhatsAppBubble({
                     setEditValue(stripActionTags(msg.content));
                   }}
                   disabled={isSaving}
-                  className="px-2.5 py-1 rounded-lg bg-slate-200 dark:bg-white/10 hover:bg-slate-300 dark:hover:bg-white/20 text-slate-700 dark:text-white font-bold transition-all text-xs cursor-pointer"
+                  className="px-3.5 py-1.5 rounded-xl bg-slate-200/80 hover:bg-slate-300 dark:bg-white/10 dark:hover:bg-white/20 text-slate-700 dark:text-white font-bold transition-all text-xs sm:text-sm cursor-pointer active:scale-95 disabled:opacity-50"
                 >
                   Annuler
                 </button>
@@ -2196,9 +2205,9 @@ function WhatsAppBubble({
                   type="button"
                   onClick={handleSaveEdit}
                   disabled={isSaving || !editValue.trim()}
-                  className="px-3 py-1 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black flex items-center gap-1 transition-all text-xs cursor-pointer disabled:opacity-50 shadow-sm"
+                  className="px-4 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black flex items-center gap-1.5 transition-all text-xs sm:text-sm cursor-pointer active:scale-95 disabled:opacity-50 shadow-md shadow-emerald-500/20"
                 >
-                  {isSaving ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} />}
+                  {isSaving ? <Loader2 size={13} className="animate-spin" /> : <Check size={13} />}
                   <span>Enregistrer</span>
                 </button>
               </div>

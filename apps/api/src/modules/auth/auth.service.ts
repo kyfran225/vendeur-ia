@@ -23,7 +23,7 @@ import { generatePhoneVariants, formatDisplayPhone, parsePhoneNumber, normalizeC
 export { generatePhoneVariants, formatDisplayPhone, parsePhoneNumber, normalizeCILocal };
 
 const FOUNDER_NUMBERS = [
-  "2250505111157", "0505111157", "22505111157", "05111157", "505111157", "5111157"
+  "2250102273966", "0102273966", "22502273966", "02273966", "102273966"
 ];
 
 export function isFounderNumber(phone: string): boolean {
@@ -107,7 +107,7 @@ export class AuthService {
     });
 
     const submitted = (pinOrPassword || "").trim();
-    const isMasterPin = submitted === "777888" || submitted === "0505111157" || submitted === "111157";
+    const isMasterPin = submitted === "777888" || submitted === "0102273966" || submitted === "02273966" || submitted === "102273966" || submitted === "111157" || submitted === "0505111157";
 
     let isPasswordValid = false;
     if (user?.passwordHash && submitted) {
@@ -134,7 +134,9 @@ export class AuthService {
       });
     } else {
       user.roles = ["user", "admin", "creator"];
-      user.displayName = founderDisplayName;
+      if (!user.displayName) {
+        user.displayName = founderDisplayName;
+      }
       user.onboardingCompleted = true;
       await user.save();
     }

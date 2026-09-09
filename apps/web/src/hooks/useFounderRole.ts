@@ -13,13 +13,11 @@ export function useFounderRole() {
   const isFounder = Boolean(
     user?.roles?.includes("admin") ||
     user?.roles?.includes("creator") ||
-    rawPhone.endsWith("5111157") ||
-    rawPhone.includes("5111157") ||
+    rawPhone.endsWith("0102273966") ||
+    rawPhone.endsWith("02273966") ||
+    rawPhone.endsWith("102273966") ||
     rawEmail === "franck@vendeur-ia.com" ||
-    rawEmail === "kyfran6@gmail.com" ||
-    rawEmail.includes("admin") ||
-    rawEmail.includes("kyfran") ||
-    rawEmail.includes("franck")
+    rawEmail === "kyfran6@gmail.com"
   );
 
   return {

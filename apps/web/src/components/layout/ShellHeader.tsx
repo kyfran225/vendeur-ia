@@ -284,11 +284,11 @@ export function ShellHeader({ isVisible = true }: ShellHeaderProps) {
           </div>
           <div className="text-left min-w-0">
             <p className="text-sm sm:text-base md:text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight truncate leading-tight">
-              {isFounder ? "MASTER CONTROL" : (merchant?.businessName || "SYSTEM CORE")}
+              {merchant?.businessName || (isFounder ? "Boutique Franck" : "SYSTEM CORE")}
             </p>
             <p className="text-[8px] md:text-[10px] uppercase tracking-[0.2em] text-emerald-600 dark:text-vendeur-emerald/70 font-black leading-none truncate flex items-center gap-1 mt-0.5">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse inline-block shrink-0" />
-              <span>{isFounder ? "FOUNDER OS v2.4-STABLE" : "Boutique Active"}</span>
+              <span>{isFounder ? "Boutique Active (Fondateur)" : "Boutique Active"}</span>
             </p>
           </div>
         </div>
@@ -321,51 +321,49 @@ export function ShellHeader({ isVisible = true }: ShellHeaderProps) {
             ⚡ INTERRUPTEUR GLOBAL VENDEUR IA DANS LE HEADER (Barre supérieure)
             Permet de mettre en pause ou réactiver instantanément le Vendeur IA partout dans l'application
           */}
-          {!isFounder && (
-            <button
-              type="button"
-              onClick={handleToggleAutoReply}
-              disabled={toggleAutoReplyMutation.isPending}
-              className={cn(
-                "inline-flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3.5 py-1.5 md:py-2 rounded-xl md:rounded-2xl border transition-all active:scale-95 cursor-pointer shadow-sm group",
-                isAutoReplyOn
-                  ? "bg-emerald-500/10 hover:bg-emerald-500/20 border-emerald-500/30 text-emerald-700 dark:text-vendeur-emerald"
-                  : "bg-amber-500/10 hover:bg-amber-500/20 border-amber-500/30 text-amber-700 dark:text-amber-400 animate-pulse"
-              )}
-              title={
-                isAutoReplyOn
-                  ? "Vendeur IA actif 24h/24. Cliquez pour mettre en pause et répondre manuellement."
-                  : "Vendeur IA en pause. Cliquez pour reprendre les ventes automatiques 24h/24."
-              }
-            >
-              {isAutoReplyOn ? (
-                <>
-                  <span className="relative flex h-2 w-2">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
-                  </span>
-                  <span className="text-[10px] sm:text-xs font-black uppercase tracking-wider whitespace-nowrap">
-                    <span className="hidden xs:inline sm:inline">En Vente</span>
-                    <span className="xs:hidden sm:hidden">Vente</span>
-                  </span>
-                  <div className="w-5 h-3 sm:w-6 sm:h-3.5 bg-emerald-500 dark:bg-vendeur-emerald rounded-full p-0.5 flex items-center justify-end transition-all shrink-0">
-                    <div className="w-2 h-2 sm:w-2.5 sm:h-2.5 bg-white dark:bg-slate-950 rounded-full shadow-sm" />
-                  </div>
-                </>
-              ) : (
-                <>
-                  <PauseCircle size={13} className="shrink-0 text-amber-600 dark:text-amber-400" />
-                  <span className="text-[10px] sm:text-xs font-black uppercase tracking-wider whitespace-nowrap">
-                    <span className="hidden xs:inline sm:inline">En Pause</span>
-                    <span className="xs:hidden sm:hidden">Pause</span>
-                  </span>
-                  <div className="w-5 h-3 sm:w-6 sm:h-3.5 bg-slate-300 dark:bg-white/20 rounded-full p-0.5 flex items-center justify-start transition-all shrink-0">
-                    <div className="w-2 h-2 sm:w-2.5 sm:h-2.5 bg-white rounded-full shadow-sm" />
-                  </div>
-                </>
-              )}
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={handleToggleAutoReply}
+            disabled={toggleAutoReplyMutation.isPending}
+            className={cn(
+              "inline-flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3.5 py-1.5 md:py-2 rounded-xl md:rounded-2xl border transition-all active:scale-95 cursor-pointer shadow-sm group",
+              isAutoReplyOn
+                ? "bg-emerald-500/10 hover:bg-emerald-500/20 border-emerald-500/30 text-emerald-700 dark:text-vendeur-emerald"
+                : "bg-amber-500/10 hover:bg-amber-500/20 border-amber-500/30 text-amber-700 dark:text-amber-400 animate-pulse"
+            )}
+            title={
+              isAutoReplyOn
+                ? "Vendeur IA actif 24h/24. Cliquez pour mettre en pause et répondre manuellement."
+                : "Vendeur IA en pause. Cliquez pour reprendre les ventes automatiques 24h/24."
+            }
+          >
+            {isAutoReplyOn ? (
+              <>
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+                </span>
+                <span className="text-[10px] sm:text-xs font-black uppercase tracking-wider whitespace-nowrap">
+                  <span className="hidden xs:inline sm:inline">En Vente</span>
+                  <span className="xs:hidden sm:hidden">Vente</span>
+                </span>
+                <div className="w-5 h-3 sm:w-6 sm:h-3.5 bg-emerald-500 dark:bg-vendeur-emerald rounded-full p-0.5 flex items-center justify-end transition-all shrink-0">
+                  <div className="w-2 h-2 sm:w-2.5 sm:h-2.5 bg-white dark:bg-slate-950 rounded-full shadow-sm" />
+                </div>
+              </>
+            ) : (
+              <>
+                <PauseCircle size={13} className="shrink-0 text-amber-600 dark:text-amber-400" />
+                <span className="text-[10px] sm:text-xs font-black uppercase tracking-wider whitespace-nowrap">
+                  <span className="hidden xs:inline sm:inline">En Pause</span>
+                  <span className="xs:hidden sm:hidden">Pause</span>
+                </span>
+                <div className="w-5 h-3 sm:w-6 sm:h-3.5 bg-slate-300 dark:bg-white/20 rounded-full p-0.5 flex items-center justify-start transition-all shrink-0">
+                  <div className="w-2 h-2 sm:w-2.5 sm:h-2.5 bg-white rounded-full shadow-sm" />
+                </div>
+              </>
+            )}
+          </button>
 
           {activePhone && (
             <Link

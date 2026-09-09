@@ -36,6 +36,7 @@ import { emitToUser, getSocketServer } from "../../realtime/socketServer.js";
 import { UserModel } from "../auth/user.model.js";
 import { isFounderNumber } from "../auth/auth.service.js";
 import { storageService } from "../../services/storage.service.js";
+import { notificationsService } from "../notifications/notifications.service.js";
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage() });
@@ -307,16 +308,8 @@ router.post("/public/shop/:merchantId/order", async (req, res) => {
       deliveryNotes: deliveryNotes || ""
     });
 
-    // 4. Realtime Socket notification to merchant dashboard
-    try {
-      emitToUser(merchant.ownerId.toString(), "order:created", {
-        order: order.toObject(),
-        customer: customer.toObject(),
-        fromWebShop: true
-      });
-    } catch (sockErr) {
-      console.warn("[Realtime] Order notification emit failed:", sockErr);
-    }
+    // 4. Multi-channel notification to merchant (Realtime + WhatsApp)
+    await notificationsService.notifyOrderCreated(merchant, order, customer, "web_shop");
 
     res.status(201).json({
       success: true,
@@ -2383,22 +2376,23 @@ router.post("/orders", authenticate, validate(CreateOrderSchema), async (req, re
       );
     }
 
+    // Notify merchant via multi-channel
+    const customerForNotif = req.body.customerId ? await CommerceCustomerModel.findById(req.body.customerId) : null;
+    await notificationsService.notifyOrderCreated(merchant, order, customerForNotif, "manual");
+
     // If created from Inbox, we might want to send a confirmation message automatically
-    if (req.body.conversationId) {
-      const customer = await CommerceCustomerModel.findById(req.body.customerId);
-      if (customer) {
-        const itemsList = req.body.items.map((i: any) => `- ${i.name} (x${i.quantity})`).join("\n");
-        const messageContent = `✅ Commande validée !\n\nRécapitulatif :\n${itemsList}\n\nTotal : ${req.body.totalAmount.toLocaleString()} XOF\n\nMerci pour votre confiance ! ✨`;
+    if (req.body.conversationId && customerForNotif) {
+      const itemsList = req.body.items.map((i: any) => `- ${i.name} (x${i.quantity})`).join("\n");
+      const messageContent = `✅ Commande validée !\n\nRécapitulatif :\n${itemsList}\n\nTotal : ${req.body.totalAmount.toLocaleString()} XOF\n\nMerci pour votre confiance ! ✨`;
 
-        await messagingService.sendMessage(merchant, customer.platform || "whatsapp", customer.phone, messageContent);
+      await messagingService.sendMessage(merchant, customerForNotif.platform || "whatsapp", customerForNotif.phone, messageContent);
 
-        // Save confirmation message to history
-        await CommerceMessageModel.create({
-          conversationId: req.body.conversationId,
-          sender: "ai",
-          content: messageContent
-        });
-      }
+      // Save confirmation message to history
+      await CommerceMessageModel.create({
+        conversationId: req.body.conversationId,
+        sender: "ai",
+        content: messageContent
+      });
     }
 
     res.status(201).json(order);
@@ -2427,6 +2421,9 @@ router.patch("/orders/:id", authenticate, async (req, res) => {
         const customer = updatedOrder.customerId as any;
         const merchantObj = await CommerceMerchantModel.findById(merchant._id);
 
+        // Notify merchant of confirmed payment
+        await notificationsService.notifyPaymentReceived(merchantObj || merchant, updatedOrder, customer, updatedOrder.totalAmount, updatedOrder.paymentMethod || undefined);
+
         if (merchantObj && customer?.phone) {
           try {
             await messagingService.sendMessage(merchantObj, 'whatsapp', customer.phone, receipt);
@@ -2454,14 +2451,39 @@ router.patch("/orders/:id", authenticate, async (req, res) => {
       }
     }
 
+    if (updateData.status === "delivered" || updateData.status === "completed") {
+      updateData.deliveredAt = new Date();
+    }
+
     const order = await CommerceOrderModel.findOneAndUpdate(
       { _id: orderId, merchantId: merchant._id },
       { $set: updateData },
       { new: true }
     );
 
-    // Schedule automated J+3 post-purchase loyalty followup if order is delivered / completed
+    // Automated actions when order is delivered / completed
     if (order && (updateData.status === "delivered" || updateData.status === "completed")) {
+      const customer = await CommerceCustomerModel.findById(order.customerId);
+      const merchantObj = await CommerceMerchantModel.findById(merchant._id);
+
+      // 1. Instant WhatsApp Delivery Confirmation & Thank-You to Customer
+      if (merchantObj && customer?.phone) {
+        const shortRef = order._id.toString().slice(-6).toUpperCase();
+        const deliveryThankYouMsg = `🎉 *COMMANDE LIVRÉE AVEC SUCCÈS !*\n\n` +
+          `Bonjour ${customer.name || "cher client"} ✨\n\n` +
+          `Votre commande *#${shortRef}* vient de vous être livrée.\n` +
+          `Toute l'équipe de *${merchant.businessName || "la boutique"}* vous remercie chaleureusement pour votre confiance ! 🙏\n\n` +
+          `Nous espérons que vos articles vous plaisent ! Si vous avez la moindre question, nous restons disponibles ici même sur WhatsApp. À très vite ! 🌟`;
+
+        try {
+          await messagingService.sendMessage(merchantObj, 'whatsapp', customer.phone, deliveryThankYouMsg);
+          logger.info(`[Order Delivered] Sent instant thank-you WhatsApp message to customer ${customer.phone}`);
+        } catch (err: any) {
+          logger.warn(`[Order Delivered] Failed to send delivery thank-you WhatsApp: ${err?.message}`);
+        }
+      }
+
+      // 2. Schedule automated J+3 post-purchase loyalty followup
       const customerId = order.customerId?.toString();
       if (customerId) {
         await aiQueue.add(

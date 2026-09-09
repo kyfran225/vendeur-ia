@@ -134,9 +134,15 @@ export function OrderManager() {
       const res = await apiClient.patch(`/api/commerce/orders/${id}`, { status });
       return res.data;
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["orders"] });
-      toast.success("Statut mis à jour avec succès !");
+      if (variables.status === "delivered") {
+        toast.success("Commande livrée ! Le client a reçu son message de remerciement sur WhatsApp 🎉");
+      } else if (variables.status === "paid") {
+        toast.success("Paiement validé avec succès ! 💰");
+      } else {
+        toast.success("Statut mis à jour avec succès !");
+      }
       setOrderToCancel(null);
     },
     onError: () => {
@@ -524,26 +530,46 @@ export function OrderManager() {
                         </button>
                       ) : null}
 
-                      {/* 4. Action de Validation (Encaissé ou Livré) */}
-                      {order.status === "pending" || order.status === "confirmed" || order.status === "dispatched" ? (
+                      {/* 4. Action de Validation (Encaissé ou Livré en 1 clic) */}
+                      {order.status === "delivered" ? (
+                        <div
+                          className="w-full h-10 min-h-[40px] px-2.5 rounded-xl bg-teal-500/10 text-teal-700 dark:text-teal-400 border border-teal-500/25 font-bold text-xs flex items-center justify-center gap-1.5 select-none"
+                          title="Commande livrée et clôturée avec succès"
+                        >
+                          <CheckCircle2 size={14} className="shrink-0 text-teal-600 dark:text-teal-400" />
+                          <span className="truncate">Livrée ✨</span>
+                        </div>
+                      ) : order.status === "dispatched" || order.status === "paid" ? (
+                        <button
+                          onClick={() => updateStatusMutation.mutate({ id: order._id, status: "delivered" })}
+                          disabled={updateStatusMutation.isPending}
+                          className="w-full h-10 min-h-[40px] px-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-all active:scale-95 shadow-md hover:shadow-teal-500/20 cursor-pointer"
+                          title="Marquer comme livrée (Notifie le client sur WhatsApp & clôture la vente)"
+                        >
+                          <CheckCircle2 size={14} className="shrink-0" />
+                          <span className="truncate">Livré ✅</span>
+                        </button>
+                      ) : order.paymentMethod === "cash_on_delivery" ? (
+                        <button
+                          onClick={() => updateStatusMutation.mutate({ id: order._id, status: "delivered" })}
+                          disabled={updateStatusMutation.isPending}
+                          className="w-full h-10 min-h-[40px] px-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-all active:scale-95 shadow-md hover:shadow-emerald-500/20 cursor-pointer"
+                          title="Livré & Encaissé (Paiement à la livraison)"
+                        >
+                          <CheckCircle2 size={14} className="shrink-0" />
+                          <span className="truncate">Livré & Encaissé ✅</span>
+                        </button>
+                      ) : (
                         <button
                           onClick={() => updateStatusMutation.mutate({ id: order._id, status: "paid" })}
-                          className="w-full h-10 min-h-[40px] px-2.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-300 dark:border-emerald-500/30 dark:hover:bg-emerald-500 dark:hover:text-black font-bold text-xs flex items-center justify-center gap-1.5 transition-all active:scale-95 shadow-sm cursor-pointer"
+                          disabled={updateStatusMutation.isPending}
+                          className="w-full h-10 min-h-[40px] px-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-all active:scale-95 shadow-md hover:shadow-emerald-500/20 cursor-pointer"
                           title="Marquer comme payée / Encaissée"
                         >
                           <Banknote size={14} className="shrink-0" />
-                          <span className="truncate">Encaissé</span>
+                          <span className="truncate">Encaissé 💰</span>
                         </button>
-                      ) : order.status === "paid" ? (
-                        <button
-                          onClick={() => updateStatusMutation.mutate({ id: order._id, status: "delivered" })}
-                          className="w-full h-10 min-h-[40px] px-2.5 rounded-xl bg-teal-50 hover:bg-teal-100 text-teal-800 border border-teal-200 dark:bg-teal-500/15 dark:text-teal-300 dark:border-teal-500/30 dark:hover:bg-teal-500 dark:hover:text-black font-bold text-xs flex items-center justify-center gap-1.5 transition-all active:scale-95 shadow-sm cursor-pointer"
-                          title="Marquer comme livrée"
-                        >
-                          <CheckCircle2 size={14} className="shrink-0" />
-                          <span className="truncate">Livré</span>
-                        </button>
-                      ) : null}
+                      )}
                     </div>
 
                     {/* Dedicated Cancel Row */}

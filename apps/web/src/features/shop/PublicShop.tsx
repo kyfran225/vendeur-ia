@@ -461,7 +461,7 @@ export function PublicShop() {
       <header className="sticky top-0 z-50 bg-white/80 dark:bg-[#07100d]/80 backdrop-blur-xl border-b border-slate-200/80 dark:border-white/5 transition-colors">
         <div className="max-w-7xl mx-auto px-4 md:px-6 h-20 flex items-center justify-between">
           <div className="flex items-center gap-3 md:gap-4">
-            <div className={cn("h-10 w-10 md:h-12 md:w-12 rounded-xl flex items-center justify-center text-slate-950 shadow-lg overflow-hidden shrink-0", theme.bgClass, theme.shadowClass)}>
+            <div className={cn("h-10 w-10 md:h-12 md:w-12 rounded-xl flex items-center justify-center text-white shadow-lg overflow-hidden shrink-0", theme.bgClass, theme.shadowClass)}>
               {merchant?.branding?.logoUrl ? (
                 <img src={merchant.branding.logoUrl} alt={merchant.businessName} className="w-full h-full object-cover" />
               ) : (
@@ -544,7 +544,7 @@ export function PublicShop() {
               <ShoppingCart size={18} className={theme.textClass} />
               <span className="hidden sm:inline">Panier</span>
               {totalCartCount > 0 && (
-                <span className={cn("h-5 min-w-[20px] px-1 rounded-full text-slate-950 text-[10px] font-black flex items-center justify-center shadow", theme.bgClass)}>
+                <span className={cn("h-5 min-w-[20px] px-1 rounded-full text-white text-[10px] font-black flex items-center justify-center shadow", theme.bgClass)}>
                   {totalCartCount}
                 </span>
               )}
@@ -552,7 +552,7 @@ export function PublicShop() {
 
             <button
               onClick={() => window.open(`https://wa.me/${merchant.whatsappNumber?.replace(/\+/g, "")}`, "_blank")}
-              className={cn("hidden md:flex h-12 px-6 text-slate-950 rounded-2xl font-black uppercase text-[10px] tracking-widest items-center gap-2 hover:scale-105 active:scale-95 transition-all shadow-xl cursor-pointer", theme.bgClass, theme.hoverBgClass, theme.shadowClass)}
+              className={cn("hidden md:flex h-12 px-6 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest items-center gap-2 hover:scale-105 active:scale-95 transition-all shadow-xl cursor-pointer", theme.bgClass, theme.hoverBgClass, theme.shadowClass)}
             >
               <MessageCircle size={18} />
               Contact Direct
@@ -643,20 +643,25 @@ export function PublicShop() {
             <p className="text-slate-600 dark:text-white/50 text-sm md:text-base font-medium leading-relaxed">
               {merchant.description || shopCfg.heroSub}
             </p>
-            <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 pt-2">
+            <div className="grid grid-cols-2 gap-2 sm:gap-3 w-full sm:w-auto sm:flex sm:flex-wrap sm:items-center sm:justify-start pt-2">
               <button
                 onClick={() => window.open(`https://wa.me/${merchant.whatsappNumber?.replace(/\+/g, "")}`, "_blank")}
-                className={cn("inline-flex items-center gap-2 h-14 px-6 text-slate-950 rounded-2xl font-black uppercase text-xs tracking-widest hover:scale-105 active:scale-95 transition-all shadow-xl cursor-pointer", theme.bgClass, theme.hoverBgClass, theme.shadowClass)}
+                className={cn(
+                  "w-full sm:w-auto inline-flex items-center justify-center gap-1.5 sm:gap-2 h-12 sm:h-14 px-2 sm:px-6 text-white rounded-2xl font-black uppercase text-[10px] sm:text-xs tracking-wider sm:tracking-widest hover:scale-105 active:scale-95 transition-all shadow-xl cursor-pointer truncate",
+                  theme.bgClass,
+                  theme.hoverBgClass,
+                  theme.shadowClass
+                )}
               >
-                <MessageCircle size={18} />
-                WhatsApp Direct
+                <MessageCircle size={16} className="shrink-0" />
+                <span className="truncate">WhatsApp Direct</span>
               </button>
               <button
                 onClick={() => setIsCartOpen(true)}
-                className="inline-flex items-center gap-2 h-14 px-6 bg-slate-100 hover:bg-slate-200/80 dark:bg-white/10 dark:hover:bg-white/20 border border-slate-200 dark:border-white/15 text-slate-900 dark:text-white rounded-2xl font-black uppercase text-xs tracking-widest transition-all cursor-pointer shadow-sm active:scale-95"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 sm:gap-2 h-12 sm:h-14 px-2 sm:px-6 bg-slate-100 hover:bg-slate-200/80 dark:bg-white/10 dark:hover:bg-white/20 border border-slate-200 dark:border-white/15 text-slate-900 dark:text-white rounded-2xl font-black uppercase text-[10px] sm:text-xs tracking-wider sm:tracking-widest transition-all cursor-pointer shadow-sm active:scale-95 truncate"
               >
-                <ShoppingCart size={18} />
-                Voir le Panier ({totalCartCount})
+                <ShoppingCart size={16} className="shrink-0" />
+                <span className="truncate">Panier ({totalCartCount})</span>
               </button>
             </div>
           </div>
@@ -681,15 +686,15 @@ export function PublicShop() {
         {/* Filters & Search */}
         <section className="space-y-6">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2 md:pb-0">
+            <div className="flex items-center gap-2.5 overflow-x-auto no-scrollbar py-2 px-1.5 -mx-1.5 sm:mx-0">
               {categories.map((cat: string) => (
                 <button
                   key={cat}
                   onClick={() => setSelectedCategory(cat)}
                   className={cn(
-                    "px-5 h-11 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap border cursor-pointer",
+                    "px-5 h-11 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap border cursor-pointer shrink-0",
                     selectedCategory === cat
-                      ? cn(theme.bgClass, theme.shadowClass, "text-slate-950 border-transparent shadow-lg scale-105")
+                      ? cn(theme.bgClass, theme.shadowClass, "text-white border-transparent shadow-lg scale-105")
                       : "bg-white dark:bg-white/5 text-slate-700 dark:text-white/60 border-slate-200/90 dark:border-white/5 hover:bg-slate-100 dark:hover:bg-white/10 hover:text-slate-950 dark:hover:text-white shadow-sm"
                   )}
                 >
@@ -784,7 +789,7 @@ export function PublicShop() {
                           e.stopPropagation();
                           handleAddToCart(p);
                         }}
-                        className={cn("h-11 w-11 rounded-2xl text-slate-950 flex items-center justify-center hover:scale-110 active:scale-95 transition-all shadow-lg cursor-pointer", theme.bgClass, theme.shadowClass)}
+                        className={cn("h-11 w-11 rounded-2xl text-white flex items-center justify-center hover:scale-110 active:scale-95 transition-all shadow-lg cursor-pointer", theme.bgClass, theme.shadowClass)}
                         title="Ajouter au panier"
                       >
                         <ShoppingCart size={18} />
@@ -835,7 +840,7 @@ export function PublicShop() {
 
                         <button
                           onClick={() => handleWhatsAppCTA(p)}
-                          className={cn("h-11 text-slate-950 font-black uppercase text-[9px] tracking-wider rounded-xl flex items-center justify-center gap-1.5 hover:scale-[1.02] active:scale-95 transition-all shadow-md cursor-pointer", theme.bgClass, theme.shadowClass)}
+                          className={cn("h-11 text-white font-black uppercase text-[9px] tracking-wider rounded-xl flex items-center justify-center gap-1.5 hover:scale-[1.02] active:scale-95 transition-all shadow-md cursor-pointer", theme.bgClass, theme.shadowClass)}
                         >
                           <MessageCircle size={14} />
                           <span>WhatsApp</span>
@@ -862,7 +867,7 @@ export function PublicShop() {
         <div className="fixed bottom-6 left-4 right-4 md:left-auto md:right-6 md:w-96 z-40 animate-in slide-in-from-bottom-6 duration-300">
           <button
             onClick={() => setIsCartOpen(true)}
-            className={cn("w-full h-14 text-slate-950 rounded-2xl p-4 flex items-center justify-between font-black uppercase text-xs tracking-widest shadow-2xl hover:scale-[1.02] active:scale-95 transition-all cursor-pointer", theme.bgClass, theme.shadowClass)}
+            className={cn("w-full h-14 text-white rounded-2xl p-4 flex items-center justify-between font-black uppercase text-xs tracking-widest shadow-2xl hover:scale-[1.02] active:scale-95 transition-all cursor-pointer", theme.bgClass, theme.shadowClass)}
           >
             <div className="flex items-center gap-2.5">
               <div className="h-7 w-7 rounded-lg bg-slate-950 text-white flex items-center justify-center text-xs font-black shadow-inner">
@@ -952,6 +957,7 @@ export function PublicShop() {
         onClose={() => setIsShareModalOpen(false)}
         merchant={merchant}
         shopUrl={shopUrl}
+        theme={theme}
       />
 
       {/* Product Quick View Modal */}
@@ -966,14 +972,14 @@ export function PublicShop() {
           >
             <button
               onClick={() => setSelectedProduct(null)}
-              className="absolute top-3 right-3 md:top-6 md:right-6 z-30 h-10 w-10 bg-slate-900/70 hover:bg-slate-900 text-white dark:bg-black/60 dark:hover:bg-black/80 rounded-full flex items-center justify-center backdrop-blur-xl border border-white/20 transition-all cursor-pointer shadow-lg active:scale-95"
+              className="absolute top-3 right-3 md:top-5 md:right-5 z-30 h-9 w-9 md:h-10 md:w-10 bg-white/95 hover:bg-white text-slate-800 hover:text-slate-950 dark:bg-black/70 dark:hover:bg-black/90 dark:text-white rounded-full flex items-center justify-center backdrop-blur-md border border-slate-200/90 dark:border-white/20 transition-all cursor-pointer shadow-md active:scale-95"
               aria-label="Fermer"
             >
-              <X size={20} />
+              <X size={18} />
             </button>
 
             {/* Product Image / Poster Container */}
-            <div className="w-full md:w-1/2 min-h-[300px] sm:min-h-[380px] md:min-h-[480px] bg-slate-900/5 dark:bg-black/50 shrink-0 flex items-center justify-center p-3 sm:p-5 md:p-6 overflow-hidden relative border-b md:border-b-0 md:border-r border-slate-200/80 dark:border-white/10 group/img">
+            <div className="w-full md:w-1/2 min-h-[280px] sm:min-h-[360px] md:min-h-[460px] bg-slate-100/70 dark:bg-black/50 shrink-0 flex items-center justify-center p-3 sm:p-5 md:p-6 overflow-hidden relative border-b md:border-b-0 md:border-r border-slate-200/80 dark:border-white/10 group/img">
               {selectedProduct.images?.[0] || selectedProduct.imageUrl ? (
                 <div
                   className="relative w-full h-full flex items-center justify-center cursor-zoom-in"
@@ -985,9 +991,9 @@ export function PublicShop() {
                     className="max-w-full max-h-[45vh] sm:max-h-[55vh] md:max-h-[70vh] w-auto h-auto object-contain rounded-2xl shadow-md group-hover/img:scale-[1.03] transition-transform duration-300"
                     alt={selectedProduct.name}
                   />
-                  {/* Floating Zoom HD trigger badge */}
-                  <div className="absolute bottom-3 right-3 sm:bottom-4 sm:right-4 px-3 py-1.5 rounded-xl bg-black/75 backdrop-blur-md border border-white/20 text-white text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 shadow-xl group-hover/img:bg-black/90 transition-all pointer-events-none">
-                    <ZoomIn size={14} className="text-white" />
+                  {/* Floating Zoom HD trigger badge (Light & Dark mode compatible) */}
+                  <div className="absolute bottom-3 right-3 sm:bottom-4 sm:right-4 px-3 py-1.5 rounded-xl bg-white/95 text-slate-900 dark:bg-black/80 dark:text-white backdrop-blur-md border border-slate-200 dark:border-white/20 text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 shadow-lg group-hover/img:scale-105 transition-all pointer-events-none">
+                    <ZoomIn size={14} className="text-emerald-600 dark:text-emerald-400" />
                     <span>Zoom HD</span>
                   </div>
                 </div>
@@ -1100,7 +1106,7 @@ export function PublicShop() {
                 <button
                   type="button"
                   onClick={() => handleWhatsAppCTA(selectedProduct)}
-                  className={cn("h-12 sm:h-14 md:h-16 text-slate-950 font-black uppercase text-xs md:text-sm tracking-wider flex items-center justify-center gap-2 sm:gap-2.5 shadow-xl hover:scale-[1.02] active:scale-95 transition-all cursor-pointer", theme.bgClass, theme.hoverBgClass, theme.shadowClass)}
+                  className={cn("h-12 sm:h-14 md:h-16 text-white font-black uppercase text-xs md:text-sm tracking-wider flex items-center justify-center gap-2 sm:gap-2.5 shadow-xl hover:scale-[1.02] active:scale-95 transition-all cursor-pointer", theme.bgClass, theme.hoverBgClass, theme.shadowClass)}
                 >
                   {getCtaIcon(merchant.category)}
                   <span>WhatsApp</span>
@@ -1181,7 +1187,7 @@ export function PublicShop() {
             </button>
             <button
               onClick={() => handleWhatsAppCTA(zoomedProduct)}
-              className={cn("flex-1 h-12 sm:h-14 text-slate-950 font-black uppercase text-xs tracking-wider rounded-2xl flex items-center justify-center gap-2 shadow-xl hover:scale-[1.02] active:scale-95 transition-all cursor-pointer", theme.bgClass, theme.hoverBgClass, theme.shadowClass)}
+              className={cn("flex-1 h-12 sm:h-14 text-white font-black uppercase text-xs tracking-wider rounded-2xl flex items-center justify-center gap-2 shadow-xl hover:scale-[1.02] active:scale-95 transition-all cursor-pointer", theme.bgClass, theme.hoverBgClass, theme.shadowClass)}
             >
               <MessageCircle size={16} />
               <span>WhatsApp</span>

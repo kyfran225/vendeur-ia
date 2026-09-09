@@ -152,36 +152,41 @@ export function HeroProductShowcase({
         )}
       </div>
 
-      {/* Bottom Ultra-Sleek Glass Card */}
-      <div className="absolute bottom-3 sm:bottom-4 left-3 sm:left-4 right-3 sm:right-4 z-10">
-        <div className="p-3.5 sm:p-4 rounded-2xl md:rounded-[1.75rem] bg-white/95 dark:bg-[#07100d]/90 backdrop-blur-xl border border-slate-200/90 dark:border-white/10 shadow-2xl flex items-end justify-between gap-3">
-          <div className="min-w-0 flex-1 space-y-1">
-            <span className={cn("text-[9px] sm:text-[10px] font-black uppercase tracking-[0.2em] block", theme.textClass)}>
-              {currentProduct.category || merchant.category || "Catalogue"}
-            </span>
-            <h4 className="text-base sm:text-lg font-black text-slate-900 dark:text-white uppercase tracking-tight line-clamp-1 leading-tight">
+      {/* Bottom Compact & Discreet Glass Card */}
+      <div className="absolute bottom-2.5 sm:bottom-3 left-2.5 sm:left-3 right-2.5 sm:right-3 z-10">
+        <div className="p-2 sm:p-2.5 rounded-xl sm:rounded-2xl bg-white/85 dark:bg-black/65 backdrop-blur-md border border-white/60 dark:border-white/10 shadow-lg flex items-center justify-between gap-2.5">
+          <div className="min-w-0 flex-1">
+            <h4 className="text-xs sm:text-sm font-black text-slate-900 dark:text-white uppercase tracking-tight truncate leading-tight">
               {currentProduct.name}
             </h4>
-            <div className="inline-flex items-center gap-1 text-sm sm:text-base font-black text-slate-950 dark:text-white bg-slate-100 dark:bg-white/10 px-2.5 py-0.5 rounded-lg border border-slate-200/80 dark:border-white/10 shadow-sm mt-0.5">
+            <div className="flex items-center gap-1.5 text-xs font-black text-slate-950 dark:text-white mt-0.5">
               <span>{currentProduct.price?.toLocaleString()}</span>
-              <span className={cn("text-xs font-bold ml-1", theme.textClass)}>
+              <span className={cn("text-[10px] font-bold", theme.textClass)}>
                 {currentProduct.currency || currency}
               </span>
+              {currentProduct.category && (
+                <>
+                  <span className="text-slate-300 dark:text-white/20">&bull;</span>
+                  <span className="text-[9px] font-bold text-slate-500 dark:text-white/40 uppercase tracking-wider truncate max-w-[100px]">
+                    {currentProduct.category}
+                  </span>
+                </>
+              )}
             </div>
           </div>
 
-          {/* 1-Tap Quick Action Buttons */}
-          <div className="flex items-center gap-2 shrink-0">
+          {/* 1-Tap Quick Action Buttons (Compact & Sleek) */}
+          <div className="flex items-center gap-1.5 shrink-0">
             <button
               type="button"
               onClick={(e) => {
                 e.stopPropagation();
                 onAddToCart(currentProduct);
               }}
-              className={cn("h-11 w-11 sm:h-12 sm:w-12 rounded-2xl text-slate-950 flex items-center justify-center shadow-lg hover:scale-105 active:scale-95 transition-all cursor-pointer", theme.bgClass, theme.hoverBgClass, theme.shadowClass)}
+              className={cn("h-8 w-8 sm:h-9 sm:w-9 rounded-xl text-white flex items-center justify-center shadow-md hover:scale-105 active:scale-95 transition-all cursor-pointer", theme.bgClass, theme.hoverBgClass, theme.shadowClass)}
               title="Ajouter au panier"
             >
-              <ShoppingCart size={18} />
+              <ShoppingCart size={14} />
             </button>
 
             <button
@@ -190,10 +195,10 @@ export function HeroProductShowcase({
                 e.stopPropagation();
                 onSelectProduct(currentProduct);
               }}
-              className="h-11 w-11 sm:h-12 sm:w-12 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-white/10 dark:hover:bg-white/20 border border-slate-200 dark:border-white/15 text-slate-900 dark:text-white flex items-center justify-center hover:scale-105 active:scale-95 transition-all cursor-pointer shadow-sm"
+              className="h-8 w-8 sm:h-9 sm:w-9 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-white/10 dark:hover:bg-white/20 border border-slate-200 dark:border-white/15 text-slate-900 dark:text-white flex items-center justify-center hover:scale-105 active:scale-95 transition-all cursor-pointer shadow-sm"
               title="Voir les détails"
             >
-              <ArrowUpRight size={18} />
+              <ArrowUpRight size={14} />
             </button>
           </div>
         </div>

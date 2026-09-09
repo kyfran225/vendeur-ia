@@ -191,7 +191,7 @@ export function CartDrawer({
               <p className="text-xs text-slate-500 dark:text-white/30 max-w-xs mx-auto">Ajoutez des articles depuis la vitrine pour passer commande en 1 clic.</p>
               <button
                 onClick={onClose}
-                className={cn("mt-4 px-6 py-3 text-slate-950 font-black text-xs uppercase tracking-widest rounded-xl hover:scale-105 active:scale-95 transition-all shadow-lg cursor-pointer", theme.bgClass, theme.shadowClass)}
+                className={cn("mt-4 px-6 py-3 text-white font-black text-xs uppercase tracking-widest rounded-xl hover:scale-105 active:scale-95 transition-all shadow-lg cursor-pointer", theme.bgClass, theme.shadowClass)}
               >
                 Découvrir le catalogue
               </button>
@@ -325,6 +325,8 @@ export function CartDrawer({
                   <AddressAutocomplete
                     value={customAddress}
                     onChange={setCustomAddress}
+                    countryCode={merchant?.countryCode || merchant?.country || "CI"}
+                    city={merchant?.city}
                     placeholder="Ex: Cocody Angré 8ème tranche, Pharmacie des Grâces"
                     inputClassName="h-11 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-3 pl-10 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-white/30 outline-none focus:border-emerald-500 transition-all shadow-sm"
                   />
@@ -433,7 +435,7 @@ export function CartDrawer({
 
               <button
                 onClick={handleOpenWhatsApp}
-                className={cn("w-full h-14 text-slate-950 font-black uppercase text-xs tracking-widest rounded-2xl flex items-center justify-center gap-3 hover:scale-[1.02] active:scale-95 transition-all shadow-xl cursor-pointer", theme.bgClass, theme.hoverBgClass, theme.shadowClass)}
+                className={cn("w-full h-14 text-white font-black uppercase text-xs tracking-widest rounded-2xl flex items-center justify-center gap-3 hover:scale-[1.02] active:scale-95 transition-all shadow-xl cursor-pointer", theme.bgClass, theme.hoverBgClass, theme.shadowClass)}
               >
                 <MessageCircle size={18} />
                 <span>Ouvrir WhatsApp pour confirmer</span>
@@ -463,7 +465,7 @@ export function CartDrawer({
             {step === "cart" ? (
               <button
                 onClick={() => setStep("checkout")}
-                className={cn("w-full h-14 text-slate-950 font-black uppercase text-xs tracking-widest rounded-2xl flex items-center justify-center gap-3 hover:scale-[1.02] active:scale-95 transition-all shadow-xl cursor-pointer", theme.bgClass, theme.hoverBgClass, theme.shadowClass)}
+                className={cn("w-full h-14 text-white font-black uppercase text-xs tracking-widest rounded-2xl flex items-center justify-center gap-3 hover:scale-[1.02] active:scale-95 transition-all shadow-xl cursor-pointer", theme.bgClass, theme.hoverBgClass, theme.shadowClass)}
               >
                 <span>Passer à la livraison</span>
                 <ArrowRight size={16} />
@@ -481,7 +483,7 @@ export function CartDrawer({
                   type="button"
                   onClick={handleCheckoutSubmit}
                   disabled={isSubmitting}
-                  className={cn("col-span-2 h-14 text-slate-950 font-black uppercase text-xs tracking-widest rounded-2xl flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all shadow-xl disabled:opacity-50 cursor-pointer", theme.bgClass, theme.hoverBgClass, theme.shadowClass)}
+                  className={cn("col-span-2 h-14 text-white font-black uppercase text-xs tracking-widest rounded-2xl flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all shadow-xl disabled:opacity-50 cursor-pointer", theme.bgClass, theme.hoverBgClass, theme.shadowClass)}
                 >
                   {isSubmitting ? (
                     <Sparkles className="animate-spin" size={16} />

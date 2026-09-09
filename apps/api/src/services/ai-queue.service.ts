@@ -21,6 +21,7 @@ import path from 'path';
 import { messagingService } from './messaging.service.js';
 import { commerceService } from '../modules/commerce/commerce.service.js';
 import { isFounderNumber } from '../modules/auth/auth.service.js';
+import { notificationsService } from '../modules/notifications/notifications.service.js';
 
 const REDIS_URL = env.REDIS_URL || 'redis://localhost:6379';
 const API_URL = env.API_URL || 'http://localhost:3001';
@@ -296,16 +297,32 @@ Réponds UNIQUEMENT avec le texte final du message.`;
 
             console.log(`[AI Auto-Order] Successfully generated Order #${newOrder._id} for customer ${customerId} (Total: ${totalAmount})`);
             
-            // Notify merchant of auto-created order
-            if (userId) {
-              emitToUser(userId, 'order:created', {
-                order: newOrder,
-                conversationId
-              });
-            }
+            // Multi-channel notification to merchant (Realtime + WhatsApp)
+            const customerObj = await CommerceCustomerModel.findById(customerId);
+            await notificationsService.notifyOrderCreated(context.merchant, newOrder, customerObj, "ai_chat");
           }
         } catch (orderErr) {
           console.error("[AI Auto-Order] Failed to parse or create auto order:", orderErr);
+        }
+      }
+
+      // Check for automated Escalation / Human Takeover tag: [[ACTION_ESCALATE_HUMAN:{...}]]
+      const escalationMatch = reply.match(/\[\[ACTION_ESCALATE_HUMAN:([\s\S]*?)\]\]/);
+      if (escalationMatch) {
+        try {
+          const escalationPayload = JSON.parse(escalationMatch[1]);
+          reply = reply.replace(/\[\[ACTION_ESCALATE_HUMAN:[\s\S]*?\]\]/, '').trim();
+          
+          await CommerceConversationModel.findByIdAndUpdate(conversationId, {
+            $set: { status: 'needs_human' }
+          });
+
+          const conv = await CommerceConversationModel.findById(conversationId);
+          const customerObj = conv?.customerId ? await CommerceCustomerModel.findById(conv.customerId) : null;
+          await notificationsService.notifyHumanEscalation(context.merchant, customerObj, escalationPayload.reason || "Demande d'intervention humaine");
+          console.log(`[AI Queue] Human escalation triggered for conversation ${conversationId}: ${escalationPayload.reason}`);
+        } catch (escErr) {
+          console.error("[AI Queue] Escalation tag parse error:", escErr);
         }
       }
 

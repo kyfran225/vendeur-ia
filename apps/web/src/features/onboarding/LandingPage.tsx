@@ -825,10 +825,16 @@ function LandingHero({
 
                       <div className="space-y-1">
                         <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-white/40 ml-1">Adresse / Ville</label>
-                        <AddressAutocomplete value={form.address} onChange={(v) => setForm({ ...form, address: v })} onSelectSuggestion={(s) => {
-                          const city = s.context?.place?.name || s.place_formatted?.split(',')[1]?.trim();
-                          setForm(prev => ({ ...prev, city: city || "" }));
-                        }} />
+                        <AddressAutocomplete
+                          value={form.address}
+                          onChange={(v) => setForm({ ...form, address: v })}
+                          countryCode={selectedCountry.code}
+                          placeholder="Ex: Cocody Angré, Marcory, Almadies, Haie Vive..."
+                          onSelectSuggestion={(s) => {
+                            const city = s.city || s.context?.place?.name || s.place_formatted?.split(',')[1]?.trim();
+                            setForm(prev => ({ ...prev, city: city || prev.city || "" }));
+                          }}
+                        />
                       </div>
 
                       <div className="space-y-1">

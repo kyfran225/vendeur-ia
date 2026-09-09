@@ -169,8 +169,8 @@ export function ProductCardSenderModal({
   };
 
   return (
-    <div className="fixed inset-0 z-[120] flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="relative w-full max-w-4xl bg-white dark:bg-[#111b21] text-slate-900 dark:text-white border border-slate-200 dark:border-white/10 rounded-3xl md:rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col max-h-[92vh] animate-in zoom-in-95 duration-200">
+    <div className="fixed inset-0 z-[120] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
+      <div className="relative w-full max-w-4xl bg-white dark:bg-[#111b21] text-slate-900 dark:text-white border-t sm:border border-slate-200 dark:border-white/10 rounded-t-3xl sm:rounded-3xl md:rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col max-h-[92vh] sm:max-h-[88vh] animate-in zoom-in-95 duration-200">
         
         {/* Modal Header */}
         <header className="p-4 sm:p-5 border-b border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-[#202c33] flex items-center justify-between shrink-0">
@@ -179,16 +179,11 @@ export function ProductCardSenderModal({
               <ShoppingBag size={22} />
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <h3 className="text-base sm:text-lg font-black uppercase tracking-tight text-slate-900 dark:text-white">
-                  Envoyer Carte Article WhatsApp
-                </h3>
-                <span className="px-2 py-0.5 rounded-md bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-[9px] font-black uppercase tracking-wider">
-                  Interactif 1-Clic
-                </span>
-              </div>
+              <h3 className="text-base sm:text-lg font-black uppercase tracking-tight text-slate-900 dark:text-white">
+                Envoyer un article WhatsApp
+              </h3>
               <p className="text-xs text-slate-500 dark:text-white/40 font-medium">
-                Partagez un article avec photo, prix et bouton d'action direct pour <span className="font-bold text-slate-900 dark:text-white">{customerName}</span>
+                Partagez un article avec photo, prix et lien direct pour <span className="font-bold text-slate-900 dark:text-white">{customerName}</span>
               </p>
             </div>
           </div>
@@ -202,7 +197,7 @@ export function ProductCardSenderModal({
         </header>
 
         {/* Modal Body */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-12 gap-5 lg:gap-6">
           
           {/* Left Column: Product Selector & Configuration (7 Cols) */}
           <div className="lg:col-span-7 space-y-5">
@@ -346,22 +341,19 @@ export function ProductCardSenderModal({
 
           </div>
 
-          {/* Right Column: Live WhatsApp Card Realistic Preview (5 Cols) */}
-          <div className="lg:col-span-5 flex flex-col justify-between space-y-4 bg-slate-100 dark:bg-[#0c1317] p-4 sm:p-5 rounded-3xl border border-slate-200 dark:border-white/5">
+          {/* Right Column: Live WhatsApp Realistic Preview (5 Cols) */}
+          <div className="lg:col-span-5 flex flex-col justify-between space-y-4 lg:bg-slate-100 lg:dark:bg-[#0c1317] p-0 lg:p-5 lg:rounded-3xl lg:border lg:border-slate-200 lg:dark:border-white/5">
             <div>
               <div className="flex items-center justify-between mb-3">
                 <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-white/40 flex items-center gap-1.5">
                   <Sparkles size={12} className="text-emerald-500" />
-                  Aperçu Réel WhatsApp
-                </span>
-                <span className="text-[9px] font-bold text-emerald-600 dark:text-[#00a884] bg-emerald-500/10 px-2 py-0.5 rounded-full">
-                  Carte HD &bull; 1-Clic
+                  Aperçu WhatsApp
                 </span>
               </div>
 
               {/* Realistic WhatsApp Chat Bubble Mockup */}
               {selectedProduct ? (
-                <div className="bg-[#d9fdd3] dark:bg-[#005c4b] text-slate-900 dark:text-[#e9edef] rounded-2xl rounded-tr-none p-3 shadow-md space-y-2.5 text-xs select-none max-w-sm ml-auto border border-emerald-500/20">
+                <div className="bg-[#d9fdd3] dark:bg-[#005c4b] text-slate-900 dark:text-[#e9edef] rounded-2xl rounded-tr-none p-3 shadow-md space-y-2.5 text-xs select-none w-full sm:max-w-sm sm:ml-auto border border-emerald-500/20">
                   
                   {/* Image Card Header */}
                   {(selectedProduct.images?.[0] || selectedProduct.imageUrl) && (
@@ -432,7 +424,7 @@ export function ProductCardSenderModal({
                 ) : (
                   <>
                     <Send size={16} />
-                    <span>Envoyer la carte dans WhatsApp</span>
+                    <span>Envoyer l'article sur WhatsApp</span>
                   </>
                 )}
               </button>
@@ -443,7 +435,7 @@ export function ProductCardSenderModal({
                 className="w-full h-10 rounded-xl bg-slate-200 hover:bg-slate-300 dark:bg-white/5 dark:hover:bg-white/10 text-slate-700 dark:text-white/70 font-bold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
               >
                 {copied ? <Check size={14} className="text-emerald-500" /> : <Copy size={14} />}
-                <span>{copied ? "Texte copié !" : "Copier le texte de la carte"}</span>
+                <span>{copied ? "Texte copié !" : "Copier le texte de l'article"}</span>
               </button>
             </div>
 

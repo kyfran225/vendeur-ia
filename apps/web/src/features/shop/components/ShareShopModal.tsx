@@ -1,20 +1,25 @@
 import React, { useState } from "react";
-import { X, QrCode, Copy, Check, Share2, MessageCircle, Download, ExternalLink } from "lucide-react";
+import { X, Copy, Check, Share2, MessageCircle, Download } from "lucide-react";
 import { toast } from "sonner";
+import { ShopTheme, getShopTheme } from "../lib/theme";
+import { cn } from "@/lib/utils";
 
 interface ShareShopModalProps {
   isOpen: boolean;
   onClose: () => void;
   merchant: any;
   shopUrl: string;
+  theme?: ShopTheme;
 }
 
-export function ShareShopModal({ isOpen, onClose, merchant, shopUrl }: ShareShopModalProps) {
+export function ShareShopModal({ isOpen, onClose, merchant, shopUrl, theme }: ShareShopModalProps) {
   const [copied, setCopied] = useState(false);
 
   if (!isOpen) return null;
 
-  const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(shopUrl)}&bgcolor=111827&color=10b981&margin=10`;
+  const activeTheme = theme || getShopTheme(merchant?.branding?.primaryColor || merchant?.branding?.accentColor);
+  const qrHex = (activeTheme.primary || "#10B981").replace("#", "");
+  const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(shopUrl)}&bgcolor=ffffff&color=${qrHex}&margin=10`;
 
   const handleCopy = () => {
     navigator.clipboard.writeText(shopUrl);
@@ -25,7 +30,7 @@ export function ShareShopModal({ isOpen, onClose, merchant, shopUrl }: ShareShop
 
   const handleShareWhatsApp = () => {
     const text = encodeURIComponent(
-      `🛍️ Découvrez la boutique officielle de *${merchant.businessName}* !\n\nConsultez tous nos articles et commandez directement en 1 clic ici :\n${shopUrl}`
+      `🛍️ Découvrez la boutique officielle de *${merchant?.businessName || "notre boutique"}* !\n\nConsultez tous nos articles et commandez directement en 1 clic ici :\n${shopUrl}`
     );
     window.open(`https://api.whatsapp.com/send?text=${text}`, "_blank");
   };
@@ -33,7 +38,7 @@ export function ShareShopModal({ isOpen, onClose, merchant, shopUrl }: ShareShop
   const handleDownloadQr = () => {
     const link = document.createElement("a");
     link.href = qrImageUrl;
-    link.download = `qrcode-${merchant.businessName.toLowerCase().replace(/\s+/g, "-")}.png`;
+    link.download = `qrcode-${(merchant?.businessName || "boutique").toLowerCase().replace(/\s+/g, "-")}.png`;
     link.target = "_blank";
     link.click();
     toast.success("QR Code téléchargé !");
@@ -41,30 +46,31 @@ export function ShareShopModal({ isOpen, onClose, merchant, shopUrl }: ShareShop
 
   return (
     <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="relative w-full max-w-md bg-white dark:bg-[#0d1f18] text-slate-900 dark:text-white border border-slate-200 dark:border-white/10 rounded-3xl p-6 md:p-8 space-y-6 shadow-2xl animate-in zoom-in-95 duration-200 text-center">
+      <div className="relative w-full max-w-md bg-white dark:bg-slate-900 text-slate-900 dark:text-white border border-slate-200/90 dark:border-white/10 rounded-3xl p-6 md:p-8 space-y-6 shadow-2xl animate-in zoom-in-95 duration-200 text-center">
         <button
           onClick={onClose}
           className="absolute top-4 right-4 h-9 w-9 bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-950 dark:bg-white/5 dark:hover:bg-white/10 dark:text-white/40 dark:hover:text-white rounded-full flex items-center justify-center transition-colors cursor-pointer"
+          aria-label="Fermer"
         >
           <X size={16} />
         </button>
 
         <div className="space-y-2">
-          <div className="h-12 w-12 mx-auto rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shadow-sm">
+          <div className={cn("h-12 w-12 mx-auto rounded-2xl flex items-center justify-center shadow-sm border", activeTheme.badgeBgClass, activeTheme.badgeBorderClass, activeTheme.textClass)}>
             <Share2 size={24} />
           </div>
           <h3 className="text-xl font-black uppercase tracking-tight text-slate-900 dark:text-white">Recommander la boutique</h3>
           <p className="text-xs text-slate-600 dark:text-white/50 font-medium">Partagez ce catalogue à vos proches ou scannez le QR Code pour commander directement.</p>
         </div>
 
-        {/* QR Code Frame */}
-        <div className="p-4 rounded-2xl bg-slate-100 dark:bg-black/40 border border-slate-200 dark:border-white/5 inline-block mx-auto shadow-inner">
+        {/* QR Code Frame (Pure white background for perfect contrast and scanning) */}
+        <div className="p-4 rounded-2xl bg-white border border-slate-200/90 dark:border-white/15 inline-block mx-auto shadow-md">
           <img
             src={qrImageUrl}
-            alt={`QR Code ${merchant.businessName}`}
+            alt={`QR Code ${merchant?.businessName || "Boutique"}`}
             className="w-48 h-48 rounded-xl object-contain mx-auto"
           />
-          <p className="text-[10px] font-black uppercase tracking-widest text-emerald-600 dark:text-emerald-400 mt-2">
+          <p className={cn("text-[10px] font-black uppercase tracking-widest mt-2", activeTheme.textClass)}>
             Scanner pour commander
           </p>
         </div>
@@ -81,27 +87,32 @@ export function ShareShopModal({ isOpen, onClose, merchant, shopUrl }: ShareShop
             onClick={handleCopy}
             className="h-9 px-4 rounded-xl bg-slate-200 hover:bg-slate-300 dark:bg-white/10 dark:hover:bg-white/20 text-slate-900 dark:text-white font-black text-[10px] uppercase tracking-wider flex items-center gap-1.5 transition-all cursor-pointer"
           >
-            {copied ? <Check size={14} className="text-emerald-600 dark:text-emerald-400" /> : <Copy size={14} />}
+            {copied ? <Check size={14} className={activeTheme.textClass} /> : <Copy size={14} />}
             <span>{copied ? "Copié" : "Copier"}</span>
           </button>
         </div>
 
         {/* Action Buttons */}
-        <div className="grid grid-cols-2 gap-3 pt-2">
+        <div className="grid grid-cols-2 gap-2 sm:gap-3 pt-2">
           <button
             onClick={handleShareWhatsApp}
-            className="h-14 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black uppercase text-xs tracking-wider flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-emerald-500/20 cursor-pointer"
+            className={cn(
+              "h-12 sm:h-14 px-2 sm:px-4 rounded-2xl text-white font-black uppercase text-[10px] sm:text-xs tracking-wider flex items-center justify-center gap-1.5 sm:gap-2 hover:scale-[1.02] active:scale-95 transition-all shadow-lg cursor-pointer min-w-0 truncate",
+              activeTheme.bgClass,
+              activeTheme.hoverBgClass,
+              activeTheme.shadowClass
+            )}
           >
-            <MessageCircle size={18} />
-            <span>Statut WhatsApp</span>
+            <MessageCircle size={16} className="shrink-0" />
+            <span className="truncate">Statut WhatsApp</span>
           </button>
 
           <button
             onClick={handleDownloadQr}
-            className="h-14 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-white/10 dark:hover:bg-white/15 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white font-black uppercase text-xs tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer"
+            className="h-12 sm:h-14 px-2 sm:px-4 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-white/10 dark:hover:bg-white/15 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white font-black uppercase text-[10px] sm:text-xs tracking-wider flex items-center justify-center gap-1.5 sm:gap-2 transition-all cursor-pointer min-w-0 truncate"
           >
-            <Download size={18} />
-            <span>Enregistrer QR</span>
+            <Download size={16} className="shrink-0 text-slate-600 dark:text-white/70" />
+            <span className="truncate">Enregistrer QR</span>
           </button>
         </div>
       </div>

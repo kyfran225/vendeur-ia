@@ -142,7 +142,7 @@ export function WebChatWidget({ merchant }: { merchant: any }) {
       {!isOpen && (
         <button
           onClick={toggleChat}
-          className="fixed bottom-8 right-8 z-[200] h-16 w-16 bg-emerald-500 text-slate-950 rounded-full flex items-center justify-center shadow-2xl hover:scale-110 active:scale-95 transition-all animate-bounce cursor-pointer"
+          className="fixed bottom-8 right-8 z-[200] h-16 w-16 bg-emerald-500 text-white rounded-full flex items-center justify-center shadow-2xl hover:scale-110 active:scale-95 transition-all animate-bounce cursor-pointer"
         >
           <div className="relative">
              <MessageCircle size={32} />
@@ -212,7 +212,7 @@ export function WebChatWidget({ merchant }: { merchant: any }) {
                        <div className={cn(
                          "px-3.5 py-2.5 md:p-4 rounded-2xl md:rounded-3xl text-sm font-medium leading-relaxed shadow-sm",
                          msg.role === 'customer'
-                           ? "bg-emerald-500 text-slate-950 font-semibold rounded-tr-none shadow-md"
+                           ? "bg-emerald-500 text-white font-semibold rounded-tr-none shadow-md"
                            : "bg-white dark:bg-white/10 border border-slate-200/80 dark:border-white/10 text-slate-900 dark:text-white rounded-tl-none"
                        )}>
                           {stripActionTags(msg.text)}
@@ -246,10 +246,12 @@ export function WebChatWidget({ merchant }: { merchant: any }) {
                </div>
 
                {/* Footer / Input */}
-               <footer className="p-3 md:p-6 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-white/10 space-y-3 md:space-y-4">
-                  <div className="flex items-center gap-3 bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl px-4 h-12 md:h-14 focus-within:border-emerald-500 transition-all shadow-inner">
+               <footer className="p-3 md:p-5 bg-slate-50/70 dark:bg-slate-900/90 border-t border-slate-200/80 dark:border-white/10 space-y-2.5 md:space-y-3">
+                  <div className="flex items-center gap-2.5 sm:gap-3 bg-white dark:bg-white/5 border border-slate-200/90 dark:border-white/10 rounded-2xl px-3.5 sm:px-4 h-12 md:h-14 focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-500/20 transition-all shadow-sm">
                      <input
-                       className="flex-1 bg-transparent outline-none text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-white/40"
+                       type="text"
+                       style={{ backgroundColor: "transparent", border: "none" }}
+                       className="flex-1 min-w-0 !bg-transparent bg-transparent !border-none !ring-0 outline-none focus:outline-none focus:ring-0 focus:border-none text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-white/40 shadow-none appearance-none"
                        placeholder="Posez votre question..."
                        value={input}
                        onChange={e => setInput(e.target.value)}
@@ -258,13 +260,15 @@ export function WebChatWidget({ merchant }: { merchant: any }) {
                      <button
                        onClick={handleSend}
                        disabled={!input.trim() || chatMutation.isPending}
-                       className="h-9 w-9 md:h-10 md:w-10 bg-emerald-500 text-slate-950 font-black rounded-xl flex items-center justify-center hover:scale-105 active:scale-95 disabled:opacity-20 transition-all shadow-lg cursor-pointer"
+                       className="h-9 w-9 md:h-10 md:w-10 bg-emerald-500 hover:bg-emerald-400 text-white font-black rounded-xl flex items-center justify-center hover:scale-105 active:scale-95 disabled:opacity-30 transition-all shadow-md shadow-emerald-500/20 cursor-pointer shrink-0"
+                       title="Envoyer"
                      >
-                        <Send size={18} />
+                        <Send size={16} />
                      </button>
                   </div>
-                  <div className="flex items-center justify-center gap-2 text-[8px] font-black uppercase text-slate-400 dark:text-white/30 tracking-widest">
-                     <ShieldCheck size={10} /> Propulsé par Vendeur IA Omnicanal
+                  <div className="flex items-center justify-center gap-1.5 text-[8px] font-black uppercase text-slate-400 dark:text-white/30 tracking-widest">
+                     <ShieldCheck size={11} className="text-emerald-500" />
+                     <span>Propulsé par Vendeur IA Omnicanal</span>
                   </div>
                </footer>
              </>

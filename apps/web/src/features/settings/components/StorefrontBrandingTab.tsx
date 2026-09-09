@@ -56,7 +56,7 @@ export const THEME_PALETTES = [
     ringClass: "ring-emerald-500",
     gradientFrom: "from-emerald-500",
     lightBg: "bg-emerald-500/10",
-    btnColor: "bg-emerald-500 hover:bg-emerald-400 text-black font-black"
+    btnColor: "bg-emerald-500 hover:bg-emerald-400 text-white font-black"
   },
   {
     id: "gold",
@@ -69,7 +69,7 @@ export const THEME_PALETTES = [
     ringClass: "ring-yellow-500",
     gradientFrom: "from-yellow-500",
     lightBg: "bg-yellow-500/10",
-    btnColor: "bg-yellow-500 hover:bg-yellow-400 text-black font-black"
+    btnColor: "bg-yellow-500 hover:bg-yellow-400 text-white font-black"
   },
   {
     id: "amber",
@@ -82,7 +82,7 @@ export const THEME_PALETTES = [
     ringClass: "ring-orange-500",
     gradientFrom: "from-orange-500",
     lightBg: "bg-orange-500/10",
-    btnColor: "bg-orange-500 hover:bg-orange-400 text-black font-black"
+    btnColor: "bg-orange-500 hover:bg-orange-400 text-white font-black"
   },
   {
     id: "violet",
@@ -121,7 +121,7 @@ export const THEME_PALETTES = [
     ringClass: "ring-sky-500",
     gradientFrom: "from-sky-500",
     lightBg: "bg-sky-500/10",
-    btnColor: "bg-sky-500 hover:bg-sky-400 text-black font-black"
+    btnColor: "bg-sky-500 hover:bg-sky-400 text-white font-black"
   }
 ];
 
@@ -555,8 +555,8 @@ export function StorefrontBrandingTab({ merchant }: StorefrontBrandingTabProps) 
               </div>
 
               <div
-                className="h-9 px-3 rounded-xl flex items-center justify-center gap-1.5 text-xs font-black uppercase tracking-wider shadow-lg"
-                style={{ backgroundColor: currentPalette.primary, color: currentPalette.id === "violet" || currentPalette.id === "rose" ? "#ffffff" : "#000000" }}
+                className="h-9 px-3 rounded-xl flex items-center justify-center gap-1.5 text-xs font-black uppercase tracking-wider shadow-lg text-white"
+                style={{ backgroundColor: currentPalette.primary, color: "#ffffff" }}
               >
                 <ShoppingBag size={13} />
                 <span className="hidden sm:inline">Panier</span>

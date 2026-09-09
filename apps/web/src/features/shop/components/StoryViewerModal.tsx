@@ -233,7 +233,7 @@ export function StoryViewerModal({
                 e.stopPropagation();
                 onAddToCart(product);
               }}
-              className={`h-11 px-4 rounded-xl ${primaryBg} text-slate-950 font-black uppercase text-[10px] tracking-widest flex items-center gap-2 hover:scale-105 active:scale-95 transition-all shrink-0 shadow-lg cursor-pointer`}
+              className={`h-11 px-4 rounded-xl ${primaryBg} text-white font-black uppercase text-[10px] tracking-widest flex items-center gap-2 hover:scale-105 active:scale-95 transition-all shrink-0 shadow-lg cursor-pointer`}
             >
               <ShoppingCart size={15} />
               <span>+ Panier</span>
@@ -258,7 +258,7 @@ export function StoryViewerModal({
                 onAddToCart(product);
                 onClose();
               }}
-              className={`h-12 ${primaryBg} text-slate-950 rounded-xl font-black uppercase text-xs tracking-wider flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all shadow-xl cursor-pointer`}
+              className={`h-12 ${primaryBg} text-white rounded-xl font-black uppercase text-xs tracking-wider flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all shadow-xl cursor-pointer`}
             >
               <span>Acheter vite</span>
               <ArrowRight size={17} />

@@ -1505,7 +1505,7 @@ export function SalesInbox() {
                   className="px-3 py-1.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-xs sm:text-[13px] font-bold text-emerald-700 dark:text-emerald-300 flex items-center gap-1.5 shrink-0 cursor-pointer transition-colors"
                 >
                   <ShoppingBag size={13} />
-                  <span>🛍️ Carte Article 1-Clic</span>
+                  <span>🛍️ Envoyer un article</span>
                 </button>
                 <button
                   type="button"

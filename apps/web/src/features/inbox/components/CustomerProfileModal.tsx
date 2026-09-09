@@ -169,7 +169,7 @@ export function CustomerProfileModal({
                 className="flex flex-col items-center justify-center p-2.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/20 active:scale-95 transition-all cursor-pointer"
               >
                 <ShoppingBag size={16} className="mb-1" />
-                <span className="text-[10px] font-bold">Carte Article</span>
+                <span className="text-[10px] font-bold">Envoyer un article</span>
               </button>
             )}
 

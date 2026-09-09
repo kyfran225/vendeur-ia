@@ -937,39 +937,52 @@ function BoutiqueTab({
           <div className="space-y-1.5">
              <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-white/40 ml-1">Adresse / Zone</label>
              <AddressAutocomplete
-               value={localMerchant?.address || ""}
-               onChange={v => { setLocalMerchant({...localMerchant, address: v}); setIsDirty(true); }}
-               onSelectSuggestion={(feature) => {
-                 const props = feature.properties;
-                 const context = props.context || {};
+                value={localMerchant?.address || ""}
+                onChange={v => { setLocalMerchant({...localMerchant, address: v}); setIsDirty(true); }}
+                countryCode={localMerchant?.countryCode || localMerchant?.country}
+                city={localMerchant?.city}
+                onSelectSuggestion={(suggestion) => {
+                  const isMapbox = !!suggestion?.properties;
+                  const props = suggestion?.properties || {};
+                  const context = props?.context || {};
 
-                 const city = props.place?.name || context.place?.name || props.name || "";
-                 const countryCode = context.country?.country_code || props.country_code || "";
-                 const district = props.district?.name || context.district?.name || "";
-                 const neighborhood = props.neighborhood?.name || context.neighborhood?.name || "";
+                  const city = isMapbox
+                    ? (props.place?.name || context.place?.name || props.name || "")
+                    : (suggestion?.city || "");
 
-                 const updates: any = {
-                   address: props.full_address || props.name,
-                   city: city,
-                 };
+                  const countryCode = isMapbox
+                    ? (context.country?.country_code || props.country_code || "")
+                    : (suggestion?.countryCode || "");
 
-                 if (countryCode) {
-                   const country = getProvidersForCountry(countryCode); // This is just to check if country exists in our core
-                   updates.country = countryCode;
-                 }
+                  const district = isMapbox
+                    ? (props.district?.name || context.district?.name || "")
+                    : (suggestion?.commune || "");
 
-                 setLocalMerchant({ ...localMerchant, ...updates });
-                 setIsDirty(true);
+                  const neighborhood = isMapbox
+                    ? (props.neighborhood?.name || context.neighborhood?.name || "")
+                    : (suggestion?.type === "neighborhood" ? suggestion?.name : "");
 
-                 // Automatically suggest adding the detected zone/commune if not already present
-                 const zoneName = neighborhood || district;
-                 if (zoneName && !deliveryFees.find((f: any) => f.zone.toLowerCase().includes(zoneName.toLowerCase()))) {
-                   setDeliveryFees([...deliveryFees, { zone: zoneName, price: 1000 }]);
-                   toast.info(`Zone "${zoneName}" ajoutée aux frais de livraison`);
-                 }
-               }}
-               placeholder="Ex: Cocody, Abidjan"
-               className="h-14 rounded-2xl"
+                  const updates: any = {
+                    address: suggestion?.formattedAddress || props.full_address || props.name || suggestion?.name,
+                    city: city || localMerchant?.city,
+                  };
+
+                  if (countryCode) {
+                    updates.country = countryCode.toUpperCase();
+                  }
+
+                  setLocalMerchant({ ...localMerchant, ...updates });
+                  setIsDirty(true);
+
+                  // Automatically suggest adding the detected zone/commune if not already present
+                  const zoneName = neighborhood || district;
+                  if (zoneName && !deliveryFees.find((f: any) => f.zone.toLowerCase().includes(zoneName.toLowerCase()))) {
+                    setDeliveryFees([...deliveryFees, { zone: zoneName, price: 1000 }]);
+                    toast.info(`Zone "${zoneName}" ajoutée aux frais de livraison`);
+                  }
+                }}
+                placeholder="Ex: Cocody, Abidjan"
+                className="h-14 rounded-2xl"
              />
           </div>
         </div>

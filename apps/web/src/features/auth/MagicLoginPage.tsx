@@ -127,7 +127,7 @@ export function MagicLoginPage() {
   if (status === "error") {
     return (
       <div className="min-h-screen bg-slate-50 dark:bg-vendeur-coal flex flex-col items-center justify-center p-4 text-center">
-        <div className="w-16 h-16 rounded-3xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-500 mb-4 shadow-sm">
+        <div className="w-16 h-16 rounded-3xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 flex items-center justify-center mb-4 shadow-sm">
           <Logo size={32} />
         </div>
         <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Lien invalide ou expiré</h2>

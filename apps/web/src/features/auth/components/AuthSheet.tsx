@@ -594,7 +594,7 @@ export function AuthSheet({ isOpen, onClose, onSuccess }: { isOpen: boolean; onC
         {/* HEADER (For Input & Email modes, or compact for Pairing) */}
         {whatsappStep !== "pairing" && (
           <div className="text-center space-y-1 mb-4">
-            <div className="inline-flex p-2 rounded-xl bg-emerald-50 dark:bg-vendeur-emerald/10 border border-emerald-200 dark:border-vendeur-emerald/20 text-emerald-700 dark:text-vendeur-emerald mb-0.5">
+            <div className="inline-flex p-2 rounded-xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 mb-0.5 shadow-sm">
               <Logo size={22} />
             </div>
             <h2 className="text-lg sm:text-xl font-black text-slate-900 dark:text-white tracking-tight uppercase">

@@ -13,6 +13,11 @@ import {
   MarketingCampaignModel
 } from "../modules/commerce/commerce.model.js";
 import { TransactionModel } from "../modules/commerce/transaction.model.js";
+import { WhatsAppConnectionModel } from "../modules/commerce/whatsapp-connection.model.js";
+import { WhatsAppSessionModel } from "../modules/whatsapp/mongo-auth-state.js";
+import { SubscriptionModel } from "../modules/commerce/subscription.model.js";
+import { PaymentIntentModel } from "../modules/commerce/payment-intent.model.js";
+import { AuthSessionModel } from "../modules/auth/auth-session.model.js";
 
 async function deleteUserByEmail(targetEnv: string, email: string) {
   if (!targetEnv || !email) {
@@ -104,7 +109,19 @@ async function deleteUserByEmail(targetEnv: string, email: string) {
       await CommerceMerchantModel.deleteMany({ ownerId: userId });
     }
 
-    // 3. Suppression du compte utilisateur
+    // 3. Suppression des sessions WhatsApp et connexions
+    console.log("- Deleting WhatsApp sessions & connection records...");
+    const sessionIdsToDelete = [userId.toString(), ...merchantIds.map(id => id.toString())];
+    await WhatsAppSessionModel.deleteMany({ sessionId: { $in: sessionIdsToDelete } });
+    await WhatsAppConnectionModel.deleteMany({ userId: { $in: sessionIdsToDelete } });
+
+    // 4. Suppression des abonnements & sessions auth
+    console.log("- Deleting subscriptions, payment intents, and auth sessions...");
+    await SubscriptionModel.deleteMany({ userId });
+    await PaymentIntentModel.deleteMany({ userId });
+    await AuthSessionModel.deleteMany({ userId });
+
+    // 5. Suppression du compte utilisateur
     console.log("- Deleting user account...");
     await UserModel.deleteOne({ _id: userId });
 

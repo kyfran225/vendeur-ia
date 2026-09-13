@@ -256,6 +256,19 @@ export class CommerceService {
     if (!merchant) return { merchant: null, products: [], metrics: {} };
 
     const isSocketAlive = whatsappService.isSessionConnected(ownerId);
+    const hasSavedSession = await whatsappService.hasStoredSession(ownerId);
+
+    // Auto-heal session if creds exist in MongoDB
+    if (hasSavedSession && !isSocketAlive) {
+      whatsappService.repairSession(ownerId).catch(() => {});
+    }
+
+    if (hasSavedSession && merchant.whatsappConfig?.status !== "connected") {
+      merchant.whatsappConfig = merchant.whatsappConfig || {};
+      merchant.whatsappConfig.status = "connected";
+      merchant.whatsappConfig.provider = merchant.whatsappConfig.provider || "baileys";
+      await merchant.save().catch(() => {});
+    }
 
     // Auto-sync merchant WhatsApp number from user identity if missing
     if (!merchant.whatsappNumber && user?.whatsappNumber) {
@@ -280,6 +293,21 @@ export class CommerceService {
       status: { $in: ['under_verification', 'pending', 'payment_detected', 'awaiting_payment'] }
     }).sort({ createdAt: -1 });
     let whatsappConnection = await WhatsAppConnectionModel.findOne({ userId: ownerId });
+    if (hasSavedSession && whatsappConnection?.status !== 'CONNECTED') {
+      whatsappConnection = await WhatsAppConnectionModel.findOneAndUpdate(
+        { userId: ownerId },
+        {
+          $set: {
+            status: 'CONNECTED',
+            connectionType: 'baileys',
+            phoneNumber: merchant.whatsappNumber || whatsappConnection?.phoneNumber,
+            connectedAt: whatsappConnection?.connectedAt || new Date(),
+            disconnectedAt: null
+          }
+        },
+        { upsert: true, new: true }
+      );
+    }
     if (isFounder || merchant?.whatsappConfig?.provider === 'meta') {
       whatsappConnection = {
         userId: ownerId,
@@ -342,6 +370,7 @@ export class CommerceService {
     const isWhatsAppConnected = (whatsappConnection?.status === 'CONNECTED') || 
                                 (merchant.whatsappConfig?.status === 'connected') || 
                                 isSocketAlive ||
+                                hasSavedSession ||
                                 Boolean(merchant.whatsappConfig?.meta?.phoneNumberId && merchant.whatsappConfig?.meta?.accessToken);
 
     // Check if user has actually ADDED payment methods (not just the default empty ones)
@@ -452,6 +481,20 @@ export class CommerceService {
     const whatsappNum = data.whatsappNumber || data.phone || "";
     const hasPhone = !!(whatsappNum && whatsappNum.trim().length >= 6);
 
+    // Check if merchant already exists or has an active WhatsApp session / connection
+    const existingMerchant = await CommerceMerchantModel.findOne({ ownerId });
+    const existingConn = await WhatsAppConnectionModel.findOne({ userId: ownerId });
+    const hasSavedSession = await whatsappService.hasStoredSession(ownerId);
+    const isSocketAlive = whatsappService.isSessionConnected(ownerId);
+
+    const isConnected = isSocketAlive ||
+      existingMerchant?.whatsappConfig?.status === 'connected' ||
+      existingConn?.status === 'CONNECTED' ||
+      hasSavedSession;
+
+    const whatsappProvider = existingMerchant?.whatsappConfig?.provider || "baileys";
+    const whatsappStatus = isConnected ? "connected" : (existingMerchant?.whatsappConfig?.status || "disconnected");
+
     // 1. Atomic Upsert for Merchant
     const merchant = await CommerceMerchantModel.findOneAndUpdate(
       { ownerId },
@@ -462,13 +505,12 @@ export class CommerceService {
           category: data.category,
           description: data.description,
           address: data.address,
-          whatsappNumber: whatsappNum,
-          phone: data.phone || whatsappNum,
+          whatsappNumber: whatsappNum || existingMerchant?.whatsappNumber,
+          phone: data.phone || whatsappNum || existingMerchant?.phone,
           city: data.city,
           country: data.country,
-          "whatsappConfig.provider": "baileys",
-          "whatsappConfig.status": "disconnected",
-          "whatsappConfig.phoneNumberId": whatsappNum
+          "whatsappConfig.provider": whatsappProvider,
+          "whatsappConfig.status": whatsappStatus
         },
         $setOnInsert: {
           referralCode: this.generateReferralCode(),
@@ -480,20 +522,39 @@ export class CommerceService {
 
     if (!merchant) throw new Error("Failed to create or update merchant");
 
-    // Provision initial WhatsApp Connection Record as NOT_CONNECTED
-    await WhatsAppConnectionModel.findOneAndUpdate(
-      { userId: ownerId },
-      {
-        $set: {
-          phoneNumber: whatsappNum || undefined,
-          status: 'NOT_CONNECTED',
-          connectionType: 'baileys',
-          connectedAt: null,
-          disconnectedAt: null
-        }
-      },
-      { upsert: true }
-    );
+    // Provision or update WhatsApp Connection Record without wiping active sessions
+    if (isConnected) {
+      await WhatsAppConnectionModel.findOneAndUpdate(
+        { userId: ownerId },
+        {
+          $set: {
+            phoneNumber: whatsappNum || existingConn?.phoneNumber || undefined,
+            status: 'CONNECTED',
+            connectionType: existingConn?.connectionType || whatsappProvider,
+            connectedAt: existingConn?.connectedAt || new Date(),
+            disconnectedAt: null
+          }
+        },
+        { upsert: true }
+      );
+      if (!isSocketAlive && hasSavedSession) {
+        whatsappService.repairSession(ownerId).catch(() => {});
+      }
+    } else {
+      await WhatsAppConnectionModel.findOneAndUpdate(
+        { userId: ownerId },
+        {
+          $set: {
+            phoneNumber: whatsappNum || existingConn?.phoneNumber || undefined,
+            status: existingConn?.status || 'NOT_CONNECTED',
+            connectionType: existingConn?.connectionType || 'baileys',
+            connectedAt: existingConn?.connectedAt || null,
+            disconnectedAt: existingConn?.disconnectedAt || null
+          }
+        },
+        { upsert: true }
+      );
+    }
 
     // 2. Atomic Initialization for Knowledge Base
     await CommerceKnowledgeModel.findOneAndUpdate(

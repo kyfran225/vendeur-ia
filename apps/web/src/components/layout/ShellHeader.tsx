@@ -240,12 +240,14 @@ export function ShellHeader({ isVisible = true }: ShellHeaderProps) {
   const isProPlan = isProParam || merchant?.subscription?.plan === 'pro' || merchant?.whatsappConfig?.provider === 'meta';
   const isConnexionsPage = location.pathname.includes('/settings') || location.pathname.includes('/connexions') || location.pathname.includes('/plus');
 
-  const hasEverConnected = Boolean(whatsapp?.connectedAt || merchant?.whatsappConfig?.connectedAt || activePhone);
-  const isUnexpectedDisconnect = !isFounder && hasEverConnected && (
+  const hasEverConnected = Boolean(whatsapp?.connectedAt || merchant?.whatsappConfig?.connectedAt);
+  const isCurrentlyConnected = whatsapp?.status === 'CONNECTED' || whatsapp?.status === 'connected' || merchant?.whatsappConfig?.status === 'connected';
+  const isUnexpectedDisconnect = !isFounder && hasEverConnected && !isCurrentlyConnected && (
     merchant?.whatsappConfig?.status === 'error' || 
     merchant?.whatsappConfig?.status === 'disconnected' ||
     whatsapp?.status === 'DISCONNECTED' ||
-    whatsapp?.status === 'disconnected'
+    whatsapp?.status === 'disconnected' ||
+    whatsapp?.status === 'ERROR'
   );
 
   const showBanner = Boolean(isUnexpectedDisconnect && !isConnexionsPage);

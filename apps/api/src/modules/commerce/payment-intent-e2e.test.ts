@@ -40,6 +40,8 @@ vi.mock('../whatsapp/whatsapp.service.js', () => ({
     sendMessage: vi.fn().mockResolvedValue(true),
     sendMetaMessage: vi.fn().mockResolvedValue(true),
     isSessionConnected: vi.fn().mockReturnValue(false),
+    hasStoredSession: vi.fn().mockResolvedValue(false),
+    repairSession: vi.fn().mockResolvedValue(undefined),
     activeSessions: { get: vi.fn() }
   }
 }));

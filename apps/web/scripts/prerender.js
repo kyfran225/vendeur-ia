@@ -10,6 +10,25 @@ const BASE_URL = 'https://vendeuria.maatfeed.com';
 
 const ROUTES = [
   {
+    path: '',
+    title: 'Agent IA WhatsApp & Vendeur Virtuel | Vendeur IA',
+    description: 'Vendeur IA : votre commercial virtuel sur WhatsApp & Instagram. Répondez, conseillez et vendez 24h/24, 7j/7 avec un agent IA intelligent.',
+    canonicalUrl: `${BASE_URL}/`,
+    noscriptContent: `
+      <div style="font-family: sans-serif; max-width: 800px; margin: 0 auto; padding: 2rem; color: #111;">
+        <h1>Vendeur IA - Votre Agent IA sur WhatsApp & Instagram</h1>
+        <p>Vendeur IA est un agent d'intelligence artificielle qui gère vos conversations clients sur WhatsApp et Instagram, présente votre catalogue, relance les prospects et encaisse les paiements 24h/24 et 7j/7.</p>
+        <h2>Nos fonctionnalités et offres :</h2>
+        <ul>
+          <li><strong>Agent IA WhatsApp 24/7</strong> : Réponse instantanée, naturelle et intelligente.</li>
+          <li><strong>Paiements Mobile Money</strong> : Wave, MTN, Orange Money intégrés.</li>
+          <li><strong>Multi-canal</strong> : WhatsApp, Instagram et bientôt TikTok.</li>
+        </ul>
+        <p><a href="/offers">Consulter nos offres et tarifs</a> | <a href="/terms">Conditions Générales</a></p>
+      </div>
+    `
+  },
+  {
     path: 'offers',
     title: 'Offres & Tarifs | Vendeur IA - Commercial Virtuel WhatsApp & Instagram',
     description: 'Découvrez nos forfaits flexibles adaptés à votre activité commerciale. Automatisez vos ventes sur WhatsApp à partir de 5 000 FCFA / mois.',

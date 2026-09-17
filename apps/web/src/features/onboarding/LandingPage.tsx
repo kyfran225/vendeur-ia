@@ -382,6 +382,75 @@ function BentoFeatures({ onOpenProduct }: { onOpenProduct?: (tab: ProductTab) =>
   );
 }
 
+const IndustrySolutions = () => {
+  const industries = [
+    { title: "Agent E-commerce IA", desc: "Automatisez la vente de vos produits physiques, de la présentation du catalogue à l'encaissement." },
+    { title: "Agent Immobilier IA", desc: "Gérez vos visites, envoyez les fiches techniques des biens et qualifiez vos prospects 24h/7." },
+    { title: "Agent de Support Client", desc: "Répondez instantanément aux questions fréquentes et libérez du temps pour votre équipe." },
+    { title: "Assistant de Vente Services", desc: "Prenez des rendez-vous et vendez vos prestations de service directement sur WhatsApp." }
+  ];
+
+  return (
+    <section className="py-20 px-4 max-w-7xl mx-auto border-t border-slate-200 dark:border-white/5">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+        {industries.map((item, i) => (
+          <FadeIn key={i} delay={0.1 * i} direction="up">
+            <div className="space-y-3">
+              <h3 className="text-[12px] font-black uppercase tracking-widest text-emerald-600 dark:text-emerald-400 mb-2">Solution Métier</h3>
+              <h4 className="text-lg font-black uppercase tracking-tight text-slate-900 dark:text-white leading-tight">{item.title}</h4>
+              <p className="text-sm text-slate-500 dark:text-white/40 leading-relaxed font-medium">{item.desc}</p>
+            </div>
+          </FadeIn>
+        ))}
+      </div>
+    </section>
+  );
+};
+
+const SEOFAQ = () => {
+  const faqs = [
+    {
+      q: "Qu'est-ce qu'un Agent WhatsApp IA ?",
+      a: "Un agent WhatsApp IA est un assistant virtuel intelligent capable de comprendre le langage naturel pour interagir avec vos clients, répondre à leurs questions et réaliser des actions de vente de manière autonome."
+    },
+    {
+      q: "Comment un agent IA peut-il augmenter mes ventes sur WhatsApp ?",
+      a: "En étant disponible 24h/24 et 7j/7, l'agent IA répond instantanément aux prospects, ce qui évite les pertes de clients liées à l'attente et permet de conclure des ventes même pendant votre sommeil."
+    },
+    {
+      q: "L'agent IA WhatsApp gère-t-il les paiements Mobile Money ?",
+      a: "Oui, Vendeur IA intègre les solutions de paiement locales comme Wave, Orange Money et MTN MoMo pour sécuriser vos transactions directement dans la conversation WhatsApp."
+    },
+    {
+      q: "Quelle est la différence entre un chatbot classique et un Agent IA ?",
+      a: "Contrairement à un chatbot classique basé sur des boutons rigides, un Agent IA utilise le traitement du langage naturel (NLP) pour comprendre les intentions réelles des clients et conseiller vos produits de manière personnalisée."
+    }
+  ];
+
+  return (
+    <section className="py-24 px-4 max-w-4xl mx-auto border-t border-slate-200 dark:border-white/5">
+      <FadeIn>
+        <h2 className="text-3xl md:text-4xl font-black text-center uppercase tracking-tighter mb-16 text-slate-900 dark:text-white">
+          Tout savoir sur les <br className="sm:hidden" />
+          <span className="text-emerald-600 dark:text-emerald-400">Agents WhatsApp IA</span>
+        </h2>
+      </FadeIn>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-10">
+        {faqs.map((faq, i) => (
+          <FadeIn key={i} delay={0.1 * i}>
+            <div className="space-y-3">
+              <h3 className="text-lg font-black text-slate-900 dark:text-white flex items-start gap-3 leading-tight">
+                <span className="text-emerald-500 shrink-0">Q.</span> {faq.q}
+              </h3>
+              <p className="text-sm text-slate-600 dark:text-white/50 leading-relaxed font-medium pl-7">{faq.a}</p>
+            </div>
+          </FadeIn>
+        ))}
+      </div>
+    </section>
+  );
+};
+
 // THE MAIN LANDING HERO
 function LandingHero({
   onAuth,
@@ -1156,6 +1225,44 @@ export function LandingPage() {
       <MetaHead
         title="Vendeur IA | Commercial Virtuel Haute-Performance sur WhatsApp"
         description="Vendeur IA : votre commercial virtuel sur WhatsApp & Instagram. Répondez, conseillez et vendez 24h/24, 7j/7."
+        schemaRaw={{
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "Qu'est-ce qu'un Agent WhatsApp IA ?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Un agent WhatsApp IA est un assistant virtuel intelligent capable de comprendre le langage naturel pour interagir avec vos clients, répondre à leurs questions et réaliser des actions de vente de manière autonome."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Comment un agent IA peut-il augmenter mes ventes sur WhatsApp ?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "En étant disponible 24h/24 et 7j/7, l'agent IA répond instantanément aux prospects, ce qui évite les pertes de clients liées à l'attente et permet de conclure des ventes même pendant votre sommeil."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "L'agent IA WhatsApp gère-t-il les paiements Mobile Money ?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Oui, Vendeur IA intègre les solutions de paiement locales comme Wave, Orange Money et MTN MoMo pour sécuriser vos transactions directement dans la conversation WhatsApp."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Quelle est la différence entre un chatbot classique et un Agent IA ?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Contrairement à un chatbot classique basé sur des boutons rigides, un Agent IA utilise le traitement du langage naturel (NLP) pour comprendre les intentions réelles des clients et conseiller vos produits de manière personnalisée."
+              }
+            }
+          ]
+        }}
       />
 
       {/* Modern Header / Glassmorphism Giant-Tech Nav */}
@@ -1481,6 +1588,9 @@ export function LandingPage() {
         {/* BENTO FEATURES WITH INTERACTIVE MODAL CALLBACKS */}
         <BentoFeatures onOpenProduct={openProduct} />
 
+        {/* SEO OPTIMIZED INDUSTRY SOLUTIONS */}
+        <IndustrySolutions />
+
         {/* CTA FINAL SECTION */}
         <section className="py-24 md:py-32 px-4 md:px-6">
            <div className="max-w-4xl mx-auto rounded-[2rem] md:rounded-[2.5rem] bg-white dark:bg-gradient-to-br dark:from-[#0c1813] dark:via-[#07110d] dark:to-[#040806] border border-slate-200 dark:border-emerald-500/15 p-8 md:p-16 text-center relative overflow-hidden shadow-xl dark:shadow-2xl text-slate-900 dark:text-white transition-colors">
@@ -1508,6 +1618,9 @@ export function LandingPage() {
               </FadeIn>
            </div>
         </section>
+
+        {/* SEO OPTIMIZED FAQ SECTION */}
+        <SEOFAQ />
 
         {/* FOOTER WITH INTERACTIVE PRODUCT LINKS */}
         <footer className="py-20 border-t border-slate-200 dark:border-white/5 bg-white dark:bg-black/20 text-slate-900 dark:text-white transition-colors">

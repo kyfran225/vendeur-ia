@@ -14,6 +14,10 @@ export interface MetaHeadProps {
 }
 
 const DEFAULT_KEYWORDS = [
+  'agent whatsapp',
+  'agent ia whatsapp',
+  'agent ia whatsapp business',
+  'assistant intelligent whatsapp',
   'vendeur IA',
   'vendeuria',
   'vendeur IA whatsapp',
@@ -27,7 +31,11 @@ const DEFAULT_KEYWORDS = [
   'automation vente e-commerce',
   'vendeur autonome ia',
   'intelligence artificielle whatsapp',
-  'agents commerciaux ia'
+  'agents commerciaux ia',
+  'agent conversationnel whatsapp',
+  'intelligence artificielle vente',
+  'chatbot ia afrique',
+  'vendre sur whatsapp avec ia'
 ];
 
 const DEFAULT_TITLE = 'Vendeur IA | Votre Commercial Virtuel sur WhatsApp & Instagram';

@@ -77,17 +77,41 @@ router.post("/process", async (req, res) => {
       platform: "web"
     });
 
+    let reply = aiResponse.text;
+
+    // Check for product image tag
+    let productImageUrl: string | undefined = undefined;
+    const sendImageMatch = reply.match(/\[\[ACTION_SEND_PRODUCT_IMAGE:([\s\S]*?)\]\]/);
+    if (sendImageMatch) {
+      try {
+        const payload = JSON.parse(sendImageMatch[1]);
+        reply = reply.replace(/\[\[ACTION_SEND_PRODUCT_IMAGE:[\s\S]*?\]\]/, '').trim();
+        const matched = products.find(p =>
+          (payload.productId && p._id.toString() === payload.productId) ||
+          (payload.productName && p.name.toLowerCase() === payload.productName.toLowerCase())
+        );
+        if (matched) {
+          productImageUrl = (matched.images && matched.images[0]) || matched.imageUrl;
+        }
+      } catch (e) {}
+    }
+
+    // Clean any other tags
+    reply = reply.replace(/\[\[ACTION_CREATE_ORDER:[\s\S]*?\]\]/g, '').replace(/\[\[ACTION_ESCALATE_HUMAN:[\s\S]*?\]\]/g, '').trim();
+
     // 7. Save AI message
     await CommerceMessageModel.create({
       conversationId: conversation._id,
       sender: "ai",
-      content: aiResponse.text
+      content: reply,
+      type: productImageUrl ? "image" : "text",
+      mediaUrl: productImageUrl || undefined
     });
 
     // 8. Schedule recovery if needed (optional for web, but good for follow-up if we get their ID)
     // scheduleRecovery(...)
 
-    res.json({ reply: aiResponse.text });
+    res.json({ reply, imageUrl: productImageUrl });
   } catch (error: any) {
     console.error("[WebChat Error]", error);
     res.status(500).json({ error: error.message });

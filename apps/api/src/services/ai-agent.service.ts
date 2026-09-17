@@ -136,14 +136,19 @@ export class AIAgentService {
 
     // 1. Specific search results (RAG)
     const ragStr = ragProducts.length > 0
-      ? `\n🔎 RÉSULTATS DE RECHERCHE PRÉCIS (Priorité) :\n` + ragProducts.map(p => `- ${p.name}: ${p.price} ${p.currency || activeCurrency} (${p.description || "Pas de description"})`).join("\n")
+      ? `\n🔎 RÉSULTATS DE RECHERCHE PRÉCIS (Priorité) :\n` + ragProducts.map(p => {
+        const hasImg = Boolean((p.images && p.images.length > 0 && p.images[0]) || p.imageUrl);
+        const imgTag = hasImg ? ` [Photo disponible]` : ``;
+        const prodId = p._id?.toString() || "prod";
+        return `- ${p.name} (ID: ${prodId}): ${p.price} ${p.currency || activeCurrency} (${p.description || "Pas de description"})${imgTag}`;
+      }).join("\n")
       : "";
 
     // 2. High-level catalog overview (excluding what's already in RAG)
     const ragIds = new Set(ragProducts.map(p => p._id?.toString()));
     const otherProducts = products
       .filter(p => p.availability !== "hidden" && !ragIds.has(p._id?.toString()))
-      .slice(0, 5); // Show top 5 others
+      .slice(0, 6); // Show top 6 others
 
     // Category-specific persona instructions
     const isService = merchant.category === "services";
@@ -164,6 +169,9 @@ export class AIAgentService {
         if (!isService && !isDigital) {
           stockStatus = p.stock <= 0 ? "ÉPUISÉ" : p.stock <= 5 ? `STOCK TRÈS LIMITÉ (${p.stock} restants)` : "Disponible";
         }
+        const hasImg = Boolean((p.images && p.images.length > 0 && p.images[0]) || p.imageUrl);
+        const imgTag = hasImg ? ` [Photo disponible]` : ``;
+        const prodId = p._id?.toString() || "prod";
         // Domain-specific metadata enrichment
         const extras: string[] = [];
         if (isFood && p.preparationTime) extras.push(`⏱ Préparation: ${p.preparationTime}`);
@@ -172,7 +180,7 @@ export class AIAgentService {
         if (isService && p.serviceDeliveryType) extras.push(`📍 Mode: ${p.serviceDeliveryType}`);
         if (isDigital && p.digitalFormat) extras.push(`📁 Format: ${p.digitalFormat}`);
         const extraStr = extras.length > 0 ? ` | ${extras.join(" | ")}` : "";
-        return `- ${p.name}: ${p.price} ${p.currency || activeCurrency} [${stockStatus}]${extraStr}`;
+        return `- ${p.name} (ID: ${prodId}): ${p.price} ${p.currency || activeCurrency} [${stockStatus}]${imgTag}${extraStr}`;
       }).join("\n")
       : "";
 
@@ -352,6 +360,14 @@ STRATÉGIE DE VENTE & PSYCHOLOGIE COMMERCIALE (CLOSING) :
      💳 *Règlement* : ${paymentsStr}
      👉 Envoie-moi simplement la confirmation ou la capture dès que le transfert est effectué pour bloquer ton colis ! 🚀
 
+DÉTECTION D'ENVOI DE PHOTO DE PRODUIT (INTELLIGENCE VISUELLE SÛRE) :
+- Quand le client demande expressément à voir une photo ou le visuel d'un article/service précis (ex: "Montre-moi la photo", "Je peux voir la photo de la robe ?", "Envoie la photo du sac noir", "C'est comment en photo ?", "Tu as une image ?"), OU s'il s'intéresse à un article spécifique qui porte la mention [Photo disponible] :
+  👉 Tu peux lui faire parvenir directement la photo de cet article dans la discussion en insérant DISCRÈTEMENT à la TOUTE FIN de ton message la balise JSON suivante :
+  [[ACTION_SEND_PRODUCT_IMAGE:{"productId":"ID_DU_PRODUIT","productName":"NomExactDuProduit"}]]
+- RÈGLES DE FLUIDITÉ & ANTI-SPAM (CRITIQUE) :
+  • N'envoie JAMAIS plusieurs photos à la fois pour ne pas saturer la discussion ni la connexion internet du client.
+  • Si le client demande à voir "TOUT le catalogue", "toutes vos offres", hésite entre trop d'articles ou cherche de la nouveauté générale : NE METS PAS la balise photo, PARTAGE plutôt avec enthousiasme le lien de la vitrine officielle (${shopUrl}) pour lui permettre d'explorer sereinement tout le catalogue.
+
 DÉTECTION DE COMMANDE FERME (AUTOMATION) :
 - Quand le client CONFIRME EXPLICITEMENT qu'il veut commander ou réserver un ou plusieurs articles précis (ex: "Je prends 2 T-shirts Noirs", "Je confirme pour la robe rouge à Cocody", "Je valide la commande"), insère DISCRÈTEMENT à la TOUTE FIN de ton message la balise JSON suivante :
 [[ACTION_CREATE_ORDER:{"items":[{"name":"NomExactDuProduit","quantity":1}],"deliveryAddress":"Quartier ou Adresse si mentionnée"}]]
@@ -384,7 +400,7 @@ RÈGLES D'OR :
 - Ne demande JAMAIS l'adresse au premier message de salutation.
 - Inculque un sentiment d'urgence ou d'exclusivité avec naturel.
 - Si le client demande le prix, donne-le CLAIREMENT avec la devise.
-- PROACTIVITÉ VITRINE : N'hésite pas à partager le lien de la boutique en ligne (${shopUrl}) dès que le client cherche à voir plus de choix, demande des photos ou hésite, pour lui offrir une expérience d'achat visuelle et complète.
+- PROACTIVITÉ VITRINE : N'hésite pas à partager le lien de la boutique en ligne (${shopUrl}) dès que le client cherche à voir l'ensemble du catalogue, hésite ou veut parcourir tous les rayons.
 `;
   }
 

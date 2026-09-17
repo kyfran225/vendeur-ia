@@ -326,12 +326,49 @@ Réponds UNIQUEMENT avec le texte final du message.`;
         }
       }
 
+      // Check for automated Send Product Image tag: [[ACTION_SEND_PRODUCT_IMAGE:{...}]]
+      let productImageToSend: string | undefined = undefined;
+      const sendImageMatch = reply.match(/\[\[ACTION_SEND_PRODUCT_IMAGE:([\s\S]*?)\]\]/);
+      if (sendImageMatch) {
+        try {
+          const payload = JSON.parse(sendImageMatch[1]);
+          reply = reply.replace(/\[\[ACTION_SEND_PRODUCT_IMAGE:[\s\S]*?\]\]/, '').trim();
+
+          const merchantId = context.merchant._id?.toString();
+          let matchedProd = null;
+
+          if (payload.productId && mongoose.isValidObjectId(payload.productId)) {
+            matchedProd = await CommerceProductModel.findOne({
+              _id: payload.productId,
+              merchantId
+            });
+          }
+
+          if (!matchedProd && payload.productName) {
+            matchedProd = await CommerceProductModel.findOne({
+              merchantId,
+              name: { $regex: new RegExp(payload.productName.trim(), 'i') }
+            });
+          }
+
+          if (matchedProd) {
+            const img = (matchedProd.images && matchedProd.images[0]) || matchedProd.imageUrl;
+            if (img && img.trim()) {
+              productImageToSend = img.trim();
+              console.log(`[AI Queue] Visual intelligence sending product photo for ${matchedProd.name}: ${productImageToSend}`);
+            }
+          }
+        } catch (imgErr) {
+          console.error("[AI Queue] Error parsing send product image tag:", imgErr);
+        }
+      }
+
       // Voice Note / Audio Mode
       let audioUrl: string | undefined = undefined;
       let audioBuffer: Buffer | null = null;
       const merchantObj = await CommerceMerchantModel.findById(context.merchant._id);
       const aiSettings = merchantObj?.aiSettings || context.merchant?.aiSettings;
-      let voiceMode = aiSettings?.voiceMode && (platform === 'whatsapp' || !platform) && reply.length < 300;
+      let voiceMode = !productImageToSend && aiSettings?.voiceMode && (platform === 'whatsapp' || !platform) && reply.length < 300;
 
       if (voiceMode) {
         try {
@@ -355,13 +392,17 @@ Réponds UNIQUEMENT avec le texte final du message.`;
         }
       }
 
+      // Determine final message type and media URL
+      const finalMessageType = productImageToSend ? 'image' : (voiceMode ? 'audio' : 'text');
+      const finalMediaUrl = productImageToSend || audioUrl;
+
       // Save AI message
       const aiMsg = await CommerceMessageModel.create({
         conversationId,
         sender: 'ai',
-        type: voiceMode ? 'audio' : 'text',
+        type: finalMessageType,
         content: reply,
-        mediaUrl: audioUrl,
+        mediaUrl: finalMediaUrl,
         status: 'sent',
         aiMetadata: {
           provider: aiResponse.provider,
@@ -391,6 +432,8 @@ Réponds UNIQUEMENT avec le texte final du message.`;
 
       // SEND MESSAGE via Unified Messaging Service
       const sendRes: any = await messagingService.sendMessage(context.merchant, platform, remoteJid, reply, {
+        type: finalMessageType,
+        mediaUrl: productImageToSend || undefined,
         audioBuffer: audioBuffer || undefined
       });
 

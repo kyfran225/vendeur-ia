@@ -33,23 +33,25 @@ export class MessagingService {
       case 'whatsapp':
         return this.sendWhatsApp(merchant, remoteId, content, options);
       case 'instagram':
-        return this.sendInstagram(merchant, remoteId, content);
+        return this.sendInstagram(merchant, remoteId, content, options);
       case 'facebook':
-        return this.sendFacebook(merchant, remoteId, content);
+        return this.sendFacebook(merchant, remoteId, content, options);
       case 'tiktok':
         return this.sendTikTok(merchant, remoteId, content);
       case 'web':
-        return this.sendWeb(remoteId, content);
+        return this.sendWeb(remoteId, content, options);
       default:
         throw new Error(`Unsupported platform: ${platform}`);
     }
   }
 
-  private async sendWeb(sessionId: string, content: string) {
+  private async sendWeb(sessionId: string, content: string, options: any = {}) {
     emitToSession(sessionId, "message:new", {
       id: Date.now().toString(),
       role: "ai", // Merchant messages are treated as AI/Agent replies in the widget
       text: content,
+      type: options.type || (options.mediaUrl ? "image" : "text"),
+      mediaUrl: options.mediaUrl,
       timestamp: new Date()
     });
     return { success: true };
@@ -60,7 +62,7 @@ export class MessagingService {
     return whatsappService.sendMessage(userId, remoteId, content, options);
   }
 
-  private async sendInstagram(merchant: any, remoteId: string, content: string) {
+  private async sendInstagram(merchant: any, remoteId: string, content: string, options: any = {}) {
     const config = merchant.instagramConfig;
     if (!config?.accessToken || !config?.pageId) {
       throw new Error("Instagram not configured for this merchant");
@@ -68,31 +70,72 @@ export class MessagingService {
 
     try {
       const url = `https://graph.facebook.com/v20.0/me/messages?access_token=${config.accessToken}`;
-      await axios.post(url, {
-        recipient: { id: remoteId },
-        message: { text: content },
-        messaging_type: "RESPONSE"
-      });
+      
+      if (options?.mediaUrl) {
+        await axios.post(url, {
+          recipient: { id: remoteId },
+          message: {
+            attachment: {
+              type: "image",
+              payload: { url: options.mediaUrl, is_reusable: true }
+            }
+          },
+          messaging_type: "RESPONSE"
+        });
+        if (content) {
+          await axios.post(url, {
+            recipient: { id: remoteId },
+            message: { text: content },
+            messaging_type: "RESPONSE"
+          });
+        }
+      } else {
+        await axios.post(url, {
+          recipient: { id: remoteId },
+          message: { text: content },
+          messaging_type: "RESPONSE"
+        });
+      }
     } catch (error: any) {
       console.error("[MessagingService] Instagram send error:", error.response?.data || error.message);
       throw error;
     }
   }
 
-  private async sendFacebook(merchant: any, remoteId: string, content: string) {
+  private async sendFacebook(merchant: any, remoteId: string, content: string, options: any = {}) {
     const config = merchant.facebookConfig;
     if (!config?.accessToken || !config?.pageId) {
       throw new Error("Facebook not configured for this merchant");
     }
 
     try {
-      // Facebook uses the same Messenger API as Instagram
       const url = `https://graph.facebook.com/v20.0/me/messages?access_token=${config.accessToken}`;
-      await axios.post(url, {
-        recipient: { id: remoteId },
-        message: { text: content },
-        messaging_type: "RESPONSE"
-      });
+      
+      if (options?.mediaUrl) {
+        await axios.post(url, {
+          recipient: { id: remoteId },
+          message: {
+            attachment: {
+              type: "image",
+              payload: { url: options.mediaUrl, is_reusable: true }
+            }
+          },
+          messaging_type: "RESPONSE"
+        });
+        if (content) {
+          await axios.post(url, {
+            recipient: { id: remoteId },
+            message: { text: content },
+            messaging_type: "RESPONSE"
+          });
+        }
+      } else {
+        await axios.post(url, {
+          recipient: { id: remoteId },
+          message: { text: content },
+          messaging_type: "RESPONSE"
+        });
+      }
     } catch (error: any) {
       console.error("[MessagingService] Facebook send error:", error.response?.data || error.message);
       throw error;

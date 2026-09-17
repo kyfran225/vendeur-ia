@@ -3096,6 +3096,35 @@ class WhatsAppService {
           } catch (err) {
             console.warn(`[WhatsApp Meta] Failed media send (${mType}), falling back to text:`, err);
           }
+        } else if (options?.mediaUrl && (options?.type === 'image' || !options?.type || options?.type === 'text')) {
+          try {
+            const config = await this.getMetaConfig(merchant);
+            if (config.phoneNumberId && config.accessToken) {
+              const res = await axios.post(
+                `https://graph.facebook.com/v20.0/${config.phoneNumberId}/messages`,
+                {
+                  messaging_product: "whatsapp",
+                  recipient_type: "individual",
+                  to: cleanPhone,
+                  type: "image",
+                  image: {
+                    link: options.mediaUrl,
+                    caption: text
+                  }
+                },
+                {
+                  headers: {
+                    Authorization: `Bearer ${config.accessToken}`,
+                    "Content-Type": "application/json"
+                  }
+                }
+              );
+              const metaMsgId = res.data?.messages?.[0]?.id || `wamid.meta_${Date.now()}`;
+              metaResult = { success: true, messageId: metaMsgId, id: metaMsgId, key: { id: metaMsgId } };
+            }
+          } catch (err: any) {
+            console.warn("[WhatsApp Meta] Failed direct image link send:", err.response?.data || err.message);
+          }
         } else if (options?.type === 'audio' || (merchant.aiSettings?.voiceMode && text && text.length < 300)) {
           try {
             const audioBuffer = await aiProvider.generateSpeech(text);

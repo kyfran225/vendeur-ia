@@ -149,11 +149,14 @@ export class StorageService {
     if (this.useCloudinary) {
       try {
         const base64Data = `data:${finalMime};base64,${finalBuffer.toString("base64")}`;
-        const result = await cloudinary.uploader.upload(base64Data, {
+        const uploadOptions: any = {
           folder,
-          resource_type: "auto",
-          transformation: [{ width: 1200, height: 1200, crop: "limit", quality: "auto:good", fetch_format: "auto" }]
-        });
+          resource_type: isImage ? "image" : "auto",
+        };
+        if (isImage) {
+          uploadOptions.transformation = [{ width: 1200, height: 1200, crop: "limit", quality: "auto:good", fetch_format: "auto" }];
+        }
+        const result = await cloudinary.uploader.upload(base64Data, uploadOptions);
         return {
           url: result.secure_url,
           provider: "cloudinary",

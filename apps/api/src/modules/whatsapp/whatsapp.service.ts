@@ -1324,32 +1324,18 @@ class WhatsAppService {
       }
     }
 
-    // Video Support
+    // Video Support - Download rejected to preserve memory and stability
     if (isVideoMsg) {
       messageType = "video";
-      console.log("[WhatsApp] Video message received, downloading...");
-      try {
-        const mimeType = videoMsg?.mimetype || 'video/mp4';
-        const buffer = msg._savedBuffer || await whatsappMediaService.downloadBaileysMedia(msg, 'video');
-        if (!mediaUrl) {
-          const storageResult = await storageService.uploadBuffer(
-            buffer,
-            `wa_video_${Date.now()}.mp4`,
-            mimeType,
-            "inbox-media"
-          );
-          mediaUrl = storageResult.url;
-        }
-        mediaMetadata = mediaMetadata || {
-          fileName: "video.mp4",
-          fileSize: buffer.length,
-          mimeType
-        };
-        if (!text) text = "[Vidéo reçue]";
-      } catch (err: any) {
-        console.error("Error handling video download:", err?.message || err);
-        if (!text) text = "[Vidéo reçue]";
-      }
+      console.log("[WhatsApp] Video message received (download bypassed to protect server RAM).");
+      mediaUrl = undefined;
+      mediaMetadata = {
+        fileName: "video.mp4",
+        mimeType: videoMsg?.mimetype || 'video/mp4',
+        rejected: true,
+        note: "Video download rejected to protect server resources"
+      };
+      if (!text) text = "[Vidéo reçue]";
     }
 
     // Document Support
@@ -1714,6 +1700,12 @@ class WhatsAppService {
       return;
     }
 
+    // --- 4. CHECK RAW VIDEO (Skip AI reasoning for videos without text questions) ---
+    if (isVideoMsg && (!videoMsg?.caption || !videoMsg.caption.trim())) {
+      console.log(`[WhatsApp] Incoming video without text caption for merchant "${merchant.businessName}". Recorded in chat history, AI processing skipped.`);
+      return;
+    }
+
     // Fetch conversation history
     const historyMessages = await CommerceMessageModel.find({ conversationId: conversation._id })
       .sort({ timestamp: -1 })
@@ -1901,21 +1893,12 @@ class WhatsAppService {
       } catch (e) {}
     } else if (isVideoMsg) {
       messageType = "video";
-      try {
-        const buffer = await whatsappMediaService.downloadBaileysMedia(msg, 'video');
-        const storageResult = await storageService.uploadBuffer(
-          buffer,
-          `out_video_${Date.now()}.mp4`,
-          videoMsg?.mimetype || 'video/mp4',
-          "inbox-media"
-        );
-        mediaUrl = storageResult.url;
-        mediaMetadata = {
-          fileName: "video.mp4",
-          fileSize: buffer.length,
-          mimeType: videoMsg?.mimetype || 'video/mp4'
-        };
-      } catch (e) {}
+      mediaUrl = undefined;
+      mediaMetadata = {
+        fileName: "video.mp4",
+        mimeType: videoMsg?.mimetype || 'video/mp4',
+        note: "Video download rejected to protect server resources"
+      };
     } else if (isDocMsg) {
       messageType = "document";
       try {

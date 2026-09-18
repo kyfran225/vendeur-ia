@@ -54,6 +54,10 @@ export class WhatsAppMediaService {
    */
   async downloadBaileysMedia(msg: any, type: 'image' | 'audio' | 'video' | 'document' | 'sticker'): Promise<Buffer> {
     try {
+      if (type === 'video') {
+        throw new Error("Video download is disabled to preserve system stability and server memory");
+      }
+
       const rawMsg = msg.message?.ephemeralMessage?.message ||
                      msg.message?.viewOnceMessage?.message ||
                      msg.message?.viewOnceMessageV2?.message ||
@@ -65,7 +69,6 @@ export class WhatsAppMediaService {
                              (type === 'document' ? (rawMsg?.documentMessage || rawMsg?.documentWithCaptionMessage?.message?.documentMessage) : null) ||
                              (type === 'image' ? rawMsg?.imageMessage : null) ||
                              (type === 'audio' ? rawMsg?.audioMessage : null) ||
-                             (type === 'video' ? rawMsg?.videoMessage : null) ||
                              (type === 'sticker' ? rawMsg?.stickerMessage : null);
 
       if (!messageContent) {
@@ -74,18 +77,20 @@ export class WhatsAppMediaService {
 
       const streamType = type === 'sticker' ? 'image' : type;
       const stream = await downloadContentFromMessage(messageContent, streamType as any);
-      let buffer = Buffer.from([]);
+      const chunks: Buffer[] = [];
+      let totalLength = 0;
 
-      const MAX_SIZE = 25 * 1024 * 1024; // 25MB Limit
+      const MAX_SIZE = 15 * 1024 * 1024; // 15MB Limit
 
       for await (const chunk of stream) {
-        buffer = Buffer.concat([buffer, chunk]);
-        if (buffer.length > MAX_SIZE) {
-          throw new Error("File too large. Max size is 25MB.");
+        totalLength += chunk.length;
+        if (totalLength > MAX_SIZE) {
+          throw new Error("File too large. Max size is 15MB.");
         }
+        chunks.push(chunk);
       }
 
-      return buffer;
+      return Buffer.concat(chunks);
     } catch (error: any) {
       console.error("[Baileys Media Download] Error:", error.message);
       throw new Error("Failed to download media from Baileys");

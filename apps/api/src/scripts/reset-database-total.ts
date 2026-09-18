@@ -71,7 +71,7 @@ async function resetDatabase(uri: string, dbName: string) {
     }, { timestamps: true }));
 
     const CommerceMerchant = conn.model("CommerceMerchant", new mongoose.Schema({
-      ownerId: mongoose.Schema.Types.ObjectId,
+      ownerId: String,
       businessName: String,
       slug: String,
       category: String,
@@ -110,6 +110,27 @@ async function resetDatabase(uri: string, dbName: string) {
       businessRules: mongoose.Schema.Types.Mixed,
       customInstructions: String
     }, { timestamps: true }));
+
+    const Subscription = conn.model("Subscription", new mongoose.Schema({
+      userId: String,
+      offerId: mongoose.Schema.Types.ObjectId,
+      status: String,
+      billingInterval: String,
+      price: Number,
+      currency: String,
+      currentPeriodStart: Date,
+      currentPeriodEnd: Date,
+      paymentMethod: String
+    }, { timestamps: true }));
+
+    const Offer = conn.model("Offer", new mongoose.Schema({
+      name: String,
+      slug: String,
+      monthlyPrice: Number,
+      yearlyPrice: Number,
+      currency: String,
+      isActive: Boolean
+    }));
 
     const SystemSettings = conn.model("SystemSettings", new mongoose.Schema({
       supportWhatsApp: String,
@@ -221,6 +242,9 @@ async function resetDatabase(uri: string, dbName: string) {
       onboardingCompleted: true
     });
 
+    const oneYearFromNow = new Date();
+    oneYearFromNow.setFullYear(oneYearFromNow.getFullYear() + 1);
+
     const founderMerchant = await CommerceMerchant.create({
       ownerId: founderUser._id,
       businessName: "Vendeur IA",
@@ -257,8 +281,31 @@ async function resetDatabase(uri: string, dbName: string) {
       },
       subscription: {
         plan: "enterprise",
-        status: "active"
+        status: "active",
+        expiresAt: oneYearFromNow
       }
+    });
+
+    // Create Enterprise Offer and Subscription for Founder
+    const enterpriseOffer = await Offer.create({
+      name: "Enterprise",
+      slug: "enterprise",
+      monthlyPrice: 0,
+      yearlyPrice: 0,
+      currency: "XOF",
+      isActive: true
+    });
+
+    await Subscription.create({
+      userId: founderUser._id.toString(),
+      offerId: enterpriseOffer._id,
+      status: "active",
+      billingInterval: "yearly",
+      price: 0,
+      currency: "XOF",
+      currentPeriodStart: new Date(),
+      currentPeriodEnd: oneYearFromNow,
+      paymentMethod: "unknown"
     });
 
     // Seed 3 Official Vendeur IA products
@@ -358,8 +405,32 @@ async function resetDatabase(uri: string, dbName: string) {
       },
       subscription: {
         plan: "pro",
-        status: "active"
+        status: "active",
+        expiresAt: oneYearFromNow,
+        billingInterval: "monthly",
+        paymentMethod: "mobile_money"
       }
+    });
+
+    const proOffer = await Offer.create({
+      name: "Pack Pro",
+      slug: "pro",
+      monthlyPrice: 20000,
+      yearlyPrice: 200000,
+      currency: "XOF",
+      isActive: true
+    });
+
+    await Subscription.create({
+      userId: demoUser._id.toString(),
+      offerId: proOffer._id,
+      status: "active",
+      billingInterval: "monthly",
+      price: 20000,
+      currency: "XOF",
+      currentPeriodStart: new Date(),
+      currentPeriodEnd: oneYearFromNow,
+      paymentMethod: "mobile_money"
     });
 
     await CommerceProduct.create([

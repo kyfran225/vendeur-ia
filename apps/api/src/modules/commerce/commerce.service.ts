@@ -287,7 +287,27 @@ export class CommerceService {
     }
 
     // New Models Data
-    const subscription = await SubscriptionModel.findOne({ userId: ownerId }).populate('offerId');
+    let subscription = await SubscriptionModel.findOne({ userId: ownerId }).populate('offerId');
+
+    // AUTO-HEAL: If Merchant says subscription is active but SubscriptionModel is missing, trust Merchant and sync
+    if (!subscription && merchant.subscription?.status === 'active' && merchant.subscription?.plan) {
+      console.log(`[Dashboard Auto-Heal] Re-syncing missing SubscriptionModel for active merchant ${merchant.businessName}`);
+      const offer = await OfferModel.findOne({ slug: merchant.subscription.plan });
+      if (offer) {
+        const expiresAt = merchant.subscription.expiresAt || new Date(Date.now() + 30 * 24 * 3600 * 1000);
+        subscription = await SubscriptionModel.create({
+          userId: ownerId,
+          offerId: offer._id,
+          status: 'active',
+          billingInterval: merchant.subscription.billingInterval || 'monthly',
+          price: offer.monthlyPrice,
+          currency: offer.currency || 'XOF',
+          currentPeriodStart: new Date(),
+          currentPeriodEnd: expiresAt,
+          paymentMethod: merchant.subscription.paymentMethod || 'unknown'
+        }) as any;
+      }
+    }
     const latestPaymentIntent = await PaymentIntentModel.findOne({
       userId: ownerId,
       status: { $in: ['under_verification', 'pending', 'payment_detected', 'awaiting_payment'] }

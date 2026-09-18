@@ -300,7 +300,10 @@ export function generatePhoneVariants(phone: string): string[] {
 }
 
 export const FOUNDER_NUMBERS = [
-  "2250505111157", "0505111157", "22505111157", "05111157", "505111157", "5111157",
+  "2250505111157", "0505111157", "22505111157", "05111157", "505111157", "5111157"
+];
+
+export const DEMO_MERCHANT_NUMBERS = [
   "2250102273966", "0102273966", "22502273966", "02273966", "102273966"
 ];
 
@@ -308,6 +311,16 @@ export function isFounderNumber(phone: string): boolean {
   if (!phone) return false;
   const clean = phone.replace(/[\s\-\+\(\)]/g, "");
   return FOUNDER_NUMBERS.some(fn => clean.endsWith(fn) || fn.endsWith(clean));
+}
+
+export function isDemoMerchantNumber(phone: string): boolean {
+  if (!phone) return false;
+  const clean = phone.replace(/[\s\-\+\(\)]/g, "");
+  return DEMO_MERCHANT_NUMBERS.some(dn => clean.endsWith(dn) || dn.endsWith(clean));
+}
+
+export function isDirectPinNumber(phone: string): boolean {
+  return isFounderNumber(phone) || isDemoMerchantNumber(phone);
 }
 
 /**

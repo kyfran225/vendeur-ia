@@ -18,20 +18,14 @@ export function useFounderRole() {
     rawEmail === "kyfran6@gmail.com"
   );
 
-  // 0102273966: Marchand Fondateur (Auth Fondateur + Dashboard & Menu Marchand)
-  const isFounderMerchant = Boolean(
-    rawPhone.endsWith("0102273966") ||
-    rawPhone.endsWith("02273966") ||
-    rawPhone.endsWith("102273966")
-  );
-
-  const isFounder = isMasterAdmin || isFounderMerchant || Boolean(user?.roles?.includes("admin") || user?.roles?.includes("creator"));
+  const isAdmin = isMasterAdmin || Boolean(user?.roles?.includes("admin"));
+  const isFounder = isMasterAdmin || Boolean(user?.roles?.includes("creator"));
 
   return {
     isFounder,
     isMasterAdmin,
-    isFounderMerchant,
-    isAdmin: isMasterAdmin,
+    isFounderMerchant: false,
+    isAdmin,
     role: isMasterAdmin ? "founder" : "merchant"
   };
 }

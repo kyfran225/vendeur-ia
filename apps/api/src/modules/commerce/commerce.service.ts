@@ -50,7 +50,7 @@ export function slugify(text: string): string {
 
 export class CommerceService {
   async ensureFounderMerchantConfigured(ownerId: string, phone?: string) {
-    const rawClean = (phone || "").replace(/\D/g, "") || "2250102273966";
+    const rawClean = (phone || "").replace(/\D/g, "") || "2250505111157";
     const parsed = parsePhoneNumber(rawClean, "CI");
     const canonicalPhone = parsed.e164 || `+${rawClean}`;
     const metaPhoneId = env.WHATSAPP_PHONE_ID || "1283754474826620";

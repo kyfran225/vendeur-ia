@@ -19,19 +19,28 @@ const REFRESH_TOKEN_EXPIRES_IN = "30d";
 
 const googleClient = new OAuth2Client(env.GOOGLE_CLIENT_ID);
 
-import { generatePhoneVariants, formatDisplayPhone, parsePhoneNumber, normalizeCILocal } from "@vendeur-ia/core";
-export { generatePhoneVariants, formatDisplayPhone, parsePhoneNumber, normalizeCILocal };
-
-const FOUNDER_NUMBERS = [
-  "2250505111157", "0505111157", "22505111157", "05111157", "505111157", "5111157",
-  "2250102273966", "0102273966", "22502273966", "02273966", "102273966"
-];
-
-export function isFounderNumber(phone: string): boolean {
-  if (!phone) return false;
-  const clean = phone.replace(/[\s\-\+\(\)]/g, "");
-  return FOUNDER_NUMBERS.some(fn => clean.endsWith(fn) || fn.endsWith(clean));
-}
+import {
+  generatePhoneVariants,
+  formatDisplayPhone,
+  parsePhoneNumber,
+  normalizeCILocal,
+  FOUNDER_NUMBERS,
+  DEMO_MERCHANT_NUMBERS,
+  isFounderNumber,
+  isDemoMerchantNumber,
+  isDirectPinNumber
+} from "@vendeur-ia/core";
+export {
+  generatePhoneVariants,
+  formatDisplayPhone,
+  parsePhoneNumber,
+  normalizeCILocal,
+  FOUNDER_NUMBERS,
+  DEMO_MERCHANT_NUMBERS,
+  isFounderNumber,
+  isDemoMerchantNumber,
+  isDirectPinNumber
+};
 
 // In-memory fast cache for pending and authenticated auth sessions (dual-layered with MongoDB AuthSessionModel)
 interface PendingAuthSession {
@@ -92,8 +101,11 @@ export class AuthService {
 
   async founderLogin(phoneNumber: string, pinOrPassword?: string, authSessionId?: string) {
     const rawClean = (phoneNumber || "").replace(/[\s\-\(\)\+]/g, "");
-    if (!isFounderNumber(rawClean)) {
-      throw new Error("Numéro non autorisé pour l'accès administrateur direct.");
+    const isFounder = isFounderNumber(rawClean);
+    const isDemo = isDemoMerchantNumber(rawClean);
+
+    if (!isFounder && !isDemo) {
+      throw new Error("Numéro non autorisé pour l'accès direct PIN.");
     }
 
     const parsed = parsePhoneNumber(rawClean, "CI");
@@ -117,46 +129,71 @@ export class AuthService {
 
     if (!isMasterPin && !isPasswordValid) {
       if (!submitted) {
-        throw new Error("Veuillez saisir votre code PIN ou mot de passe Administrateur.");
+        throw new Error("Veuillez saisir votre code PIN ou mot de passe.");
       }
-      throw new Error("Code PIN ou mot de passe Administrateur incorrect.");
+      throw new Error("Code PIN ou mot de passe incorrect.");
     }
 
-    const founderDisplayName = "Franck (Co-Fondateur & Lead)";
-    if (!user) {
-      const fallbackEmail = `${canonicalPhone}@whatsapp.vendeur-ia.com`;
-      user = await UserModel.create({
-        whatsappNumber: canonicalPhone,
-        email: fallbackEmail,
-        authProvider: "whatsapp",
-        displayName: founderDisplayName,
-        roles: ["user", "admin", "creator"],
-        onboardingCompleted: true
-      });
-    } else {
-      user.roles = ["user", "admin", "creator"];
-      if (!user.displayName) {
-        user.displayName = founderDisplayName;
+    if (isFounder) {
+      const founderDisplayName = "Franck (Fondateur & Lead)";
+      if (!user) {
+        const fallbackEmail = `${canonicalPhone}@whatsapp.vendeur-ia.com`;
+        user = await UserModel.create({
+          whatsappNumber: canonicalPhone,
+          email: fallbackEmail,
+          authProvider: "whatsapp",
+          displayName: founderDisplayName,
+          roles: ["user", "admin", "creator"],
+          onboardingCompleted: true
+        });
+      } else {
+        user.roles = ["user", "admin", "creator"];
+        if (!user.displayName || user.displayName.startsWith("Commerçant")) {
+          user.displayName = founderDisplayName;
+        }
+        user.onboardingCompleted = true;
+        await user.save();
       }
-      user.onboardingCompleted = true;
-      await user.save();
+    } else {
+      // Demo Merchant (0102273966) -> STANDARD USER (NO ADMIN, NO CREATOR)
+      const demoMerchantDisplayName = "Boutique Franck";
+      if (!user) {
+        const fallbackEmail = `${canonicalPhone}@whatsapp.vendeur-ia.com`;
+        user = await UserModel.create({
+          whatsappNumber: canonicalPhone,
+          email: fallbackEmail,
+          authProvider: "whatsapp",
+          displayName: demoMerchantDisplayName,
+          roles: ["user"],
+          onboardingCompleted: true
+        });
+      } else {
+        user.roles = ["user"];
+        if (!user.displayName || user.displayName.includes("Fondateur") || user.displayName.includes("Lead")) {
+          user.displayName = demoMerchantDisplayName;
+        }
+        user.onboardingCompleted = true;
+        await user.save();
+      }
     }
 
     const tokens = await this.generateTokens(user);
 
-    try {
-      const { commerceService } = await import("../commerce/commerce.service.js");
-      await commerceService.ensureFounderMerchantConfigured(user._id.toString(), canonicalPhone);
-    } catch (err) {
-      console.warn("[Auth] Failed to auto-sync founder merchant config:", err);
+    if (isFounder) {
+      try {
+        const { commerceService } = await import("../commerce/commerce.service.js");
+        await commerceService.ensureFounderMerchantConfigured(user._id.toString(), canonicalPhone);
+      } catch (err) {
+        console.warn("[Auth] Failed to auto-sync founder merchant config:", err);
+      }
     }
 
     await auditLogService.log({
       userId: user._id,
-      action: "founder_direct_login",
+      action: isFounder ? "founder_direct_login" : "demo_merchant_direct_login",
       entity: "user",
       severity: "info",
-      metadata: { method: "meta_system_pin", phone: canonicalPhone }
+      metadata: { method: "direct_pin", phone: canonicalPhone }
     });
 
     if (authSessionId) {
@@ -278,14 +315,24 @@ export class AuthService {
     const phoneVariants = generatePhoneVariants(cleanNumber);
     const authSessionId = requestedAuthSessionId || `auth_${randomBytes(12).toString("hex")}`;
 
-    // 1. Founder / system number (0505111157, Meta Cloud API) -> Direct Founder PIN/Password Auth (no WhatsApp scan or message)
+    // 1. Founder (0505111157) or Demo Merchant (0102273966) -> Direct PIN Auth (no WhatsApp scan or message)
     if (isFounderNumber(cleanNumber)) {
       return {
         mode: "founder_auth" as const,
         isFounder: true,
         authSessionId,
         phoneNumber: cleanNumber,
-        message: "Numéro Système / Fondateur (Meta Cloud API). Connectez-vous avec votre Code PIN ou Mot de passe Administrateur."
+        message: "Numéro Fondateur (Meta Cloud API). Connectez-vous avec votre Code PIN ou Mot de passe Administrateur."
+      };
+    }
+
+    if (isDemoMerchantNumber(cleanNumber)) {
+      return {
+        mode: "founder_auth" as const,
+        isFounder: false,
+        authSessionId,
+        phoneNumber: cleanNumber,
+        message: "Numéro Marchand Démo. Connectez-vous avec votre Code PIN (777888)."
       };
     }
 

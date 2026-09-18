@@ -141,10 +141,13 @@ export function sanitizeAIText(rawText: string): string {
   // SAFETY: If sanitization stripped everything (leaked prompt ONLY or unexpected format),
   // return a minimally cleaned version of original instead of an empty string
   if (!finalResult && rawText.trim()) {
-    return rawText
+    const minimal = rawText
       .replace(/<think[\s\S]*?<\/think>/gi, "")
       .replace(/<thought[\s\S]*?<\/thought>/gi, "")
-      .trim() || rawText.trim();
+      .replace(/<(?:think|thought|reasoning|internal|reflection|cot)[\s\S]*$/gi, "")
+      .replace(/\[(?:THINKING|REASONING|THOUGHT)\][\s\S]*$/gi, "")
+      .trim();
+    return minimal;
   }
 
   return finalResult;

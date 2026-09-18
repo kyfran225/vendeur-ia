@@ -136,7 +136,18 @@ export function sanitizeAIText(rawText: string): string {
   // 9. Strip leaked internal section headers if regurgitated at beginning of response
   cleaned = cleaned.replace(/^(?:RÈGLES D'ACTION ET ENGAGEMENT|GARDES-FOUS & SÉCURITÉ|RÈGLES D'OR|STRATÉGIE DE VENTE|FORMAT DE CONVERSATION|TON ET PERSONA|INTERDICTIONS STRICTES DE VOCABULAIRE)\s*:[\s\S]*?(?=(?:\r?\n){2,}[A-ZÀ-ÖØ-ß0-9"«'#*]|$)/gi, "");
 
-  return cleaned.trim();
+  const finalResult = cleaned.trim();
+
+  // SAFETY: If sanitization stripped everything (leaked prompt ONLY or unexpected format),
+  // return a minimally cleaned version of original instead of an empty string
+  if (!finalResult && rawText.trim()) {
+    return rawText
+      .replace(/<think[\s\S]*?<\/think>/gi, "")
+      .replace(/<thought[\s\S]*?<\/thought>/gi, "")
+      .trim() || rawText.trim();
+  }
+
+  return finalResult;
 }
 
 export function normalizeHistoryForGemini(
@@ -292,7 +303,7 @@ export class AIProvider {
       case 'gemini': return GEMINI_DEFAULT_TEXT_MODEL;
       case 'groq': return 'openai/gpt-oss-120b';
       case 'openai': return type === 'audio' ? 'whisper-1' : 'gpt-4o-mini';
-      case 'openrouter': return 'meta-llama/llama-3.3-70b-instruct:free';
+      case 'openrouter': return 'meta-llama/llama-3.3-70b-instruct';
       case 'elevenlabs': return 'eleven_multilingual_v2';
       default: return "";
     }
@@ -581,9 +592,9 @@ export class AIProvider {
       defaultGroqModel,
       "openai/gpt-oss-120b",
       "openai/gpt-oss-20b",
-      "qwen/qwen3.8-27b",
-      "qwen/qwen3.6-27b",
-      "groq/compound-mini"
+      "meta-llama/llama-4-scout-17b",
+      "qwen/qwen-3.8-27b",
+      "qwen/qwen-3.6-27b"
     ].filter((m, i, arr) => arr.indexOf(m) === i && !!m);
 
     let lastError: any;

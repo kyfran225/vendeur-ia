@@ -155,7 +155,7 @@ async function resetDatabase(uri: string, dbName: string) {
             name: "groq",
             apiKey: GROQ_API_KEY,
             isActive: true,
-            models: { text: "llama-3.3-70b-versatile", vision: "", audio: "" }
+            models: { text: "openai/gpt-oss-120b", vision: "", audio: "" }
           },
           {
             name: "openai",

@@ -6,6 +6,7 @@ interface LogoProps extends React.SVGProps<SVGSVGElement> {
   className?: string;
   leftBranchColor?: string;
   rightBranchColor?: string;
+  withAberration?: boolean;
 }
 
 export const Logo: React.FC<LogoProps> = ({
@@ -13,6 +14,7 @@ export const Logo: React.FC<LogoProps> = ({
   className,
   leftBranchColor,
   rightBranchColor = "#10b981",
+  withAberration = true,
   ...props
 }) => {
   return (
@@ -24,7 +26,34 @@ export const Logo: React.FC<LogoProps> = ({
       className={cn("shrink-0 transition-colors duration-200", className)}
       {...props}
     >
-      <g>
+      <defs>
+        <filter id="logo-chromatic-aberration" x="-20%" y="-20%" width="140%" height="140%">
+          <feColorMatrix type="matrix" values="
+            1 0 0 0 0
+            0 0 0 0 0
+            0 0 0 0 0
+            0 0 0 1 0" in="SourceGraphic" result="red" />
+          <feOffset dx="-16" dy="-4" in="red" result="redShifted" />
+
+          <feColorMatrix type="matrix" values="
+            0 0 0 0 0
+            0 0 0 0 0
+            0 0 1 0 0
+            0 0 0 1 0" in="SourceGraphic" result="blue" />
+          <feOffset dx="16" dy="4" in="blue" result="blueShifted" />
+
+          <feColorMatrix type="matrix" values="
+            0 0 0 0 0
+            0 1 0 0 0
+            0 0 0 0 0
+            0 0 0 1 0" in="SourceGraphic" result="green" />
+          <feOffset dx="0" dy="0" in="green" result="greenShifted" />
+
+          <feBlend mode="screen" in="redShifted" in2="greenShifted" result="redGreen" />
+          <feBlend mode="screen" in="blueShifted" in2="redGreen" result="final" />
+        </filter>
+      </defs>
+      <g filter={withAberration ? "url(#logo-chromatic-aberration)" : undefined}>
         {/* Branche Gauche (Oblique V) - Tracé exact 100% indépendant */}
         <path
           fill={leftBranchColor}

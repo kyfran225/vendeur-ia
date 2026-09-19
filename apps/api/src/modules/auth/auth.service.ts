@@ -179,6 +179,21 @@ export class AuthService {
 
     const tokens = await this.generateTokens(user);
 
+    // Alert admin of founder login activity securely
+    try {
+      const { notificationsService } = await import("../notifications/notifications.service.js");
+      const name = user.displayName || "Non renseigné";
+      const identity = user.email || user.whatsappNumber || "Inconnu";
+      const message = `🔐 **Nouvelle connexion à l'application**\n` +
+        `• **Utilisateur** : ${name}\n` +
+        `• **Identifiant** : ${identity}\n` +
+        `• **Méthode** : Connexion Administrateur / Fondateur (PIN)\n` +
+        `• **Date** : ${new Date().toLocaleString("fr-FR")}`;
+      notificationsService.sendAdminAlert(message).catch(() => {});
+    } catch (alertErr) {
+      console.warn("[Auth] Failed to send admin alert for founder login:", alertErr);
+    }
+
     if (isFounder) {
       try {
         const { commerceService } = await import("../commerce/commerce.service.js");

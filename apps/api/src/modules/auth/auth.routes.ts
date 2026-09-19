@@ -3,6 +3,7 @@ import { env } from "../../config/env.js";
 import { authService } from "./auth.service.js";
 import { authenticate } from "../../middleware/authenticate.js";
 import { validate } from "../../middleware/validate.js";
+import { notificationsService } from "../notifications/notifications.service.js";
 import {
   registerSchema,
   loginSchema,
@@ -15,9 +16,37 @@ import {
 
 const router = Router();
 
+const notifyAdminOfLogin = (user: any, method: string) => {
+  if (!user) return;
+  const name = user.displayName || "Non renseigné";
+  const identity = user.email || user.whatsappNumber || "Inconnu";
+  const message = `🔐 **Nouvelle connexion à l'application**\n` +
+    `• **Utilisateur** : ${name}\n` +
+    `• **Identifiant** : ${identity}\n` +
+    `• **Méthode** : ${method}\n` +
+    `• **Date** : ${new Date().toLocaleString("fr-FR")}`;
+  notificationsService.sendAdminAlert(message).catch(() => {});
+};
+
+router.post("/track-visit", async (req, res) => {
+  try {
+    const { platform, referrer, page } = req.body;
+    const message = `🚀 **Nouveau visiteur sur l'application !**\n` +
+      `• **Page** : ${page || "/"}\n` +
+      `• **Plateforme** : ${platform || "Web"}\n` +
+      `• **Referrer** : ${referrer || "Direct"}\n` +
+      `• **Date** : ${new Date().toLocaleString("fr-FR")}`;
+    notificationsService.sendAdminAlert(message).catch(() => {});
+    res.json({ success: true });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 router.post("/register", validate(registerSchema), async (req, res) => {
   try {
     const tokens = await authService.register(req.body);
+    notifyAdminOfLogin(tokens?.user, "Inscription (Email/Password)");
     res.status(201).json(tokens);
   } catch (error: any) {
     res.status(400).json({ error: error.message });
@@ -27,6 +56,7 @@ router.post("/register", validate(registerSchema), async (req, res) => {
 router.post("/login", validate(loginSchema), async (req, res) => {
   try {
     const tokens = await authService.login(req.body);
+    notifyAdminOfLogin(tokens?.user, "Connexion (Email/Password)");
     res.json(tokens);
   } catch (error: any) {
     res.status(400).json({ error: error.message });
@@ -56,6 +86,7 @@ router.post("/google", validate(googleAuthSchema), async (req, res) => {
   const { token } = req.body;
   try {
     const tokens = await authService.verifyGoogleToken(token);
+    notifyAdminOfLogin(tokens?.user, "Connexion Google");
     res.json(tokens);
   } catch (error: any) {
     res.status(400).json({ error: error.message });
@@ -72,6 +103,7 @@ router.post("/whatsapp-quick-access", async (req, res) => {
     // WARNING: This is insecure as it allows access without verification.
     // We should migrate to magic links.
     const tokens = await authService.loginOrRegisterWithWhatsApp(phoneNumber, displayName);
+    notifyAdminOfLogin(tokens?.user, "Accès Rapide WhatsApp");
     res.json(tokens);
   } catch (error: any) {
     res.status(400).json({ error: error.message });
@@ -86,6 +118,7 @@ router.post("/founder-login", async (req, res) => {
       return res.status(400).json({ error: "Le numéro WhatsApp est obligatoire." });
     }
     const tokens = await authService.founderLogin(phoneNumber, pinOrPassword, authSessionId);
+    notifyAdminOfLogin(tokens?.user, "Connexion Administrateur / Fondateur");
     res.json(tokens);
   } catch (error: any) {
     res.status(401).json({ error: error.message || "Échec de l'authentification administrateur." });
@@ -141,6 +174,7 @@ router.post("/verify-magic-link", async (req, res) => {
       return res.status(400).json({ error: "Le numéro et le token sont requis." });
     }
     const tokens = await authService.verifyMagicLink(phoneNumber, token, authSessionId);
+    notifyAdminOfLogin(tokens?.user, "Lien Magique WhatsApp");
     res.json(tokens);
   } catch (error: any) {
     res.status(401).json({ error: error.message });
@@ -179,6 +213,7 @@ router.post("/whatsapp-otp-verify", async (req, res) => {
       return res.status(400).json({ error: "Le numéro et le code OTP sont requis." });
     }
     const tokens = await authService.verifyWhatsAppOtp(phoneNumber, code);
+    notifyAdminOfLogin(tokens?.user, "OTP Code WhatsApp");
     res.json(tokens);
   } catch (error: any) {
     res.status(400).json({ error: error.message });

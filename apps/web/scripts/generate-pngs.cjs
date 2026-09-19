@@ -10,6 +10,7 @@ async function main() {
 
   const svgContent = fs.readFileSync(svgPath, 'utf8');
 
+  // Rendre le background transparent pour que l'arrondi du rect SVG noir se détache parfaitement sur fond transparent
   const htmlContent = `
     <!DOCTYPE html>
     <html>
@@ -17,7 +18,7 @@ async function main() {
       <meta charset="utf-8">
       <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body, html { width: 100%; height: 100%; overflow: hidden; background: #000000; }
+        body, html { width: 100%; height: 100%; overflow: hidden; background: transparent !important; }
         svg { width: 100%; height: 100%; display: block; }
       </style>
     </head>
@@ -46,17 +47,18 @@ async function main() {
     });
 
     await page.setContent(htmlContent);
-    // Attendre un court instant pour s'assurer que les filtres SVG complexes soient pleinement calculés
     await page.waitForTimeout(300);
 
     const outputPath = path.join(__dirname, '../public', name);
-    await page.screenshot({ path: outputPath, type: 'png' });
-    console.log(`✔ Généré : ${name} (${size}x${size})`);
+
+    // omitBackground: true active la transparence alpha réelle de Playwright
+    await page.screenshot({ path: outputPath, type: 'png', omitBackground: true });
+    console.log(`✔ Généré : ${name} (${size}x${size}) avec transparence et coins arrondis`);
     await page.close();
   }
 
   await browser.close();
-  console.log('🎉 Tous les logos PNG ont été générés avec succès via Playwright !');
+  console.log('🎉 Tous les logos PNG ont été générés avec succès avec de magnifiques coins arrondis !');
 }
 
 main().catch(err => {

@@ -1,5 +1,7 @@
 import { emitToUser } from "../../realtime/socketServer.js";
 import { messagingService } from "../../services/messaging.service.js";
+import { env } from "../../config/env.js";
+import axios from "axios";
 
 export class NotificationsService {
   /**
@@ -147,6 +149,26 @@ export class NotificationsService {
       } catch (err: any) {
         console.warn("[NotificationsService] Failed to send escalation alert to WhatsApp:", err?.message);
       }
+    }
+  }
+
+  /**
+   * Sends a real-time notification to the administrator via Discord/Slack webhook
+   */
+  async sendAdminAlert(text: string) {
+    try {
+      if (!env.ENABLE_ADMIN_NOTIFICATIONS || !env.ADMIN_NOTIFICATIONS_WEBHOOK_URL) {
+        return;
+      }
+
+      const payload = {
+        content: text,
+        text: text
+      };
+
+      await axios.post(env.ADMIN_NOTIFICATIONS_WEBHOOK_URL, payload);
+    } catch (err: any) {
+      console.warn("[NotificationsService] Error sending admin alert:", err?.message || err);
     }
   }
 }

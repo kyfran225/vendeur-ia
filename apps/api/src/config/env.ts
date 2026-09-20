@@ -47,10 +47,13 @@ const envSchema = z.object({
     }
     return val === "true" || val === "1";
   }, z.boolean()),
-  ADMIN_NOTIFICATIONS_WEBHOOK_URL: z.string().optional(),
+  ADMIN_NOTIFICATIONS_WEBHOOK_URL: z.preprocess((val) => typeof val === "string" ? val.trim() : val, z.string().optional()),
   ENABLE_ADMIN_NOTIFICATIONS: z.preprocess((val) => {
     if (val === undefined || val === null || val === "") return undefined;
-    return val === "true" || val === "1";
+    const str = String(val).toLowerCase().trim();
+    if (["true", "1", "yes", "on"].includes(str)) return true;
+    if (["false", "0", "no", "off"].includes(str)) return false;
+    return undefined;
   }, z.boolean().optional()).default(true),
 });
 

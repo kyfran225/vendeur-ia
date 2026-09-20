@@ -152,25 +152,29 @@ export class NotificationsService {
     }
   }
 
-  /**
-   * Sends a real-time notification to the administrator via Discord/Slack webhook
-   */
   async sendAdminAlert(text: string) {
     try {
-      let webhookUrl = env.ADMIN_NOTIFICATIONS_WEBHOOK_URL?.trim();
+      let webhookUrl = env.ADMIN_NOTIFICATIONS_WEBHOOK_URL;
       const isEnabled = env.ENABLE_ADMIN_NOTIFICATIONS;
 
-      if (!isEnabled || !webhookUrl) {
+      if (!isEnabled) {
+        return;
+      }
+
+      if (!webhookUrl) {
+        if (process.env.NODE_ENV === "production") {
+          console.warn("[NotificationsService] Admin notifications are enabled but ADMIN_NOTIFICATIONS_WEBHOOK_URL is missing.");
+        }
         return;
       }
 
       // Automatically strip any accidental wrapping quotes injected by deployment environments
-      if (webhookUrl.startsWith('"') || webhookUrl.startsWith("'")) {
+      if ((webhookUrl.startsWith('"') && webhookUrl.endsWith('"')) || (webhookUrl.startsWith("'") && webhookUrl.endsWith("'"))) {
         webhookUrl = webhookUrl.slice(1, -1).trim();
       }
 
       if (!webhookUrl.startsWith("http")) {
-        console.warn("[NotificationsService] Invalid Webhook URL format skipped.");
+        console.warn("[NotificationsService] Invalid Webhook URL format (must start with http/https). Value:", webhookUrl.substring(0, 10) + "...");
         return;
       }
 
@@ -182,6 +186,10 @@ export class NotificationsService {
         headers: { 'Content-Type': 'application/json' },
         timeout: 10000
       });
+
+      if (process.env.NODE_ENV !== "production") {
+        console.log("[NotificationsService] Admin alert sent successfully.");
+      }
     } catch (err: any) {
       console.error("[NotificationsService] Discord Alert Error:", err?.response?.data || err?.message || err);
     }

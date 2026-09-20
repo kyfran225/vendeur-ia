@@ -13,6 +13,7 @@ import { AuthSessionModel } from "./auth-session.model.js";
 import { SystemSettingsModel } from "../commerce/admin.model.js";
 import { CommerceMerchantModel } from "../commerce/commerce.model.js";
 import { auditLogService } from "../../services/audit-log.service.js";
+import { notificationsService } from "../notifications/notifications.service.js";
 
 const ACCESS_TOKEN_EXPIRES_IN = "7d";
 const REFRESH_TOKEN_EXPIRES_IN = "30d";
@@ -181,7 +182,6 @@ export class AuthService {
 
     // Alert admin of founder login activity securely
     try {
-      const { notificationsService } = await import("../notifications/notifications.service.js");
       const name = user.displayName || "Non renseigné";
       const identity = user.email || user.whatsappNumber || "Inconnu";
       const message = `🔐 **Nouvelle connexion à l'application**\n` +

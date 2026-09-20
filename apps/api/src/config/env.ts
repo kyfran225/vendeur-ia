@@ -48,7 +48,10 @@ const envSchema = z.object({
     return val === "true" || val === "1";
   }, z.boolean()),
   ADMIN_NOTIFICATIONS_WEBHOOK_URL: z.string().optional(),
-  ENABLE_ADMIN_NOTIFICATIONS: z.preprocess((val) => val === "true" || val === "1", z.boolean()).default(true),
+  ENABLE_ADMIN_NOTIFICATIONS: z.preprocess((val) => {
+    if (val === undefined || val === null || val === "") return undefined;
+    return val === "true" || val === "1";
+  }, z.boolean().optional()).default(true),
 });
 
 export const env = envSchema.parse(process.env);

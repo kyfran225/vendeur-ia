@@ -157,18 +157,23 @@ export class NotificationsService {
    */
   async sendAdminAlert(text: string) {
     try {
-      if (!env.ENABLE_ADMIN_NOTIFICATIONS || !env.ADMIN_NOTIFICATIONS_WEBHOOK_URL) {
+      const webhookUrl = env.ADMIN_NOTIFICATIONS_WEBHOOK_URL;
+      const isEnabled = env.ENABLE_ADMIN_NOTIFICATIONS;
+
+      if (!isEnabled || !webhookUrl) {
         return;
       }
 
       const payload = {
-        content: text,
-        text: text
+        content: text
       };
 
-      await axios.post(env.ADMIN_NOTIFICATIONS_WEBHOOK_URL, payload);
+      await axios.post(webhookUrl, payload, {
+        headers: { 'Content-Type': 'application/json' },
+        timeout: 8000
+      });
     } catch (err: any) {
-      console.warn("[NotificationsService] Error sending admin alert:", err?.message || err);
+      console.error("[NotificationsService] Discord Alert Error:", err?.response?.data || err?.message || err);
     }
   }
 }

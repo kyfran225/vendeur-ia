@@ -157,10 +157,20 @@ export class NotificationsService {
    */
   async sendAdminAlert(text: string) {
     try {
-      const webhookUrl = env.ADMIN_NOTIFICATIONS_WEBHOOK_URL;
+      let webhookUrl = env.ADMIN_NOTIFICATIONS_WEBHOOK_URL?.trim();
       const isEnabled = env.ENABLE_ADMIN_NOTIFICATIONS;
 
       if (!isEnabled || !webhookUrl) {
+        return;
+      }
+
+      // Automatically strip any accidental wrapping quotes injected by deployment environments
+      if (webhookUrl.startsWith('"') || webhookUrl.startsWith("'")) {
+        webhookUrl = webhookUrl.slice(1, -1).trim();
+      }
+
+      if (!webhookUrl.startsWith("http")) {
+        console.warn("[NotificationsService] Invalid Webhook URL format skipped.");
         return;
       }
 
@@ -170,7 +180,7 @@ export class NotificationsService {
 
       await axios.post(webhookUrl, payload, {
         headers: { 'Content-Type': 'application/json' },
-        timeout: 8000
+        timeout: 10000
       });
     } catch (err: any) {
       console.error("[NotificationsService] Discord Alert Error:", err?.response?.data || err?.message || err);

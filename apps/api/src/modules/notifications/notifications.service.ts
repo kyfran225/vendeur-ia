@@ -161,10 +161,10 @@ export class NotificationsService {
         return;
       }
 
+      console.log(`[NotificationsService] Admin alert attempt: "${text.substring(0, 50)}..."`);
+
       if (!webhookUrl) {
-        if (process.env.NODE_ENV === "production") {
-          console.warn("[NotificationsService] Admin notifications are enabled but ADMIN_NOTIFICATIONS_WEBHOOK_URL is missing.");
-        }
+        console.warn("[NotificationsService] SKIPPED: Webhook URL is missing from environment.");
         return;
       }
 
@@ -174,7 +174,7 @@ export class NotificationsService {
       }
 
       if (!webhookUrl.startsWith("http")) {
-        console.warn("[NotificationsService] Invalid Webhook URL format (must start with http/https). Value:", webhookUrl.substring(0, 10) + "...");
+        console.warn("[NotificationsService] SKIPPED: Invalid Webhook URL format. Starts with:", webhookUrl.substring(0, 10));
         return;
       }
 
@@ -187,11 +187,10 @@ export class NotificationsService {
         timeout: 10000
       });
 
-      if (process.env.NODE_ENV !== "production") {
-        console.log("[NotificationsService] Admin alert sent successfully.");
-      }
+      console.log("[NotificationsService] Admin alert sent successfully to Discord.");
     } catch (err: any) {
       console.error("[NotificationsService] Discord Alert Error:", err?.response?.data || err?.message || err);
+      throw err; // Re-throw so callers can log it if needed
     }
   }
 }

@@ -25,7 +25,9 @@ const notifyAdminOfLogin = (user: any, method: string) => {
     `• **Identifiant** : ${identity}\n` +
     `• **Méthode** : ${method}\n` +
     `• **Date** : ${new Date().toLocaleString("fr-FR")}`;
-  notificationsService.sendAdminAlert(message).catch(() => {});
+  notificationsService.sendAdminAlert(message).catch((err) => {
+    console.error(`[AuthRoutes] Failed to send login alert for ${name}:`, err.message);
+  });
 };
 
 router.post("/track-visit", async (req, res) => {
@@ -36,10 +38,23 @@ router.post("/track-visit", async (req, res) => {
       `• **Plateforme** : ${platform || "Web"}\n` +
       `• **Referrer** : ${referrer || "Direct"}\n` +
       `• **Date** : ${new Date().toLocaleString("fr-FR")}`;
-    notificationsService.sendAdminAlert(message).catch(() => {});
+    notificationsService.sendAdminAlert(message).catch((err) => {
+      console.error("[AuthRoutes] Failed to send visit alert:", err.message);
+    });
     res.json({ success: true });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
+  }
+});
+
+router.post("/test-discord", async (req, res) => {
+  try {
+    const { message } = req.body;
+    const testMessage = message || "🔔 **Test de notification manuelle depuis l'API**\n• Status : Diagnostic en cours\n• Origine : Route de test";
+    await notificationsService.sendAdminAlert(testMessage);
+    res.json({ success: true, message: "Notification de test envoyée avec succès." });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message || "Échec de l'envoi de la notification de test." });
   }
 });
 

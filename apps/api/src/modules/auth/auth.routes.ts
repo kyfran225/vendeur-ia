@@ -118,7 +118,7 @@ router.post("/founder-login", async (req, res) => {
       return res.status(400).json({ error: "Le numéro WhatsApp est obligatoire." });
     }
     const tokens = await authService.founderLogin(phoneNumber, pinOrPassword, authSessionId);
-    notifyAdminOfLogin(tokens?.user, "Connexion Administrateur / Fondateur");
+    // Notification handled inside authService.founderLogin to avoid double notification
     res.json(tokens);
   } catch (error: any) {
     res.status(401).json({ error: error.message || "Échec de l'authentification administrateur." });
@@ -213,7 +213,13 @@ router.post("/whatsapp-otp-verify", async (req, res) => {
       return res.status(400).json({ error: "Le numéro et le code OTP sont requis." });
     }
     const tokens = await authService.verifyWhatsAppOtp(phoneNumber, code);
-    notifyAdminOfLogin(tokens?.user, "OTP Code WhatsApp");
+
+    // Only notify here if it's NOT a founder number (because founderLogin already handles its own notification inside the service)
+    const isFounder = tokens?.user?.roles?.includes("creator") || tokens?.user?.roles?.includes("admin");
+    if (!isFounder) {
+      notifyAdminOfLogin(tokens?.user, "OTP Code WhatsApp");
+    }
+
     res.json(tokens);
   } catch (error: any) {
     res.status(400).json({ error: error.message });

@@ -275,6 +275,46 @@ export function SalesInbox() {
 
     // Incoming conversation update (customer or outbound message)
     const handleConvUpdate = (data: any) => {
+      // 1. Instant Cache Update for Conversation List (Inbox)
+      queryClient.setQueryData(["conversations"], (old: any[] | undefined) => {
+        if (!old) return old;
+
+        const convId = String(data.conversationId || data.message?.conversationId);
+        if (!convId) return old;
+
+        const existingIndex = old.findIndex(c => String(c._id) === convId);
+
+        if (existingIndex > -1) {
+          // Update existing conversation
+          const updatedConv = {
+            ...old[existingIndex],
+            lastMessage: data.message || old[existingIndex].lastMessage,
+            lastMessageAt: data.message?.timestamp || new Date(),
+            updatedAt: new Date(),
+            unreadCount: data.unreadCount !== undefined ? data.unreadCount :
+                        (data.message?.sender === 'customer' ? (old[existingIndex].unreadCount || 0) + 1 : old[existingIndex].unreadCount)
+          };
+
+          const next = [...old];
+          next.splice(existingIndex, 1);
+          next.unshift(updatedConv); // Move to top of the list
+          return next;
+        } else {
+          // New conversation appearing for the first time
+          const newConv = {
+            _id: convId,
+            customerId: data.customer || data.message?.customerId,
+            lastMessage: data.message,
+            lastMessageAt: data.message?.timestamp || new Date(),
+            updatedAt: new Date(),
+            unreadCount: data.unreadCount !== undefined ? data.unreadCount : 1,
+            platform: data.platform || 'whatsapp'
+          };
+          return [newConv, ...old];
+        }
+      });
+
+      // 2. Fallback Invalidation to ensure server sync
       queryClient.invalidateQueries({ queryKey: ["conversations"] });
 
       if (data?.conversationId && String(data.conversationId) === String(selectedChat)) {

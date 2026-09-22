@@ -47,17 +47,6 @@ router.post("/track-visit", async (req, res) => {
   }
 });
 
-router.post("/test-discord", async (req, res) => {
-  try {
-    const { message } = req.body;
-    const testMessage = message || "🔔 **Test de notification manuelle depuis l'API**\n• Status : Diagnostic en cours\n• Origine : Route de test";
-    await notificationsService.sendAdminAlert(testMessage);
-    res.json({ success: true, message: "Notification de test envoyée avec succès." });
-  } catch (error: any) {
-    res.status(500).json({ error: error.message || "Échec de l'envoi de la notification de test." });
-  }
-});
-
 router.post("/register", validate(registerSchema), async (req, res) => {
   try {
     const tokens = await authService.register(req.body);

@@ -48,6 +48,8 @@ const envSchema = z.object({
     return val === "true" || val === "1";
   }, z.boolean()),
   ADMIN_NOTIFICATIONS_WEBHOOK_URL: z.preprocess((val) => typeof val === "string" ? val.trim() : val, z.string().optional()),
+  TELEGRAM_BOT_TOKEN: z.string().optional(),
+  TELEGRAM_CHAT_ID: z.string().optional(),
   ENABLE_ADMIN_NOTIFICATIONS: z.preprocess((val) => {
     if (val === undefined || val === null || val === "") return undefined;
     const str = String(val).toLowerCase().trim();

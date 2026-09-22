@@ -154,43 +154,50 @@ export class NotificationsService {
 
   async sendAdminAlert(text: string) {
     try {
-      let webhookUrl = env.ADMIN_NOTIFICATIONS_WEBHOOK_URL;
       const isEnabled = env.ENABLE_ADMIN_NOTIFICATIONS;
-
-      if (!isEnabled) {
-        return;
-      }
+      if (!isEnabled) return;
 
       console.log(`[NotificationsService] Admin alert attempt: "${text.substring(0, 50)}..."`);
 
-      if (!webhookUrl) {
-        console.warn("[NotificationsService] SKIPPED: Webhook URL is missing from environment.");
-        return;
+      // 1. Try Telegram (Priority)
+      if (env.TELEGRAM_BOT_TOKEN && env.TELEGRAM_CHAT_ID) {
+        try {
+          const url = `https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/sendMessage`;
+          await axios.post(url, {
+            chat_id: env.TELEGRAM_CHAT_ID,
+            text: text,
+            parse_mode: 'Markdown'
+          }, { timeout: 10000 });
+          console.log("[NotificationsService] Admin alert sent successfully to Telegram.");
+          return; // Success, don't fallback to Discord
+        } catch (tgErr: any) {
+          console.error("[NotificationsService] Telegram Alert Error:", tgErr?.response?.data || tgErr?.message);
+          // Fallback to Discord if Telegram fails
+        }
       }
 
-      // Automatically strip any accidental wrapping quotes injected by deployment environments
-      if ((webhookUrl.startsWith('"') && webhookUrl.endsWith('"')) || (webhookUrl.startsWith("'") && webhookUrl.endsWith("'"))) {
-        webhookUrl = webhookUrl.slice(1, -1).trim();
+      // 2. Fallback to Discord
+      let webhookUrl = env.ADMIN_NOTIFICATIONS_WEBHOOK_URL;
+      if (webhookUrl) {
+        // Automatically strip any accidental wrapping quotes injected by deployment environments
+        if ((webhookUrl.startsWith('"') && webhookUrl.endsWith('"')) || (webhookUrl.startsWith("'") && webhookUrl.endsWith("'"))) {
+          webhookUrl = webhookUrl.slice(1, -1).trim();
+        }
+
+        if (webhookUrl.startsWith("http")) {
+          const payload = { content: text };
+          await axios.post(webhookUrl, payload, {
+            headers: { 'Content-Type': 'application/json' },
+            timeout: 10000
+          });
+          console.log("[NotificationsService] Admin alert sent successfully to Discord.");
+          return;
+        }
       }
 
-      if (!webhookUrl.startsWith("http")) {
-        console.warn("[NotificationsService] SKIPPED: Invalid Webhook URL format. Starts with:", webhookUrl.substring(0, 10));
-        return;
-      }
-
-      const payload = {
-        content: text
-      };
-
-      await axios.post(webhookUrl, payload, {
-        headers: { 'Content-Type': 'application/json' },
-        timeout: 10000
-      });
-
-      console.log("[NotificationsService] Admin alert sent successfully to Discord.");
+      console.warn("[NotificationsService] SKIPPED: No valid notification channel (Telegram or Discord) configured.");
     } catch (err: any) {
-      console.error("[NotificationsService] Discord Alert Error:", err?.response?.data || err?.message || err);
-      throw err; // Re-throw so callers can log it if needed
+      console.error("[NotificationsService] Admin Alert Error:", err?.response?.data || err?.message || err);
     }
   }
 }

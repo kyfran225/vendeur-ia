@@ -586,7 +586,7 @@ function LandingHero({
                 className={cn(
                   "absolute inset-0 flex items-center justify-center transition-all cursor-pointer z-10",
                   isPlaying
-                    ? "bg-black/10 opacity-0 group-hover:opacity-100"
+                    ? "bg-black/10 opacity-0 [@media(hover:hover)]:group-hover:opacity-100"
                     : "bg-slate-900/40 dark:bg-black/50 backdrop-blur-[2px] opacity-100"
                 )}
                 aria-label={isPlaying ? "Mettre en pause" : "Lire la vidéo"}

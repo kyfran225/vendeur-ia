@@ -18,11 +18,13 @@ const router = Router();
 
 const notifyAdminOfLogin = (user: any, method: string) => {
   if (!user) return;
-  const name = user.displayName || "Non renseigné";
-  const identity = user.email || user.whatsappNumber || "Inconnu";
+  const name = user.displayName || user.name || "Non renseigné";
+  const phone = user.whatsappNumber || user.phone || "Non renseigné";
+  const email = user.email || "Non renseigné";
   const message = `🔐 **Nouvelle connexion à l'application**\n` +
     `• **Utilisateur** : ${name}\n` +
-    `• **Identifiant** : ${identity}\n` +
+    `• **Téléphone / WhatsApp** : ${phone}\n` +
+    `• **Email** : ${email}\n` +
     `• **Méthode** : ${method}\n` +
     `• **Date** : ${new Date().toLocaleString("fr-FR")}`;
   notificationsService.sendAdminAlert(message).catch((err) => {
@@ -32,12 +34,14 @@ const notifyAdminOfLogin = (user: any, method: string) => {
 
 router.post("/track-visit", async (req, res) => {
   try {
-    const { platform, referrer, page } = req.body;
+    const { platform, referrer, page, phone } = req.body;
+    const phoneStr = phone ? `\n• **Téléphone** : ${phone}` : "";
     const message = `🚀 **Nouveau visiteur sur l'application !**\n` +
       `• **Page** : ${page || "/"}\n` +
       `• **Plateforme** : ${platform || "Web Client"}\n` +
-      `• **Referrer** : ${referrer || "Direct"}\n` +
-      `• **Date** : ${new Date().toLocaleString("fr-FR")}`;
+      `• **Referrer** : ${referrer || "Direct"}` +
+      phoneStr +
+      `\n• **Date** : ${new Date().toLocaleString("fr-FR")}`;
 
     // Fire-and-forget but explicitly logging errors if Telegram endpoint breaks
     notificationsService.sendAdminAlert(message).catch((err) => {

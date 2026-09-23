@@ -285,6 +285,7 @@ export function ProductManager() {
         category: businessCategory,
         description: "",
         imageUrl: "",
+        images: [],
         digitalUrl: "",
         digitalFormat: "PDF / E-Book",
         serviceDuration: "1h",

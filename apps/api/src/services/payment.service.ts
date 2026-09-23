@@ -10,6 +10,7 @@ import { UserModel } from "../modules/auth/user.model.js";
 import { whatsappService } from "../modules/whatsapp/whatsapp.service.js";
 import { messagingService } from "./messaging.service.js";
 import { pushService } from "./push.service.js";
+import { notificationsService } from "../modules/notifications/notifications.service.js";
 import { logger } from "./logger.service.js";
 import { emitToUser } from "../realtime/socketServer.js";
 import { paymentShieldService, ForensicExtractionResult } from "./payment-shield.service.js";
@@ -591,6 +592,22 @@ export class PaymentService {
    */
   async notifyAdminsNewPayment(intent: IPaymentIntent, merchantName?: string) {
     try {
+      const intervalLabel = intent.billingInterval === "yearly" ? "Annuel (-17%)" : "Mensuel";
+      const phone = intent.senderPhoneNumber || "Non renseigné";
+
+      // Telegram Admin Alert with phone number
+      const telegramMsg = `💳 **Nouveau Paiement Reçu / Soumis !**\n` +
+        `• **Marchand** : ${merchantName || intent.senderName || "Non renseigné"}\n` +
+        `• **Téléphone** : ${phone}\n` +
+        `• **Montant** : ${intent.amount.toLocaleString("fr-FR")} ${intent.currency}\n` +
+        `• **Formule** : ${intent.planName} (${intervalLabel})\n` +
+        `• **Référence** : ${intent.reference || "N/A"}\n` +
+        `• **Moyen** : ${intent.paymentMethod || "Mobile Money"}\n` +
+        `• **Date** : ${new Date().toLocaleString("fr-FR")}`;
+      notificationsService.sendAdminAlert(telegramMsg).catch(err => {
+        logger.warn(`[PaymentService] Erreur alerte Telegram paiement: ${err.message}`);
+      });
+
       const admins = await UserModel.find({
         $or: [
           { roles: "admin" },
@@ -599,7 +616,6 @@ export class PaymentService {
         ]
       });
 
-      const intervalLabel = intent.billingInterval === "yearly" ? "Annuel (-17%)" : "Mensuel";
       const pushTitle = `💰 Paiement Reçu • ${intent.amount.toLocaleString("fr-FR")} ${intent.currency}`;
       const pushBody = `Marchand : ${merchantName || intent.senderName || "Commerçant"}\nFormule : ${intent.planName} (${intervalLabel})\n👉 Touchez pour inspecter & activer le compte.`;
 

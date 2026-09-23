@@ -405,10 +405,11 @@ export class CommerceService {
     const isIdentityStepComplete = hasIdentityName && (hasPaymentMethods || hasDeliveryFees);
 
     const now = new Date();
+    const sub = subscription as any;
     const isPaidActive = subscription?.status === 'active';
-    const isTrial = subscription?.status === 'trial' || (!subscription?.status && !isPaidActive);
-    const trialEndsAt = subscription?.trialEndsAt ? new Date(subscription.trialEndsAt) : null;
-    const trialUsage = subscription?.trialUsage || { messagesCount: 0, maxMessages: 50 };
+    const isTrial = sub?.status === 'trial' || (!sub?.status && !isPaidActive);
+    const trialEndsAt = sub?.trialEndsAt ? new Date(sub.trialEndsAt) : null;
+    const trialUsage = sub?.trialUsage || { messagesCount: 0, maxMessages: 50 };
     const isTrialValid = isTrial && trialEndsAt && trialEndsAt > now && (trialUsage.messagesCount ?? 0) < (trialUsage.maxMessages ?? 50);
 
     const isSubscriptionValidOrActive = isPaidActive || isTrialValid;

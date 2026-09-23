@@ -18,38 +18,49 @@ export class NotificationsService {
    */
   async notifyOrderCreated(merchant: any, order: any, customer?: any, source: "web_shop" | "ai_chat" | "manual" = "web_shop") {
     const ownerId = merchant?.ownerId?.toString() || merchant?.ownerId;
-    if (!ownerId) return;
 
-    const currency = merchant.currency || "XOF";
+    const currency = merchant?.currency || "XOF";
     const totalFormatted = (order.totalAmount || 0).toLocaleString();
     const customerName = customer?.name || order.shippingAddress || "Client";
-    const customerPhone = customer?.phone || customer?.platformId || "Non renseigné";
+    const customerPhone = customer?.phone || customer?.whatsappNumber || customer?.platformId || "Non renseigné";
     
     // 1. In-App Realtime Socket event
-    try {
-      emitToUser(ownerId, "order:created", {
-        order: order.toObject ? order.toObject() : order,
-        customer: customer?.toObject ? customer.toObject() : customer,
-        source
-      });
-      emitToUser(ownerId, "notification:new", {
-        title: "Nouvelle commande ! 🛍️",
-        body: `Commande de ${totalFormatted} ${currency} par ${customerName}`,
-        data: { orderId: order._id, source }
-      });
-    } catch (sockErr) {
-      console.warn("[NotificationsService] Socket emit error:", sockErr);
+    if (ownerId) {
+      try {
+        emitToUser(ownerId, "order:created", {
+          order: order.toObject ? order.toObject() : order,
+          customer: customer?.toObject ? customer.toObject() : customer,
+          source
+        });
+        emitToUser(ownerId, "notification:new", {
+          title: "Nouvelle commande ! 🛍️",
+          body: `Commande de ${totalFormatted} ${currency} par ${customerName}`,
+          data: { orderId: order._id, source }
+        });
+      } catch (sockErr) {
+        console.warn("[NotificationsService] Socket emit error:", sockErr);
+      }
     }
 
+    const sourceLabel = source === "web_shop" ? "🛒 Vitrine Panier Web" : source === "ai_chat" ? "🤖 Discussion Vendeur IA" : "📝 Saisie Manuelle";
+
+    // Telegram Admin Alert with phone number
+    const adminMsg = `🛒 **Nouvelle Commande Passée !**\n` +
+      `• **Boutique** : ${merchant?.storeName || merchant?.displayName || merchant?.name || 'Boutique'}\n` +
+      `• **Client** : ${customerName}\n` +
+      `• **Téléphone** : ${customerPhone}\n` +
+      `• **Montant** : ${totalFormatted} ${currency}\n` +
+      `• **Canal** : ${sourceLabel}\n` +
+      `• **Date** : ${new Date().toLocaleString("fr-FR")}`;
+    this.sendAdminAlert(adminMsg).catch(() => {});
+
     // 2. WhatsApp Notification to Merchant
-    const merchantPhone = merchant.phone || merchant.whatsappNumber;
+    const merchantPhone = merchant?.phone || merchant?.whatsappNumber;
     if (merchantPhone) {
       try {
         const itemsList = Array.isArray(order.items)
           ? order.items.map((i: any) => `• ${i.name || "Article"} (x${i.quantity || 1}) - ${((i.price || 0) * (i.quantity || 1)).toLocaleString()} ${currency}`).join("\n")
           : "• Articles sélectionnés";
-
-        const sourceLabel = source === "web_shop" ? "🛒 Vitrine Panier Web" : source === "ai_chat" ? "🤖 Discussion Vendeur IA" : "📝 Saisie Manuelle";
 
         const whatsappMessage = `🔔 *NOUVELLE COMMANDE REÇUE !*\n` +
           `━━━━━━━━━━━━━━━━━━━━\n` +
@@ -76,30 +87,43 @@ export class NotificationsService {
    */
   async notifyPaymentReceived(merchant: any, order: any, customer?: any, amount?: number, method?: string) {
     const ownerId = merchant?.ownerId?.toString() || merchant?.ownerId;
-    if (!ownerId) return;
 
-    const currency = merchant.currency || "XOF";
+    const currency = merchant?.currency || "XOF";
     const totalFormatted = (amount || order?.totalAmount || 0).toLocaleString();
     const customerName = customer?.name || "Client";
+    const customerPhone = customer?.phone || customer?.whatsappNumber || customer?.platformId || "Non renseigné";
+
+    // Telegram Admin Alert with phone number
+    const adminMsg = `💰 **Paiement Reçu & Validé !**\n` +
+      `• **Boutique** : ${merchant?.storeName || merchant?.displayName || merchant?.name || 'Boutique'}\n` +
+      `• **Client** : ${customerName}\n` +
+      `• **Téléphone** : ${customerPhone}\n` +
+      `• **Montant** : ${totalFormatted} ${currency}\n` +
+      `• **Moyen** : ${method || 'Mobile Money'}\n` +
+      `• **Commande** : #${order?._id?.toString().slice(-6) || ''}\n` +
+      `• **Date** : ${new Date().toLocaleString("fr-FR")}`;
+    this.sendAdminAlert(adminMsg).catch(() => {});
 
     // 1. In-App Realtime Socket event
-    try {
-      emitToUser(ownerId, "payment:received", {
-        orderId: order?._id,
-        amount,
-        customer
-      });
-      emitToUser(ownerId, "notification:new", {
-        title: "Paiement Reçu ! 💰",
-        body: `${totalFormatted} ${currency} reçu pour la commande #${order?._id?.toString().slice(-6) || ''}`,
-        data: { orderId: order?._id, amount }
-      });
-    } catch (sockErr) {
-      console.warn("[NotificationsService] Socket emit error:", sockErr);
+    if (ownerId) {
+      try {
+        emitToUser(ownerId, "payment:received", {
+          orderId: order?._id,
+          amount,
+          customer
+        });
+        emitToUser(ownerId, "notification:new", {
+          title: "Paiement Reçu ! 💰",
+          body: `${totalFormatted} ${currency} reçu pour la commande #${order?._id?.toString().slice(-6) || ''}`,
+          data: { orderId: order?._id, amount }
+        });
+      } catch (sockErr) {
+        console.warn("[NotificationsService] Socket emit error:", sockErr);
+      }
     }
 
     // 2. WhatsApp alert to merchant
-    const merchantPhone = merchant.phone || merchant.whatsappNumber;
+    const merchantPhone = merchant?.phone || merchant?.whatsappNumber;
     if (merchantPhone) {
       try {
         const whatsappMessage = `💰 *PAIEMENT REÇU & VALIDÉ !*\n` +
@@ -122,27 +146,38 @@ export class NotificationsService {
    */
   async notifyHumanEscalation(merchant: any, customer: any, reason: string) {
     const ownerId = merchant?.ownerId?.toString() || merchant?.ownerId;
-    if (!ownerId) return;
+    const customerPhone = customer?.phone || customer?.whatsappNumber || customer?.platformId || "Non renseigné";
+
+    // Telegram Admin Alert with phone number
+    const adminMsg = `🚨 **Intervention Humaine Requise !**\n` +
+      `• **Boutique** : ${merchant?.storeName || merchant?.displayName || merchant?.name || 'Boutique'}\n` +
+      `• **Client** : ${customer?.name || 'Client'}\n` +
+      `• **Téléphone** : ${customerPhone}\n` +
+      `• **Motif** : ${reason}\n` +
+      `• **Date** : ${new Date().toLocaleString("fr-FR")}`;
+    this.sendAdminAlert(adminMsg).catch(() => {});
 
     // In-App Socket
-    emitToUser(ownerId, "takeover:requested", {
-      customer: customer?.toObject ? customer.toObject() : customer,
-      reason,
-      timestamp: new Date()
-    });
-    emitToUser(ownerId, "notification:new", {
-      title: "🚨 Intervention humaine requise",
-      body: `Client ${customer?.name || customer?.phone || 'Inconnu'} : ${reason}`,
-      data: { customerId: customer?._id, priority: "high" }
-    });
+    if (ownerId) {
+      emitToUser(ownerId, "takeover:requested", {
+        customer: customer?.toObject ? customer.toObject() : customer,
+        reason,
+        timestamp: new Date()
+      });
+      emitToUser(ownerId, "notification:new", {
+        title: "🚨 Intervention humaine requise",
+        body: `Client ${customer?.name || customerPhone} : ${reason}`,
+        data: { customerId: customer?._id, priority: "high" }
+      });
+    }
 
     // WhatsApp
-    const merchantPhone = merchant.phone || merchant.whatsappNumber;
+    const merchantPhone = merchant?.phone || merchant?.whatsappNumber;
     if (merchantPhone) {
       try {
         const msg = `🚨 *ALERTE REPRISE EN MAIN - VENDEUR IA*\n` +
           `━━━━━━━━━━━━━━━━━━━━\n` +
-          `Le client *${customer?.name || 'Client'}* (${customer?.phone || ''}) a besoin d'un conseiller humain.\n\n` +
+          `Le client *${customer?.name || 'Client'}* (${customerPhone}) a besoin d'un conseiller humain.\n\n` +
           `📝 *Motif* : ${reason}\n\n` +
           `👉 *Rendez-vous sur l'application pour répondre au client.*`;
         await messagingService.sendMessage(merchant, "whatsapp", merchantPhone, msg);

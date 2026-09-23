@@ -182,11 +182,13 @@ export class AuthService {
 
     // Alert admin of founder login activity securely
     try {
-      const name = user.displayName || "Non renseigné";
-      const identity = user.email || user.whatsappNumber || "Inconnu";
-      const message = `🔐 **Nouvelle connexion à l'application**\n` +
+      const name = (user as any).displayName || (user as any).name || "Non renseigné";
+      const phone = user.whatsappNumber || (user as any).phone || canonicalPhone || "Non renseigné";
+      const email = user.email || "Non renseigné";
+      const message = `🔐 **Nouvelle connexion Administrateur**\n` +
         `• **Utilisateur** : ${name}\n` +
-        `• **Identifiant** : ${identity}\n` +
+        `• **Téléphone / WhatsApp** : ${phone}\n` +
+        `• **Email** : ${email}\n` +
         `• **Méthode** : Connexion Administrateur / Fondateur (PIN)\n` +
         `• **Date** : ${new Date().toLocaleString("fr-FR")}`;
       notificationsService.sendAdminAlert(message).catch(() => {});

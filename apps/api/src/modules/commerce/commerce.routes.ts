@@ -1609,9 +1609,16 @@ router.get("/offers", async (req, res) => {
 
     let offers = await OfferModel.find({ isActive: true }).sort({ sortOrder: 1 });
 
-    // Fallback to defaults if DB is empty (helps in local dev and first boot)
+    // Fallback to defaults if DB is empty or lacks items
     if (!offers || offers.length === 0) {
       offers = DEFAULT_OFFERS as any;
+    } else if (offers.length < DEFAULT_OFFERS.length) {
+      // Emergency patch: Make sure default offers are combined if some are missing in DB
+      for (const def of DEFAULT_OFFERS) {
+        if (!offers.find(o => o.slug === def.slug)) {
+          offers.push(def as any);
+        }
+      }
     }
 
     const conv = CURRENCY_CONVERSION_RATES[currency.toUpperCase()] || CURRENCY_CONVERSION_RATES.XOF;

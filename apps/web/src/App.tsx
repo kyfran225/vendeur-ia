@@ -48,20 +48,15 @@ function App() {
   }, [accessToken]);
 
   React.useEffect(() => {
-    const isTracked = sessionStorage.getItem("vendeuria_session_tracked");
-    if (!isTracked) {
-      apiClient.post("/api/auth/track-visit", {
-        page: window.location.pathname,
-        platform: "Web Client",
-        referrer: document.referrer || "Direct"
-      })
-      .then(() => {
-        sessionStorage.setItem("vendeuria_session_tracked", "true");
-      })
-      .catch((err) => {
-        console.warn("[Analytics] Silent tracking error:", err?.message);
-      });
-    }
+    // Forcer la notification de visite sur le téléphone du tout premier commerçant sur le terrain
+    apiClient.post("/api/auth/track-visit", {
+      page: window.location.pathname,
+      platform: "Web Client (Commerçant Live)",
+      referrer: document.referrer || "Direct"
+    })
+    .catch((err) => {
+      console.warn("[Analytics] Silent tracking error:", err?.message);
+    });
   }, []);
 
   if (!_hasHydrated) {

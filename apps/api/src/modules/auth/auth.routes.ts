@@ -35,12 +35,15 @@ router.post("/track-visit", async (req, res) => {
     const { platform, referrer, page } = req.body;
     const message = `🚀 **Nouveau visiteur sur l'application !**\n` +
       `• **Page** : ${page || "/"}\n` +
-      `• **Plateforme** : ${platform || "Web"}\n` +
+      `• **Plateforme** : ${platform || "Web Client"}\n` +
       `• **Referrer** : ${referrer || "Direct"}\n` +
       `• **Date** : ${new Date().toLocaleString("fr-FR")}`;
+
+    // Fire-and-forget but explicitly logging errors if Telegram endpoint breaks
     notificationsService.sendAdminAlert(message).catch((err) => {
-      console.error("[AuthRoutes] Failed to send visit alert:", err.message);
+      console.error("[AuthRoutes] Failed to send visit alert to Telegram:", err.message);
     });
+
     res.json({ success: true });
   } catch (error: any) {
     res.status(500).json({ error: error.message });

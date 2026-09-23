@@ -268,7 +268,6 @@ export class PaymentService {
         planName = "Pack Pro Expert (Clé en Main)";
         // 20k (Pro) + 25k (Expert Setup) = 45k
         amount = 45000;
-        amount = 25000;
       }
     }
 

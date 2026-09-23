@@ -33,6 +33,7 @@ import { SmartAssistantCard } from "./components/SmartAssistantCard";
 import { VendeurIAPlaygroundModal } from "./components/VendeurIAPlaygroundModal";
 import { SetupCompletionModal } from "./components/SetupCompletionModal";
 import { StepSuccessModal } from "./components/StepSuccessModal";
+import { StoreSetupWizardModal } from "./components/StoreSetupWizardModal";
 import { OffersModal } from "@/features/settings/components/OffersModal";
 import { PauseConfirmationModal } from "@/components/modals/PauseConfirmationModal";
 import { ShareShopModal } from "@/features/shop/components/ShareShopModal";
@@ -75,6 +76,7 @@ export function SalesDashboard() {
   const [isOffersModalOpen, setIsOffersModalOpen] = useState(false);
   const [isWhatsAppMilestoneOpen, setIsWhatsAppMilestoneOpen] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [isStoreSetupModalOpen, setIsStoreSetupModalOpen] = useState(false);
 
   // Suivi des étapes complétées pour détecter les nouvelles complétion
   const [stepSuccessModal, setStepSuccessModal] = useState<{
@@ -288,6 +290,7 @@ export function SalesDashboard() {
         onOpenOffers={() => setIsOffersModalOpen(true)}
         onOpenShare={() => setIsShareModalOpen(true)}
         onConnectWhatsApp={() => navigate("/settings?tab=connexions#whatsapp")}
+        onOpenStoreSetupModal={() => setIsStoreSetupModalOpen(true)}
       />
 
       <VendeurIAPlaygroundModal
@@ -357,6 +360,12 @@ export function SalesDashboard() {
         merchant={dashboard?.merchant}
         shopUrl={getMerchantShopUrl(dashboard?.merchant)}
       />
+
+      <StoreSetupWizardModal
+        isOpen={isStoreSetupModalOpen}
+        onClose={() => setIsStoreSetupModalOpen(false)}
+        dashboard={dashboard}
+      />
     </main>
   );
 }
@@ -368,7 +377,8 @@ function HomePanel({
   onOpenTestIA,
   onOpenOffers,
   onOpenShare,
-  onConnectWhatsApp
+  onConnectWhatsApp,
+  onOpenStoreSetupModal
 }: {
   dashboard: any;
   hasProducts: boolean;
@@ -377,6 +387,7 @@ function HomePanel({
   onOpenOffers: () => void;
   onOpenShare: () => void;
   onConnectWhatsApp?: () => void;
+  onOpenStoreSetupModal?: () => void;
 }) {
   const [isPauseModalOpen, setIsPauseModalOpen] = useState(false);
   const [isDailyStatusModalOpen, setIsDailyStatusModalOpen] = useState(false);
@@ -417,6 +428,7 @@ function HomePanel({
           onOpenOffers={onOpenOffers}
           onOpenDailyStatus={() => setIsDailyStatusModalOpen(true)}
           onOpenPauseModal={() => setIsPauseModalOpen(true)}
+          onOpenStoreSetupModal={onOpenStoreSetupModal}
         />
       )}
 

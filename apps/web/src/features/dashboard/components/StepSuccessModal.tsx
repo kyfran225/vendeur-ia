@@ -27,36 +27,24 @@ const STEP_ICONS: Record<string, React.ReactNode> = {
   identity: <Store size={32} />,
   whatsapp: <MessageCircle size={32} />,
   products: <Package size={32} />,
-  payments: <CreditCard size={32} />,
-  delivery: <Truck size={32} />,
-  subscription: <Zap size={32} />,
 };
 
 const STEP_MESSAGES: Record<string, string> = {
-  identity: "Votre profil boutique est configuré ! Vos clients vous connaîtront parfaitement.",
-  whatsapp: "WhatsApp est relié ! Votre Vendeur IA peut maintenant discuter avec vos clients.",
-  products: "Votre catalogue est en ligne ! Votre vitrine publique est désormais active.",
-  payments: "Vos moyens d'encaissement sont configurés ! Votre Vendeur IA peut maintenant valider les paiements automatiquement.",
-  delivery: "Vos zones de livraison sont définies ! Votre boutique est maintenant techniquement prête à 100%.",
-  subscription: "Votre forfait est actif ! Votre Vendeur IA est désormais en service 24h/24 pour propulser vos ventes.",
+  identity: "L'identité, les paiements et la livraison de votre boutique sont configurés !",
+  whatsapp: "WhatsApp est relié ! Votre Vendeur IA peut maintenant échanger avec vos clients.",
+  products: "Votre catalogue est en ligne ! Votre boutique est entièrement prête à vendre.",
 };
 
 const NEXT_STEP_LINKS: Record<string, string> = {
   identity: "/settings?tab=connexions#whatsapp",
   whatsapp: "/products",
-  products: "/settings?tab=boutique#payments",
-  payments: "/settings?tab=boutique#delivery",
-  delivery: "/offers",
-  subscription: "/dashboard",
+  products: "/dashboard?test_ia=true",
 };
 
 const NEXT_STEP_CTA: Record<string, string> = {
   identity: "Brancher mon WhatsApp",
   whatsapp: "Ajouter mes articles & prix",
-  products: "Configurer mes paiements",
-  payments: "Définir mes zones de livraison",
-  delivery: "Activer les Ventes 24h/24",
-  subscription: "Voir mon tableau de bord",
+  products: "Tester mon Vendeur IA",
 };
 
 export function StepSuccessModal({

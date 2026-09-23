@@ -393,25 +393,35 @@ export class CommerceService {
                                 hasSavedSession ||
                                 Boolean(merchant.whatsappConfig?.meta?.phoneNumberId && merchant.whatsappConfig?.meta?.accessToken);
 
-    // Check if user has actually ADDED payment methods (not just the default empty ones)
+    const hasIdentityName = Boolean(merchant.businessName && merchant.businessName.trim().length > 0);
+
+    // Check if user has actually ADDED payment methods (not just default empty ones)
     const hasPaymentMethods = (knowledge?.businessRules?.paymentMethods?.length || 0) > 0 &&
-                             knowledge?.businessRules?.paymentMethods?.some(m => m.number && m.number.trim() !== "");
+                             knowledge?.businessRules?.paymentMethods?.some((m: any) => m.number && m.number.trim() !== "");
 
     const hasDeliveryFees = (knowledge?.businessRules?.deliveryFees?.length || 0) > 0;
 
-    const isSubscriptionActive = subscription?.status === 'active';
+    // Grouped Identity & Store Settings (Identity + Payments + Delivery in 1 step)
+    const isIdentityStepComplete = hasIdentityName && (hasPaymentMethods || hasDeliveryFees);
 
+    const now = new Date();
+    const isPaidActive = subscription?.status === 'active';
+    const isTrial = subscription?.status === 'trial' || (!subscription?.status && !isPaidActive);
+    const trialEndsAt = subscription?.trialEndsAt ? new Date(subscription.trialEndsAt) : null;
+    const trialUsage = subscription?.trialUsage || { messagesCount: 0, maxMessages: 50 };
+    const isTrialValid = isTrial && trialEndsAt && trialEndsAt > now && (trialUsage.messagesCount ?? 0) < (trialUsage.maxMessages ?? 50);
+
+    const isSubscriptionValidOrActive = isPaidActive || isTrialValid;
+
+    // Simplified 3 setup steps (Identité & Réglages -> WhatsApp -> Produits)
     const setupSteps = [
-      { id: 'identity', label: 'Identité du Commerce', completed: true, weight: 10 },
-      { id: 'whatsapp', label: 'Numéro WhatsApp de vente', completed: isWhatsAppConnected, weight: 30 },
-      { id: 'products', label: 'Ajouter des produits', completed: hasProducts, weight: 20 },
-      { id: 'payments', label: 'Modes de paiement', completed: hasPaymentMethods, weight: 15 },
-      { id: 'delivery', label: 'Tarifs de livraison', completed: hasDeliveryFees, weight: 10 },
-      { id: 'subscription', label: 'Forfait Vendeur IA', completed: isSubscriptionActive, weight: 15 }
+      { id: 'identity', label: 'Identité & Réglages Boutique', completed: isIdentityStepComplete, weight: 35 },
+      { id: 'whatsapp', label: 'Numéro WhatsApp de vente', completed: isWhatsAppConnected, weight: 35 },
+      { id: 'products', label: 'Catalogue & Produits', completed: hasProducts, weight: 30 }
     ];
 
     const setupScore = setupSteps.reduce((acc, step) => acc + (step.completed ? step.weight : 0), 0);
-    const isFullyOperational = setupScore === 100;
+    const isFullyOperational = setupScore === 100 && isSubscriptionValidOrActive;
 
     // --- PRODUCT PERFORMANCE ---
     const topProducts = await CommerceOrderModel.aggregate([

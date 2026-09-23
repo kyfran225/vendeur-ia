@@ -28,7 +28,7 @@ interface Step {
   weight: number;
 }
 
-export function SetupGuide({ setupStatus, businessName, dashboard }: { setupStatus: any, businessName: string, dashboard?: any }) {
+export function SetupGuide({ setupStatus, businessName, dashboard, onOpenStoreSetupModal }: { setupStatus: any, businessName: string, dashboard?: any, onOpenStoreSetupModal?: () => void }) {
   const [isPackProModalOpen, setIsPackProModalOpen] = useState(false);
   const { score, steps, isFullyOperational } = setupStatus;
 
@@ -42,8 +42,6 @@ export function SetupGuide({ setupStatus, businessName, dashboard }: { setupStat
       case 'identity': return "/settings?tab=boutique#identity";
       case 'whatsapp': return "/settings?tab=connexions#whatsapp";
       case 'products': return "/products";
-      case 'payments': return "/settings?tab=boutique#payments";
-      case 'delivery': return "/settings?tab=boutique#delivery";
       default: return "/";
     }
   };
@@ -83,28 +81,24 @@ export function SetupGuide({ setupStatus, businessName, dashboard }: { setupStat
 
             <div className="bg-slate-50 dark:bg-black/40 border border-slate-200 dark:border-white/5 rounded-2xl sm:rounded-3xl p-4 sm:p-5 md:p-6 relative space-y-4 w-full min-w-0">
               <p className="text-xs sm:text-sm md:text-base text-slate-700 dark:text-white/80 leading-relaxed italic break-words">
-                "{nextStep?.id === 'whatsapp' ? (
+                "{nextStep?.id === 'identity' ? (
                   <>
-                    Bienvenue chez <span className="text-emerald-700 dark:text-vendeur-emerald font-black not-italic">{businessName}</span> ! 🚀 Première étape essentielle : connectons ton numéro WhatsApp pour que je puisse enfin répondre à tes clients et vendre à ta place !
+                    Bienvenue ! Commençons par configurer l'identité de <span className="text-emerald-700 dark:text-vendeur-emerald font-black not-italic">{businessName}</span> (numéro, modes de paiement Mobile Money et frais de livraison) pour que je puisse encaisser tes clients.
+                  </>
+                ) : nextStep?.id === 'whatsapp' ? (
+                  <>
+                    Étape essentielle : connectons ton numéro WhatsApp pour que je puisse enfin répondre à tes clients et vendre à ta place chez <span className="text-emerald-700 dark:text-vendeur-emerald font-black not-italic">{businessName}</span> !
                   </>
                 ) : nextStep?.id === 'products' ? (
                   firstProduct ? (
                     <>
-                      Super, l'identité de <span className="text-emerald-700 dark:text-vendeur-emerald font-black not-italic">{businessName}</span> prend forme ! Je vois déjà "{firstProduct.name}". Complète ton catalogue pour que mes réponses soient ultra précises.
+                      Super ! Je vois déjà "{firstProduct.name}". Complète ton catalogue pour que mes réponses soient ultra précises.
                     </>
                   ) : (
                     <>
-                      Génial, WhatsApp est relié à <span className="text-emerald-700 dark:text-vendeur-emerald font-black not-italic">{businessName}</span> ! 🛍️ Il ne me manque plus que tes articles et leurs prix pour commencer à négocier et vendre.
+                      Génial, WhatsApp est relié à <span className="text-emerald-700 dark:text-vendeur-emerald font-black not-italic">{businessName}</span> ! 🛍️ Il ne me manque plus que tes articles et leurs prix pour commencer à vendre.
                     </>
                   )
-                ) : nextStep?.id === 'payments' ? (
-                  <>
-                    Ton catalogue pour <span className="text-emerald-700 dark:text-vendeur-emerald font-black not-italic">{businessName}</span> est en place ! 💰 Configure tes moyens de paiement (Mobile Money, Virement) pour qu'on puisse encaisser automatiquement.
-                  </>
-                ) : nextStep?.id === 'identity' ? (
-                  <>
-                    Bienvenue ! Commençons par donner un nom et une identité percutante à ta boutique <span className="text-emerald-700 dark:text-vendeur-emerald font-black not-italic">{businessName}</span> pour inspirer confiance à tes acheteurs.
-                  </>
                 ) : (
                   <>
                     Bravo, nous y sommes presque ! Plus que quelques détails et <span className="text-emerald-700 dark:text-vendeur-emerald font-black not-italic">{businessName}</span> tournera à 100% en automatique.
@@ -114,19 +108,29 @@ export function SetupGuide({ setupStatus, businessName, dashboard }: { setupStat
 
               {nextStep && (
                 <div className="pt-1">
-                  <Link
-                    to={getActionLink(nextStep.id)}
-                    className="flex items-center justify-center gap-2 w-full min-h-[3rem] sm:min-h-[3.25rem] px-3 sm:px-4 rounded-xl sm:rounded-2xl bg-vendeur-emerald text-white font-black uppercase text-xs tracking-wider hover:bg-emerald-400 hover:scale-[1.01] active:scale-95 transition-all shadow-lg shadow-emerald-500/20 group cursor-pointer"
-                  >
-                    <Zap size={15} fill="currentColor" className="shrink-0 animate-pulse text-white" />
-                    <span className="truncate font-black">
-                      {nextStep.id === 'whatsapp' ? 'Brancher mon WhatsApp' :
-                       nextStep.id === 'products' ? 'Ajouter des articles & prix' :
-                       nextStep.id === 'payments' ? 'Configurer mes paiements' :
-                       nextStep.id === 'identity' ? 'Configurer ma boutique' : 'Action Requise'}
-                    </span>
-                    <ArrowRight size={15} className="shrink-0 group-hover:translate-x-1 transition-transform" />
-                  </Link>
+                  {nextStep.id === 'identity' && onOpenStoreSetupModal ? (
+                    <button
+                      type="button"
+                      onClick={onOpenStoreSetupModal}
+                      className="flex items-center justify-center gap-2 w-full min-h-[3rem] sm:min-h-[3.25rem] px-3 sm:px-4 rounded-xl sm:rounded-2xl bg-vendeur-emerald text-white font-black uppercase text-xs tracking-wider hover:bg-emerald-400 hover:scale-[1.01] active:scale-95 transition-all shadow-lg shadow-emerald-500/20 group cursor-pointer"
+                    >
+                      <Zap size={15} fill="currentColor" className="shrink-0 animate-pulse text-white" />
+                      <span className="truncate font-black">Configurer ma boutique</span>
+                      <ArrowRight size={15} className="shrink-0 group-hover:translate-x-1 transition-transform" />
+                    </button>
+                  ) : (
+                    <Link
+                      to={getActionLink(nextStep.id)}
+                      className="flex items-center justify-center gap-2 w-full min-h-[3rem] sm:min-h-[3.25rem] px-3 sm:px-4 rounded-xl sm:rounded-2xl bg-vendeur-emerald text-white font-black uppercase text-xs tracking-wider hover:bg-emerald-400 hover:scale-[1.01] active:scale-95 transition-all shadow-lg shadow-emerald-500/20 group cursor-pointer"
+                    >
+                      <Zap size={15} fill="currentColor" className="shrink-0 animate-pulse text-white" />
+                      <span className="truncate font-black">
+                        {nextStep.id === 'whatsapp' ? 'Brancher mon WhatsApp' :
+                         nextStep.id === 'products' ? 'Ajouter des articles & prix' : 'Action Requise'}
+                      </span>
+                      <ArrowRight size={15} className="shrink-0 group-hover:translate-x-1 transition-transform" />
+                    </Link>
+                  )}
                 </div>
               )}
 

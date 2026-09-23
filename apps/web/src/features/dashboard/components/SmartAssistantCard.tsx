@@ -40,6 +40,7 @@ interface SmartAssistantCardProps {
   onOpenOffers?: () => void;
   onOpenDailyStatus?: () => void;
   onOpenPauseModal?: () => void;
+  onOpenStoreSetupModal?: () => void;
 }
 
 export function SmartAssistantCard({
@@ -49,7 +50,8 @@ export function SmartAssistantCard({
   onConnectWhatsApp,
   onOpenOffers,
   onOpenDailyStatus,
-  onOpenPauseModal
+  onOpenPauseModal,
+  onOpenStoreSetupModal
 }: SmartAssistantCardProps) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -292,25 +294,21 @@ export function SmartAssistantCard({
                     Votre Vendeur IA est actuellement en pause. Votre WhatsApp reste connecté et vous échangez manuellement avec vos clients. Vous pouvez réactiver les ventes automatiques 24h/24 en 1 clic quand vous le souhaitez.
                   </>
                 ) : isDiscoveryMode ? (
-                  nextStep?.id === "subscription" ? (
+                  !nextStep || isFullyOperational ? (
                     <>
-                      Félicitations <span className="text-amber-600 dark:text-amber-400 font-bold not-italic">{businessName}</span>, votre configuration est terminée ! 🏁 Votre Vendeur IA est en <strong>Essai Gratuit 7 Jours (En attente d'activation)</strong>. Activez votre forfait pour qu'il prenne le relais de vos ventes 24h/24.
+                      Félicitations <span className="text-amber-600 dark:text-amber-400 font-bold not-italic">{businessName}</span> ! 🏁 Votre boutique est entièrement configurée. Votre Vendeur IA est <strong>ACTIF et vend pour vous 24h/24 en Essai Gratuit 7 Jours</strong> (50 messages offerts) !
+                    </>
+                  ) : nextStep?.id === "identity" ? (
+                    <>
+                      Bienvenue chez <span className="text-amber-600 dark:text-amber-400 font-bold not-italic">{businessName}</span> ! 🏪 Configurez l'identité et les réglages de votre boutique (moyens de paiement Mobile Money et frais de livraison) pour activer les ventes automatiques.
                     </>
                   ) : nextStep?.id === "whatsapp" ? (
                     <>
-                      Bienvenue chez <span className="text-amber-600 dark:text-amber-400 font-bold not-italic">{businessName}</span> ! 🚀 Vous êtes en <strong>Essai Gratuit 7 Jours</strong> : votre Vendeur IA répondra à vos clients sur WhatsApp dès que vous le connecterez. Première étape : relions votre WhatsApp !
+                      Génial ! 🚀 Vous êtes en <strong>Essai Gratuit 7 Jours</strong> : votre Vendeur IA répondra à vos clients sur WhatsApp dès que vous le connecterez. Relions votre numéro WhatsApp !
                     </>
                   ) : nextStep?.id === "products" ? (
                     <>
-                      Génial, WhatsApp est relié à <span className="text-amber-600 dark:text-amber-400 font-bold not-italic">{businessName}</span> ! 🛍️ Ajoutez vos articles : votre vitrine publique sera automatiquement générée et votre Vendeur IA pourra commencer à répondre à vos clients.
-                    </>
-                  ) : nextStep?.id === "delivery" ? (
-                    <>
-                      Votre catalogue est prêt ! 🛵 Définissez vos zones et tarifs de livraison pour que je calcule automatiquement les frais d'expédition lors des commandes clients.
-                    </>
-                  ) : nextStep?.id === "payments" ? (
-                    <>
-                      Votre catalogue est en place ! 💰 Configurez vos canaux d'encaissement (Wave, Orange Money, MoMo) pour transmettre vos coordonnées de paiement aux clients.
+                      WhatsApp est relié à <span className="text-amber-600 dark:text-amber-400 font-bold not-italic">{businessName}</span> ! 🛍️ Ajoutez vos articles : votre Vendeur IA pourra immédiatement présenter votre catalogue et vendre à vos clients.
                     </>
                   ) : (
                     <>
@@ -322,21 +320,17 @@ export function SmartAssistantCard({
                     Tout est parfait pour <span className="text-emerald-700 dark:text-vendeur-emerald font-bold not-italic">{businessName}</span> ! 🎯 Votre boutique est entièrement configurée. Je réponds à vos clients, présente vos produits et enregistre vos commandes sur WhatsApp 24h/24.
                   </>
                 ) : (
-                  nextStep?.id === "whatsapp" ? (
+                  nextStep?.id === "identity" ? (
+                    <>
+                      Bienvenue chez <span className="text-emerald-700 dark:text-vendeur-emerald font-bold not-italic">{businessName}</span> ! Configurez votre identité, vos modes de paiement et vos frais de livraison pour valider vos ventes.
+                    </>
+                  ) : nextStep?.id === "whatsapp" ? (
                     <>
                       Bienvenue chez <span className="text-emerald-700 dark:text-vendeur-emerald font-bold not-italic">{businessName}</span> ! Connectons votre numéro WhatsApp pour que je prenne le relais de vos ventes 24h/24.
                     </>
                   ) : nextStep?.id === "products" ? (
                     <>
                       Votre ligne est prête ! 🛍️ Ajoutez vos articles et leurs prix pour activer votre vitrine publique et me permettre de vendre à vos clients.
-                    </>
-                  ) : nextStep?.id === "delivery" ? (
-                    <>
-                      Votre catalogue est prêt ({productsCount} article{productsCount > 1 ? 's' : ''}) ! 🛵 Configurez vos zones et frais de livraison pour le calcul automatique sur WhatsApp.
-                    </>
-                  ) : nextStep?.id === "payments" ? (
-                    <>
-                      Votre catalogue est en place ({productsCount} article{productsCount > 1 ? 's' : ''}) et votre vitrine est active ! 💰 Configurez vos moyens d'encaissement (Wave, Orange Money, MoMo) pour valider les paiements automatiques.
                     </>
                   ) : (
                     <>
@@ -419,6 +413,16 @@ export function SmartAssistantCard({
                           >
                             <Zap size={17} fill="currentColor" className="shrink-0 group-hover:scale-110 transition-transform" />
                             <span className="truncate">Lier mon WhatsApp</span>
+                            <ArrowRight size={17} className="shrink-0 group-hover:translate-x-1 transition-transform" />
+                          </button>
+                        ) : nextStep.id === "identity" && onOpenStoreSetupModal ? (
+                          <button
+                            type="button"
+                            onClick={onOpenStoreSetupModal}
+                            className="flex-1 flex items-center justify-center gap-2.5 min-h-[52px] sm:min-h-[56px] px-5 py-3.5 rounded-2xl bg-vendeur-emerald text-slate-950 font-black uppercase text-xs sm:text-sm tracking-wider hover:bg-emerald-400 active:scale-95 transition-all shadow-lg shadow-emerald-500/20 cursor-pointer shrink-0 truncate group"
+                          >
+                            <Zap size={17} fill="currentColor" className="shrink-0 group-hover:scale-110 transition-transform" />
+                            <span className="truncate">Configurer ma boutique</span>
                             <ArrowRight size={17} className="shrink-0 group-hover:translate-x-1 transition-transform" />
                           </button>
                         ) : (

@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { Package, Sparkles, Trash2, Edit, Camera, X, Save, Zap, Utensils, Laptop, Palette, Hammer, ShoppingBag, Loader2, MessageSquareText, Plus, Minus, Heart, Monitor, Home, ShoppingCart, Activity, Car, Box, Image as ImageIcon, Star, Search, LayoutGrid, List, ArrowUpDown, SlidersHorizontal, AlertCircle, Filter } from "lucide-react";
+import { Package, Sparkles, Trash2, Edit, Camera, X, Save, Zap, Utensils, Laptop, Palette, Hammer, ShoppingBag, Loader2, MessageSquareText, Plus, Minus, Heart, Monitor, Home, ShoppingCart, Activity, Car, Box, Image as ImageIcon, Star, Search, LayoutGrid, List, ArrowUpDown, SlidersHorizontal, AlertCircle, Filter, ArrowRight, ArrowLeft } from "lucide-react";
 import { ProductScanner } from "./components/ProductScanner";
 import { CaptionModal } from "./components/CaptionModal";
 import { PosterGenerator } from "./components/PosterGenerator";
@@ -200,6 +200,7 @@ export function ProductManager() {
 
   const [isScannerOpen, setIsScannerOpen] = useState(false);
   const [isAddingManual, setIsAddingManual] = useState(false);
+  const [productWizardStep, setProductWizardStep] = useState<1 | 2 | 3>(1);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [deletingProduct, setDeletingProduct] = useState<Product | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
@@ -211,6 +212,7 @@ export function ProductManager() {
     category: businessCategory,
     description: "",
     imageUrl: "",
+    images: [] as string[],
     digitalUrl: "",
     digitalFormat: "PDF / E-Book",
     serviceDuration: "1h",
@@ -273,6 +275,7 @@ export function ProductManager() {
       queryClient.invalidateQueries({ queryKey: ["dashboard"] });
       toast.success("Ajouté au catalogue avec succès !");
       setIsAddingManual(false);
+      setProductWizardStep(1);
       setLastAddedName(variables.name || "Produit");
       setShowMilestoneModal(true);
       setNewProduct({
@@ -424,46 +427,128 @@ export function ProductManager() {
   const [autoAnalyzeWithIA, setAutoAnalyzeWithIA] = useState(true);
 
   const handleUnifiedPhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
 
-    const reader = new FileReader();
-    reader.onload = async (event) => {
-      const dataUrl = event.target?.result as string;
-      try {
-        const compressedBlob = await compressImage(dataUrl, 1080, 0.7);
+    setAnalyzing(true);
+    const newImages: string[] = [];
+
+    try {
+      for (const file of files) {
+        const dataUrl = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result as string);
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+
+        const compressedBlob = await compressImage(dataUrl, 1080, 0.75);
         const compressedDataUrl = await new Promise<string>((resolve) => {
           const r = new FileReader();
           r.onload = () => resolve(r.result as string);
           r.readAsDataURL(compressedBlob);
         });
 
-        if (editingProduct) {
-          setEditingProduct({ ...editingProduct, imageUrl: compressedDataUrl } as any);
-        } else {
-          setNewProduct(prev => ({ ...prev, imageUrl: compressedDataUrl }));
-        }
-
-        // Trigger AI vision analysis if auto-analyze option is enabled
-        if (autoAnalyzeWithIA && config.showScanner) {
-          visionMutation.mutate(file);
-        }
-      } catch (error) {
-        toast.error("Erreur lors du traitement de la photo");
+        newImages.push(compressedDataUrl);
       }
-    };
-    reader.readAsDataURL(file);
+
+      if (editingProduct) {
+        const existing = (editingProduct as any).images || (editingProduct.imageUrl ? [editingProduct.imageUrl] : []);
+        const combined = [...existing, ...newImages].slice(0, 8);
+        setEditingProduct({
+          ...editingProduct,
+          imageUrl: combined[0] || "",
+          images: combined
+        } as any);
+      } else {
+        const existing = newProduct.images || (newProduct.imageUrl ? [newProduct.imageUrl] : []);
+        const combined = [...existing, ...newImages].slice(0, 8);
+        setNewProduct(prev => ({
+          ...prev,
+          imageUrl: combined[0] || "",
+          images: combined
+        }));
+      }
+
+      // Trigger AI vision analysis if first photo & option enabled
+      if (files[0] && autoAnalyzeWithIA && config.showScanner) {
+        visionMutation.mutate(files[0]);
+      } else {
+        toast.success(`${newImages.length} photo(s) ajoutée(s) !`);
+      }
+    } catch (error) {
+      toast.error("Erreur lors de l'importation des photos");
+    } finally {
+      setAnalyzing(false);
+      e.target.value = "";
+    }
+  };
+
+  const handleRemoveImage = (index: number) => {
+    if (editingProduct) {
+      const existing = (editingProduct as any).images || (editingProduct.imageUrl ? [editingProduct.imageUrl] : []);
+      const updated = existing.filter((_: any, idx: number) => idx !== index);
+      setEditingProduct({
+        ...editingProduct,
+        imageUrl: updated[0] || "",
+        images: updated
+      } as any);
+    } else {
+      const existing = newProduct.images || (newProduct.imageUrl ? [newProduct.imageUrl] : []);
+      const updated = existing.filter((_: any, idx: number) => idx !== index);
+      setNewProduct(prev => ({
+        ...prev,
+        imageUrl: updated[0] || "",
+        images: updated
+      }));
+    }
+    toast.success("Photo retirée");
+  };
+
+  const handleSetPrimaryImage = (index: number) => {
+    if (index === 0) return;
+
+    if (editingProduct) {
+      const existing = [...((editingProduct as any).images || (editingProduct.imageUrl ? [editingProduct.imageUrl] : []))];
+      const [selected] = existing.splice(index, 1);
+      existing.unshift(selected);
+      setEditingProduct({
+        ...editingProduct,
+        imageUrl: existing[0] || "",
+        images: existing
+      } as any);
+    } else {
+      const existing = [...(newProduct.images || (newProduct.imageUrl ? [newProduct.imageUrl] : []))];
+      const [selected] = existing.splice(index, 1);
+      existing.unshift(selected);
+      setNewProduct(prev => ({
+        ...prev,
+        imageUrl: existing[0] || "",
+        images: existing
+      }));
+    }
+    toast.success("Photo principale mise à jour ! ⭐");
   };
 
   const handleUpdate = (e: React.FormEvent) => {
     e.preventDefault();
-    if (editingProduct) updateMutation.mutate(editingProduct);
+    if (editingProduct) {
+      const imgs = (editingProduct as any).images || (editingProduct.imageUrl ? [editingProduct.imageUrl] : []);
+      updateMutation.mutate({
+        ...editingProduct,
+        imageUrl: imgs[0] || "",
+        images: imgs
+      });
+    }
   };
 
   const handleManualCreate = (e: React.FormEvent) => {
     e.preventDefault();
+    const imgs = newProduct.images || (newProduct.imageUrl ? [newProduct.imageUrl] : []);
     createMutation.mutate({
       ...newProduct,
+      imageUrl: imgs[0] || "",
+      images: imgs,
       price: isNaN(newProduct.price) ? 0 : newProduct.price,
       stock: isNaN(newProduct.stock) ? 0 : newProduct.stock,
       category: newProduct.category || businessCategory,
@@ -643,17 +728,17 @@ export function ProductManager() {
         type="danger"
       />
 
-      {/* Edit / Add Form Modal - Ultra-sleek 2-Column Desktop & Thumb-Friendly Mobile Experience */}
+      {/* Edit / Add Form Modal - Unified Direct Sleek Layout */}
       {(editingProduct || isAddingManual) && (
         <div className="fixed inset-0 z-[150] flex items-end sm:items-center justify-center p-0 sm:p-6 overflow-hidden animate-in fade-in duration-200">
           <div 
             className="fixed inset-0 bg-slate-950/60 dark:bg-black/80 backdrop-blur-md transition-opacity" 
-            onClick={() => { setEditingProduct(null); setIsAddingManual(false); }} 
+            onClick={() => { setEditingProduct(null); setIsAddingManual(false); }}
           />
           
           <form
             onSubmit={editingProduct ? handleUpdate : handleManualCreate}
-            className="relative w-full max-w-4xl bg-slate-50 dark:bg-[#0c1612] border border-slate-200/90 dark:border-white/10 rounded-t-3xl sm:rounded-[2.5rem] shadow-2xl dark:shadow-[0_25px_80px_rgba(0,0,0,0.85)] flex flex-col max-h-[85dvh] sm:max-h-[92vh] mb-16 sm:mb-0 overflow-hidden my-0 sm:my-auto text-slate-900 dark:text-white"
+            className="relative w-full max-w-xl bg-slate-50 dark:bg-[#0c1612] border border-slate-200/90 dark:border-white/10 rounded-t-3xl sm:rounded-[2.5rem] shadow-2xl dark:shadow-[0_25px_80px_rgba(0,0,0,0.85)] flex flex-col max-h-[88dvh] sm:max-h-[92vh] mb-16 sm:mb-0 overflow-hidden my-0 sm:my-auto text-slate-900 dark:text-white"
           >
             {/* Modal Header */}
             <div className="px-5 py-4 sm:px-8 sm:py-5 border-b border-slate-200 dark:border-white/5 bg-slate-50 dark:bg-white/[0.02] flex items-center justify-between shrink-0">
@@ -666,7 +751,7 @@ export function ProductManager() {
                     <span>{editingProduct ? "Modifier" : "Ajouter"} {config.itemLabel}</span>
                   </h2>
                   <p className="text-[11px] text-slate-500 dark:text-white/40 font-medium">
-                    Configurez les détails et le visuel que le Vendeur IA présentera à vos clients sur WhatsApp.
+                    Configurez les détails et le visuel que le Vendeur IA présentera sur WhatsApp.
                   </p>
                 </div>
               </div>
@@ -680,327 +765,242 @@ export function ProductManager() {
               </button>
             </div>
 
-            {/* Modal Body - 2 Columns on Desktop */}
-            <div className="flex-1 overflow-y-auto custom-scrollbar p-5 sm:p-8">
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
-                
-                {/* LEFT COLUMN: Media & Visual Presentation (5 cols) */}
-                <div className="lg:col-span-5 space-y-4">
-                  {businessCategory !== "digital" ? (
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-white/70 flex items-center gap-1.5">
-                          <ImageIcon size={14} className="text-emerald-600 dark:text-vendeur-emerald" />
-                          Visuel de l'article
-                        </span>
-                        {(editingProduct ? (editingProduct as any).imageUrl : newProduct.imageUrl) && (
-                          <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-vendeur-emerald border border-emerald-500/20">
-                            Photo Active
-                          </span>
-                        )}
-                      </div>
+            {/* Modal Body - Single Clean Direct View */}
+            <div className="flex-1 overflow-y-auto custom-scrollbar p-5 sm:p-7 space-y-4">
 
-                      <div className="relative w-full">
-                        <label className={cn(
-                          "relative flex flex-col items-center justify-center w-full aspect-square max-h-72 lg:max-h-80 rounded-2xl sm:rounded-3xl bg-slate-50 dark:bg-black/40 border-2 border-dashed border-slate-300 dark:border-white/10 hover:border-emerald-500/50 transition-all cursor-pointer overflow-hidden p-3 group text-center select-none shadow-inner",
-                          analyzing && "opacity-75 cursor-wait border-sky-400/50"
-                        )}>
-                          {(editingProduct ? (editingProduct as any).imageUrl : newProduct.imageUrl) ? (
-                            <div className="relative w-full h-full">
-                              <img
-                                src={editingProduct ? (editingProduct as any).imageUrl : newProduct.imageUrl}
-                                className="w-full h-full object-cover rounded-xl sm:rounded-2xl"
-                                alt="Preview"
-                              />
-                              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-center pb-4">
-                                <span className="text-xs font-black uppercase tracking-wider text-white px-3 py-1.5 rounded-xl bg-black/60 backdrop-blur-md border border-white/10 flex items-center gap-1.5">
-                                  <Camera size={14} /> Changer la photo
-                                </span>
-                              </div>
-                            </div>
-                          ) : (
-                            <div className="flex flex-col items-center justify-center gap-3 p-4">
-                              {analyzing ? (
-                                <>
-                                  <div className="h-14 w-14 rounded-2xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-400 animate-pulse">
-                                    <Loader2 size={28} className="animate-spin" />
-                                  </div>
-                                  <div className="space-y-1">
-                                    <p className="text-xs font-black uppercase text-sky-400 tracking-wider">Analyse par Vendeur IA...</p>
-                                    <p className="text-[10px] text-slate-500 dark:text-white/40">Extraction du produit et des prix...</p>
-                                  </div>
-                                </>
-                              ) : (
-                                <>
-                                  <div className="h-14 w-14 rounded-2xl bg-slate-200/70 dark:bg-white/5 border border-slate-300 dark:border-white/10 flex items-center justify-center text-slate-500 dark:text-white/40 group-hover:text-emerald-600 dark:group-hover:text-vendeur-emerald group-hover:bg-emerald-500/10 group-hover:border-emerald-500/30 group-hover:scale-110 transition-all">
-                                    <Camera size={26} />
-                                  </div>
-                                  <div className="space-y-1">
-                                    <p className="text-xs font-black uppercase text-slate-800 dark:text-white tracking-wider">Importer une photo</p>
-                                    <p className="text-[10px] text-slate-500 dark:text-white/40 font-medium">Glissez une image ou cliquez pour parcourir</p>
-                                  </div>
-                                </>
-                              )}
-                            </div>
+              {/* Name Field */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-white/70 flex items-center justify-between">
+                  <span>Nom de l'{config.itemLabel.toLowerCase()} <span className="text-red-500">*</span></span>
+                </label>
+                <input
+                  className="w-full h-12 sm:h-13 rounded-2xl bg-slate-50 dark:bg-black/40 border border-slate-300 dark:border-white/10 px-4 text-sm font-semibold text-slate-900 dark:text-white outline-none focus:border-emerald-500 transition-all placeholder:text-slate-400 dark:placeholder:text-white/20 shadow-inner"
+                  value={editingProduct ? editingProduct.name : newProduct.name}
+                  onChange={e => editingProduct
+                    ? setEditingProduct({...editingProduct, name: e.target.value})
+                    : setNewProduct({...newProduct, name: e.target.value})
+                  }
+                  placeholder={
+                    businessCategory === "services" ? "Ex: Massage Relaxant 1h, Consultation, Coiffure..." :
+                    businessCategory === "food" ? "Ex: Burger Double Cheese, Choucouya Poulet..." :
+                    "Ex: Robe de Soirée Satin, Chaussures Cuir..."
+                  }
+                  required
+                />
+              </div>
+
+              {/* Photo / Image Upload (Multi-Photo Supported) */}
+              {businessCategory !== "digital" && (() => {
+                const currentImages: string[] = editingProduct
+                  ? ((editingProduct as any).images && (editingProduct as any).images.length > 0
+                      ? (editingProduct as any).images
+                      : ((editingProduct as any).imageUrl ? [(editingProduct as any).imageUrl] : []))
+                  : (newProduct.images && newProduct.images.length > 0
+                      ? newProduct.images
+                      : (newProduct.imageUrl ? [newProduct.imageUrl] : []));
+
+                return (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-white/70 flex items-center gap-1.5">
+                        <ImageIcon size={14} className="text-emerald-600 dark:text-vendeur-emerald" />
+                        Photos de l'article ({currentImages.length})
+                      </span>
+                      <span className="text-[10px] text-slate-400 font-bold">
+                        {currentImages.length} / 8 photos
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-2.5">
+                      {currentImages.map((imgUrl, idx) => (
+                        <div
+                          key={idx}
+                          className={cn(
+                            "relative aspect-square rounded-2xl overflow-hidden border-2 transition-all group bg-black/40",
+                            idx === 0 ? "border-vendeur-emerald shadow-md shadow-emerald-500/10" : "border-slate-200 dark:border-white/10 hover:border-vendeur-emerald/50"
                           )}
-                          <input type="file" accept="image/*" className="hidden" onChange={handleUnifiedPhotoUpload} disabled={analyzing} />
-                        </label>
-                      </div>
+                        >
+                          <img src={imgUrl} className="w-full h-full object-cover" alt={`Photo ${idx + 1}`} />
 
-                      {/* AI Auto-fill Checkbox */}
-                      {config.showScanner && (
-                        <label className="flex items-center gap-2.5 px-3 py-2 rounded-xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 cursor-pointer select-none">
+                          {/* Main/Primary Badge */}
+                          {idx === 0 ? (
+                            <span className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded-md bg-vendeur-emerald text-[9px] font-black uppercase tracking-wider text-slate-950 shadow-md">
+                              Principale
+                            </span>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => handleSetPrimaryImage(idx)}
+                              className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded-md bg-black/70 hover:bg-black text-[9px] font-bold text-white opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-md cursor-pointer"
+                              title="Mettre en photo principale"
+                            >
+                              Mettre 1ère
+                            </button>
+                          )}
+
+                          {/* Delete Image Button */}
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveImage(idx)}
+                            className="absolute top-1.5 right-1.5 h-6 w-6 rounded-full bg-red-500/80 hover:bg-red-500 text-white flex items-center justify-center transition-all opacity-0 group-hover:opacity-100 backdrop-blur-md shadow-md cursor-pointer"
+                            title="Supprimer cette photo"
+                          >
+                            <X size={12} />
+                          </button>
+                        </div>
+                      ))}
+
+                      {/* Add More Photos Tile */}
+                      {currentImages.length < 8 && (
+                        <label className="relative flex flex-col items-center justify-center aspect-square rounded-2xl bg-slate-100 dark:bg-white/5 border-2 border-dashed border-slate-300 dark:border-white/10 hover:border-vendeur-emerald transition-all cursor-pointer text-center group">
+                          {analyzing ? (
+                            <Loader2 size={20} className="animate-spin text-vendeur-emerald" />
+                          ) : (
+                            <>
+                              <div className="h-8 w-8 rounded-xl bg-vendeur-emerald/10 text-vendeur-emerald flex items-center justify-center group-hover:scale-110 transition-transform">
+                                <Plus size={18} />
+                              </div>
+                              <span className="text-[10px] font-black uppercase tracking-wider text-slate-600 dark:text-white/70 mt-1">
+                                {currentImages.length === 0 ? "Ajouter" : "Plus"}
+                              </span>
+                            </>
+                          )}
                           <input
-                            type="checkbox"
-                            checked={autoAnalyzeWithIA}
-                            onChange={(e) => setAutoAnalyzeWithIA(e.target.checked)}
-                            className="rounded border-slate-300 text-emerald-500 focus:ring-emerald-500"
+                            type="file"
+                            accept="image/*"
+                            multiple
+                            className="hidden"
+                            onChange={handleUnifiedPhotoUpload}
+                            disabled={analyzing}
                           />
-                          <span className="text-[11px] font-bold text-slate-700 dark:text-white/70">
-                            Auto-remplir le nom et prix par Vision IA
-                          </span>
                         </label>
                       )}
                     </div>
-                  ) : (
-                    /* Digital products banner */
-                    <div className="p-6 rounded-3xl bg-slate-100 dark:bg-black/40 border border-slate-200 dark:border-white/5 space-y-3 text-center">
-                      <div className="h-12 w-12 rounded-2xl bg-purple-500/10 border border-purple-500/20 text-purple-600 dark:text-purple-400 flex items-center justify-center mx-auto">
-                        <Laptop size={24} />
-                      </div>
-                      <div className="space-y-1">
-                        <h4 className="text-xs font-black uppercase tracking-wider text-slate-900 dark:text-white">Produit Numérique</h4>
-                        <p className="text-[11px] text-slate-500 dark:text-white/40 leading-relaxed">
-                          La livraison s'effectue automatiquement via le lien d'accès sécurisé dès réception du paiement Mobile Money.
-                        </p>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* RIGHT COLUMN: Product Attributes & Data (7 cols) */}
-                <div className="lg:col-span-7 space-y-4">
-                  
-                  {/* Title / Name Field */}
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-white/70 flex items-center justify-between">
-                      <span>Nom de l'{config.itemLabel.toLowerCase()}</span>
-                      <span className="text-[10px] text-slate-400 font-bold">* Requis</span>
-                    </label>
-                    <input
-                      className="w-full h-12 rounded-2xl bg-slate-50 dark:bg-black/40 border border-slate-300 dark:border-white/10 px-4 text-sm font-semibold text-slate-900 dark:text-white outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/30 transition-all placeholder:text-slate-400 dark:placeholder:text-white/20 shadow-inner"
-                      value={editingProduct ? editingProduct.name : newProduct.name}
-                      onChange={e => editingProduct
-                        ? setEditingProduct({...editingProduct, name: e.target.value})
-                        : setNewProduct({...newProduct, name: e.target.value})
-                      }
-                      required
-                    />
                   </div>
+                );
+              })()}
 
-                  {/* Price & Operational Specs Row */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                    {/* Price Input */}
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-white/70 flex items-center justify-between">
-                        <span>Prix</span>
-                        <span className="text-[10px] text-emerald-600 dark:text-vendeur-emerald font-black uppercase">{activeCurrency}</span>
-                      </label>
-                      <div className="relative flex items-center">
-                        <input
-                          type="number"
-                          className="w-full h-12 rounded-2xl bg-slate-50 dark:bg-black/40 border border-slate-300 dark:border-white/10 pl-4 pr-16 text-sm font-black text-slate-900 dark:text-white outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/30 transition-all placeholder:text-slate-400 dark:placeholder:text-white/20 shadow-inner"
-                          value={editingProduct ? (isNaN(editingProduct.price) ? "" : editingProduct.price) : (isNaN(newProduct.price) ? "" : newProduct.price)}
-                          onChange={e => {
-                            const val = e.target.value === "" ? NaN : parseInt(e.target.value);
-                            editingProduct
-                              ? setEditingProduct({...editingProduct, price: val})
-                              : setNewProduct({...newProduct, price: val});
-                          }}
-                          placeholder="0"
-                          required
-                        />
-                        <span className="absolute right-3 px-2 py-1 rounded-lg bg-slate-200/80 dark:bg-white/5 border border-slate-300 dark:border-white/10 text-[10px] font-black uppercase text-slate-600 dark:text-white/40 select-none">
-                          {activeCurrency}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Secondary Field by Domain */}
-                    {businessCategory === "digital" && (
-                      <div className="space-y-1.5">
-                        <label className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-white/70">
-                          Format du Contenu
-                        </label>
-                        <select
-                          className="w-full h-12 rounded-2xl bg-slate-50 dark:bg-[#121814] border border-slate-300 dark:border-white/10 px-4 text-sm font-medium text-slate-900 dark:text-white outline-none focus:border-emerald-500 transition-all"
-                          value={editingProduct ? (editingProduct.digitalFormat || "PDF / E-Book") : newProduct.digitalFormat}
-                          onChange={e => editingProduct
-                            ? setEditingProduct({...editingProduct, digitalFormat: e.target.value})
-                            : setNewProduct({...newProduct, digitalFormat: e.target.value})
-                          }
-                        >
-                          <option value="PDF / E-Book">PDF / E-Book</option>
-                          <option value="Formation Vidéo">Formation Vidéo</option>
-                          <option value="Fichier ZIP / Logiciel">Fichier ZIP / Logiciel</option>
-                          <option value="Lien VIP / Groupe">Lien VIP / Groupe</option>
-                        </select>
-                      </div>
-                    )}
-
-                    {businessCategory === "services" && (
-                      <div className="space-y-1.5">
-                        <label className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-white/70">
-                          Durée Estimée
-                        </label>
-                        <input
-                          className="w-full h-12 rounded-2xl bg-slate-50 dark:bg-black/40 border border-slate-300 dark:border-white/10 px-4 text-sm font-medium text-slate-900 dark:text-white outline-none focus:border-emerald-500 transition-all placeholder:text-slate-400 dark:placeholder:text-white/20"
-                          value={editingProduct ? (editingProduct.serviceDuration || "1h") : newProduct.serviceDuration}
-                          onChange={e => editingProduct
-                            ? setEditingProduct({...editingProduct, serviceDuration: e.target.value})
-                            : setNewProduct({...newProduct, serviceDuration: e.target.value})
-                          }
-                          placeholder="ex: 45 min, 1h30"
-                        />
-                      </div>
-                    )}
-
-                    {businessCategory === "food" && (
-                      <div className="space-y-1.5">
-                        <label className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-white/70">
-                          Temps de Préparation
-                        </label>
-                        <input
-                          className="w-full h-12 rounded-2xl bg-slate-50 dark:bg-black/40 border border-slate-300 dark:border-white/10 px-4 text-sm font-medium text-slate-900 dark:text-white outline-none focus:border-emerald-500 transition-all placeholder:text-slate-400 dark:placeholder:text-white/20"
-                          value={editingProduct ? (editingProduct.preparationTime || "15-20 min") : newProduct.preparationTime}
-                          onChange={e => editingProduct
-                            ? setEditingProduct({...editingProduct, preparationTime: e.target.value})
-                            : setNewProduct({...newProduct, preparationTime: e.target.value})
-                          }
-                          placeholder="ex: 15-20 min"
-                        />
-                      </div>
-                    )}
-
-                    {config.showStock && (
-                      <div className="space-y-1.5">
-                        <label className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-white/70 flex items-center justify-between">
-                          <span>{config.stockLabel}</span>
-                          <span className="text-[10px] text-slate-400 dark:text-white/40">Unités</span>
-                        </label>
-                        <input
-                          type="number"
-                          className="w-full h-12 rounded-2xl bg-slate-50 dark:bg-black/40 border border-slate-300 dark:border-white/10 px-4 text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-emerald-500 transition-all placeholder:text-slate-400 dark:placeholder:text-white/20"
-                          value={editingProduct ? (isNaN(editingProduct.stock) ? "" : editingProduct.stock) : (isNaN(newProduct.stock) ? "" : newProduct.stock)}
-                          onChange={e => {
-                            const val = e.target.value === "" ? NaN : parseInt(e.target.value);
-                            editingProduct
-                              ? setEditingProduct({...editingProduct, stock: val})
-                              : setNewProduct({...newProduct, stock: val});
-                          }}
-                          placeholder="1"
-                        />
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Domain Specific Extensions */}
-                  {businessCategory === "food" && (
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-white/70">
-                        Options & Formules d'accompagnement
-                      </label>
-                      <input
-                        className="w-full h-12 rounded-2xl bg-slate-50 dark:bg-black/40 border border-slate-300 dark:border-white/10 px-4 text-sm text-slate-900 dark:text-white outline-none focus:border-emerald-500 transition-all placeholder:text-slate-400 dark:placeholder:text-white/20"
-                        value={editingProduct ? (editingProduct.foodOptions || "") : newProduct.foodOptions}
-                        onChange={e => editingProduct
-                          ? setEditingProduct({...editingProduct, foodOptions: e.target.value})
-                          : setNewProduct({...newProduct, foodOptions: e.target.value})
-                        }
-                        placeholder="ex: Sans sauce, Extra fromage, Frites incluses..."
-                      />
-                      <p className="text-[10px] text-slate-500 dark:text-white/40">Le Vendeur IA proposera spontanément ces choix aux clients lors de leur commande.</p>
-                    </div>
-                  )}
-
-                  {businessCategory === "digital" && (
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-white/70">
-                        Lien d'Accès Sécurisé (Google Drive, Notion, etc.)
-                      </label>
-                      <input
-                        className="w-full h-12 rounded-2xl bg-slate-50 dark:bg-black/40 border border-slate-300 dark:border-white/10 px-4 text-sm text-emerald-600 dark:text-emerald-400 outline-none focus:border-emerald-500 transition-all placeholder:text-slate-400 dark:placeholder:text-white/20"
-                        value={editingProduct ? (editingProduct.digitalUrl || "") : newProduct.digitalUrl}
-                        onChange={e => editingProduct
-                          ? setEditingProduct({...editingProduct, digitalUrl: e.target.value})
-                          : setNewProduct({...newProduct, digitalUrl: e.target.value})
-                        }
-                        placeholder="https://drive.google.com/file/d/..."
-                      />
-                      <p className="text-[10px] text-slate-500 dark:text-white/40">Ce lien est délivré de manière automatisée et privée au client après paiement.</p>
-                    </div>
-                  )}
-
-                  {businessCategory === "services" && (
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-white/70">
-                        Mode de délivrance
-                      </label>
-                      <select
-                        className="w-full h-12 rounded-2xl bg-slate-50 dark:bg-[#121814] border border-slate-300 dark:border-white/10 px-4 text-sm text-slate-900 dark:text-white outline-none focus:border-emerald-500 transition-all"
-                        value={editingProduct ? (editingProduct.serviceDeliveryType || "Présentiel") : newProduct.serviceDeliveryType}
-                        onChange={e => editingProduct
-                          ? setEditingProduct({...editingProduct, serviceDeliveryType: e.target.value})
-                          : setNewProduct({...newProduct, serviceDeliveryType: e.target.value})
-                        }
-                      >
-                        <option value="Présentiel (En cabinet/boutique)">Présentiel (En cabinet / boutique)</option>
-                        <option value="À domicile">À domicile</option>
-                        <option value="En Ligne (Google Meet/Zoom)">En Ligne (Google Meet / Zoom)</option>
-                      </select>
-                    </div>
-                  )}
-
-                  {/* Description Field */}
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-white/70 flex items-center justify-between">
-                      <span>Description détaillée</span>
-                      <span className="text-[10px] text-slate-500 dark:text-white/40">Contexte pour l'IA</span>
-                    </label>
-                    <textarea
-                      rows={3}
-                      className="w-full rounded-2xl bg-slate-50 dark:bg-black/40 border border-slate-300 dark:border-white/10 p-4 text-sm text-slate-900 dark:text-white outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/30 transition-all resize-none placeholder:text-slate-400 dark:placeholder:text-white/20 shadow-inner"
-                      value={editingProduct ? (editingProduct.description || "") : newProduct.description}
-                      onChange={e => editingProduct
-                        ? setEditingProduct({...editingProduct, description: e.target.value})
-                        : setNewProduct({...newProduct, description: e.target.value})
-                      }
-                      placeholder={
-                        businessCategory === "services" ? "Expliquez le déroulement de la séance ou prestation..." :
-                        businessCategory === "digital" ? "Décrivez ce que le client apprendra ou téléchargera..." :
-                        "Détails des tailles, caractéristiques, conseils d'utilisation..."
-                      }
-                    />
-                  </div>
-
+              {/* Price Field */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-white/70 flex items-center justify-between">
+                  <span>Prix de vente <span className="text-red-500">*</span></span>
+                  <span className="text-[10px] text-emerald-600 dark:text-vendeur-emerald font-black uppercase">{activeCurrency}</span>
+                </label>
+                <div className="relative flex items-center">
+                  <input
+                    type="number"
+                    className="w-full h-12 sm:h-13 rounded-2xl bg-slate-50 dark:bg-black/40 border border-slate-300 dark:border-white/10 pl-4 pr-16 text-base font-black text-slate-900 dark:text-white outline-none focus:border-emerald-500 transition-all shadow-inner"
+                    value={editingProduct ? (isNaN(editingProduct.price) ? "" : editingProduct.price) : (isNaN(newProduct.price) ? "" : newProduct.price)}
+                    onChange={e => {
+                      const val = e.target.value === "" ? NaN : parseInt(e.target.value);
+                      editingProduct
+                        ? setEditingProduct({...editingProduct, price: val})
+                        : setNewProduct({...newProduct, price: val});
+                    }}
+                    placeholder="Ex: 5000"
+                    required
+                  />
+                  <span className="absolute right-3 px-2 py-1 rounded-lg bg-slate-200/80 dark:bg-white/5 border border-slate-300 dark:border-white/10 text-[10px] font-black uppercase text-slate-600 dark:text-white/40 select-none">
+                    {activeCurrency}
+                  </span>
                 </div>
               </div>
+
+              {/* Domain Specific Fields */}
+              {businessCategory === "services" && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-white/70">
+                      Durée Estimée
+                    </label>
+                    <input
+                      className="w-full h-12 rounded-2xl bg-slate-50 dark:bg-black/40 border border-slate-300 dark:border-white/10 px-4 text-sm font-medium text-slate-900 dark:text-white outline-none focus:border-emerald-500 transition-all"
+                      value={editingProduct ? (editingProduct.serviceDuration || "1h") : newProduct.serviceDuration}
+                      onChange={e => editingProduct
+                        ? setEditingProduct({...editingProduct, serviceDuration: e.target.value})
+                        : setNewProduct({...newProduct, serviceDuration: e.target.value})
+                      }
+                      placeholder="ex: 45 min, 1h30"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-white/70">
+                      Mode de délivrance
+                    </label>
+                    <select
+                      className="w-full h-12 rounded-2xl bg-slate-50 dark:bg-[#121814] border border-slate-300 dark:border-white/10 px-4 text-sm text-slate-900 dark:text-white outline-none focus:border-emerald-500 transition-all cursor-pointer"
+                      value={editingProduct ? (editingProduct.serviceDeliveryType || "Présentiel") : newProduct.serviceDeliveryType}
+                      onChange={e => editingProduct
+                        ? setEditingProduct({...editingProduct, serviceDeliveryType: e.target.value})
+                        : setNewProduct({...newProduct, serviceDeliveryType: e.target.value})
+                      }
+                    >
+                      <option value="Présentiel (En cabinet/boutique)">Présentiel (En cabinet / boutique)</option>
+                      <option value="À domicile">À domicile</option>
+                      <option value="En Ligne (Google Meet/Zoom)">En Ligne (Google Meet / Zoom)</option>
+                    </select>
+                  </div>
+                </div>
+              )}
+
+              {config.showStock && businessCategory !== "services" && businessCategory !== "digital" && (
+                <div className="space-y-1.5">
+                  <label className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-white/70">
+                    {config.stockLabel}
+                  </label>
+                  <input
+                    type="number"
+                    className="w-full h-12 rounded-2xl bg-slate-50 dark:bg-black/40 border border-slate-300 dark:border-white/10 px-4 text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-emerald-500 transition-all"
+                    value={editingProduct ? (isNaN(editingProduct.stock) ? "" : editingProduct.stock) : (isNaN(newProduct.stock) ? "" : newProduct.stock)}
+                    onChange={e => {
+                      const val = e.target.value === "" ? NaN : parseInt(e.target.value);
+                      editingProduct
+                        ? setEditingProduct({...editingProduct, stock: val})
+                        : setNewProduct({...newProduct, stock: val});
+                    }}
+                    placeholder="1"
+                  />
+                </div>
+              )}
+
+              {/* Description Field */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-white/70 flex items-center justify-between">
+                  <span>Description <span className="text-slate-400 font-normal">(Optionnel)</span></span>
+                  <span className="text-[10px] text-slate-500 dark:text-white/40">Explications pour l'IA</span>
+                </label>
+                <textarea
+                  rows={3}
+                  className="w-full rounded-2xl bg-slate-50 dark:bg-black/40 border border-slate-300 dark:border-white/10 p-4 text-sm text-slate-900 dark:text-white outline-none focus:border-emerald-500 transition-all resize-none shadow-inner"
+                  value={editingProduct ? (editingProduct.description || "") : newProduct.description}
+                  onChange={e => editingProduct
+                    ? setEditingProduct({...editingProduct, description: e.target.value})
+                    : setNewProduct({...newProduct, description: e.target.value})
+                  }
+                  placeholder={
+                    businessCategory === "services" ? "Expliquez le déroulement de la séance ou prestation..." :
+                    "Taille, caractéristiques, conseils d'utilisation..."
+                  }
+                />
+              </div>
+
             </div>
 
-            {/* Modal Footer Actions */}
+            {/* Modal Footer Controls */}
             <div className="px-5 py-3.5 sm:px-8 sm:py-5 border-t border-slate-200 dark:border-white/5 bg-slate-50 dark:bg-black/40 flex items-center justify-between gap-4 shrink-0 sticky bottom-0 z-10 pb-safe sm:pb-5">
               <button
                 type="button"
                 onClick={() => { setEditingProduct(null); setIsAddingManual(false); }}
-                className="px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider text-slate-600 dark:text-white/50 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-white/5 transition-all cursor-pointer"
+                className="px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider text-slate-600 dark:text-white/50 hover:text-slate-900 dark:hover:text-white transition-all cursor-pointer"
               >
                 Annuler
               </button>
 
               <button
                 type="submit"
-                disabled={createMutation.isPending || updateMutation.isPending}
-                className="h-12 px-5 sm:px-7 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black uppercase text-xs tracking-wider rounded-2xl flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-emerald-500/20 disabled:opacity-50 cursor-pointer"
+                disabled={createMutation.isPending || updateMutation.isPending || (!editingProduct && !newProduct.name.trim())}
+                className="h-12 px-5 sm:px-7 bg-vendeur-emerald hover:bg-emerald-400 text-slate-950 font-black uppercase text-xs tracking-wider rounded-2xl flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-emerald-500/20 disabled:opacity-50 cursor-pointer font-bold"
               >
                 {(createMutation.isPending || updateMutation.isPending) ? (
                   <Loader2 size={18} className="animate-spin" />
@@ -1010,17 +1010,7 @@ export function ProductManager() {
                   <Plus size={18} />
                 )}
                 <span>
-                  {editingProduct ? (
-                    <>
-                      <span className="sm:hidden">Enregistrer</span>
-                      <span className="hidden sm:inline">Enregistrer les modifications</span>
-                    </>
-                  ) : (
-                    <>
-                      <span className="sm:hidden">Publier</span>
-                      <span className="hidden sm:inline">Publier l'article</span>
-                    </>
-                  )}
+                  {editingProduct ? "Enregistrer" : "+ PUBLIER"}
                 </span>
               </button>
             </div>
@@ -1616,33 +1606,26 @@ export function ProductManager() {
       {/* Step Milestone Progression Modal */}
       {(() => {
         const setupSteps = dashboard?.setupStatus?.steps || [];
-        const isPaymentSetup = Boolean(setupSteps.find((s: any) => s.id === 'payments')?.completed);
-        const isDeliverySetup = Boolean(setupSteps.find((s: any) => s.id === 'delivery')?.completed);
-        const isSubscriptionActive = Boolean(setupSteps.find((s: any) => s.id === 'subscription')?.completed);
+        const isIdentitySetup = Boolean(setupSteps.find((s: any) => s.id === 'identity')?.completed);
+        const isWhatsAppConnected = Boolean(setupSteps.find((s: any) => s.id === 'whatsapp')?.completed);
 
         let nextActionConfig = {
-          label: "Configurer mes Moyens de Paiement",
-          sublabel: "Activez Mobile Money (Wave, OM, MTN)",
-          href: "/settings?tab=boutique#payments"
+          label: "Tester mon Vendeur IA",
+          sublabel: "Simulez une conversation en direct",
+          href: "/dashboard?test_ia=true"
         };
 
-        if (!isPaymentSetup) {
+        if (!isIdentitySetup) {
           nextActionConfig = {
-            label: "Configurer mes Moyens de Paiement",
-            sublabel: "Wave, Orange Money, MTN, Moov",
-            href: "/settings?tab=boutique#payments"
+            label: "Configurer mes Réglages Boutique",
+            sublabel: "Paiements Mobile Money & Tarifs de Livraison",
+            href: "/settings?tab=boutique#identity"
           };
-        } else if (!isDeliverySetup) {
+        } else if (!isWhatsAppConnected) {
           nextActionConfig = {
-            label: "Définir mes Tarifs de Livraison",
-            sublabel: "Configurez vos zones d'expédition",
-            href: "/settings?tab=boutique#delivery"
-          };
-        } else if (!isSubscriptionActive) {
-          nextActionConfig = {
-            label: "Activer mon Forfait 24h/24",
-            sublabel: "Lancez votre Vendeur IA autonome",
-            href: "/offers"
+            label: "Lier mon WhatsApp",
+            sublabel: "Scannez le QR code pour activer les ventes",
+            href: "/settings?tab=connexions#whatsapp"
           };
         } else {
           nextActionConfig = {

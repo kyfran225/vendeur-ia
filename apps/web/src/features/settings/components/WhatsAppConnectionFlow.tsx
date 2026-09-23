@@ -418,7 +418,7 @@ export function WhatsAppConnectionFlow() {
                           ? "En Vente 24h/24"
                           : isPaused
                             ? "Mode Pause (Manuel)"
-                            : "Ligne Connectée (Mode Découverte)"
+                            : "Ligne Connectée (Essai Gratuit)"
                       : "Ligne Non Connectée"}
                   </span>
                 </span>

@@ -2169,10 +2169,36 @@ router.post("/webhooks/paystack", async (req, res) => {
 router.get("/merchant", authenticate, async (req, res) => {
   const ownerId = (req as any).user.id;
   try {
-    const merchant = await CommerceMerchantModel.findOne({ ownerId });
+    let merchant = await CommerceMerchantModel.findOne({ ownerId });
     if (!merchant) {
       return res.json({ merchant: null, onboardingCompleted: false });
     }
+
+    // Auto-initialize trial guardrails if missing and not already paid active
+    if (!merchant.subscription?.trialEndsAt && merchant.subscription?.status !== "active") {
+      const createdAt = (merchant as any).createdAt ? new Date((merchant as any).createdAt) : new Date();
+      const trialEndsAt = new Date(createdAt.getTime() + 7 * 24 * 60 * 60 * 1000);
+      const isExpired = trialEndsAt <= new Date();
+      const updatedSub = {
+        ...(merchant.subscription ? (merchant.subscription as any).toObject?.() || merchant.subscription : {}),
+        plan: merchant.subscription?.plan || "trial",
+        status: merchant.subscription?.status || (isExpired ? "expired" : "trial"),
+        trialEndsAt: trialEndsAt,
+        expiresAt: merchant.subscription?.expiresAt || trialEndsAt,
+        trialUsage: {
+          messagesCount: merchant.subscription?.trialUsage?.messagesCount || 0,
+          maxMessages: merchant.subscription?.trialUsage?.maxMessages || 50,
+          productsCount: merchant.subscription?.trialUsage?.productsCount || 0,
+          maxProducts: merchant.subscription?.trialUsage?.maxProducts || 10
+        }
+      };
+      merchant = await CommerceMerchantModel.findOneAndUpdate(
+        { ownerId },
+        { $set: { subscription: updatedSub } },
+        { new: true }
+      );
+    }
+
     res.json(merchant);
   } catch (error: any) {
     res.status(500).json({ error: error.message });
@@ -2699,99 +2725,19 @@ import { pushService } from "../../services/push.service.js";
 
 // ... existing imports ...
 
-// Demo AI Processing Route (Unified with Main Agent)
-router.post("/demo/process", async (req, res) => {
-  try {
-    const { businessName, city, category, description, message, history, phone } = req.body;
-
-    const [merchantInstructions, merchantPayments] = (description || "").split("---");
-
-    // Parse simulated payment channels if provided in description
-    const paymentChannels = merchantPayments?.split(',').map((p: string) => {
-      const [label, number] = p.trim().split(':');
-      return { label: label?.trim(), number: number?.trim() };
-    }).filter((p: any) => p.label && p.number) || [];
-
-    // Get mock products for the selected category
-    const mockProducts = CATEGORY_MOCKS[category] || CATEGORY_MOCKS["other"];
-
-    // Refined instructions to PRIORITIZE user location
-    const customInstructions = `Ceci est une démonstration pour un commerce de type "${category}".
-
-    LIEU DE VENTE / LIVRAISON : Ton commerce est situé à ${city || "sa ville"}, précisément à "${req.body.address || city || "son adresse"}".
-    IMPORTANT : Tu dois ABSOLUMENT te situer dans la ville spécifiée par l'utilisateur (${city || "sa ville"}). Ne mentionne JAMAIS une autre ville (comme Abidjan) par défaut.
-
-    IMPORTANT : L'utilisateur a décrit précisément ce qu'il vend : "${description || "Pas de description spécifiée"}".
-    SI l'utilisateur a mentionné des produits spécifiques (ex: "Tchep", "Thieboudienne", "Attiéké", "Robes rouges"), tu dois ABSOLUMENT parler de CES produits en priorité.
-    Les produits du catalogue mocké (ex: Burgers, Sneakers) ne sont que des EXEMPLES génériques. Ne les utilise PAS si l'utilisateur a spécifié ses propres articles.
-
-    TON BUT : Faire croire à l'utilisateur que tu as lu et compris SA description.
-    Si il dit qu'il vend du "Tchep", parle avec passion de son Tchep, demande s'il veut du piment ou du poisson.
-    Invente des prix réalistes (en XOF) et des stocks pour les produits mentionnés par l'utilisateur.
-
-    Personnalisation maximale : ignore les mocks si ils contredisent la description de l'utilisateur.`;
-
-    const isInitialGreeting = message === "SYSTEM_INITIAL_GREETING";
-    const processedHistory = Array.isArray(history)
-      ? history
-          .filter((h: any) => h && typeof h.text === "string" && h.text.trim())
-          .map((h: any) => ({
-            role: (h.role === "customer" ? "customer" : "ai") as "customer" | "ai",
-            text: h.text.trim()
-          }))
-      : [];
-
-    const userMessage = isInitialGreeting
-      ? `Bonjour ! Accueille-moi chaleureusement chez ${businessName || "notre boutique"}, mentionne nos spécialités en ${category || "commerce"} (${description || "nos créations phares"}) et propose de me conseiller.`
-      : (message || "Bonjour !");
-
-    const reply = await aiAgentService.generateResponse({
-      merchant: {
-        businessName,
-        category,
-        city,
-        country: req.body.country || "CI",
-        currency: req.body.currency || "XOF",
-        description: description,
-        paymentChannels
-      },
-      products: mockProducts,
-      knowledge: {
-        businessRules: {
-          deliveryZones: [city, req.body.address].filter(Boolean),
-          paymentMethods: paymentChannels.length > 0 ? paymentChannels : [
-            { provider: "Orange Money", number: "07 00 00 00 00" },
-            { provider: "Wave", number: "05 00 00 00 00" }
-          ]
-        },
-        customInstructions: customInstructions
-      },
-      history: isInitialGreeting ? [] : processedHistory,
-      message: userMessage,
-      customerPhone: phone
-    });
-
-    res.json({ reply: reply.text });
-  } catch (error) {
-    console.error("Demo AI Error:", error);
-    res.status(500).json({ error: "ai_demo_error" });
-  }
+// Deprecated unauthenticated demo endpoints - Protected from bot scraping and token consumption
+router.post("/demo/process", async (_req, res) => {
+  res.status(410).json({
+    error: "demo_deprecated",
+    message: "La démo interactive non-authentifiée a été remplacée par un essai gratuit de 7 jours sans carte bancaire."
+  });
 });
 
-router.post("/demo/transcribe", upload.single("audio"), async (req, res) => {
-  try {
-    if (!req.file) return res.status(400).json({ error: "No audio provided" });
-
-    const transcription = await aiProvider.transcribeAudio(
-      req.file.buffer,
-      req.file.mimetype,
-      "Démonstration Landing Page"
-    );
-
-    res.json({ transcription });
-  } catch (error: any) {
-    res.status(500).json({ error: error.message });
-  }
+router.post("/demo/transcribe", async (_req, res) => {
+  res.status(410).json({
+    error: "demo_deprecated",
+    message: "La transcription non-authentifiée a été remplacée par un essai gratuit de 7 jours."
+  });
 });
 
 router.get("/push/vapid-public-key", async (req, res) => {

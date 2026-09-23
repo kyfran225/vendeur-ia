@@ -38,6 +38,7 @@ import { PauseConfirmationModal } from "@/components/modals/PauseConfirmationMod
 import { ShareShopModal } from "@/features/shop/components/ShareShopModal";
 import { StepMilestoneModal } from "@/components/ui/StepMilestoneModal";
 import { DailyStatusModal } from "./components/DailyStatusModal";
+import { SubscriptionBanner } from "./components/SubscriptionBanner";
 import { AssistantIcon } from "@/components/ui/AssistantIcon";
 import { getMerchantShopUrl, getMerchantShopPath } from "@/lib/slugify";
 import { formatDisplayPhone } from "@/features/onboarding/components/CountrySelector";
@@ -386,13 +387,39 @@ function HomePanel({
   const isPaidActive = dashboard?.merchant?.subscription?.status === "active";
   const isPaused = isPaidActive && dashboard?.merchant?.aiSettings?.autoReply === false;
   const isExpired = dashboard?.merchant?.subscription?.status === "past_due";
-  const showAssistant = !isFullyOperational || isPaused || isExpired;
+  const subStatus = dashboard?.merchant?.subscription?.status;
+  const trialEndsAt = dashboard?.merchant?.subscription?.trialEndsAt;
+  const trialUsage = dashboard?.merchant?.subscription?.trialUsage;
+  const isTrialStatus = subStatus === "trial" || (!isPaidActive && subStatus !== "past_due");
+  const trialExpirationDate = trialEndsAt ? new Date(trialEndsAt) : null;
+  const trialDaysRemaining = trialExpirationDate ? Math.max(0, Math.ceil((trialExpirationDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24))) : 7;
+  const isTrialTimeExpired = trialExpirationDate !== null && trialDaysRemaining <= 0;
+  const isTrialQuotaExceeded = (trialUsage?.messagesCount ?? 0) >= (trialUsage?.maxMessages ?? 50);
+  const isTrialExpired = subStatus === "expired" || (isTrialStatus && (isTrialTimeExpired || isTrialQuotaExceeded));
+  const showAssistant = !isFullyOperational || isPaused || isExpired || isTrialExpired;
   const isEssentialPlan = isPaidActive && (dashboard?.merchant?.subscription?.plan === "essential" || dashboard?.merchant?.subscription?.planId?.toLowerCase().includes("essential"));
   const canUpgradeToPro = isEssentialPlan && !isFounder;
   const productsCount = dashboard?.products?.length || 0;
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-700">
+      {/* 
+        BANNIÈRE D'ÉTAT ABONNEMENT
+        Affiche en permanence l'état de l'essai gratuit (actif ou expiré), du mode pause,
+        ou de l'expiration de l'abonnement payant. Coût API = 0 sur la landing.
+      */}
+      {!isFounder && (
+        <SubscriptionBanner
+          status={subStatus}
+          expiresAt={dashboard?.merchant?.subscription?.expiresAt}
+          trialEndsAt={trialEndsAt}
+          trialUsage={trialUsage}
+          autoReply={dashboard?.merchant?.aiSettings?.autoReply ?? true}
+          onOpenTestIA={onOpenTestIA}
+          onOpenOffers={onOpenOffers}
+        />
+      )}
+
       {/* 
         ASSISTANT GUIDAGE EN COURS DE CONFIGURATION OU EN CAS DE PAUSE/EXPIRATION
         Si la boutique est en cours de configuration ou nécessite une action vitale (pause, expiration),
@@ -443,7 +470,7 @@ function HomePanel({
                   <div className="flex items-center gap-2 mt-1">
                     <div className={cn("h-2 w-2 md:h-2.5 md:w-2.5 rounded-full", (status === 'connected' && isPaidActive) ? "bg-vendeur-emerald" : "bg-amber-400")} />
                     <p className={cn("text-xs sm:text-xs font-bold uppercase tracking-wider truncate", (status === 'connected' && isPaidActive) ? "text-emerald-700 dark:text-vendeur-emerald font-black" : "text-amber-600 dark:text-amber-400 font-bold")}>
-                      {status === 'connected' ? (isPaidActive ? "IA en ligne & active 24h/24" : "Mode Découverte (Activation requise)") : "IA en attente de connexion"}
+                      {status === 'connected' ? (isPaidActive ? "IA en ligne & active 24h/24" : "Essai Gratuit 7j (Activation requise)") : "IA en attente de connexion"}
                     </p>
                   </div>
                 </div>

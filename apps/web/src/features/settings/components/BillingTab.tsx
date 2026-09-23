@@ -418,7 +418,7 @@ export function BillingTab({ merchant }: { merchant: any }) {
             <div className="space-y-3.5 max-w-xl">
               <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 text-xs font-black uppercase tracking-wider">
                 <span className="h-2 w-2 rounded-full bg-amber-400" />
-                Mode Découverte Actif (Gratuit)
+                Essai Gratuit 7 Jours Actif
               </div>
 
               <h2 className="text-2xl sm:text-3xl md:text-4xl font-black uppercase tracking-tight text-slate-900 dark:text-white leading-tight">

@@ -45,6 +45,11 @@ pnpm-debug.log*
 !apps/web/public/*.png
 **/*.ogg
 
+# Public videos (ignore heavy raw videos, keep only optimized web assets)
+apps/web/public/videos/*
+!apps/web/public/videos/vendeur-ia-demo-optimized.mp4
+!apps/web/public/videos/vendeur-ia-demo-poster.webp
+
 apps/api/storage/
 apps/api/uploads/audio/
 apps/web/e2e/

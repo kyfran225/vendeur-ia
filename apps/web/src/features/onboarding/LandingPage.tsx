@@ -27,6 +27,9 @@ import {
   ArrowRight,
   Globe,
   Play,
+  Pause,
+  Volume2,
+  VolumeX,
   CheckCircle2,
   MousePointer2,
   Phone,
@@ -42,35 +45,22 @@ import {
   RotateCw
 } from "lucide-react";
 import { toast } from "sonner";
-import {
-  CountrySelector,
-  COUNTRIES,
-  parsePhoneNumber
-} from "./components/CountrySelector";
-import { CategorySelector } from "./components/CategorySelector";
-import { AddressAutocomplete } from "./components/AddressAutocomplete";
 import { AuthSheet } from "../auth/components/AuthSheet";
 import { ProductShowcaseModal, type ProductTab } from "./components/ProductShowcaseModal";
 import { useAuthStore } from "@/stores/authStore";
 import { useFounderRole } from "@/hooks/useFounderRole";
-import { AudioRecorder } from "@/lib/audioUtils";
-import { apiClient } from "@/lib/apiClient";
 import axios from "axios";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
-import { useOnboardingStore } from "@/stores/onboardingStore";
 import { Logo } from "@/components/ui/Logo";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { Link, useNavigate, useSearchParams, useLocation } from "react-router-dom";
-import { WhatsAppTypingIndicator } from "@/components/ui/WhatsAppTypingIndicator";
 import { MetaHead } from "@/components/seo/MetaHead";
-import { stripActionTags } from "@/lib/utils";
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-const MAX_DEMO_REPLIES = 7;
 const API_URL = (import.meta as any).env.VITE_API_URL || "http://localhost:3001";
 
 // --- COMPONENTS ---
@@ -95,39 +85,6 @@ const FadeIn = ({ children, delay = 0, direction = "up", className = "" }: { chi
     </motion.div>
   );
 };
-
-function WhatsAppBubble({ role, text, time }: { role: string; text: string; time: string }) {
-  const isAi = role === "ai";
-  return (
-    <div className={isAi ? "flex justify-start mb-3" : "flex justify-end mb-3"}>
-      <motion.div
-        initial={{ opacity: 0, scale: 0.9, y: 10 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        className={cn(
-          "p-2.5 px-3 rounded-xl shadow-sm relative text-[14px] leading-[1.4] max-w-[85%]",
-          isAi
-            ? "bg-white dark:bg-[#202c33] text-slate-900 dark:text-white rounded-tl-none border border-slate-200/80 dark:border-white/5"
-            : "bg-[#d9fdd3] dark:bg-[#005c4b] text-slate-900 dark:text-white rounded-tr-none border border-emerald-200/50 dark:border-transparent"
-        )}
-      >
-        <p className="whitespace-pre-wrap font-normal text-slate-900 dark:text-white">{stripActionTags(text)}</p>
-        <div className="flex items-center justify-end gap-1 mt-1">
-           <span className="text-[10px] text-slate-500 dark:text-white/70 font-medium">{time}</span>
-           {role !== "ai" && (
-             <div className="flex items-center text-[#53bdeb]">
-               <svg width="16" height="11" viewBox="0 0 16 11" fill="none" xmlns="http://www.w3.org/2000/svg" className="scale-[0.85] origin-right">
-                  <path d="M4.156 6.188L1.5 3.531.5 4.531l3.656 3.656 7.844-7.844-1-1-6.844 6.844z" fill="currentColor"/>
-                  <path d="M15.5.344l-1-1-6.844 6.844L6.5 5.031l-1 1 2.156 2.156 7.844-7.843z" fill="currentColor"/>
-               </svg>
-             </div>
-           )}
-        </div>
-      </motion.div>
-    </div>
-  );
-}
-
-const MemoizedWhatsAppBubble = memo(WhatsAppBubble);
 
 function BentoFeatures({ onOpenProduct }: { onOpenProduct?: (tab: ProductTab) => void }) {
   const secondaryFeatures = [
@@ -458,278 +415,44 @@ function LandingHero({
   onLaunchDemo
 }: {
   onAuth: () => void;
-  onFormUpdate: (name: string) => void;
-  onLaunchDemo: () => void;
+  onFormUpdate?: (name: string) => void;
+  onLaunchDemo?: () => void;
 }) {
   const navigate = useNavigate();
-  const { isFounder } = useFounderRole();
-  const { tempData, setTempData, isSimulatorActive, setSimulatorActive } = useOnboardingStore();
-  const [step, setStep] = useState<"form" | "simulator">(isSimulatorActive ? "simulator" : "form");
-  const rawSavedPhone = tempData?.whatsappNumber || "";
-  const initialParsed = parsePhoneNumber(rawSavedPhone, tempData?.country);
-  const [selectedCountry, setSelectedCountry] = useState(
-    (tempData?.country ? COUNTRIES.find(c => c.code === tempData.country) : null) || initialParsed.country
-  );
-  const [localPhone, setLocalPhone] = useState(initialParsed.local);
-  const [form, setForm] = useState(tempData || {
-    businessName: "",
-    category: "fashion",
-    description: "",
-    country: initialParsed.country.code,
-    city: "",
-    address: "",
-    whatsappNumber: rawSavedPhone
-  });
   const { user } = useAuthStore();
+  const { isFounder } = useFounderRole();
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [isMuted, setIsMuted] = useState(true);
+  const [isPlaying, setIsPlaying] = useState(true);
 
-  const recorderRef = useRef<AudioRecorder | null>(null);
-  const [isRecording, setIsRecording] = useState(false);
-  const scrollRef = useRef<HTMLDivElement>(null);
-
-  // Synchroniser le numéro de téléphone dès qu'il est disponible (authentification WhatsApp ou store)
-  useEffect(() => {
-    const activePhone = tempData?.whatsappNumber || user?.whatsappNumber;
-    if (activePhone) {
-      const parsed = parsePhoneNumber(activePhone, tempData?.country || "CI");
-      if (parsed.local) {
-        setLocalPhone(parsed.local);
-        if (parsed.country) {
-          setSelectedCountry(parsed.country);
-        }
-        setForm(prev => ({
-          ...prev,
-          whatsappNumber: parsed.e164 || activePhone,
-          country: parsed.country?.code || prev.country,
-          currency: parsed.country?.currency || prev.currency
-        }));
-      }
-    }
-  }, [tempData?.whatsappNumber, user?.whatsappNumber, tempData?.country]);
-
-  useEffect(() => {
-    if (selectedCountry) {
-      const fullPhone = localPhone ? `${selectedCountry.dialCode}${localPhone}` : "";
-      setForm(prev => ({
-        ...prev,
-        country: selectedCountry.code,
-        currency: selectedCountry.currency,
-        whatsappNumber: fullPhone
-      }));
-    }
-  }, [localPhone, selectedCountry]);
-
-  // Sync form edits to tempData safely with debounce
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      const fullPhone = localPhone && selectedCountry ? `${selectedCountry.dialCode}${localPhone}` : form.whatsappNumber;
-      setTempData({
-        ...form,
-        country: selectedCountry?.code || form.country,
-        currency: selectedCountry?.currency || "XOF",
-        whatsappNumber: fullPhone
-      });
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [form.businessName, form.category, form.description, form.address, form.city, form.whatsappNumber, setTempData, selectedCountry, localPhone]);
-
-  const [testMessage, setMessage] = useState("");
-  const [isReplying, setIsReplying] = useState(false);
-  const [aiResponseCount, setAiResponseCount] = useState<number>(() => {
-    try {
-      const saved = localStorage.getItem("vendeur_demo_replies_count");
-      return saved ? parseInt(saved, 10) || 0 : 0;
-    } catch {
-      return 0;
-    }
-  });
-
-  useEffect(() => {
-    try {
-      localStorage.setItem("vendeur_demo_replies_count", aiResponseCount.toString());
-    } catch (e) {
-      console.warn("Could not persist demo replies count to localStorage", e);
-    }
-  }, [aiResponseCount]);
-
-  type ChatMessage = { role: "customer" | "ai"; text: string; time: string };
-  const [history, setHistory] = useState<ChatMessage[]>([]);
-
-  useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
-  }, [history, isReplying]);
-
-  const getTime = () => new Date().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
-
-  const handleCreateVendeur = async () => {
-    const fullPhone = localPhone && selectedCountry ? `${selectedCountry.dialCode}${localPhone}` : form.whatsappNumber;
-    if (form.businessName && form.address && fullPhone) {
-      const updatedForm = {
-        ...form,
-        whatsappNumber: fullPhone,
-        city: form.city,
-        country: selectedCountry.code,
-        currency: selectedCountry.currency
-      };
-      setForm(updatedForm);
-      setTempData(updatedForm);
-      setSimulatorActive(true);
-      onFormUpdate(form.businessName);
-      setStep("simulator");
-      setIsReplying(true);
-
-      try {
-        const response = await axios.post(`${API_URL}/api/commerce/demo/process`, {
-          ...updatedForm,
-          city: form.city || selectedCountry.defaultCity,
-          country: selectedCountry.code,
-          currency: selectedCountry.currency,
-          message: "SYSTEM_INITIAL_GREETING",
-          phone: fullPhone,
-          history: []
-        });
-
-        const rawReply = typeof response.data.reply === 'object' ? response.data.reply.text : response.data.reply;
-        const cleanedReply = (rawReply || "").trim() || `Bonjour ! Bienvenue chez ${form.businessName}. Que puis-je vous faire découvrir aujourd'hui ? 😊`;
-
-        setHistory([{ role: "ai", text: cleanedReply, time: getTime() }]);
-      } catch (error) {
-        setHistory([{
-          role: "ai",
-          text: `Bonjour ! Bienvenue chez ${form.businessName}. Je suis votre conseiller Vendeur IA prêt à vous servir.`,
-          time: getTime()
-        }]);
-      } finally {
-        setIsReplying(false);
-      }
-    } else {
-      toast.error("Veuillez remplir les champs obligatoires.");
-    }
-  };
-
-  const handleActivate = async () => {
-    const fullPhone = localPhone && selectedCountry ? `${selectedCountry.dialCode}${localPhone}` : form.whatsappNumber;
-    const updatedData = {
-      ...form,
-      country: selectedCountry?.code || form.country,
-      currency: selectedCountry?.currency || "XOF",
-      whatsappNumber: fullPhone,
-      city: form.city
-    };
-    setTempData(updatedData);
-    setSimulatorActive(true);
-    if (!user) {
-      onAuth();
-    } else {
-      try {
-        await apiClient.post("/api/commerce/merchant", {
-          ...updatedData,
-          city: updatedData.city || "",
-          onboardingCompleted: true
-        });
-        useAuthStore.getState().updateUser({ onboardingCompleted: true });
-        toast.custom(
-          (t) => (
-            <div className="flex items-center gap-3.5 bg-[#0b1410] border border-vendeur-emerald/40 text-white p-4 rounded-2xl shadow-[0_10px_30px_rgba(16,185,129,0.25)] min-w-[320px] animate-in slide-in-from-top-2 duration-300">
-              <div className="h-10 w-10 rounded-xl bg-vendeur-emerald/15 border border-vendeur-emerald/30 flex items-center justify-center shrink-0">
-                <AssistantIcon size={24} color="#10B981" withBackground={false} />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-1.5">
-                  <span className="text-[10px] font-black uppercase text-vendeur-emerald tracking-wider">Vendeur IA</span>
-                  <span className="text-white/40 text-[10px]">·</span>
-                  <span className="text-[10px] text-white/50 font-bold uppercase">Boutique Créée</span>
-                </div>
-                <p className="text-xs sm:text-sm font-black text-white truncate mt-0.5">
-                  Boutique configurée avec succès ! 🎉
-                </p>
-              </div>
-            </div>
-          ),
-          { id: "store-created-toast", duration: 3500 }
-        );
-      } catch (err) {
-        console.warn("[Landing] Auto-create merchant error:", err);
-      }
-      navigate("/dashboard");
-    }
-  };
-
-  const handleMicClick = async () => {
-    if (isRecording) {
-      const audioBlob = await recorderRef.current?.stop();
-      setIsRecording(false);
-      if (!audioBlob) return;
-      setIsReplying(true);
-      try {
-        const formData = new FormData();
-        formData.append("audio", audioBlob, "demo.webm");
-        const res = await axios.post(`${API_URL}/api/commerce/demo/transcribe`, formData);
-        if (res.data.transcription) {
-          handleSend(res.data.transcription);
-        }
-      } catch (err) {
-        toast.error("Échec de la transcription.");
-      } finally {
-        setIsReplying(false);
-      }
-    } else {
-      try {
-        if (!recorderRef.current) recorderRef.current = new AudioRecorder();
-        await recorderRef.current.start();
-        setIsRecording(true);
-      } catch (err) {
-        toast.error("Microphone non accessible.");
+  const togglePlay = () => {
+    if (videoRef.current) {
+      if (isPlaying) {
+        videoRef.current.pause();
+        setIsPlaying(false);
+      } else {
+        videoRef.current.play();
+        setIsPlaying(true);
       }
     }
   };
 
-  const handleSend = async (manualMessage?: string) => {
-    const textToSend = manualMessage || testMessage;
-    if (!textToSend.trim()) return;
-
-    if (aiResponseCount >= MAX_DEMO_REPLIES) {
-      toast.error("Limite atteinte ! Activez votre Vendeur IA réel.");
-      return;
-    }
-
-    const currentHistory = [...history];
-    setHistory(prev => [...prev, { role: "customer", text: textToSend, time: getTime() }]);
-    setMessage("");
-    setIsReplying(true);
-
-    try {
-      const response = await axios.post(`${API_URL}/api/commerce/demo/process`, {
-        ...form,
-        city: form.city || selectedCountry.defaultCity,
-        country: selectedCountry.code,
-        currency: selectedCountry.currency,
-        message: textToSend,
-        phone: form.whatsappNumber || `${selectedCountry.dialCode.replace('+', '')}01010101`,
-        history: currentHistory
-      });
-
-      const rawReply = typeof response.data.reply === 'object' ? response.data.reply.text : response.data.reply;
-      const cleanedReply = (rawReply || "").trim() || "C'est bien noté ! Souhaitez-vous qu'on valide votre commande ?";
-
-      setHistory(prev => [...prev, { role: "ai", text: cleanedReply, time: getTime() }]);
-      setAiResponseCount(prev => prev + 1);
-    } catch (error) {
-      toast.error("Vendeur IA est momentanément indisponible.");
-    } finally {
-      setIsReplying(false);
+  const toggleMute = () => {
+    if (videoRef.current) {
+      const nextMuted = !isMuted;
+      videoRef.current.muted = nextMuted;
+      setIsMuted(nextMuted);
     }
   };
 
   return (
-    <section className="w-full px-4 pt-4 md:pt-6 lg:pt-8 pb-12 flex flex-col lg:flex-row items-center justify-center gap-8 lg:gap-12 xl:gap-16 max-w-6xl mx-auto lg:min-h-[calc(100vh-96px)]">
+    <section className="w-full px-4 sm:px-6 lg:px-8 pt-4 md:pt-6 lg:pt-8 pb-12 flex flex-col lg:flex-row items-center justify-between gap-10 lg:gap-12 xl:gap-16 max-w-6xl mx-auto lg:min-h-[calc(100vh-96px)]">
       {/* Left Text Side */}
-      <div className="w-full lg:max-w-lg xl:max-w-xl text-center lg:text-left space-y-6">
+      <div className="w-full lg:max-w-xl xl:max-w-2xl text-center lg:text-left space-y-6 flex-1">
         <FadeIn delay={0.2} direction="down">
           <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-4 py-2 text-[11px] font-black uppercase tracking-widest text-emerald-600 dark:text-emerald-400">
-            <Rocket size={14} />
-            <span>Le Futur du Commerce Social</span>
+            <Sparkles size={14} />
+            <span>Essai Gratuit 7 Jours • Zéro Engagement</span>
           </div>
         </FadeIn>
 
@@ -742,323 +465,142 @@ function LandingHero({
 
         <FadeIn delay={0.4}>
           <p className="text-base md:text-lg text-slate-600 dark:text-white/50 leading-relaxed font-medium max-w-lg mx-auto lg:mx-0">
-            Transformez votre WhatsApp en une machine de vente autonome. Propulsé par Vendeur IA qui comprend vos produits, gère vos clients et sécurise vos paiements 24h/7.
+            Transformez votre WhatsApp en une machine de vente autonome. Propulsé par une IA qui conseille vos clients, présente vos produits et encaisse par Mobile Money 24h/7.
           </p>
         </FadeIn>
 
         <FadeIn delay={0.5}>
-          <div className="flex flex-col sm:flex-row items-center gap-4 justify-center lg:justify-start">
-            <button
-              onClick={onLaunchDemo}
-              className="w-full sm:w-auto h-14 px-10 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black uppercase tracking-widest text-xs flex items-center justify-center gap-3 hover:scale-105 active:scale-95 transition-all shadow-[0_20px_50px_rgba(16,185,129,0.3)] cursor-pointer"
-            >
-              Lancer Vendeur IA <Play size={16} fill="currentColor" />
-            </button>
-            <button
-              onClick={onAuth}
-              className="w-full sm:w-auto h-14 px-10 rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-slate-900 dark:text-white font-black uppercase tracking-widest text-xs flex items-center justify-center gap-3 hover:bg-slate-100 dark:hover:bg-white/10 transition-all cursor-pointer shadow-sm"
-            >
-              Connexion Marchand <ArrowRight size={18} />
-            </button>
+          <div className="space-y-3">
+            <div className="flex flex-col sm:flex-row items-center gap-3.5 justify-center lg:justify-start flex-wrap">
+              <button
+                onClick={onAuth}
+                className="w-full sm:w-auto h-13 px-7 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black uppercase tracking-wider text-xs flex items-center justify-center gap-2.5 hover:scale-105 active:scale-95 transition-all shadow-[0_15px_40px_rgba(16,185,129,0.3)] cursor-pointer whitespace-nowrap"
+              >
+                <span>Démarrer l'essai gratuit</span>
+                <ArrowRight size={17} />
+              </button>
+              
+              {user ? (
+                <button
+                  onClick={() => navigate(isFounder ? "/admin" : "/dashboard")}
+                  className="w-full sm:w-auto h-13 px-6 rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-slate-900 dark:text-white font-black uppercase tracking-wider text-xs flex items-center justify-center gap-2.5 hover:bg-slate-100 dark:hover:bg-white/10 transition-all cursor-pointer shadow-sm whitespace-nowrap"
+                >
+                  <span>Accéder au Cockpit</span>
+                  <ArrowRight size={17} />
+                </button>
+              ) : (
+                <button
+                  onClick={onAuth}
+                  className="w-full sm:w-auto h-13 px-6 rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-slate-800 dark:text-white/90 font-bold uppercase tracking-wider text-xs flex items-center justify-center gap-2 hover:bg-slate-100 dark:hover:bg-white/10 hover:text-slate-950 dark:hover:text-white transition-all cursor-pointer shadow-sm whitespace-nowrap"
+                >
+                  Connexion Marchand
+                </button>
+              )}
+            </div>
+
+            <p className="text-[11px] font-semibold text-slate-500 dark:text-white/40 flex items-center justify-center lg:justify-start gap-2">
+              <span className="text-emerald-500">✓</span> Aucune carte bancaire requise
+              <span>•</span>
+              <span className="text-emerald-500">✓</span> Prêt en 2 minutes
+            </p>
           </div>
         </FadeIn>
 
         <FadeIn delay={0.6}>
-            <div className="grid grid-cols-3 gap-2 md:gap-8 pt-6 max-w-lg mx-auto lg:mx-0">
-              <div className="flex flex-col sm:flex-row items-center sm:gap-3 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 px-2 py-3 sm:px-4 sm:py-2 rounded-2xl shadow-sm backdrop-blur-sm">
-                <div className="h-7 w-7 sm:h-8 sm:w-8 rounded-lg bg-slate-100 dark:bg-white/5 border border-slate-200/60 dark:border-white/10 flex items-center justify-center text-emerald-600 dark:text-emerald-400 mb-2 sm:mb-0">
-                  <ShieldCheck size={16} className="sm:w-[18px] sm:h-[18px]" />
-                </div>
-                <div className="text-center sm:text-left">
-                  <p className="text-lg sm:text-xl font-black text-slate-900 dark:text-white leading-none">98%</p>
-                  <p className="text-[7px] sm:text-[9px] uppercase font-black tracking-widest text-slate-400 dark:text-white/30 mt-1">Satisfait</p>
-                </div>
+          <div className="grid grid-cols-3 gap-2 md:gap-8 pt-4 max-w-lg mx-auto lg:mx-0">
+            <div className="flex flex-col sm:flex-row items-center sm:gap-3 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 px-2 py-3 sm:px-4 sm:py-2 rounded-2xl shadow-sm backdrop-blur-sm">
+              <div className="h-7 w-7 sm:h-8 sm:w-8 rounded-lg bg-slate-100 dark:bg-white/5 border border-slate-200/60 dark:border-white/10 flex items-center justify-center text-emerald-600 dark:text-emerald-400 mb-2 sm:mb-0">
+                <ShieldCheck size={16} className="sm:w-[18px] sm:h-[18px]" />
               </div>
+              <div className="text-center sm:text-left">
+                <p className="text-lg sm:text-xl font-black text-slate-900 dark:text-white leading-none">98%</p>
+                <p className="text-[7px] sm:text-[9px] uppercase font-black tracking-widest text-slate-400 dark:text-white/30 mt-1">Satisfait</p>
+              </div>
+            </div>
 
-              <div className="flex flex-col sm:flex-row items-center sm:gap-3 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 px-2 py-3 sm:px-4 sm:py-2 rounded-2xl shadow-sm backdrop-blur-sm">
-                <div className="h-7 w-7 sm:h-8 sm:w-8 rounded-lg bg-slate-100 dark:bg-white/5 border border-slate-200/60 dark:border-white/10 flex items-center justify-center text-emerald-600 dark:text-emerald-400 mb-2 sm:mb-0">
-                  <Zap size={16} className="sm:w-[18px] sm:h-[18px]" />
-                </div>
-                <div className="text-center sm:text-left">
-                  <p className="text-lg sm:text-xl font-black text-slate-900 dark:text-white leading-none">3s</p>
-                  <p className="text-[7px] sm:text-[9px] uppercase font-black tracking-widest text-slate-400 dark:text-white/30 mt-1">Réponse</p>
-                </div>
+            <div className="flex flex-col sm:flex-row items-center sm:gap-3 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 px-2 py-3 sm:px-4 sm:py-2 rounded-2xl shadow-sm backdrop-blur-sm">
+              <div className="h-7 w-7 sm:h-8 sm:w-8 rounded-lg bg-slate-100 dark:bg-white/5 border border-slate-200/60 dark:border-white/10 flex items-center justify-center text-emerald-600 dark:text-emerald-400 mb-2 sm:mb-0">
+                <Zap size={16} className="sm:w-[18px] sm:h-[18px]" />
               </div>
+              <div className="text-center sm:text-left">
+                <p className="text-lg sm:text-xl font-black text-slate-900 dark:text-white leading-none">3s</p>
+                <p className="text-[7px] sm:text-[9px] uppercase font-black tracking-widest text-slate-400 dark:text-white/30 mt-1">Réponse</p>
+              </div>
+            </div>
 
-              <div className="flex flex-col sm:flex-row items-center sm:gap-3 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 px-2 py-3 sm:px-4 sm:py-2 rounded-2xl shadow-sm backdrop-blur-sm group hover:border-emerald-500/30 transition-all">
-                <div className="h-7 w-7 sm:h-8 sm:w-8 rounded-lg bg-slate-100 dark:bg-white/5 border border-slate-200/60 dark:border-white/10 flex items-center justify-center text-emerald-600 dark:text-emerald-400 mb-2 sm:mb-0">
-                  <AnimatedAssistantBot size={20} glow={false} />
-                </div>
-                <div className="text-center sm:text-left">
-                  <p className="text-lg sm:text-xl font-black text-slate-900 dark:text-white leading-none">24/7</p>
-                  <p className="text-[7px] sm:text-[9px] uppercase font-black tracking-widest text-slate-400 dark:text-white/30 mt-1">Actif</p>
-                </div>
+            <div className="flex flex-col sm:flex-row items-center sm:gap-3 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 px-2 py-3 sm:px-4 sm:py-2 rounded-2xl shadow-sm backdrop-blur-sm">
+              <div className="h-7 w-7 sm:h-8 sm:w-8 rounded-lg bg-slate-100 dark:bg-white/5 border border-slate-200/60 dark:border-white/10 flex items-center justify-center text-emerald-600 dark:text-emerald-400 mb-2 sm:mb-0">
+                <AnimatedAssistantBot size={20} glow={false} />
               </div>
-           </div>
+              <div className="text-center sm:text-left">
+                <p className="text-lg sm:text-xl font-black text-slate-900 dark:text-white leading-none">24/7</p>
+                <p className="text-[7px] sm:text-[9px] uppercase font-black tracking-widest text-slate-400 dark:text-white/30 mt-1">Actif</p>
+              </div>
+            </div>
+          </div>
         </FadeIn>
       </div>
 
-      {/* Right Visual Side - Smartphone Mockup */}
-      <div id="demo-card" className="relative w-full lg:w-auto flex justify-center perspective-1000 overflow-visible z-10">
-        {/* Subtle Decorative Background Shadow */}
-        <div className="absolute -inset-4 bg-emerald-500/5 blur-2xl rounded-full pointer-events-none" />
+      {/* Right Visual Side - Responsive Showcase */}
+      <div id="demo-card" className="relative w-full lg:w-auto flex justify-center perspective-1000 overflow-visible z-10 mt-6 sm:mt-8 lg:mt-0 shrink-0">
+        {/* Soft Ambient Background Aura */}
+        <div className="absolute -top-6 -right-6 w-48 sm:w-60 h-48 sm:h-60 bg-emerald-500/15 dark:bg-emerald-400/15 blur-[60px] rounded-full pointer-events-none animate-pulse" />
+        <div className="absolute -bottom-6 -left-6 w-48 sm:w-60 h-48 sm:h-60 bg-teal-500/15 dark:bg-cyan-500/10 blur-[60px] rounded-full pointer-events-none" />
 
         <FadeIn delay={0.4} direction="right" className="w-full flex justify-center">
-          <div className="relative group w-full max-w-[360px] sm:max-w-[420px] md:w-[320px] lg:w-[340px]">
-            {/* Floating Companion Badge Anchored Higher Near Phone Corner (visible only in form step) */}
-            <AnimatePresence>
-              {step === "form" && (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.9, x: -10 }}
-                  animate={{ opacity: 1, scale: 1, x: 0 }}
-                  exit={{ opacity: 0, scale: 0.9, x: -10 }}
-                  transition={{ duration: 0.25 }}
-                  className="hidden lg:flex absolute -left-28 xl:-left-36 -top-8 z-20 items-center gap-3 p-3 pr-4 rounded-2xl bg-white/95 dark:bg-[#0d1612]/95 border border-slate-200 dark:border-white/10 shadow-xl select-none"
-                >
-                  <div className="relative flex items-center justify-center shrink-0">
-                    <div className="relative h-11 w-11 rounded-xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 flex items-center justify-center p-1.5 shadow-sm">
-                      <AnimatedAssistantBot size={26} glow={false} />
-                    </div>
-                  </div>
-                  <div className="text-left whitespace-nowrap">
-                    <div className="flex items-center gap-1.5">
-                      <p className="text-[11px] font-black text-slate-900 dark:text-white uppercase tracking-tight">Vendeur IA Actif</p>
-                      <span className="text-[9px] px-1.5 py-0.2 rounded bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-bold">24/7</span>
-                    </div>
-                    <p className="text-[10px] text-slate-500 dark:text-white/50 font-medium">Conseille & encaisse en direct</p>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
+          <div className="relative group w-[270px] xs:w-[290px] sm:w-[310px] lg:w-[295px] xl:w-[315px] mx-auto">
 
-            {/* Phone Frame Mockup */}
-            <div className="relative w-full h-[640px] sm:h-[700px] md:h-[620px] lg:h-[640px] rounded-[2.8rem] border-[7px] border-slate-800 dark:border-[#1a1c1e] bg-slate-950 dark:bg-black shadow-[0_25px_60px_rgba(0,0,0,0.15)] dark:shadow-[0_30px_70px_rgba(0,0,0,0.65)] overflow-hidden ring-4 ring-slate-900/10 dark:ring-white/5 transition-all duration-500">
-              {/* Camera Notch */}
-              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-6 bg-slate-800 dark:bg-[#1a1c1e] rounded-b-2xl z-[5] flex items-center justify-center">
-                <div className="w-10 h-1 bg-white/20 dark:bg-white/10 rounded-full" />
-              </div>
+            {/* Clean & Compact Video Stage - 100% Crisp on Mobile and Desktop */}
+            <div
+              className="relative w-full aspect-[9/16] rounded-xl sm:rounded-2xl overflow-hidden bg-slate-100 dark:bg-[#07100d] border border-slate-200/90 dark:border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.12)] dark:shadow-[0_25px_60px_rgba(0,0,0,0.7)] group"
+            >
+              {/* Minimalist Glass Audio Button (Top Right) */}
+              <button
+                onClick={toggleMute}
+                title={isMuted ? "Activer le son" : "Couper le son"}
+                className="absolute top-3 right-3 z-30 h-8 w-8 sm:h-9 sm:w-9 rounded-full bg-white/80 dark:bg-black/60 backdrop-blur-md border border-slate-200/80 dark:border-white/20 text-slate-800 dark:text-white flex items-center justify-center transition-all hover:scale-110 active:scale-95 cursor-pointer shadow-md hover:bg-white dark:hover:bg-black/80 group/btn"
+              >
+                {isMuted ? (
+                  <VolumeX size={15} className="text-slate-600 dark:text-white/80" />
+                ) : (
+                  <Volume2 size={15} className="text-emerald-600 dark:text-emerald-400 animate-pulse" />
+                )}
+              </button>
 
-              {step === "form" ? (
-                <div className="h-full w-full bg-white dark:bg-[#0c0f0d] p-5 pt-8 pb-4 flex flex-col justify-between no-scrollbar overflow-y-auto">
-                  <div className="mb-2.5 space-y-0.5 shrink-0">
-                    <div className="flex items-center justify-between">
-                      <h2 className="text-xl md:text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">Lancez Vendeur IA.</h2>
-                      {user && (
-                        <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400">
-                          Connecté ✅
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-[10px] md:text-[11px] text-slate-500 dark:text-white/40 font-medium">
-                      {user ? "WhatsApp relié ! Nommez et configurez votre boutique." : "Configurez votre boutique en quelques secondes."}
-                    </p>
-                  </div>
+              {/* Video Element */}
+              <video
+                ref={videoRef}
+                src="/videos/vendeur-ia-demo-optimized.mp4"
+                poster="/videos/vendeur-ia-demo-poster.webp"
+                autoPlay
+                loop
+                muted={isMuted}
+                playsInline
+                preload="auto"
+                className="w-full h-full object-cover select-none"
+              />
 
-                  <div className="flex-1 flex flex-col justify-between min-h-0">
-                    <div className="space-y-2.5">
-                      <div className="space-y-1">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-white/40 ml-1">Nom du commerce</label>
-                        <input
-                          id="business-name-input"
-                          className="w-full h-11 sm:h-12 rounded-xl sm:rounded-2xl bg-slate-50 dark:bg-black/40 border border-slate-200 dark:border-white/25 px-3.5 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-white/30 outline-none focus:border-emerald-500 dark:focus:border-emerald-400 transition-all text-sm shadow-inner"
-                          value={form.businessName}
-                          onChange={(e) => setForm({ ...form, businessName: e.target.value })}
-                          placeholder="Ex: Ma Boutique Chic"
-                        />
-                      </div>
-
-                      <div className="space-y-1">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-white/40 ml-1">Catégorie</label>
-                        <CategorySelector
-                          value={form.category}
-                          onChange={(catId) => setForm({ ...form, category: catId as any })}
-                        />
-                      </div>
-
-                      <div className="space-y-1">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-white/40 ml-1">Numéro WhatsApp</label>
-                        <div className="flex gap-2 items-center w-full min-w-0">
-                          <CountrySelector
-                            selected={selectedCountry}
-                            onSelect={(c) => { setSelectedCountry(c); setForm({ ...form, country: c.code }); }}
-                            className="h-11 sm:h-12"
-                          />
-                          <input
-                            className="flex-1 min-w-0 w-full h-11 sm:h-12 rounded-xl sm:rounded-2xl bg-slate-50 dark:bg-black/40 border border-slate-200 dark:border-white/10 px-3.5 text-slate-900 dark:text-white font-mono text-sm outline-none focus:border-emerald-500 dark:focus:border-emerald-400 placeholder:text-slate-400 dark:placeholder:text-white/30 shadow-inner"
-                            value={localPhone}
-                            onChange={(e) => setLocalPhone(e.target.value.replace(/\D/g, ""))}
-                            placeholder="0700000000"
-                          />
-                        </div>
-                      </div>
-
-                      <div className="space-y-1">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-white/40 ml-1">Adresse / Ville</label>
-                        <AddressAutocomplete
-                          value={form.address}
-                          onChange={(v) => setForm({ ...form, address: v })}
-                          countryCode={selectedCountry.code}
-                          placeholder="Ex: Cocody Angré, Marcory, Almadies, Haie Vive..."
-                          onSelectSuggestion={(s) => {
-                            const city = s.city || s.context?.place?.name || s.place_formatted?.split(',')[1]?.trim();
-                            setForm(prev => ({ ...prev, city: city || prev.city || "" }));
-                          }}
-                        />
-                      </div>
-
-                      <div className="space-y-1">
-                        <div className="flex items-center justify-between px-1">
-                          <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-white/40">Votre offre (produits, services...)</label>
-                          <span className={cn(
-                            "text-[9px] font-bold tracking-wider",
-                            (form.description?.length || 0) >= 280 ? "text-amber-500 font-black" : "text-slate-400 dark:text-white/30"
-                          )}>
-                            {form.description?.length || 0}/300
-                          </span>
-                        </div>
-                        <textarea
-                          maxLength={300}
-                          className="w-full h-16 sm:h-20 rounded-xl bg-slate-50 dark:bg-black/40 border border-slate-200 dark:border-white/25 p-3 text-sm text-slate-900 dark:text-white resize-none outline-none focus:border-emerald-500 dark:focus:border-emerald-400 placeholder:text-slate-400 dark:placeholder:text-white/20 leading-relaxed shadow-inner"
-                          value={form.description}
-                          onChange={(e) => setForm({ ...form, description: e.target.value })}
-                          placeholder="Ex: Articles, prestations de service, tarifs ou livraison..."
-                        />
-                      </div>
-                    </div>
-
-                    <button
-                      onClick={handleCreateVendeur}
-                      disabled={!form.businessName || !form.address}
-                      className="w-full h-11 sm:h-12 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all shadow-xl shadow-emerald-500/20 disabled:opacity-30 shrink-0 cursor-pointer mt-3 mb-2"
-                    >
-                      Démarrer Vendeur IA <ChevronRight size={18} />
-                    </button>
-                  </div>
+              {/* Play/Pause Overlay Controller */}
+              <button
+                onClick={togglePlay}
+                className={cn(
+                  "absolute inset-0 flex items-center justify-center transition-all cursor-pointer z-10",
+                  isPlaying
+                    ? "bg-black/10 opacity-0 group-hover:opacity-100"
+                    : "bg-slate-900/40 dark:bg-black/50 backdrop-blur-[2px] opacity-100"
+                )}
+                aria-label={isPlaying ? "Mettre en pause" : "Lire la vidéo"}
+              >
+                <div className="p-3.5 sm:p-4 rounded-full bg-white/95 dark:bg-slate-900/90 text-slate-900 dark:text-white border border-slate-200/80 dark:border-white/20 shadow-2xl hover:scale-110 active:scale-95 transition-transform flex items-center justify-center">
+                  {isPlaying ? (
+                    <Pause size={18} className="text-slate-900 dark:text-white" />
+                  ) : (
+                    <Play size={20} className="text-emerald-600 dark:text-emerald-400 ml-0.5 fill-current" />
+                  )}
                 </div>
-              ) : (
-                <div className="h-full w-full bg-[#efeae2] dark:bg-[#0b141a] flex flex-col relative">
-                  {/* WhatsApp UI Inside Frame */}
-                  <div className="bg-[#f0f2f5] dark:bg-[#202c33] px-3.5 pt-8 pb-3 flex items-center justify-between border-b border-slate-200 dark:border-white/5 shrink-0">
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <div className="h-9 w-9 rounded-full bg-emerald-600 dark:bg-emerald-700/80 border border-emerald-400/40 flex items-center justify-center text-white font-black text-sm shrink-0 shadow-inner">
-                        {form.businessName ? form.businessName.charAt(0).toUpperCase() : "V"}
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-xs font-bold text-slate-900 dark:text-white leading-tight truncate">{form.businessName || "Votre Boutique"}</p>
-                        <p className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400/90 leading-none mt-0.5">
-                          {isReplying ? "en train d'écrire..." : "en ligne"}
-                        </p>
-                      </div>
-                    </div>
-                    
-                    {/* Live Quota Badge */}
-                    <div className={cn(
-                      "flex items-center gap-1 px-2.5 py-1 rounded-full border shadow-sm shrink-0",
-                      aiResponseCount >= MAX_DEMO_REPLIES
-                        ? "bg-amber-500/10 border-amber-500/30 text-amber-600 dark:text-amber-400"
-                        : "bg-emerald-500/15 border-emerald-500/30 text-emerald-700 dark:bg-emerald-500/10 dark:border-emerald-500/20 dark:text-emerald-400"
-                    )}>
-                      <Zap size={11} className={aiResponseCount >= MAX_DEMO_REPLIES ? "text-amber-500 dark:text-amber-400" : "text-emerald-600 dark:text-emerald-400"} />
-                      <span className="text-[10px] font-black tracking-wider uppercase">
-                        {Math.max(0, MAX_DEMO_REPLIES - aiResponseCount)} / {MAX_DEMO_REPLIES} {MAX_DEMO_REPLIES - aiResponseCount <= 1 ? "essai" : "essais"}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div
-                    ref={scrollRef}
-                    className="flex-1 overflow-y-auto p-4 space-y-2 no-scrollbar flex flex-col"
-                    style={{ backgroundImage: "url('https://static.whatsapp.net/rsrc.php/v3/y6/r/wa669ae5qee.png')", backgroundSize: "400px" }}
-                  >
-                    {history.map((msg, i) => (
-                      <MemoizedWhatsAppBubble key={i} role={msg.role} text={msg.text} time={msg.time} />
-                    ))}
-                    {isReplying && <WhatsAppTypingIndicator variant="bubble" />}
-
-                    {/* Interactive End of Demo Card */}
-                    {aiResponseCount >= MAX_DEMO_REPLIES && !isReplying && (
-                      <motion.div
-                        initial={{ opacity: 0, scale: 0.95, y: 8 }}
-                        animate={{ opacity: 1, scale: 1, y: 0 }}
-                        className="my-3 p-4 rounded-2xl bg-white dark:bg-gradient-to-b dark:from-[#182229] dark:to-[#111b21] border border-emerald-500/30 dark:border-emerald-500/25 text-slate-900 dark:text-white shadow-xl space-y-2.5 text-center"
-                      >
-                        <div className="w-10 h-10 mx-auto rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shadow-sm">
-                          <CheckCircle2 size={22} />
-                        </div>
-                        <div>
-                          <p className="text-xs font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-400">Démonstration terminée ({MAX_DEMO_REPLIES}/{MAX_DEMO_REPLIES})</p>
-                          <p className="text-[11px] text-slate-600 dark:text-slate-300 mt-1 leading-snug">
-                            Vous avez testé le potentiel de Vendeur IA. Lancez votre boutique pour vendre 24h/7 sur votre propre WhatsApp.
-                          </p>
-                        </div>
-                        <div className="pt-0.5 flex items-center justify-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
-                          <span>Cliquez ci-dessous pour continuer</span>
-                          <ArrowRight size={12} className="rotate-90 animate-bounce" />
-                        </div>
-                      </motion.div>
-                    )}
-                  </div>
-
-                  <div className="bg-[#f0f2f5] dark:bg-[#202c33] p-2.5 sm:p-3 flex items-center gap-2.5 border-t border-slate-200 dark:border-white/5 shrink-0">
-                     <div className="flex-1 relative">
-                       <input
-                          value={testMessage}
-                          onChange={(e) => setMessage(e.target.value)}
-                          onKeyDown={(e) => e.key === "Enter" && handleSend()}
-                          disabled={aiResponseCount >= MAX_DEMO_REPLIES || isReplying}
-                          placeholder={
-                            aiResponseCount >= MAX_DEMO_REPLIES
-                              ? "Limite démo atteinte (0 restant)"
-                              : `Message (${Math.max(0, MAX_DEMO_REPLIES - aiResponseCount)} restant${MAX_DEMO_REPLIES - aiResponseCount > 1 ? "s" : ""})...`
-                          }
-                          className="w-full h-11 sm:h-12 bg-white dark:bg-[#2a3942] text-slate-900 dark:text-white border border-slate-200 dark:border-transparent text-[15px] sm:text-base rounded-xl px-4 py-2.5 outline-none placeholder:text-slate-400 dark:placeholder:text-[#8696a0] placeholder:text-[13px] sm:placeholder:text-[14px] disabled:opacity-50 shadow-inner"
-                       />
-                     </div>
-                     <button
-                       onClick={() => testMessage ? handleSend() : handleMicClick()}
-                       disabled={aiResponseCount >= MAX_DEMO_REPLIES && !testMessage}
-                       className={cn(
-                         "w-11 h-11 sm:w-12 sm:h-12 rounded-full flex items-center justify-center text-white transition-all shadow-xl shrink-0 cursor-pointer",
-                         testMessage ? "bg-emerald-500 hover:bg-emerald-400 scale-105" : isRecording ? "bg-red-500 animate-pulse" : "bg-emerald-600 hover:bg-emerald-500",
-                         aiResponseCount >= MAX_DEMO_REPLIES && !testMessage && "opacity-40 cursor-not-allowed"
-                       )}
-                     >
-                       {testMessage ? <Send size={18} /> : <Mic size={18} />}
-                     </button>
-                  </div>
-
-                  {/* Activation Sheet - more spacious & informative */}
-                  <div className="p-4 bg-white dark:bg-[#111b21] border-t border-slate-200 dark:border-white/10 shadow-[0_-10px_30px_rgba(0,0,0,0.05)] dark:shadow-[0_-10px_30px_rgba(0,0,0,0.5)] z-10 space-y-2.5 shrink-0">
-                     <div className="flex items-center justify-between px-0.5 text-[9px] font-black uppercase tracking-wider">
-                       <span className="text-slate-500 dark:text-slate-400">Démo Interactive</span>
-                       <span className={aiResponseCount >= MAX_DEMO_REPLIES ? "text-amber-500 dark:text-amber-400 font-black" : "text-emerald-600 dark:text-emerald-400 font-bold"}>
-                         {aiResponseCount}/{MAX_DEMO_REPLIES} réponses IA
-                       </span>
-                     </div>
-
-                     {/* Progress bar */}
-                     <div className="w-full h-1.5 bg-slate-100 dark:bg-white/10 rounded-full overflow-hidden">
-                       <motion.div
-                         className="h-full bg-gradient-to-r from-emerald-500 to-teal-400 rounded-full"
-                         initial={{ width: 0 }}
-                         animate={{ width: `${Math.min(100, (aiResponseCount / MAX_DEMO_REPLIES) * 100)}%` }}
-                         transition={{ duration: 0.3 }}
-                       />
-                     </div>
-
-                     <button
-                        onClick={handleActivate}
-                        className="w-full h-12 md:h-12 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black uppercase tracking-widest text-xs md:text-sm flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all shadow-xl shadow-emerald-500/20 cursor-pointer"
-                      >
-                        Créer mon Vendeur IA <Rocket size={18} />
-                      </button>
-                      <button onClick={() => setStep("form")} className="w-full text-[10px] md:text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-colors cursor-pointer">
-                        Modifier les infos
-                      </button>
-                  </div>
-                </div>
-              )}
+              </button>
             </div>
+
           </div>
         </FadeIn>
       </div>
@@ -1085,13 +627,7 @@ export function LandingPage() {
   const { isFounder } = useFounderRole();
 
   const handleLaunchDemo = () => {
-    const el = document.getElementById("demo-card");
-    if (el) {
-      el.scrollIntoView({ behavior: "smooth", block: "center" });
-      setTimeout(() => {
-        document.getElementById("business-name-input")?.focus();
-      }, 500);
-    }
+    setIsAuthOpen(true);
   };
 
   const handleSubscribeNewsletter = async (e: React.FormEvent) => {
@@ -1366,18 +902,18 @@ export function LandingPage() {
                     </button>
 
                     <button
-                      onClick={() => openProduct("simulator")}
+                      onClick={() => openProduct("payments")}
                       className="w-full p-2.5 rounded-xl hover:bg-slate-50 dark:hover:bg-white/5 transition-all text-left flex items-start gap-3 group cursor-pointer"
                     >
                       <div className="h-9 w-9 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-500 dark:text-purple-400 shrink-0 group-hover:scale-110 transition-transform">
-                        <Cpu size={17} />
+                        <CreditCard size={17} />
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
-                          <p className="text-xs font-black uppercase tracking-wider text-slate-900 dark:text-white group-hover:text-purple-500 dark:group-hover:text-purple-400 transition-colors">Simulateur Commercial</p>
-                          <span className="text-[8px] font-black uppercase px-1.5 py-0.5 rounded bg-purple-500/10 text-purple-500 dark:text-purple-400 border border-purple-500/20">Live</span>
+                          <p className="text-xs font-black uppercase tracking-wider text-slate-900 dark:text-white group-hover:text-purple-500 dark:group-hover:text-purple-400 transition-colors">Mobile Money & Encaissement</p>
+                          <span className="text-[8px] font-black uppercase px-1.5 py-0.5 rounded bg-purple-500/10 text-purple-500 dark:text-purple-400 border border-purple-500/20">Wave • MoMo</span>
                         </div>
-                        <p className="text-[10px] text-slate-500 dark:text-white/40 leading-snug mt-0.5">Laboratoire interactif pour tester les négociations et closing en direct.</p>
+                        <p className="text-[10px] text-slate-500 dark:text-white/40 leading-snug mt-0.5">Encaissement automatique, audit forensic anti-fraude & reçus instantanés.</p>
                       </div>
                     </button>
                   </motion.div>
@@ -1406,14 +942,6 @@ export function LandingPage() {
             >
               Tarifs & Offres
             </Link>
-
-            <button
-              onClick={handleLaunchDemo}
-              className="px-3.5 py-2 rounded-xl transition-all text-emerald-600 dark:text-emerald-400 hover:text-emerald-500 hover:bg-emerald-500/10 cursor-pointer flex items-center gap-1.5 font-black"
-            >
-              <Zap size={13} />
-              <span>Simulateur Live</span>
-            </button>
           </nav>
 
           {/* Right Action Buttons */}
@@ -1421,12 +949,12 @@ export function LandingPage() {
             <button
               onClick={() => {
                 setMobileMenuOpen(false);
-                handleLaunchDemo();
+                setIsAuthOpen(true);
               }}
               className="hidden sm:flex h-9 md:h-10 px-4 md:px-5 rounded-xl md:rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-[9px] md:text-[10px] font-black uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-md items-center gap-2 cursor-pointer"
             >
-              <Play size={13} fill="currentColor" />
-              <span>Tester la Démo</span>
+              <Sparkles size={13} />
+              <span>Essai Gratuit 7j</span>
             </button>
 
             <button
@@ -1504,11 +1032,11 @@ export function LandingPage() {
                     <span>API WhatsApp & Cloud</span>
                   </button>
                   <button
-                    onClick={() => openProduct("simulator")}
+                    onClick={() => openProduct("payments")}
                     className="w-full flex items-center gap-2.5 p-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-white/5 text-left text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider"
                   >
-                    <Cpu size={16} className="text-purple-500" />
-                    <span>Simulateur Commercial IA</span>
+                    <CreditCard size={16} className="text-purple-500" />
+                    <span>Mobile Money & Encaissement</span>
                   </button>
                 </div>
 
@@ -1609,12 +1137,17 @@ export function LandingPage() {
                 <p className="text-slate-600 dark:text-white/70 text-base md:text-lg mb-10 max-w-xl mx-auto font-medium">
                   Rejoignez des centaines de commerçants qui ont déjà automatisé leur croissance avec Vendeur IA.
                 </p>
-                <button
-                  onClick={handleLaunchDemo}
-                  className="w-full sm:w-auto h-16 px-10 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black uppercase tracking-widest text-xs sm:text-sm hover:scale-105 active:scale-95 transition-all shadow-[0_20px_60px_rgba(16,185,129,0.3)] flex items-center justify-center gap-3 mx-auto cursor-pointer"
-                >
-                  Configurer mon Vendeur IA
-                </button>
+                <div className="space-y-4">
+                  <button
+                    onClick={handleLaunchDemo}
+                    className="w-full sm:w-auto h-16 px-10 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black uppercase tracking-widest text-xs sm:text-sm hover:scale-105 active:scale-95 transition-all shadow-[0_20px_60px_rgba(16,185,129,0.3)] flex items-center justify-center gap-3 mx-auto cursor-pointer"
+                  >
+                    Démarrer mon essai gratuit (7 jours) <ArrowRight size={18} />
+                  </button>
+                  <p className="text-xs text-slate-500 dark:text-white/40 font-semibold">
+                    Essai gratuit de 7 jours • Aucune carte requise • Configuration en 2 minutes
+                  </p>
+                </div>
               </FadeIn>
            </div>
         </section>
@@ -1667,10 +1200,10 @@ export function LandingPage() {
                 </li>
                 <li>
                   <button
-                    onClick={() => openProduct("simulator")}
+                    onClick={() => openProduct("payments")}
                     className="hover:text-purple-500 dark:hover:text-purple-400 transition-colors cursor-pointer text-left flex items-center gap-1.5 group"
                   >
-                    <span>Simulateur</span>
+                    <span>Mobile Money & Encaissement</span>
                     <ArrowRight size={12} className="opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all text-purple-500" />
                   </button>
                 </li>

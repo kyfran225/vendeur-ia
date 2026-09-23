@@ -205,13 +205,19 @@ Réponds UNIQUEMENT avec le texte final du message.`;
       return { status: 'skipped_human_takeover' };
     }
 
-    // CHECK SUBSCRIPTION & PAUSE (MODE DÉCOUVERTE & MODE PAUSE)
+    // CHECK SUBSCRIPTION & FREE TRIAL WITH GUARDRAILS
     const merchantData = context.merchant;
     const isFounder = isFounderNumber(merchantData?.whatsappNumber || merchantData?.phone || "") || (userId && isFounderNumber(userId));
-    const isSubscriptionActive = merchantData?.subscription?.status === "active" || isFounder;
-    if (!isSubscriptionActive && !jobData.isSimulator) {
-      console.log(`[AI Queue] Mode Découverte: AI locked for unpaid merchant ${merchantData?._id}. Skipping live AI response.`);
-      return { status: 'skipped_unpaid_discovery_mode' };
+    const isPaidActive = merchantData?.subscription?.status === "active" || isFounder;
+    const now = new Date();
+    const isTrial = merchantData?.subscription?.status === "trial" || (!merchantData?.subscription?.status && !isPaidActive);
+    const trialEndsAt = merchantData?.subscription?.trialEndsAt ? new Date(merchantData.subscription.trialEndsAt) : null;
+    const trialUsage = merchantData?.subscription?.trialUsage || { messagesCount: 0, maxMessages: 50 };
+    const isTrialValid = isTrial && trialEndsAt && trialEndsAt > now && (trialUsage.messagesCount ?? 0) < (trialUsage.maxMessages ?? 50);
+
+    if (!isPaidActive && !isTrialValid && !jobData.isSimulator) {
+      console.log(`[AI Queue] Free Trial Expired or Inactive: AI locked for merchant ${merchantData?._id}. Skipping live AI response.`);
+      return { status: 'skipped_inactive_subscription_or_trial' };
     }
 
     if (merchantData?.aiSettings?.autoReply === false && !jobData.isSimulator) {
@@ -441,6 +447,13 @@ Réponds UNIQUEMENT avec le texte final du message.`;
       if (msgId) {
         aiMsg.whatsappMessageId = msgId;
         await aiMsg.save();
+      }
+
+      // If merchant is on free trial, track message usage
+      if (!isPaidActive && isTrialValid && merchantData?._id) {
+        await CommerceMerchantModel.findByIdAndUpdate(merchantData._id, {
+          $inc: { "subscription.trialUsage.messagesCount": 1 }
+        }).catch(err => console.error("[AI Queue] Failed to increment trial messagesCount:", err));
       }
 
       return reply;

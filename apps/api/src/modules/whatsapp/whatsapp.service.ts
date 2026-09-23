@@ -1679,18 +1679,24 @@ class WhatsAppService {
       return;
     }
 
-    // --- 2. CHECK SUBSCRIPTION (MODE DÉCOUVERTE) ---
-    // If merchant has no active subscription (unpaid), AI is locked on WhatsApp so merchant maintains 100% manual control
+    // --- 2. CHECK SUBSCRIPTION & FREE TRIAL WITH GUARDRAILS ---
     const isFounder = isFounderNumber(merchant.whatsappNumber || merchant.phone || "") || (merchant.ownerId && isFounderNumber(merchant.ownerId));
-    let isSubscriptionActive = merchant.subscription?.status === "active" || isFounder;
-    if (!isSubscriptionActive) {
+    let isPaidActive = merchant.subscription?.status === "active" || isFounder;
+    if (!isPaidActive) {
       const sub = await SubscriptionModel.findOne({ userId });
       if (sub && sub.status === "active") {
-        isSubscriptionActive = true;
+        isPaidActive = true;
       }
     }
-    if (!isSubscriptionActive) {
-      console.log(`[WhatsApp] Mode Découverte: AI locked on WhatsApp for unpaid merchant "${merchant.businessName}". Conversations remain 100% manual.`);
+
+    const now = new Date();
+    const isTrial = merchant.subscription?.status === "trial" || (!merchant.subscription?.status && !isPaidActive);
+    const trialEndsAt = merchant.subscription?.trialEndsAt ? new Date(merchant.subscription.trialEndsAt) : null;
+    const trialUsage = merchant.subscription?.trialUsage || { messagesCount: 0, maxMessages: 50 };
+    const isTrialValid = isTrial && trialEndsAt && trialEndsAt > now && (trialUsage.messagesCount ?? 0) < (trialUsage.maxMessages ?? 50);
+
+    if (!isPaidActive && !isTrialValid) {
+      console.log(`[WhatsApp] Free Trial Expired or Inactive: AI locked on WhatsApp for merchant "${merchant.businessName}". Conversations remain 100% manual.`);
       return;
     }
 

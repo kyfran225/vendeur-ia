@@ -534,7 +534,17 @@ export class CommerceService {
         },
         $setOnInsert: {
           referralCode: this.generateReferralCode(),
-          referredBy: data.referredByCode ? await this.getMerchantIdByCode(data.referredByCode) : undefined
+          referredBy: data.referredByCode ? await this.getMerchantIdByCode(data.referredByCode) : undefined,
+          "subscription.plan": "trial",
+          "subscription.status": "trial",
+          "subscription.trialEndsAt": new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+          "subscription.expiresAt": new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+          "subscription.trialUsage": {
+            messagesCount: 0,
+            maxMessages: 50,
+            productsCount: 0,
+            maxProducts: 10
+          }
         }
       },
       { new: true, upsert: true, runValidators: false }

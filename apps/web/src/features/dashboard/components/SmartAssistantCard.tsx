@@ -185,7 +185,7 @@ export function SmartAssistantCard({ dashboard, onOpenTestIA, onOpenShare, onCon
       return {
         cardBg: "bg-amber-50/80 dark:bg-amber-500/10 border-amber-200 dark:border-amber-500/30 shadow-amber-500/5",
         badgeBg: "bg-amber-500/15 border-amber-500/30 text-amber-800 dark:text-amber-300",
-        badgeText: "Mode Découverte (Gratuit)",
+        badgeText: "Essai Gratuit 7 Jours",
         iconBorder: "border-amber-500/30",
         accentText: "text-amber-600 dark:text-amber-400",
         accentGlow: "shadow-amber-500/10",
@@ -275,15 +275,15 @@ export function SmartAssistantCard({ dashboard, onOpenTestIA, onOpenShare, onCon
                 ) : isDiscoveryMode ? (
                   nextStep?.id === "subscription" ? (
                     <>
-                      Félicitations <span className="text-amber-600 dark:text-amber-400 font-bold not-italic">{businessName}</span>, votre configuration est terminée ! 🏁 Votre Vendeur IA est en <strong>Mode Découverte (En attente d'activation)</strong>. Activez votre forfait pour qu'il prenne le relais de vos ventes 24h/24.
+                      Félicitations <span className="text-amber-600 dark:text-amber-400 font-bold not-italic">{businessName}</span>, votre configuration est terminée ! 🏁 Votre Vendeur IA est en <strong>Essai Gratuit 7 Jours (En attente d'activation)</strong>. Activez votre forfait pour qu'il prenne le relais de vos ventes 24h/24.
                     </>
                   ) : nextStep?.id === "whatsapp" ? (
                     <>
-                      Bienvenue chez <span className="text-amber-600 dark:text-amber-400 font-bold not-italic">{businessName}</span> ! 🚀 Vous êtes en <strong>Mode Découverte Gratuit</strong> : je ne réponds pas encore à vos clients sur WhatsApp afin que vous gardiez 100% le contrôle. Première étape : relions votre WhatsApp !
+                      Bienvenue chez <span className="text-amber-600 dark:text-amber-400 font-bold not-italic">{businessName}</span> ! 🚀 Vous êtes en <strong>Essai Gratuit 7 Jours</strong> : votre Vendeur IA répondra à vos clients sur WhatsApp dès que vous le connecterez. Première étape : relions votre WhatsApp !
                     </>
                   ) : nextStep?.id === "products" ? (
                     <>
-                      Génial, WhatsApp est relié à <span className="text-amber-600 dark:text-amber-400 font-bold not-italic">{businessName}</span> ! 🛍️ Ajoutez vos articles : votre vitrine publique sera automatiquement générée et vous pourrez me tester librement dans le simulateur.
+                      Génial, WhatsApp est relié à <span className="text-amber-600 dark:text-amber-400 font-bold not-italic">{businessName}</span> ! 🛍️ Ajoutez vos articles : votre vitrine publique sera automatiquement générée et votre Vendeur IA pourra commencer à répondre à vos clients.
                     </>
                   ) : nextStep?.id === "delivery" ? (
                     <>
@@ -295,7 +295,7 @@ export function SmartAssistantCard({ dashboard, onOpenTestIA, onOpenShare, onCon
                     </>
                   ) : (
                     <>
-                      Bienvenue chez <span className="text-amber-600 dark:text-amber-400 font-bold not-italic">{businessName}</span> ! {hasProducts ? `Votre catalogue (${productsCount} article${productsCount > 1 ? 's' : ''}) et votre vitrine sont prêts.` : "Ajoutez vos articles pour activer votre vitrine."} Le Vendeur IA ne répondra pas sur WhatsApp tant que le forfait n'est pas activé.
+                      Bienvenue chez <span className="text-amber-600 dark:text-amber-400 font-bold not-italic">{businessName}</span> ! {hasProducts ? `Votre catalogue (${productsCount} article${productsCount > 1 ? 's' : ''}) et votre vitrine sont prêts.` : "Ajoutez vos articles pour activer votre vitrine."} Votre Vendeur IA répondra automatiquement à vos clients sur WhatsApp pendant les 7 jours d'essai gratuit.
                     </>
                   )
                 ) : isFullyOperational ? (

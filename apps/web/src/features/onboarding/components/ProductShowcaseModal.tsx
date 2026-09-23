@@ -4,7 +4,7 @@ import {
   Eye,
   Megaphone,
   Code2,
-  Cpu,
+  Lock,
   Sparkles,
   Zap,
   CheckCircle2,
@@ -22,8 +22,8 @@ import {
   RotateCw,
   TrendingUp,
   Flame,
-  Lock,
-  ChevronRight
+  ChevronRight,
+  CreditCard
 } from "lucide-react";
 import { AnimatedAssistantBot } from "@/components/ui/AnimatedAssistantBot";
 import { WhatsAppIcon } from "@/components/ui/WhatsAppIcon";
@@ -35,7 +35,7 @@ function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export type ProductTab = "vision" | "marketing" | "api" | "simulator";
+export type ProductTab = "vision" | "marketing" | "api" | "payments" | "simulator";
 
 interface ProductShowcaseModalProps {
   isOpen: boolean;
@@ -62,7 +62,7 @@ export function ProductShowcaseModal({
   // Keep active tab in sync when initialTab changes
   useEffect(() => {
     if (initialTab) {
-      setActiveTab(initialTab);
+      setActiveTab(initialTab === "simulator" ? "payments" : initialTab);
     }
   }, [initialTab]);
 
@@ -120,13 +120,13 @@ export function ProductShowcaseModal({
       description: "Connectez vos boutiques, webhooks et ERP à WhatsApp en moins de 2 minutes avec notre passerelle robuste et son système anti-bannissement."
     },
     {
-      id: "simulator" as ProductTab,
-      title: "Simulateur Commercial IA",
-      shortName: "Simulateur",
-      badge: "Bac à Sable Live",
-      icon: Cpu,
-      tagline: "Testez votre vendeur IA en conditions réelles",
-      description: "Simulez instantanément le comportement de votre commercial virtuel face à différents types de clients (négociateur, pressé, curieux)."
+      id: "payments" as ProductTab,
+      title: "Mobile Money & Encaissement™",
+      shortName: "Mobile Money",
+      badge: "Wave • Orange • MTN • Moov",
+      icon: CreditCard,
+      tagline: "Validation OCR des Reçus & Audit Forensic Anti-Fraude",
+      description: "Validation automatique et instantanée des virements Mobile Money par OCR, détection des faux reçus et confirmation des commandes sans friction."
     }
   ];
 
@@ -516,7 +516,7 @@ export function ProductShowcaseModal({
                   <div className="flex items-center justify-between flex-wrap gap-2">
                     <h4 className="text-xs font-black uppercase tracking-widest text-slate-700 dark:text-white/70 flex items-center gap-2">
                       <Flame size={14} className="text-amber-600 dark:text-amber-400" />
-                      Simulateur de Campagne WhatsApp :
+                      Générateur de Campagne WhatsApp :
                     </h4>
                   </div>
 
@@ -942,20 +942,20 @@ $order = $vendeur->orders->createFromWhatsApp([
             )}
 
             {/* TAB 4: SIMULATEUR */}
-            {activeTab === "simulator" && (
+            {(activeTab === "payments" || activeTab === "simulator") && (
               <div className="space-y-6 sm:space-y-8 w-full min-w-0">
                 {/* Hero Header */}
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-gradient-to-r from-emerald-50 via-slate-50 to-white dark:from-emerald-950/40 dark:via-[#071710] dark:to-black/60 border border-emerald-200 dark:border-emerald-500/25 w-full min-w-0">
                   <div className="space-y-2 max-w-xl min-w-0">
                     <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-100 dark:bg-emerald-500/10 border border-emerald-300 dark:border-emerald-500/20 text-emerald-800 dark:text-emerald-400 text-[10px] font-black uppercase tracking-widest">
-                      <Cpu size={13} />
-                      <span>Laboratoire d'Essai & Simulation</span>
+                      <CreditCard size={13} />
+                      <span>Encaissement Mobile Money & Anti-Fraude</span>
                     </div>
                     <h2 className="text-xl sm:text-2xl md:text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tight break-words">
-                      Simulateur <span className="text-emerald-600 dark:text-emerald-400">Commercial Live</span>
+                      Paiements <span className="text-emerald-600 dark:text-emerald-400">Mobile Money Automatisés</span>
                     </h2>
                     <p className="text-xs sm:text-sm text-slate-600 dark:text-white/60 leading-relaxed font-medium">
-                      Testez immédiatement comment Vendeur IA répond à vos prospects, négocie les tarifs, surmonte les objections et finalise la vente en direct sans configurer de numéro.
+                      Wave, Orange Money, MTN MoMo, Moov Money : l'IA génère les liens de règlement, audite les captures d'écran de virements par OCR et détecte les faux reçus en direct.
                     </p>
                   </div>
 
@@ -966,14 +966,14 @@ $order = $vendeur->orders->createFromWhatsApp([
                     }}
                     className="h-11 sm:h-12 px-5 sm:px-6 rounded-xl sm:rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black uppercase text-xs tracking-wider hover:scale-105 active:scale-95 transition-all shadow-xl flex items-center justify-center gap-2 shrink-0 cursor-pointer w-full md:w-auto"
                   >
-                    Tester le Simulateur Live <Play size={16} fill="currentColor" />
+                    Démarrer mon essai gratuit (7 jours) <ArrowRight size={16} />
                   </button>
                 </div>
 
                 {/* Scenario Tester Cards */}
                 <div className="space-y-3 w-full min-w-0">
                   <h4 className="text-xs font-black uppercase tracking-widest text-slate-700 dark:text-white/70">
-                    Scénarios Commerciaux Pré-configurés à Essayer :
+                    3 Piliers d'Encaissement Mobile Money :
                   </h4>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-4 w-full min-w-0">
@@ -985,12 +985,12 @@ $order = $vendeur->orders->createFromWhatsApp([
                       className="p-4 rounded-2xl bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 hover:border-emerald-500 hover:bg-emerald-50/50 dark:hover:bg-emerald-500/5 transition-all cursor-pointer group space-y-2 shadow-sm"
                     >
                       <div className="flex items-center justify-between">
-                        <span className="text-xs font-black text-emerald-700 dark:text-emerald-400 uppercase">1. Négociation de Prix</span>
+                        <span className="text-xs font-black text-emerald-700 dark:text-emerald-400 uppercase">1. Scan OCR de Reçu Wave / OM</span>
                         <ChevronRight size={14} className="text-slate-400 dark:text-white/30 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 group-hover:translate-x-1 transition-all" />
                       </div>
-                      <p className="text-xs font-bold text-slate-900 dark:text-white">"C'est trop cher, vous pouvez faire un rabais ?"</p>
+                      <p className="text-xs font-bold text-slate-900 dark:text-white">"Voici la capture de mon paiement Wave"</p>
                       <p className="text-[11px] text-slate-500 dark:text-white/40">
-                        Démontre comment l'IA valorise la qualité du produit tout en proposant une remise contrôlée.
+                        L'IA Vision extrait la référence exacte, le montant et le numéro d'émetteur en moins de 3 secondes.
                       </p>
                     </div>
 
@@ -1002,12 +1002,12 @@ $order = $vendeur->orders->createFromWhatsApp([
                       className="p-4 rounded-2xl bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 hover:border-emerald-500 hover:bg-emerald-50/50 dark:hover:bg-emerald-500/5 transition-all cursor-pointer group space-y-2 shadow-sm"
                     >
                       <div className="flex items-center justify-between">
-                        <span className="text-xs font-black text-emerald-700 dark:text-emerald-400 uppercase">2. Urgence Livraison</span>
+                        <span className="text-xs font-black text-emerald-700 dark:text-emerald-400 uppercase">2. Bouclier Anti-Fraude Forensic</span>
                         <ChevronRight size={14} className="text-slate-400 dark:text-white/30 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 group-hover:translate-x-1 transition-all" />
                       </div>
-                      <p className="text-xs font-bold text-slate-900 dark:text-white">"Est-ce livrable dans 2 heures à Cocody ?"</p>
+                      <p className="text-xs font-bold text-slate-900 dark:text-white">Détection des faux reçus & réutilisations</p>
                       <p className="text-[11px] text-slate-500 dark:text-white/40">
-                        Vérifie la zone géographique et coordonne les livreurs partenaires instantanément.
+                        Vérification d'authenticité pour bloquer les faux reçus retouchés et les reçus déjà enregistrés.
                       </p>
                     </div>
 
@@ -1019,12 +1019,12 @@ $order = $vendeur->orders->createFromWhatsApp([
                       className="p-4 rounded-2xl bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 hover:border-emerald-500 hover:bg-emerald-50/50 dark:hover:bg-emerald-500/5 transition-all cursor-pointer group space-y-2 shadow-sm"
                     >
                       <div className="flex items-center justify-between">
-                        <span className="text-xs font-black text-emerald-700 dark:text-emerald-400 uppercase">3. Validation Virement</span>
+                        <span className="text-xs font-black text-emerald-700 dark:text-emerald-400 uppercase">3. Liens de Paiement 1-Clic</span>
                         <ChevronRight size={14} className="text-slate-400 dark:text-white/30 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 group-hover:translate-x-1 transition-all" />
                       </div>
-                      <p className="text-xs font-bold text-slate-900 dark:text-white">"J'ai envoyé l'argent par Wave, voici le reçu"</p>
+                      <p className="text-xs font-bold text-slate-900 dark:text-white">"Envoyez-moi le lien pour régler direct"</p>
                       <p className="text-[11px] text-slate-500 dark:text-white/40">
-                        Reconnaissance instantanée du montant et validation de la commande en temps réel.
+                        Génération instantanée du lien sécurisé Wave Checkout ou MTN MoMo pré-rempli avec le montant.
                       </p>
                     </div>
                   </div>
@@ -1038,7 +1038,7 @@ $order = $vendeur->orders->createFromWhatsApp([
           <div className="px-4 py-3 sm:px-8 sm:py-4 bg-slate-50 dark:bg-[#08120d] border-t border-slate-200 dark:border-white/10 flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0">
             <div className="flex items-center gap-2 text-xs text-slate-600 dark:text-white/50">
               <ShieldCheck size={16} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
-              <span className="text-[11px] sm:text-xs">Sans carte de crédit requise • Essai instantané</span>
+              <span className="text-[11px] sm:text-xs">Essai gratuit 7 jours • Sans carte de crédit requise • Prêt en 2 minutes</span>
             </div>
 
             <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
@@ -1055,7 +1055,7 @@ $order = $vendeur->orders->createFromWhatsApp([
                 }}
                 className="flex-1 sm:flex-none h-10 sm:h-11 px-5 sm:px-6 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-black uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-[0_10px_30px_rgba(16,185,129,0.3)] flex items-center justify-center gap-2 cursor-pointer"
               >
-                Démarrer Vendeur IA <ArrowRight size={14} />
+                Démarrer mon essai gratuit (7 jours) <ArrowRight size={14} />
               </button>
             </div>
           </div>

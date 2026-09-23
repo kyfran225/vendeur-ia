@@ -21,9 +21,16 @@ const MerchantSchema = new Schema({
     number: String
   }],
   subscription: {
-    plan: { type: String, default: null },
-    status: { type: String, default: null },
+    plan: { type: String, default: "trial" },
+    status: { type: String, default: "trial" },
     expiresAt: { type: Date, default: null },
+    trialEndsAt: { type: Date, default: null },
+    trialUsage: {
+      messagesCount: { type: Number, default: 0 },
+      maxMessages: { type: Number, default: 50 },
+      productsCount: { type: Number, default: 0 },
+      maxProducts: { type: Number, default: 10 }
+    },
     subscriptionCode: { type: String, default: null },
     emailToken: { type: String, default: null },
     nextPaymentDate: { type: Date, default: null },

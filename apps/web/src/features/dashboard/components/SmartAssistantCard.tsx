@@ -37,9 +37,20 @@ interface SmartAssistantCardProps {
   onOpenTestIA: () => void;
   onOpenShare?: () => void;
   onConnectWhatsApp?: () => void;
+  onOpenOffers?: () => void;
+  onOpenDailyStatus?: () => void;
+  onOpenPauseModal?: () => void;
 }
 
-export function SmartAssistantCard({ dashboard, onOpenTestIA, onOpenShare, onConnectWhatsApp }: SmartAssistantCardProps) {
+export function SmartAssistantCard({
+  dashboard,
+  onOpenTestIA,
+  onOpenShare,
+  onConnectWhatsApp,
+  onOpenOffers,
+  onOpenDailyStatus,
+  onOpenPauseModal
+}: SmartAssistantCardProps) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [isPackProModalOpen, setIsPackProModalOpen] = useState(false);
@@ -50,6 +61,7 @@ export function SmartAssistantCard({ dashboard, onOpenTestIA, onOpenShare, onCon
   const subscription = merchant?.subscription;
   const aiSettings = merchant?.aiSettings;
   const businessName = merchant?.businessName || "Votre boutique";
+  const tips = dashboard?.aiGrowthAdvice?.tips || [];
 
   // Subscription calculations
   const isPaidActive = subscription?.status === "active";
@@ -441,20 +453,67 @@ export function SmartAssistantCard({ dashboard, onOpenTestIA, onOpenShare, onCon
                           <span>Simulateur & Test IA</span>
                         </button>
 
-                        {isDiscoveryMode && (
-                          <Link
-                            to="/offers"
-                            className="min-h-[52px] sm:min-h-[56px] px-5 py-3.5 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-white/10 dark:hover:bg-white/15 text-slate-800 dark:text-white font-black uppercase text-xs tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95 shrink-0 border border-slate-200 dark:border-white/10"
+                        {onOpenDailyStatus && (
+                          <button
+                            type="button"
+                            onClick={onOpenDailyStatus}
+                            className="min-h-[52px] sm:min-h-[56px] px-5 py-3.5 rounded-2xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black uppercase text-xs tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95 shrink-0 shadow-lg shadow-amber-500/20"
                           >
-                            <Sparkles size={16} className="text-amber-500 dark:text-amber-300" />
-                            <span>Activer le Forfait 24h/24</span>
-                          </Link>
+                            <Sparkles size={16} className="shrink-0" />
+                            <span>Mes Statuts du Jour</span>
+                          </button>
+                        )}
+
+                        {onOpenPauseModal && (
+                          <button
+                            type="button"
+                            onClick={onOpenPauseModal}
+                            className="min-h-[52px] sm:min-h-[56px] px-4 py-3.5 rounded-2xl bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/30 text-sky-700 dark:text-sky-300 text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95 shrink-0"
+                            title="Mettre le Vendeur IA en pause"
+                          >
+                            <PauseCircle size={16} className="shrink-0" />
+                            <span>Mettre en pause</span>
+                          </button>
+                        )}
+
+                        {isDiscoveryMode && (
+                          <button
+                            type="button"
+                            onClick={onOpenOffers || (() => navigate("/offers"))}
+                            className="min-h-[52px] sm:min-h-[56px] px-5 py-3.5 rounded-2xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black uppercase text-xs tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95 shrink-0 shadow-lg shadow-amber-500/20"
+                          >
+                            <Sparkles size={16} className="shrink-0" />
+                            <span>Choisir mon Forfait</span>
+                          </button>
                         )}
                       </>
                     )}
                   </>
                 )}
               </div>
+
+              {/* AI Growth Advice Cards (When 100% Operational) */}
+              {isFullyOperational && tips.length > 0 && (
+                <div className="pt-3 space-y-3 w-full border-t border-slate-200/60 dark:border-white/5 mt-3">
+                  <div className="flex items-center gap-2">
+                    <Sparkles size={15} className={theme.accentText} />
+                    <span className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-white/80">
+                      Conseils de Croissance IA du Jour
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    {tips.map((tip: any, i: number) => (
+                      <Link
+                        key={i}
+                        to={tip.action || "#"}
+                        className="bg-white/80 dark:bg-black/40 backdrop-blur-md border border-slate-200 dark:border-white/5 p-3.5 sm:p-4 rounded-2xl text-xs sm:text-sm font-medium leading-relaxed hover:border-vendeur-emerald/40 hover:bg-white dark:hover:bg-black/60 transition-all active:scale-[0.98] text-slate-800 dark:text-white/90 shadow-sm"
+                      >
+                        {tip.text || tip}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Progression Bar */}

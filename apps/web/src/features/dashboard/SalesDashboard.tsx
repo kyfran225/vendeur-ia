@@ -403,125 +403,21 @@ function HomePanel({
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-700">
-      {/* 
-        BANNIÈRE D'ÉTAT ABONNEMENT
-        Affiche en permanence l'état de l'essai gratuit (actif ou expiré), du mode pause,
-        ou de l'expiration de l'abonnement payant. Coût API = 0 sur la landing.
+      {/*
+        ASSISTANT VENDEUR IA (PERPÉTUEL SUR LE TABLEAU DE BORD)
+        L'Assistant Vendeur IA est présent en permanence pour guider la mise en place,
+        gérer le statut d'essai/abonnement et propulser la croissance au quotidien.
       */}
-      {!isFounder && !showAssistant && (
-        <SubscriptionBanner
-          status={subStatus}
-          expiresAt={dashboard?.merchant?.subscription?.expiresAt}
-          trialEndsAt={trialEndsAt}
-          trialUsage={trialUsage}
-          autoReply={dashboard?.merchant?.aiSettings?.autoReply ?? true}
-          onOpenTestIA={onOpenTestIA}
-          onOpenOffers={onOpenOffers}
-        />
-      )}
-
-      {/* 
-        ASSISTANT GUIDAGE EN COURS DE CONFIGURATION OU EN CAS DE PAUSE/EXPIRATION
-        Si la boutique est en cours de configuration ou nécessite une action vitale (pause, expiration),
-        l'Assistant SmartAssistantCard prend la priorité absolue.
-      */}
-      {showAssistant && !isFounder && (
+      {!isFounder && (
         <SmartAssistantCard
           dashboard={dashboard}
           onOpenTestIA={onOpenTestIA}
           onOpenShare={onOpenShare}
           onConnectWhatsApp={onConnectWhatsApp}
+          onOpenOffers={onOpenOffers}
+          onOpenDailyStatus={() => setIsDailyStatusModalOpen(true)}
+          onOpenPauseModal={() => setIsPauseModalOpen(true)}
         />
-      )}
-
-      {/* MOBILE-ONLY UPGRADE BUTTON */}
-      {canUpgradeToPro && (
-        <div className="md:hidden">
-          <button
-            onClick={onOpenOffers}
-            className="w-full min-h-[52px] h-13 px-4 rounded-2xl bg-vendeur-emerald/15 border border-vendeur-emerald/30 text-vendeur-emerald text-xs font-black uppercase tracking-wider hover:bg-vendeur-emerald hover:text-slate-950 transition-all flex items-center justify-center text-center gap-2 active:scale-95 cursor-pointer shadow-sm"
-          >
-            <Zap size={16} className="shrink-0" />
-            <span>Passer en Pro</span>
-          </button>
-        </div>
-      )}
-
-      {/* 
-        CONSEILLER DE CROISSANCE IA
-        Affiché lorsque la boutique est 100% opérationnelle pour propulser les ventes du quotidien
-      */}
-      {isFullyOperational && !isPaused && !isExpired && (
-        <section className="relative overflow-hidden bg-vendeur-emerald/10 border border-vendeur-emerald/20 p-4 sm:p-6 md:p-7 rounded-3xl sm:rounded-[2.5rem] group shadow-2xl space-y-6">
-          <div className="absolute top-0 right-0 p-8 md:p-12 opacity-10 group-hover:scale-110 transition-transform duration-700 pointer-events-none">
-             <Sparkles size={160} className="text-vendeur-emerald" />
-          </div>
-
-          <div className="relative z-10 space-y-6">
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 sm:gap-5">
-              <div className="flex items-center gap-3 sm:gap-4 md:gap-5 min-w-0">
-                <div className="h-10 w-10 sm:h-12 sm:w-12 flex items-center justify-center group-hover:rotate-3 transition-transform shrink-0">
-                  <AssistantIcon size="100%" color="#10B981" withBackground={false} className="drop-shadow-[0_0_8px_rgba(16,185,129,0.3)]" />
-                </div>
-                <div className="min-w-0">
-                  <h2 className="text-base sm:text-xl md:text-2xl lg:text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tight leading-tight truncate">
-                    Conseiller de Croissance IA
-                  </h2>
-                  <div className="flex items-center gap-2 mt-1">
-                    <div className={cn("h-2 w-2 md:h-2.5 md:w-2.5 rounded-full", (status === 'connected' && isPaidActive) ? "bg-vendeur-emerald" : "bg-amber-400")} />
-                    <p className={cn("text-xs sm:text-xs font-bold uppercase tracking-wider truncate", (status === 'connected' && isPaidActive) ? "text-emerald-700 dark:text-vendeur-emerald font-black" : "text-amber-600 dark:text-amber-400 font-bold")}>
-                      {status === 'connected' ? (isPaidActive ? "IA en ligne & active 24h/24" : "Essai Gratuit 7j (Activation requise)") : "IA en attente de connexion"}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 sm:gap-2.5 w-full lg:w-auto">
-
-                <button
-                  type="button"
-                  onClick={() => setIsPauseModalOpen(true)}
-                  className="flex-1 sm:flex-initial flex items-center justify-center gap-2 min-h-[44px] sm:min-h-[48px] h-11 sm:h-12 px-3.5 sm:px-4 py-2.5 sm:py-3 rounded-2xl bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/30 text-sky-700 dark:text-sky-300 text-[11px] sm:text-xs font-black uppercase tracking-wider transition-all cursor-pointer active:scale-95 whitespace-nowrap"
-                  title="Mettre le Vendeur IA en pause pour répondre manuellement"
-                >
-                  <PauseCircle size={15} className="shrink-0" />
-                  <span>Mettre en pause</span>
-                </button>
-
-                <button
-                  onClick={onOpenTestIA}
-                  className="flex-1 sm:flex-initial flex items-center justify-center gap-2 min-h-[44px] sm:min-h-[48px] h-11 sm:h-12 px-3.5 sm:px-4 py-2.5 sm:py-3 rounded-2xl bg-white/80 dark:bg-white/5 hover:bg-white dark:hover:bg-white/10 border border-slate-200 dark:border-white/10 text-slate-800 dark:text-white text-[11px] sm:text-xs font-black uppercase tracking-wider transition-all cursor-pointer active:scale-95 whitespace-nowrap shadow-sm"
-                >
-                  <Play size={14} fill="currentColor" className="shrink-0" />
-                  <span>Tester</span>
-                </button>
-
-                <button
-                  onClick={() => setIsDailyStatusModalOpen(true)}
-                  className="flex-1 sm:flex-initial flex items-center justify-center gap-2 min-h-[44px] sm:min-h-[48px] h-11 sm:h-12 px-3.5 sm:px-4 py-2.5 sm:py-3 rounded-2xl bg-vendeur-emerald text-slate-950 font-black hover:bg-emerald-400 text-[11px] sm:text-xs uppercase tracking-wider transition-all shadow-lg shadow-vendeur-emerald/20 cursor-pointer active:scale-95 whitespace-nowrap"
-                >
-                  <Sparkles size={16} className="shrink-0" />
-                  <span>Mes Statuts du Jour</span>
-                </button>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5 sm:gap-4">
-              {tips.map((tip: any, i: number) => (
-                <Link
-                  key={i}
-                  to={tip.action || "#"}
-                  className="bg-white/80 dark:bg-black/40 backdrop-blur-md border border-slate-200 dark:border-white/5 p-4 sm:p-5 rounded-2xl text-xs sm:text-sm font-medium leading-relaxed hover:border-vendeur-emerald/40 hover:bg-white dark:hover:bg-black/60 transition-all active:scale-[0.98] text-slate-800 dark:text-white/90 shadow-sm"
-                >
-                  {tip.text || tip}
-                </Link>
-              ))}
-              {tips.length === 0 && (
-                 <div className="col-span-3 text-slate-500 dark:text-white/40 text-xs sm:text-sm italic">Analyse de votre business en cours...</div>
-              )}
-            </div>
-          </div>
-        </section>
       )}
 
       {/* 

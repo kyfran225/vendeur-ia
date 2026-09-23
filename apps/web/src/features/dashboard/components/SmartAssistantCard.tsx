@@ -67,6 +67,13 @@ export function SmartAssistantCard({ dashboard, onOpenTestIA, onOpenShare, onCon
   const diffTime = expirationDate ? expirationDate.getTime() - now.getTime() : 0;
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
+  const trialExpirationDate = subscription?.trialEndsAt ? new Date(subscription.trialEndsAt) : null;
+  const trialDiffTime = trialExpirationDate ? trialExpirationDate.getTime() - now.getTime() : 0;
+  const trialDaysRemaining = trialExpirationDate ? Math.max(0, Math.ceil(trialDiffTime / (1000 * 60 * 60 * 24))) : 7;
+  const messagesUsed = subscription?.trialUsage?.messagesCount ?? 0;
+  const maxMessages = subscription?.trialUsage?.maxMessages ?? 50;
+  const usagePercent = Math.min(100, Math.round((messagesUsed / maxMessages) * 100));
+
   const isExpired = subscription?.status === "past_due" || (isPaidActive && expirationDate !== null && diffDays <= 0);
   const isExpiringSoon = isPaidActive && expirationDate !== null && diffDays > 0 && diffDays <= 5;
   const isDiscoveryMode = !isPaidActive && !isExpired && !isUnderVerification;
@@ -185,7 +192,7 @@ export function SmartAssistantCard({ dashboard, onOpenTestIA, onOpenShare, onCon
       return {
         cardBg: "bg-amber-50/80 dark:bg-amber-500/10 border-amber-200 dark:border-amber-500/30 shadow-amber-500/5",
         badgeBg: "bg-amber-500/15 border-amber-500/30 text-amber-800 dark:text-amber-300",
-        badgeText: "Essai Gratuit 7 Jours",
+        badgeText: `Essai Gratuit Actif • ${trialDaysRemaining}j restant${trialDaysRemaining > 1 ? "s" : ""}`,
         iconBorder: "border-amber-500/30",
         accentText: "text-amber-600 dark:text-amber-400",
         accentGlow: "shadow-amber-500/10",
@@ -326,6 +333,24 @@ export function SmartAssistantCard({ dashboard, onOpenTestIA, onOpenShare, onCon
                   )
                 )}"
               </p>
+
+              {/* Guardrail Trial Usage Gauge */}
+              {isDiscoveryMode && (
+                <div className="flex items-center gap-3 pt-2.5 border-t border-slate-200/60 dark:border-white/5 mt-2">
+                  <div className="flex-1 h-2 bg-slate-200 dark:bg-white/10 rounded-full overflow-hidden">
+                    <div
+                      className={cn(
+                        "h-full rounded-full transition-all duration-500",
+                        usagePercent > 80 ? "bg-amber-500" : "bg-gradient-to-r from-emerald-500 to-teal-400"
+                      )}
+                      style={{ width: `${usagePercent}%` }}
+                    />
+                  </div>
+                  <span className="text-[10px] font-mono font-bold text-slate-500 dark:text-white/50 shrink-0">
+                    {messagesUsed}/{maxMessages} msgs ({usagePercent}%)
+                  </span>
+                </div>
+              )}
 
               {/* SINGLE UNIFIED PRIMARY ACTION BAR (Generous Heights, No Flattening) */}
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-1">

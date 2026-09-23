@@ -408,7 +408,7 @@ function HomePanel({
         Affiche en permanence l'état de l'essai gratuit (actif ou expiré), du mode pause,
         ou de l'expiration de l'abonnement payant. Coût API = 0 sur la landing.
       */}
-      {!isFounder && (
+      {!isFounder && !showAssistant && (
         <SubscriptionBanner
           status={subStatus}
           expiresAt={dashboard?.merchant?.subscription?.expiresAt}

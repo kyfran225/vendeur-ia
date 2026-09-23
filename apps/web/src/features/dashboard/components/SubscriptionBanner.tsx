@@ -106,15 +106,15 @@ export function SubscriptionBanner({
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2.5 w-full lg:w-auto shrink-0">
+          <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2 sm:gap-2.5 w-full lg:w-auto shrink-0">
             {onOpenTestIA && (
               <button
                 type="button"
                 onClick={onOpenTestIA}
-                className="h-11 px-4 rounded-xl bg-white dark:bg-white/10 hover:bg-slate-100 dark:hover:bg-white/15 border border-slate-200 dark:border-white/10 text-slate-800 dark:text-white font-bold uppercase text-[11px] tracking-wider transition-all flex items-center gap-1.5 cursor-pointer active:scale-95 whitespace-nowrap shadow-sm"
+                className="h-11 px-2.5 sm:px-4 rounded-xl bg-white dark:bg-white/10 hover:bg-slate-100 dark:hover:bg-white/15 border border-slate-200 dark:border-white/10 text-slate-800 dark:text-white font-bold uppercase text-[10px] sm:text-[11px] tracking-wider transition-all flex items-center justify-center gap-1 sm:gap-1.5 cursor-pointer active:scale-95 whitespace-nowrap shadow-sm w-full sm:w-auto"
               >
-                <Sparkles size={14} className="text-emerald-600 dark:text-emerald-400" />
-                <span>Tester mon Vendeur IA</span>
+                <Sparkles size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+                <span className="truncate">Tester mon Vendeur<span className="hidden xs:inline"> IA</span></span>
               </button>
             )}
 
@@ -122,18 +122,18 @@ export function SubscriptionBanner({
               <button
                 type="button"
                 onClick={onOpenOffers}
-                className="h-11 px-5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black uppercase text-[11px] tracking-wider transition-all shadow-lg shadow-emerald-500/20 flex items-center gap-2 active:scale-95 whitespace-nowrap cursor-pointer"
+                className="h-11 px-2.5 sm:px-5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black uppercase text-[10px] sm:text-[11px] tracking-wider transition-all shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-1 sm:gap-2 active:scale-95 whitespace-nowrap cursor-pointer w-full sm:w-auto"
               >
-                <span>Choisir mon Forfait</span>
-                <ArrowRight size={14} />
+                <span className="truncate">Choisir mon Forfait</span>
+                <ArrowRight size={14} className="shrink-0" />
               </button>
             ) : (
               <Link
                 to="/settings?tab=billing"
-                className="h-11 px-5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black uppercase text-[11px] tracking-wider transition-all shadow-lg shadow-emerald-500/20 flex items-center gap-2 active:scale-95 whitespace-nowrap"
+                className="h-11 px-2.5 sm:px-5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black uppercase text-[10px] sm:text-[11px] tracking-wider transition-all shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-1 sm:gap-2 active:scale-95 whitespace-nowrap w-full sm:w-auto"
               >
-                <span>Choisir mon Forfait</span>
-                <ArrowRight size={14} />
+                <span className="truncate">Choisir mon Forfait</span>
+                <ArrowRight size={14} className="shrink-0" />
               </Link>
             )}
           </div>

@@ -25,6 +25,26 @@ import { generatePhoneVariants, isFounderNumber } from "../auth/auth.service.js"
 import { parsePhoneNumber, formatToWhatsAppRecipient } from "@vendeur-ia/core";
 import { storageService } from "../../services/storage.service.js";
 
+let cachedBaileysVersion: { version: [number, number, number]; isLatest: boolean } | null = null;
+let lastVersionFetchTime = 0;
+
+async function getBaileysVersion() {
+  const now = Date.now();
+  if (cachedBaileysVersion && (now - lastVersionFetchTime < 24 * 60 * 60 * 1000)) {
+    return cachedBaileysVersion;
+  }
+  try {
+    const res = await fetchLatestBaileysVersion();
+    cachedBaileysVersion = res;
+    lastVersionFetchTime = now;
+    return res;
+  } catch (err) {
+    console.warn("[WhatsApp] Failed to fetch latest Baileys version, using cached/fallback version:", err);
+    if (cachedBaileysVersion) return cachedBaileysVersion;
+    return { version: [2, 3000, 1017531287] as [number, number, number], isLatest: true };
+  }
+}
+
 class WhatsAppService {
   private activeSessions: Map<string, any> = new Map();
   private pendingInitializations: Map<string, Promise<void>> = new Map();
@@ -192,37 +212,24 @@ class WhatsAppService {
 
     console.log(`[WhatsApp Connection Close] User: ${userId}, StatusCode: ${statusCode}, Error: ${errMessage}`);
 
-    // Codes and messages that indicate an absolute unlinking / logged out / auth failure / banned / rejected / replaced
-    const isLoggedOut = statusCode === DisconnectReason.loggedOut 
-      || statusCode === 401 
-      || /logged\s*out/i.test(errMessage) 
-      || /device\s*unlinked/i.test(errMessage)
-      || /device\s*removed/i.test(errMessage);
-
-    const isBadSession = statusCode === DisconnectReason.badSession 
-      || statusCode === 500 
-      || /bad\s*session/i.test(errMessage);
-
-    const isReplaced = statusCode === DisconnectReason.connectionReplaced 
-      || statusCode === 440 
-      || /replaced|conflict/i.test(errMessage);
-
-    const isAuthFailure = statusCode === 401 
-      || statusCode === 403 
-      || statusCode === DisconnectReason.forbidden 
-      || /connection failure|unauthorized|forbidden/i.test(errMessage);
-
     // Clean in-memory session maps
     this.activeSessions.delete(userId);
     this.pendingInitializations.delete(userId);
     this.lastPairingCodeMap.delete(userId);
     this.lastQrMap.delete(userId);
 
-    if (isLoggedOut || isBadSession || isAuthFailure || isReplaced) {
-      console.warn(`[WhatsApp Security] Session fermée ou rejetée par WhatsApp pour ${userId} (Code ${statusCode}, Error: ${errMessage}). Arrêt immédiat des reconnexions.`);
+    // 1. Explicit Logged Out from Phone or Unlinked Device
+    const isLoggedOut = statusCode === DisconnectReason.loggedOut
+      || statusCode === 401
+      || /logged\s*out/i.test(errMessage)
+      || /device\s*unlinked/i.test(errMessage)
+      || /device\s*removed/i.test(errMessage);
+
+    if (isLoggedOut) {
+      console.warn(`[WhatsApp Security] Session déconnectée depuis le téléphone pour ${userId} (Code ${statusCode}). Arrêt des reconnexions.`);
       this.reconnectAttempts.delete(userId);
 
-      // Clear invalid MongoDB session state to prevent retry loops on reboot
+      // ONLY clear Mongo auth state when explicitly logged out by user on phone!
       await clearMongoAuthState(userId);
 
       await CommerceMerchantModel.findOneAndUpdate(
@@ -242,28 +249,16 @@ class WhatsAppService {
           $set: {
             status: 'DISCONNECTED',
             disconnectedAt: new Date(),
-            lastError: isLoggedOut 
-              ? "Session déconnectée depuis le téléphone" 
-              : isReplaced
-              ? "Session remplacée sur un autre appareil"
-              : isAuthFailure 
-              ? "Session refusée par WhatsApp (Appareil dissocié ou expiré)" 
-              : "Session expirée ou invalide"
+            lastError: "Session déconnectée depuis le téléphone"
           }
         },
         { upsert: true }
       );
 
       const payload = {
-        reason: isLoggedOut ? "logged_out" : isReplaced ? "replaced" : isAuthFailure ? "auth_rejected" : "bad_session",
+        reason: "logged_out",
         statusCode,
-        message: isLoggedOut 
-          ? "Votre session WhatsApp a été déconnectée depuis votre téléphone." 
-          : isReplaced
-          ? "Session WhatsApp remplacée ou connectée sur un autre appareil."
-          : isAuthFailure
-          ? "La session WhatsApp a expiré ou été dissociée. Veuillez reconnecter votre appareil."
-          : "Session WhatsApp expirée.",
+        message: "Votre session WhatsApp a été déconnectée depuis votre téléphone.",
         shouldReconnect: false
       };
 
@@ -272,59 +267,57 @@ class WhatsAppService {
       return;
     }
 
-    // For transient network disconnects (connectionClosed, connectionLost, timedOut, restartRequired, etc.):
-    if (userId.startsWith("auth_") || userId.startsWith("temp_")) {
-      console.log(`[WhatsApp] handleConnectionClose called for temporary onboarding session ${userId} - delegating to onboarding socket.`);
+    // 2. Connection Replaced / Conflict (Code 440)
+    // Occurs when another process/instance connects for the same user (e.g. during Render deployment).
+    // DO NOT clear Mongo auth state! Just stop this socket from reconnecting.
+    const isReplaced = statusCode === DisconnectReason.connectionReplaced
+      || statusCode === 440
+      || /replaced|conflict/i.test(errMessage);
+
+    if (isReplaced) {
+      console.warn(`[WhatsApp] Session remplacée sur un autre processus/appareil pour ${userId} (Code ${statusCode}). Arrêt de la socket sans effacer la session Mongo.`);
+      this.reconnectAttempts.delete(userId);
       return;
     }
 
+    // 3. Stream Restart Required (Code 515)
+    // Fast reconnect signal from WhatsApp. Do not increment reconnectAttempts or apply long delays.
+    const isRestartRequired = statusCode === DisconnectReason.restartRequired || statusCode === 515;
+    if (isRestartRequired) {
+      console.log(`[WhatsApp] Stream restart required pour ${userId} (Code 515). Reconnexion immédiate...`);
+      setTimeout(() => {
+        this.initSession(userId).catch(err => {
+          console.warn(`[WhatsApp] Stream restart failed pour ${userId}:`, err?.message || err);
+        });
+      }, 500);
+      return;
+    }
+
+    // 4. Temporary Disconnects for Onboarding
+    if (userId.startsWith("auth_") || userId.startsWith("temp_")) {
+      console.log(`[WhatsApp] Temporary onboarding session ${userId} closed.`);
+      return;
+    }
+
+    // 5. Transient Network Disconnects (408, 428, 500, 502, 503, network drop)
     const currentAttempts = (this.reconnectAttempts.get(userId) || 0) + 1;
     this.reconnectAttempts.set(userId, currentAttempts);
-    this.activeSessions.delete(userId);
-    this.pendingInitializations.delete(userId);
 
-    // If transient reconnect failed more than 5 times consecutively, stop hammering and notify UI
-    if (currentAttempts > 5) {
-      console.warn(`[WhatsApp] Max auto-reconnect attempts reached (${currentAttempts}) for ${userId}. Passage en statut disconnected.`);
-      this.reconnectAttempts.delete(userId);
+    // If transient reconnect failed more than 10 times consecutively, switch to slow background retry (60s)
+    if (currentAttempts > 10) {
+      console.warn(`[WhatsApp] Reconnexions fréquentes pour ${userId} (${currentAttempts} tentatives). Mode reconnexion lente (toutes les 60s)...`);
+      emitToUser(userId, "whatsapp:connecting", { attempt: currentAttempts });
 
-      await CommerceMerchantModel.findOneAndUpdate(
-        { ownerId: userId },
-        { 
-          $set: { 
-            "whatsappConfig.status": "disconnected", 
-            "whatsappConfig.disconnectedAt": new Date(),
-            "whatsappConfig.reconnectAttempts": currentAttempts 
-          } 
-        }
-      );
-
-      await WhatsAppConnectionModel.findOneAndUpdate(
-        { userId },
-        {
-          $set: {
-            status: 'DISCONNECTED',
-            disconnectedAt: new Date(),
-            lastError: `Échec de reconnexion après ${currentAttempts} tentatives (${errMessage || "Délai réseau dépassé"})`
-          }
-        },
-        { upsert: true }
-      );
-
-      const payload = {
-        reason: "connection_lost",
-        statusCode,
-        message: "Impossible de rétablir la connexion WhatsApp après plusieurs tentatives.",
-        shouldReconnect: false
-      };
-
-      emitToUser(userId, "whatsapp:disconnected", payload);
-      emitToSession(userId, "whatsapp:disconnected", payload);
+      setTimeout(() => {
+        this.initSession(userId).catch(err => {
+          console.warn(`[WhatsApp] Slow auto-reconnect attempt for ${userId}:`, err?.message || err);
+        });
+      }, 60000);
       return;
     }
 
-    const backoffDelay = Math.min(2000 * Math.pow(1.5, currentAttempts - 1), 15000);
-    console.log(`[WhatsApp] Déconnexion transitoire pour ${userId} (Code ${statusCode}, Error: ${errMessage}, Tentative ${currentAttempts}/5). Reconnexion dans ${backoffDelay}ms...`);
+    const backoffDelay = Math.min(2000 * Math.pow(1.5, currentAttempts - 1), 20000);
+    console.log(`[WhatsApp] Déconnexion transitoire pour ${userId} (Code ${statusCode}, Error: ${errMessage}, Tentative ${currentAttempts}/10). Reconnexion dans ${backoffDelay}ms...`);
     
     emitToUser(userId, "whatsapp:connecting", { attempt: currentAttempts });
 
@@ -345,11 +338,16 @@ class WhatsAppService {
       generateHighQualityLinkPreview: false,
       markOnlineOnConnect: false,
       qrTimeout: 240000,
-      connectTimeoutMs: 120000,
-      defaultQueryTimeoutMs: 120000,
-      keepAliveIntervalMs: 30000,
+      connectTimeoutMs: 60000,
+      defaultQueryTimeoutMs: 60000,
+      keepAliveIntervalMs: 15000, // 15s interval keeps Render proxy / Envoy WebSocket connection alive
       retryRequestDelayMs: 500,
-      maxMsgRetryCount: 3,
+      maxMsgRetryCount: 5,
+      options: {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+        }
+      },
       shouldIgnoreJid: (jid: string) => jid.includes('@broadcast') || jid.includes('@newsletter') || jid.endsWith('@g.us'),
       getMessage: async (key) => {
         if (key.id) {
@@ -387,7 +385,7 @@ class WhatsAppService {
     const initPromise = (async () => {
       try {
         const { state, saveCreds } = await useMongoAuthState(userId);
-        const { version } = await fetchLatestBaileysVersion();
+        const { version } = await getBaileysVersion();
 
         const sock = this.createBaileysSocket(state, version);
 
@@ -529,7 +527,7 @@ class WhatsAppService {
     await clearMongoAuthState(userId);
 
     const { state, saveCreds } = await useMongoAuthState(userId);
-    const { version } = await fetchLatestBaileysVersion();
+    const { version } = await getBaileysVersion();
 
     const sock = this.createBaileysSocket(state, version);
 
@@ -637,7 +635,7 @@ class WhatsAppService {
     await clearMongoAuthState(userId);
 
     const { state, saveCreds } = await useMongoAuthState(userId);
-    const { version } = await fetchLatestBaileysVersion();
+    const { version } = await getBaileysVersion();
 
     const sock = this.createBaileysSocket(state, version);
 
@@ -751,7 +749,7 @@ class WhatsAppService {
     storeData?: any
   ): Promise<any> {
     const { state, saveCreds, updateSessionId } = await useMongoAuthState(authSessionId);
-    const { version } = await fetchLatestBaileysVersion();
+    const { version } = await getBaileysVersion();
 
     let currentOwnerId: string = authSessionId;
 

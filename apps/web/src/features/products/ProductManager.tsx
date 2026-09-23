@@ -643,9 +643,9 @@ export function ProductManager() {
         type="danger"
       />
 
-      {/* Edit / Add Form Modal - Ultra-sleek 2-Column Desktop Experience */}
+      {/* Edit / Add Form Modal - Ultra-sleek 2-Column Desktop & Thumb-Friendly Mobile Experience */}
       {(editingProduct || isAddingManual) && (
-        <div className="fixed inset-0 z-[150] flex items-center justify-center p-3 sm:p-6 overflow-y-auto overscroll-contain animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-[150] flex items-end sm:items-center justify-center p-0 sm:p-6 overflow-hidden animate-in fade-in duration-200">
           <div 
             className="fixed inset-0 bg-slate-950/60 dark:bg-black/80 backdrop-blur-md transition-opacity" 
             onClick={() => { setEditingProduct(null); setIsAddingManual(false); }} 
@@ -653,7 +653,7 @@ export function ProductManager() {
           
           <form
             onSubmit={editingProduct ? handleUpdate : handleManualCreate}
-            className="relative w-full max-w-4xl bg-slate-50 dark:bg-[#0c1612] border border-slate-200/90 dark:border-white/10 rounded-3xl sm:rounded-[2.5rem] shadow-2xl dark:shadow-[0_25px_80px_rgba(0,0,0,0.85)] flex flex-col max-h-[92vh] overflow-hidden my-auto animate-in zoom-in-95 duration-200 text-slate-900 dark:text-white"
+            className="relative w-full max-w-4xl bg-slate-50 dark:bg-[#0c1612] border border-slate-200/90 dark:border-white/10 rounded-t-3xl sm:rounded-[2.5rem] shadow-2xl dark:shadow-[0_25px_80px_rgba(0,0,0,0.85)] flex flex-col max-h-[85dvh] sm:max-h-[92vh] mb-16 sm:mb-0 overflow-hidden my-0 sm:my-auto text-slate-900 dark:text-white"
           >
             {/* Modal Header */}
             <div className="px-5 py-4 sm:px-8 sm:py-5 border-b border-slate-200 dark:border-white/5 bg-slate-50 dark:bg-white/[0.02] flex items-center justify-between shrink-0">
@@ -988,7 +988,7 @@ export function ProductManager() {
             </div>
 
             {/* Modal Footer Actions */}
-            <div className="px-5 py-4 sm:px-8 sm:py-5 border-t border-slate-200 dark:border-white/5 bg-slate-50 dark:bg-black/40 flex items-center justify-between gap-4 shrink-0">
+            <div className="px-5 py-3.5 sm:px-8 sm:py-5 border-t border-slate-200 dark:border-white/5 bg-slate-50 dark:bg-black/40 flex items-center justify-between gap-4 shrink-0 sticky bottom-0 z-10 pb-safe sm:pb-5">
               <button
                 type="button"
                 onClick={() => { setEditingProduct(null); setIsAddingManual(false); }}

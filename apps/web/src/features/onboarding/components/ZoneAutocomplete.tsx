@@ -137,6 +137,14 @@ export function ZoneAutocomplete({
           const mapboxSuggestions = response?.suggestions || [];
           for (const item of mapboxSuggestions) {
             const name = item.name || "";
+            const lowerName = name.toLowerCase();
+            const lowerQuery = newValue.toLowerCase().trim();
+
+            const isCountry = lowerName === "côte d'ivoire" || lowerName === "cote d'ivoire" || lowerName === "sénégal" || lowerName === "senegal" || lowerName === "bénin" || lowerName === "benin";
+            if (isCountry && !lowerQuery.includes("cote") && !lowerQuery.includes("côte") && !lowerQuery.includes("ivoire") && !lowerQuery.includes("senegal") && !lowerQuery.includes("benin")) {
+              continue;
+            }
+
             const exists = unified.some(u => u.name.toLowerCase() === name.toLowerCase());
             if (!exists) {
               unified.push({

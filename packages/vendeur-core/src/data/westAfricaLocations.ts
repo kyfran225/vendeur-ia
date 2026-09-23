@@ -1,7 +1,7 @@
 export interface AfricanLocation {
   id: string;
   name: string;
-  type: 'neighborhood' | 'commune' | 'city' | 'landmark' | 'street';
+  type: 'neighborhood' | 'commune' | 'city' | 'landmark' | 'street' | 'country';
   commune?: string;
   city: string;
   countryCode: string;
@@ -12,6 +12,142 @@ export interface AfricanLocation {
 }
 
 export const WEST_AND_CENTRAL_AFRICA_LOCATIONS: AfricanLocation[] = [
+  // =========================================================================
+  // 0. CAPITALES & VILLES PRINCIPALES D'AFRIQUE DE L'OUEST ET DU CENTRE
+  // =========================================================================
+  {
+    id: "ci-abidjan-city",
+    name: "Abidjan",
+    type: "city",
+    city: "Abidjan",
+    countryCode: "CI",
+    countryName: "Côte d'Ivoire",
+    formattedAddress: "Abidjan",
+    aliases: ["abidjan", "ville d'abidjan", "district d'abidjan", "abi"],
+    coordinates: [-4.0083, 5.3599]
+  },
+  {
+    id: "ci-yamoussoukro-city",
+    name: "Yamoussoukro",
+    type: "city",
+    city: "Yamoussoukro",
+    countryCode: "CI",
+    countryName: "Côte d'Ivoire",
+    formattedAddress: "Yamoussoukro",
+    aliases: ["yamoussoukro", "yakro"],
+    coordinates: [-5.2767, 6.8276]
+  },
+  {
+    id: "ci-bouake-city",
+    name: "Bouaké",
+    type: "city",
+    city: "Bouaké",
+    countryCode: "CI",
+    countryName: "Côte d'Ivoire",
+    formattedAddress: "Bouaké",
+    aliases: ["bouake", "gbeke"],
+    coordinates: [-5.0303, 7.6939]
+  },
+  {
+    id: "ci-san-pedro-city",
+    name: "San-Pédro",
+    type: "city",
+    city: "San-Pédro",
+    countryCode: "CI",
+    countryName: "Côte d'Ivoire",
+    formattedAddress: "San-Pédro",
+    aliases: ["san pedro", "san-pedro"],
+    coordinates: [-6.6364, 4.7485]
+  },
+  {
+    id: "ci-korhogo-city",
+    name: "Korhogo",
+    type: "city",
+    city: "Korhogo",
+    countryCode: "CI",
+    countryName: "Côte d'Ivoire",
+    formattedAddress: "Korhogo",
+    aliases: ["korhogo"],
+    coordinates: [-5.6297, 9.4580]
+  },
+  {
+    id: "sn-dakar-city",
+    name: "Dakar",
+    type: "city",
+    city: "Dakar",
+    countryCode: "SN",
+    countryName: "Sénégal",
+    formattedAddress: "Dakar",
+    aliases: ["dakar", "ville de dakar"],
+    coordinates: [-17.4441, 14.6937]
+  },
+  {
+    id: "bj-cotonou-city",
+    name: "Cotonou",
+    type: "city",
+    city: "Cotonou",
+    countryCode: "BJ",
+    countryName: "Bénin",
+    formattedAddress: "Cotonou",
+    aliases: ["cotonou"],
+    coordinates: [2.4183, 6.3654]
+  },
+  {
+    id: "tg-lome-city",
+    name: "Lomé",
+    type: "city",
+    city: "Lomé",
+    countryCode: "TG",
+    countryName: "Togo",
+    formattedAddress: "Lomé",
+    aliases: ["lome"],
+    coordinates: [1.2222, 6.1375]
+  },
+  {
+    id: "bf-ouaga-city",
+    name: "Ouagadougou",
+    type: "city",
+    city: "Ouagadougou",
+    countryCode: "BF",
+    countryName: "Burkina Faso",
+    formattedAddress: "Ouagadougou",
+    aliases: ["ouagadougou", "ouaga"],
+    coordinates: [-1.5197, 12.3714]
+  },
+  {
+    id: "ml-bamako-city",
+    name: "Bamako",
+    type: "city",
+    city: "Bamako",
+    countryCode: "ML",
+    countryName: "Mali",
+    formattedAddress: "Bamako",
+    aliases: ["bamako"],
+    coordinates: [-8.0029, 12.6392]
+  },
+  {
+    id: "cm-douala-city",
+    name: "Douala",
+    type: "city",
+    city: "Douala",
+    countryCode: "CM",
+    countryName: "Cameroun",
+    formattedAddress: "Douala",
+    aliases: ["douala"],
+    coordinates: [9.7085, 4.0511]
+  },
+  {
+    id: "cm-yaounde-city",
+    name: "Yaoundé",
+    type: "city",
+    city: "Yaoundé",
+    countryCode: "CM",
+    countryName: "Cameroun",
+    formattedAddress: "Yaoundé",
+    aliases: ["yaounde"],
+    coordinates: [11.5186, 3.8480]
+  },
+
   // =========================================================================
   // 1. CÔTE D'IVOIRE (CI) - ABIDJAN & INTERIOR
   // =========================================================================

@@ -54,6 +54,7 @@ export function MagicLoginPage() {
         });
 
         setSession(res.data);
+        useAuthStore.getState().updateUser({ onboardingCompleted: true });
         const loggedUser = res.data?.user;
         const rawPhone = (loggedUser?.whatsappNumber || "").replace(/\D/g, "");
         const rawEmail = (loggedUser?.email || "").toLowerCase();

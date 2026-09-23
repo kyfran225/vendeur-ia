@@ -257,12 +257,12 @@ export class AuthService {
         authProvider: "whatsapp",
         displayName: isFounder ? founderDisplayName : (displayName?.trim() || `Commerçant WhatsApp (${canonicalPhone.slice(-4)})`),
         roles: isFounder ? ["user", "admin", "creator"] : ["user"],
-        onboardingCompleted: isFounder ? true : Boolean(displayName && displayName !== "Votre boutique" && !displayName.startsWith("Commerçant WhatsApp"))
+        onboardingCompleted: true
       });
     } else {
+      user.onboardingCompleted = true;
       if (isFounder) {
         user.roles = ["user", "admin", "creator"];
-        user.onboardingCompleted = true;
         if (!user.displayName || user.displayName.startsWith("Commerçant")) {
           user.displayName = founderDisplayName;
         }
@@ -1182,25 +1182,22 @@ export class AuthService {
         googleId: payload.sub,
         displayName: payload.name || "Utilisateur Google",
         avatarUrl: payload.picture,
-        onboardingCompleted: false,
+        onboardingCompleted: true,
         emailVerifiedAt: new Date(), // Google emails are considered verified
       });
     } else {
-      // Sync Google info if not already present
-      let changed = false;
+      user.onboardingCompleted = true;
+      let changed = true;
       if (!user.googleId) {
         user.googleId = payload.sub;
-        changed = true;
       }
       if (!user.avatarUrl && payload.picture) {
         user.avatarUrl = payload.picture;
-        changed = true;
       }
       if (!user.emailVerifiedAt) {
         user.emailVerifiedAt = new Date();
-        changed = true;
       }
-      if (changed) await user.save();
+      await user.save();
     }
 
     return this.generateTokens(user);

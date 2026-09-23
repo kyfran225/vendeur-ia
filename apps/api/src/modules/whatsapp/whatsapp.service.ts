@@ -807,7 +807,7 @@ class WhatsAppService {
           this.activeSessions.delete(authSessionId);
           this.activeSessions.set(userId, sock);
 
-          // 5. Initialize or update Commerce Merchant profile
+          // 5. Initialize or update Commerce Merchant profile & mark onboarding complete
           await CommerceMerchantModel.findOneAndUpdate(
             { ownerId: userId },
             {
@@ -816,6 +816,7 @@ class WhatsAppService {
                 "whatsappConfig.provider": "baileys",
                 "whatsappConfig.reconnectAttempts": 0,
                 whatsappNumber: pairedPhone,
+                onboardingCompleted: true,
                 ...(storeData?.businessName ? {
                   businessName: storeData.businessName,
                   category: storeData.category || "other",
@@ -823,13 +824,14 @@ class WhatsAppService {
                   city: storeData.city || "",
                   address: storeData.address || "",
                   country: storeData.country || "CI",
-                  currency: storeData.currency || "XOF",
-                  onboardingCompleted: true
+                  currency: storeData.currency || "XOF"
                 } : {})
               }
             },
             { upsert: true, new: true }
           );
+
+          await UserModel.findByIdAndUpdate(userId, { onboardingCompleted: true });
 
           await WhatsAppConnectionModel.findOneAndUpdate(
             { userId },
@@ -844,6 +846,11 @@ class WhatsAppService {
             },
             { upsert: true }
           );
+
+          // Guarantee sessionData has onboardingCompleted set to true
+          if (sessionData && sessionData.user) {
+            sessionData.user.onboardingCompleted = true;
+          }
 
           // 6. Register authenticated session so polling & sockets both catch it
           authService.registerAuthenticatedSession(authSessionId, pairedPhone, sessionData);

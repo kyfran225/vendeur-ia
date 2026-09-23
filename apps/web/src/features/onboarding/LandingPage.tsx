@@ -548,11 +548,11 @@ function LandingHero({
         <div className="absolute -bottom-6 -left-6 w-48 sm:w-60 h-48 sm:h-60 bg-teal-500/15 dark:bg-cyan-500/10 blur-[60px] rounded-full pointer-events-none" />
 
         <FadeIn delay={0.4} direction="right" className="w-full flex justify-center">
-          <div className="relative group w-[270px] xs:w-[290px] sm:w-[310px] lg:w-[295px] xl:w-[315px] mx-auto">
+          <div className="relative group w-[320px] xs:w-[350px] sm:w-[370px] lg:w-[305px] xl:w-[325px] max-w-[92vw] mx-auto">
 
-            {/* Clean & Compact Video Stage - 100% Crisp on Mobile and Desktop */}
+            {/* Clean & Compact Video Stage - Enlarged Display on Mobile */}
             <div
-              className="relative w-full aspect-[9/16] rounded-xl sm:rounded-2xl overflow-hidden bg-slate-100 dark:bg-[#07100d] border border-slate-200/90 dark:border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.12)] dark:shadow-[0_25px_60px_rgba(0,0,0,0.7)] group"
+              className="relative w-full aspect-[9/16] rounded-2xl sm:rounded-3xl overflow-hidden bg-slate-100 dark:bg-[#07100d] border border-slate-200/90 dark:border-white/10 shadow-[0_25px_60px_rgba(0,0,0,0.18)] dark:shadow-[0_30px_70px_rgba(0,0,0,0.8)] group ring-1 ring-black/5 dark:ring-white/10"
             >
               {/* Minimalist Glass Audio Button (Top Right) */}
               <button
@@ -740,18 +740,8 @@ export function LandingPage() {
     if (user) {
       if (isMasterAdmin) {
         navigate("/admin", { replace: true });
-        return;
-      }
-      if (user.onboardingCompleted) {
-        navigate("/dashboard");
       } else {
-        const el = document.getElementById("demo-card");
-        if (el) {
-          el.scrollIntoView({ behavior: "smooth", block: "center" });
-          setTimeout(() => {
-            document.getElementById("business-name-input")?.focus();
-          }, 600);
-        }
+        navigate("/dashboard", { replace: true });
       }
     }
   }, [user, isMasterAdmin, navigate]);

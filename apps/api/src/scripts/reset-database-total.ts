@@ -188,7 +188,7 @@ async function resetDatabase(uri: string, dbName: string) {
             name: "openrouter",
             apiKey: OPENROUTER_API_KEY,
             isActive: true,
-            models: { text: "meta-llama/llama-3.3-70b-instruct", vision: "", audio: "" }
+            models: { text: "openrouter/free", vision: "", audio: "" }
           },
           {
             name: "elevenlabs",

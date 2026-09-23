@@ -304,9 +304,9 @@ export class AIProvider {
     // Ultra-reliable Defaults
     switch (providerName) {
       case 'gemini': return GEMINI_DEFAULT_TEXT_MODEL;
-      case 'groq': return 'llama-3.3-70b-versatile';
+      case 'groq': return 'openai/gpt-oss-120b';
       case 'openai': return type === 'audio' ? 'whisper-1' : 'gpt-4o-mini';
-      case 'openrouter': return 'meta-llama/llama-3.3-70b-instruct';
+      case 'openrouter': return 'openrouter/free';
       case 'elevenlabs': return 'eleven_multilingual_v2';
       default: return "";
     }
@@ -590,11 +590,12 @@ export class AIProvider {
 
     const messages = normalizeMessagesForOpenAI(systemPrompt, request.history, request.userMessage);
 
-    const defaultGroqModel = model && model.trim() ? model : "llama-3.3-70b-versatile";
+    const defaultGroqModel = model && model.trim() && !model.includes("llama-3") ? model : "openai/gpt-oss-120b";
     const modelsToTry = [
       defaultGroqModel,
-      "llama-3.3-70b-versatile",
-      "llama-3.1-8b-instant"
+      "openai/gpt-oss-120b",
+      "openai/gpt-oss-20b",
+      "qwen/qwen3.8-27b"
     ].filter((m, i, arr) => arr.indexOf(m) === i && !!m);
 
     let lastError: any;

@@ -19,7 +19,6 @@ import { apiClient } from "@/lib/apiClient";
 import { toast } from "sonner";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
-import * as Portal from "@radix-ui/react-portal";
 import { stripActionTags } from "@/lib/utils";
 import { WhatsAppTypingIndicator } from "@/components/ui/WhatsAppTypingIndicator";
 import { AssistantIcon } from "@/components/ui/AssistantIcon";
@@ -154,9 +153,8 @@ export function VendeurIAPlaygroundModal({ isOpen, onClose, merchant }: VendeurI
   if (!isOpen) return null;
 
   return (
-    <Portal.Root>
-      <AnimatePresence>
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-0 sm:p-4 bg-black/40 dark:bg-black/80 backdrop-blur-md animate-in fade-in duration-300">
+    <AnimatePresence>
+      <div className="fixed inset-0 z-[75] flex items-center justify-center p-0 sm:p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-300">
         <motion.div
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -343,6 +341,5 @@ export function VendeurIAPlaygroundModal({ isOpen, onClose, merchant }: VendeurI
         </motion.div>
       </div>
     </AnimatePresence>
-    </Portal.Root>
   );
 }

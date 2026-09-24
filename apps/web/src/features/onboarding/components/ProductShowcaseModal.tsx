@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import * as Portal from "@radix-ui/react-portal";
 import {
   Eye,
   Megaphone,
@@ -136,17 +135,16 @@ export function ProductShowcaseModal({
   if (!isOpen) return null;
 
   return (
-    <Portal.Root>
-      <AnimatePresence>
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-2 sm:p-4 md:p-6 overflow-y-auto">
-          {/* Backdrop */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={onClose}
-            className="fixed inset-0 bg-black/40 dark:bg-black/80 backdrop-blur-md transition-all"
-          />
+    <AnimatePresence>
+      <div className="fixed inset-0 z-[200] flex items-center justify-center p-2 sm:p-4 md:p-6 overflow-y-auto">
+        {/* Backdrop */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          onClick={onClose}
+          className="fixed inset-0 bg-black/80 backdrop-blur-xl transition-all"
+        />
 
         {/* Modal Window */}
         <motion.div
@@ -966,9 +964,9 @@ $order = $vendeur->orders->createFromWhatsApp([
                       onClose();
                       onLaunchDemo?.();
                     }}
-                    className="h-11 sm:h-12 px-5 sm:px-6 rounded-xl sm:rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black uppercase text-xs tracking-wider hover:scale-105 active:scale-95 transition-all shadow-xl flex items-center justify-center gap-2 shrink-0 cursor-pointer w-full md:w-auto text-center"
+                    className="h-11 sm:h-12 px-5 sm:px-6 rounded-xl sm:rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black uppercase text-xs tracking-wider hover:scale-105 active:scale-95 transition-all shadow-xl flex items-center justify-center gap-2 shrink-0 cursor-pointer w-full md:w-auto"
                   >
-                    <span>Essai Gratuit 7 Jours</span> <ArrowRight size={16} />
+                    Démarrer mon essai gratuit (7 jours) <ArrowRight size={16} />
                   </button>
                 </div>
 
@@ -1043,10 +1041,10 @@ $order = $vendeur->orders->createFromWhatsApp([
               <span className="text-[11px] sm:text-xs">Essai gratuit 7 jours • Sans carte de crédit requise • Prêt en 2 minutes</span>
             </div>
 
-            <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-3 w-full sm:w-auto">
+            <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
               <button
                 onClick={onClose}
-                className="w-full sm:w-auto h-10 sm:h-11 px-4 sm:px-5 rounded-xl border border-slate-300 dark:border-white/10 hover:bg-slate-200 dark:hover:bg-white/5 text-slate-700 hover:text-slate-950 dark:text-white/70 dark:hover:text-white text-xs font-black uppercase tracking-wider transition-all cursor-pointer order-2 sm:order-1"
+                className="flex-1 sm:flex-none h-10 sm:h-11 px-4 sm:px-5 rounded-xl border border-slate-300 dark:border-white/10 hover:bg-slate-200 dark:hover:bg-white/5 text-slate-700 hover:text-slate-950 dark:text-white/70 dark:hover:text-white text-xs font-black uppercase tracking-wider transition-all cursor-pointer"
               >
                 Fermer
               </button>
@@ -1055,15 +1053,14 @@ $order = $vendeur->orders->createFromWhatsApp([
                   onClose();
                   onLaunchDemo?.();
                 }}
-                className="w-full sm:w-auto h-11 px-5 sm:px-6 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-black uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-[0_10px_30px_rgba(16,185,129,0.3)] flex items-center justify-center gap-2 cursor-pointer order-1 sm:order-2 text-center"
+                className="flex-1 sm:flex-none h-10 sm:h-11 px-5 sm:px-6 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-black uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-[0_10px_30px_rgba(16,185,129,0.3)] flex items-center justify-center gap-2 cursor-pointer"
               >
-                <span>Essai Gratuit 7 Jours</span> <ArrowRight size={14} />
+                Démarrer mon essai gratuit (7 jours) <ArrowRight size={14} />
               </button>
             </div>
           </div>
         </motion.div>
       </div>
     </AnimatePresence>
-    </Portal.Root>
   );
 }

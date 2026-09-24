@@ -22,7 +22,6 @@ import { toast } from "sonner";
 import { getShopTheme, type ShopTheme } from "../lib/theme";
 import { cn } from "@/lib/utils";
 import { AddressAutocomplete } from "@/features/onboarding/components/AddressAutocomplete";
-import * as Portal from "@radix-ui/react-portal";
 
 export interface CartItem {
   product: any;
@@ -157,8 +156,7 @@ export function CartDrawer({
   if (!isOpen) return null;
 
   return (
-    <Portal.Root>
-      <div className="fixed inset-0 z-[200] flex justify-end bg-black/40 dark:bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-[110] flex justify-end bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
       <div className="relative w-full max-w-lg bg-white dark:bg-[#0d1f18] text-slate-900 dark:text-white h-full flex flex-col justify-between border-l border-slate-200 dark:border-white/10 shadow-2xl animate-in slide-in-from-right duration-300">
         
         {/* Header */}
@@ -507,6 +505,5 @@ export function CartDrawer({
         )}
       </div>
     </div>
-    </Portal.Root>
   );
 }

@@ -36,9 +36,7 @@ import {
   Moon,
   Eye,
   ZoomIn,
-  Maximize2,
-  ChevronLeft,
-  ChevronRight
+  Maximize2
 } from "lucide-react";
 import { getShopTheme, type ShopTheme } from "./lib/theme";
 
@@ -256,7 +254,6 @@ export function PublicShop() {
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedProduct, setSelectedProduct] = useState<any | null>(null);
-  const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [zoomedProduct, setZoomedProduct] = useState<any | null>(null);
   
   // New State additions for Interactive Shopping & Story Engine
@@ -981,98 +978,30 @@ export function PublicShop() {
               <X size={18} />
             </button>
 
-            {/* Product Image / Gallery Container */}
-            <div className="w-full md:w-1/2 min-h-[280px] sm:min-h-[360px] md:min-h-[460px] bg-slate-100/70 dark:bg-black/50 shrink-0 flex flex-col items-center justify-between p-3 sm:p-5 md:p-6 overflow-hidden relative border-b md:border-b-0 md:border-r border-slate-200/80 dark:border-white/10 group/img">
-              {(() => {
-                const productImages: string[] = selectedProduct.images && selectedProduct.images.length > 0
-                  ? selectedProduct.images
-                  : (selectedProduct.imageUrl ? [selectedProduct.imageUrl] : []);
-
-                const currentImg = productImages[activeImageIndex] || productImages[0];
-
-                if (!currentImg) {
-                  return (
-                    <div className="w-full h-full flex items-center justify-center opacity-20">
-                      {getCategoryIcon(merchant.category, 80, "text-slate-400 dark:text-white/20")}
-                    </div>
-                  );
-                }
-
-                return (
-                  <div className="w-full h-full flex flex-col items-center justify-between gap-3 min-h-0">
-                    {/* Main Active Image View */}
-                    <div
-                      className="relative w-full flex-1 flex items-center justify-center cursor-zoom-in group/main overflow-hidden"
-                      onClick={() => setZoomedProduct(selectedProduct)}
-                      title="Cliquer pour afficher en plein écran (Zoom HD)"
-                    >
-                      <img
-                        src={currentImg}
-                        className="max-w-full max-h-[38vh] sm:max-h-[48vh] md:max-h-[58vh] w-auto h-auto object-contain rounded-2xl shadow-md group-hover/main:scale-[1.02] transition-transform duration-300"
-                        alt={selectedProduct.name}
-                      />
-
-                      {/* Navigation Arrows for Multi-Photos */}
-                      {productImages.length > 1 && (
-                        <>
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setActiveImageIndex((prev) => (prev === 0 ? productImages.length - 1 : prev - 1));
-                            }}
-                            className="absolute left-2 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full bg-black/60 hover:bg-black text-white flex items-center justify-center backdrop-blur-md transition-all shadow-md cursor-pointer z-10"
-                            title="Photo précédente"
-                          >
-                            <ChevronLeft size={18} />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setActiveImageIndex((prev) => (prev === productImages.length - 1 ? 0 : prev + 1));
-                            }}
-                            className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full bg-black/60 hover:bg-black text-white flex items-center justify-center backdrop-blur-md transition-all shadow-md cursor-pointer z-10"
-                            title="Photo suivante"
-                          >
-                            <ChevronRight size={18} />
-                          </button>
-                        </>
-                      )}
-
-                      {/* Floating Zoom HD trigger badge */}
-                      <div className="absolute bottom-2 right-2 px-2.5 py-1 rounded-xl bg-white/95 text-slate-900 dark:bg-black/80 dark:text-white backdrop-blur-md border border-slate-200 dark:border-white/20 text-[10px] font-black uppercase tracking-wider flex items-center gap-1 shadow-lg pointer-events-none">
-                        <ZoomIn size={13} className="text-emerald-600 dark:text-emerald-400" />
-                        <span>Zoom HD</span>
-                      </div>
-                    </div>
-
-                    {/* Thumbnail Selector Bar */}
-                    {productImages.length > 1 && (
-                      <div className="flex items-center justify-center gap-2 overflow-x-auto max-w-full py-1 px-1 custom-scrollbar shrink-0">
-                        {productImages.map((img, idx) => (
-                          <button
-                            key={idx}
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setActiveImageIndex(idx);
-                            }}
-                            className={cn(
-                              "h-12 w-12 sm:h-14 sm:w-14 rounded-xl overflow-hidden border-2 transition-all shrink-0 cursor-pointer",
-                              idx === activeImageIndex
-                                ? "border-vendeur-emerald scale-105 shadow-md"
-                                : "border-transparent opacity-60 hover:opacity-100"
-                            )}
-                          >
-                            <img src={img} className="w-full h-full object-cover" alt={`Miniature ${idx + 1}`} />
-                          </button>
-                        ))}
-                      </div>
-                    )}
+            {/* Product Image / Poster Container */}
+            <div className="w-full md:w-1/2 min-h-[280px] sm:min-h-[360px] md:min-h-[460px] bg-slate-100/70 dark:bg-black/50 shrink-0 flex items-center justify-center p-3 sm:p-5 md:p-6 overflow-hidden relative border-b md:border-b-0 md:border-r border-slate-200/80 dark:border-white/10 group/img">
+              {selectedProduct.images?.[0] || selectedProduct.imageUrl ? (
+                <div
+                  className="relative w-full h-full flex items-center justify-center cursor-zoom-in"
+                  onClick={() => setZoomedProduct(selectedProduct)}
+                  title="Cliquer pour afficher en plein écran (Zoom HD)"
+                >
+                  <img
+                    src={selectedProduct.images?.[0] || selectedProduct.imageUrl}
+                    className="max-w-full max-h-[45vh] sm:max-h-[55vh] md:max-h-[70vh] w-auto h-auto object-contain rounded-2xl shadow-md group-hover/img:scale-[1.03] transition-transform duration-300"
+                    alt={selectedProduct.name}
+                  />
+                  {/* Floating Zoom HD trigger badge (Light & Dark mode compatible) */}
+                  <div className="absolute bottom-3 right-3 sm:bottom-4 sm:right-4 px-3 py-1.5 rounded-xl bg-white/95 text-slate-900 dark:bg-black/80 dark:text-white backdrop-blur-md border border-slate-200 dark:border-white/20 text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 shadow-lg group-hover/img:scale-105 transition-all pointer-events-none">
+                    <ZoomIn size={14} className="text-emerald-600 dark:text-emerald-400" />
+                    <span>Zoom HD</span>
                   </div>
-                );
-              })()}
+                </div>
+              ) : (
+                <div className="w-full h-full flex items-center justify-center opacity-20">
+                  {getCategoryIcon(merchant.category, 80, "text-slate-400 dark:text-white/20")}
+                </div>
+              )}
             </div>
 
             {/* Product Details */}

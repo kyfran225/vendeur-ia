@@ -201,8 +201,6 @@ export function AuthSheet({ isOpen, onClose, onSuccess }: { isOpen: boolean; onC
       isAuthCompletedRef.current = true;
 
       setSession(sessionData);
-      useAuthStore.getState().updateUser({ onboardingCompleted: true });
-
       toast.custom(
         () => (
           <div className="flex items-center gap-3 bg-white dark:bg-[#0b1410] border border-emerald-500/40 text-slate-900 dark:text-white p-3.5 sm:p-4 rounded-2xl shadow-[0_10px_30px_rgba(16,185,129,0.25)] min-w-[300px] animate-in slide-in-from-top-2 duration-300">
@@ -228,6 +226,7 @@ export function AuthSheet({ isOpen, onClose, onSuccess }: { isOpen: boolean; onC
       // Custom callback if provided
       if (onSuccess) {
         onSuccess(sessionData);
+        return;
       }
 
       // If user logged in while on checkout page, remain on checkout page to complete payment
@@ -246,7 +245,15 @@ export function AuthSheet({ isOpen, onClose, onSuccess }: { isOpen: boolean; onC
 
       // 0. Master Admin (0505111157) -> GO DIRECTLY TO /admin
       if (isMasterAdminUser) {
+        useAuthStore.getState().updateUser({ onboardingCompleted: true });
         navigate("/admin");
+        return;
+      }
+
+      // 1. Returning merchant / Founder Merchant (0102273966) -> GO DIRECTLY TO /dashboard
+      if (sessionData?.user?.onboardingCompleted) {
+        useAuthStore.getState().updateUser({ onboardingCompleted: true });
+        navigate("/dashboard");
         return;
       }
 
@@ -258,15 +265,32 @@ export function AuthSheet({ isOpen, onClose, onSuccess }: { isOpen: boolean; onC
             city: tempData.city || "",
             onboardingCompleted: true
           });
+          useAuthStore.getState().updateUser({ onboardingCompleted: true });
         } catch (e) {
           console.warn("[Auth] Auto-merchant init:", e);
         }
+        navigate("/dashboard");
+        return;
       }
 
-      // 2. Direct redirect to Dashboard after pairing / login
-      navigate("/dashboard");
+      // 2. Check if merchant profile already exists and is configured in DB
+      try {
+        const res = await apiClient.get("/api/commerce/merchant");
+        if (res.data && res.data.businessName && res.data.businessName !== "Votre boutique" && res.data.onboardingCompleted) {
+          useAuthStore.getState().updateUser({ onboardingCompleted: true });
+          navigate("/dashboard");
+          return;
+        }
+      } catch {
+        // New user without merchant profile yet
+      }
+
+      // 3. User authenticated via WhatsApp/email but hasn't configured store yet:
+      // Stay on landing page form so they can configure their store name & details!
+      useAuthStore.getState().updateUser({ onboardingCompleted: false });
+      navigate("/");
     },
-    [setSession, onClose, navigate, tempData, onSuccess]
+    [setSession, onClose, navigate, tempData]
   );
 
   // Real-time socket & polling listener during pairing / OTP
@@ -675,7 +699,7 @@ export function AuthSheet({ isOpen, onClose, onSuccess }: { isOpen: boolean; onC
                       <div className="h-px flex-1 bg-slate-200 dark:bg-white/5" />
                     </div>
                     <GoogleLoginButton
-                      onSuccess={(data) => completeAuth(data)}
+                      onSuccess={onClose}
                       onLoading={setGoogleLoading}
                       disabled={loading}
                     />

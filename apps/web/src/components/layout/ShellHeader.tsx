@@ -242,17 +242,10 @@ export function ShellHeader({ isVisible = true }: ShellHeaderProps) {
   const isProPlan = isProParam || merchant?.subscription?.plan === 'pro' || merchant?.whatsappConfig?.provider === 'meta';
   const isConnexionsPage = location.pathname.includes('/settings') || location.pathname.includes('/connexions') || location.pathname.includes('/plus');
 
-  const hasEverConnected = Boolean(whatsapp?.connectedAt || merchant?.whatsappConfig?.connectedAt);
   const isCurrentlyConnected = whatsapp?.status === 'CONNECTED' || whatsapp?.status === 'connected' || merchant?.whatsappConfig?.status === 'connected';
-  const isUnexpectedDisconnect = !isFounder && hasEverConnected && !isCurrentlyConnected && (
-    merchant?.whatsappConfig?.status === 'error' || 
-    merchant?.whatsappConfig?.status === 'disconnected' ||
-    whatsapp?.status === 'DISCONNECTED' ||
-    whatsapp?.status === 'disconnected' ||
-    whatsapp?.status === 'ERROR'
-  );
+  const isWhatsAppDisconnected = !isFounder && !isCurrentlyConnected;
 
-  const showBanner = Boolean(isUnexpectedDisconnect && !isConnexionsPage);
+  const showBanner = Boolean(isWhatsAppDisconnected && !isConnexionsPage);
 
   // Détection Logo Boutique & Avatar Utilisateur
   const shopLogoUrl = merchant?.branding?.logoUrl;
@@ -609,17 +602,17 @@ export function ShellHeader({ isVisible = true }: ShellHeaderProps) {
             )}>
               {isProPlan 
                 ? "⚡ Ré-activation requise pour votre Vendeur IA Pro" 
-                : "Session WhatsApp interrompue"}
+                : "⚠️ Numéro WhatsApp non relié ou déconnecté"}
             </p>
           </div>
           <Link
-            to="/settings?tab=connexions"
+            to="/settings?tab=connexions#whatsapp"
             className={cn(
               "px-2.5 sm:px-3 py-1 rounded-lg text-[9px] sm:text-[10px] font-black uppercase transition-all shadow-sm shrink-0 whitespace-nowrap",
               isProPlan ? "bg-slate-950 text-vendeur-emerald hover:bg-black" : "bg-white text-red-600 font-black hover:bg-white/90"
             )}
           >
-            {isProPlan ? "Activer" : "Reconnecter"}
+            {isProPlan ? "Activer" : "Lier WhatsApp"}
           </Link>
         </div>
       )}

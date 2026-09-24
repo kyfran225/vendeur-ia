@@ -33,7 +33,7 @@ import { SmartAssistantCard } from "./components/SmartAssistantCard";
 import { VendeurIAPlaygroundModal } from "./components/VendeurIAPlaygroundModal";
 import { SetupCompletionModal } from "./components/SetupCompletionModal";
 import { StepSuccessModal } from "./components/StepSuccessModal";
-import { StoreSetupWizardModal } from "./components/StoreSetupWizardModal";
+
 import { OffersModal } from "@/features/settings/components/OffersModal";
 import { PauseConfirmationModal } from "@/components/modals/PauseConfirmationModal";
 import { ShareShopModal } from "@/features/shop/components/ShareShopModal";
@@ -214,8 +214,6 @@ export function SalesDashboard() {
     (!isWhatsAppExplicitlyDisconnected &&
     (dashboard?.whatsappConnection?.status === "CONNECTED" ||
      dashboard?.whatsappConnection?.status === "connected" ||
-     dashboard?.merchant?.whatsappConfig?.status === "connected" ||
-     dashboard?.merchant?.whatsappConfig?.provider === "meta" ||
      (dashboard?.merchant?.whatsappConfig?.provider === "meta" &&
       dashboard?.merchant?.whatsappConfig?.status === "connected" &&
       Boolean(dashboard?.merchant?.whatsappConfig?.meta?.phoneNumberId))));
@@ -359,12 +357,6 @@ export function SalesDashboard() {
         onClose={() => setIsShareModalOpen(false)}
         merchant={dashboard?.merchant}
         shopUrl={getMerchantShopUrl(dashboard?.merchant)}
-      />
-
-      <StoreSetupWizardModal
-        isOpen={isStoreSetupModalOpen}
-        onClose={() => setIsStoreSetupModalOpen(false)}
-        dashboard={dashboard}
       />
     </main>
   );

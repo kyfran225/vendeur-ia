@@ -121,7 +121,7 @@ export function DeliveryDispatchModal({ isOpen, onClose, order }: DeliveryDispat
   if (!isOpen || !order) return null;
 
   return createPortal(
-    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/40 dark:bg-black/80 backdrop-blur-md animate-in fade-in duration-300">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/60 dark:bg-black/80 backdrop-blur-md animate-in fade-in duration-300">
       <div className="bg-slate-50 dark:bg-[#0c1612] border border-slate-200/90 dark:border-white/10 w-full max-w-md rounded-[2.5rem] overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300 flex flex-col text-slate-900 dark:text-white">
         <header className="p-6 border-b border-slate-100 dark:border-white/5 flex items-center justify-between bg-slate-50/50 dark:bg-white/[0.02]">
           <div className="flex items-center gap-3">

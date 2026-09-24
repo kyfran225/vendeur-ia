@@ -270,13 +270,18 @@ export class CommerceService {
       await merchant.save().catch(() => {});
     }
 
+    // If marked as connected in DB but no active session/socket/connection exists, sync to disconnected
+    if (merchant.whatsappConfig?.status === "connected" && !isSocketAlive && !hasSavedSession && !isFounder && merchant.whatsappConfig?.provider !== 'meta') {
+      const activeConn = await WhatsAppConnectionModel.findOne({ userId: ownerId, status: { $in: ['CONNECTED', 'connected'] } });
+      if (!activeConn) {
+        merchant.whatsappConfig.status = "disconnected";
+        await merchant.save().catch(() => {});
+      }
+    }
+
     // Auto-sync merchant WhatsApp number from user identity if missing
     if (!merchant.whatsappNumber && user?.whatsappNumber) {
       merchant.whatsappNumber = user.whatsappNumber;
-      if (merchant.whatsappConfig) {
-        merchant.whatsappConfig.status = "connected";
-        merchant.whatsappConfig.provider = "baileys";
-      }
       await merchant.save().catch(() => {});
     }
 
@@ -387,11 +392,19 @@ export class CommerceService {
     const knowledge = await CommerceKnowledgeModel.findOne({ merchantId: merchant._id });
 
     const hasProducts = (products?.length || 0) > 0;
-    const isWhatsAppConnected = (whatsappConnection?.status === 'CONNECTED') || 
-                                (merchant.whatsappConfig?.status === 'connected') || 
-                                isSocketAlive ||
-                                hasSavedSession ||
-                                Boolean(merchant.whatsappConfig?.meta?.phoneNumberId && merchant.whatsappConfig?.meta?.accessToken);
+    const hasActiveConnection = isFounder ||
+                                 (whatsappConnection?.status === 'CONNECTED') ||
+                                 (merchant.whatsappConfig?.status === 'connected') ||
+                                 isSocketAlive ||
+                                 hasSavedSession ||
+                                 Boolean(merchant.whatsappConfig?.meta?.phoneNumberId && merchant.whatsappConfig?.meta?.accessToken);
+
+    const isExplicitlyDisconnected = !hasActiveConnection && (
+      merchant.whatsappConfig?.status === 'disconnected' ||
+      whatsappConnection?.status === 'DISCONNECTED'
+    );
+
+    const isWhatsAppConnected = hasActiveConnection && !isExplicitlyDisconnected;
 
     const hasIdentityName = Boolean(merchant.businessName && merchant.businessName.trim().length > 0);
 

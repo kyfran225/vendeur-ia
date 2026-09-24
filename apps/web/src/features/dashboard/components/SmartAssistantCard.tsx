@@ -95,8 +95,15 @@ export function SmartAssistantCard({
   const isPaused = !isExpired && !isAutoReplyOn;
   const isFully247Active = !isExpired && isAutoReplyOn;
 
-  const { score, steps, isFullyOperational } = setupStatus;
-  const nextStep = steps.find((s: any) => !s.completed);
+  const rawSteps = setupStatus?.steps && setupStatus.steps.length > 0 ? setupStatus.steps : [
+    { id: 'identity', label: 'Identité & Réglages Boutique', completed: Boolean(merchant?.businessName), weight: 35 },
+    { id: 'whatsapp', label: 'Numéro WhatsApp de vente', completed: false, weight: 35 },
+    { id: 'products', label: 'Catalogue & Produits', completed: (dashboard?.products?.length || 0) > 0, weight: 30 }
+  ];
+  const steps = rawSteps;
+  const score = setupStatus?.score !== undefined ? setupStatus.score : Math.round(steps.reduce((acc: number, s: any) => acc + (s.completed ? (s.weight || 33) : 0), 0));
+  const isFullyOperational = setupStatus?.isFullyOperational !== undefined ? setupStatus.isFullyOperational : (score === 100);
+  const nextStep = steps.find((s: any) => !s.completed) || steps[0];
   const firstProduct = dashboard?.products?.[0];
   const productsCount = dashboard?.products?.length || 0;
   const hasProducts = productsCount > 0 || Boolean(steps.find((s: any) => s.id === "products")?.completed);
@@ -203,22 +210,22 @@ export function SmartAssistantCard({
         progressColor: "bg-sky-500"
       };
     }
-    if (isFullyOperational || score === 100 || !nextStep) {
+    if (isFullyOperational || score === 100 || (steps.length > 0 && steps.every((s: any) => s.completed))) {
       return {
-        cardBg: "bg-white dark:bg-vendeur-coal/60 border-slate-200 dark:border-white/10 hover:border-emerald-500/30 dark:hover:border-vendeur-emerald/30 shadow-xl dark:shadow-2xl",
-        badgeBg: "bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-vendeur-emerald",
+        cardBg: "bg-white dark:bg-vendeur-coal/90 border border-slate-200 dark:border-white/10 hover:border-emerald-500/30 dark:hover:border-vendeur-emerald/30 shadow-xl dark:shadow-2xl text-slate-900 dark:text-white",
+        badgeBg: "bg-emerald-500/15 border-emerald-500/30 text-emerald-800 dark:text-emerald-300",
         badgeText: isPaidActive ? "En Vente 24h/24 (IA Active)" : `Boutique Prête • Essai Gratuit (${trialDaysRemaining}j)`,
         iconBorder: "border-emerald-500/30",
-        accentText: "text-emerald-600 dark:text-vendeur-emerald",
+        accentText: "text-emerald-600 dark:text-emerald-400",
         accentGlow: "shadow-emerald-500/10",
         progressColor: "bg-vendeur-emerald"
       };
     }
     return {
-      cardBg: "bg-amber-50/80 dark:bg-amber-500/10 border-amber-200 dark:border-amber-500/30 shadow-amber-500/5",
-      badgeBg: "bg-amber-500/15 border-amber-500/30 text-amber-800 dark:text-amber-300",
+      cardBg: "bg-amber-50/80 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-500/40 shadow-xl dark:shadow-2xl text-slate-900 dark:text-white",
+      badgeBg: "bg-amber-500/15 border-amber-500/40 text-amber-800 dark:text-amber-300",
       badgeText: `Configuration (${score}%) • Essai ${trialDaysRemaining}j`,
-      iconBorder: "border-amber-500/30",
+      iconBorder: "border-amber-500/40",
       accentText: "text-amber-600 dark:text-amber-400",
       accentGlow: "shadow-amber-500/10",
       progressColor: "bg-amber-500"
@@ -295,7 +302,7 @@ export function SmartAssistantCard({
                     Votre Vendeur IA est actuellement en pause. Votre WhatsApp reste connecté et vous échangez manuellement avec vos clients. Vous pouvez réactiver les ventes automatiques 24h/24 en 1 clic quand vous le souhaitez.
                   </>
                 ) : isDiscoveryMode ? (
-                  !nextStep || isFullyOperational ? (
+                  ((steps.length > 0 && steps.every((s: any) => s.completed)) || isFullyOperational) ? (
                     <>
                       Félicitations <span className="text-amber-600 dark:text-amber-400 font-bold not-italic">{businessName}</span> ! 🏁 Votre boutique est entièrement configurée. Votre Vendeur IA est <strong>ACTIF et vend pour vous 24h/24 en Essai Gratuit 7 Jours</strong> (50 messages offerts) !
                     </>
@@ -360,12 +367,12 @@ export function SmartAssistantCard({
               )}
 
               {/* SINGLE UNIFIED PRIMARY ACTION BAR */}
-              <div className="flex flex-wrap items-center gap-2.5 sm:gap-3 pt-1 w-full">
+              <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-2.5 sm:gap-3 pt-1 w-full">
                 {isUnderVerification ? (
                   <>
                     <Link
                       to="/settings?tab=billing"
-                      className="flex-1 min-w-[200px] flex items-center justify-center gap-2.5 min-h-[48px] px-5 py-3 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-white font-black uppercase text-xs sm:text-sm tracking-wider transition-all shadow-lg shadow-emerald-500/20 active:scale-95 cursor-pointer"
+                      className="w-full sm:flex-1 min-w-[200px] flex items-center justify-center gap-2.5 min-h-[48px] px-5 py-3 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-white font-black uppercase text-xs sm:text-sm tracking-wider transition-all shadow-lg shadow-emerald-500/20 active:scale-95 cursor-pointer"
                     >
                       <Clock size={16} className="shrink-0" />
                       <span className="truncate">Suivre mon activation {latestPaymentIntent?.reference ? `(#${latestPaymentIntent.reference.slice(-6)})` : ""}</span>
@@ -378,7 +385,7 @@ export function SmartAssistantCard({
                       )}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="min-h-[48px] px-4 py-3 rounded-2xl bg-slate-100 hover:bg-[#25D366]/20 hover:border-[#25D366]/50 dark:bg-white/10 dark:hover:bg-[#25D366]/20 dark:hover:border-[#25D366]/50 border border-slate-200 dark:border-white/10 text-slate-800 dark:text-white hover:text-[#25D366] font-black uppercase text-xs tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95"
+                      className="w-full sm:flex-1 min-h-[48px] px-4 py-3 rounded-2xl bg-slate-100 hover:bg-[#25D366]/20 hover:border-[#25D366]/50 dark:bg-white/10 dark:hover:bg-[#25D366]/20 dark:hover:border-[#25D366]/50 border border-slate-200 dark:border-white/10 text-slate-800 dark:text-white hover:text-[#25D366] font-black uppercase text-xs tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95"
                     >
                       <WhatsAppIcon size={16} variant="brand" />
                       <span>Assistance WhatsApp</span>
@@ -387,7 +394,7 @@ export function SmartAssistantCard({
                 ) : isExpired ? (
                   <Link
                     to="/settings?tab=billing"
-                    className="flex-1 min-w-[200px] flex items-center justify-center gap-2.5 min-h-[48px] px-6 py-3 rounded-2xl bg-red-500 hover:bg-red-400 text-white font-black uppercase text-xs sm:text-sm tracking-wider transition-all shadow-lg shadow-red-500/20 active:scale-95 cursor-pointer"
+                    className="w-full flex items-center justify-center gap-2.5 min-h-[48px] px-6 py-3 rounded-2xl bg-red-500 hover:bg-red-400 text-white font-black uppercase text-xs sm:text-sm tracking-wider transition-all shadow-lg shadow-red-500/20 active:scale-95 cursor-pointer"
                   >
                     <RefreshCw size={16} />
                     <span>Recharger mon Forfait Vendeur IA</span>
@@ -398,7 +405,7 @@ export function SmartAssistantCard({
                     <button
                       type="button"
                       onClick={() => setIsResumeModalOpen(true)}
-                      className="flex-1 min-w-[220px] flex items-center justify-center gap-2.5 min-h-[48px] px-6 py-3 rounded-2xl bg-vendeur-emerald hover:bg-emerald-400 text-slate-950 font-black uppercase text-xs sm:text-sm tracking-wider transition-all shadow-lg shadow-emerald-500/20 active:scale-95 cursor-pointer"
+                      className="w-full sm:flex-1 min-w-[220px] flex items-center justify-center gap-2.5 min-h-[48px] px-6 py-3 rounded-2xl bg-vendeur-emerald hover:bg-emerald-400 text-slate-950 font-black uppercase text-xs sm:text-sm tracking-wider transition-all shadow-lg shadow-emerald-500/20 active:scale-95 cursor-pointer"
                     >
                       <PlayCircle size={18} className="shrink-0" />
                       <span className="whitespace-nowrap">Reprendre les Ventes 24h/24</span>
@@ -407,7 +414,7 @@ export function SmartAssistantCard({
                     <button
                       type="button"
                       onClick={onOpenTestIA}
-                      className="min-h-[48px] px-4 py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-white/10 dark:hover:bg-white/15 border border-slate-200 dark:border-white/10 text-slate-800 dark:text-white font-black uppercase text-xs tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95"
+                      className="w-full sm:flex-1 min-h-[48px] px-4 py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-white/10 dark:hover:bg-white/15 border border-slate-200 dark:border-white/10 text-slate-800 dark:text-white font-black uppercase text-xs tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95"
                       title="Tester les réponses de l'IA"
                     >
                       <Play size={15} fill="currentColor" className="text-emerald-600 dark:text-vendeur-emerald shrink-0" />
@@ -416,13 +423,13 @@ export function SmartAssistantCard({
                   </>
                 ) : (
                   <>
-                    {!isFullyOperational && nextStep ? (
+                    {!isFullyOperational ? (
                       <>
                         {nextStep.id === "whatsapp" && onConnectWhatsApp ? (
                           <button
                             type="button"
                             onClick={onConnectWhatsApp}
-                            className="flex-1 min-w-[180px] flex items-center justify-center gap-2.5 min-h-[48px] px-5 py-3 rounded-2xl bg-vendeur-emerald text-slate-950 font-black uppercase text-xs sm:text-sm tracking-wider hover:bg-emerald-400 active:scale-95 transition-all shadow-lg shadow-emerald-500/20 cursor-pointer group"
+                            className="w-full sm:flex-1 min-w-[180px] flex items-center justify-center gap-2.5 min-h-[48px] px-5 py-3 rounded-2xl bg-vendeur-emerald text-slate-950 font-black uppercase text-xs sm:text-sm tracking-wider hover:bg-emerald-400 active:scale-95 transition-all shadow-lg shadow-emerald-500/20 cursor-pointer group"
                           >
                             <Zap size={16} fill="currentColor" className="shrink-0 group-hover:scale-110 transition-transform" />
                             <span className="whitespace-nowrap">Lier mon WhatsApp</span>
@@ -432,7 +439,7 @@ export function SmartAssistantCard({
                           <button
                             type="button"
                             onClick={onOpenStoreSetupModal}
-                            className="flex-1 min-w-[180px] flex items-center justify-center gap-2.5 min-h-[48px] px-5 py-3 rounded-2xl bg-vendeur-emerald text-slate-950 font-black uppercase text-xs sm:text-sm tracking-wider hover:bg-emerald-400 active:scale-95 transition-all shadow-lg shadow-emerald-500/20 cursor-pointer group"
+                            className="w-full sm:flex-1 min-w-[180px] flex items-center justify-center gap-2.5 min-h-[48px] px-5 py-3 rounded-2xl bg-vendeur-emerald text-slate-950 font-black uppercase text-xs sm:text-sm tracking-wider hover:bg-emerald-400 active:scale-95 transition-all shadow-lg shadow-emerald-500/20 cursor-pointer group"
                           >
                             <Zap size={16} fill="currentColor" className="shrink-0 group-hover:scale-110 transition-transform" />
                             <span className="whitespace-nowrap">Configurer ma boutique</span>
@@ -441,7 +448,7 @@ export function SmartAssistantCard({
                         ) : (
                           <Link
                             to={getActionLink(nextStep.id)}
-                            className="flex-1 min-w-[180px] flex items-center justify-center gap-2.5 min-h-[48px] px-5 py-3 rounded-2xl bg-vendeur-emerald text-slate-950 font-black uppercase text-xs sm:text-sm tracking-wider hover:bg-emerald-400 active:scale-95 transition-all shadow-lg shadow-emerald-500/20 cursor-pointer group"
+                            className="w-full sm:flex-1 min-w-[180px] flex items-center justify-center gap-2.5 min-h-[48px] px-5 py-3 rounded-2xl bg-vendeur-emerald text-slate-950 font-black uppercase text-xs sm:text-sm tracking-wider hover:bg-emerald-400 active:scale-95 transition-all shadow-lg shadow-emerald-500/20 cursor-pointer group"
                           >
                             <Zap size={16} fill="currentColor" className="shrink-0 group-hover:scale-110 transition-transform" />
                             <span className="whitespace-nowrap">{nextStep.label}</span>
@@ -452,7 +459,7 @@ export function SmartAssistantCard({
                         <button
                           type="button"
                           onClick={onOpenTestIA}
-                          className="min-h-[48px] px-4 py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-white/10 dark:hover:bg-white/15 border border-slate-200 dark:border-white/10 text-slate-800 dark:text-white font-black uppercase text-xs tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95"
+                          className="w-full sm:flex-1 min-h-[48px] px-4 py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-white/10 dark:hover:bg-white/15 border border-slate-200 dark:border-white/10 text-slate-800 dark:text-white font-black uppercase text-xs tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95"
                           title="Tester les réponses de l'IA"
                         >
                           <Play size={15} fill="currentColor" className="text-emerald-600 dark:text-vendeur-emerald shrink-0" />
@@ -464,7 +471,7 @@ export function SmartAssistantCard({
                         <button
                           type="button"
                           onClick={onOpenTestIA}
-                          className="flex-1 min-w-[180px] flex items-center justify-center gap-2.5 min-h-[48px] px-5 py-3 rounded-2xl bg-vendeur-emerald text-slate-950 font-black uppercase text-xs sm:text-sm tracking-wider hover:bg-emerald-400 active:scale-95 transition-all shadow-lg shadow-emerald-500/20 cursor-pointer"
+                          className="w-full sm:flex-1 min-w-[180px] flex items-center justify-center gap-2.5 min-h-[48px] px-5 py-3 rounded-2xl bg-vendeur-emerald text-slate-950 font-black uppercase text-xs sm:text-sm tracking-wider hover:bg-emerald-400 active:scale-95 transition-all shadow-lg shadow-emerald-500/20 cursor-pointer"
                         >
                           <Play size={16} fill="currentColor" className="shrink-0" />
                           <span className="whitespace-nowrap">Simulateur & Test IA</span>
@@ -474,7 +481,7 @@ export function SmartAssistantCard({
                           <button
                             type="button"
                             onClick={onOpenDailyStatus}
-                            className="min-h-[48px] px-4 py-3 rounded-2xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black uppercase text-xs tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95 shadow-lg shadow-amber-500/20"
+                            className="w-full sm:flex-1 min-h-[48px] px-4 py-3 rounded-2xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black uppercase text-xs tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95 shadow-lg shadow-amber-500/20"
                           >
                             <Sparkles size={15} className="shrink-0" />
                             <span className="whitespace-nowrap">Statuts du Jour</span>
@@ -485,7 +492,7 @@ export function SmartAssistantCard({
                           <button
                             type="button"
                             onClick={onOpenPauseModal}
-                            className="min-h-[48px] px-4 py-3 rounded-2xl bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/30 text-sky-700 dark:text-sky-300 text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95"
+                            className="w-full sm:flex-1 min-h-[48px] px-4 py-3 rounded-2xl bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/30 text-sky-700 dark:text-sky-300 text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95"
                             title="Mettre le Vendeur IA en pause"
                           >
                             <PauseCircle size={15} className="shrink-0" />
@@ -497,7 +504,7 @@ export function SmartAssistantCard({
                           <button
                             type="button"
                             onClick={onOpenOffers || (() => navigate("/offers"))}
-                            className="min-h-[48px] px-4 py-3 rounded-2xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-800 dark:text-amber-300 text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95"
+                            className="w-full sm:flex-1 min-h-[48px] px-4 py-3 rounded-2xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-800 dark:text-amber-300 text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95"
                           >
                             <Sparkles size={15} className="shrink-0" />
                             <span className="whitespace-nowrap">Choisir mon Forfait</span>

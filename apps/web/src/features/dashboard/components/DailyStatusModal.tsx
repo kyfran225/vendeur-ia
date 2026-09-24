@@ -14,7 +14,6 @@ import {
 } from "lucide-react";
 import { apiClient } from "@/lib/apiClient";
 import { toast } from "sonner";
-import * as Portal from "@radix-ui/react-portal";
 
 interface StatusItem {
   headline: string;
@@ -91,12 +90,11 @@ export function DailyStatusModal({ isOpen, onClose }: DailyStatusModalProps) {
   if (!isOpen) return null;
 
   return (
-    <Portal.Root>
-      <div className="fixed inset-0 z-[200] flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
-        <div
-          className="fixed inset-0 bg-black/40 dark:bg-black/80 backdrop-blur-md transition-opacity"
-          onClick={onClose}
-        />
+    <div className="fixed inset-0 z-[200] flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+      <div
+        className="fixed inset-0 bg-black/80 backdrop-blur-md transition-opacity"
+        onClick={onClose}
+      />
 
       <div className="relative w-full max-w-3xl bg-white dark:bg-neutral-900/95 border border-slate-200 dark:border-white/10 rounded-3xl p-5 sm:p-8 space-y-6 shadow-2xl animate-in zoom-in-95 duration-200 my-auto text-slate-900 dark:text-white">
         {/* Header */}
@@ -254,6 +252,5 @@ export function DailyStatusModal({ isOpen, onClose }: DailyStatusModalProps) {
         </div>
       </div>
     </div>
-    </Portal.Root>
   );
 }

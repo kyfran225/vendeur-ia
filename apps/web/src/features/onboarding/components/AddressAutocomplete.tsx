@@ -26,7 +26,7 @@ interface UnifiedSuggestion {
   name: string;
   secondaryText: string;
   fullAddress: string;
-  type: 'neighborhood' | 'commune' | 'city' | 'landmark' | 'street' | 'mapbox' | 'country';
+  type: 'country' | 'neighborhood' | 'commune' | 'city' | 'landmark' | 'street' | 'mapbox';
   badgeLabel?: string;
   badgeClass?: string;
   source: 'local' | 'mapbox';
@@ -34,6 +34,12 @@ interface UnifiedSuggestion {
 }
 
 const TYPE_CONFIG: Record<string, { label: string; bg: string; text: string; icon: any }> = {
+  country: {
+    label: "Pays",
+    bg: "bg-emerald-500/10 dark:bg-emerald-500/20",
+    text: "text-emerald-700 dark:text-emerald-300",
+    icon: MapPin
+  },
   neighborhood: {
     label: "Quartier",
     bg: "bg-emerald-500/10 dark:bg-emerald-500/20",
@@ -158,8 +164,8 @@ export function AddressAutocomplete({
         return {
           id: `local-${loc.id}`,
           name: loc.name,
-          secondaryText: loc.type === 'city' ? loc.countryName : secondary,
-          fullAddress: (loc.type === 'city' || loc.type === 'country') ? loc.name : loc.formattedAddress,
+          secondaryText: secondary,
+          fullAddress: loc.formattedAddress,
           type: loc.type,
           source: 'local',
           raw: loc
@@ -183,19 +189,7 @@ export function AddressAutocomplete({
           if (response?.suggestions && response.suggestions.length > 0) {
             for (const item of response.suggestions) {
               const name = item.name || "";
-              const lowerName = name.toLowerCase();
-              const lowerQuery = newValue.toLowerCase().trim();
-
-              // Filter out fallback country suggestions if user didn't type a country name
-              const isCountry = lowerName === "côte d'ivoire" || lowerName === "cote d'ivoire" || lowerName === "sénégal" || lowerName === "senegal" || lowerName === "bénin" || lowerName === "benin";
-              if (isCountry && !lowerQuery.includes("cote") && !lowerQuery.includes("côte") && !lowerQuery.includes("ivoire") && !lowerQuery.includes("senegal") && !lowerQuery.includes("benin")) {
-                continue;
-              }
-
-              let fullAddr = item.full_address || item.place_formatted || name;
-              if (lowerName === "abidjan" || fullAddr.toLowerCase() === "côte d'ivoire" || fullAddr.toLowerCase() === "cote d'ivoire") {
-                fullAddr = name;
-              }
+              const fullAddr = item.full_address || item.place_formatted || name;
 
               // Prevent duplicates already covered by high-quality local curated data
               const exists = unifiedResults.some(
@@ -232,11 +226,7 @@ export function AddressAutocomplete({
   };
 
   const handleSelect = async (suggestion: UnifiedSuggestion) => {
-    const selectedText = (suggestion.type === 'city' || suggestion.type === 'country' || suggestion.name.toLowerCase() === 'abidjan')
-      ? suggestion.name
-      : (suggestion.fullAddress || suggestion.name);
-
-    onChange(selectedText);
+    onChange(suggestion.fullAddress);
     setShowSuggestions(false);
 
     if (suggestion.source === 'mapbox' && suggestion.raw && accessToken) {

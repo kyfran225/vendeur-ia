@@ -250,7 +250,7 @@ export function AuthSheet({ isOpen, onClose, onSuccess }: { isOpen: boolean; onC
         return;
       }
 
-      // 1. Returning merchant / Founder Merchant (0102273966) -> GO DIRECTLY TO /dashboard
+      // 1. Returning merchant -> GO DIRECTLY TO /dashboard
       if (sessionData?.user?.onboardingCompleted) {
         useAuthStore.getState().updateUser({ onboardingCompleted: true });
         navigate("/dashboard");
@@ -1001,31 +1001,29 @@ export function AuthSheet({ isOpen, onClose, onSuccess }: { isOpen: boolean; onC
               </form>
             )}
 
-            {/* STEP 4: FOUNDER & DEMO MERCHANT DIRECT PIN AUTH */}
+            {/* STEP 4: FOUNDER DIRECT PIN AUTH */}
             {whatsappStep === "founder" && (
               <form onSubmit={handleFounderLogin} className="space-y-4 animate-in zoom-in-95 duration-200">
                 <div className="p-3 rounded-2xl bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 text-emerald-900 dark:text-emerald-300 text-xs space-y-1">
                   <div className="flex items-center gap-2 font-bold text-slate-900 dark:text-white">
                     <ShieldCheck size={16} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
-                    <span>{isFounderFlow ? "Numéro Système Meta Cloud" : "Accès Direct Démo Marchand"}</span>
+                    <span>Numéro Système Meta Cloud</span>
                   </div>
                   <p className="text-[11px] text-slate-600 dark:text-white/70 leading-relaxed">
-                    {isFounderFlow
-                      ? <>Le <strong>{formatDisplayPhone(`${selectedCountry.dialCode}${localPhone}`, selectedCountry.code)}</strong> est géré par l'API Cloud Meta. Aucun scan QR ni code WhatsApp n'est requis.</>
-                      : <>Le <strong>{formatDisplayPhone(`${selectedCountry.dialCode}${localPhone}`, selectedCountry.code)}</strong> est configuré en accès démo direct. Entrez le code PIN (777888) pour vous connecter instantanément.</>}
+                    Le <strong>{formatDisplayPhone(`${selectedCountry.dialCode}${localPhone}`, selectedCountry.code)}</strong> est géré par l'API Cloud Meta. Aucun scan QR ni code WhatsApp n'est requis.
                   </p>
                 </div>
 
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-white/50 ml-1">
-                    {isFounderFlow ? "Code PIN ou Mot de passe Administrateur" : "Code PIN Marchand (777888)"}
+                    Code PIN ou Mot de passe Administrateur
                   </label>
                   <div className="relative">
                     <input
                       required
                       type={showFounderPin ? "text" : "password"}
                       className="w-full h-13 bg-slate-50 dark:bg-black/50 border border-slate-200 dark:border-white/10 focus:border-emerald-500 rounded-2xl px-4 pr-12 text-slate-900 dark:text-white font-mono text-base placeholder:text-slate-400 dark:placeholder:text-white/20 outline-none transition-all shadow-inner"
-                      placeholder={isFounderFlow ? "Entrez votre PIN ou mot de passe" : "Entrez le code PIN (ex: 777888)"}
+                      placeholder="Entrez votre PIN ou mot de passe"
                       value={founderPin}
                       onChange={(e) => setFounderPin(e.target.value)}
                       autoFocus
@@ -1050,7 +1048,7 @@ export function AuthSheet({ isOpen, onClose, onSuccess }: { isOpen: boolean; onC
                   ) : (
                     <>
                       <ShieldCheck size={16} className="shrink-0" />
-                      <span>{isFounderFlow ? "Accéder à l'Administration" : "Accéder à mon Espace Marchand"}</span>
+                      <span>Accéder à l'Administration</span>
                       <ChevronRight size={16} className="shrink-0" />
                     </>
                   )}

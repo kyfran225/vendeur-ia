@@ -114,9 +114,8 @@ export class AuthService {
   async founderLogin(phoneNumber: string, pinOrPassword?: string, authSessionId?: string) {
     const rawClean = (phoneNumber || "").replace(/[\s\-\(\)\+]/g, "");
     const isFounder = isFounderNumber(rawClean);
-    const isDemo = isDemoMerchantNumber(rawClean);
 
-    if (!isFounder && !isDemo) {
+    if (!isFounder) {
       throw new Error("Numéro non autorisé pour l'accès direct PIN.");
     }
 
@@ -132,7 +131,7 @@ export class AuthService {
     });
 
     const submitted = (pinOrPassword || "").trim();
-    const isMasterPin = submitted === "777888" || submitted === "0102273966" || submitted === "02273966" || submitted === "102273966" || submitted === "111157" || submitted === "0505111157";
+    const isMasterPin = submitted === "777888" || submitted === "111157" || submitted === "0505111157";
 
     let isPasswordValid = false;
     if (user?.passwordHash && submitted) {
@@ -146,47 +145,24 @@ export class AuthService {
       throw new Error("Code PIN ou mot de passe incorrect.");
     }
 
-    if (isFounder) {
-      const founderDisplayName = "Franck (Fondateur & Lead)";
-      if (!user) {
-        const fallbackEmail = `${canonicalPhone}@whatsapp.vendeur-ia.com`;
-        user = await UserModel.create({
-          whatsappNumber: canonicalPhone,
-          email: fallbackEmail,
-          authProvider: "whatsapp",
-          displayName: founderDisplayName,
-          roles: ["user", "admin", "creator"],
-          onboardingCompleted: true
-        });
-      } else {
-        user.roles = ["user", "admin", "creator"];
-        if (!user.displayName || user.displayName.startsWith("Commerçant")) {
-          user.displayName = founderDisplayName;
-        }
-        user.onboardingCompleted = true;
-        await user.save();
-      }
+    const founderDisplayName = "Franck (Fondateur & Lead)";
+    if (!user) {
+      const fallbackEmail = `${canonicalPhone}@whatsapp.vendeur-ia.com`;
+      user = await UserModel.create({
+        whatsappNumber: canonicalPhone,
+        email: fallbackEmail,
+        authProvider: "whatsapp",
+        displayName: founderDisplayName,
+        roles: ["user", "admin", "creator"],
+        onboardingCompleted: true
+      });
     } else {
-      // Demo Merchant (0102273966) -> STANDARD USER (NO ADMIN, NO CREATOR)
-      const demoMerchantDisplayName = "Boutique Franck";
-      if (!user) {
-        const fallbackEmail = `${canonicalPhone}@whatsapp.vendeur-ia.com`;
-        user = await UserModel.create({
-          whatsappNumber: canonicalPhone,
-          email: fallbackEmail,
-          authProvider: "whatsapp",
-          displayName: demoMerchantDisplayName,
-          roles: ["user"],
-          onboardingCompleted: true
-        });
-      } else {
-        user.roles = ["user"];
-        if (!user.displayName || user.displayName.includes("Fondateur") || user.displayName.includes("Lead")) {
-          user.displayName = demoMerchantDisplayName;
-        }
-        user.onboardingCompleted = true;
-        await user.save();
+      user.roles = ["user", "admin", "creator"];
+      if (!user.displayName || user.displayName.startsWith("Commerçant")) {
+        user.displayName = founderDisplayName;
       }
+      user.onboardingCompleted = true;
+      await user.save();
     }
 
     const tokens = await this.generateTokens(user);
@@ -343,7 +319,7 @@ export class AuthService {
     const phoneVariants = generatePhoneVariants(cleanNumber);
     const authSessionId = requestedAuthSessionId || `auth_${randomBytes(12).toString("hex")}`;
 
-    // 1. Founder (0505111157) or Demo Merchant (0102273966) -> Direct PIN Auth (no WhatsApp scan or message)
+    // 1. Founder (0505111157) -> Direct PIN Auth (no WhatsApp scan or message)
     if (isFounderNumber(cleanNumber)) {
       return {
         mode: "founder_auth" as const,
@@ -351,16 +327,6 @@ export class AuthService {
         authSessionId,
         phoneNumber: cleanNumber,
         message: "Numéro Fondateur (Meta Cloud API). Connectez-vous avec votre Code PIN ou Mot de passe Administrateur."
-      };
-    }
-
-    if (isDemoMerchantNumber(cleanNumber)) {
-      return {
-        mode: "founder_auth" as const,
-        isFounder: false,
-        authSessionId,
-        phoneNumber: cleanNumber,
-        message: "Numéro Marchand Démo. Connectez-vous avec votre Code PIN (777888)."
       };
     }
 

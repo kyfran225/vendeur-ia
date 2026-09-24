@@ -23,6 +23,8 @@ function cn(...inputs: ClassValue[]) {
 
 const statusColors: Record<string, string> = {
   pending: "bg-amber-500/10 text-amber-700 dark:text-amber-500 border-amber-500/25",
+  payment_detected: "bg-sky-500/10 text-sky-700 dark:text-sky-400 border-sky-500/25",
+  under_verification: "bg-amber-500/15 text-amber-800 dark:text-amber-400 border-amber-500/30 font-black",
   confirmed: "bg-blue-500/10 text-blue-700 dark:text-blue-500 border-blue-500/25",
   dispatched: "bg-purple-500/10 text-purple-700 dark:text-purple-400 border-purple-500/25",
   paid: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-500 border-emerald-500/25",
@@ -32,6 +34,8 @@ const statusColors: Record<string, string> = {
 
 const statusLabels: Record<string, string> = {
   pending: "En attente",
+  payment_detected: "Paiement détecté",
+  under_verification: "À vérifier",
   confirmed: "Confirmée",
   dispatched: "En livraison",
   paid: "Payée",
@@ -41,6 +45,8 @@ const statusLabels: Record<string, string> = {
 
 const statusIcons: Record<string, React.ReactNode> = {
   pending: <Clock size={12} className="shrink-0" />,
+  payment_detected: <Clock size={12} className="shrink-0 text-sky-500" />,
+  under_verification: <Clock size={12} className="shrink-0 text-amber-500" />,
   confirmed: <Package size={12} className="shrink-0" />,
   dispatched: <Truck size={12} className="shrink-0 text-purple-600 dark:text-purple-400" />,
   paid: <Banknote size={12} className="shrink-0" />,
@@ -481,13 +487,13 @@ export function OrderManager() {
                 <div className="border-t lg:border-t-0 lg:border-l border-slate-200 dark:border-white/5 pt-3 lg:pt-0 lg:pl-8 flex flex-col gap-2.5 shrink-0">
                   
                   {/* Status Badge */}
-                  <div className="flex items-center justify-between lg:justify-start gap-3">
+                  <div className="flex items-center justify-between lg:justify-start gap-3 min-w-0">
                     <div className={cn(
-                      "px-3.5 py-1.5 lg:py-2 rounded-xl border text-[10px] font-black uppercase tracking-wider flex items-center justify-center gap-2 shrink-0",
+                      "px-3 py-1.5 lg:py-2 rounded-xl border text-[10px] sm:text-xs font-black uppercase tracking-wider flex items-center justify-center gap-1.5 shrink-0 max-w-full truncate",
                       statusColors[order.status] || statusColors.pending
                     )}>
                       {statusIcons[order.status] || statusIcons.pending}
-                      <span>{statusLabels[order.status] || order.status}</span>
+                      <span className="truncate">{statusLabels[order.status] || order.status}</span>
                     </div>
                   </div>
 

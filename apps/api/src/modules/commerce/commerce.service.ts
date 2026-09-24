@@ -528,7 +528,13 @@ export class CommerceService {
 
     const isWhatsAppConnected = hasActiveConnection && !isExplicitlyDisconnected;
 
-    const hasIdentityName = Boolean(merchant.businessName && merchant.businessName.trim().length > 0);
+    const nameTrimmed = (merchant.businessName || "").trim();
+    const isDefaultPlaceholderName = !nameTrimmed ||
+      nameTrimmed.toLowerCase() === "ma boutique" ||
+      nameTrimmed.includes("Commerçant WhatsApp") ||
+      nameTrimmed.includes("Utilisateur Google");
+
+    const hasCustomIdentityName = Boolean(nameTrimmed.length > 0 && !isDefaultPlaceholderName);
 
     // Check if user has actually ADDED payment methods (not just default empty ones)
     const hasPaymentMethods = (knowledge?.businessRules?.paymentMethods?.length || 0) > 0 &&
@@ -536,8 +542,8 @@ export class CommerceService {
 
     const hasDeliveryFees = (knowledge?.businessRules?.deliveryFees?.length || 0) > 0;
 
-    // Grouped Identity & Store Settings (Identity + Payments + Delivery in 1 step)
-    const isIdentityStepComplete = hasIdentityName && (hasPaymentMethods || hasDeliveryFees);
+    // Grouped Identity & Store Settings (Custom Name + (Payments or Delivery))
+    const isIdentityStepComplete = hasCustomIdentityName && (hasPaymentMethods || hasDeliveryFees);
 
     const now = new Date();
     const sub = subscription as any;

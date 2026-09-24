@@ -108,29 +108,18 @@ export function SetupGuide({ setupStatus, businessName, dashboard, onOpenStoreSe
 
               {nextStep && (
                 <div className="pt-1">
-                  {nextStep.id === 'identity' && onOpenStoreSetupModal ? (
-                    <button
-                      type="button"
-                      onClick={onOpenStoreSetupModal}
-                      className="flex items-center justify-center gap-2 w-full min-h-[3rem] sm:min-h-[3.25rem] px-3 sm:px-4 rounded-xl sm:rounded-2xl bg-vendeur-emerald text-white font-black uppercase text-xs tracking-wider hover:bg-emerald-400 hover:scale-[1.01] active:scale-95 transition-all shadow-lg shadow-emerald-500/20 group cursor-pointer"
-                    >
-                      <Zap size={15} fill="currentColor" className="shrink-0 animate-pulse text-white" />
-                      <span className="truncate font-black">Configurer ma boutique</span>
-                      <ArrowRight size={15} className="shrink-0 group-hover:translate-x-1 transition-transform" />
-                    </button>
-                  ) : (
-                    <Link
-                      to={getActionLink(nextStep.id)}
-                      className="flex items-center justify-center gap-2 w-full min-h-[3rem] sm:min-h-[3.25rem] px-3 sm:px-4 rounded-xl sm:rounded-2xl bg-vendeur-emerald text-white font-black uppercase text-xs tracking-wider hover:bg-emerald-400 hover:scale-[1.01] active:scale-95 transition-all shadow-lg shadow-emerald-500/20 group cursor-pointer"
-                    >
-                      <Zap size={15} fill="currentColor" className="shrink-0 animate-pulse text-white" />
-                      <span className="truncate font-black">
-                        {nextStep.id === 'whatsapp' ? 'Brancher mon WhatsApp' :
-                         nextStep.id === 'products' ? 'Ajouter des articles & prix' : 'Action Requise'}
-                      </span>
-                      <ArrowRight size={15} className="shrink-0 group-hover:translate-x-1 transition-transform" />
-                    </Link>
-                  )}
+                  <Link
+                    to={getActionLink(nextStep.id)}
+                    className="flex items-center justify-center gap-2 w-full min-h-[3rem] sm:min-h-[3.25rem] px-3 sm:px-4 rounded-xl sm:rounded-2xl bg-vendeur-emerald text-white font-black uppercase text-xs tracking-wider hover:bg-emerald-400 hover:scale-[1.01] active:scale-95 transition-all shadow-lg shadow-emerald-500/20 group cursor-pointer"
+                  >
+                    <Zap size={15} fill="currentColor" className="shrink-0 animate-pulse text-white" />
+                    <span className="truncate font-black">
+                      {nextStep.id === 'identity' ? 'Configurer ma boutique' :
+                       nextStep.id === 'whatsapp' ? 'Brancher mon WhatsApp' :
+                       nextStep.id === 'products' ? 'Ajouter des articles & prix' : 'Action Requise'}
+                    </span>
+                    <ArrowRight size={15} className="shrink-0 group-hover:translate-x-1 transition-transform" />
+                  </Link>
                 </div>
               )}
 

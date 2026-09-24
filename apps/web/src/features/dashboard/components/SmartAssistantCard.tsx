@@ -95,8 +95,16 @@ export function SmartAssistantCard({
   const isPaused = !isExpired && !isAutoReplyOn;
   const isFully247Active = !isExpired && isAutoReplyOn;
 
+  const nameTrimmed = (merchant?.businessName || "").trim();
+  const isCustomName = Boolean(
+    nameTrimmed.length > 0 &&
+    nameTrimmed.toLowerCase() !== "ma boutique" &&
+    !nameTrimmed.includes("Commerçant WhatsApp") &&
+    !nameTrimmed.includes("Utilisateur Google")
+  );
+
   const rawSteps = setupStatus?.steps && setupStatus.steps.length > 0 ? setupStatus.steps : [
-    { id: 'identity', label: 'Identité & Réglages Boutique', completed: Boolean(merchant?.businessName), weight: 35 },
+    { id: 'identity', label: 'Identité & Réglages Boutique', completed: isCustomName, weight: 35 },
     { id: 'whatsapp', label: 'Numéro WhatsApp de vente', completed: false, weight: 35 },
     { id: 'products', label: 'Catalogue & Produits', completed: (dashboard?.products?.length || 0) > 0, weight: 30 }
   ];
@@ -435,16 +443,15 @@ export function SmartAssistantCard({
                             <span className="whitespace-nowrap">Lier mon WhatsApp</span>
                             <ArrowRight size={16} className="shrink-0 group-hover:translate-x-1 transition-transform" />
                           </button>
-                        ) : nextStep.id === "identity" && onOpenStoreSetupModal ? (
-                          <button
-                            type="button"
-                            onClick={onOpenStoreSetupModal}
+                        ) : nextStep.id === "identity" ? (
+                          <Link
+                            to="/settings?tab=boutique#identity"
                             className="w-full sm:flex-1 min-w-[180px] flex items-center justify-center gap-2.5 min-h-[48px] px-5 py-3 rounded-2xl bg-vendeur-emerald text-slate-950 font-black uppercase text-xs sm:text-sm tracking-wider hover:bg-emerald-400 active:scale-95 transition-all shadow-lg shadow-emerald-500/20 cursor-pointer group"
                           >
                             <Zap size={16} fill="currentColor" className="shrink-0 group-hover:scale-110 transition-transform" />
                             <span className="whitespace-nowrap">Configurer ma boutique</span>
                             <ArrowRight size={16} className="shrink-0 group-hover:translate-x-1 transition-transform" />
-                          </button>
+                          </Link>
                         ) : (
                           <Link
                             to={getActionLink(nextStep.id)}

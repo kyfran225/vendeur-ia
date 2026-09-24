@@ -446,14 +446,14 @@ export function WhatsAppConnectionFlow() {
             </div>
           </div>
 
-          {/* Quick Actions Header - Perfectly Centered in the card */}
-          <div className="flex flex-row items-center justify-center gap-3 w-full pt-1">
+          {/* Quick Actions Header - Perfectly Aligned & Responsive */}
+          <div className="flex flex-col xs:flex-row sm:flex-row items-stretch xs:items-center justify-center gap-2.5 w-full pt-1">
             {isConnectedLive && !isFounder && (
               <button
                 type="button"
                 onClick={handleDisconnect}
                 disabled={isDisconnecting}
-                className="h-9 px-3.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-600 dark:text-rose-400 font-black uppercase tracking-wider text-[10px] sm:text-[11px] flex items-center justify-center gap-1.5 transition-all cursor-pointer active:scale-95 disabled:opacity-50 shrink-0 whitespace-nowrap shadow-sm"
+                className="flex-1 sm:flex-none h-10 min-h-[40px] px-4 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-600 dark:text-rose-400 font-black uppercase tracking-wider text-[11px] flex items-center justify-center gap-1.5 transition-all cursor-pointer active:scale-95 disabled:opacity-50 whitespace-nowrap shadow-sm"
               >
                 {isDisconnecting ? <Loader2 size={13} className="animate-spin shrink-0" /> : <LogOut size={13} className="shrink-0" />}
                 <span>Déconnecter</span>
@@ -463,9 +463,9 @@ export function WhatsAppConnectionFlow() {
             <button
               type="button"
               onClick={() => navigate("/dashboard?test_ia=true")}
-              className="h-9 px-3.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-white/5 dark:hover:bg-white/10 border border-slate-200 dark:border-white/10 text-slate-800 dark:text-white font-black uppercase tracking-wider text-[10px] sm:text-[11px] transition-all flex items-center justify-center gap-1.5 cursor-pointer active:scale-[0.98] shrink-0 whitespace-nowrap shadow-sm"
+              className="flex-1 sm:flex-none h-10 min-h-[40px] px-4 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-white/5 dark:hover:bg-white/10 border border-slate-200 dark:border-white/10 text-slate-800 dark:text-white font-black uppercase tracking-wider text-[11px] transition-all flex items-center justify-center gap-1.5 cursor-pointer active:scale-[0.98] whitespace-nowrap shadow-sm"
             >
-              <AssistantIcon size={14} color="#10B981" />
+              <AssistantIcon size={14} color="#10B981" className="shrink-0" />
               <span>Simulateur IA</span>
             </button>
           </div>

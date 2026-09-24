@@ -141,8 +141,9 @@ export function SalesDashboard() {
       // Prendre la première nouvellement complétée
       const justDone = newlyCompleted[0];
       
-      // Si l'étape complétée est 'whatsapp', StepMilestoneModal la prend déjà en charge
+      // Si l'étape complétée est 'whatsapp', déclencher le modal de jalons WhatsApp
       if (justDone.id === "whatsapp") {
+        setIsWhatsAppMilestoneOpen(true);
         previousCompletedStepsRef.current = nowCompleted;
         return;
       }
@@ -170,8 +171,8 @@ export function SalesDashboard() {
         const now = Date.now();
         if (now - lastConnectedToastRef.current > 15000) {
           lastConnectedToastRef.current = now;
-          toast.success("WhatsApp connecté avec succès !");
-          setIsOffersModalOpen(true);
+          toast.success("🎉 WhatsApp connecté avec succès !");
+          setIsWhatsAppMilestoneOpen(true);
         }
         queryClient.invalidateQueries({ queryKey: ["dashboard"] });
       };
@@ -330,21 +331,33 @@ export function SalesDashboard() {
       <StepMilestoneModal
         isOpen={isWhatsAppMilestoneOpen}
         onClose={() => setIsWhatsAppMilestoneOpen(false)}
-        title="Étape 1 validée : WhatsApp Connecté !"
-        subtitle={`Félicitations ${dashboard?.merchant?.businessName || ""}, votre Vendeur IA est désormais relié à votre ligne WhatsApp. Passons à l'étape suivante : ajoutez vos produits !`}
+        title="🎉 Étape validée : WhatsApp Connecté !"
+        subtitle={
+          !dashboard?.setupStatus?.steps?.find((s: any) => s.id === "identity")?.completed
+            ? `Félicitations ${dashboard?.merchant?.businessName && dashboard.merchant.businessName !== "Ma Boutique" ? dashboard.merchant.businessName : ""} ! Votre Vendeur IA est désormais relié à votre ligne WhatsApp. Configurez maintenant les détails de votre boutique dans vos paramètres.`
+            : `Félicitations ${dashboard?.merchant?.businessName || ""} ! Votre Vendeur IA est désormais relié à votre ligne WhatsApp. Passons à l'étape suivante : ajoutez vos articles et leurs prix !`
+        }
         stepNumber={2}
-        totalSteps={5}
-        score={40}
-        primaryAction={{
-          label: "Ajouter mes produits",
-          href: "/products",
-          isPrimary: true
-        }}
+        totalSteps={3}
+        score={dashboard?.setupStatus?.score || 70}
+        primaryAction={
+          !dashboard?.setupStatus?.steps?.find((s: any) => s.id === "identity")?.completed
+            ? {
+                label: "Configurer ma boutique",
+                href: "/settings?tab=boutique#identity",
+                isPrimary: true
+              }
+            : {
+                label: "Ajouter mes articles & prix",
+                href: "/products",
+                isPrimary: true
+              }
+        }
         secondaryAction={{
           label: "Tester le simulateur IA",
           onClick: () => setIsTestIAOpen(true)
         }}
-        dashboardActionLabel="Voir mon Tableau de Bord"
+        dashboardActionLabel="Rester sur le Tableau de Bord"
         onDashboardClick={() => setIsWhatsAppMilestoneOpen(false)}
       />
 

@@ -1696,9 +1696,12 @@ class WhatsAppService {
 
     const now = new Date();
     const isTrial = merchant.subscription?.status === "trial" || (!merchant.subscription?.status && !isPaidActive);
-    const trialEndsAt = merchant.subscription?.trialEndsAt ? new Date(merchant.subscription.trialEndsAt) : null;
+    // Defensive fallback: if trialEndsAt is missing (old/partial onboarding), infer from createdAt + 7 days
+    const rawTrialEndsAt = merchant.subscription?.trialEndsAt
+      ? new Date(merchant.subscription.trialEndsAt)
+      : (isTrial && (merchant as any).createdAt ? new Date(new Date((merchant as any).createdAt).getTime() + 7 * 24 * 60 * 60 * 1000) : null);
     const trialUsage = merchant.subscription?.trialUsage || { messagesCount: 0, maxMessages: 50 };
-    const isTrialValid = isTrial && trialEndsAt && trialEndsAt > now && (trialUsage.messagesCount ?? 0) < (trialUsage.maxMessages ?? 50);
+    const isTrialValid = isTrial && rawTrialEndsAt && rawTrialEndsAt > now && (trialUsage.messagesCount ?? 0) < (trialUsage.maxMessages ?? 50);
 
     if (!isPaidActive && !isTrialValid) {
       console.log(`[WhatsApp] Free Trial Expired or Inactive: AI locked on WhatsApp for merchant "${merchant.businessName}". Conversations remain 100% manual.`);

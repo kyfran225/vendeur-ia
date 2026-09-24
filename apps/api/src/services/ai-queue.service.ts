@@ -211,9 +211,12 @@ Réponds UNIQUEMENT avec le texte final du message.`;
     const isPaidActive = merchantData?.subscription?.status === "active" || isFounder;
     const now = new Date();
     const isTrial = merchantData?.subscription?.status === "trial" || (!merchantData?.subscription?.status && !isPaidActive);
-    const trialEndsAt = merchantData?.subscription?.trialEndsAt ? new Date(merchantData.subscription.trialEndsAt) : null;
+    // Defensive fallback: if trialEndsAt is missing (old/partial onboarding), infer from createdAt + 7 days
+    const rawTrialEndsAt = merchantData?.subscription?.trialEndsAt
+      ? new Date(merchantData.subscription.trialEndsAt)
+      : (isTrial && (merchantData as any)?.createdAt ? new Date(new Date((merchantData as any).createdAt).getTime() + 7 * 24 * 60 * 60 * 1000) : null);
     const trialUsage = merchantData?.subscription?.trialUsage || { messagesCount: 0, maxMessages: 50 };
-    const isTrialValid = isTrial && trialEndsAt && trialEndsAt > now && (trialUsage.messagesCount ?? 0) < (trialUsage.maxMessages ?? 50);
+    const isTrialValid = isTrial && rawTrialEndsAt && rawTrialEndsAt > now && (trialUsage.messagesCount ?? 0) < (trialUsage.maxMessages ?? 50);
 
     if (!isPaidActive && !isTrialValid && !jobData.isSimulator) {
       console.log(`[AI Queue] Free Trial Expired or Inactive: AI locked for merchant ${merchantData?._id}. Skipping live AI response.`);

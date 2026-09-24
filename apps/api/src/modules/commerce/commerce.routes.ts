@@ -492,7 +492,29 @@ router.get("/conversations", authenticate, async (req, res) => {
       };
     }));
 
-    res.json(populatedConversations);
+    // Filter out empty ghost conversations without any messages
+    const validConversations = populatedConversations.filter(conv => conv.lastMessage !== null);
+
+    // Asynchronously delete empty ghost conversations & orphaned contacts from database
+    const emptyConvIds = populatedConversations.filter(c => !c.lastMessage).map(c => c._id);
+    if (emptyConvIds.length > 0) {
+      (async () => {
+        const emptyConvs = populatedConversations.filter(c => !c.lastMessage);
+        const customerIdsToCheck = emptyConvs.map(c => c.customerId?._id).filter(Boolean);
+
+        await CommerceConversationModel.deleteMany({ _id: { $in: emptyConvIds } });
+
+        for (const custId of customerIdsToCheck) {
+          const hasOtherConv = await CommerceConversationModel.exists({ customerId: custId });
+          const hasOrder = await CommerceOrderModel.exists({ customerId: custId });
+          if (!hasOtherConv && !hasOrder) {
+            await CommerceCustomerModel.deleteOne({ _id: custId });
+          }
+        }
+      })().catch(() => {});
+    }
+
+    res.json(validConversations);
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }

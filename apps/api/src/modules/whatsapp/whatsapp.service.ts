@@ -2729,30 +2729,12 @@ class WhatsAppService {
         ]
       });
 
-      if (!customer) {
-        customer = await CommerceCustomerModel.create({
-          merchantId: merchant._id,
-          phone: cleanPhone || remoteJid,
-          name: cleanPhone ? `Client ${cleanPhone}` : "Client WhatsApp",
-          tags: ["whatsapp"]
-        }).catch(() => null);
-      }
-
       if (!customer) return;
 
       let conversation = await CommerceConversationModel.findOne({
         merchantId: merchant._id,
         customerId: customer._id
       });
-
-      if (!conversation) {
-        conversation = await CommerceConversationModel.create({
-          merchantId: merchant._id,
-          customerId: customer._id,
-          platform: "whatsapp",
-          unreadCount: 0
-        }).catch(() => null);
-      }
 
       if (!conversation) return;
 

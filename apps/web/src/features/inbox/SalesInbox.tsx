@@ -68,6 +68,14 @@ function formatCustomerDisplayName(
   const rawName = customer.name?.trim() || "";
   const phone = customer.phone || "";
 
+  // Check if name is a raw LID string like "Client 47417042972840"
+  const isLidRawName = /^Client\s*#?\d{8,}$/i.test(rawName);
+  if (isLidRawName) {
+    const rawDigits = rawName.replace(/\D/g, "");
+    const shortId = rawDigits.length > 6 ? rawDigits.slice(-6) : rawDigits;
+    return `Client #${shortId}`;
+  }
+
   // Check if name is a numeric fragment like "25", "2", "225" or was mistakenly set to merchant's / user's name
   const isNumericFragment = /^\d{1,4}$/.test(rawName);
   const isCorrupted = rawName && (
@@ -81,7 +89,7 @@ function formatCustomerDisplayName(
 
   if (rawName && !isCorrupted) return rawName;
 
-  if (phone.includes("@lid")) {
+  if (phone.includes("@lid") || (/^\d{12,}$/.test(phone) && !phone.startsWith("225") && !phone.startsWith("221") && !phone.startsWith("226") && !phone.startsWith("229") && !phone.startsWith("237"))) {
     const rawDigits = phone.replace(/@lid/g, "").replace(/\D/g, "");
     const shortId = rawDigits.length > 6 ? rawDigits.slice(-6) : rawDigits;
     return `Client #${shortId}`;

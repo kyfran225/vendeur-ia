@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import {
   Sparkles,
   Bot,
@@ -179,6 +181,7 @@ function FormattedMessageContent({ text, onNavigate }: { text: string; onNavigat
 export function CopilotWidget() {
   const location = useLocation();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const {
@@ -294,6 +297,10 @@ export function CopilotWidget() {
       const targetUrl = resolveTargetRoute(action.payload, action.label);
       navigate(targetUrl);
       closeCopilot();
+    } else if (action.type === "action") {
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+      queryClient.invalidateQueries({ queryKey: ["knowledge"] });
+      toast.success(action.label || "Mise à jour enregistrée avec succès !");
     } else if (action.type === "modal") {
       if (action.payload === "dispatch_founder") {
         setFounderModalOpen(true);

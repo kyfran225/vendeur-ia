@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { authenticate } from "../../middleware/authenticate.js";
 import { marketingService } from "../../services/marketing.service.js";
+import { commerceService } from "./commerce.service.js";
 import { CommerceMerchantModel, MarketingCampaignModel } from "./commerce.model.js";
 
 const router = Router();
@@ -8,8 +9,7 @@ const router = Router();
 router.get("/active", authenticate, async (req, res) => {
   try {
     const ownerId = (req as any).user.id;
-    const merchant = await CommerceMerchantModel.findOne({ ownerId });
-    if (!merchant) return res.json(null);
+    const merchant = await commerceService.getOrCreateMerchant(ownerId);
 
     const campaign = await MarketingCampaignModel.findOne({
       merchantId: merchant._id,
@@ -25,8 +25,7 @@ router.get("/active", authenticate, async (req, res) => {
 router.get("/segments", authenticate, async (req, res) => {
   try {
     const ownerId = (req as any).user.id;
-    const merchant = await CommerceMerchantModel.findOne({ ownerId });
-    if (!merchant) return res.json({ vip: 0, active: 0, all: 0 });
+    const merchant = await commerceService.getOrCreateMerchant(ownerId);
 
     const segments = await marketingService.getSegments(merchant._id.toString());
     res.json(segments);
@@ -38,8 +37,7 @@ router.get("/segments", authenticate, async (req, res) => {
 router.get("/campaigns", authenticate, async (req, res) => {
   try {
     const ownerId = (req as any).user.id;
-    const merchant = await CommerceMerchantModel.findOne({ ownerId });
-    if (!merchant) return res.json([]);
+    const merchant = await commerceService.getOrCreateMerchant(ownerId);
 
     const campaigns = await marketingService.getCampaigns(merchant._id.toString());
     res.json(campaigns);
@@ -51,8 +49,7 @@ router.get("/campaigns", authenticate, async (req, res) => {
 router.post("/preview", authenticate, async (req, res) => {
   try {
     const ownerId = (req as any).user.id;
-    const merchant = await CommerceMerchantModel.findOne({ ownerId });
-    if (!merchant) return res.status(404).json({ error: "Marchand non trouvé" });
+    const merchant = await commerceService.getOrCreateMerchant(ownerId);
 
     const { productId, segment, template } = req.body;
     const result = await marketingService.generateBroadcastPreview(merchant._id.toString(), productId, segment, template);
@@ -65,8 +62,7 @@ router.post("/preview", authenticate, async (req, res) => {
 router.post("/broadcast", authenticate, async (req, res) => {
   try {
     const ownerId = (req as any).user.id;
-    const merchant = await CommerceMerchantModel.findOne({ ownerId });
-    if (!merchant) return res.status(404).json({ error: "Marchand non trouvé" });
+    const merchant = await commerceService.getOrCreateMerchant(ownerId);
 
     const { productId, segment, customText, personalization, scheduledAt } = req.body;
     const result = await marketingService.launchBroadcast(
@@ -89,8 +85,7 @@ router.post("/broadcast", authenticate, async (req, res) => {
 router.get("/automations", authenticate, async (req, res) => {
   try {
     const ownerId = (req as any).user.id;
-    const merchant = await CommerceMerchantModel.findOne({ ownerId });
-    if (!merchant) return res.status(404).json({ error: "Marchand non trouvé" });
+    const merchant = await commerceService.getOrCreateMerchant(ownerId);
 
     const automations = {
       abandonedCart: merchant.marketingAutomations?.abandonedCart ?? true,
@@ -115,12 +110,12 @@ router.patch("/automations", authenticate, async (req, res) => {
       updateObj["marketingAutomations.postPurchaseFollowup"] = postPurchaseFollowup;
     }
 
-    const merchant = await CommerceMerchantModel.findOneAndUpdate(
+    let merchant = await commerceService.getOrCreateMerchant(ownerId);
+    merchant = await CommerceMerchantModel.findOneAndUpdate(
       { ownerId },
       { $set: updateObj },
       { new: true }
-    );
-    if (!merchant) return res.status(404).json({ error: "Marchand non trouvé" });
+    ) || merchant;
 
     res.json({
       abandonedCart: merchant.marketingAutomations?.abandonedCart ?? true,

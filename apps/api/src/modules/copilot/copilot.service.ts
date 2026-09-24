@@ -49,19 +49,31 @@ export class CopilotService {
    * Extract high-fidelity real-time context from the merchant's store
    */
   async getMerchantContext(merchantId: string, pageRoute: string = "/dashboard") {
-    const merchantObjId = new mongoose.Types.ObjectId(merchantId);
+    let merchantObjId: mongoose.Types.ObjectId;
+    let merchantDoc: any = null;
 
-    const [merchant, products, orders, knowledge, conversationsCount] = await Promise.all([
-      CommerceMerchantModel.findById(merchantObjId).lean(),
+    if (mongoose.Types.ObjectId.isValid(merchantId)) {
+      merchantObjId = new mongoose.Types.ObjectId(merchantId);
+      merchantDoc = await CommerceMerchantModel.findById(merchantObjId).lean();
+    }
+
+    if (!merchantDoc) {
+      const { commerceService } = await import("../commerce/commerce.service.js");
+      const ensured = await commerceService.getOrCreateMerchant(merchantId);
+      merchantObjId = ensured._id as mongoose.Types.ObjectId;
+      merchantDoc = ensured.toObject ? ensured.toObject() : ensured;
+    } else {
+      merchantObjId = merchantDoc._id as mongoose.Types.ObjectId;
+    }
+
+    const merchant = merchantDoc;
+
+    const [products, orders, knowledge, conversationsCount] = await Promise.all([
       CommerceProductModel.find({ merchantId: merchantObjId }).limit(10).lean(),
       CommerceOrderModel.find({ merchantId: merchantObjId }).sort({ createdAt: -1 }).limit(10).lean(),
       CommerceKnowledgeModel.findOne({ merchantId: merchantObjId }).lean(),
       CommerceConversationModel.countDocuments({ merchantId: merchantObjId })
     ]);
-
-    if (!merchant) {
-      throw new Error("Commerçant introuvable");
-    }
 
     const totalProducts = await CommerceProductModel.countDocuments({ merchantId: merchantObjId });
     const outOfStockCount = await CommerceProductModel.countDocuments({
@@ -240,6 +252,8 @@ Pour offrir une expérience hors-norme, insère TOUJOURS des balises d'action pr
   \`[[ACTION_NAVIGATE:/offers,🌟 Découvrir les Formules & Pack Pro]]\`
 - \`[[ACTION_OPEN_MODAL:modalName,Libellé]]\` : pour ouvrir directement une fenêtre d'action (scanner, pack_pro, fast_pay, dispatch_founder).
 - \`[[ACTION_NOTIFY_FOUNDER:résumé]]\` : utilise cette balise UNIQUEMENT si le commerçant te demande expressément de transmettre un message, une suggestion, un besoin ou une réclamation aux Fondateurs / à l'équipe dirigeante.
+- \`[[ACTION_UPDATE_STORE:{"businessName":"...", "city":"...", "category":"...", "phone":"...", "description":"..."}]]\` : si le commerçant te demande de modifier le nom, la ville, la catégorie, le téléphone ou la description de sa boutique dans la conversation.
+- \`[[ACTION_UPDATE_KNOWLEDGE:{"paymentMethods":[{"provider":"Wave","number":"..."}], "deliveryFees":[{"zoneName":"...", "fee":1500}]}]]\` : si le commerçant te transmet ses moyens de paiement Mobile Money ou ses tarifs de livraison.
 
 ---
 ### 💬 TON & COMPORTEMENT :
@@ -359,6 +373,45 @@ Pour offrir une expérience hors-norme, insère TOUJOURS des balises d'action pr
         pageRoute
       });
       founderAlertSent = true;
+      rawText = rawText.replace(match[0], "");
+    }
+
+    // Parse [[ACTION_UPDATE_STORE:json]]
+    const storeMatches = [...rawText.matchAll(/\[\[ACTION_UPDATE_STORE:(\{.*?\})\]\]/g)];
+    for (const match of storeMatches) {
+      try {
+        const updateData = JSON.parse(match[1]);
+        const mDoc = await CommerceMerchantModel.findById(merchantObjId);
+        if (mDoc && mDoc.ownerId) {
+          const { commerceService } = await import("../commerce/commerce.service.js");
+          await commerceService.updateMerchant(mDoc.ownerId.toString(), updateData);
+          actions.push({
+            type: "action",
+            label: "✅ Boutique mise à jour",
+            payload: "store_updated"
+          });
+        }
+      } catch (e: any) {
+        logger.error(`[Copilot Action] Erreur UPDATE_STORE: ${e.message}`);
+      }
+      rawText = rawText.replace(match[0], "");
+    }
+
+    // Parse [[ACTION_UPDATE_KNOWLEDGE:json]]
+    const knowledgeMatches = [...rawText.matchAll(/\[\[ACTION_UPDATE_KNOWLEDGE:(\{.*?\})\]\]/g)];
+    for (const match of knowledgeMatches) {
+      try {
+        const updateData = JSON.parse(match[1]);
+        const { commerceService } = await import("../commerce/commerce.service.js");
+        await commerceService.updateKnowledge(merchantObjId.toString(), updateData);
+        actions.push({
+          type: "action",
+          label: "📚 Informations enregistrées",
+          payload: "knowledge_updated"
+        });
+      } catch (e: any) {
+        logger.error(`[Copilot Action] Erreur UPDATE_KNOWLEDGE: ${e.message}`);
+      }
       rawText = rawText.replace(match[0], "");
     }
 

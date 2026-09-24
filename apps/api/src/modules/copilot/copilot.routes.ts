@@ -1,12 +1,12 @@
 import { Router } from "express";
 import { authenticate } from "../../middleware/authenticate.js";
-import { CommerceMerchantModel } from "../commerce/commerce.model.js";
+import { commerceService } from "../commerce/commerce.service.js";
 import { copilotService } from "./copilot.service.js";
 import { logger } from "../../services/logger.service.js";
 
 const router = Router();
 
-// Middleware to resolve the current merchant from JWT user
+// Middleware to resolve or auto-create the current merchant from JWT user
 const resolveMerchant = async (req: any, res: any, next: any) => {
   try {
     const ownerId = req.user?.id;
@@ -14,11 +14,7 @@ const resolveMerchant = async (req: any, res: any, next: any) => {
       return res.status(401).json({ error: "Non authentifié" });
     }
 
-    const merchant = await CommerceMerchantModel.findOne({ ownerId });
-    if (!merchant) {
-      return res.status(404).json({ error: "Boutique marchand introuvable" });
-    }
-
+    const merchant = await commerceService.getOrCreateMerchant(ownerId);
     req.merchant = merchant;
     next();
   } catch (error: any) {

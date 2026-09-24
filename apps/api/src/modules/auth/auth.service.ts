@@ -85,6 +85,17 @@ export class AuthService {
     const refreshTokenHash = await bcrypt.hash(refreshToken, 10);
     await UserModel.findByIdAndUpdate(user._id, { refreshTokenHash, lastSeenAt: new Date() });
 
+    // Auto-ensure CommerceMerchant and Free Trial existence for every authenticated user
+    try {
+      const { commerceService } = await import("../commerce/commerce.service.js");
+      await commerceService.getOrCreateMerchant(user._id.toString(), {
+        businessName: user.displayName,
+        phone: user.whatsappNumber
+      });
+    } catch (err) {
+      console.warn("[Auth] Failed to auto-ensure merchant on token generation:", err);
+    }
+
     return {
       accessToken,
       refreshToken,

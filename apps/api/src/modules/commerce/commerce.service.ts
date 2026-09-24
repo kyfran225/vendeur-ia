@@ -240,20 +240,141 @@ export class CommerceService {
     return merchant;
   }
 
-  async getDashboard(ownerId: string) {
-    const user = await UserModel.findById(ownerId);
+  /**
+   * Guarantees a CommerceMerchant document exists for the specified user (ownerId).
+   * Automatically initializes Free Trial (7 days, 50 AI msgs, 10 products) and default Knowledge Base if missing.
+   */
+  async getOrCreateMerchant(ownerId: string, initialData?: any) {
+    if (!ownerId) throw new Error("ownerId est requis");
+
+    const user = await UserModel.findById(ownerId).lean();
     const isFounder = (user?.whatsappNumber && isFounderNumber(user.whatsappNumber)) || 
                       (user?.email && isFounderNumber(user.email)) ||
                       (user?.roles && (user.roles.includes("admin") || user.roles.includes("creator")));
 
-    let merchant: any = null;
     if (isFounder) {
-      merchant = await this.ensureFounderMerchantConfigured(ownerId, user?.whatsappNumber || undefined);
-    } else {
-      merchant = await CommerceMerchantModel.findOne({ ownerId });
+      return await this.ensureFounderMerchantConfigured(ownerId, user?.whatsappNumber || undefined);
     }
 
-    if (!merchant) return { merchant: null, products: [], metrics: {} };
+    let merchant = await CommerceMerchantModel.findOne({ ownerId });
+
+    if (!merchant) {
+      const rawName = initialData?.businessName || user?.displayName || "Ma Boutique";
+      const cleanName = (rawName.includes("Commerçant WhatsApp") || rawName.includes("Utilisateur Google"))
+        ? "Ma Boutique"
+        : rawName;
+      const slug = await this.generateUniqueSlug(cleanName);
+      const phoneNum = initialData?.phone || initialData?.whatsappNumber || user?.whatsappNumber || "";
+
+      const defaultTrialEndsAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+
+      merchant = await CommerceMerchantModel.create({
+        ownerId,
+        businessName: cleanName,
+        slug,
+        category: initialData?.category || "clothing",
+        description: initialData?.description || "",
+        address: initialData?.address || "",
+        city: initialData?.city || "Abidjan",
+        country: initialData?.country || "CI",
+        currency: initialData?.currency || "XOF",
+        phone: phoneNum,
+        whatsappNumber: phoneNum,
+        referralCode: this.generateReferralCode(),
+        subscription: {
+          plan: "trial",
+          status: "trial",
+          trialEndsAt: defaultTrialEndsAt,
+          expiresAt: defaultTrialEndsAt,
+          trialUsage: {
+            messagesCount: 0,
+            maxMessages: 50,
+            productsCount: 0,
+            maxProducts: 10
+          }
+        },
+        aiSettings: {
+          personality: "friendly",
+          autoReply: true,
+          weeklyReport: true
+        },
+        whatsappConfig: {
+          provider: "baileys",
+          status: "disconnected"
+        }
+      });
+
+      // Auto-provision default Knowledge Base
+      await CommerceKnowledgeModel.findOneAndUpdate(
+        { merchantId: merchant._id },
+        {
+          $setOnInsert: {
+            merchantId: merchant._id,
+            businessName: cleanName,
+            generalKnowledge: `Boutique ${cleanName} spécialisée dans la vente de produits de qualité à ${merchant.city || "Abidjan"}.`,
+            businessRules: {
+              openingHours: "09:00 - 19:00",
+              deliveryZones: ["Abidjan", "Intérieur de la Côte d'Ivoire"],
+              deliveryFees: [
+                { zoneName: "Abidjan Centre (Cocody, Plateau, Marcory)", fee: 1500 },
+                { zoneName: "Abidjan Périphérie (Yopougon, Abobo)", fee: 2000 }
+              ],
+              paymentMethods: [
+                { provider: "Wave", number: phoneNum || "Non configuré" },
+                { provider: "Orange Money", number: phoneNum || "Non configuré" }
+              ],
+              returnPolicy: "Retours acceptés sous 48h en cas de défaut."
+            },
+            faq: []
+          }
+        },
+        { upsert: true, new: true }
+      );
+    } else {
+      // Auto-heal missing trial parameters if needed
+      if (!merchant.subscription?.trialEndsAt && merchant.subscription?.status !== "active") {
+        const createdAt = (merchant as any).createdAt ? new Date((merchant as any).createdAt) : new Date();
+        const trialEndsAt = new Date(createdAt.getTime() + 7 * 24 * 60 * 60 * 1000);
+        const isExpired = trialEndsAt <= new Date();
+
+        const updatedSub = {
+          ...(merchant.subscription ? (merchant.subscription as any).toObject?.() || merchant.subscription : {}),
+          plan: merchant.subscription?.plan || "trial",
+          status: merchant.subscription?.status || (isExpired ? "expired" : "trial"),
+          trialEndsAt: trialEndsAt,
+          expiresAt: merchant.subscription?.expiresAt || trialEndsAt,
+          trialUsage: {
+            messagesCount: merchant.subscription?.trialUsage?.messagesCount || 0,
+            maxMessages: merchant.subscription?.trialUsage?.maxMessages || 50,
+            productsCount: merchant.subscription?.trialUsage?.productsCount || 0,
+            maxProducts: merchant.subscription?.trialUsage?.maxProducts || 10
+          }
+        };
+
+        merchant = await CommerceMerchantModel.findOneAndUpdate(
+          { ownerId },
+          { $set: { subscription: updatedSub } },
+          { new: true }
+        ) || merchant;
+      }
+
+      if (!merchant.slug && merchant.businessName) {
+        merchant.slug = await this.generateUniqueSlug(merchant.businessName, merchant._id.toString());
+        await merchant.save().catch(() => {});
+      }
+    }
+
+    return merchant;
+  }
+
+  async getDashboard(ownerId: string) {
+    const user = await UserModel.findById(ownerId);
+    let merchant: any = await this.getOrCreateMerchant(ownerId);
+    const isFounder = (user?.whatsappNumber && isFounderNumber(user.whatsappNumber)) ||
+      (user?.email && isFounderNumber(user.email)) ||
+      (merchant?.whatsappNumber && isFounderNumber(merchant.whatsappNumber)) ||
+      user?.roles?.includes('admin') ||
+      user?.roles?.includes('creator');
 
     const isSocketAlive = whatsappService.isSessionConnected(ownerId);
     const hasSavedSession = await whatsappService.hasStoredSession(ownerId);
@@ -678,17 +799,16 @@ export class CommerceService {
   }
 
   async updateMerchant(ownerId: string, data: any) {
-    const existingMerchant = await CommerceMerchantModel.findOne({ ownerId });
-    if (!existingMerchant) throw new Error("Merchant not found");
+    let merchant = await this.getOrCreateMerchant(ownerId, data);
 
     if (data.slug) {
-      data.slug = await this.generateUniqueSlug(data.slug, existingMerchant._id.toString());
-    } else if (data.businessName && data.businessName !== existingMerchant.businessName && !existingMerchant.slug) {
-      data.slug = await this.generateUniqueSlug(data.businessName, existingMerchant._id.toString());
+      data.slug = await this.generateUniqueSlug(data.slug, merchant._id.toString());
+    } else if (data.businessName && data.businessName !== merchant.businessName && !merchant.slug) {
+      data.slug = await this.generateUniqueSlug(data.businessName, merchant._id.toString());
     }
 
-    const previousCurrency = existingMerchant.currency || "XOF";
-    const targetCurrency = data.currency || existingMerchant.currency || "XOF";
+    const previousCurrency = merchant.currency || "XOF";
+    const targetCurrency = data.currency || merchant.currency || "XOF";
 
     // Preserve existing WhatsApp configuration unless explicitly provided
     if (!data.whatsappConfig) {
@@ -706,12 +826,19 @@ export class CommerceService {
     // Detect if currency changed
     const currencyChanged = data.currency && data.currency.toUpperCase() !== previousCurrency.toUpperCase();
 
-    const merchant = await CommerceMerchantModel.findOneAndUpdate(
+    merchant = await CommerceMerchantModel.findOneAndUpdate(
       { ownerId },
       { $set: data },
       { new: true }
-    );
-    if (!merchant) throw new Error("Merchant not found");
+    ) || merchant;
+
+    // Sync businessName to Knowledge base
+    if (data.businessName) {
+      await CommerceKnowledgeModel.findOneAndUpdate(
+        { merchantId: merchant._id },
+        { $set: { businessName: data.businessName } }
+      );
+    }
 
     // If currency changed, convert all existing products and knowledge delivery fees
     if (currencyChanged) {

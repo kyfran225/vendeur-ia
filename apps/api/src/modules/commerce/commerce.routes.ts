@@ -2191,36 +2191,7 @@ router.post("/webhooks/paystack", async (req, res) => {
 router.get("/merchant", authenticate, async (req, res) => {
   const ownerId = (req as any).user.id;
   try {
-    let merchant = await CommerceMerchantModel.findOne({ ownerId });
-    if (!merchant) {
-      return res.json({ merchant: null, onboardingCompleted: false });
-    }
-
-    // Auto-initialize trial guardrails if missing and not already paid active
-    if (!merchant.subscription?.trialEndsAt && merchant.subscription?.status !== "active") {
-      const createdAt = (merchant as any).createdAt ? new Date((merchant as any).createdAt) : new Date();
-      const trialEndsAt = new Date(createdAt.getTime() + 7 * 24 * 60 * 60 * 1000);
-      const isExpired = trialEndsAt <= new Date();
-      const updatedSub = {
-        ...(merchant.subscription ? (merchant.subscription as any).toObject?.() || merchant.subscription : {}),
-        plan: merchant.subscription?.plan || "trial",
-        status: merchant.subscription?.status || (isExpired ? "expired" : "trial"),
-        trialEndsAt: trialEndsAt,
-        expiresAt: merchant.subscription?.expiresAt || trialEndsAt,
-        trialUsage: {
-          messagesCount: merchant.subscription?.trialUsage?.messagesCount || 0,
-          maxMessages: merchant.subscription?.trialUsage?.maxMessages || 50,
-          productsCount: merchant.subscription?.trialUsage?.productsCount || 0,
-          maxProducts: merchant.subscription?.trialUsage?.maxProducts || 10
-        }
-      };
-      merchant = await CommerceMerchantModel.findOneAndUpdate(
-        { ownerId },
-        { $set: { subscription: updatedSub } },
-        { new: true }
-      );
-    }
-
+    const merchant = await commerceService.getOrCreateMerchant(ownerId);
     res.json(merchant);
   } catch (error: any) {
     res.status(500).json({ error: error.message });
@@ -2254,21 +2225,7 @@ router.patch("/merchant", authenticate, validate(UpdateMerchantSchema), async (r
 router.get("/knowledge", authenticate, async (req, res) => {
   try {
     const ownerId = (req as any).user.id;
-    const merchant = await CommerceMerchantModel.findOne({ ownerId });
-    if (!merchant) {
-      return res.json({
-        businessRules: {
-          deliveryZones: [],
-          deliveryFees: [],
-          openingHours: "09:00 - 18:00",
-          returnPolicy: "Retours acceptés sous 48h.",
-          paymentMethods: []
-        },
-        faq: [],
-        customInstructions: ""
-      });
-    }
-
+    const merchant = await commerceService.getOrCreateMerchant(ownerId);
     const knowledge = await commerceService.getKnowledge(merchant._id.toString());
     res.json(knowledge);
   } catch (error: any) {
@@ -2279,9 +2236,7 @@ router.get("/knowledge", authenticate, async (req, res) => {
 router.patch("/knowledge", authenticate, async (req, res) => {
   try {
     const ownerId = (req as any).user.id;
-    const merchant = await CommerceMerchantModel.findOne({ ownerId });
-    if (!merchant) return res.status(404).json({ error: "Merchant not found" });
-
+    const merchant = await commerceService.getOrCreateMerchant(ownerId);
     const knowledge = await commerceService.updateKnowledge(merchant._id.toString(), req.body);
     res.json(knowledge);
   } catch (error: any) {
@@ -2292,8 +2247,7 @@ router.patch("/knowledge", authenticate, async (req, res) => {
 router.get("/products", authenticate, async (req, res) => {
   try {
     const ownerId = (req as any).user.id;
-    const merchant = await CommerceMerchantModel.findOne({ ownerId });
-    if (!merchant) return res.json([]);
+    const merchant = await commerceService.getOrCreateMerchant(ownerId);
 
     const isFounder = (merchant.whatsappNumber && isFounderNumber(merchant.whatsappNumber)) ||
                       (merchant.phone && isFounderNumber(merchant.phone)) ||
@@ -2313,8 +2267,7 @@ router.get("/products", authenticate, async (req, res) => {
 router.post("/products", authenticate, validate(CreateProductSchema), async (req, res) => {
   try {
     const ownerId = (req as any).user.id;
-    const merchant = await CommerceMerchantModel.findOne({ ownerId });
-    if (!merchant) return res.status(404).json({ error: "Merchant not found" });
+    const merchant = await commerceService.getOrCreateMerchant(ownerId);
 
     logger.info(`[Product] Creating new product for merchant ${merchant.businessName}`);
 

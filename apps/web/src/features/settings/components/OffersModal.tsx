@@ -9,6 +9,7 @@ import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { useNavigate } from "react-router-dom";
 import { VendeurIALoader } from "@/components/ui/VendeurIALoader";
+import * as Portal from "@radix-ui/react-portal";
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -56,9 +57,11 @@ export function OffersModal({ isOpen, onClose }: OffersModalProps) {
 
   if (isLoading) {
     return (
-      <div className="fixed inset-0 z-[300] flex items-center justify-center bg-black/90 backdrop-blur-sm">
-        <VendeurIALoader label="Chargement des formules..." />
-      </div>
+      <Portal.Root>
+        <div className="fixed inset-0 z-[300] flex items-center justify-center bg-black/40 dark:bg-black/80 backdrop-blur-md">
+          <VendeurIALoader label="Chargement des formules..." />
+        </div>
+      </Portal.Root>
     );
   }
 
@@ -78,8 +81,9 @@ export function OffersModal({ isOpen, onClose }: OffersModalProps) {
   );
 
   return (
-    <div className="fixed inset-0 z-[300] flex flex-col items-center justify-start sm:justify-center p-2.5 sm:p-4 md:p-6 overflow-y-auto no-scrollbar pt-4 pb-16 sm:py-8">
-      <div className="fixed inset-0 bg-black/80 backdrop-blur-xl" onClick={onClose} />
+    <Portal.Root>
+      <div className="fixed inset-0 z-[300] flex flex-col items-center justify-start sm:justify-center p-2.5 sm:p-4 md:p-6 overflow-y-auto no-scrollbar pt-4 pb-16 sm:py-8">
+        <div className="fixed inset-0 bg-black/40 dark:bg-black/80 backdrop-blur-md" onClick={onClose} />
 
       <div className="relative w-full max-w-5xl bg-white dark:bg-[#09110d] border border-slate-200 dark:border-white/10 rounded-[1.75rem] sm:rounded-[2.5rem] md:rounded-[3rem] overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300 flex flex-col my-auto shrink-0 text-slate-900 dark:text-white">
         {/* Glow ambient spots */}
@@ -314,6 +318,7 @@ export function OffersModal({ isOpen, onClose }: OffersModalProps) {
         </button>
       </div>
     </div>
+    </Portal.Root>
   );
 }
 

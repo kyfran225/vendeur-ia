@@ -171,7 +171,7 @@ export function StoreSetupWizardModal({
 
   return (
     <Portal.Root>
-      <div className="fixed inset-0 z-[200] flex items-center justify-center p-3 sm:p-6 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
+      <div className="fixed inset-0 z-[200] flex items-center justify-center p-3 sm:p-6 bg-black/40 dark:bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
         <motion.div
           initial={{ opacity: 0, scale: 0.92, y: 15 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}

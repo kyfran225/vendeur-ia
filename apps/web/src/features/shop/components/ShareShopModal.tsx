@@ -3,6 +3,7 @@ import { X, Copy, Check, Share2, MessageCircle, Download } from "lucide-react";
 import { toast } from "sonner";
 import { ShopTheme, getShopTheme } from "../lib/theme";
 import { cn } from "@/lib/utils";
+import * as Portal from "@radix-ui/react-portal";
 
 interface ShareShopModalProps {
   isOpen: boolean;
@@ -45,7 +46,8 @@ export function ShareShopModal({ isOpen, onClose, merchant, shopUrl, theme }: Sh
   };
 
   return (
-    <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
+    <Portal.Root>
+      <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/40 dark:bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
       <div className="relative w-full max-w-md bg-white dark:bg-slate-900 text-slate-900 dark:text-white border border-slate-200/90 dark:border-white/10 rounded-3xl p-6 md:p-8 space-y-6 shadow-2xl animate-in zoom-in-95 duration-200 text-center">
         <button
           onClick={onClose}
@@ -117,5 +119,6 @@ export function ShareShopModal({ isOpen, onClose, merchant, shopUrl, theme }: Sh
         </div>
       </div>
     </div>
+    </Portal.Root>
   );
 }

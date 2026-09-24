@@ -1,6 +1,7 @@
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { AlertTriangle, Trash2, X, AlertCircle, LogOut, Loader2 } from "lucide-react";
+import * as Portal from "@radix-ui/react-portal";
 
 export interface ConfirmationModalProps {
   isOpen: boolean;
@@ -53,17 +54,18 @@ export function ConfirmationModal({
   };
 
   return (
-    <AnimatePresence>
-      {isOpen && (
-        <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
-          {/* Backdrop */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={isLoading ? undefined : onClose}
-            className="absolute inset-0 bg-black/80 backdrop-blur-md"
-          />
+    <Portal.Root>
+      <AnimatePresence>
+        {isOpen && (
+          <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={isLoading ? undefined : onClose}
+              className="absolute inset-0 bg-black/40 dark:bg-black/80 backdrop-blur-md"
+            />
 
           {/* Modal Content */}
           <motion.div
@@ -118,6 +120,7 @@ export function ConfirmationModal({
         </div>
       )}
     </AnimatePresence>
+    </Portal.Root>
   );
 }
 

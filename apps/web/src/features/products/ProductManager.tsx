@@ -14,6 +14,7 @@ import { compressImage } from "@/lib/imageUtils";
 import axios from "axios";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import * as Portal from "@radix-ui/react-portal";
 
 const API_URL = import.meta.env.VITE_API_URL;
 if (!API_URL) console.warn("VITE_API_URL is not defined! Check your .env file.");
@@ -731,11 +732,12 @@ export function ProductManager() {
 
       {/* Edit / Add Form Modal - Unified Direct Sleek Layout */}
       {(editingProduct || isAddingManual) && (
-        <div className="fixed inset-0 z-[150] flex items-end sm:items-center justify-center p-0 sm:p-6 overflow-hidden animate-in fade-in duration-200">
-          <div 
-            className="fixed inset-0 bg-slate-950/60 dark:bg-black/80 backdrop-blur-md transition-opacity" 
-            onClick={() => { setEditingProduct(null); setIsAddingManual(false); }}
-          />
+        <Portal.Root>
+          <div className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center p-0 sm:p-6 overflow-hidden animate-in fade-in duration-200">
+            <div
+              className="fixed inset-0 bg-black/40 dark:bg-black/80 backdrop-blur-md transition-opacity"
+              onClick={() => { setEditingProduct(null); setIsAddingManual(false); }}
+            />
           
           <form
             onSubmit={editingProduct ? handleUpdate : handleManualCreate}
@@ -1017,6 +1019,7 @@ export function ProductManager() {
             </div>
           </form>
         </div>
+        </Portal.Root>
       )}
 
       {/* Main Header */}

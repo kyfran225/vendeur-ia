@@ -13,6 +13,7 @@ import { twMerge } from "tailwind-merge";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/apiClient";
 import { toast } from "sonner";
+import * as Portal from "@radix-ui/react-portal";
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -85,16 +86,17 @@ export function ResumeConfirmationModal({ isOpen, onClose, onSuccess }: ResumeCo
   if (!isOpen) return null;
 
   return (
-    <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-        {/* Backdrop */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          onClick={onClose}
-          className="fixed inset-0 bg-black/80 backdrop-blur-md"
-        />
+    <Portal.Root>
+      <AnimatePresence>
+        <div className="fixed inset-0 z-[300] flex items-center justify-center p-4">
+          {/* Backdrop */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={onClose}
+            className="fixed inset-0 bg-black/40 dark:bg-black/80 backdrop-blur-md"
+          />
 
         {/* Modal Dialog */}
         <motion.div
@@ -194,5 +196,6 @@ export function ResumeConfirmationModal({ isOpen, onClose, onSuccess }: ResumeCo
         </motion.div>
       </div>
     </AnimatePresence>
+    </Portal.Root>
   );
 }

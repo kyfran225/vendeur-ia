@@ -13,6 +13,7 @@ import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/apiClient";
+import * as Portal from "@radix-ui/react-portal";
 import { toast } from "sonner";
 
 function cn(...inputs: ClassValue[]) {
@@ -86,16 +87,17 @@ export function PauseConfirmationModal({ isOpen, onClose, onSuccess }: PauseConf
   if (!isOpen) return null;
 
   return (
-    <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-        {/* Backdrop */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          onClick={onClose}
-          className="fixed inset-0 bg-black/80 backdrop-blur-md"
-        />
+    <Portal.Root>
+      <AnimatePresence>
+        <div className="fixed inset-0 z-[300] flex items-center justify-center p-4">
+          {/* Backdrop */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={onClose}
+            className="fixed inset-0 bg-black/40 dark:bg-black/80 backdrop-blur-md"
+          />
 
         {/* Modal Dialog */}
         <motion.div
@@ -195,5 +197,6 @@ export function PauseConfirmationModal({ isOpen, onClose, onSuccess }: PauseConf
         </motion.div>
       </div>
     </AnimatePresence>
+    </Portal.Root>
   );
 }

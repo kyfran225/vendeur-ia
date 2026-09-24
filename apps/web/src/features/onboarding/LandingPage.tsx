@@ -425,6 +425,54 @@ function LandingHero({
   const [isMuted, setIsMuted] = useState(true);
   const [isPlaying, setIsPlaying] = useState(true);
 
+  useEffect(() => {
+    const videoElement = videoRef.current;
+    if (!videoElement) return;
+
+    let isIntersecting = true;
+
+    const updatePlayState = () => {
+      if (document.hidden) {
+        videoElement.pause();
+        setIsPlaying(false);
+      } else if (isIntersecting) {
+        videoElement.play().then(() => {
+          setIsPlaying(true);
+        }).catch(() => {});
+      }
+    };
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          isIntersecting = entry.isIntersecting;
+          if (entry.isIntersecting && !document.hidden) {
+            videoElement.play().then(() => {
+              setIsPlaying(true);
+            }).catch(() => {});
+          } else {
+            videoElement.pause();
+            setIsPlaying(false);
+          }
+        });
+      },
+      { threshold: 0.25 }
+    );
+
+    observer.observe(videoElement);
+
+    const handleVisibilityChange = () => {
+      updatePlayState();
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      observer.disconnect();
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, []);
+
   const togglePlay = () => {
     if (videoRef.current) {
       if (isPlaying) {
@@ -1132,7 +1180,7 @@ export function LandingPage() {
                     onClick={handleLaunchDemo}
                     className="w-full sm:w-auto h-16 px-10 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black uppercase tracking-widest text-xs sm:text-sm hover:scale-105 active:scale-95 transition-all shadow-[0_20px_60px_rgba(16,185,129,0.3)] flex items-center justify-center gap-3 mx-auto cursor-pointer"
                   >
-                    Démarrer mon essai gratuit (7 jours) <ArrowRight size={18} />
+                    <span>Essai Gratuit 7 Jours</span> <ArrowRight size={18} />
                   </button>
                   <p className="text-xs text-slate-500 dark:text-white/40 font-semibold">
                     Essai gratuit de 7 jours • Aucune carte requise • Configuration en 2 minutes

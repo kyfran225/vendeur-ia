@@ -14,6 +14,7 @@
     "db:delete-user": "tsx src/scripts/delete-user.ts",
     "db:make-admin": "tsx src/scripts/make-admin.ts",
     "db:backup": "tsx src/scripts/cloud-backup.ts",
+    "db:restore": "tsx src/scripts/cloud-restore.ts",
     "db:seed-offers": "tsx src/scripts/seed-offers.ts",
     "db:full-reset": "tsx src/scripts/full-reset-and-setup.ts"
   },

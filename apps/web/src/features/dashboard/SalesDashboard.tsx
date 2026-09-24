@@ -33,6 +33,7 @@ import { SmartAssistantCard } from "./components/SmartAssistantCard";
 import { VendeurIAPlaygroundModal } from "./components/VendeurIAPlaygroundModal";
 import { SetupCompletionModal } from "./components/SetupCompletionModal";
 import { StepSuccessModal } from "./components/StepSuccessModal";
+import { StoreSetupWizardModal } from "./components/StoreSetupWizardModal";
 
 import { OffersModal } from "@/features/settings/components/OffersModal";
 import { PauseConfirmationModal } from "@/components/modals/PauseConfirmationModal";
@@ -357,6 +358,11 @@ export function SalesDashboard() {
         onClose={() => setIsShareModalOpen(false)}
         merchant={dashboard?.merchant}
         shopUrl={getMerchantShopUrl(dashboard?.merchant)}
+      />
+
+      <StoreSetupWizardModal
+        isOpen={isStoreSetupModalOpen}
+        onClose={() => setIsStoreSetupModalOpen(false)}
       />
     </main>
   );

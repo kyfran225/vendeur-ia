@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   X,
@@ -57,14 +58,26 @@ export function VendeurIAPlaygroundModal({ isOpen, onClose, merchant }: VendeurI
   const sessionId = useRef(`simulator_${merchant?._id}_${Date.now()}`).current;
   const whatsappNumber = merchant?.whatsappNumber || merchant?.phone || "";
   const waTestLink = `https://wa.me/${whatsappNumber.replace(/[^0-9]/g, '')}?text=${encodeURIComponent("Bonjour Vendeur IA ! Je teste ton fonctionnement.")}`;
-  const isPaidActive = merchant?.subscription?.status === "active";
+
+  const sub = merchant?.subscription;
+  const isPaidActive = sub?.status === "active";
+  const trialEndsAt = sub?.trialEndsAt ? new Date(sub.trialEndsAt) : (merchant?.createdAt ? new Date(new Date(merchant.createdAt).getTime() + 7 * 24 * 60 * 60 * 1000) : null);
+  const now = new Date();
+  const trialDaysRemaining = trialEndsAt ? Math.max(0, Math.ceil((trialEndsAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))) : 7;
+  const messagesUsed = sub?.trialUsage?.messagesCount ?? 0;
+  const maxMessages = sub?.trialUsage?.maxMessages ?? 50;
+  const isTrialStatus = sub?.status === "trial" || (!sub?.status && !isPaidActive);
+  const isTrialExpired = sub?.status === "expired" || (isTrialStatus && (trialDaysRemaining <= 0 || messagesUsed >= maxMessages));
+  const isTrialActive = isTrialStatus && !isTrialExpired && !isPaidActive;
+
+  const isAiActive = isPaidActive || isTrialActive;
 
   // Initial greeting from AI
   useEffect(() => {
     if (isOpen && messages.length === 0) {
-      const welcomeText = isPaidActive
+      const welcomeText = isAiActive
         ? `Bonjour ! 👋 Je suis l'assistant Vendeur IA de **${merchant?.businessName || merchant?.storeName || "votre boutique"}**. Je suis actif et prêt à répondre à vos clients sur WhatsApp !`
-        : `Bonjour ! 👋 Je suis prêt dans ce **Banc d'Essai** ! Posez-moi des questions pour voir comment je répondrais à vos clients. *Note : Je ne répondrai sur votre vrai WhatsApp qu'une fois votre forfait activé.*`;
+        : `Bonjour ! 👋 Je suis prêt dans ce **Banc d'Essai** ! Posez-moi des questions pour voir comment je répondrais à vos clients. *Note : Votre période d'essai est expirée. Activez votre forfait pour relancer les réponses sur votre WhatsApp.*`;
 
       setMessages([
         {
@@ -75,7 +88,7 @@ export function VendeurIAPlaygroundModal({ isOpen, onClose, merchant }: VendeurI
         }
       ]);
     }
-  }, [isOpen, merchant, isPaidActive]);
+  }, [isOpen, merchant, isAiActive]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -152,17 +165,15 @@ export function VendeurIAPlaygroundModal({ isOpen, onClose, merchant }: VendeurI
 
   if (!isOpen) return null;
 
-  return (
+  return createPortal(
     <AnimatePresence>
-      <div className="fixed inset-0 z-[75] flex items-center justify-center p-0 sm:p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-300">
+      <div className="fixed inset-0 z-[75] flex flex-col justify-start sm:items-center sm:justify-center p-0 sm:p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-300">
         <motion.div
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
-          className="relative w-full max-w-2xl bg-white dark:bg-vendeur-coal border-0 sm:border sm:border-slate-200 sm:dark:border-vendeur-emerald/30 rounded-none sm:rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col h-[100dvh] sm:h-[90vh] sm:max-h-[750px] text-slate-900 dark:text-white"
+          className="relative w-full h-[100dvh] sm:h-[85vh] sm:max-h-[750px] sm:max-w-2xl bg-white dark:bg-vendeur-coal border-0 sm:border sm:border-slate-200 sm:dark:border-vendeur-emerald/30 rounded-none sm:rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col text-slate-900 dark:text-white"
         >
-          {/* Mobile Sheet Indicator */}
-          <div className="w-12 h-1 bg-slate-300 dark:bg-white/20 rounded-full mx-auto mt-2 sm:hidden shrink-0" />
 
           {/* Top Header */}
           <div className="p-3.5 sm:p-5 md:p-6 bg-slate-50 dark:bg-vendeur-bg border-b border-slate-200 dark:border-white/10 flex items-center justify-between shrink-0 gap-3">
@@ -177,12 +188,12 @@ export function VendeurIAPlaygroundModal({ isOpen, onClose, merchant }: VendeurI
                   </h3>
                   <span className={cn(
                     "inline-flex items-center gap-1 border text-[8px] sm:text-[9px] font-black uppercase px-2 py-0.5 rounded-full shrink-0",
-                    isPaidActive
+                    isAiActive
                       ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-vendeur-emerald"
                       : "bg-amber-500/10 border-amber-500/30 text-amber-700 dark:text-amber-400"
                   )}>
-                    <span className={cn("h-1.5 w-1.5 rounded-full", isPaidActive ? "bg-emerald-500 animate-pulse" : "bg-amber-500")} />
-                    {isPaidActive ? "IA en Ligne" : "Mode Simulateur"}
+                    <span className={cn("h-1.5 w-1.5 rounded-full", isAiActive ? "bg-emerald-500 animate-pulse" : "bg-amber-500")} />
+                    {isAiActive ? (isPaidActive ? "IA en Ligne" : `Essai Gratuit (${trialDaysRemaining}j)`) : "Forfait Expiré"}
                   </span>
                 </div>
                 <p className="text-[10px] sm:text-xs text-slate-500 dark:text-white/50 font-medium truncate">
@@ -211,19 +222,19 @@ export function VendeurIAPlaygroundModal({ isOpen, onClose, merchant }: VendeurI
           {/* Dual Action Strip (Real WA vs Simulator) */}
           <div className={cn(
             "border-b p-2.5 px-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 text-xs shrink-0",
-            isPaidActive
+            isAiActive
               ? "bg-emerald-50 dark:bg-vendeur-emerald/10 border-emerald-200 dark:border-vendeur-emerald/20"
               : "bg-amber-50 dark:bg-amber-500/10 border-amber-200 dark:border-amber-500/20"
           )}>
             <div className={cn(
               "flex items-center gap-2 font-bold text-[11px] sm:text-xs",
-              isPaidActive ? "text-emerald-800 dark:text-vendeur-emerald" : "text-amber-800 dark:text-amber-400"
+              isAiActive ? "text-emerald-800 dark:text-vendeur-emerald" : "text-amber-800 dark:text-amber-400"
             )}>
-              <Zap size={14} className={cn(isPaidActive && "animate-pulse", "shrink-0")} />
+              <Zap size={14} className={cn(isAiActive && "animate-pulse", "shrink-0")} />
               <span className="truncate">
-                {isPaidActive
-                  ? "WhatsApp connecté & IA active !"
-                  : "IA en attente de forfait (Muette sur WhatsApp)"}
+                {isAiActive
+                  ? (isPaidActive ? "WhatsApp connecté & IA active !" : `Essai gratuit actif (${trialDaysRemaining}j restants) • IA active sur WhatsApp`)
+                  : "IA en pause (Forfait expiré)"}
               </span>
             </div>
             
@@ -312,7 +323,7 @@ export function VendeurIAPlaygroundModal({ isOpen, onClose, merchant }: VendeurI
           </div>
 
           {/* Chat Input Field */}
-          <div className="p-3 sm:p-4 bg-slate-50 dark:bg-vendeur-bg border-t border-slate-200 dark:border-white/10 shrink-0 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))]">
+          <div className="p-3 sm:p-4 bg-slate-50 dark:bg-vendeur-bg border-t border-slate-200 dark:border-white/10 shrink-0 pb-[calc(1.5rem+env(safe-area-inset-bottom,0px))] sm:pb-4">
             <form
               onSubmit={(e) => {
                 e.preventDefault();
@@ -340,6 +351,7 @@ export function VendeurIAPlaygroundModal({ isOpen, onClose, merchant }: VendeurI
           </div>
         </motion.div>
       </div>
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 }

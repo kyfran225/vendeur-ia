@@ -169,13 +169,13 @@ export function StoreSetupWizardModal({
   if (!isOpen) return null;
 
   return createPortal(
-    <div className="fixed inset-0 z-[200] flex items-center justify-center p-3 sm:p-6 bg-slate-950/60 dark:bg-black/80 backdrop-blur-md animate-in fade-in duration-200 overflow-y-auto">
+    <div className="fixed inset-0 z-[200] flex items-center justify-center p-0 sm:p-6 bg-slate-950/60 dark:bg-black/80 backdrop-blur-md animate-in fade-in duration-200 overflow-y-auto">
       <motion.div
         initial={{ opacity: 0, scale: 0.92, y: 15 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.92, y: 15 }}
         transition={{ type: "spring", stiffness: 350, damping: 28 }}
-        className="relative w-full max-w-xl bg-white dark:bg-[#0c1612] border border-slate-200 dark:border-white/10 rounded-3xl sm:rounded-[2.5rem] shadow-2xl overflow-hidden text-slate-900 dark:text-white flex flex-col max-h-[90vh]"
+        className="relative w-full h-full sm:h-auto max-w-xl bg-white dark:bg-[#0c1612] border-0 sm:border border-slate-200 dark:border-white/10 rounded-none sm:rounded-[2.5rem] shadow-2xl overflow-hidden text-slate-900 dark:text-white flex flex-col sm:max-h-[90vh] supports-[height:100dvh]:h-[100dvh] sm:supports-[height:100dvh]:h-auto"
       >
         {/* Header with Step Progress */}
         <div className="px-6 py-5 border-b border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/[0.02] flex items-center justify-between shrink-0">

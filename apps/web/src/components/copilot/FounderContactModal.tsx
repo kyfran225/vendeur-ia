@@ -49,8 +49,8 @@ export function FounderContactModal() {
   };
 
   return createPortal(
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-slate-950/60 dark:bg-black/80 backdrop-blur-md animate-in fade-in duration-300">
-      <div className="relative w-full max-w-xl bg-white dark:bg-vendeur-coal border border-slate-200 dark:border-white/10 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] text-slate-900 dark:text-white">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-0 sm:p-6 bg-slate-950/60 dark:bg-black/80 backdrop-blur-md animate-in fade-in duration-300">
+      <div className="relative w-full h-full sm:h-auto max-w-xl bg-white dark:bg-vendeur-coal border-0 sm:border border-slate-200 dark:border-white/10 rounded-none sm:rounded-3xl shadow-2xl overflow-hidden flex flex-col sm:max-h-[90vh] text-slate-900 dark:text-white supports-[height:100dvh]:h-[100dvh] sm:supports-[height:100dvh]:h-auto">
         {/* Top Header */}
         <div className="flex items-center justify-between p-5 border-b border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-[#0f1d17]">
           <div className="flex items-center gap-3">

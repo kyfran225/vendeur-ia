@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { ShoppingCart, Package, Plus, Minus, X, CheckCheck, Loader2, User, Phone, MapPin, Search, ChevronDown, Check, UserPlus } from "lucide-react";
+import { ShoppingCart, Package, Plus, Minus, X, CheckCheck, Loader2, User, Phone, MapPin, Search, ChevronDown, Check, UserPlus, ArrowLeft } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/apiClient";
 import { useMerchantCurrency } from "@/hooks/useMerchantCurrency";
@@ -181,17 +181,20 @@ export function OrderCreationModal({
   if (!isOpen) return null;
 
   return createPortal(
-    <div className="fixed inset-0 z-[100] flex flex-col justify-end sm:justify-center items-center p-0 sm:p-4 bg-slate-950/60 dark:bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="bg-slate-50 dark:bg-[#0c1612] border-t sm:border border-slate-200/90 dark:border-white/10 w-full max-w-3xl h-[94vh] sm:h-auto sm:max-h-[90vh] rounded-t-[2.5rem] sm:rounded-3xl overflow-hidden shadow-2xl flex flex-col animate-in slide-in-from-bottom duration-300 text-slate-900 dark:text-white">
+    <div className="fixed inset-0 z-[100] flex flex-col justify-start sm:justify-center items-center p-0 sm:p-4 bg-slate-950/60 dark:bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
+      <div className="bg-slate-50 dark:bg-[#0c1612] border-0 sm:border border-slate-200/90 dark:border-white/10 w-full max-w-3xl h-full sm:h-auto sm:max-h-[90vh] rounded-none sm:rounded-3xl overflow-hidden shadow-2xl flex flex-col animate-in slide-in-from-bottom duration-300 text-slate-900 dark:text-white supports-[height:100dvh]:h-[100dvh] sm:supports-[height:100dvh]:h-auto">
         
-        {/* Mobile Pull Handle */}
-        <div className="sm:hidden w-full flex items-center justify-center pt-3 pb-1 shrink-0">
-          <div className="w-12 h-1.5 rounded-full bg-slate-300 dark:bg-white/20" />
-        </div>
-
         {/* Header */}
-        <header className="p-4 sm:p-6 border-b border-slate-200/80 dark:border-white/5 flex items-center justify-between shrink-0 bg-white/80 dark:bg-white/[0.02] gap-3">
-          <div className="flex items-center gap-3 min-w-0">
+        <header className="p-3.5 sm:p-6 border-b border-slate-200/80 dark:border-white/5 flex items-center justify-between shrink-0 bg-white/95 dark:bg-[#0c1612]/95 backdrop-blur-md gap-3 sticky top-0 z-20">
+          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+            <button
+              type="button"
+              onClick={onClose}
+              className="sm:hidden h-10 w-10 rounded-xl bg-slate-100 dark:bg-white/5 text-slate-700 dark:text-white flex items-center justify-center shrink-0 cursor-pointer active:scale-95 transition-transform"
+              title="Retour"
+            >
+              <ArrowLeft size={20} />
+            </button>
             <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-2xl bg-emerald-500/10 flex items-center justify-center border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 shrink-0 shadow-[0_0_15px_rgba(16,185,129,0.2)]">
               <ShoppingCart size={22} className="shrink-0" />
             </div>
@@ -199,14 +202,14 @@ export function OrderCreationModal({
               <h2 className="text-base sm:text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight truncate">
                 Nouvelle Commande
               </h2>
-              <p className="text-[11px] sm:text-xs text-slate-500 dark:text-white/40 font-medium truncate">
+              <p className="text-[10px] sm:text-xs text-slate-500 dark:text-white/40 font-medium truncate">
                 Sélectionnez les articles et saisissez les coordonnées.
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 text-slate-500 dark:text-white/70 hover:text-slate-900 dark:hover:text-white flex items-center justify-center shrink-0 transition-colors active:scale-95"
+            className="hidden sm:flex w-10 h-10 rounded-xl bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 text-slate-500 dark:text-white/70 hover:text-slate-900 dark:hover:text-white items-center justify-center shrink-0 transition-colors active:scale-95"
             title="Fermer"
           >
             <X size={18} className="shrink-0" />

@@ -136,23 +136,23 @@ export function ProductShowcaseModal({
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-[200] flex items-center justify-center p-2 sm:p-4 md:p-6 overflow-y-auto">
+      <div className="fixed inset-0 z-[200] flex items-center justify-center p-0 sm:p-4 md:p-6 overflow-y-auto">
         {/* Backdrop */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           onClick={onClose}
-          className="fixed inset-0 bg-black/80 backdrop-blur-xl transition-all"
+          className="fixed inset-0 bg-black/80 backdrop-blur-xl transition-all hidden sm:block"
         />
 
-        {/* Modal Window */}
+        {/* Modal / Full Mobile Page Window */}
         <motion.div
           initial={{ opacity: 0, scale: 0.96, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.96, y: 20 }}
           transition={{ duration: 0.25, ease: "easeOut" }}
-          className="relative w-full max-w-5xl bg-white dark:bg-[#09130e] border border-slate-200 dark:border-emerald-500/20 rounded-2xl sm:rounded-[2.5rem] shadow-[0_25px_80px_rgba(0,0,0,0.8)] overflow-hidden z-10 flex flex-col max-h-[94vh] min-w-0 text-slate-900 dark:text-white"
+          className="relative w-full h-full sm:h-auto max-w-5xl bg-white dark:bg-[#09130e] border-0 sm:border border-slate-200 dark:border-emerald-500/20 rounded-none sm:rounded-[2.5rem] shadow-[0_25px_80px_rgba(0,0,0,0.8)] overflow-hidden z-10 flex flex-col sm:max-h-[94vh] min-w-0 text-slate-900 dark:text-white supports-[height:100dvh]:h-[100dvh] sm:supports-[height:100dvh]:h-auto"
         >
           {/* Top Header Bar */}
           <div className="px-4 py-3.5 sm:px-8 sm:py-5 border-b border-slate-200 dark:border-white/10 bg-slate-50/95 dark:bg-[#0c1913]/90 flex items-center justify-between shrink-0 gap-3">

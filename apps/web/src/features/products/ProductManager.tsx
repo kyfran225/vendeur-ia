@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { Package, Sparkles, Trash2, Edit, Camera, X, Save, Zap, Utensils, Laptop, Palette, Hammer, ShoppingBag, Loader2, MessageSquareText, Plus, Minus, Heart, Monitor, Home, ShoppingCart, Activity, Car, Box, Image as ImageIcon, Star, Search, LayoutGrid, List, ArrowUpDown, SlidersHorizontal, AlertCircle, Filter } from "lucide-react";
+import { Package, Sparkles, Trash2, Edit, Camera, X, Save, Zap, Utensils, Laptop, Palette, Hammer, ShoppingBag, Loader2, MessageSquareText, Plus, Minus, Heart, Monitor, Home, ShoppingCart, Activity, Car, Box, Image as ImageIcon, Star, Search, LayoutGrid, List, ArrowUpDown, SlidersHorizontal, AlertCircle, Filter, ArrowLeft } from "lucide-react";
 import { ProductScanner } from "./components/ProductScanner";
 import { CaptionModal } from "./components/CaptionModal";
 import { PosterGenerator } from "./components/PosterGenerator";
@@ -643,29 +643,37 @@ export function ProductManager() {
         type="danger"
       />
 
-      {/* Edit / Add Form Modal - Ultra-sleek 2-Column Desktop Experience */}
+      {/* Edit / Add Form Modal - Ultra-sleek Dedicated Mobile Full-Page & 2-Column Desktop Experience */}
       {(editingProduct || isAddingManual) && (
-        <div className="fixed inset-0 z-[150] flex items-center justify-center p-3 sm:p-6 overflow-y-auto overscroll-contain animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-[150] flex items-center justify-center p-0 sm:p-6 overflow-y-auto overscroll-contain animate-in fade-in duration-200">
           <div
-            className="fixed inset-0 bg-slate-950/60 dark:bg-black/80 backdrop-blur-md transition-opacity"
+            className="fixed inset-0 bg-slate-950/60 dark:bg-black/80 backdrop-blur-md transition-opacity hidden sm:block"
             onClick={() => { setEditingProduct(null); setIsAddingManual(false); }}
           />
           
           <form
             onSubmit={editingProduct ? handleUpdate : handleManualCreate}
-            className="relative w-full max-w-4xl bg-slate-50 dark:bg-[#0c1612] border border-slate-200/90 dark:border-white/10 rounded-3xl sm:rounded-[2.5rem] shadow-2xl dark:shadow-[0_25px_80px_rgba(0,0,0,0.85)] flex flex-col max-h-[92vh] overflow-hidden my-auto animate-in zoom-in-95 duration-200 text-slate-900 dark:text-white"
+            className="relative w-full h-full sm:h-auto max-w-4xl sm:max-h-[92vh] bg-slate-50 dark:bg-[#0c1612] border-0 sm:border border-slate-200/90 dark:border-white/10 rounded-none sm:rounded-[2.5rem] shadow-2xl dark:shadow-[0_25px_80px_rgba(0,0,0,0.85)] flex flex-col overflow-hidden my-0 sm:my-auto animate-in zoom-in-95 duration-200 text-slate-900 dark:text-white supports-[height:100dvh]:h-[100dvh] sm:supports-[height:100dvh]:h-auto z-10"
           >
-            {/* Modal Header */}
-            <div className="px-5 py-4 sm:px-8 sm:py-5 border-b border-slate-200 dark:border-white/5 bg-slate-50 dark:bg-white/[0.02] flex items-center justify-between shrink-0">
-              <div className="flex items-center gap-3.5">
-                <div className="h-11 w-11 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-600 dark:text-vendeur-emerald shrink-0">
+            {/* Modal / Page Header */}
+            <div className="px-4 py-3.5 sm:px-8 sm:py-5 border-b border-slate-200 dark:border-white/5 bg-slate-50/95 dark:bg-[#0c1612]/95 backdrop-blur-md flex items-center justify-between shrink-0 sticky top-0 z-20">
+              <div className="flex items-center gap-2.5 sm:gap-3.5 min-w-0">
+                <button
+                  type="button"
+                  onClick={() => { setEditingProduct(null); setIsAddingManual(false); }}
+                  className="sm:hidden h-10 w-10 rounded-xl bg-slate-200/70 dark:bg-white/10 text-slate-700 dark:text-white flex items-center justify-center shrink-0 cursor-pointer active:scale-95 transition-transform"
+                  title="Retour"
+                >
+                  <ArrowLeft size={20} />
+                </button>
+                <div className="h-10 w-10 sm:h-11 sm:w-11 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-600 dark:text-vendeur-emerald shrink-0">
                   {editingProduct ? <Edit size={20} /> : <Plus size={20} />}
                 </div>
-                <div>
-                  <h2 className="text-lg sm:text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight flex items-center gap-2">
+                <div className="min-w-0">
+                  <h2 className="text-base sm:text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight flex items-center gap-2 truncate">
                     <span>{editingProduct ? "Modifier" : "Ajouter"} {config.itemLabel}</span>
                   </h2>
-                  <p className="text-[11px] text-slate-500 dark:text-white/40 font-medium">
+                  <p className="text-[10px] sm:text-[11px] text-slate-500 dark:text-white/40 font-medium truncate">
                     Configurez les détails et le visuel que le Vendeur IA présentera à vos clients sur WhatsApp.
                   </p>
                 </div>
@@ -673,15 +681,15 @@ export function ProductManager() {
               <button
                 type="button"
                 onClick={() => { setEditingProduct(null); setIsAddingManual(false); }}
-                className="h-9 w-9 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-white/5 dark:hover:bg-white/10 text-slate-500 dark:text-white/40 hover:text-slate-900 dark:hover:text-white flex items-center justify-center transition-all cursor-pointer"
+                className="hidden sm:flex h-9 w-9 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-white/5 dark:hover:bg-white/10 text-slate-500 dark:text-white/40 hover:text-slate-900 dark:hover:text-white items-center justify-center transition-all cursor-pointer shrink-0"
                 title="Fermer"
               >
                 <X size={18} />
               </button>
             </div>
 
-            {/* Modal Body - 2 Columns on Desktop */}
-            <div className="flex-1 overflow-y-auto custom-scrollbar p-5 sm:p-8">
+            {/* Modal / Page Body - 2 Columns on Desktop, Full Scroll Clearance on Mobile */}
+            <div className="flex-1 overflow-y-auto custom-scrollbar p-4 sm:p-8 space-y-6 pb-28 sm:pb-8">
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
 
                 {/* LEFT COLUMN: Media & Visual Presentation (5 cols) */}
@@ -987,8 +995,8 @@ export function ProductManager() {
               </div>
             </div>
 
-            {/* Modal Footer Actions */}
-            <div className="px-5 py-4 sm:px-8 sm:py-5 border-t border-slate-200 dark:border-white/5 bg-slate-50 dark:bg-black/40 flex items-center justify-between gap-4 shrink-0">
+            {/* Modal / Page Footer Actions */}
+            <div className="px-4 py-3.5 sm:px-8 sm:py-5 border-t border-slate-200 dark:border-white/5 bg-slate-50/95 dark:bg-[#0c1612]/95 backdrop-blur-md flex items-center justify-between gap-4 shrink-0 sticky bottom-0 z-20 pb-safe sm:pb-5">
               <button
                 type="button"
                 onClick={() => { setEditingProduct(null); setIsAddingManual(false); }}

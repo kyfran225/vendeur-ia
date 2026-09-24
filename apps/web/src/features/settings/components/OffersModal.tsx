@@ -78,10 +78,10 @@ export function OffersModal({ isOpen, onClose }: OffersModalProps) {
   );
 
   return (
-    <div className="fixed inset-0 z-[300] flex flex-col items-center justify-start sm:justify-center p-2.5 sm:p-4 md:p-6 overflow-y-auto no-scrollbar pt-4 pb-16 sm:py-8">
-      <div className="fixed inset-0 bg-black/80 backdrop-blur-xl" onClick={onClose} />
+    <div className="fixed inset-0 z-[300] flex flex-col items-center justify-start sm:justify-center p-0 sm:p-4 md:p-6 overflow-y-auto no-scrollbar sm:py-8">
+      <div className="fixed inset-0 bg-black/80 backdrop-blur-xl hidden sm:block" onClick={onClose} />
 
-      <div className="relative w-full max-w-5xl bg-white dark:bg-[#09110d] border border-slate-200 dark:border-white/10 rounded-[1.75rem] sm:rounded-[2.5rem] md:rounded-[3rem] overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300 flex flex-col my-auto shrink-0 text-slate-900 dark:text-white">
+      <div className="relative w-full h-full sm:h-auto max-w-5xl bg-white dark:bg-[#09110d] border-0 sm:border border-slate-200 dark:border-white/10 rounded-none sm:rounded-[2.5rem] md:rounded-[3rem] overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300 flex flex-col my-0 sm:my-auto shrink-0 text-slate-900 dark:text-white supports-[height:100dvh]:h-[100dvh] sm:supports-[height:100dvh]:h-auto">
         {/* Glow ambient spots */}
         <div className="absolute top-0 right-1/4 w-96 h-48 bg-emerald-500/10 dark:bg-vendeur-emerald/10 blur-[90px] rounded-full pointer-events-none" />
         <div className="absolute bottom-0 left-1/4 w-96 h-48 bg-emerald-600/5 blur-[90px] rounded-full pointer-events-none" />

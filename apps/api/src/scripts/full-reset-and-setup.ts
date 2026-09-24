@@ -31,7 +31,7 @@ const userSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 const merchantSchema = new mongoose.Schema({
-  ownerId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  ownerId: { type: String },
   businessName: { type: String, required: true },
   slug: { type: String },
   category: { type: String },

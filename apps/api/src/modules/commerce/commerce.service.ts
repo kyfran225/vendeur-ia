@@ -58,6 +58,7 @@ export class CommerceService {
     let merchant = await CommerceMerchantModel.findOne({
       $or: [
         { ownerId },
+        ...(mongoose.isValidObjectId(ownerId) ? [{ ownerId: new mongoose.Types.ObjectId(ownerId) as any }] : []),
         { whatsappNumber: canonicalPhone },
         { phone: canonicalPhone }
       ]

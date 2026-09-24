@@ -487,9 +487,15 @@ Réponds UNIQUEMENT avec le texte final du message.`;
 }
 
 export async function addAIJob(context: SalesContext & { userId: string; conversationId: string; remoteJid: string; platform?: string }) {
+  // Deterministic jobId to prevent duplicate AI responses if the same message is queued twice
+  // (e.g. webhook retries, race conditions between Baileys upsert and Meta webhook)
+  const msgHash = Buffer.from(`${context.conversationId}:${context.message || ""}`.slice(0, 256)).toString('base64').slice(0, 32);
+  const dedupeJobId = `ai:${context.conversationId}:${msgHash}`;
+
   try {
     await aiQueue.add('process-message', context, {
-      attempts: 3,
+      jobId: dedupeJobId,
+      attempts: 1, // Only 1 attempt — duplicate sends are worse than missing a retry
       backoff: {
         type: 'exponential',
         delay: 1000,
@@ -505,6 +511,7 @@ export async function addAIJob(context: SalesContext & { userId: string; convers
     });
   }
 }
+
 
 // Worker implementation (optimized for serverless Redis like Upstash)
 export const aiWorker = new Worker(

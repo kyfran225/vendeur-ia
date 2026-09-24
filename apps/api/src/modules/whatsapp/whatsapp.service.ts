@@ -3025,7 +3025,7 @@ class WhatsAppService {
         ...(userId && mongoose.isValidObjectId(userId) ? [{ _id: new mongoose.Types.ObjectId(userId) }] : [])
       ]
     });
-    if (!merchant && !userId) {
+    if (!merchant) {
       merchant = await CommerceMerchantModel.findOne({
         $or: [
           { whatsappNumber: { $regex: '5111157' } },

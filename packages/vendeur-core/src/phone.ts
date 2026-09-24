@@ -339,8 +339,10 @@ export function formatToWhatsAppRecipient(phoneOrJid: string, defaultCountry = "
   }
 
   // 3. Extraction du préfixe utilisateur (avant le @s.whatsapp.net éventuel)
+  // Strip Baileys multi-device suffix e.g. "2250141033935:12@s.whatsapp.net" → "2250141033935"
   const userPart = trimmed.includes("@") ? trimmed.split("@")[0] : trimmed;
-  const digits = userPart.replace(/\D/g, "");
+  const userPartClean = userPart.includes(":") ? userPart.split(":")[0] : userPart;
+  const digits = userPartClean.replace(/\D/g, "");
 
   if (!digits) {
     return { jid: trimmed, cleanPhone: trimmed };

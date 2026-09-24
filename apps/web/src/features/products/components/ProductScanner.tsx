@@ -6,6 +6,7 @@ import { BatchReviewModal } from "./BatchReviewModal";
 import { useAuthStore } from "@/stores/authStore";
 import { useOnboardingStore } from "@/stores/onboardingStore";
 import { compressImage } from "@/lib/imageUtils";
+import { cropAndEnhanceProductImage } from "@/lib/imageCropUtils";
 import axios from "axios";
 
 const API_URL = import.meta.env.VITE_API_URL;
@@ -129,12 +130,31 @@ export function ProductScanner({ onClose, onScanComplete, boutiqueName }: Produc
       });
 
       const resData = response.data;
-      const items = resData.items && Array.isArray(resData.items) ? resData.items : [resData];
+      const rawItems = resData.items && Array.isArray(resData.items) ? resData.items : [resData];
 
-      setBatchItems(items);
+      // Automatically crop and enhance each detected product image if box_2d is present
+      const processedItems = await Promise.all(
+        rawItems.map(async (item: any) => {
+          let croppedImage = imageData;
+          if (item.box_2d && Array.isArray(item.box_2d) && item.box_2d.length >= 4) {
+            try {
+              croppedImage = await cropAndEnhanceProductImage(imageData, item.box_2d);
+            } catch (cropErr) {
+              console.warn("[ProductScanner] Cropping failed, using full image:", cropErr);
+            }
+          }
+          return {
+            ...item,
+            image: croppedImage,
+            rawFullImage: imageData
+          };
+        })
+      );
+
+      setBatchItems(processedItems);
       setDetectedData({
-        ...items[0],
-        image: imageData
+        ...processedItems[0],
+        image: processedItems[0]?.image || imageData
       });
       setScanStep("batch_review");
     } catch (error) {

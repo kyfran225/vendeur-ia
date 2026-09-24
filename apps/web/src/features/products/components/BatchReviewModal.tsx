@@ -33,7 +33,7 @@ export function BatchReviewModal({ image, rawItems, boutiqueName, currency = "XO
       category: item.category || "fashion",
       description: item.description || "",
       tags: item.tags || [],
-      image,
+      image: item.image || image,
       selected: true,
     }))
   );
@@ -272,6 +272,28 @@ export function BatchReviewModal({ image, rawItems, boutiqueName, currency = "XO
                     <Trash2 size={16} />
                   </button>
                 )}
+              </div>
+            </div>
+
+            {/* Cropped Product Image Preview Card */}
+            <div className="flex items-center gap-3.5 p-3 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl">
+              <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-xl overflow-hidden bg-slate-200 dark:bg-zinc-800 shrink-0 border border-slate-300 dark:border-white/10 shadow-inner">
+                <img
+                  src={activeItem.image}
+                  alt={activeItem.name}
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute bottom-1 right-1 bg-black/70 backdrop-blur-md px-1.5 py-0.5 rounded text-[9px] font-black text-emerald-400 flex items-center gap-1">
+                  <Sparkles size={9} /> Studio Découpé
+                </div>
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-bold text-slate-800 dark:text-white/90 truncate">
+                  Visuel du produit
+                </p>
+                <p className="text-[11px] text-slate-500 dark:text-white/60 mt-0.5 leading-relaxed">
+                  Image découpée et isolée automatiquement par Vendeur IA pour votre catalogue.
+                </p>
               </div>
             </div>
 

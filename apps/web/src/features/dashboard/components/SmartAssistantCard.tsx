@@ -91,8 +91,9 @@ export function SmartAssistantCard({
   const isExpired = subscription?.status === "past_due" || (isPaidActive && expirationDate !== null && diffDays <= 0);
   const isExpiringSoon = isPaidActive && expirationDate !== null && diffDays > 0 && diffDays <= 5;
   const isDiscoveryMode = !isPaidActive && !isExpired && !isUnderVerification;
-  const isPaused = isPaidActive && !isExpired && aiSettings?.autoReply === false;
-  const isFully247Active = isPaidActive && !isExpired && aiSettings?.autoReply !== false;
+  const isAutoReplyOn = aiSettings?.autoReply !== false && merchant?.aiSettings?.autoReply !== false;
+  const isPaused = !isExpired && !isAutoReplyOn;
+  const isFully247Active = !isExpired && isAutoReplyOn;
 
   const { score, steps, isFullyOperational } = setupStatus;
   const nextStep = steps.find((s: any) => !s.completed);
@@ -202,25 +203,25 @@ export function SmartAssistantCard({
         progressColor: "bg-sky-500"
       };
     }
-    if (isDiscoveryMode) {
+    if (isFullyOperational || score === 100 || !nextStep) {
       return {
-        cardBg: "bg-amber-50/80 dark:bg-amber-500/10 border-amber-200 dark:border-amber-500/30 shadow-amber-500/5",
-        badgeBg: "bg-amber-500/15 border-amber-500/30 text-amber-800 dark:text-amber-300",
-        badgeText: `Essai Gratuit Actif • ${trialDaysRemaining}j restant${trialDaysRemaining > 1 ? "s" : ""}`,
-        iconBorder: "border-amber-500/30",
-        accentText: "text-amber-600 dark:text-amber-400",
-        accentGlow: "shadow-amber-500/10",
-        progressColor: "bg-amber-500"
+        cardBg: "bg-white dark:bg-vendeur-coal/60 border-slate-200 dark:border-white/10 hover:border-emerald-500/30 dark:hover:border-vendeur-emerald/30 shadow-xl dark:shadow-2xl",
+        badgeBg: "bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-vendeur-emerald",
+        badgeText: isPaidActive ? "En Vente 24h/24 (IA Active)" : `Boutique Prête • Essai Gratuit (${trialDaysRemaining}j)`,
+        iconBorder: "border-emerald-500/30",
+        accentText: "text-emerald-600 dark:text-vendeur-emerald",
+        accentGlow: "shadow-emerald-500/10",
+        progressColor: "bg-vendeur-emerald"
       };
     }
     return {
-      cardBg: "bg-white dark:bg-vendeur-coal/60 border-slate-200 dark:border-white/10 hover:border-emerald-500/30 dark:hover:border-vendeur-emerald/30 shadow-xl dark:shadow-2xl",
-      badgeBg: "bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-vendeur-emerald",
-      badgeText: "En Vente 24h/24 (IA Active)",
-      iconBorder: "border-emerald-500/30",
-      accentText: "text-emerald-600 dark:text-vendeur-emerald",
-      accentGlow: "shadow-emerald-500/10",
-      progressColor: "bg-vendeur-emerald"
+      cardBg: "bg-amber-50/80 dark:bg-amber-500/10 border-amber-200 dark:border-amber-500/30 shadow-amber-500/5",
+      badgeBg: "bg-amber-500/15 border-amber-500/30 text-amber-800 dark:text-amber-300",
+      badgeText: `Configuration (${score}%) • Essai ${trialDaysRemaining}j`,
+      iconBorder: "border-amber-500/30",
+      accentText: "text-amber-600 dark:text-amber-400",
+      accentGlow: "shadow-amber-500/10",
+      progressColor: "bg-amber-500"
     };
   };
 
@@ -358,17 +359,17 @@ export function SmartAssistantCard({
                 </div>
               )}
 
-              {/* SINGLE UNIFIED PRIMARY ACTION BAR (Generous Heights, No Flattening) */}
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-1">
+              {/* SINGLE UNIFIED PRIMARY ACTION BAR */}
+              <div className="flex flex-wrap items-center gap-2.5 sm:gap-3 pt-1 w-full">
                 {isUnderVerification ? (
                   <>
                     <Link
                       to="/settings?tab=billing"
-                      className="flex-1 flex items-center justify-center gap-2.5 min-h-[52px] sm:min-h-[56px] px-6 py-3.5 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-white font-black uppercase text-xs sm:text-sm tracking-wider transition-all shadow-lg shadow-emerald-500/20 active:scale-95 cursor-pointer shrink-0 truncate"
+                      className="flex-1 min-w-[200px] flex items-center justify-center gap-2.5 min-h-[48px] px-5 py-3 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-white font-black uppercase text-xs sm:text-sm tracking-wider transition-all shadow-lg shadow-emerald-500/20 active:scale-95 cursor-pointer"
                     >
-                      <Clock size={17} className="shrink-0" />
-                      <span className="truncate">Suivre mon activation {latestPaymentIntent?.reference ? `(Réf : #${latestPaymentIntent.reference.slice(-6)})` : ""}</span>
-                      <ArrowRight size={17} className="shrink-0" />
+                      <Clock size={16} className="shrink-0" />
+                      <span className="truncate">Suivre mon activation {latestPaymentIntent?.reference ? `(#${latestPaymentIntent.reference.slice(-6)})` : ""}</span>
+                      <ArrowRight size={16} className="shrink-0" />
                     </Link>
 
                     <a
@@ -377,7 +378,7 @@ export function SmartAssistantCard({
                       )}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="min-h-[52px] sm:min-h-[56px] px-5 py-3.5 rounded-2xl bg-slate-100 hover:bg-[#25D366]/20 hover:border-[#25D366]/50 dark:bg-white/10 dark:hover:bg-[#25D366]/20 dark:hover:border-[#25D366]/50 border border-slate-200 dark:border-white/10 text-slate-800 dark:text-white hover:text-[#25D366] font-black uppercase text-xs tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95 shrink-0"
+                      className="min-h-[48px] px-4 py-3 rounded-2xl bg-slate-100 hover:bg-[#25D366]/20 hover:border-[#25D366]/50 dark:bg-white/10 dark:hover:bg-[#25D366]/20 dark:hover:border-[#25D366]/50 border border-slate-200 dark:border-white/10 text-slate-800 dark:text-white hover:text-[#25D366] font-black uppercase text-xs tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95"
                     >
                       <WhatsAppIcon size={16} variant="brand" />
                       <span>Assistance WhatsApp</span>
@@ -386,21 +387,33 @@ export function SmartAssistantCard({
                 ) : isExpired ? (
                   <Link
                     to="/settings?tab=billing"
-                    className="flex-1 flex items-center justify-center gap-2.5 min-h-[52px] sm:min-h-[56px] px-6 py-3.5 rounded-2xl bg-red-500 hover:bg-red-400 text-white font-black uppercase text-xs sm:text-sm tracking-wider transition-all shadow-lg shadow-red-500/20 active:scale-95 cursor-pointer shrink-0"
+                    className="flex-1 min-w-[200px] flex items-center justify-center gap-2.5 min-h-[48px] px-6 py-3 rounded-2xl bg-red-500 hover:bg-red-400 text-white font-black uppercase text-xs sm:text-sm tracking-wider transition-all shadow-lg shadow-red-500/20 active:scale-95 cursor-pointer"
                   >
-                    <RefreshCw size={17} />
+                    <RefreshCw size={16} />
                     <span>Recharger mon Forfait Vendeur IA</span>
-                    <ArrowRight size={17} />
+                    <ArrowRight size={16} />
                   </Link>
                 ) : isPaused ? (
-                  <button
-                    type="button"
-                    onClick={() => setIsResumeModalOpen(true)}
-                    className="flex-1 flex items-center justify-center gap-2.5 min-h-[52px] sm:min-h-[56px] px-6 py-3.5 rounded-2xl bg-sky-500 hover:bg-sky-400 text-white font-black uppercase text-xs sm:text-sm tracking-wider transition-all shadow-lg shadow-sky-500/20 active:scale-95 cursor-pointer shrink-0"
-                  >
-                    <PlayCircle size={18} />
-                    <span>Reprendre les Ventes 24h/24</span>
-                  </button>
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => setIsResumeModalOpen(true)}
+                      className="flex-1 min-w-[220px] flex items-center justify-center gap-2.5 min-h-[48px] px-6 py-3 rounded-2xl bg-vendeur-emerald hover:bg-emerald-400 text-slate-950 font-black uppercase text-xs sm:text-sm tracking-wider transition-all shadow-lg shadow-emerald-500/20 active:scale-95 cursor-pointer"
+                    >
+                      <PlayCircle size={18} className="shrink-0" />
+                      <span className="whitespace-nowrap">Reprendre les Ventes 24h/24</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={onOpenTestIA}
+                      className="min-h-[48px] px-4 py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-white/10 dark:hover:bg-white/15 border border-slate-200 dark:border-white/10 text-slate-800 dark:text-white font-black uppercase text-xs tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95"
+                      title="Tester les réponses de l'IA"
+                    >
+                      <Play size={15} fill="currentColor" className="text-emerald-600 dark:text-vendeur-emerald shrink-0" />
+                      <span className="whitespace-nowrap">Simulateur & Test IA</span>
+                    </button>
+                  </>
                 ) : (
                   <>
                     {!isFullyOperational && nextStep ? (
@@ -409,41 +422,41 @@ export function SmartAssistantCard({
                           <button
                             type="button"
                             onClick={onConnectWhatsApp}
-                            className="flex-1 flex items-center justify-center gap-2.5 min-h-[52px] sm:min-h-[56px] px-5 py-3.5 rounded-2xl bg-vendeur-emerald text-slate-950 font-black uppercase text-xs sm:text-sm tracking-wider hover:bg-emerald-400 active:scale-95 transition-all shadow-lg shadow-emerald-500/20 cursor-pointer shrink-0 truncate group"
+                            className="flex-1 min-w-[180px] flex items-center justify-center gap-2.5 min-h-[48px] px-5 py-3 rounded-2xl bg-vendeur-emerald text-slate-950 font-black uppercase text-xs sm:text-sm tracking-wider hover:bg-emerald-400 active:scale-95 transition-all shadow-lg shadow-emerald-500/20 cursor-pointer group"
                           >
-                            <Zap size={17} fill="currentColor" className="shrink-0 group-hover:scale-110 transition-transform" />
-                            <span className="truncate">Lier mon WhatsApp</span>
-                            <ArrowRight size={17} className="shrink-0 group-hover:translate-x-1 transition-transform" />
+                            <Zap size={16} fill="currentColor" className="shrink-0 group-hover:scale-110 transition-transform" />
+                            <span className="whitespace-nowrap">Lier mon WhatsApp</span>
+                            <ArrowRight size={16} className="shrink-0 group-hover:translate-x-1 transition-transform" />
                           </button>
                         ) : nextStep.id === "identity" && onOpenStoreSetupModal ? (
                           <button
                             type="button"
                             onClick={onOpenStoreSetupModal}
-                            className="flex-1 flex items-center justify-center gap-2.5 min-h-[52px] sm:min-h-[56px] px-5 py-3.5 rounded-2xl bg-vendeur-emerald text-slate-950 font-black uppercase text-xs sm:text-sm tracking-wider hover:bg-emerald-400 active:scale-95 transition-all shadow-lg shadow-emerald-500/20 cursor-pointer shrink-0 truncate group"
+                            className="flex-1 min-w-[180px] flex items-center justify-center gap-2.5 min-h-[48px] px-5 py-3 rounded-2xl bg-vendeur-emerald text-slate-950 font-black uppercase text-xs sm:text-sm tracking-wider hover:bg-emerald-400 active:scale-95 transition-all shadow-lg shadow-emerald-500/20 cursor-pointer group"
                           >
-                            <Zap size={17} fill="currentColor" className="shrink-0 group-hover:scale-110 transition-transform" />
-                            <span className="truncate">Configurer ma boutique</span>
-                            <ArrowRight size={17} className="shrink-0 group-hover:translate-x-1 transition-transform" />
+                            <Zap size={16} fill="currentColor" className="shrink-0 group-hover:scale-110 transition-transform" />
+                            <span className="whitespace-nowrap">Configurer ma boutique</span>
+                            <ArrowRight size={16} className="shrink-0 group-hover:translate-x-1 transition-transform" />
                           </button>
                         ) : (
                           <Link
                             to={getActionLink(nextStep.id)}
-                            className="flex-1 flex items-center justify-center gap-2.5 min-h-[52px] sm:min-h-[56px] px-5 py-3.5 rounded-2xl bg-vendeur-emerald text-slate-950 font-black uppercase text-xs sm:text-sm tracking-wider hover:bg-emerald-400 active:scale-95 transition-all shadow-lg shadow-emerald-500/20 cursor-pointer shrink-0 truncate group"
+                            className="flex-1 min-w-[180px] flex items-center justify-center gap-2.5 min-h-[48px] px-5 py-3 rounded-2xl bg-vendeur-emerald text-slate-950 font-black uppercase text-xs sm:text-sm tracking-wider hover:bg-emerald-400 active:scale-95 transition-all shadow-lg shadow-emerald-500/20 cursor-pointer group"
                           >
-                            <Zap size={17} fill="currentColor" className="shrink-0 group-hover:scale-110 transition-transform" />
-                            <span className="truncate">{nextStep.label}</span>
-                            <ArrowRight size={17} className="shrink-0 group-hover:translate-x-1 transition-transform" />
+                            <Zap size={16} fill="currentColor" className="shrink-0 group-hover:scale-110 transition-transform" />
+                            <span className="whitespace-nowrap">{nextStep.label}</span>
+                            <ArrowRight size={16} className="shrink-0 group-hover:translate-x-1 transition-transform" />
                           </Link>
                         )}
 
                         <button
                           type="button"
                           onClick={onOpenTestIA}
-                          className="min-h-[52px] sm:min-h-[56px] px-5 py-3.5 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-white/10 dark:hover:bg-white/15 border border-slate-200 dark:border-white/10 text-slate-800 dark:text-white font-black uppercase text-xs tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95 shrink-0"
+                          className="min-h-[48px] px-4 py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-white/10 dark:hover:bg-white/15 border border-slate-200 dark:border-white/10 text-slate-800 dark:text-white font-black uppercase text-xs tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95"
                           title="Tester les réponses de l'IA"
                         >
-                          <Play size={16} fill="currentColor" className="text-emerald-600 dark:text-vendeur-emerald shrink-0" />
-                          <span>Simulateur & Test IA</span>
+                          <Play size={15} fill="currentColor" className="text-emerald-600 dark:text-vendeur-emerald shrink-0" />
+                          <span className="whitespace-nowrap">Simulateur & Test IA</span>
                         </button>
                       </>
                     ) : (
@@ -451,20 +464,20 @@ export function SmartAssistantCard({
                         <button
                           type="button"
                           onClick={onOpenTestIA}
-                          className="flex-1 flex items-center justify-center gap-2.5 min-h-[52px] sm:min-h-[56px] px-5 py-3.5 rounded-2xl bg-vendeur-emerald text-slate-950 font-black uppercase text-xs sm:text-sm tracking-wider hover:bg-emerald-400 active:scale-95 transition-all shadow-lg shadow-emerald-500/20 cursor-pointer shrink-0 truncate"
+                          className="flex-1 min-w-[180px] flex items-center justify-center gap-2.5 min-h-[48px] px-5 py-3 rounded-2xl bg-vendeur-emerald text-slate-950 font-black uppercase text-xs sm:text-sm tracking-wider hover:bg-emerald-400 active:scale-95 transition-all shadow-lg shadow-emerald-500/20 cursor-pointer"
                         >
-                          <Play size={17} fill="currentColor" className="shrink-0" />
-                          <span>Simulateur & Test IA</span>
+                          <Play size={16} fill="currentColor" className="shrink-0" />
+                          <span className="whitespace-nowrap">Simulateur & Test IA</span>
                         </button>
 
                         {onOpenDailyStatus && (
                           <button
                             type="button"
                             onClick={onOpenDailyStatus}
-                            className="min-h-[52px] sm:min-h-[56px] px-5 py-3.5 rounded-2xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black uppercase text-xs tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95 shrink-0 shadow-lg shadow-amber-500/20"
+                            className="min-h-[48px] px-4 py-3 rounded-2xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black uppercase text-xs tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95 shadow-lg shadow-amber-500/20"
                           >
-                            <Sparkles size={16} className="shrink-0" />
-                            <span>Mes Statuts du Jour</span>
+                            <Sparkles size={15} className="shrink-0" />
+                            <span className="whitespace-nowrap">Statuts du Jour</span>
                           </button>
                         )}
 
@@ -472,11 +485,11 @@ export function SmartAssistantCard({
                           <button
                             type="button"
                             onClick={onOpenPauseModal}
-                            className="min-h-[52px] sm:min-h-[56px] px-4 py-3.5 rounded-2xl bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/30 text-sky-700 dark:text-sky-300 text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95 shrink-0"
+                            className="min-h-[48px] px-4 py-3 rounded-2xl bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/30 text-sky-700 dark:text-sky-300 text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95"
                             title="Mettre le Vendeur IA en pause"
                           >
-                            <PauseCircle size={16} className="shrink-0" />
-                            <span>Mettre en pause</span>
+                            <PauseCircle size={15} className="shrink-0" />
+                            <span className="whitespace-nowrap">Mettre en pause</span>
                           </button>
                         )}
 
@@ -484,10 +497,10 @@ export function SmartAssistantCard({
                           <button
                             type="button"
                             onClick={onOpenOffers || (() => navigate("/offers"))}
-                            className="min-h-[52px] sm:min-h-[56px] px-5 py-3.5 rounded-2xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black uppercase text-xs tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95 shrink-0 shadow-lg shadow-amber-500/20"
+                            className="min-h-[48px] px-4 py-3 rounded-2xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-800 dark:text-amber-300 text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95"
                           >
-                            <Sparkles size={16} className="shrink-0" />
-                            <span>Choisir mon Forfait</span>
+                            <Sparkles size={15} className="shrink-0" />
+                            <span className="whitespace-nowrap">Choisir mon Forfait</span>
                           </button>
                         )}
                       </>

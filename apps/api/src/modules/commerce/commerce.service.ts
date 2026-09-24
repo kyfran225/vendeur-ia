@@ -408,11 +408,12 @@ export class CommerceService {
     const sub = subscription as any;
     const isPaidActive = subscription?.status === 'active';
     const isTrial = sub?.status === 'trial' || (!sub?.status && !isPaidActive);
+    const isExpired = sub?.status === 'past_due' || sub?.status === 'expired';
     const trialEndsAt = sub?.trialEndsAt ? new Date(sub.trialEndsAt) : null;
     const trialUsage = sub?.trialUsage || { messagesCount: 0, maxMessages: 50 };
-    const isTrialValid = isTrial && trialEndsAt && trialEndsAt > now && (trialUsage.messagesCount ?? 0) < (trialUsage.maxMessages ?? 50);
+    const isTrialValid = isTrial && (!trialEndsAt || trialEndsAt > now) && (trialUsage.messagesCount ?? 0) < (trialUsage.maxMessages ?? 500);
 
-    const isSubscriptionValidOrActive = isPaidActive || isTrialValid;
+    const isSubscriptionValidOrActive = !isExpired && (isPaidActive || isTrialValid || isTrial);
 
     // Simplified 3 setup steps (Identité & Réglages -> WhatsApp -> Produits)
     const setupSteps = [
@@ -815,11 +816,12 @@ Détecte tous les produits visibles distincts et extrait un tableau JSON "items"
       "stock": 1,
       "description": "Description commerciale complète optimisée pour WhatsApp/Instagram avec emojis et détails (couleurs, style, matière)",
       "category": "Choisir parmi: fashion, food, beauty, electronics, artisan, services, digital, home, grocery, health, auto, other",
-      "tags": ["tag1", "tag2"]
+      "tags": ["tag1", "tag2"],
+      "box_2d": [ymin, xmin, ymax, xmax] (coordonnées de la zone encadrant le produit sur l'image, normalisées de 0 à 1000 ex: [100, 150, 400, 500])
     }
   ]
 }
-Réponds UNIQUEMENT avec le JSON strict. Si 1 seul produit est présent, renvoie quand même un tableau "items" avec cet unique élément.`;
+Réponds UNIQUEMENT avec le JSON strict. Si 1 seul produit est présent, renvoie quand même un tableau "items" avec cet unique élément et sa "box_2d".`;
 
     const settings = await SystemSettingsModel.findOne();
     const primaryProvider = settings?.aiConfig?.defaultVisionProvider || 'gemini';

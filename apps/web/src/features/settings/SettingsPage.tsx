@@ -410,7 +410,7 @@ export function SettingsPage() {
             ))}
           </nav>
 
-          <div className="p-6 border-t border-slate-200 dark:border-white/5">
+          <div className="p-6 border-t border-slate-200 dark:border-white/5 pb-24 sm:pb-6">
             <button
               onClick={() => setShowLogoutModal(true)}
               className="w-full flex items-center gap-4 p-4 rounded-2xl bg-red-500/5 border border-red-500/10 text-red-600 dark:text-red-400 hover:bg-red-500/10 transition-all active:scale-95 group"
@@ -582,7 +582,7 @@ function BoutiqueTab({
   const [showMilestoneModal, setShowMilestoneModal] = useState(false);
   const [savedSectionType, setSavedSectionType] = useState<"delivery" | "payments" | "all">("all");
 
-  const isModified = hasChanges;
+  const isModified = isMerchantModified;
 
   const updateMutation = useMutation({
     mutationFn: async (targetType?: "delivery" | "payments" | "all") => {

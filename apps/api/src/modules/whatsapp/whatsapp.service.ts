@@ -1747,6 +1747,7 @@ class WhatsAppService {
       knowledge: knowledge ? (knowledge.toObject() as any) : {},
       history: formattedHistory,
       message: text,
+      messageId: msg.key?.id,
       customerPhone: from,
       customerLoyalty: customer ? {
         points: customer.loyaltyPoints || 0,

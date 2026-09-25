@@ -67,51 +67,53 @@ export function ConfirmationModal({
 
           {/* Modal Content */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            initial={{ opacity: 0, scale: 0.94, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.9, y: 20 }}
-            transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            className="relative w-full max-w-md overflow-hidden rounded-[2rem] sm:rounded-[2.5rem] border border-slate-200 dark:border-white/10 bg-white dark:bg-vendeur-coal p-6 sm:p-8 shadow-2xl z-10 text-slate-900 dark:text-white"
+            exit={{ opacity: 0, scale: 0.94, y: 10 }}
+            transition={{ type: "spring", damping: 25, stiffness: 350 }}
+            className="relative w-full max-w-sm overflow-hidden rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-vendeur-coal p-4 sm:p-5 shadow-2xl z-10 text-slate-900 dark:text-white"
           >
             {/* Close Button */}
             <button
               onClick={onClose}
               disabled={isLoading}
-              className="absolute right-5 top-5 sm:right-6 sm:top-6 text-slate-400 hover:text-slate-900 dark:text-white/30 dark:hover:text-white transition-colors p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-white/5 disabled:opacity-30 cursor-pointer"
+              className="absolute right-3 top-3 text-slate-400 hover:text-slate-900 dark:text-white/30 dark:hover:text-white transition-colors p-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-white/5 disabled:opacity-30 cursor-pointer"
             >
-              <X size={20} />
+              <X size={16} />
             </button>
 
-            {/* Icon Header */}
-            <div className={`mb-6 flex h-16 w-16 items-center justify-center rounded-2xl border ${getBadgeStyle()}`}>
-              {getIcon()}
+            {/* Icon & Title Row */}
+            <div className="flex items-center gap-3 mb-3 pr-6">
+              <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border ${getBadgeStyle()}`}>
+                {getIcon()}
+              </div>
+              <h3 className="text-base sm:text-lg font-black text-slate-900 dark:text-white leading-tight uppercase tracking-tight">
+                {title}
+              </h3>
             </div>
 
             {/* Text */}
-            <div className="mb-8 space-y-2 text-left">
-              <h3 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white leading-tight uppercase tracking-tight">
-                {title}
-              </h3>
-              <p className="text-xs sm:text-sm font-medium leading-relaxed text-slate-600 dark:text-white/60">
+            <div className="mb-4">
+              <p className="text-xs font-medium leading-relaxed text-slate-600 dark:text-white/70">
                 {message}
               </p>
             </div>
 
             {/* Actions */}
-            <div className="flex flex-col sm:flex-row-reverse gap-3">
-              <button
-                disabled={isLoading}
-                onClick={handleConfirm}
-                className={`flex h-14 w-full sm:flex-1 items-center justify-center gap-2 rounded-2xl text-xs sm:text-sm font-black uppercase tracking-wider transition-all active:scale-95 disabled:opacity-50 shrink-0 cursor-pointer ${getConfirmButtonStyle()}`}
-              >
-                {isLoading ? <Loader2 className="animate-spin" size={18} /> : confirmLabel}
-              </button>
+            <div className="flex gap-2">
               <button
                 disabled={isLoading}
                 onClick={onClose}
-                className="flex h-14 w-full sm:flex-1 items-center justify-center rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/5 text-xs sm:text-sm font-black uppercase tracking-wider text-slate-700 dark:text-white/70 hover:bg-slate-200 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white transition-all active:scale-95 disabled:opacity-50 shrink-0 cursor-pointer"
+                className="flex h-11 flex-1 items-center justify-center rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/5 text-xs font-black uppercase tracking-wider text-slate-700 dark:text-white/70 hover:bg-slate-200 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white transition-all active:scale-95 disabled:opacity-50 shrink-0 cursor-pointer"
               >
                 {cancelLabel}
+              </button>
+              <button
+                disabled={isLoading}
+                onClick={handleConfirm}
+                className={`flex h-11 flex-1 items-center justify-center gap-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all active:scale-95 disabled:opacity-50 shrink-0 cursor-pointer ${getConfirmButtonStyle()}`}
+              >
+                {isLoading ? <Loader2 className="animate-spin" size={16} /> : confirmLabel}
               </button>
             </div>
           </motion.div>

@@ -120,103 +120,76 @@ export function StepMilestoneModal({
   return (
     <AnimatePresence>
       <div
-        className="fixed inset-0 z-[250] flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md overflow-y-auto"
+        className="fixed inset-0 z-[250] flex items-center justify-center p-3 bg-black/80 backdrop-blur-md"
         onMouseEnter={() => setIsPaused(true)}
         onMouseLeave={() => setIsPaused(false)}
       >
         <motion.div
-          initial={{ opacity: 0, scale: 0.92, y: 15 }}
+          initial={{ opacity: 0, scale: 0.94, y: 10 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.92, y: 15 }}
+          exit={{ opacity: 0, scale: 0.94, y: 10 }}
           transition={{ type: "spring", damping: 25, stiffness: 350 }}
-          className="relative w-full max-w-md bg-white dark:bg-[#0c0f0d] border border-slate-200 dark:border-vendeur-emerald/30 rounded-3xl p-5 sm:p-6 shadow-2xl overflow-hidden my-auto max-h-[90vh] flex flex-col text-slate-900 dark:text-white"
+          className="relative w-full max-w-sm bg-white dark:bg-[#0c120e] border border-slate-200 dark:border-vendeur-emerald/30 rounded-2xl p-4 sm:p-5 shadow-2xl overflow-hidden my-auto text-slate-900 dark:text-white"
         >
-          {/* Subtle Ambient Glows */}
-          <div className="absolute -top-20 -right-20 w-40 h-40 bg-vendeur-emerald/20 rounded-full blur-3xl pointer-events-none" />
-          <div className="absolute -bottom-20 -left-20 w-40 h-40 bg-vendeur-emerald/10 rounded-full blur-3xl pointer-events-none" />
-
           {/* Close button */}
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 p-1.5 rounded-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-500 hover:text-slate-900 dark:text-white/50 dark:hover:text-white transition-all cursor-pointer z-20"
+            className="absolute top-3 right-3 p-1 rounded-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-500 hover:text-slate-900 dark:text-white/50 dark:hover:text-white transition-all cursor-pointer z-20"
             title="Fermer"
           >
-            <X size={16} />
+            <X size={14} />
           </button>
 
-          <div className="space-y-6 relative z-10 text-center">
-            {/* Success Badge Icon */}
-            <div className="relative inline-flex items-center justify-center">
-              <motion.div
-                initial={{ scale: 0.5, rotate: -20 }}
-                animate={{ scale: 1, rotate: 0 }}
-                transition={{ type: "spring", damping: 15 }}
-                className="h-16 w-16 md:h-20 md:w-20 rounded-3xl bg-vendeur-emerald flex items-center justify-center text-vendeur-coal shadow-xl shadow-vendeur-emerald/30"
-              >
-                <CheckCircle2 size={36} className="md:w-10 md:h-10" />
-              </motion.div>
-              <div className="absolute -top-1.5 -right-1.5 bg-amber-400 text-vendeur-coal p-1.5 rounded-full shadow-lg animate-bounce">
-                <Sparkles size={14} />
+          <div className="space-y-3.5 relative z-10 text-center">
+            {/* Success Badge Icon + Title Compact Row */}
+            <div className="flex items-center justify-center gap-2.5 pt-1">
+              <div className="h-10 w-10 rounded-xl bg-vendeur-emerald flex items-center justify-center text-vendeur-coal shrink-0 shadow-md shadow-vendeur-emerald/20">
+                <CheckCircle2 size={22} />
+              </div>
+              <div className="text-left min-w-0">
+                <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-wider text-emerald-600 dark:text-vendeur-emerald">
+                  <Zap size={11} /> Étape Validée ({progressPercent}%)
+                </span>
+                <h2 className="text-base sm:text-lg font-black text-slate-900 dark:text-white uppercase tracking-tight truncate leading-tight">
+                  {title}
+                </h2>
               </div>
             </div>
 
-            {/* Header Text */}
-            <div className="space-y-2">
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 dark:bg-vendeur-emerald/10 border border-emerald-200 dark:border-vendeur-emerald/30 text-emerald-700 dark:text-vendeur-emerald text-[10px] font-black uppercase tracking-widest">
-                <Zap size={12} />
-                Étape Validée
-              </div>
-              <h2 className="text-2xl md:text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tight">
-                {title}
-              </h2>
-              {subtitle && (
-                <p className="text-xs md:text-sm text-slate-600 dark:text-white/70 font-medium max-w-md mx-auto leading-relaxed">
-                  {subtitle}
-                </p>
-              )}
-            </div>
-
-            {/* Setup Progress Indicator Bar */}
-            <div className="bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl p-4 space-y-2.5 text-left">
-              <div className="flex items-center justify-between text-[11px] font-black uppercase tracking-wider">
-                <span className="text-slate-600 dark:text-white/60">Progression globale de configuration</span>
-                <span className="text-emerald-600 dark:text-vendeur-emerald">{progressPercent}%</span>
-              </div>
-              <div className="h-2 w-full bg-slate-200 dark:bg-black/60 rounded-full overflow-hidden border border-slate-300/60 dark:border-white/5">
-                <motion.div
-                  initial={{ width: 0 }}
-                  animate={{ width: `${progressPercent}%` }}
-                  transition={{ duration: 0.8, ease: "easeOut" }}
-                  className="h-full bg-gradient-to-r from-vendeur-emerald to-emerald-400 rounded-full shadow-[0_0_12px_rgba(16,185,129,0.5)]"
-                />
-              </div>
-              <p className="text-[10px] text-slate-500 dark:text-white/40 font-medium italic text-right">
-                {progressPercent === 100
-                  ? "Votre boutique est prête à vendre 24/7 !"
-                  : "Complétez les étapes pour rendre Vendeur IA 100% autonome."}
+            {subtitle && (
+              <p className="text-xs text-slate-600 dark:text-white/70 font-medium leading-normal line-clamp-2">
+                {subtitle}
               </p>
+            )}
+
+            {/* Compact Progress Line */}
+            <div className="w-full bg-slate-100 dark:bg-black/60 rounded-full h-1.5 overflow-hidden border border-slate-200 dark:border-white/5">
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: `${progressPercent}%` }}
+                transition={{ duration: 0.6, ease: "easeOut" }}
+                className="h-full bg-vendeur-emerald rounded-full"
+              />
             </div>
 
-            {/* Actions Grid */}
-            <div className="space-y-3 pt-1">
-              {/* Primary Next Step Action */}
-              {primaryAction && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    onClose();
-                    if (primaryAction.onClick) primaryAction.onClick();
-                    else if (primaryAction.href) navigate(primaryAction.href);
-                  }}
-                  className="w-full min-h-[3.25rem] md:min-h-[3.5rem] bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black uppercase tracking-wider text-xs md:text-sm rounded-2xl flex items-center justify-center gap-2.5 px-4 hover:scale-[1.02] active:scale-95 transition-all shadow-xl shadow-emerald-500/20 cursor-pointer group"
-                >
-                  {primaryAction.icon || <Sparkles size={16} className="shrink-0" />}
-                  <span className="truncate">{primaryAction.label}</span>
-                  <ArrowRight size={16} className="shrink-0 group-hover:translate-x-1 transition-transform" />
-                </button>
-              )}
+            {/* Primary Action Button */}
+            {primaryAction && (
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  if (primaryAction.onClick) primaryAction.onClick();
+                  else if (primaryAction.href) navigate(primaryAction.href);
+                }}
+                className="w-full h-11 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black uppercase tracking-wider text-xs sm:text-sm rounded-xl flex items-center justify-center gap-2 px-4 active:scale-95 transition-all shadow-md shadow-emerald-500/20 cursor-pointer"
+              >
+                <span className="truncate">{primaryAction.label}</span>
+                <ArrowRight size={15} className="shrink-0" />
+              </button>
+            )}
 
-              {/* Secondary Same-Task Action (e.g. Add another product) */}
+            {/* Secondary Action / Dashboard Options in one line */}
+            <div className="flex items-center justify-center gap-3 pt-0.5 text-xs font-bold">
               {secondaryAction && (
                 <button
                   type="button"
@@ -225,33 +198,26 @@ export function StepMilestoneModal({
                     if (secondaryAction.onClick) secondaryAction.onClick();
                     else if (secondaryAction.href) navigate(secondaryAction.href);
                   }}
-                  className="w-full min-h-[2.85rem] md:min-h-[3rem] bg-slate-100 hover:bg-slate-200 dark:bg-white/5 dark:hover:bg-white/10 border border-slate-200 dark:border-white/10 text-slate-800 dark:text-white font-black uppercase tracking-wider text-xs rounded-2xl flex items-center justify-center gap-2 px-4 transition-all active:scale-95 cursor-pointer"
+                  className="text-slate-700 dark:text-white/80 hover:text-emerald-600 dark:hover:text-vendeur-emerald underline underline-offset-2 transition-colors cursor-pointer"
                 >
-                  {secondaryAction.icon || <Plus size={15} className="shrink-0" />}
-                  <span className="truncate">{secondaryAction.label}</span>
+                  {secondaryAction.label}
                 </button>
               )}
-
-              {/* Dashboard / Dismiss Option */}
+              {secondaryAction && <span className="text-slate-300 dark:text-white/20">•</span>}
               <button
                 type="button"
                 onClick={handleDashboard}
-                className="w-full text-center text-slate-500 hover:text-slate-900 dark:text-white/40 dark:hover:text-white text-[11px] font-black uppercase tracking-widest transition-colors py-2 flex items-center justify-center gap-1.5 cursor-pointer"
+                className="text-slate-500 dark:text-white/50 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer"
               >
-                <LayoutDashboard size={14} />
-                <span>{dashboardActionLabel}</span>
+                {dashboardActionLabel}
               </button>
             </div>
 
-            {/* Auto-redirect 7s Countdown bar */}
-            <div className="pt-1 flex items-center justify-center gap-2 text-[10px] text-slate-500 dark:text-white/40 font-mono">
-              <Timer size={12} className={isPaused ? "text-amber-500" : "text-emerald-600 dark:text-vendeur-emerald"} />
+            {/* Auto-redirect Timer line */}
+            <div className="flex items-center justify-center gap-1.5 text-[10px] text-slate-400 dark:text-white/40 font-mono pt-0.5">
+              <Timer size={11} className={isPaused ? "text-amber-500" : "text-emerald-600 dark:text-vendeur-emerald"} />
               <span>
-                {isPaused ? (
-                  <span className="text-amber-600 dark:text-amber-400 font-sans">Compte à rebours en pause (survol)</span>
-                ) : (
-                  <>Redirection automatique dans <strong className="text-slate-900 dark:text-white font-black">{secondsRemaining}s</strong></>
-                )}
+                {isPaused ? "Redirection en pause" : `Suite automatique dans ${secondsRemaining}s`}
               </span>
             </div>
           </div>

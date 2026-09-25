@@ -25,7 +25,7 @@ export function AppLayout() {
         {!isInbox && <ShellHeader />}
         <main
           className={cn(
-            "flex-1 overscroll-contain",
+            "flex-1 overscroll-contain min-h-0",
             isInbox
               ? "overflow-hidden h-full flex flex-col pb-16 md:pb-0"
               : "overflow-y-auto pb-16 md:pb-0"

@@ -181,7 +181,7 @@ export function OrderCreationModal({
   if (!isOpen) return null;
 
   return createPortal(
-    <div className="fixed inset-0 z-[100] flex flex-col justify-start sm:justify-center items-center p-0 sm:p-4 bg-slate-950/60 dark:bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-[200] flex flex-col justify-start sm:justify-center items-center p-0 sm:p-4 bg-slate-950/60 dark:bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
       <div className="bg-slate-50 dark:bg-[#0c1612] border-0 sm:border border-slate-200/90 dark:border-white/10 w-full max-w-3xl h-full sm:h-auto sm:max-h-[90vh] rounded-none sm:rounded-3xl overflow-hidden shadow-2xl flex flex-col animate-in slide-in-from-bottom duration-300 text-slate-900 dark:text-white supports-[height:100dvh]:h-[100dvh] sm:supports-[height:100dvh]:h-auto">
         
         {/* Header */}
@@ -202,7 +202,7 @@ export function OrderCreationModal({
               <h2 className="text-base sm:text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight truncate">
                 Nouvelle Commande
               </h2>
-              <p className="text-[10px] sm:text-xs text-slate-500 dark:text-white/40 font-medium truncate">
+              <p className="text-xs sm:text-sm text-slate-500 dark:text-white/40 font-medium truncate">
                 Sélectionnez les articles et saisissez les coordonnées.
               </p>
             </div>
@@ -220,8 +220,8 @@ export function OrderCreationModal({
         <div className="p-4 sm:px-6 sm:py-3.5 bg-slate-50/80 dark:bg-white/[0.01] border-b border-slate-200 dark:border-white/5 grid grid-cols-1 sm:grid-cols-2 gap-3 shrink-0 relative">
           <div>
             <div className="flex items-center justify-between mb-1.5">
-              <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-white/50 flex items-center gap-1.5">
-                <User size={12} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+              <label className="text-xs sm:text-sm font-black uppercase tracking-wider text-slate-500 dark:text-white/50 flex items-center gap-1.5">
+                <User size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
                 Client
               </label>
               {!initialCustomerId && customers.length > 0 && (
@@ -233,15 +233,15 @@ export function OrderCreationModal({
                       setSelectedCustomerId("");
                     }
                   }}
-                  className="text-[10px] text-emerald-600 dark:text-emerald-400/80 hover:text-emerald-500 dark:hover:text-emerald-300 font-bold flex items-center gap-1 transition-colors"
+                  className="text-xs text-emerald-600 dark:text-emerald-400/80 hover:text-emerald-500 dark:hover:text-emerald-300 font-bold flex items-center gap-1 transition-colors"
                 >
                   {isManualPhoneMode ? (
                     <>
-                      <User size={10} /> Choisir existant
+                      <User size={12} /> Choisir existant
                     </>
                   ) : (
                     <>
-                      <UserPlus size={10} /> + Nouveau numéro
+                      <UserPlus size={12} /> + Nouveau numéro
                     </>
                   )}
                 </button>
@@ -249,7 +249,7 @@ export function OrderCreationModal({
             </div>
 
             {initialCustomerId ? (
-              <div className="w-full h-11 bg-slate-100 dark:bg-vendeur-coal border border-slate-200 dark:border-white/10 rounded-xl px-3 text-xs text-slate-900 dark:text-white flex items-center justify-between gap-2 shadow-inner">
+              <div className="w-full h-11 bg-slate-100 dark:bg-vendeur-coal border border-slate-200 dark:border-white/10 rounded-xl px-3 text-sm text-slate-900 dark:text-white flex items-center justify-between gap-2 shadow-inner">
                 <div className="flex items-center gap-2 min-w-0 flex-1">
                   <CustomerAvatar
                     name={selectedCustomer?.name}
@@ -260,11 +260,11 @@ export function OrderCreationModal({
                     showPlatformBadge={false}
                   />
                   <div className="min-w-0 flex-1 truncate">
-                    <span className="font-bold text-slate-900 dark:text-white truncate block">
+                    <span className="font-bold text-sm text-slate-900 dark:text-white truncate block">
                       {selectedCustomer?.name || (initialCustomerPhone ? formatDisplayPhone(initialCustomerPhone, "CI") : "Client sélectionné")}
                     </span>
                     {initialCustomerPhone && (
-                      <span className="text-[10px] text-slate-500 dark:text-white/40 font-mono block truncate">
+                      <span className="text-xs text-slate-500 dark:text-white/40 font-mono block truncate">
                         {formatDisplayPhone(initialCustomerPhone, "CI")}
                       </span>
                     )}
@@ -276,7 +276,7 @@ export function OrderCreationModal({
                 <button
                   type="button"
                   onClick={() => setIsCustomerDropdownOpen(!isCustomerDropdownOpen)}
-                  className="w-full h-11 bg-slate-100 dark:bg-vendeur-coal border border-slate-200 dark:border-white/10 rounded-xl px-3 text-xs text-slate-900 dark:text-white flex items-center justify-between gap-2 hover:border-slate-300 dark:hover:border-white/20 transition-colors text-left"
+                  className="w-full h-11 bg-slate-100 dark:bg-vendeur-coal border border-slate-200 dark:border-white/10 rounded-xl px-3 text-sm text-slate-900 dark:text-white flex items-center justify-between gap-2 hover:border-slate-300 dark:hover:border-white/20 transition-colors text-left"
                 >
                   {selectedCustomer ? (
                     <div className="flex items-center gap-2 min-w-0 flex-1">
@@ -289,18 +289,18 @@ export function OrderCreationModal({
                         showPlatformBadge={false}
                       />
                       <div className="min-w-0 flex-1 truncate">
-                        <span className="font-bold text-slate-900 dark:text-white truncate block">
+                        <span className="font-bold text-sm text-slate-900 dark:text-white truncate block">
                           {selectedCustomer.name || formatDisplayPhone(selectedCustomer.phone, "CI")}
                         </span>
                         {selectedCustomer.name && (
-                          <span className="text-[10px] text-slate-500 dark:text-white/40 font-mono block truncate">
+                          <span className="text-xs text-slate-500 dark:text-white/40 font-mono block truncate">
                             {formatDisplayPhone(selectedCustomer.phone, "CI")}
                           </span>
                         )}
                       </div>
                     </div>
                   ) : (
-                    <span className="text-slate-400 dark:text-white/40 flex items-center gap-2">
+                    <span className="text-slate-400 dark:text-white/40 flex items-center gap-2 text-sm font-medium">
                       <Search size={14} className="text-slate-400 dark:text-white/20" />
                       Choisir un client...
                     </span>
@@ -323,7 +323,7 @@ export function OrderCreationModal({
                             value={searchCustomer}
                             onChange={(e) => setSearchCustomer(e.target.value)}
                             placeholder="Rechercher nom, numéro..."
-                            className="w-full h-8 bg-slate-100 dark:bg-black/40 border border-slate-200 dark:border-white/10 rounded-lg pl-8 pr-3 text-xs text-slate-900 dark:text-white outline-none focus:border-emerald-500 placeholder:text-slate-400 dark:placeholder:text-white/20"
+                            className="w-full h-9 bg-slate-100 dark:bg-black/40 border border-slate-200 dark:border-white/10 rounded-lg pl-8 pr-3 text-sm text-slate-900 dark:text-white outline-none focus:border-emerald-500 placeholder:text-slate-400 dark:placeholder:text-white/20"
                             autoFocus
                           />
                         </div>
@@ -331,7 +331,7 @@ export function OrderCreationModal({
 
                       <div className="overflow-y-auto max-h-48 divide-y divide-slate-100 dark:divide-white/5 p-1">
                         {filteredCustomers.length === 0 ? (
-                          <div className="p-4 text-center text-xs text-slate-400 dark:text-white/30">
+                          <div className="p-4 text-center text-sm text-slate-400 dark:text-white/30">
                             Aucun client trouvé.
                           </div>
                         ) : (
@@ -362,14 +362,14 @@ export function OrderCreationModal({
                                     showPlatformBadge={false}
                                   />
                                   <div className="min-w-0 flex-1">
-                                    <div className="text-xs font-bold text-slate-900 dark:text-white truncate">
+                                    <div className="text-sm font-bold text-slate-900 dark:text-white truncate">
                                       {c.name || formatDisplayPhone(cleanPhone, "CI") || "Client"}
                                     </div>
-                                    <div className="text-[10px] text-slate-500 dark:text-white/40 font-mono truncate flex items-center gap-1.5">
+                                    <div className="text-xs text-slate-500 dark:text-white/40 font-mono truncate flex items-center gap-1.5">
                                       {c.name && <span>{formatDisplayPhone(cleanPhone, "CI")}</span>}
                                       {c.location && (
                                         <span className="text-emerald-600 dark:text-emerald-400/80 flex items-center gap-0.5">
-                                          • <MapPin size={9} /> {c.location}
+                                          • <MapPin size={10} /> {c.location}
                                         </span>
                                       )}
                                     </div>
@@ -393,22 +393,22 @@ export function OrderCreationModal({
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   placeholder="Numéro WhatsApp (+225 07...)"
-                  className="w-full h-11 bg-slate-100 dark:bg-vendeur-coal border border-slate-200 dark:border-white/10 rounded-xl pl-9 pr-3 text-xs text-slate-900 dark:text-white outline-none focus:border-emerald-500 font-mono"
+                  className="w-full h-11 bg-slate-100 dark:bg-vendeur-coal border border-slate-200 dark:border-white/10 rounded-xl pl-9 pr-3 text-sm text-slate-900 dark:text-white outline-none focus:border-emerald-500 font-mono"
                 />
               </div>
             )}
           </div>
 
           <div>
-            <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-white/50 flex items-center gap-1.5 mb-1.5">
-              <MapPin size={12} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+            <label className="text-xs sm:text-sm font-black uppercase tracking-wider text-slate-500 dark:text-white/50 flex items-center gap-1.5 mb-1.5">
+              <MapPin size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
               Lieu de Livraison
             </label>
             <AddressAutocomplete
               value={shippingAddress}
               onChange={setShippingAddress}
               placeholder="Ex: Cocody Angré, Marcory, Plateau..."
-              inputClassName="h-11 bg-slate-100 dark:bg-vendeur-coal border border-slate-200 dark:border-white/10 rounded-xl text-xs text-slate-900 dark:text-white pl-9 placeholder:text-slate-400 dark:placeholder:text-white/30"
+              inputClassName="h-11 bg-slate-100 dark:bg-vendeur-coal border border-slate-200 dark:border-white/10 rounded-xl text-sm text-slate-900 dark:text-white pl-9 placeholder:text-slate-400 dark:placeholder:text-white/30"
             />
           </div>
         </div>
@@ -417,7 +417,7 @@ export function OrderCreationModal({
         <div className="flex md:hidden border-b border-slate-200 dark:border-white/5 bg-slate-50 dark:bg-white/[0.01] px-3 shrink-0">
           <button
             onClick={() => setMobileTab("catalog")}
-            className={`flex-1 py-3 text-xs font-black uppercase tracking-wider transition-all border-b-2 flex items-center justify-center gap-2 ${
+            className={`flex-1 py-3 text-sm font-black uppercase tracking-wider transition-all border-b-2 flex items-center justify-center gap-2 ${
               mobileTab === "catalog"
                 ? "border-emerald-500 text-emerald-600 dark:text-emerald-400"
                 : "border-transparent text-slate-400 dark:text-white/40"
@@ -429,7 +429,7 @@ export function OrderCreationModal({
 
           <button
             onClick={() => setMobileTab("cart")}
-            className={`flex-1 py-3 text-xs font-black uppercase tracking-wider transition-all border-b-2 flex items-center justify-center gap-2 ${
+            className={`flex-1 py-3 text-sm font-black uppercase tracking-wider transition-all border-b-2 flex items-center justify-center gap-2 ${
               mobileTab === "cart"
                 ? "border-emerald-500 text-emerald-600 dark:text-emerald-400"
                 : "border-transparent text-slate-400 dark:text-white/40"
@@ -448,8 +448,8 @@ export function OrderCreationModal({
             mobileTab === "catalog" ? "flex" : "hidden md:flex"
           }`}>
             <div className="flex items-center justify-between gap-2 shrink-0">
-              <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-white/40">Catalogue Produits</h3>
-              <span className="text-[10px] text-slate-500 dark:text-white/40">{filteredProducts.length} articles</span>
+              <h3 className="text-xs sm:text-sm font-black uppercase tracking-wider text-slate-500 dark:text-white/40">Catalogue Produits</h3>
+              <span className="text-xs text-slate-500 dark:text-white/40">{filteredProducts.length} articles</span>
             </div>
 
             {/* Quick Search */}
@@ -460,7 +460,7 @@ export function OrderCreationModal({
                 value={searchProduct}
                 onChange={(e) => setSearchProduct(e.target.value)}
                 placeholder="Rechercher un article..."
-                className="w-full h-10 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl pl-9 pr-3 text-xs text-slate-900 dark:text-white outline-none focus:border-emerald-500"
+                className="w-full h-10 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl pl-9 pr-3 text-sm text-slate-900 dark:text-white outline-none focus:border-emerald-500"
               />
             </div>
 
@@ -469,10 +469,10 @@ export function OrderCreationModal({
               {loadingProducts ? (
                 <div className="py-12 flex flex-col items-center justify-center text-slate-400 dark:text-white/40 gap-2">
                   <Loader2 className="animate-spin text-emerald-500 shrink-0" size={24} />
-                  <p className="text-xs">Chargement du catalogue...</p>
+                  <p className="text-sm">Chargement du catalogue...</p>
                 </div>
               ) : filteredProducts.length === 0 ? (
-                <p className="text-xs text-slate-400 dark:text-white/30 italic py-8 text-center">Aucun produit trouvé.</p>
+                <p className="text-sm text-slate-400 dark:text-white/30 italic py-8 text-center">Aucun produit trouvé.</p>
               ) : (
                 filteredProducts.map((p: any) => {
                   const selected = selectedItems.find(i => i.productId === p._id);
@@ -490,8 +490,8 @@ export function OrderCreationModal({
                       )}
                       
                       <div className="flex-1 min-w-0">
-                        <p className="font-bold text-xs truncate text-slate-900 dark:text-white">{p.name}</p>
-                        <p className="text-xs font-black text-emerald-600 dark:text-emerald-400 pt-0.5">
+                        <p className="font-bold text-sm truncate text-slate-900 dark:text-white">{p.name}</p>
+                        <p className="text-sm font-black text-emerald-600 dark:text-emerald-400 pt-0.5">
                           {p.price.toLocaleString()} {p.currency || merchantCurrency}
                         </p>
                       </div>
@@ -504,7 +504,7 @@ export function OrderCreationModal({
                           >
                             <Minus size={13} className="shrink-0" />
                           </button>
-                          <span className="text-xs font-black text-emerald-600 dark:text-emerald-400 w-5 text-center shrink-0">
+                          <span className="text-sm font-black text-emerald-600 dark:text-emerald-400 w-5 text-center shrink-0">
                             {selected.quantity}
                           </span>
                           <button
@@ -517,7 +517,7 @@ export function OrderCreationModal({
                       ) : (
                         <button
                           onClick={() => handleAddItem(p)}
-                          className="h-9 px-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 hover:bg-emerald-500 hover:text-white dark:hover:text-black text-emerald-600 dark:text-emerald-400 font-bold text-xs flex items-center gap-1.5 transition-all active:scale-95 shrink-0"
+                          className="h-9 px-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 hover:bg-emerald-500 hover:text-white dark:hover:text-black text-emerald-600 dark:text-emerald-400 font-bold text-sm flex items-center gap-1.5 transition-all active:scale-95 shrink-0"
                         >
                           <Plus size={14} className="shrink-0" />
                           <span>Ajouter</span>
@@ -535,8 +535,8 @@ export function OrderCreationModal({
             mobileTab === "cart" ? "flex" : "hidden md:flex"
           }`}>
             <div className="flex items-center justify-between mb-3 shrink-0">
-              <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-white/40">Articles Sélectionnés</h3>
-              <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+              <h3 className="text-xs sm:text-sm font-black uppercase tracking-wider text-slate-500 dark:text-white/40">Articles Sélectionnés</h3>
+              <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-full border border-emerald-500/20">
                 {totalItemCount} article{totalItemCount > 1 ? "s" : ""}
               </span>
             </div>
@@ -545,15 +545,15 @@ export function OrderCreationModal({
               {selectedItems.length === 0 ? (
                 <div className="h-full flex flex-col items-center justify-center text-center opacity-40 py-12 space-y-2">
                   <ShoppingCart size={36} className="shrink-0 text-slate-400 dark:text-white/50" />
-                  <p className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-white">Panier vide</p>
-                  <p className="text-[11px] text-slate-500 dark:text-white/50 max-w-[200px]">Sélectionnez des articles dans le catalogue pour composer la commande.</p>
+                  <p className="text-sm font-bold uppercase tracking-wider text-slate-600 dark:text-white">Panier vide</p>
+                  <p className="text-xs sm:text-sm text-slate-500 dark:text-white/50 max-w-[220px]">Sélectionnez des articles dans le catalogue pour composer la commande.</p>
                 </div>
               ) : (
                 selectedItems.map((item) => (
                   <div key={item.productId} className="flex items-center justify-between p-3 rounded-2xl bg-white dark:bg-white/5 border border-slate-200 dark:border-white/5 shadow-sm dark:shadow-none">
                     <div className="min-w-0 flex-1 pr-2">
-                      <p className="text-xs font-bold text-slate-900 dark:text-white truncate">{item.name}</p>
-                      <p className="text-[11px] font-mono text-emerald-600 dark:text-emerald-400/90">{item.price.toLocaleString()} {merchantCurrency}</p>
+                      <p className="text-sm font-bold text-slate-900 dark:text-white truncate">{item.name}</p>
+                      <p className="text-xs sm:text-sm font-mono text-emerald-600 dark:text-emerald-400/90">{item.price.toLocaleString()} {merchantCurrency}</p>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
                       <button
@@ -562,7 +562,7 @@ export function OrderCreationModal({
                       >
                         <Minus size={13} className="shrink-0" />
                       </button>
-                      <span className="text-xs font-black text-emerald-600 dark:text-emerald-400 w-5 text-center shrink-0">{item.quantity}</span>
+                      <span className="text-sm font-black text-emerald-600 dark:text-emerald-400 w-5 text-center shrink-0">{item.quantity}</span>
                       <button
                         onClick={() => handleAddItem({ _id: item.productId, name: item.name, price: item.price })}
                         className="w-8 h-8 rounded-lg bg-emerald-500 text-white dark:text-black flex items-center justify-center active:scale-95 shrink-0"
@@ -576,16 +576,16 @@ export function OrderCreationModal({
             </div>
 
             {/* Bottom Checkout Action */}
-            <div className="pt-4 border-t border-slate-200 dark:border-white/10 mt-4 space-y-3 shrink-0">
+            <div className="pt-4 border-t border-slate-200 dark:border-white/10 mt-4 space-y-3 shrink-0 pb-24 sm:pb-0">
               <div className="flex justify-between items-center">
-                <span className="text-xs font-black text-slate-500 dark:text-white/50 uppercase tracking-wider">Total Commande</span>
+                <span className="text-xs sm:text-sm font-black text-slate-500 dark:text-white/50 uppercase tracking-wider">Total Commande</span>
                 <span className="text-xl sm:text-2xl font-black text-emerald-600 dark:text-emerald-400">{totalAmount.toLocaleString()} {merchantCurrency}</span>
               </div>
               
               <button
                 disabled={selectedItems.length === 0 || createOrderMutation.isPending || isCreatingCustomer}
                 onClick={handleValidateOrder}
-                className="w-full h-12 sm:h-14 bg-emerald-500 hover:bg-emerald-600 text-white dark:text-black font-black uppercase tracking-wider text-xs rounded-2xl flex items-center justify-center gap-2 shadow-xl shadow-emerald-500/20 active:scale-98 transition-all disabled:opacity-20"
+                className="w-full h-12 sm:h-14 bg-emerald-500 hover:bg-emerald-600 text-white dark:text-black font-black uppercase tracking-wider text-sm sm:text-base rounded-2xl flex items-center justify-center gap-2 shadow-xl shadow-emerald-500/20 active:scale-98 transition-all disabled:opacity-20"
               >
                 {createOrderMutation.isPending || isCreatingCustomer ? (
                   <Loader2 className="animate-spin shrink-0" size={18} />

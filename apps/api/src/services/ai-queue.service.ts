@@ -486,11 +486,11 @@ Réponds UNIQUEMENT avec le texte final du message.`;
   }
 }
 
-export async function addAIJob(context: SalesContext & { userId: string; conversationId: string; remoteJid: string; platform?: string }) {
-  // Deterministic jobId to prevent duplicate AI responses if the same message is queued twice
-  // (e.g. webhook retries, race conditions between Baileys upsert and Meta webhook)
-  const msgHash = Buffer.from(`${context.conversationId}:${context.message || ""}`.slice(0, 256)).toString('base64').slice(0, 32);
-  const dedupeJobId = `ai:${context.conversationId}:${msgHash}`;
+export async function addAIJob(context: SalesContext & { userId: string; conversationId: string; remoteJid: string; platform?: string; messageId?: string }) {
+  // Use unique messageId or timestamp/nonce to ensure every unique incoming message gets processed,
+  // while preventing duplicate processing of the exact same message ID.
+  const uniqueId = context.messageId || `${Date.now()}-${Math.random().toString(36).substring(7)}`;
+  const dedupeJobId = `ai:${context.conversationId}:${uniqueId}`;
 
   try {
     await aiQueue.add('process-message', context, {

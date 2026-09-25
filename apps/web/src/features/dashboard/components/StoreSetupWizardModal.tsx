@@ -53,6 +53,20 @@ const DEFAULT_PAYMENT_PROVIDERS = [
   { id: "moov", name: "Moov Money", badge: "Mobile" }
 ];
 
+function getDetectedProvider(phone: string): string {
+  const digits = (phone || "").replace(/\D/g, "").slice(-10);
+  if (/^(01|02|03|40|41|42|43|50|51|52|53|70|71|72|73)/.test(digits)) {
+    return "Moov Money";
+  }
+  if (/^(04|05|06|44|45|46|54|55|56|74|75|76|84|85|86)/.test(digits)) {
+    return "MTN MoMo";
+  }
+  if (/^(07|08|09|47|48|49|57|58|59|77|78|79|87|88|89)/.test(digits)) {
+    return "Orange Money";
+  }
+  return "Moov Money";
+}
+
 export function StoreSetupWizardModal({
   isOpen,
   onClose,
@@ -76,11 +90,30 @@ export function StoreSetupWizardModal({
     { zoneName: "Expédition Intérieur du pays", fee: 3500 }
   ]);
 
+  const initialPhone = merchant?.whatsappNumber || merchant?.phone || "";
+  const initialProvider = getDetectedProvider(initialPhone);
+
   // Payment Channels State
   const [paymentMethods, setPaymentMethods] = useState<Array<{ provider: string; number: string; customLabel?: string }>>([
-    { provider: "Wave", number: whatsappNumber || "" },
-    { provider: "Orange Money", number: whatsappNumber || "" }
+    { provider: "Wave", number: initialPhone },
+    { provider: initialProvider, number: initialPhone }
   ]);
+
+  // Sync payment methods provider when whatsappNumber changes
+  useEffect(() => {
+    if (whatsappNumber) {
+      const detected = getDetectedProvider(whatsappNumber);
+      setPaymentMethods(prev => {
+        if (prev.length === 2 && prev[0].provider === "Wave") {
+          return [
+            { provider: "Wave", number: whatsappNumber },
+            { provider: detected, number: whatsappNumber }
+          ];
+        }
+        return prev;
+      });
+    }
+  }, [whatsappNumber]);
 
   // Fetch Knowledge Base to populate delivery & payment defaults
   const { data: knowledge } = useQuery({

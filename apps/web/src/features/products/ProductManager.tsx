@@ -645,7 +645,7 @@ export function ProductManager() {
 
       {/* Edit / Add Form Modal - Ultra-sleek Dedicated Mobile Full-Page & 2-Column Desktop Experience */}
       {(editingProduct || isAddingManual) && (
-        <div className="fixed inset-0 z-[150] flex items-center justify-center p-0 sm:p-6 overflow-y-auto overscroll-contain animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-0 sm:p-6 overflow-y-auto overscroll-contain animate-in fade-in duration-200">
           <div
             className="fixed inset-0 bg-slate-950/60 dark:bg-black/80 backdrop-blur-md transition-opacity hidden sm:block"
             onClick={() => { setEditingProduct(null); setIsAddingManual(false); }}
@@ -673,7 +673,7 @@ export function ProductManager() {
                   <h2 className="text-base sm:text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight flex items-center gap-2 truncate">
                     <span>{editingProduct ? "Modifier" : "Ajouter"} {config.itemLabel}</span>
                   </h2>
-                  <p className="text-[10px] sm:text-[11px] text-slate-500 dark:text-white/40 font-medium truncate">
+                  <p className="text-xs sm:text-sm text-slate-500 dark:text-white/40 font-medium truncate">
                     Configurez les détails et le visuel que le Vendeur IA présentera à vos clients sur WhatsApp.
                   </p>
                 </div>
@@ -697,12 +697,12 @@ export function ProductManager() {
                   {businessCategory !== "digital" ? (
                     <div className="space-y-3">
                       <div className="flex items-center justify-between">
-                        <span className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-white/70 flex items-center gap-1.5">
+                        <span className="text-xs sm:text-sm font-black uppercase tracking-wider text-slate-700 dark:text-white/70 flex items-center gap-1.5">
                           <ImageIcon size={14} className="text-emerald-600 dark:text-vendeur-emerald" />
                           Visuel de l'article
                         </span>
                         {(editingProduct ? (editingProduct as any).imageUrl : newProduct.imageUrl) && (
-                          <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-vendeur-emerald border border-emerald-500/20">
+                          <span className="text-xs font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-vendeur-emerald border border-emerald-500/20">
                             Photo Active
                           </span>
                         )}
@@ -721,7 +721,7 @@ export function ProductManager() {
                                 alt="Preview"
                               />
                               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-center pb-4">
-                                <span className="text-xs font-black uppercase tracking-wider text-white px-3 py-1.5 rounded-xl bg-black/60 backdrop-blur-md border border-white/10 flex items-center gap-1.5">
+                                <span className="text-xs sm:text-sm font-black uppercase tracking-wider text-white px-3 py-1.5 rounded-xl bg-black/60 backdrop-blur-md border border-white/10 flex items-center gap-1.5">
                                   <Camera size={14} /> Changer la photo
                                 </span>
                               </div>
@@ -734,8 +734,8 @@ export function ProductManager() {
                                     <Loader2 size={28} className="animate-spin" />
                                   </div>
                                   <div className="space-y-1">
-                                    <p className="text-xs font-black uppercase text-sky-400 tracking-wider">Analyse par Vendeur IA...</p>
-                                    <p className="text-[10px] text-slate-500 dark:text-white/40">Extraction du produit et des prix...</p>
+                                    <p className="text-xs sm:text-sm font-black uppercase text-sky-400 tracking-wider">Analyse par Vendeur IA...</p>
+                                    <p className="text-xs text-slate-500 dark:text-white/40">Extraction du produit et des prix...</p>
                                   </div>
                                 </>
                               ) : (
@@ -744,8 +744,8 @@ export function ProductManager() {
                                     <Camera size={26} />
                                   </div>
                                   <div className="space-y-1">
-                                    <p className="text-xs font-black uppercase text-slate-800 dark:text-white tracking-wider">Importer une photo</p>
-                                    <p className="text-[10px] text-slate-500 dark:text-white/40 font-medium">Glissez une image ou cliquez pour parcourir</p>
+                                    <p className="text-xs sm:text-sm font-black uppercase text-slate-800 dark:text-white tracking-wider">Importer une photo</p>
+                                    <p className="text-xs text-slate-500 dark:text-white/40 font-medium">Glissez une image ou cliquez pour parcourir</p>
                                   </div>
                                 </>
                               )}
@@ -764,7 +764,7 @@ export function ProductManager() {
                             onChange={(e) => setAutoAnalyzeWithIA(e.target.checked)}
                             className="rounded border-slate-300 text-emerald-500 focus:ring-emerald-500"
                           />
-                          <span className="text-[11px] font-bold text-slate-700 dark:text-white/70">
+                          <span className="text-xs sm:text-sm font-bold text-slate-700 dark:text-white/70">
                             Auto-remplir le nom et prix par Vision IA
                           </span>
                         </label>
@@ -777,8 +777,8 @@ export function ProductManager() {
                         <Laptop size={24} />
                       </div>
                       <div className="space-y-1">
-                        <h4 className="text-xs font-black uppercase tracking-wider text-slate-900 dark:text-white">Produit Numérique</h4>
-                        <p className="text-[11px] text-slate-500 dark:text-white/40 leading-relaxed">
+                        <h4 className="text-xs sm:text-sm font-black uppercase tracking-wider text-slate-900 dark:text-white">Produit Numérique</h4>
+                        <p className="text-xs sm:text-sm text-slate-500 dark:text-white/40 leading-relaxed">
                           La livraison s'effectue automatiquement via le lien d'accès sécurisé dès réception du paiement Mobile Money.
                         </p>
                       </div>
@@ -791,9 +791,9 @@ export function ProductManager() {
 
                   {/* Title / Name Field */}
                   <div className="space-y-1.5">
-                    <label className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-white/70 flex items-center justify-between">
+                    <label className="text-xs sm:text-sm font-black uppercase tracking-wider text-slate-700 dark:text-white/70 flex items-center justify-between">
                       <span>Nom de l'{config.itemLabel.toLowerCase()}</span>
-                      <span className="text-[10px] text-slate-400 font-bold">* Requis</span>
+                      <span className="text-xs text-slate-400 font-bold">* Requis</span>
                     </label>
                     <input
                       className="w-full h-12 rounded-2xl bg-slate-50 dark:bg-black/40 border border-slate-300 dark:border-white/10 px-4 text-sm font-semibold text-slate-900 dark:text-white outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/30 transition-all placeholder:text-slate-400 dark:placeholder:text-white/20 shadow-inner"
@@ -810,9 +810,9 @@ export function ProductManager() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                     {/* Price Input */}
                     <div className="space-y-1.5">
-                      <label className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-white/70 flex items-center justify-between">
+                      <label className="text-xs sm:text-sm font-black uppercase tracking-wider text-slate-700 dark:text-white/70 flex items-center justify-between">
                         <span>Prix</span>
-                        <span className="text-[10px] text-emerald-600 dark:text-vendeur-emerald font-black uppercase">{activeCurrency}</span>
+                        <span className="text-xs text-emerald-600 dark:text-vendeur-emerald font-black uppercase">{activeCurrency}</span>
                       </label>
                       <div className="relative flex items-center">
                         <input
@@ -828,7 +828,7 @@ export function ProductManager() {
                           placeholder="0"
                           required
                         />
-                        <span className="absolute right-3 px-2 py-1 rounded-lg bg-slate-200/80 dark:bg-white/5 border border-slate-300 dark:border-white/10 text-[10px] font-black uppercase text-slate-600 dark:text-white/40 select-none">
+                        <span className="absolute right-3 px-2 py-1 rounded-lg bg-slate-200/80 dark:bg-white/5 border border-slate-300 dark:border-white/10 text-xs font-black uppercase text-slate-600 dark:text-white/40 select-none">
                           {activeCurrency}
                         </span>
                       </div>
@@ -892,9 +892,9 @@ export function ProductManager() {
 
                     {config.showStock && (
                       <div className="space-y-1.5">
-                        <label className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-white/70 flex items-center justify-between">
+                        <label className="text-xs sm:text-sm font-black uppercase tracking-wider text-slate-700 dark:text-white/70 flex items-center justify-between">
                           <span>{config.stockLabel}</span>
-                          <span className="text-[10px] text-slate-400 dark:text-white/40">Unités</span>
+                          <span className="text-xs text-slate-400 dark:text-white/40">Unités</span>
                         </label>
                         <input
                           type="number"
@@ -915,7 +915,7 @@ export function ProductManager() {
                   {/* Domain Specific Extensions */}
                   {businessCategory === "food" && (
                     <div className="space-y-1.5">
-                      <label className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-white/70">
+                      <label className="text-xs sm:text-sm font-black uppercase tracking-wider text-slate-700 dark:text-white/70">
                         Options & Formules d'accompagnement
                       </label>
                       <input
@@ -927,13 +927,13 @@ export function ProductManager() {
                         }
                         placeholder="ex: Sans sauce, Extra fromage, Frites incluses..."
                       />
-                      <p className="text-[10px] text-slate-500 dark:text-white/40">Le Vendeur IA proposera spontanément ces choix aux clients lors de leur commande.</p>
+                      <p className="text-xs text-slate-500 dark:text-white/40">Le Vendeur IA proposera spontanément ces choix aux clients lors de leur commande.</p>
                     </div>
                   )}
 
                   {businessCategory === "digital" && (
                     <div className="space-y-1.5">
-                      <label className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-white/70">
+                      <label className="text-xs sm:text-sm font-black uppercase tracking-wider text-slate-700 dark:text-white/70">
                         Lien d'Accès Sécurisé (Google Drive, Notion, etc.)
                       </label>
                       <input
@@ -945,13 +945,13 @@ export function ProductManager() {
                         }
                         placeholder="https://drive.google.com/file/d/..."
                       />
-                      <p className="text-[10px] text-slate-500 dark:text-white/40">Ce lien est délivré de manière automatisée et privée au client après paiement.</p>
+                      <p className="text-xs text-slate-500 dark:text-white/40">Ce lien est délivré de manière automatisée et privée au client après paiement.</p>
                     </div>
                   )}
 
                   {businessCategory === "services" && (
                     <div className="space-y-1.5">
-                      <label className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-white/70">
+                      <label className="text-xs sm:text-sm font-black uppercase tracking-wider text-slate-700 dark:text-white/70">
                         Mode de délivrance
                       </label>
                       <select
@@ -971,9 +971,9 @@ export function ProductManager() {
 
                   {/* Description Field */}
                   <div className="space-y-1.5">
-                    <label className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-white/70 flex items-center justify-between">
+                    <label className="text-xs sm:text-sm font-black uppercase tracking-wider text-slate-700 dark:text-white/70 flex items-center justify-between">
                       <span>Description détaillée</span>
-                      <span className="text-[10px] text-slate-500 dark:text-white/40">Contexte pour l'IA</span>
+                      <span className="text-xs text-slate-500 dark:text-white/40">Contexte pour l'IA</span>
                     </label>
                     <textarea
                       rows={3}
@@ -996,11 +996,11 @@ export function ProductManager() {
             </div>
 
             {/* Modal / Page Footer Actions */}
-            <div className="px-4 py-3.5 sm:px-8 sm:py-5 border-t border-slate-200 dark:border-white/5 bg-slate-50/95 dark:bg-[#0c1612]/95 backdrop-blur-md flex items-center justify-between gap-4 shrink-0 sticky bottom-0 z-20 pb-safe sm:pb-5">
+            <div className="px-4 py-4 sm:px-8 sm:py-5 border-t border-slate-200 dark:border-white/5 bg-slate-50/95 dark:bg-[#0c1612]/95 backdrop-blur-md flex items-center justify-between gap-4 shrink-0 sticky bottom-0 z-20 pb-28 sm:pb-5">
               <button
                 type="button"
                 onClick={() => { setEditingProduct(null); setIsAddingManual(false); }}
-                className="px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider text-slate-600 dark:text-white/50 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-white/5 transition-all cursor-pointer"
+                className="px-5 py-2.5 rounded-xl text-sm font-black uppercase tracking-wider text-slate-600 dark:text-white/50 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-white/5 transition-all cursor-pointer"
               >
                 Annuler
               </button>
@@ -1008,7 +1008,7 @@ export function ProductManager() {
               <button
                 type="submit"
                 disabled={createMutation.isPending || updateMutation.isPending}
-                className="h-12 px-5 sm:px-7 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black uppercase text-xs tracking-wider rounded-2xl flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-emerald-500/20 disabled:opacity-50 cursor-pointer"
+                className="h-12 px-5 sm:px-7 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black uppercase text-sm sm:text-base tracking-wider rounded-2xl flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-emerald-500/20 disabled:opacity-50 cursor-pointer"
               >
                 {(createMutation.isPending || updateMutation.isPending) ? (
                   <Loader2 size={18} className="animate-spin" />
@@ -1046,7 +1046,7 @@ export function ProductManager() {
           {config.showScanner && (
             <button
               onClick={() => setIsScannerOpen(true)}
-              className="flex items-center justify-center gap-2 bg-sky-500 text-white px-4 md:px-6 py-3 md:py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] md:text-xs shadow-xl hover:bg-sky-600 hover:scale-[1.02] active:scale-95 transition-all"
+              className="flex items-center justify-center gap-2 bg-sky-500 text-white px-4 md:px-6 py-3 md:py-4 rounded-2xl font-black uppercase tracking-widest text-xs md:text-sm shadow-xl hover:bg-sky-600 hover:scale-[1.02] active:scale-95 transition-all"
             >
               <Camera size={16} /> <span className="hidden xs:inline">Scanner</span>
             </button>
@@ -1054,7 +1054,7 @@ export function ProductManager() {
           <button
             onClick={() => setIsAddingManual(true)}
             className={cn(
-              "flex items-center justify-center gap-2 px-4 md:px-6 py-3 md:py-4 rounded-2xl text-[10px] md:text-xs tracking-widest uppercase shadow-xl hover:scale-[1.02] active:scale-95 transition-all flex-1 sm:flex-none",
+              "flex items-center justify-center gap-2 px-4 md:px-6 py-3 md:py-4 rounded-2xl text-xs md:text-sm tracking-widest uppercase shadow-xl hover:scale-[1.02] active:scale-95 transition-all flex-1 sm:flex-none font-black",
               config.btnBg
             )}
           >
@@ -1338,7 +1338,7 @@ export function ProductManager() {
                     }}
                     disabled={toggleFeaturedMutation.isPending}
                     className={cn(
-                      "absolute top-3.5 left-3.5 px-3 py-1.5 rounded-xl flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider z-10 cursor-pointer transition-all shadow-md",
+                      "absolute top-3.5 left-3.5 px-3 py-1.5 rounded-xl flex items-center gap-1.5 text-xs font-black uppercase tracking-wider z-10 cursor-pointer transition-all shadow-md",
                       p.isFeatured
                         ? "bg-amber-400 hover:bg-amber-300 text-slate-950 border border-amber-300 shadow-amber-400/30 scale-105"
                         : "bg-white/95 hover:bg-white text-slate-800 hover:text-amber-600 dark:bg-zinc-900/90 dark:hover:bg-zinc-800 dark:text-zinc-100 dark:hover:text-amber-300 border border-slate-200 dark:border-white/20 backdrop-blur-md"
@@ -1350,7 +1350,7 @@ export function ProductManager() {
                   </button>
 
                   <div className="absolute top-4 right-4 bg-sky-500/10 dark:bg-sky-500/20 border border-sky-500/30 px-3 py-1 rounded-lg flex items-center gap-1.5 backdrop-blur-md">
-                    <span className="text-[10px] font-black text-sky-700 dark:text-sky-400 uppercase tracking-widest">IA Active</span>
+                    <span className="text-xs font-black text-sky-700 dark:text-sky-400 uppercase tracking-wider">IA Active</span>
                   </div>
                 </div>
 

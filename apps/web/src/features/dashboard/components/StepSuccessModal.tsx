@@ -46,7 +46,7 @@ const NEXT_STEP_LINKS: Record<string, string> = {
   whatsapp: "/products",
   products: "/settings?tab=boutique#payments",
   payments: "/settings?tab=boutique#delivery",
-  delivery: "/offers",
+  delivery: "/dashboard",
   subscription: "/dashboard",
 };
 
@@ -55,7 +55,7 @@ const NEXT_STEP_CTA: Record<string, string> = {
   whatsapp: "Ajouter mes articles & prix",
   products: "Configurer mes paiements",
   payments: "Définir mes zones de livraison",
-  delivery: "Activer les Ventes 24h/24",
+  delivery: "Voir mon tableau de bord",
   subscription: "Voir mon tableau de bord",
 };
 
@@ -71,83 +71,66 @@ export function StepSuccessModal({
 
   const nextLink = nextStep ? NEXT_STEP_LINKS[completedStepId] : "/dashboard";
   const nextCTA = nextStep
-    ? NEXT_STEP_CTA[completedStepId] || `Etape suivante : ${nextStep.label}`
+    ? NEXT_STEP_CTA[completedStepId] || `Étape suivante : ${nextStep.label}`
     : "Voir mon tableau de bord";
 
   return createPortal(
     <AnimatePresence>
-      <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/60 dark:bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
+      <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 bg-slate-950/60 dark:bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
         <motion.div
-          initial={{ opacity: 0, scale: 0.88, y: 24 }}
+          initial={{ opacity: 0, scale: 0.94, y: 12 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.88, y: 24 }}
-          transition={{ type: "spring", stiffness: 320, damping: 28 }}
-          className="relative w-full max-w-md bg-white dark:bg-vendeur-coal border border-slate-200 dark:border-vendeur-emerald/40 rounded-[2.5rem] p-6 md:p-8 shadow-2xl overflow-hidden text-slate-900 dark:text-white"
+          exit={{ opacity: 0, scale: 0.94, y: 12 }}
+          transition={{ type: "spring", stiffness: 350, damping: 25 }}
+          className="relative w-full max-w-sm bg-white dark:bg-vendeur-coal border border-slate-200 dark:border-vendeur-emerald/40 rounded-2xl p-4 sm:p-5 shadow-2xl overflow-hidden text-slate-900 dark:text-white"
         >
-          {/* Background Glows */}
-          <div className="absolute -top-20 -right-20 w-40 h-40 bg-emerald-500/10 dark:bg-vendeur-emerald/20 rounded-full blur-3xl pointer-events-none" />
-          <div className="absolute -bottom-20 -left-20 w-40 h-40 bg-emerald-500/10 dark:bg-vendeur-emerald/10 rounded-full blur-3xl pointer-events-none" />
-
           {/* Close Button */}
           <button
             onClick={onClose}
-            className="absolute top-5 right-5 p-2 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-500 hover:text-slate-900 dark:text-white/50 dark:hover:text-white transition-all cursor-pointer"
+            className="absolute top-3 right-3 p-1 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-500 hover:text-slate-900 dark:text-white/50 dark:hover:text-white transition-all cursor-pointer"
+            title="Fermer"
           >
-            <X size={16} />
+            <X size={14} />
           </button>
 
-          <div className="relative z-10 text-center space-y-5">
-            {/* Animated Check Icon */}
-            <div className="relative inline-flex items-center justify-center">
-              <motion.div
-                initial={{ scale: 0, rotate: -20 }}
-                animate={{ scale: 1, rotate: 0 }}
-                transition={{ type: "spring", stiffness: 400, damping: 20, delay: 0.1 }}
-                className="h-20 w-20 rounded-3xl bg-emerald-500 flex items-center justify-center text-white shadow-xl shadow-emerald-500/30"
-              >
-                {STEP_ICONS[completedStepId] || <CheckCircle2 size={32} />}
-              </motion.div>
-              <motion.div
-                initial={{ scale: 0, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{ delay: 0.3 }}
-                className="absolute -top-2 -right-2 h-7 w-7 rounded-full bg-emerald-500 border-2 border-white dark:border-vendeur-coal flex items-center justify-center"
-              >
-                <CheckCircle2 size={14} className="text-white fill-emerald-500" />
-              </motion.div>
+          <div className="relative z-10 text-center space-y-3">
+            {/* Animated Check Icon + Header Compact */}
+            <div className="flex items-center justify-center gap-2.5 pt-1">
+              <div className="h-10 w-10 rounded-xl bg-emerald-500 flex items-center justify-center text-white shrink-0 shadow-md shadow-emerald-500/20">
+                {STEP_ICONS[completedStepId] || <CheckCircle2 size={22} />}
+              </div>
+              <div className="text-left min-w-0">
+                <span className="text-[10px] font-black uppercase text-emerald-700 dark:text-vendeur-emerald tracking-wider">
+                  Étape complétée ✓
+                </span>
+                <h2 className="text-base sm:text-lg font-black text-slate-900 dark:text-white uppercase tracking-tight leading-tight truncate">
+                  {completedStepLabel}
+                </h2>
+              </div>
             </div>
 
-            {/* Header */}
-            <div className="space-y-2">
-              <span className="text-[10px] font-black uppercase text-emerald-700 dark:text-vendeur-emerald tracking-[0.2em] bg-emerald-50 dark:bg-vendeur-emerald/10 border border-emerald-200 dark:border-vendeur-emerald/30 px-3 py-1 rounded-full">
-                Étape complétée !
-              </span>
-              <h2 className="text-xl md:text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight leading-tight">
-                {completedStepLabel}
-              </h2>
-              <p className="text-xs md:text-sm text-slate-600 dark:text-white/65 leading-relaxed">
-                {STEP_MESSAGES[completedStepId] ||
-                  `Super, vous avez complété cette étape${businessName ? ` pour ${businessName}` : ""} !`}
-              </p>
-            </div>
+            <p className="text-xs text-slate-600 dark:text-white/70 leading-normal line-clamp-2">
+              {STEP_MESSAGES[completedStepId] ||
+                `Super, vous avez complété cette étape${businessName ? ` pour ${businessName}` : ""} !`}
+            </p>
 
             {/* Actions */}
-            <div className="flex flex-col gap-3 pt-1">
+            <div className="space-y-2 pt-1">
               {nextStep && (
                 <Link
                   to={nextLink}
                   onClick={onClose}
-                  className="w-full flex items-center justify-center gap-2.5 min-h-[52px] px-6 py-3.5 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-white font-black uppercase text-xs tracking-wider active:scale-95 transition-all shadow-lg shadow-emerald-500/20 cursor-pointer"
+                  className="w-full h-11 flex items-center justify-center gap-2 px-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black uppercase text-xs sm:text-sm tracking-wider active:scale-95 transition-all shadow-md shadow-emerald-500/20 cursor-pointer"
                 >
-                  <Zap size={16} fill="currentColor" className="animate-pulse shrink-0" />
-                  <span>{nextCTA}</span>
-                  <ArrowRight size={16} className="shrink-0" />
+                  <Zap size={15} fill="currentColor" className="shrink-0" />
+                  <span className="truncate">{nextCTA}</span>
+                  <ArrowRight size={15} className="shrink-0" />
                 </Link>
               )}
 
               <button
                 onClick={onClose}
-                className="w-full flex items-center justify-center gap-2 min-h-[44px] px-5 py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-white/5 dark:hover:bg-white/10 border border-slate-200 dark:border-white/10 text-slate-700 hover:text-slate-900 dark:text-white/70 dark:hover:text-white font-black uppercase text-xs tracking-wider transition-all cursor-pointer active:scale-95"
+                className="w-full text-center text-xs font-bold text-slate-500 hover:text-slate-900 dark:text-white/50 dark:hover:text-white transition-colors py-1 cursor-pointer"
               >
                 Rester sur le tableau de bord
               </button>

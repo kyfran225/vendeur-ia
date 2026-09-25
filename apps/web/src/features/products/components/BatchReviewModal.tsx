@@ -301,7 +301,7 @@ export function BatchReviewModal({ image, rawItems, boutiqueName, currency = "XO
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
               {/* Product Name */}
               <div className="space-y-1 sm:col-span-2">
-                <label className="text-[10px] sm:text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-white/60">
+                <label className="text-xs sm:text-sm font-black uppercase tracking-wider text-slate-500 dark:text-white/60">
                   Nom du produit
                 </label>
                 <input
@@ -315,7 +315,7 @@ export function BatchReviewModal({ image, rawItems, boutiqueName, currency = "XO
 
               {/* Price Dynamic Currency */}
               <div className="space-y-1">
-                <label className="text-[10px] sm:text-[11px] font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+                <label className="text-xs sm:text-sm font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
                   Prix de Vente ({currency})
                 </label>
                 <div className="relative">
@@ -334,7 +334,7 @@ export function BatchReviewModal({ image, rawItems, boutiqueName, currency = "XO
 
               {/* Stock */}
               <div className="space-y-1">
-                <label className="text-[10px] sm:text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-white/60">
+                <label className="text-xs sm:text-sm font-black uppercase tracking-wider text-slate-500 dark:text-white/60">
                   Stock initial
                 </label>
                 <input
@@ -347,7 +347,7 @@ export function BatchReviewModal({ image, rawItems, boutiqueName, currency = "XO
 
               {/* Category */}
               <div className="space-y-1 sm:col-span-2">
-                <label className="text-[10px] sm:text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-white/60">
+                <label className="text-xs sm:text-sm font-black uppercase tracking-wider text-slate-500 dark:text-white/60">
                   Catégorie
                 </label>
                 <select
@@ -371,7 +371,7 @@ export function BatchReviewModal({ image, rawItems, boutiqueName, currency = "XO
             {/* Social Commerce Description */}
             <div className="space-y-1">
               <div className="flex justify-between items-center">
-                <label className="text-[10px] sm:text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-white/60 flex items-center gap-1.5">
+                <label className="text-xs sm:text-sm font-black uppercase tracking-wider text-slate-500 dark:text-white/60 flex items-center gap-1.5">
                   <Sparkles size={12} className="text-emerald-600 dark:text-emerald-400" />
                   Description Vendeuse (Réseaux Sociaux / WhatsApp)
                 </label>

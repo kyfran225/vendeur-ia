@@ -274,7 +274,7 @@ export function OrderManager() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
         <div className="p-4 md:p-5 rounded-2xl bg-white dark:bg-vendeur-coal border border-slate-200 dark:border-white/10 shadow-sm hover:shadow-md dark:shadow-xl transition-all flex flex-col justify-between">
           <div className="flex items-center justify-between text-emerald-600 dark:text-emerald-400 mb-2">
-            <span className="text-[10px] md:text-xs font-black uppercase tracking-wider text-slate-500 dark:text-white/40">Encaissé</span>
+            <span className="text-xs sm:text-sm font-black uppercase tracking-wider text-slate-500 dark:text-white/40">Encaissé</span>
             <Banknote size={18} />
           </div>
           <div className="text-xl md:text-2xl font-black text-emerald-600 dark:text-emerald-400">
@@ -284,7 +284,7 @@ export function OrderManager() {
 
         <div className="p-4 md:p-5 rounded-2xl bg-white dark:bg-vendeur-coal border border-slate-200 dark:border-white/10 shadow-sm hover:shadow-md dark:shadow-xl transition-all flex flex-col justify-between">
           <div className="flex items-center justify-between text-amber-600 dark:text-amber-400 mb-2">
-            <span className="text-[10px] md:text-xs font-black uppercase tracking-wider text-slate-500 dark:text-white/40">À Encaisser</span>
+            <span className="text-xs sm:text-sm font-black uppercase tracking-wider text-slate-500 dark:text-white/40">À Encaisser</span>
             <Clock size={18} />
           </div>
           <div className="text-xl md:text-2xl font-black text-amber-600 dark:text-amber-400">
@@ -294,7 +294,7 @@ export function OrderManager() {
 
         <div className="p-4 md:p-5 rounded-2xl bg-white dark:bg-vendeur-coal border border-slate-200 dark:border-white/10 shadow-sm hover:shadow-md dark:shadow-xl transition-all flex flex-col justify-between">
           <div className="flex items-center justify-between text-purple-600 dark:text-purple-400 mb-2">
-            <span className="text-[10px] md:text-xs font-black uppercase tracking-wider text-slate-500 dark:text-white/40">En Course</span>
+            <span className="text-xs sm:text-sm font-black uppercase tracking-wider text-slate-500 dark:text-white/40">En Course</span>
             <Truck size={18} />
           </div>
           <div className="text-xl md:text-2xl font-black text-purple-600 dark:text-purple-400">
@@ -304,7 +304,7 @@ export function OrderManager() {
 
         <div className="p-4 md:p-5 rounded-2xl bg-white dark:bg-vendeur-coal border border-slate-200 dark:border-white/10 shadow-sm hover:shadow-md dark:shadow-xl transition-all flex flex-col justify-between">
           <div className="flex items-center justify-between text-blue-600 dark:text-blue-400 mb-2">
-            <span className="text-[10px] md:text-xs font-black uppercase tracking-wider text-slate-500 dark:text-white/40">Total Ventes</span>
+            <span className="text-xs sm:text-sm font-black uppercase tracking-wider text-slate-500 dark:text-white/40">Total Ventes</span>
             <Package size={18} />
           </div>
           <div className="text-xl md:text-2xl font-black text-slate-900 dark:text-white">
@@ -342,7 +342,7 @@ export function OrderManager() {
                 onClick={() => setFilter(tab.id)}
                 data-active={filter === tab.id}
                 className={cn(
-                  "flex items-center justify-center gap-2 px-3.5 h-10 rounded-xl text-[10px] font-black uppercase tracking-tight transition-all shrink-0 whitespace-nowrap cursor-pointer",
+                  "flex items-center justify-center gap-2 px-3.5 h-10 rounded-xl text-xs font-black uppercase tracking-tight transition-all shrink-0 whitespace-nowrap cursor-pointer",
                   filter === tab.id
                     ? "bg-vendeur-emerald text-slate-950 shadow-md font-black"
                     : "text-slate-600 dark:text-white/40 hover:bg-slate-100 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white"

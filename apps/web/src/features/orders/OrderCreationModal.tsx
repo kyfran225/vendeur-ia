@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { ShoppingCart, Package, Plus, Minus, X, CheckCheck, Loader2, User, Phone, MapPin, Search, ChevronDown, Check, UserPlus, ArrowLeft } from "lucide-react";
+import { ShoppingCart, Package, Plus, Minus, X, CheckCheck, Loader2, User, Phone, MapPin, Search, ChevronDown, Check, UserPlus, ArrowLeft, Landmark } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/apiClient";
 import { useMerchantCurrency } from "@/hooks/useMerchantCurrency";
@@ -29,6 +29,7 @@ export function OrderCreationModal({
   const [selectedItems, setSelectedItems] = useState<any[]>([]);
   const [phone, setPhone] = useState(initialCustomerPhone || "");
   const [shippingAddress, setShippingAddress] = useState(initialDeliveryAddress);
+  const [shippingLandmark, setShippingLandmark] = useState("");
   const [isCreatingCustomer, setIsCreatingCustomer] = useState(false);
   const [searchProduct, setSearchProduct] = useState("");
   const [searchCustomer, setSearchCustomer] = useState("");
@@ -168,6 +169,7 @@ export function OrderCreationModal({
       totalAmount,
       currency: merchantCurrency,
       shippingAddress: shippingAddress.trim() || undefined,
+      shippingLandmark: shippingLandmark.trim() || undefined,
       deliveryAddress: shippingAddress.trim() || undefined,
       status: "pending"
     });
@@ -217,7 +219,7 @@ export function OrderCreationModal({
         </header>
 
         {/* Customer & Delivery Form Header */}
-        <div className="p-4 sm:px-6 sm:py-3.5 bg-slate-50/80 dark:bg-white/[0.01] border-b border-slate-200 dark:border-white/5 grid grid-cols-1 sm:grid-cols-2 gap-3 shrink-0 relative">
+        <div className="p-4 sm:px-6 sm:py-3.5 bg-slate-50/80 dark:bg-white/[0.01] border-b border-slate-200 dark:border-white/5 grid grid-cols-1 sm:grid-cols-3 gap-3 shrink-0 relative">
           <div>
             <div className="flex items-center justify-between mb-1.5">
               <label className="text-xs sm:text-sm font-black uppercase tracking-wider text-slate-500 dark:text-white/50 flex items-center gap-1.5">
@@ -407,8 +409,22 @@ export function OrderCreationModal({
             <AddressAutocomplete
               value={shippingAddress}
               onChange={setShippingAddress}
-              placeholder="Ex: Cocody Angré, Marcory, Plateau..."
+              placeholder="Ex: Cocody Angré, Marcory..."
               inputClassName="h-11 bg-slate-100 dark:bg-vendeur-coal border border-slate-200 dark:border-white/10 rounded-xl text-sm text-slate-900 dark:text-white pl-9 placeholder:text-slate-400 dark:placeholder:text-white/30"
+            />
+          </div>
+
+          <div>
+            <label className="text-xs sm:text-sm font-black uppercase tracking-wider text-slate-500 dark:text-white/50 flex items-center gap-1.5 mb-1.5">
+              <Landmark size={14} className="text-amber-500 shrink-0" />
+              Point de repère précis
+            </label>
+            <input
+              type="text"
+              value={shippingLandmark}
+              onChange={(e) => setShippingLandmark(e.target.value)}
+              placeholder="Ex: Pharmacie des Grâces, carrefour..."
+              className="w-full h-11 bg-slate-100 dark:bg-vendeur-coal border border-slate-200 dark:border-white/10 rounded-xl px-3 text-sm text-slate-900 dark:text-white outline-none focus:border-emerald-500 placeholder:text-slate-400 dark:placeholder:text-white/30"
             />
           </div>
         </div>

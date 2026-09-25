@@ -135,7 +135,17 @@ export class PushService {
       const maxRetries = 2;
       for (let attempt = 0; attempt <= maxRetries; attempt++) {
         try {
-          await webpush.sendNotification(sub.subscription as any, JSON.stringify(payload));
+          await webpush.sendNotification(
+            sub.subscription as any,
+            JSON.stringify(payload),
+            {
+              urgency: 'high',
+              TTL: 86400, // 24 hours
+              headers: {
+                Urgency: 'high'
+              }
+            }
+          );
           return;
         } catch (err: any) {
           const isTransient500 = err.statusCode === 500 || err.statusCode === 502 || err.statusCode === 503;

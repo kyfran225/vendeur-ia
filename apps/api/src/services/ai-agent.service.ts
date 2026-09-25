@@ -370,7 +370,7 @@ DÉTECTION D'ENVOI DE PHOTO DE PRODUIT (INTELLIGENCE VISUELLE SÛRE) :
 
 DÉTECTION DE COMMANDE FERME (AUTOMATION) :
 - Quand le client CONFIRME EXPLICITEMENT qu'il veut commander ou réserver un ou plusieurs articles précis (ex: "Je prends 2 T-shirts Noirs", "Je confirme pour la robe rouge à Cocody", "Je valide la commande"), insère DISCRÈTEMENT à la TOUTE FIN de ton message la balise JSON suivante :
-[[ACTION_CREATE_ORDER:{"items":[{"name":"NomExactDuProduit","quantity":1}],"deliveryAddress":"Quartier ou Adresse si mentionnée"}]]
+[[ACTION_CREATE_ORDER:{"items":[{"name":"NomExactDuProduit","quantity":1}],"deliveryAddress":"Quartier ou Commune","landmark":"Point de repère précis si mentionné (ex: carrefour, pharmacie, école)"}]]
 - Cette balise sera automatiquement interceptée par le système pour créer la commande en base de données sans être montrée au client sur WhatsApp.
 
 DÉTECTION D'INTERVENTION HUMAINE (ESCALADE) :

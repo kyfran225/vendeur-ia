@@ -66,6 +66,7 @@ export function CartDrawer({
   const [customerPhone, setCustomerPhone] = useState("");
   const [selectedZone, setSelectedZone] = useState<string>("cocody");
   const [customAddress, setCustomAddress] = useState("");
+  const [customLandmark, setCustomLandmark] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<"cash_on_delivery" | "mobile_money">("cash_on_delivery");
   const [deliveryNotes, setDeliveryNotes] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -96,6 +97,7 @@ export function CartDrawer({
         customerPhone: customerPhone.trim(),
         deliveryAddress: customAddress.trim() || deliveryInfo.label,
         deliveryZone: deliveryInfo.label,
+        deliveryLandmark: customLandmark.trim(),
         deliveryFee,
         items: items.map(it => ({
           productId: it.product._id,
@@ -123,7 +125,8 @@ export function CartDrawer({
       `━━━━━━━━━━━━━━━━━━━━`,
       `👤 *Client* : ${customerName || "Client Web"} (${customerPhone})`,
       `📍 *Livraison* : ${deliveryInfo.label}`,
-      customAddress ? `🏠 *Détails adresse* : ${customAddress}` : "",
+      customAddress ? `🏠 *Adresse* : ${customAddress}` : "",
+      customLandmark ? `🏢 *Point de repère* : ${customLandmark}` : "",
       `⏱ *Délai estimé* : ${deliveryInfo.eta}`,
       `💳 *Mode de paiement* : ${paymentMethod === "cash_on_delivery" ? "Espèces à la livraison" : "Mobile Money / Transfert direct (Wave, OM, MoMo, Sendwave, TapTap Send)"}`,
       `━━━━━━━━━━━━━━━━━━━━`,
@@ -320,15 +323,28 @@ export function CartDrawer({
 
                 <div>
                   <label className="block text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-white/50 mb-1">
-                    Adresse ou repère précis
+                    Adresse / Quartier de livraison
                   </label>
                   <AddressAutocomplete
                     value={customAddress}
                     onChange={setCustomAddress}
                     countryCode={merchant?.countryCode || merchant?.country || "CI"}
                     city={merchant?.city}
-                    placeholder="Ex: Cocody Angré 8ème tranche, Pharmacie des Grâces"
+                    placeholder="Ex: Cocody Angré 8ème tranche..."
                     inputClassName="h-11 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-3 pl-10 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-white/30 outline-none focus:border-emerald-500 transition-all shadow-sm"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-white/50 mb-1">
+                    Point de repère précis (facultatif mais recommandé)
+                  </label>
+                  <input
+                    type="text"
+                    value={customLandmark}
+                    onChange={(e) => setCustomLandmark(e.target.value)}
+                    placeholder="Ex: Pharmacie des Grâces, face à l'école..."
+                    className="w-full h-11 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-3.5 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-white/30 outline-none focus:border-emerald-500 transition-all shadow-sm"
                   />
                 </div>
 

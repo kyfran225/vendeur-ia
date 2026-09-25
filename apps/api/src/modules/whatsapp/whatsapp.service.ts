@@ -1095,11 +1095,15 @@ class WhatsAppService {
       return;
     }
 
-    // If Baileys uses LID (@lid), try to get the real phone number (sender_pn or remoteJidAlt)
+    // If Baileys uses LID (@lid), aggressively extract the real phone number JID (@s.whatsapp.net)
     if (msg.key?.remoteJidAlt && msg.key.remoteJidAlt.includes('@s.whatsapp.net')) {
       from = msg.key.remoteJidAlt;
     } else if (msg.key?.sender_pn) {
-      from = msg.key.sender_pn;
+      from = msg.key.sender_pn.includes('@s.whatsapp.net') ? msg.key.sender_pn : `${msg.key.sender_pn.replace(/\D/g, '')}@s.whatsapp.net`;
+    } else if (msg.key?.participant && msg.key.participant.includes('@s.whatsapp.net')) {
+      from = msg.key.participant;
+    } else if ((msg as any).participant && (msg as any).participant.includes('@s.whatsapp.net')) {
+      from = (msg as any).participant;
     }
 
     const rawMsg = msg.message?.ephemeralMessage?.message ||
@@ -3134,11 +3138,20 @@ class WhatsAppService {
     let sock = this.getLiveSocket(userId, merchant);
 
     let targetJid = jid;
+    // CRITICAL NOTIFICATION FIX: Always ensure targetJid uses the standard phone number JID (@s.whatsapp.net).
+    // In modern WhatsApp / Baileys, if a message is sent to a @lid (Linked ID) instead of @s.whatsapp.net,
+    // WhatsApp servers deliver it silently as a multi-device data sync: only the unread badge updates,
+    // and no push notification (banner, sound, lock screen wake-up) is triggered on the recipient's phone!
+    if (targetJid.includes('@lid') && cleanPhone) {
+      targetJid = `${cleanPhone}@s.whatsapp.net`;
+    }
+
     if (sock && typeof sock.onWhatsApp === "function") {
       try {
         const variants = generatePhoneVariants(cleanPhone);
         const checkResults = await sock.onWhatsApp(...variants.map((v: string) => v.replace(/\D/g, "")));
-        const validMatch = checkResults?.find((r: any) => r.exists && r.jid);
+        // Filter out any @lid matches — we strictly want @s.whatsapp.net for high-priority push delivery
+        const validMatch = checkResults?.find((r: any) => r.exists && r.jid && !r.jid.includes('@lid'));
         if (validMatch?.jid) {
           targetJid = validMatch.jid;
         }
@@ -3149,9 +3162,8 @@ class WhatsAppService {
       try {
         if (typeof socket.sendPresenceUpdate === "function") {
           await socket.sendPresenceUpdate("composing", tJid).catch(() => {});
-          const typingDelay = Math.min(Math.max((text?.length || 20) * 12, 400), 1200);
+          const typingDelay = Math.min(Math.max((text?.length || 20) * 12, 400), 1000);
           await new Promise(r => setTimeout(r, typingDelay));
-          await socket.sendPresenceUpdate("paused", tJid).catch(() => {});
         }
       } catch (e) {}
       return await socket.sendMessage(tJid, payload);

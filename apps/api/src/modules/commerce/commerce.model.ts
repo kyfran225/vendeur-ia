@@ -117,6 +117,11 @@ const MerchantSchema = new Schema({
     },
     openingHours: { type: String, default: "08:30 - 20:00" }
   },
+  defaultDeliveryGuy: {
+    name: { type: String, default: "" },
+    phone: { type: String, default: "" },
+    autoDispatch: { type: Boolean, default: false }
+  },
   lastWeeklyReportDate: { type: Date, default: null }
 }, { timestamps: true });
 
@@ -279,6 +284,7 @@ const OrderSchema = new Schema({
   },
   paymentMethod: String,
   shippingAddress: String,
+  shippingLandmark: String,
   deliveryGuyName: String,
   deliveryGuyPhone: String,
   deliveryNotes: String,

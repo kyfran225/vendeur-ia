@@ -33,6 +33,7 @@ import { TransactionModel } from "./transaction.model.js";
 import { PaymentIntentModel } from "./payment-intent.model.js";
 import { whatsappService } from "../whatsapp/whatsapp.service.js";
 import { isFounderNumber } from "../auth/auth.service.js";
+import { emitToUser } from "../../realtime/socketServer.js";
 
 export function slugify(text: string): string {
   if (!text) return "";
@@ -1726,6 +1727,9 @@ Résumé actuel :`;
   async createOrderByAiIntent(merchantId: string, customerId: string, conversationId: string, orderData: {
     items: Array<{ name: string; quantity: number; price?: number }>;
     deliveryAddress?: string;
+    shippingLandmark?: string;
+    landmark?: string;
+    pointDeRepere?: string;
     notes?: string;
   }) {
     const merchant = await CommerceMerchantModel.findById(merchantId);
@@ -1760,6 +1764,8 @@ Résumé actuel :`;
       return null;
     }
 
+    const landmarkValue = orderData.shippingLandmark || orderData.landmark || orderData.pointDeRepere || "";
+
     const recentThreshold = new Date(Date.now() - 30 * 60 * 1000);
     let order = await CommerceOrderModel.findOne({
       merchantId,
@@ -1775,6 +1781,12 @@ Résumé actuel :`;
       if (orderData.deliveryAddress) {
         order.shippingAddress = orderData.deliveryAddress;
       }
+      if (landmarkValue) {
+        order.shippingLandmark = landmarkValue;
+      }
+      if (orderData.notes) {
+        order.deliveryNotes = orderData.notes;
+      }
       await order.save();
       console.log(`[AI Order] Automatically updated existing pending order ${order._id} for customer ${customerId} (${calculatedTotal} ${order.currency})`);
     } else {
@@ -1786,7 +1798,10 @@ Résumé actuel :`;
         totalAmount: calculatedTotal,
         currency: merchant.currency || "XOF",
         status: "pending",
-        shippingAddress: orderData.deliveryAddress || undefined
+        shippingAddress: orderData.deliveryAddress || undefined,
+        shippingLandmark: landmarkValue || undefined,
+        deliveryNotes: orderData.notes || undefined,
+        recoveredByAi: true
       });
       console.log(`[AI Order] Automatically created order ${order._id} for customer ${customerId} (${calculatedTotal} ${order.currency})`);
     }
@@ -1794,6 +1809,136 @@ Résumé actuel :`;
     if (orderData.deliveryAddress) {
       await CommerceCustomerModel.findByIdAndUpdate(customerId, {
         $set: { location: orderData.deliveryAddress }
+      });
+    }
+
+    // Auto-dispatch to default delivery guy if configured
+    if (merchant.defaultDeliveryGuy?.phone && merchant.defaultDeliveryGuy?.autoDispatch) {
+      this.dispatchOrderToCourier(order._id.toString(), { isAuto: true }).catch(err =>
+        logger.warn(`[AI Order] Auto-dispatch to courier failed for order ${order._id}:`, err?.message || err)
+      );
+    }
+
+    return order;
+  }
+
+  /**
+   * Generates a pre-filled delivery slip (Bon de Livraison) containing:
+   * Nom client, Téléphone, Adresse, Point de repère, Montant à encaisser
+   */
+  generateDeliverySlip(merchant: any, order: any, customer: any, notes?: string): string {
+    const businessName = merchant?.businessName || "La Boutique";
+    const shortRef = order?._id ? order._id.toString().slice(-6).toUpperCase() : "COMMANDE";
+    const customerName = customer?.name?.trim() || "Client";
+    const rawCustomerPhone = (customer?.phone || "").replace(/@s\.whatsapp\.net|@c\.us/g, "").replace(/\D/g, "");
+    const customerPhoneDisplay = customer?.phone
+      ? (customer.phone.startsWith("+") ? customer.phone : `+${customer.phone}`)
+      : "Non renseigné";
+
+    const shippingAddress = order?.shippingAddress || customer?.location || "À convenir avec le client";
+    const shippingLandmark = order?.shippingLandmark || (order?.shippingAddress && order.shippingAddress.includes(",") ? order.shippingAddress.split(",")[1].trim() : "À préciser par le client / Appeler à l'arrivée");
+
+    const itemsList = Array.isArray(order?.items) && order.items.length > 0
+      ? order.items.map((i: any) => `• ${i.quantity || 1}x ${i.name || "Article"} (${((i.price || 0) * (i.quantity || 1)).toLocaleString()} ${order?.currency || merchant?.currency || "XOF"})`).join("\n")
+      : "• Articles de la commande";
+
+    const isPaid = order?.status === "paid" || !!order?.paidAt;
+    const amountToCollect = isPaid
+      ? "0 FCFA (DÉJÀ PAYÉ EN LIGNE ✅ - NE RIEN ENCAISSER)"
+      : `${(order?.totalAmount || 0).toLocaleString()} ${order?.currency || merchant?.currency || "XOF"} (À ENCAISSER EN ESPÈCES 💵)`;
+
+    const effectiveNotes = notes || order?.deliveryNotes || "";
+
+    const deliverySlip = `🛵 *BON DE LIVRAISON - ${businessName.toUpperCase()}*\n` +
+      `━━━━━━━━━━━━━━━━━━━━\n` +
+      `📦 *COMMANDE :* #${shortRef}\n` +
+      `📅 *DATE :* ${new Date(order?.createdAt || Date.now()).toLocaleDateString("fr-FR", { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}\n\n` +
+      `👤 *CLIENT :* ${customerName}\n` +
+      `📞 *TÉLÉPHONE :* ${customerPhoneDisplay}\n` +
+      `📍 *ADRESSE :* ${shippingAddress}\n` +
+      `🏢 *POINT DE REPÈRE :* ${shippingLandmark}\n\n` +
+      `🛒 *ARTICLES À LIVRER :*\n${itemsList}\n\n` +
+      `💰 *MONTANT À ENCAISSER :* *${amountToCollect}*\n` +
+      (effectiveNotes ? `📝 *INSTRUCTIONS MARCHAND :* ${effectiveNotes}\n` : "") +
+      `━━━━━━━━━━━━━━━━━━━━\n` +
+      (rawCustomerPhone ? `👉 *WhatsApp direct client :* https://wa.me/${rawCustomerPhone}\n` : "") +
+      `🚀 *Merci d'assurer la livraison et de confirmer dès que le colis est remis !*`;
+
+    return deliverySlip;
+  }
+
+  /**
+   * Dispatches an order to the merchant's habitual courier or a designated courier via WhatsApp
+   */
+  async dispatchOrderToCourier(orderId: string, options?: {
+    deliveryGuyName?: string;
+    deliveryGuyPhone?: string;
+    deliveryNotes?: string;
+    isAuto?: boolean;
+  }) {
+    const order = await CommerceOrderModel.findById(orderId);
+    if (!order) throw new Error("Commande non trouvée");
+
+    const merchant = await CommerceMerchantModel.findById(order.merchantId);
+    if (!merchant) throw new Error("Marchand non trouvé");
+
+    const customer = await CommerceCustomerModel.findById(order.customerId);
+
+    // Identify courier: priority to options, fallback to merchant.defaultDeliveryGuy
+    let courierPhone = (options?.deliveryGuyPhone || merchant.defaultDeliveryGuy?.phone || "").replace(/[^0-9]/g, "");
+    let courierName = (options?.deliveryGuyName || merchant.defaultDeliveryGuy?.name || "Livreur Habituel").trim();
+    const notes = options?.deliveryNotes || order.deliveryNotes || "";
+
+    if (!courierPhone) {
+      throw new Error("Aucun numéro de livreur configuré");
+    }
+
+    if (courierPhone.startsWith("0") && courierPhone.length === 10) {
+      courierPhone = "225" + courierPhone;
+    }
+
+    // Generate slip text
+    const slipText = this.generateDeliverySlip(merchant, order, customer, notes);
+
+    // Send WhatsApp message to courier
+    try {
+      await messagingService.sendMessage(merchant, "whatsapp", courierPhone, slipText);
+      logger.info(`[Delivery Dispatch] Successfully sent delivery slip for order ${order._id} to courier ${courierPhone} (Auto: ${!!options?.isAuto})`);
+    } catch (err: any) {
+      logger.error(`[Delivery Dispatch] Failed to send WhatsApp to courier ${courierPhone}:`, err);
+      throw new Error(`Échec de l'envoi WhatsApp au livreur: ${err.message}`);
+    }
+
+    // Update Order
+    order.deliveryGuyName = courierName;
+    order.deliveryGuyPhone = courierPhone;
+    if (notes) order.deliveryNotes = notes;
+    order.dispatchedAt = new Date();
+    if (order.status === "pending" || order.status === "confirmed") {
+      order.status = "dispatched";
+    }
+    await order.save();
+
+    // Emit Realtime socket updates
+    if (merchant.ownerId) {
+      emitToUser(merchant.ownerId.toString(), "order:dispatched", {
+        orderId: order._id,
+        order,
+        courierName,
+        courierPhone,
+        dispatchedAt: order.dispatchedAt
+      });
+      emitToUser(merchant.ownerId.toString(), "order:update", {
+        orderId: order._id,
+        status: order.status,
+        deliveryGuyName: order.deliveryGuyName,
+        deliveryGuyPhone: order.deliveryGuyPhone,
+        dispatchedAt: order.dispatchedAt
+      });
+      emitToUser(merchant.ownerId.toString(), "notification:new", {
+        title: "Course envoyée au livreur 🛵",
+        body: `Bon de livraison #${order._id.toString().slice(-6).toUpperCase()} envoyé à ${courierName} (${courierPhone})`,
+        data: { orderId: order._id }
       });
     }
 

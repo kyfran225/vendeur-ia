@@ -195,39 +195,35 @@ export class NotificationsService {
       // Determine category / origin tag to distinguish test/local, PC dev, and real visitors
       let originTag = "🌐 **[VRAI VISITEUR]**";
 
+      // 1. Automated test environment (Jest / Vitest)
       if (process.env.NODE_ENV === 'test' || process.env.VITEST || process.env.JEST_WORKER_ID) {
         originTag = "🧪 **[TEST & LOCAL]**";
-      } else if (
-        process.env.NODE_ENV === 'development' ||
-        process.env.LOCAL_DEV ||
-        (req && (
-          req.headers?.['x-developer-pc'] === 'true' ||
-          req.headers?.['x-developer-pc'] === true ||
-          req.headers?.['x-forwarded-for']?.includes('127.0.0.1') ||
-          req.socket?.remoteAddress === '127.0.0.1' ||
-          req.socket?.remoteAddress === '::1'
-        ))
-      ) {
-        originTag = "💻 **[PC / DÉVELOPPEMENT]**";
-      } else if (req) {
+      }
+      // 2. Request object available: inspect client headers, IP, and User-Agent
+      else if (req) {
+        const userAgent = (req.headers?.['user-agent'] || '').toLowerCase();
+        const hasDevHeader = req.headers?.['x-developer-pc'] === 'true' || req.headers?.['x-developer-pc'] === true;
+
         const forwarded = req.headers?.['x-forwarded-for'];
         const ip = typeof forwarded === 'string' ? forwarded.split(',')[0].trim() : (req.socket?.remoteAddress || '');
-        const userAgent = (req.headers?.['user-agent'] || '').toLowerCase();
+        const isLocalhostIp = ip === '127.0.0.1' || ip === '::1';
 
-        if (
-          ip === '127.0.0.1' ||
-          ip === '::1' ||
-          ip.startsWith('192.168.') ||
-          ip.startsWith('10.') ||
-          ip.startsWith('172.16.') ||
-          ip.startsWith('100.') ||
+        const isApiTestTool =
           userAgent.includes('postman') ||
           userAgent.includes('axios') ||
           userAgent.includes('curl') ||
-          userAgent.includes('node-fetch')
-        ) {
+          userAgent.includes('node-fetch') ||
+          userAgent.includes('insomnia');
+
+        if (hasDevHeader || isLocalhostIp || isApiTestTool) {
           originTag = "💻 **[PC / DÉVELOPPEMENT]**";
+        } else {
+          originTag = "🌐 **[VRAI VISITEUR]**";
         }
+      }
+      // 3. Fallback when no HTTP request context is available
+      else if (process.env.NODE_ENV === 'development') {
+        originTag = "💻 **[PC / DÉVELOPPEMENT]**";
       }
 
       const formattedText = `${originTag}\n${text}`;

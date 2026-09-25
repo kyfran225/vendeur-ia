@@ -227,7 +227,7 @@ router.get("/public/shop/:merchantId", async (req, res) => {
 router.post("/public/shop/:merchantId/order", async (req, res) => {
   try {
     const { merchantId } = req.params;
-    const { customerName, customerPhone, deliveryAddress, deliveryZone, deliveryFee, items, paymentMethod, deliveryNotes, totalAmount } = req.body;
+    const { customerName, customerPhone, deliveryAddress, deliveryZone, deliveryLandmark, landmark, shippingLandmark, deliveryFee, items, paymentMethod, deliveryNotes, totalAmount } = req.body;
 
     const merchant = await commerceService.findMerchantByIdOrSlug(merchantId);
     if (!merchant) return res.status(404).json({ error: "Boutique non trouvée" });
@@ -239,6 +239,8 @@ router.post("/public/shop/:merchantId/order", async (req, res) => {
     if (!customerPhone) {
       return res.status(400).json({ error: "Le numéro de téléphone est obligatoire pour confirmer la commande" });
     }
+
+    const landmarkValue = (deliveryLandmark || landmark || shippingLandmark || "").trim();
 
     // 1. Find or create Customer
     let customer = await CommerceCustomerModel.findOne({
@@ -305,11 +307,19 @@ router.post("/public/shop/:merchantId/order", async (req, res) => {
       status: "pending",
       paymentMethod: paymentMethod || "cash_on_delivery",
       shippingAddress: `${deliveryZone ? `[${deliveryZone}] ` : ""}${deliveryAddress || "À préciser via WhatsApp"}`,
+      shippingLandmark: landmarkValue || undefined,
       deliveryNotes: deliveryNotes || ""
     });
 
     // 4. Multi-channel notification to merchant (Realtime + WhatsApp)
     await notificationsService.notifyOrderCreated(merchant, order, customer, "web_shop", req);
+
+    // 5. Automated Dispatch to default delivery guy if enabled
+    if (merchant.defaultDeliveryGuy?.phone && merchant.defaultDeliveryGuy?.autoDispatch) {
+      await commerceService.dispatchOrderToCourier(order._id.toString(), { isAuto: true }).catch(err =>
+        console.warn("[Public Order] Auto-dispatch to courier failed:", err?.message || err)
+      );
+    }
 
     res.status(201).json({
       success: true,
@@ -2514,8 +2524,11 @@ router.post("/orders", authenticate, validate(CreateOrderSchema), async (req, re
     const merchant = await CommerceMerchantModel.findOne({ ownerId });
     if (!merchant) return res.status(404).json({ error: "Merchant not found" });
 
+    const landmarkValue = (req.body.shippingLandmark || req.body.landmark || req.body.deliveryLandmark || "").trim();
+
     const order = await CommerceOrderModel.create({
       ...req.body,
+      shippingLandmark: landmarkValue || undefined,
       merchantId: merchant._id
     });
 
@@ -2541,6 +2554,13 @@ router.post("/orders", authenticate, validate(CreateOrderSchema), async (req, re
     // Notify merchant via multi-channel
     const customerForNotif = req.body.customerId ? await CommerceCustomerModel.findById(req.body.customerId) : null;
     await notificationsService.notifyOrderCreated(merchant, order, customerForNotif, "manual", req);
+
+    // Auto-dispatch to default delivery guy if enabled
+    if (merchant.defaultDeliveryGuy?.phone && merchant.defaultDeliveryGuy?.autoDispatch) {
+      await commerceService.dispatchOrderToCourier(order._id.toString(), { isAuto: true }).catch(err =>
+        console.warn("[Manual Order] Auto-dispatch to courier failed:", err?.message || err)
+      );
+    }
 
     // If created from Inbox, we might want to send a confirmation message automatically
     if (req.body.conversationId && customerForNotif) {
@@ -2666,28 +2686,44 @@ router.patch("/orders/:id", authenticate, async (req, res) => {
 
     // Handle delivery guy assignment & WhatsApp notification if provided
     if (order && updateData.deliveryGuyPhone && updateData.notifyDeliveryGuy) {
-      const customer = await CommerceCustomerModel.findById(order.customerId);
-      const cleanCustomerPhone = customer?.phone?.replace(/@s\.whatsapp\.net|@c\.us/g, "") || "Client";
-      const itemsList = order.items.map((i: any) => `• ${i.quantity}x ${i.name}`).join("\n");
-      const deliveryMsg = `🛵 *NOUVELLE COURSE - ${merchant.businessName}*\n\n` +
-        `📦 *Commande:* #${order._id.toString().slice(-6).toUpperCase()}\n` +
-        `👤 *Client à livrer:* ${cleanCustomerPhone}\n` +
-        `📍 *Adresse / Quartier:* ${order.shippingAddress || customer?.location || "À convenir avec le client"}\n\n` +
-        `📦 *Articles :*\n${itemsList}\n\n` +
-        `💰 *Montant à encaisser :* ${order.status === "paid" ? "0 (Déjà payé ✅)" : `${order.totalAmount.toLocaleString()} ${order.currency || "XOF"} (À encaisser)`}\n` +
-        (updateData.deliveryNotes ? `📝 *Note :* ${updateData.deliveryNotes}\n` : "") +
-        `\nMerci d'assurer la livraison dès que possible ! 🚀`;
-
-      try {
-        await messagingService.sendMessage(merchant, 'whatsapp', updateData.deliveryGuyPhone, deliveryMsg);
-        logger.info(`[Delivery Dispatch] Dispatched order ${order._id} to courier ${updateData.deliveryGuyPhone}`);
-      } catch (err: any) {
+      await commerceService.dispatchOrderToCourier(order._id.toString(), {
+        deliveryGuyName: updateData.deliveryGuyName,
+        deliveryGuyPhone: updateData.deliveryGuyPhone,
+        deliveryNotes: updateData.deliveryNotes
+      }).catch(err => {
         logger.warn(`[Delivery Dispatch] Could not send WhatsApp to delivery guy: ${err.message}`);
-      }
+      });
+    } else if (order && (updateData.status === "confirmed" || updateData.status === "dispatched") && !order.dispatchedAt && merchant.defaultDeliveryGuy?.phone && merchant.defaultDeliveryGuy?.autoDispatch) {
+      await commerceService.dispatchOrderToCourier(order._id.toString(), { isAuto: true }).catch(err => {
+        logger.warn(`[Delivery Dispatch] Auto-dispatch failed on status change: ${err.message}`);
+      });
     }
 
     res.json(order);
   } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Dedicated 1-click or customized courier dispatch route
+router.post("/orders/:id/dispatch", authenticate, async (req, res) => {
+  try {
+    const ownerId = (req as any).user.id;
+    const merchant = await CommerceMerchantModel.findOne({ ownerId });
+    if (!merchant) return res.status(404).json({ error: "Marchand non trouvé" });
+
+    const orderId = req.params.id;
+    const { deliveryGuyName, deliveryGuyPhone, deliveryNotes } = req.body;
+
+    const order = await commerceService.dispatchOrderToCourier(orderId, {
+      deliveryGuyName,
+      deliveryGuyPhone,
+      deliveryNotes
+    });
+
+    res.json({ success: true, order });
+  } catch (error: any) {
+    console.error(`[Order Dispatch Route Error]`, error);
     res.status(500).json({ error: error.message });
   }
 });

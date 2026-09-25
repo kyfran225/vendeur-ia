@@ -54,6 +54,8 @@ export const CreateOrderSchema = z.object({
     totalAmount: z.number(),
     currency: z.string().default("XOF"),
     shippingAddress: z.string().optional(),
+    shippingLandmark: z.string().optional(),
+    landmark: z.string().optional(),
     deliveryAddress: z.string().optional(),
     paymentMethod: z.string().optional(),
   })
@@ -83,6 +85,11 @@ export const UpdateMerchantSchema = z.object({
       autoReply: z.boolean().optional(),
       voiceMode: z.boolean().optional(),
       localSlang: z.boolean().optional(),
+    }).optional(),
+    defaultDeliveryGuy: z.object({
+      name: z.string().optional(),
+      phone: z.string().optional(),
+      autoDispatch: z.boolean().optional(),
     }).optional(),
     loyaltySettings: z.object({
       enabled: z.boolean().optional(),

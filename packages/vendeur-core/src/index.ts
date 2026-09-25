@@ -121,6 +121,11 @@ export const merchantSchema = z.object({
     autoReply: z.boolean().default(true),
     weeklyReport: z.boolean().default(true)
   }),
+  defaultDeliveryGuy: z.object({
+    name: z.string().default(""),
+    phone: z.string().default(""),
+    autoDispatch: z.boolean().default(false)
+  }).optional(),
   createdAt: z.string(),
   updatedAt: z.string(),
 });
@@ -169,6 +174,12 @@ export const orderSchema = z.object({
   paymentStatus: z.enum(commercePaymentStatuses),
   paymentProvider: z.enum(commercePaymentProviders).optional(),
   deliveryAddress: z.string().optional(),
+  shippingAddress: z.string().optional(),
+  shippingLandmark: z.string().optional(),
+  deliveryGuyName: z.string().optional(),
+  deliveryGuyPhone: z.string().optional(),
+  deliveryNotes: z.string().optional(),
+  dispatchedAt: z.string().optional(),
   createdAt: z.string(),
   updatedAt: z.string()
 });

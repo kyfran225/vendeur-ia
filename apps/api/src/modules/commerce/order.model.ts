@@ -19,6 +19,7 @@ const OrderSchema = new Schema({
   },
   paymentMethod: String,
   shippingAddress: String,
+  shippingLandmark: String,
   deliveryGuyName: String,
   deliveryGuyPhone: String,
   deliveryNotes: String,

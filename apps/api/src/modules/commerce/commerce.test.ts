@@ -219,4 +219,94 @@ describe('Commerce Module API', () => {
       expect(waStep2.weight).toBe(35);
     });
   });
+
+  describe('Automated Courier Delivery Slip & Dispatch', () => {
+    it('should configure defaultDeliveryGuy and dispatch order with 5 required fields', async () => {
+      // 1. Configure default courier on merchant
+      const patchRes = await request(app)
+        .patch('/api/commerce/merchant')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({
+          defaultDeliveryGuy: {
+            name: "Moussa Express",
+            phone: "+2250701020304",
+            autoDispatch: true
+          }
+        });
+
+      expect(patchRes.status).toBe(200);
+      expect(patchRes.body.defaultDeliveryGuy?.name).toBe("Moussa Express");
+      expect(patchRes.body.defaultDeliveryGuy?.phone).toBe("+2250701020304");
+      expect(patchRes.body.defaultDeliveryGuy?.autoDispatch).toBe(true);
+
+      const merchant = await CommerceMerchantModel.findOne({ ownerId: userId });
+      expect(merchant).toBeDefined();
+
+      // 2. Create customer and product
+      const customer = await CommerceCustomerModel.create({
+        merchantId: merchant!._id,
+        name: "Awa Kouamé",
+        phone: "+2250505111157",
+        location: "Cocody Angré 8ème tranche"
+      });
+
+      const product = await CommerceProductModel.create({
+        merchantId: merchant!._id,
+        name: "Robe Fleurie Wax",
+        price: 15000,
+        currency: "XOF"
+      });
+
+      // 3. Create Order with landmark
+      const orderRes = await request(app)
+        .post('/api/commerce/orders')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({
+          customerId: customer._id.toString(),
+          items: [{
+            productId: product._id.toString(),
+            name: product.name,
+            price: 15000,
+            quantity: 1
+          }],
+          totalAmount: 15000,
+          currency: "XOF",
+          shippingAddress: "Cocody Angré 8ème tranche",
+          shippingLandmark: "Pharmacie des Grâces, face carrefour Pétroci"
+        });
+
+      expect(orderRes.status).toBe(201);
+      const orderId = orderRes.body._id;
+
+      // 4. Test dedicated dispatch endpoint
+      const dispatchRes = await request(app)
+        .post(`/api/commerce/orders/${orderId}/dispatch`)
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({
+          deliveryNotes: "Appeler le client avant d'arriver au carrefour"
+        });
+
+      expect(dispatchRes.status).toBe(200);
+      expect(dispatchRes.body.success).toBe(true);
+      expect(dispatchRes.body.order?.status).toBe("dispatched");
+      expect(dispatchRes.body.order?.deliveryGuyName).toBe("Moussa Express");
+      expect(dispatchRes.body.order?.deliveryGuyPhone).toBe("2250701020304");
+
+      // 5. Test delivery slip generation method directly
+      const { commerceService } = await import('./commerce.service.js');
+      const slip = commerceService.generateDeliverySlip(merchant, dispatchRes.body.order, customer, "Appeler avant d'arriver");
+      
+      // Verify all 5 key components are present:
+      // 1. Nom client
+      expect(slip).toContain("Awa Kouamé");
+      // 2. Téléphone
+      expect(slip).toContain("2250505111157");
+      // 3. Adresse
+      expect(slip).toContain("Cocody Angré 8ème tranche");
+      // 4. Point de repère
+      expect(slip).toContain("Pharmacie des Grâces");
+      // 5. Montant à encaisser
+      expect(slip).toMatch(/15[\s\u202f]*000\s*XOF/);
+    });
+  });
 });

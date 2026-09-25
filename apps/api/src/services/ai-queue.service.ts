@@ -298,6 +298,9 @@ Réponds UNIQUEMENT avec le texte final du message.`;
               });
             }
 
+            const landmark = (orderPayload.landmark || orderPayload.shippingLandmark || orderPayload.pointDeRepere || '').trim();
+            const address = (orderPayload.shippingAddress || orderPayload.deliveryAddress || '').trim();
+
             const newOrder = await CommerceOrderModel.create({
               merchantId,
               customerId,
@@ -306,15 +309,29 @@ Réponds UNIQUEMENT avec le texte final du message.`;
               totalAmount,
               currency: context.merchant.currency || 'XOF',
               status: 'pending',
-              shippingAddress: orderPayload.shippingAddress || '',
+              shippingAddress: address,
+              shippingLandmark: landmark,
               recoveredByAi: true
             });
+
+            if (address) {
+              await CommerceCustomerModel.findByIdAndUpdate(customerId, {
+                $set: { location: address }
+              }).catch(() => {});
+            }
 
             console.log(`[AI Auto-Order] Successfully generated Order #${newOrder._id} for customer ${customerId} (Total: ${totalAmount})`);
             
             // Multi-channel notification to merchant (Realtime + WhatsApp)
             const customerObj = await CommerceCustomerModel.findById(customerId);
             await notificationsService.notifyOrderCreated(context.merchant, newOrder, customerObj, "ai_chat");
+
+            // Auto-dispatch to default delivery guy if enabled
+            if (context.merchant.defaultDeliveryGuy?.phone && context.merchant.defaultDeliveryGuy?.autoDispatch) {
+              await commerceService.dispatchOrderToCourier(newOrder._id.toString(), { isAuto: true }).catch(err =>
+                console.warn('[AI Auto-Order] Auto-dispatch to courier failed:', err?.message || err)
+              );
+            }
           }
         } catch (orderErr) {
           console.error("[AI Auto-Order] Failed to parse or create auto order:", orderErr);

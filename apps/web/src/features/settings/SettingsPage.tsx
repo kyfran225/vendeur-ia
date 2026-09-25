@@ -493,6 +493,9 @@ function BoutiqueTab({
     if (!copy.whatsappNumber && (copy.phone || copy.whatsappConfig?.phoneNumberId)) {
       copy.whatsappNumber = copy.phone || copy.whatsappConfig?.phoneNumberId || "";
     }
+    if (!copy.defaultDeliveryGuy) {
+      copy.defaultDeliveryGuy = { name: "", phone: "", autoDispatch: false };
+    }
     return copy;
   };
 
@@ -580,7 +583,8 @@ function BoutiqueTab({
   const initialPayments = initialKnowledge?.businessRules?.paymentMethods || [];
   const initialFees = initialKnowledge?.businessRules?.deliveryFees || [];
   const isPaymentsModified = JSON.stringify(payments) !== JSON.stringify(initialPayments);
-  const isDeliveryModified = JSON.stringify(deliveryFees) !== JSON.stringify(initialFees);
+  const isDeliveryModified = JSON.stringify(deliveryFees) !== JSON.stringify(initialFees) ||
+    JSON.stringify(localMerchant?.defaultDeliveryGuy) !== JSON.stringify(savedMerchant?.defaultDeliveryGuy);
   const isMerchantModified = isDirty || (JSON.stringify(localMerchant) !== JSON.stringify(savedMerchant));
   const hasChanges = isMerchantModified || isPaymentsModified || isDeliveryModified;
 
@@ -605,6 +609,13 @@ function BoutiqueTab({
       if (localMerchant?.billingCurrency !== undefined) merchantPayload.billingCurrency = localMerchant.billingCurrency;
       if (localMerchant?.phone !== undefined) merchantPayload.phone = localMerchant.phone;
       if (localMerchant?.whatsappNumber !== undefined) merchantPayload.whatsappNumber = localMerchant.whatsappNumber;
+      if (localMerchant?.defaultDeliveryGuy !== undefined) {
+        merchantPayload.defaultDeliveryGuy = {
+          name: (localMerchant.defaultDeliveryGuy?.name || "").trim(),
+          phone: (localMerchant.defaultDeliveryGuy?.phone || "").trim(),
+          autoDispatch: Boolean(localMerchant.defaultDeliveryGuy?.autoDispatch)
+        };
+      }
 
       const cleanPayments = payments.filter((p: any) => p && (p.number?.trim() || p.provider?.trim()));
       const cleanDelivery = deliveryFees.filter((f: any) => f && f.zone?.trim());
@@ -1063,6 +1074,99 @@ function BoutiqueTab({
               </div>
            )}
 
+           {/* Livreur Habituel & Dispatch Automatique WhatsApp */}
+           <div className="pt-6 border-t border-slate-200 dark:border-white/10 space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="h-9 w-9 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center border border-purple-500/20 shrink-0">
+                    <Truck size={18} />
+                  </div>
+                  <div>
+                    <h3 className="text-xs sm:text-sm font-black uppercase text-slate-900 dark:text-white">Livreur Habituel & Dispatch Automatique</h3>
+                    <p className="text-[9px] sm:text-[10px] font-bold text-slate-500 dark:text-white/40">Partage direct du bon de livraison pré-rempli sur WhatsApp</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-white/40 mb-1 block">
+                    Nom du livreur habituel
+                  </label>
+                  <input
+                    type="text"
+                    value={localMerchant?.defaultDeliveryGuy?.name || ""}
+                    onChange={(e) => {
+                      setLocalMerchant({
+                        ...localMerchant,
+                        defaultDeliveryGuy: {
+                          ...(localMerchant?.defaultDeliveryGuy || {}),
+                          name: e.target.value
+                        }
+                      });
+                      setIsDirty(true);
+                    }}
+                    placeholder="Ex: Moussa Express, Livreur Diallo..."
+                    className="w-full h-12 bg-slate-50 dark:bg-black/40 border border-slate-200 dark:border-white/10 rounded-xl sm:rounded-2xl px-3.5 text-xs sm:text-sm text-slate-900 dark:text-white font-bold outline-none focus:border-purple-500 transition-all"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-white/40 mb-1 block">
+                    Numéro WhatsApp du livreur
+                  </label>
+                  <input
+                    type="tel"
+                    value={localMerchant?.defaultDeliveryGuy?.phone || ""}
+                    onChange={(e) => {
+                      setLocalMerchant({
+                        ...localMerchant,
+                        defaultDeliveryGuy: {
+                          ...(localMerchant?.defaultDeliveryGuy || {}),
+                          phone: e.target.value
+                        }
+                      });
+                      setIsDirty(true);
+                    }}
+                    placeholder="Ex: +225 07 00 00 00 00 ou 0700000000"
+                    className="w-full h-12 bg-slate-50 dark:bg-black/40 border border-slate-200 dark:border-white/10 rounded-xl sm:rounded-2xl px-3.5 text-xs sm:text-sm text-slate-900 dark:text-white font-mono font-bold outline-none focus:border-purple-500 transition-all"
+                  />
+                </div>
+              </div>
+
+              {/* Auto-Dispatch Toggle Card */}
+              <div className="p-3.5 sm:p-4 rounded-2xl bg-purple-500/5 dark:bg-purple-500/10 border border-purple-500/20 flex items-center justify-between gap-3">
+                <div className="space-y-0.5 min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-black uppercase text-purple-900 dark:text-purple-200">Dispatch Automatique WhatsApp</span>
+                    <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-700 dark:text-purple-300 border border-purple-500/30">Auto ⚡</span>
+                  </div>
+                  <p className="text-[10px] sm:text-xs text-slate-600 dark:text-white/60">
+                    Envoie immédiatement le bon de livraison pré-rempli (Nom client, Téléphone, Adresse, Point de repère, Montant à encaisser) à votre livreur dès qu'une commande est confirmée.
+                  </p>
+                </div>
+
+                <label className="relative inline-flex items-center cursor-pointer shrink-0">
+                  <input
+                    type="checkbox"
+                    checked={Boolean(localMerchant?.defaultDeliveryGuy?.autoDispatch)}
+                    onChange={(e) => {
+                      setLocalMerchant({
+                        ...localMerchant,
+                        defaultDeliveryGuy: {
+                          ...(localMerchant?.defaultDeliveryGuy || {}),
+                          autoDispatch: e.target.checked
+                        }
+                      });
+                      setIsDirty(true);
+                    }}
+                    className="sr-only peer"
+                  />
+                  <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-white/10 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-purple-600"></div>
+                </label>
+              </div>
+           </div>
+
            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-2">
              <button
                 type="button"
@@ -1078,32 +1182,32 @@ function BoutiqueTab({
                 type="button"
                 onClick={() => {
                   const validDelivery = deliveryFees.filter((f: any) => f && f.zone && f.zone.trim() !== "");
-                  if (validDelivery.length === 0) {
-                    toast.error("Veuillez renseigner au moins une zone de livraison valide.");
+                  if (validDelivery.length === 0 && !localMerchant?.defaultDeliveryGuy?.phone) {
+                    toast.error("Veuillez renseigner au moins une zone de livraison ou un numéro de livreur.");
                     return;
                   }
                   setSavedSectionType("delivery");
                   updateMutation.mutate("delivery");
                 }}
-                disabled={updateMutation.isPending || deliveryFees.length === 0 || !isDeliveryModified}
+                disabled={updateMutation.isPending || (!isDeliveryModified && deliveryFees.length === 0 && !localMerchant?.defaultDeliveryGuy?.phone)}
                 className={cn(
                   "h-12 px-6 rounded-2xl font-black uppercase text-xs tracking-wider flex items-center justify-center gap-2 transition-all shadow-lg shrink-0",
-                  !isDeliveryModified && deliveryFees.length > 0
+                  !isDeliveryModified && (deliveryFees.length > 0 || !!localMerchant?.defaultDeliveryGuy?.phone)
                     ? "bg-slate-100 dark:bg-white/10 text-slate-400 dark:text-white/50 border border-slate-200 dark:border-white/10 cursor-default"
                     : "bg-sky-500 hover:bg-sky-400 text-white hover:scale-105 active:scale-95 shadow-sky-500/20 cursor-pointer disabled:opacity-50"
                 )}
               >
                 {updateMutation.isPending && savedSectionType === "delivery" ? (
                   <Loader2 size={16} className="animate-spin" />
-                ) : !isDeliveryModified && deliveryFees.length > 0 ? (
+                ) : !isDeliveryModified && (deliveryFees.length > 0 || !!localMerchant?.defaultDeliveryGuy?.phone) ? (
                   <Check size={16} className="text-emerald-500 dark:text-white" />
                 ) : (
                   <Check size={16} />
                 )}
                 <span>
-                  {!isDeliveryModified && deliveryFees.length > 0
-                    ? "Tarifs de Livraison Validés"
-                    : "Valider les Tarifs de Livraison"}
+                  {!isDeliveryModified && (deliveryFees.length > 0 || !!localMerchant?.defaultDeliveryGuy?.phone)
+                    ? "Paramètres de Livraison Validés"
+                    : "Valider les Paramètres de Livraison"}
                 </span>
               </button>
            </div>

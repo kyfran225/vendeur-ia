@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { ShoppingCart, Package, Clock, CheckCircle2, XCircle, Truck, Banknote, User, Calendar, Loader2, Search, Filter, MoreVertical, ExternalLink, Plus, MapPin, CreditCard, Receipt, Download, CalendarDays, Shield, MessageSquare, Phone, AlertCircle } from "lucide-react";
+import { ShoppingCart, Package, Clock, CheckCircle2, XCircle, Truck, Banknote, User, Calendar, Loader2, Search, Filter, MoreVertical, ExternalLink, Plus, MapPin, CreditCard, Receipt, Download, CalendarDays, Shield, MessageSquare, Phone, AlertCircle, Landmark } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/apiClient";
 import { useAuthStore } from "@/stores/authStore";
@@ -452,9 +452,15 @@ export function OrderManager() {
                         </span>
                       </div>
                       {(order.shippingAddress || order.customerId?.location) && (
-                        <div className="flex items-center gap-1 text-emerald-700 dark:text-emerald-400/90 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-md text-[10px] font-bold max-w-[200px] truncate">
+                        <div className="flex items-center gap-1 text-emerald-700 dark:text-emerald-400/90 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-md text-[10px] font-bold max-w-[200px] truncate" title={`Adresse: ${order.shippingAddress || order.customerId?.location}`}>
                           <MapPin size={10} className="shrink-0" />
                           <span className="truncate">{order.shippingAddress || order.customerId?.location}</span>
+                        </div>
+                      )}
+                      {order.shippingLandmark && (
+                        <div className="flex items-center gap-1 text-amber-700 dark:text-amber-400/90 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-md text-[10px] font-bold max-w-[200px] truncate" title={`Point de repère: ${order.shippingLandmark}`}>
+                          <Landmark size={10} className="shrink-0" />
+                          <span className="truncate">{order.shippingLandmark}</span>
                         </div>
                       )}
                       {order.paymentMethod && (

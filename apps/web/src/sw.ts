@@ -56,6 +56,8 @@ self.addEventListener('push', (event: PushEvent) => {
         vibrate: [200, 100, 200],
         tag,
         renotify: true,
+        requireInteraction: true,
+        silent: false,
         actions
       };
 

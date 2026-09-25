@@ -228,6 +228,7 @@ Réponds UNIQUEMENT avec le texte final du message.`;
       return { status: 'skipped_mode_pause' };
     }
 
+    let typingInterval: NodeJS.Timeout | null = null;
     try {
       // Native Typing Indicator to recipient on WhatsApp & merchant inbox
       const targetUserIds = new Set<string>([userId.toString()]);
@@ -237,6 +238,9 @@ Réponds UNIQUEMENT avec le texte final du message.`;
         await whatsappService.sendPresence(userId, remoteJid, 'composing', merchantData).catch((err: any) => {
           console.warn("[AI Queue] sendPresence composing error:", err?.message);
         });
+        typingInterval = setInterval(() => {
+          whatsappService.sendPresence(userId, remoteJid, 'composing', merchantData).catch(() => {});
+        }, 2500);
       }
       targetUserIds.forEach(tId => {
         emitToUser(tId, 'conversation:typing', {
@@ -463,6 +467,10 @@ Réponds UNIQUEMENT avec le texte final du message.`;
 
       return reply;
     } finally {
+      if (typingInterval) {
+        clearInterval(typingInterval);
+        typingInterval = null;
+      }
       const targetUserIds = new Set<string>([userId.toString()]);
       if (merchantData?.ownerId) targetUserIds.add(merchantData.ownerId.toString());
 

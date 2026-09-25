@@ -1383,12 +1383,12 @@ function BoutiqueTab({
       {/* Sticky Floating Save Bar (Centered & Glassmorphism, only visible when modified) */}
       {isModified && (
         <div className="fixed bottom-20 md:bottom-6 inset-x-0 z-[60] flex items-center justify-center px-3 sm:px-4 pointer-events-none animate-in fade-in slide-in-from-bottom-5 duration-300">
-          <div className="pointer-events-auto p-1.5 sm:p-2.5 rounded-2xl sm:rounded-3xl bg-slate-900/95 dark:bg-vendeur-coal/95 backdrop-blur-2xl border border-slate-700 dark:border-white/20 shadow-[0_20px_50px_rgba(0,0,0,0.4)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.8)] flex items-center gap-2 sm:gap-3 max-w-full">
+          <div className="pointer-events-auto p-1.5 sm:p-2.5 rounded-2xl sm:rounded-3xl bg-white/95 dark:bg-vendeur-coal/95 backdrop-blur-2xl border border-slate-200/90 dark:border-white/20 shadow-2xl shadow-slate-900/15 dark:shadow-[0_20px_50px_rgba(0,0,0,0.8)] flex items-center gap-2 sm:gap-3 max-w-full">
             <button
               type="button"
               onClick={handleCancel}
               disabled={updateMutation.isPending}
-              className="h-11 sm:h-12 px-3.5 sm:px-5 rounded-xl sm:rounded-2xl bg-white/10 hover:bg-white/20 text-white/80 hover:text-white font-black uppercase text-xs tracking-wider flex items-center justify-center gap-1.5 transition-all shrink-0 active:scale-95 cursor-pointer"
+              className="h-11 sm:h-12 px-3.5 sm:px-5 rounded-xl sm:rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-white/10 dark:hover:bg-white/20 dark:text-white/80 dark:hover:text-white font-black uppercase text-xs tracking-wider flex items-center justify-center gap-1.5 transition-all shrink-0 active:scale-95 cursor-pointer"
             >
               <RotateCcw size={15} className="shrink-0" />
               <span>Annuler</span>
@@ -1401,7 +1401,7 @@ function BoutiqueTab({
                 updateMutation.mutate("all");
               }}
               disabled={updateMutation.isPending}
-              className="h-11 sm:h-12 px-5 sm:px-8 rounded-xl sm:rounded-2xl bg-vendeur-emerald hover:bg-emerald-400 text-white font-black uppercase text-xs tracking-widest flex items-center justify-center gap-2 hover:scale-105 active:scale-95 transition-all shadow-xl shadow-vendeur-emerald/30 disabled:opacity-50 shrink-0 whitespace-nowrap cursor-pointer"
+              className="h-11 sm:h-12 px-5 sm:px-8 rounded-xl sm:rounded-2xl bg-vendeur-emerald hover:bg-emerald-400 text-slate-950 font-black uppercase text-xs tracking-widest flex items-center justify-center gap-2 hover:scale-105 active:scale-95 transition-all shadow-xl shadow-vendeur-emerald/30 disabled:opacity-50 shrink-0 whitespace-nowrap cursor-pointer"
             >
               {updateMutation.isPending ? <Loader2 className="animate-spin shrink-0" size={16} /> : <Save size={16} className="shrink-0" />}
               <span>{updateMutation.isPending ? "Enregistrement..." : "Enregistrer"}</span>
@@ -1413,6 +1413,7 @@ function BoutiqueTab({
       {(() => {
         const steps = dashboard?.setupStatus?.steps || [];
         const hasProducts = Boolean(steps.find((s: any) => s.id === "products")?.completed);
+        const hasWhatsApp = Boolean(steps.find((s: any) => s.id === "whatsapp")?.completed || merchant?.whatsappConfig?.status === "connected");
         const hasPayments = payments.length > 0;
         const hasDelivery = deliveryFees.length > 0;
         const hasSubscription = Boolean(steps.find((s: any) => s.id === "subscription")?.completed || merchant?.subscription?.status === "active");
@@ -1496,11 +1497,8 @@ function BoutiqueTab({
           }
         }
 
-        let calculatedScore = 25; // Base WhatsApp
-        if (hasProducts) calculatedScore += 25;
-        if (hasPayments) calculatedScore += 20;
-        if (hasDelivery) calculatedScore += 15;
-        if (hasSubscription) calculatedScore += 15;
+        const isIdentityDone = Boolean(localMerchant?.businessName && localMerchant.businessName !== "Ma Boutique" && (hasPayments || hasDelivery));
+        const calculatedScore = dashboard?.setupStatus?.score ?? ((isIdentityDone ? 35 : 0) + (hasWhatsApp ? 35 : 0) + (hasProducts ? 30 : 0));
 
         return (
           <StepMilestoneModal
@@ -1509,6 +1507,8 @@ function BoutiqueTab({
             title={modalTitle}
             subtitle={modalSubtitle}
             score={calculatedScore}
+            stepNumber={calculatedScore >= 100 ? 3 : (calculatedScore >= 35 ? 2 : 1)}
+            totalSteps={3}
             primaryAction={{
               label: primaryLabel,
               sublabel: primarySub,

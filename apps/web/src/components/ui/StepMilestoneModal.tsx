@@ -65,14 +65,24 @@ export function StepMilestoneModal({
   const navigate = useNavigate();
   const [secondsRemaining, setSecondsRemaining] = useState(autoRedirectSeconds);
   const [isPaused, setIsPaused] = useState(false);
+  const [displayScore, setDisplayScore] = useState<number>(0);
 
-  // Reset timer on open
+  // Compute raw score from props safely
+  const rawScore = Math.max(
+    0,
+    Math.min(100, score !== undefined ? score : stepNumber ? Math.round((stepNumber / totalSteps) * 100) : 50)
+  );
+
+  // Lock score on open and prevent regression while open
   useEffect(() => {
     if (isOpen) {
+      setDisplayScore((prev) => (prev > 0 ? Math.max(prev, rawScore) : rawScore));
       setSecondsRemaining(autoRedirectSeconds);
       setIsPaused(false);
+    } else {
+      setDisplayScore(0);
     }
-  }, [isOpen, autoRedirectSeconds]);
+  }, [isOpen, rawScore, autoRedirectSeconds]);
 
   const handleAutoRedirect = () => {
     onClose();
@@ -112,10 +122,7 @@ export function StepMilestoneModal({
 
   if (!isOpen) return null;
 
-  const progressPercent = Math.max(
-    0,
-    Math.min(100, score !== undefined ? score : stepNumber ? (stepNumber / totalSteps) * 100 : 50)
-  );
+  const progressPercent = displayScore || rawScore;
 
   return (
     <AnimatePresence>

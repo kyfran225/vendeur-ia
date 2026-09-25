@@ -339,7 +339,7 @@ export function SalesDashboard() {
         }
         stepNumber={2}
         totalSteps={3}
-        score={dashboard?.setupStatus?.score || 70}
+        score={dashboard?.setupStatus?.score ?? 70}
         primaryAction={
           !dashboard?.setupStatus?.steps?.find((s: any) => s.id === "identity")?.completed
             ? {

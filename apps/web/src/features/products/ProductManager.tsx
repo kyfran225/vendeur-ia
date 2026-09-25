@@ -1672,7 +1672,9 @@ export function ProductManager() {
             onClose={() => setShowMilestoneModal(false)}
             title={modalTitle}
             subtitle={`« ${lastAddedName || itemLabel} » est enregistré. Votre commercial IA connaît désormais ses spécificités et ses tarifs.`}
-            score={dashboard?.setupStatus?.score || 50}
+            score={dashboard?.setupStatus?.score ?? 100}
+            stepNumber={3}
+            totalSteps={3}
             primaryAction={nextActionConfig}
             secondaryAction={{
               label: isFood

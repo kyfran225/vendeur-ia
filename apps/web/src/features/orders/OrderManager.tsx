@@ -239,7 +239,7 @@ export function OrderManager() {
   };
 
   return (
-    <div className="p-3.5 sm:p-6 md:p-10 space-y-4 sm:space-y-6 md:space-y-8 max-w-6xl mx-auto animate-in fade-in duration-700 pb-24 md:pb-12 text-slate-900 dark:text-white">
+    <div className="p-3.5 sm:p-6 md:p-10 space-y-4 sm:space-y-6 md:space-y-8 max-w-6xl mx-auto animate-in fade-in duration-700 pb-24 md:pb-12 text-slate-900 dark:text-white overflow-x-hidden max-w-full w-full">
       <header id="tour-orders-management" className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-6">
         <div className="space-y-0.5 sm:space-y-1">
           <h1 className="text-lg sm:text-2xl md:text-3xl font-bold tracking-tight text-slate-900 dark:text-white flex items-center gap-2 sm:gap-3">
@@ -314,7 +314,7 @@ export function OrderManager() {
       </div>
 
       {/* Navigation Filter Tabs */}
-      <div className="sticky top-0 z-20 -mx-4 px-4 py-2 bg-slate-50/95 dark:bg-vendeur-bg/95 backdrop-blur-xl">
+      <div className="sticky top-0 z-20 -mx-3.5 sm:-mx-6 md:-mx-10 px-3.5 sm:px-6 md:px-10 py-2 bg-slate-50/95 dark:bg-vendeur-bg/95 backdrop-blur-xl">
         <div className="relative max-w-full w-full group">
           <div className={cn(
             "absolute left-0 top-0 bottom-0 w-12 z-10 bg-gradient-to-r from-slate-100 dark:from-vendeur-coal to-transparent pointer-events-none rounded-l-2xl transition-opacity duration-300",

@@ -147,7 +147,7 @@ export function AdminDashboard() {
   const unreadTicketsCount = unreadTicketsData?.tickets?.length || 0;
 
   // 1. Fetch Admin Stats
-  const { data: stats, isLoading: statsLoading } = useQuery({
+  const { data: stats, isLoading: statsLoading, isError: statsError } = useQuery({
     queryKey: ["admin:stats"],
     queryFn: async () => {
       const res = await apiClient.get("/api/admin/stats");
@@ -190,13 +190,14 @@ export function AdminDashboard() {
   });
 
   // 3. Fetch Global Settings
-  const { data: settings, isLoading: settingsLoading } = useQuery({
+  const { data: settings, isLoading: settingsLoading, isError: settingsError } = useQuery({
     queryKey: ["admin:settings"],
     queryFn: async () => {
       const res = await apiClient.get("/api/admin/settings");
       return res.data;
     },
-    enabled: !!accessToken && isFounder
+    enabled: !!accessToken && isFounder,
+    retry: 1
   });
 
   const updateSettingsMutation = useMutation({
@@ -224,7 +225,7 @@ export function AdminDashboard() {
 
   const activeTabData = tabs.find(t => t.id === activeTab);
 
-  if (statsLoading || settingsLoading) {
+  if ((statsLoading && !statsError) || (settingsLoading && !settingsError)) {
     return (
       <VendeurIALoader fullscreen size="xl" label="Chargement de l'administration..." />
     );

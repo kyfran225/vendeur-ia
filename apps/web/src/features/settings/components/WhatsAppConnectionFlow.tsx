@@ -15,7 +15,8 @@ import {
   RefreshCw,
   LogOut,
   CheckCircle2,
-  Clock
+  Clock,
+  Sparkles
 } from "lucide-react";
 import { AssistantIcon } from "@/components/ui/AssistantIcon";
 import { toast } from "sonner";
@@ -745,27 +746,43 @@ export function WhatsAppConnectionFlow() {
                 <CheckCircle2 size={20} />
               </div>
               <div>
-                <h4 className="text-sm font-black text-slate-900 dark:text-white tracking-tight">
-                  {isFounder ? "Ligne Officielle Meta Cloud Active" : "Ligne WhatsApp Live Active"}
+                <h4 className="text-sm font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-2 flex-wrap">
+                  <span>{isFounder ? "Ligne Officielle Meta Cloud Active" : "Ligne WhatsApp Live Active"}</span>
+                  {isDiscoveryMode && !isFounder && (
+                    <span className="text-[10px] font-black uppercase tracking-wider bg-vendeur-emerald/15 text-vendeur-emerald px-2.5 py-0.5 rounded-full border border-vendeur-emerald/30">
+                      ⚡ Essai Gratuit (7 Jours)
+                    </span>
+                  )}
                 </h4>
-                <p className="text-xs text-slate-600 dark:text-white/60">
+                <p className="text-xs text-slate-600 dark:text-white/60 mt-0.5">
                   {isFounder 
-                    ? "Connectée directement aux serveurs Meta Cloud API (ID: 1283754474826620). Votre IA répond 24h/24 sans nécessiter de jumelage QR."
-                    : "Votre Vendeur IA répond aux messages entrants sur votre numéro en temps réel."}
+                    ? "Connectée directement aux serveurs Meta Cloud API. Votre IA répond 24h/24 sans nécessiter de jumelage QR."
+                    : "Votre Vendeur IA répond automatiquement à vos clients sur votre numéro en temps réel pendant votre essai gratuit."}
                 </p>
               </div>
             </div>
 
-            {isDiscoveryMode && !isFounder && (
+            <div className="flex items-center gap-2 shrink-0">
               <button
                 type="button"
-                onClick={() => navigate("/offers")}
-                className="h-12 px-5 rounded-xl bg-vendeur-emerald text-slate-950 font-black uppercase tracking-wider text-xs hover:bg-emerald-400 transition-all flex items-center justify-center gap-1.5 shrink-0 shadow-md active:scale-95 cursor-pointer"
+                onClick={() => navigate("/dashboard?test_ia=true")}
+                className="h-11 px-4 rounded-xl bg-vendeur-emerald text-slate-950 font-black uppercase tracking-wider text-xs hover:bg-emerald-400 transition-all flex items-center justify-center gap-1.5 shadow-md active:scale-95 cursor-pointer"
               >
-                <Zap size={15} fill="currentColor" className="shrink-0" />
-                <span>Activer mon Forfait pour les Ventes</span>
+                <Sparkles size={15} className="shrink-0" />
+                <span>Tester dans le Simulateur</span>
               </button>
-            )}
+              {isDiscoveryMode && !isFounder && (
+                <button
+                  type="button"
+                  onClick={() => navigate("/offers")}
+                  className="h-11 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-white/10 dark:hover:bg-white/15 text-slate-800 dark:text-white font-bold text-xs transition-all flex items-center justify-center gap-1 cursor-pointer"
+                  title="Voir les forfaits disponibles"
+                >
+                  <Zap size={14} className="text-amber-500 shrink-0" />
+                  <span>Forfaits</span>
+                </button>
+              )}
+            </div>
           </div>
         )}
 
@@ -915,8 +932,10 @@ export function WhatsAppConnectionFlow() {
         isOpen={showMilestoneModal}
         onClose={() => setShowMilestoneModal(false)}
         title="Ligne WhatsApp Connectée ! 🎉"
-        subtitle="Votre WhatsApp de vente est désormais relié à votre Vendeur IA. Vos clients reçoivent des réponses automatiques en direct."
-        score={dashboard?.setupStatus?.score || 60}
+        subtitle="Votre WhatsApp de vente est désormais relié à votre Vendeur IA. Vos clients reçoivent des réponses automatiques en direct pendant votre essai gratuit."
+        score={dashboard?.setupStatus?.score ?? 70}
+        stepNumber={2}
+        totalSteps={3}
         primaryAction={{
           label: (dashboard?.products?.length || 0) > 0 ? "Tester dans le Simulateur" : "Ajouter mes Articles & Prix",
           sublabel: (dashboard?.products?.length || 0) > 0 ? "Vérifiez les réponses de l'IA" : "Créez votre catalogue de vente",

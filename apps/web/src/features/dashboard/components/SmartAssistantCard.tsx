@@ -514,7 +514,7 @@ export function SmartAssistantCard({
                             className="w-full sm:flex-1 min-h-[48px] px-4 py-3 rounded-2xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-800 dark:text-amber-300 text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95"
                           >
                             <Sparkles size={15} className="shrink-0" />
-                            <span className="whitespace-nowrap">Choisir mon Forfait</span>
+                            <span className="whitespace-nowrap">Découvrir les Offres</span>
                           </button>
                         )}
                       </>

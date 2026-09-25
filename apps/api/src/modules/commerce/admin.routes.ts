@@ -387,14 +387,18 @@ router.get("/merchants", authenticate, isAdmin, async (req, res) => {
 
     // Enrich with usage and last message data
     const enrichedMerchants = await Promise.all(merchants.map(async (m) => {
+      const convIds = await CommerceConversationModel.find({ merchantId: m._id }).distinct("_id");
+      const convIdStrings = convIds.map(id => id.toString());
+      const allConvIds = [...convIds, ...convIdStrings];
+
       const lastMessage = await CommerceMessageModel.findOne({
-        conversationId: { $in: await CommerceConversationModel.find({ merchantId: m._id }).distinct("_id") }
-      }).sort({ timestamp: -1 }).limit(1);
+        conversationId: { $in: allConvIds }
+      }).sort({ timestamp: -1 });
 
       const aiUsage = await CommerceMessageModel.aggregate([
         { $match: {
           sender: "ai",
-          conversationId: { $in: await CommerceConversationModel.find({ merchantId: m._id }).distinct("_id") }
+          conversationId: { $in: allConvIds }
         } },
         { $group: { _id: null, tokens: { $sum: "$aiMetadata.tokensUsed" }, cost: { $sum: "$aiMetadata.cost" } } }
       ]);

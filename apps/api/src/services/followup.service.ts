@@ -30,7 +30,12 @@ class FollowUpService {
     }).populate("merchantId customerId");
 
     for (const conv of abandonedConversations) {
-      const lastMessage = await CommerceMessageModel.findOne({ conversationId: conv._id }).sort({ timestamp: -1 });
+      const lastMessage = await CommerceMessageModel.findOne({
+        $or: [
+          { conversationId: conv._id },
+          { conversationId: conv._id.toString() }
+        ]
+      }).sort({ timestamp: -1 });
 
       // Only follow up if the last message was from the AI (meaning we are waiting for client)
       if (lastMessage?.sender === 'ai') {

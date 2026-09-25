@@ -446,8 +446,12 @@ router.get("/conversations", authenticate, async (req, res) => {
       .sort({ lastMessageAt: -1, updatedAt: -1 });
 
     const populatedConversations = await Promise.all(conversations.map(async (conv) => {
-      const lastMsg = await CommerceMessageModel.findOne({ conversationId: conv._id })
-        .sort({ timestamp: -1 });
+      const lastMsg = await CommerceMessageModel.findOne({
+        $or: [
+          { conversationId: conv._id },
+          { conversationId: conv._id.toString() }
+        ]
+      }).sort({ timestamp: -1 });
 
       const convObj = conv.toObject();
       const cust = convObj.customerId as any;

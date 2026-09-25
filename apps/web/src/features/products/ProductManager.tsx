@@ -996,7 +996,7 @@ export function ProductManager() {
             </div>
 
             {/* Modal / Page Footer Actions */}
-            <div className="px-4 py-4 sm:px-8 sm:py-5 border-t border-slate-200 dark:border-white/5 bg-slate-50/95 dark:bg-[#0c1612]/95 backdrop-blur-md flex items-center justify-between gap-4 shrink-0 sticky bottom-0 z-20 pb-28 sm:pb-5">
+            <div className="px-4 py-3.5 sm:px-8 sm:py-5 border-t border-slate-200 dark:border-white/5 bg-slate-50/95 dark:bg-[#0c1612]/95 backdrop-blur-md flex items-center justify-between gap-4 shrink-0 sticky bottom-0 z-20">
               <button
                 type="button"
                 onClick={() => { setEditingProduct(null); setIsAddingManual(false); }}
@@ -1626,7 +1626,6 @@ export function ProductManager() {
         const setupSteps = dashboard?.setupStatus?.steps || [];
         const isPaymentSetup = Boolean(setupSteps.find((s: any) => s.id === 'payments')?.completed);
         const isDeliverySetup = Boolean(setupSteps.find((s: any) => s.id === 'delivery')?.completed);
-        const isSubscriptionActive = Boolean(setupSteps.find((s: any) => s.id === 'subscription')?.completed);
 
         let nextActionConfig = {
           label: "Configurer mes Moyens de Paiement",
@@ -1645,12 +1644,6 @@ export function ProductManager() {
             label: "Définir mes Tarifs de Livraison",
             sublabel: "Configurez vos zones d'expédition",
             href: "/settings?tab=boutique#delivery"
-          };
-        } else if (!isSubscriptionActive) {
-          nextActionConfig = {
-            label: "Activer mon Forfait 24h/24",
-            sublabel: "Lancez votre Vendeur IA autonome",
-            href: "/offers"
           };
         } else {
           nextActionConfig = {

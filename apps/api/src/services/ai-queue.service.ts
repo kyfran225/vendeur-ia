@@ -234,7 +234,9 @@ Réponds UNIQUEMENT avec le texte final du message.`;
       if (merchantData?.ownerId) targetUserIds.add(merchantData.ownerId.toString());
 
       if (platform === 'whatsapp') {
-        await whatsappService.sendPresence(userId, remoteJid, 'composing', merchantData).catch(() => {});
+        await whatsappService.sendPresence(userId, remoteJid, 'composing', merchantData).catch((err: any) => {
+          console.warn("[AI Queue] sendPresence composing error:", err?.message);
+        });
       }
       targetUserIds.forEach(tId => {
         emitToUser(tId, 'conversation:typing', {
@@ -477,7 +479,9 @@ Réponds UNIQUEMENT avec le texte final du message.`;
         participant: 'ai'
       });
       if (platform === 'whatsapp') {
-        await whatsappService.sendPresence(userId, remoteJid, 'paused', merchantData).catch(() => {});
+        await whatsappService.sendPresence(userId, remoteJid, 'paused', merchantData).catch((err: any) => {
+          console.warn("[AI Queue] sendPresence paused error:", err?.message);
+        });
       }
     }
   } catch (error) {

@@ -239,32 +239,32 @@ export function OrderManager() {
   };
 
   return (
-    <div className="p-4 md:p-10 space-y-6 md:space-y-8 max-w-6xl mx-auto animate-in fade-in duration-700 pb-24 md:pb-12 text-slate-900 dark:text-white">
-      <header id="tour-orders-management" className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div className="space-y-1">
-          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight text-slate-900 dark:text-white flex items-center gap-2.5 sm:gap-3">
-            <ShoppingCart className="text-vendeur-emerald shrink-0" size={24} />
+    <div className="p-3.5 sm:p-6 md:p-10 space-y-4 sm:space-y-6 md:space-y-8 max-w-6xl mx-auto animate-in fade-in duration-700 pb-24 md:pb-12 text-slate-900 dark:text-white">
+      <header id="tour-orders-management" className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-6">
+        <div className="space-y-0.5 sm:space-y-1">
+          <h1 className="text-lg sm:text-2xl md:text-3xl font-bold tracking-tight text-slate-900 dark:text-white flex items-center gap-2 sm:gap-3">
+            <ShoppingCart className="text-vendeur-emerald shrink-0" size={22} />
             <span>{config.ordersLabel}</span>
           </h1>
-          <p className="text-slate-500 dark:text-white/50 text-xs sm:text-sm font-normal mt-1">Suivez vos ventes et gérez le cycle de vie de vos {config.ordersLabel.toLowerCase()}.</p>
+          <p className="text-slate-500 dark:text-white/50 text-[11px] sm:text-sm font-normal">Suivez vos ventes et gérez le cycle de vie de vos {config.ordersLabel.toLowerCase()}.</p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
           <button
             onClick={() => setIsShieldModalOpen(true)}
-            className="flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/30 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/20 px-4 h-12 rounded-2xl font-black uppercase text-xs tracking-wider shadow-lg shadow-emerald-500/10 hover:scale-[1.02] active:scale-95 transition-all cursor-pointer"
+            className="flex items-center gap-1.5 sm:gap-2 bg-emerald-500/10 border border-emerald-500/30 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/20 px-3 sm:px-4 h-10 sm:h-12 rounded-xl sm:rounded-2xl font-black uppercase text-[10px] sm:text-xs tracking-wider shadow-lg shadow-emerald-500/10 hover:scale-[1.02] active:scale-95 transition-all cursor-pointer"
             title="Ouvrir le registre d'audit et scanner Shield OCR"
           >
-            <Shield size={18} className="animate-pulse" />
+            <Shield size={16} className="animate-pulse" />
             <span className="hidden sm:inline">Shield Preuves IA</span>
             <span className="sm:hidden">Shield</span>
           </button>
 
           <button
             onClick={() => setIsCreateOpen(true)}
-            className="flex items-center gap-2 bg-vendeur-emerald text-slate-950 px-5 h-12 rounded-2xl font-black uppercase text-xs tracking-wider shadow-xl shadow-vendeur-emerald/20 hover:scale-[1.02] active:scale-95 transition-all cursor-pointer"
+            className="flex items-center gap-1.5 sm:gap-2 bg-vendeur-emerald text-slate-950 px-3.5 sm:px-5 h-10 sm:h-12 rounded-xl sm:rounded-2xl font-black uppercase text-[10px] sm:text-xs tracking-wider shadow-xl shadow-vendeur-emerald/20 hover:scale-[1.02] active:scale-95 transition-all cursor-pointer"
           >
-            <Plus size={18} />
+            <Plus size={16} />
             <span>Nouvelle {config.orderLabel}</span>
           </button>
         </div>

@@ -368,8 +368,12 @@ Réponds UNIQUEMENT avec le texte du message.`;
       const customer = conv.customerId as any;
       if (!customer || !customer.phone) continue;
 
-      const lastMsg = await CommerceMessageModel.findOne({ conversationId: conv._id })
-        .sort({ timestamp: -1 });
+      const lastMsg = await CommerceMessageModel.findOne({
+        $or: [
+          { conversationId: conv._id },
+          { conversationId: conv._id.toString() }
+        ]
+      }).sort({ timestamp: -1 });
 
       if (lastMsg && lastMsg.sender === "ai") {
         const followUpPrompt = `Génère une relance courte, bienveillante et courtoise pour un client sur WhatsApp.

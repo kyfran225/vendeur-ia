@@ -2639,7 +2639,12 @@ class WhatsAppService {
     if (!jid) return;
 
     let sock = this.getLiveSocket(userId, merchant);
+    if (!sock && merchant) {
+      if (merchant.ownerId) sock = this.getLiveSocket(merchant.ownerId, merchant);
+      if (!sock && merchant._id) sock = this.getLiveSocket(merchant._id, merchant);
+    }
     if (!sock) {
+      console.warn(`[WhatsApp Presence] No live socket found for userId ${userId} (merchant: ${merchant?._id}) to send presence ${presence}`);
       // Trigger background auto-repair if session is saved
       this.hasStoredSession(userId).then(hasCreds => {
         if (hasCreds) this.initSession(userId).catch(() => {});

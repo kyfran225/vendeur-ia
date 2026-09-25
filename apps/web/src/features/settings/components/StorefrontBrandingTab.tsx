@@ -1138,7 +1138,7 @@ export function StorefrontBrandingTab({ merchant }: StorefrontBrandingTabProps) 
 
       {/* ─── STICKY FLOATING SAVE BAR ─── */}
       {isDirty && (
-        <div className="fixed bottom-6 inset-x-0 z-50 flex items-center justify-center px-3 sm:px-4 pointer-events-none animate-in fade-in slide-in-from-bottom-5 duration-300">
+        <div className="fixed bottom-20 md:bottom-6 inset-x-0 z-[60] flex items-center justify-center px-3 sm:px-4 pointer-events-none animate-in fade-in slide-in-from-bottom-5 duration-300">
           <div className="pointer-events-auto p-1.5 sm:p-2.5 rounded-2xl sm:rounded-3xl bg-vendeur-coal/95 backdrop-blur-2xl border border-white/20 shadow-[0_20px_50px_rgba(0,0,0,0.8)] flex items-center gap-2 sm:gap-3 max-w-full">
             <button
               type="button"

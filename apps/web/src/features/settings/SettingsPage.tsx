@@ -1041,7 +1041,6 @@ function BoutiqueTab({
                   type="button"
                   onClick={() => {
                     setDeliveryFees((prev: any[]) => prev.filter((_: any, i: number) => i !== idx));
-                    setIsDirty(true);
                   }}
                   className="absolute -top-2.5 -right-1.5 z-20 h-6 w-6 sm:h-6 sm:w-6 rounded-full bg-rose-500 hover:bg-rose-600 text-white shadow-md shadow-rose-500/40 flex items-center justify-center transition-all duration-200 cursor-pointer active:scale-90 border border-white/20 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 scale-90 group-hover:scale-100 group-focus-within:scale-100"
                   title="Supprimer cette zone de livraison"
@@ -1057,7 +1056,6 @@ function BoutiqueTab({
                       countryCode={localMerchant?.country}
                       onChange={(val) => {
                         setDeliveryFees((prev: any[]) => prev.map((f: any, i: number) => i === idx ? { ...f, zone: val } : f));
-                        setIsDirty(true);
                       }}
                       placeholder="Ex: Riviera 3"
                       className="flex-1 min-w-0 h-12 sm:h-14 text-xs sm:text-sm font-bold"
@@ -1073,7 +1071,6 @@ function BoutiqueTab({
                         onChange={(e) => {
                           const val = parseInt(e.target.value.replace(/\D/g, "")) || 0;
                           setDeliveryFees((prev: any[]) => prev.map((f: any, i: number) => i === idx ? { ...f, price: val } : f));
-                          setIsDirty(true);
                         }}
                     />
                     <span className="absolute right-2.5 sm:right-3.5 top-1/2 -translate-y-1/2 text-[9px] sm:text-[10px] font-black text-slate-400 dark:text-white/30 pointer-events-none font-mono">
@@ -1094,7 +1091,6 @@ function BoutiqueTab({
                           type="button"
                           onClick={() => {
                             setDeliveryFees((prev: any[]) => [...prev, { zone: suggestion.name, price: suggestion.suggestedPrice }]);
-                            setIsDirty(true);
                           }}
                           className="px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/20 text-sky-600 dark:text-sky-300 text-[10px] sm:text-xs font-bold transition-all cursor-pointer"
                       >
@@ -1110,7 +1106,6 @@ function BoutiqueTab({
                 type="button"
                 onClick={() => {
                   setDeliveryFees((prev: any[]) => [...prev, { zone: "", price: 1000 }]);
-                  setIsDirty(true);
                 }}
                 className="flex items-center gap-2 text-sky-600 dark:text-sky-400 text-[10px] font-black uppercase tracking-[0.2em] hover:underline px-1 py-1 cursor-pointer"
              >
@@ -1198,7 +1193,6 @@ function BoutiqueTab({
                     type="button"
                     onClick={() => {
                       setPayments((prev: any[]) => prev.filter((_: any, i: number) => i !== idx));
-                      setIsDirty(true);
                     }}
                     className="absolute -top-1.5 -right-1.5 z-20 h-6 w-6 sm:h-6 sm:w-6 rounded-full bg-rose-500 hover:bg-rose-600 text-white shadow-md shadow-rose-500/40 flex items-center justify-center transition-all duration-200 cursor-pointer active:scale-90 border border-white/20 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 scale-90 group-hover:scale-100 group-focus-within:scale-100"
                     title="Supprimer ce canal"
@@ -1216,7 +1210,6 @@ function BoutiqueTab({
                             onChange={(e) => {
                               const val = e.target.value;
                               setPayments((prev: any[]) => prev.map((item: any, i: number) => i === idx ? { ...item, provider: val } : item));
-                              setIsDirty(true);
                             }}
                           >
                             {countryProviders.map(provider => (
@@ -1244,7 +1237,6 @@ function BoutiqueTab({
                             onChange={(e) => {
                               const val = e.target.value;
                               setPayments((prev: any[]) => prev.map((item: any, i: number) => i === idx ? { ...item, number: val } : item));
-                              setIsDirty(true);
                             }}
                             placeholder={placeholder}
                           />
@@ -1267,7 +1259,6 @@ function BoutiqueTab({
                         onChange={(e) => {
                           const val = e.target.value;
                           setPayments((prev: any[]) => prev.map((item: any, i: number) => i === idx ? { ...item, customLabel: val } : item));
-                          setIsDirty(true);
                         }}
                       />
                     </div>
@@ -1283,7 +1274,6 @@ function BoutiqueTab({
                   const countryProviders = getProvidersForCountry(localMerchant?.country || "CI");
                   const defaultProvider = countryProviders[0]?.label || "Wave";
                   setPayments((prev: any[]) => [...prev, { provider: defaultProvider, number: "" }]);
-                  setIsDirty(true);
                 }}
                 className="flex items-center gap-2 text-sky-600 dark:text-sky-400 text-[10px] font-black uppercase tracking-[0.2em] hover:underline px-1 py-1 cursor-pointer"
               >
@@ -1392,7 +1382,7 @@ function BoutiqueTab({
 
       {/* Sticky Floating Save Bar (Centered & Glassmorphism, only visible when modified) */}
       {isModified && (
-        <div className="fixed bottom-6 inset-x-0 z-50 flex items-center justify-center px-3 sm:px-4 pointer-events-none animate-in fade-in slide-in-from-bottom-5 duration-300">
+        <div className="fixed bottom-20 md:bottom-6 inset-x-0 z-[60] flex items-center justify-center px-3 sm:px-4 pointer-events-none animate-in fade-in slide-in-from-bottom-5 duration-300">
           <div className="pointer-events-auto p-1.5 sm:p-2.5 rounded-2xl sm:rounded-3xl bg-slate-900/95 dark:bg-vendeur-coal/95 backdrop-blur-2xl border border-slate-700 dark:border-white/20 shadow-[0_20px_50px_rgba(0,0,0,0.4)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.8)] flex items-center gap-2 sm:gap-3 max-w-full">
             <button
               type="button"
@@ -1441,10 +1431,6 @@ function BoutiqueTab({
             primaryLabel = "Configurer mes Moyens de Paiement";
             primarySub = "Wave, Orange Money, MTN, Moov";
             primaryHref = "/settings?tab=boutique#payments";
-          } else if (!hasSubscription) {
-            primaryLabel = "Activer mon Forfait 24h/24";
-            primarySub = "Lancez vos ventes automatiques";
-            primaryHref = "/offers";
           } else {
             primaryLabel = "Tester dans le Simulateur";
             primarySub = "Simulez une commande avec livraison";
@@ -1468,10 +1454,6 @@ function BoutiqueTab({
             primaryLabel = "Définir mes Tarifs de Livraison";
             primarySub = "Configurez vos zones d'expédition";
             primaryHref = "/settings?tab=boutique#delivery";
-          } else if (!hasSubscription) {
-            primaryLabel = "Activer mon Forfait 24h/24";
-            primarySub = "Lancez vos ventes automatiques";
-            primaryHref = "/offers";
           } else {
             primaryLabel = "Tester dans le Simulateur";
             primarySub = "Simulez une vente avec encaissement";
@@ -1504,10 +1486,6 @@ function BoutiqueTab({
             primaryLabel = "Définir mes Tarifs de Livraison";
             primarySub = "Configurez vos zones d'expédition";
             primaryHref = "/settings?tab=boutique#delivery";
-          } else if (!hasSubscription) {
-            primaryLabel = "Activer mon Forfait 24h/24";
-            primarySub = "Lancez vos ventes automatiques";
-            primaryHref = "/offers";
           } else {
             primaryLabel = "Tester dans le Simulateur";
             primarySub = "Vérifiez les réponses de l'IA";

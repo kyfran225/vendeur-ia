@@ -17,13 +17,57 @@ export function AppLayout() {
   const location = useLocation();
   const isInbox = location.pathname.startsWith("/inbox");
 
+  const mainRef = React.useRef<HTMLElement>(null);
+  const [isHeaderHidden, setIsHeaderHidden] = React.useState(false);
+  const lastScrollTopRef = React.useRef(0);
+
+  // Scroll to top and restore header on route change
+  React.useEffect(() => {
+    setIsHeaderHidden(false);
+    if (mainRef.current) {
+      mainRef.current.scrollTop = 0;
+    }
+    window.scrollTo(0, 0);
+  }, [location.pathname]);
+
+  // Auto-hide header when scrolling DOWN, reveal when scrolling UP
+  const handleScroll = () => {
+    if (isInbox || !mainRef.current) return;
+    const currentScrollTop = mainRef.current.scrollTop;
+    const diff = currentScrollTop - lastScrollTopRef.current;
+
+    if (Math.abs(diff) > 8) {
+      if (currentScrollTop > 60 && diff > 0) {
+        // Scrolling DOWN -> Hide header
+        setIsHeaderHidden(true);
+      } else if (diff < 0 || currentScrollTop <= 20) {
+        // Scrolling UP or near top -> Show header
+        setIsHeaderHidden(false);
+      }
+      lastScrollTopRef.current = currentScrollTop;
+    }
+  };
+
   return (
-    <div className="flex h-screen overflow-hidden flex-col md:flex-row bg-slate-50 dark:bg-vendeur-bg text-slate-900 dark:text-white relative overscroll-none transition-colors">
+    <div className="flex h-screen h-[100dvh] overflow-hidden flex-col md:flex-row bg-slate-50 dark:bg-vendeur-bg text-slate-900 dark:text-white relative overscroll-none transition-colors">
       <WifiOff />
       <Sidebar />
-      <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
-        <ShellHeader />
+      <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden relative">
+        {!isInbox && (
+          <div
+            className={cn(
+              "sticky top-0 w-full z-40 transition-all duration-300 ease-in-out shrink-0",
+              isHeaderHidden
+                ? "-mt-14 md:-mt-16 opacity-0 pointer-events-none"
+                : "mt-0 opacity-100"
+            )}
+          >
+            <ShellHeader />
+          </div>
+        )}
         <main
+          ref={mainRef}
+          onScroll={handleScroll}
           className={cn(
             "flex-1 overscroll-contain min-h-0 overflow-x-hidden",
             isInbox

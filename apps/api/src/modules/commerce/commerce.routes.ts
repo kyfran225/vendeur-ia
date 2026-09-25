@@ -309,7 +309,7 @@ router.post("/public/shop/:merchantId/order", async (req, res) => {
     });
 
     // 4. Multi-channel notification to merchant (Realtime + WhatsApp)
-    await notificationsService.notifyOrderCreated(merchant, order, customer, "web_shop");
+    await notificationsService.notifyOrderCreated(merchant, order, customer, "web_shop", req);
 
     res.status(201).json({
       success: true,
@@ -420,24 +420,6 @@ router.get("/conversations", authenticate, async (req, res) => {
     }).select("_id").lean();
 
     ownMerchants.forEach(m => merchantIds.push(m._id));
-
-    // 2. If founder / admin, also include Vendeur IA system merchant conversations
-    if (isFounder) {
-      const founderMerchants = await CommerceMerchantModel.find({
-        $or: [
-          { businessName: "Vendeur IA" },
-          { whatsappNumber: { $regex: '5111157' } },
-          { phone: { $regex: '5111157' } },
-          { "whatsappConfig.phoneNumberId": env.WHATSAPP_PHONE_ID }
-        ]
-      }).select("_id").lean();
-
-      founderMerchants.forEach(m => {
-        if (!merchantIds.some(id => id.toString() === m._id.toString())) {
-          merchantIds.push(m._id);
-        }
-      });
-    }
 
     if (merchantIds.length === 0) return res.json([]);
 
@@ -1991,13 +1973,24 @@ router.post("/verify-payment", authenticate, async (req, res) => {
           } as any;
         }
 
+        const rawSub = (merchant.subscription as any)?.toObject
+          ? (merchant.subscription as any).toObject()
+          : (merchant.subscription || {});
+
         // Standardize subscription field usage
         merchant.subscription = {
+          ...rawSub,
           plan: type === "ram_contribution" ? "premium" : "business",
           status: "active",
           expiresAt: expiresAt,
           paymentMethod: 'card',
-          billingInterval: 'monthly'
+          billingInterval: 'monthly',
+          trialUsage: {
+            messagesCount: rawSub.trialUsage?.messagesCount ?? 0,
+            maxMessages: rawSub.trialUsage?.maxMessages ?? 50,
+            productsCount: rawSub.trialUsage?.productsCount ?? 0,
+            maxProducts: rawSub.trialUsage?.maxProducts ?? 10
+          }
         };
 
         await merchant.save();
@@ -2547,7 +2540,7 @@ router.post("/orders", authenticate, validate(CreateOrderSchema), async (req, re
 
     // Notify merchant via multi-channel
     const customerForNotif = req.body.customerId ? await CommerceCustomerModel.findById(req.body.customerId) : null;
-    await notificationsService.notifyOrderCreated(merchant, order, customerForNotif, "manual");
+    await notificationsService.notifyOrderCreated(merchant, order, customerForNotif, "manual", req);
 
     // If created from Inbox, we might want to send a confirmation message automatically
     if (req.body.conversationId && customerForNotif) {
@@ -2591,7 +2584,7 @@ router.patch("/orders/:id", authenticate, async (req, res) => {
         const merchantObj = await CommerceMerchantModel.findById(merchant._id);
 
         // Notify merchant of confirmed payment
-        await notificationsService.notifyPaymentReceived(merchantObj || merchant, updatedOrder, customer, updatedOrder.totalAmount, updatedOrder.paymentMethod || undefined);
+        await notificationsService.notifyPaymentReceived(merchantObj || merchant, updatedOrder, customer, updatedOrder.totalAmount, updatedOrder.paymentMethod || undefined, req);
 
         if (merchantObj && customer?.phone) {
           try {

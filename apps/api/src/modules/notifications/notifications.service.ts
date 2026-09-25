@@ -16,7 +16,7 @@ export class NotificationsService {
   /**
    * Notifies merchant across In-App Realtime and WhatsApp when a new order is placed
    */
-  async notifyOrderCreated(merchant: any, order: any, customer?: any, source: "web_shop" | "ai_chat" | "manual" = "web_shop") {
+  async notifyOrderCreated(merchant: any, order: any, customer?: any, source: "web_shop" | "ai_chat" | "manual" = "web_shop", req?: any) {
     const ownerId = merchant?.ownerId?.toString() || merchant?.ownerId;
 
     const currency = merchant?.currency || "XOF";
@@ -52,7 +52,7 @@ export class NotificationsService {
       `• **Montant** : ${totalFormatted} ${currency}\n` +
       `• **Canal** : ${sourceLabel}\n` +
       `• **Date** : ${new Date().toLocaleString("fr-FR")}`;
-    this.sendAdminAlert(adminMsg).catch(() => {});
+    this.sendAdminAlert(adminMsg, req).catch(() => {});
 
     // 2. WhatsApp Notification to Merchant
     const merchantPhone = merchant?.phone || merchant?.whatsappNumber;
@@ -85,7 +85,7 @@ export class NotificationsService {
   /**
    * Notifies merchant when a payment is received / validated
    */
-  async notifyPaymentReceived(merchant: any, order: any, customer?: any, amount?: number, method?: string) {
+  async notifyPaymentReceived(merchant: any, order: any, customer?: any, amount?: number, method?: string, req?: any) {
     const ownerId = merchant?.ownerId?.toString() || merchant?.ownerId;
 
     const currency = merchant?.currency || "XOF";
@@ -102,7 +102,7 @@ export class NotificationsService {
       `• **Moyen** : ${method || 'Mobile Money'}\n` +
       `• **Commande** : #${order?._id?.toString().slice(-6) || ''}\n` +
       `• **Date** : ${new Date().toLocaleString("fr-FR")}`;
-    this.sendAdminAlert(adminMsg).catch(() => {});
+    this.sendAdminAlert(adminMsg, req).catch(() => {});
 
     // 1. In-App Realtime Socket event
     if (ownerId) {
@@ -144,7 +144,7 @@ export class NotificationsService {
   /**
    * Notifies merchant when human escalation is triggered
    */
-  async notifyHumanEscalation(merchant: any, customer: any, reason: string) {
+  async notifyHumanEscalation(merchant: any, customer: any, reason: string, req?: any) {
     const ownerId = merchant?.ownerId?.toString() || merchant?.ownerId;
     const customerPhone = customer?.phone || customer?.whatsappNumber || customer?.platformId || "Non renseigné";
 
@@ -155,7 +155,7 @@ export class NotificationsService {
       `• **Téléphone** : ${customerPhone}\n` +
       `• **Motif** : ${reason}\n` +
       `• **Date** : ${new Date().toLocaleString("fr-FR")}`;
-    this.sendAdminAlert(adminMsg).catch(() => {});
+    this.sendAdminAlert(adminMsg, req).catch(() => {});
 
     // In-App Socket
     if (ownerId) {
@@ -187,12 +187,52 @@ export class NotificationsService {
     }
   }
 
-  async sendAdminAlert(text: string) {
+  async sendAdminAlert(text: string, req?: any) {
     try {
       const isEnabled = env.ENABLE_ADMIN_NOTIFICATIONS;
       if (!isEnabled) return;
 
-      console.log(`[NotificationsService] Admin alert attempt: "${text.substring(0, 50)}..."`);
+      // Determine category / origin tag to distinguish test/local, PC dev, and real visitors
+      let originTag = "🌐 **[VRAI VISITEUR]**";
+
+      if (process.env.NODE_ENV === 'test' || process.env.VITEST || process.env.JEST_WORKER_ID) {
+        originTag = "🧪 **[TEST & LOCAL]**";
+      } else if (
+        process.env.NODE_ENV === 'development' ||
+        process.env.LOCAL_DEV ||
+        (req && (
+          req.headers?.['x-developer-pc'] === 'true' ||
+          req.headers?.['x-developer-pc'] === true ||
+          req.headers?.['x-forwarded-for']?.includes('127.0.0.1') ||
+          req.socket?.remoteAddress === '127.0.0.1' ||
+          req.socket?.remoteAddress === '::1'
+        ))
+      ) {
+        originTag = "💻 **[PC / DÉVELOPPEMENT]**";
+      } else if (req) {
+        const forwarded = req.headers?.['x-forwarded-for'];
+        const ip = typeof forwarded === 'string' ? forwarded.split(',')[0].trim() : (req.socket?.remoteAddress || '');
+        const userAgent = (req.headers?.['user-agent'] || '').toLowerCase();
+
+        if (
+          ip === '127.0.0.1' ||
+          ip === '::1' ||
+          ip.startsWith('192.168.') ||
+          ip.startsWith('10.') ||
+          ip.startsWith('172.16.') ||
+          ip.startsWith('100.') ||
+          userAgent.includes('postman') ||
+          userAgent.includes('axios') ||
+          userAgent.includes('curl') ||
+          userAgent.includes('node-fetch')
+        ) {
+          originTag = "💻 **[PC / DÉVELOPPEMENT]**";
+        }
+      }
+
+      const formattedText = `${originTag}\n${text}`;
+
+      console.log(`[NotificationsService] Admin alert attempt (${originTag}): "${text.substring(0, 50)}..."`);
 
       // 1. Try Telegram (Priority)
       if (env.TELEGRAM_BOT_TOKEN && env.TELEGRAM_CHAT_ID) {
@@ -200,7 +240,7 @@ export class NotificationsService {
           const url = `https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/sendMessage`;
           await axios.post(url, {
             chat_id: env.TELEGRAM_CHAT_ID,
-            text: text,
+            text: formattedText,
             parse_mode: 'Markdown'
           }, { timeout: 10000 });
           console.log("[NotificationsService] Admin alert sent successfully to Telegram.");
@@ -220,7 +260,7 @@ export class NotificationsService {
         }
 
         if (webhookUrl.startsWith("http")) {
-          const payload = { content: text };
+          const payload = { content: formattedText };
           await axios.post(webhookUrl, payload, {
             headers: { 'Content-Type': 'application/json' },
             timeout: 10000

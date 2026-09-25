@@ -9,16 +9,17 @@ const router = Router();
 // Middleware to resolve or auto-create the current merchant from JWT user
 const resolveMerchant = async (req: any, res: any, next: any) => {
   try {
-    const ownerId = req.user?.id;
+    const ownerId = req.user?.id || req.user?._id || req.user?.sub;
     if (!ownerId) {
-      return res.status(401).json({ error: "Non authentifié" });
+      return res.status(401).json({ error: "Non authentifié (ID manquant)" });
     }
 
-    const merchant = await commerceService.getOrCreateMerchant(ownerId);
+    const merchant = await commerceService.getOrCreateMerchant(ownerId.toString());
     req.merchant = merchant;
     next();
   } catch (error: any) {
-    res.status(500).json({ error: error.message });
+    logger.error(`[Copilot resolveMerchant Error] ${error.message}`, { error });
+    res.status(500).json({ error: error.message || "Erreur lors de la résolution du marchand" });
   }
 };
 

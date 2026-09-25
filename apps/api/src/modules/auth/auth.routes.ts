@@ -16,7 +16,7 @@ import {
 
 const router = Router();
 
-const notifyAdminOfLogin = (user: any, method: string) => {
+const notifyAdminOfLogin = (user: any, method: string, req?: any) => {
   if (!user) return;
   const name = user.displayName || user.name || "Non renseigné";
   const phone = user.whatsappNumber || user.phone || "Non renseigné";
@@ -27,7 +27,7 @@ const notifyAdminOfLogin = (user: any, method: string) => {
     `• **Email** : ${email}\n` +
     `• **Méthode** : ${method}\n` +
     `• **Date** : ${new Date().toLocaleString("fr-FR")}`;
-  notificationsService.sendAdminAlert(message).catch((err) => {
+  notificationsService.sendAdminAlert(message, req).catch((err) => {
     console.error(`[AuthRoutes] Failed to send login alert for ${name}:`, err.message);
   });
 };
@@ -44,7 +44,7 @@ router.post("/track-visit", async (req, res) => {
       `\n• **Date** : ${new Date().toLocaleString("fr-FR")}`;
 
     // Fire-and-forget but explicitly logging errors if Telegram endpoint breaks
-    notificationsService.sendAdminAlert(message).catch((err) => {
+    notificationsService.sendAdminAlert(message, req).catch((err) => {
       console.error("[AuthRoutes] Failed to send visit alert to Telegram:", err.message);
     });
 
@@ -57,7 +57,7 @@ router.post("/track-visit", async (req, res) => {
 router.post("/register", validate(registerSchema), async (req, res) => {
   try {
     const tokens = await authService.register(req.body);
-    notifyAdminOfLogin(tokens?.user, "Inscription (Email/Password)");
+    notifyAdminOfLogin(tokens?.user, "Inscription (Email/Password)", req);
     res.status(201).json(tokens);
   } catch (error: any) {
     res.status(400).json({ error: error.message });
@@ -67,7 +67,7 @@ router.post("/register", validate(registerSchema), async (req, res) => {
 router.post("/login", validate(loginSchema), async (req, res) => {
   try {
     const tokens = await authService.login(req.body);
-    notifyAdminOfLogin(tokens?.user, "Connexion (Email/Password)");
+    notifyAdminOfLogin(tokens?.user, "Connexion (Email/Password)", req);
     res.json(tokens);
   } catch (error: any) {
     res.status(400).json({ error: error.message });

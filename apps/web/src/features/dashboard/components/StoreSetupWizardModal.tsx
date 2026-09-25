@@ -119,8 +119,13 @@ export function StoreSetupWizardModal({
   const { data: knowledge } = useQuery({
     queryKey: ["knowledge"],
     queryFn: async () => {
-      const res = await apiClient.get("/api/commerce/knowledge");
-      return res.data;
+      try {
+        const res = await apiClient.get("/api/commerce/knowledge");
+        return res.data;
+      } catch (e) {
+        console.warn("[StoreSetupWizardModal] Knowledge load warning:", e);
+        return {};
+      }
     },
     enabled: isOpen
   });

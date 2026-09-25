@@ -177,7 +177,7 @@ export function ShellHeader({ isVisible = true }: ShellHeaderProps) {
   // Vendeur IA Status & 1-Click Master Switch in Header
   const isPaidActive = merchant?.subscription?.status === "active";
   const isAutoReplyOn = merchant?.aiSettings?.autoReply !== false;
-  const isPaused = isPaidActive && !isAutoReplyOn;
+  const isPaused = !isAutoReplyOn;
 
   const toggleAutoReplyMutation = useMutation({
     mutationFn: async (newAutoReply: boolean) => {
@@ -289,9 +289,21 @@ export function ShellHeader({ isVisible = true }: ShellHeaderProps) {
             <p className="text-sm sm:text-base md:text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight truncate leading-tight">
               {isMasterAdmin ? "MASTER CONTROL" : (merchant?.businessName || "Boutique Franck")}
             </p>
-            <p className="text-[8px] md:text-[10px] uppercase tracking-[0.2em] text-emerald-600 dark:text-vendeur-emerald/70 font-black leading-none truncate flex items-center gap-1 mt-0.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse inline-block shrink-0" />
-              <span>{isMasterAdmin ? "FOUNDER OS v2.4-STABLE" : "Boutique Active"}</span>
+            <p className={cn(
+              "text-[8px] md:text-[10px] uppercase tracking-[0.2em] font-black leading-none truncate flex items-center gap-1 mt-0.5",
+              !isMasterAdmin && !isAutoReplyOn ? "text-amber-600 dark:text-amber-400" : "text-emerald-600 dark:text-vendeur-emerald/70"
+            )}>
+              <span className={cn(
+                "w-1.5 h-1.5 rounded-full inline-block shrink-0",
+                !isMasterAdmin && !isAutoReplyOn ? "bg-amber-500" : "bg-emerald-500 animate-pulse"
+              )} />
+              <span>
+                {isMasterAdmin
+                  ? "FOUNDER OS v2.4-STABLE"
+                  : !isAutoReplyOn
+                    ? "Vendeur en Pause"
+                    : "Boutique Active"}
+              </span>
             </p>
           </div>
         </div>

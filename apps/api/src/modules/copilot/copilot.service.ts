@@ -777,7 +777,7 @@ Pour offrir une expérience hors-norme, insère TOUJOURS des balises d'action pr
     const suggestions: Array<{ text: string; category: string; icon: string }> = [];
 
     // Context-dependent suggestions
-    if (!context.setupHealth.isWhatsAppConnected) {
+    if (!context.setupHealth?.isWhatsAppConnected) {
       suggestions.push({
         text: "Comment connecter mon WhatsApp Business en 1 clic ?",
         category: "setup",
@@ -797,7 +797,7 @@ Pour offrir une expérience hors-norme, insère TOUJOURS des balises d'action pr
       icon: "compass"
     });
 
-    if (context.stats.pendingOrdersCount > 0) {
+    if ((context.stats?.pendingOrdersCount || 0) > 0) {
       suggestions.push({
         text: `J'ai ${context.stats.pendingOrdersCount} commande(s) en attente, que dois-je faire ?`,
         category: "orders",
@@ -805,7 +805,7 @@ Pour offrir une expérience hors-norme, insère TOUJOURS des balises d'action pr
       });
     }
 
-    if (context.stats.totalProducts === 0) {
+    if ((context.stats?.totalProducts || 0) === 0) {
       suggestions.push({
         text: "Comment ajouter mon catalogue entier par simple photo de rayon ?",
         category: "products",
@@ -844,11 +844,14 @@ Pour offrir une expérience hors-norme, insère TOUJOURS des balises d'action pr
     return {
       suggestions: suggestions.slice(0, 5),
       storeHealth: {
-        businessName: context.merchant.businessName,
-        isWhatsAppConnected: context.setupHealth.isWhatsAppConnected,
-        totalProducts: context.stats.totalProducts,
-        pendingOrdersCount: context.stats.pendingOrdersCount,
-        currency: context.merchant.currency
+        businessName: context.merchant?.businessName || "Ma Boutique",
+        isWhatsAppConnected: !!context.setupHealth?.isWhatsAppConnected,
+        whatsappStatus: context.merchant?.whatsappStatus || "disconnected",
+        totalProducts: context.stats?.totalProducts || 0,
+        productCount: context.stats?.totalProducts || 0,
+        pendingOrdersCount: context.stats?.pendingOrdersCount || 0,
+        currency: context.merchant?.currency || "XOF",
+        plan: context.merchant?.subscriptionPlan || "starter"
       }
     };
   }

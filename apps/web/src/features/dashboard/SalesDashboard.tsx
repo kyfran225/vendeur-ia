@@ -223,7 +223,7 @@ export function SalesDashboard() {
   const productsCount = dashboard?.products?.length || 0;
   const hasProducts = productsCount > 0 || Boolean(dashboard?.setupStatus?.steps?.find((s: any) => s.id === "products")?.completed);
   const isFullyOperational = isFounder || dashboard?.setupStatus?.isFullyOperational;
-  const isPaused = isPaidActive && dashboard?.merchant?.aiSettings?.autoReply === false;
+  const isPaused = dashboard?.merchant?.aiSettings?.autoReply === false;
   const isExpired = !isFounder && dashboard?.merchant?.subscription?.status === "past_due";
   const showAssistant = !isFounder && (!isFullyOperational || isPaused || isExpired);
   const isEssentialPlan = isPaidActive && (dashboard?.merchant?.subscription?.plan === "essential" || dashboard?.merchant?.subscription?.planId?.toLowerCase().includes("essential"));
@@ -326,6 +326,8 @@ export function SalesDashboard() {
         completedStepLabel={stepSuccessModal.completedStepLabel}
         nextStep={stepSuccessModal.nextStep}
         businessName={dashboard?.merchant?.businessName}
+        score={dashboard?.setupStatus?.score}
+        steps={dashboard?.setupStatus?.steps}
       />
 
       <StepMilestoneModal
@@ -339,7 +341,8 @@ export function SalesDashboard() {
         }
         stepNumber={2}
         totalSteps={3}
-        score={dashboard?.setupStatus?.score ?? 70}
+        score={dashboard?.setupStatus?.score}
+        steps={dashboard?.setupStatus?.steps}
         primaryAction={
           !dashboard?.setupStatus?.steps?.find((s: any) => s.id === "identity")?.completed
             ? {
@@ -376,6 +379,7 @@ export function SalesDashboard() {
       <StoreSetupWizardModal
         isOpen={isStoreSetupModalOpen}
         onClose={() => setIsStoreSetupModalOpen(false)}
+        dashboard={dashboard}
       />
     </main>
   );
@@ -407,7 +411,7 @@ function HomePanel({
   const status = dashboard?.merchant?.whatsappConfig?.status || 'disconnected';
   const isFullyOperational = dashboard?.setupStatus?.isFullyOperational;
   const isPaidActive = dashboard?.merchant?.subscription?.status === "active";
-  const isPaused = isPaidActive && dashboard?.merchant?.aiSettings?.autoReply === false;
+  const isPaused = dashboard?.merchant?.aiSettings?.autoReply === false;
   const isExpired = dashboard?.merchant?.subscription?.status === "past_due";
   const subStatus = dashboard?.merchant?.subscription?.status;
   const trialEndsAt = dashboard?.merchant?.subscription?.trialEndsAt;

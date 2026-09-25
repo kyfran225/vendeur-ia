@@ -64,6 +64,22 @@ export class CommerceService {
       ]
     });
 
+    const rawSub = (merchant?.subscription as any)?.toObject
+      ? (merchant?.subscription as any).toObject()
+      : (merchant?.subscription || {});
+
+    const founderSubscription = {
+      ...rawSub,
+      plan: "enterprise",
+      status: "active",
+      trialUsage: {
+        messagesCount: rawSub.trialUsage?.messagesCount ?? 0,
+        maxMessages: rawSub.trialUsage?.maxMessages ?? 999999,
+        productsCount: rawSub.trialUsage?.productsCount ?? 0,
+        maxProducts: rawSub.trialUsage?.maxProducts ?? 999999
+      }
+    };
+
     const merchantData = {
       ownerId,
       businessName: merchant?.businessName || "Boutique Franck",
@@ -78,6 +94,7 @@ export class CommerceService {
       currency: merchant?.currency || "XOF",
       language: (merchant?.language || "fr") as any,
       onboardingCompleted: true,
+      subscription: founderSubscription,
       whatsappConfig: merchant?.whatsappConfig || {
         provider: "baileys" as const,
         status: "connected" as const
@@ -103,13 +120,7 @@ export class CommerceService {
         merchantDoc.ownerId = ownerId as any;
       }
       merchantDoc.onboardingCompleted = true;
-      if (!merchantDoc.subscription || merchantDoc.subscription.status !== "active") {
-        merchantDoc.subscription = {
-          ...(merchantDoc.subscription || {}),
-          plan: "enterprise",
-          status: "active"
-        } as any;
-      }
+      merchantDoc.subscription = founderSubscription as any;
       await merchantDoc.save();
     }
 
@@ -164,8 +175,7 @@ export class CommerceService {
       );
     }
 
-    // Update Knowledge base for Vendeur IA
-    let knowledge = await CommerceKnowledgeModel.findOne({ merchantId: merchant._id });
+    // Update Knowledge base for Vendeur IA via atomic findOneAndUpdate
     const knowledgeData = {
       merchantId: merchant._id,
       businessName: "Vendeur IA",
@@ -184,12 +194,11 @@ export class CommerceService {
       customInstructions: "Tu es l'assistant commercial d'élite de la plateforme Vendeur IA — tu ES l'exemple vivant de ce que tu vends.\n\nTon rôle : accueillir chaleureusement les commerçants, entrepreneurs et marques qui souhaitent automatiser leurs ventes sur WhatsApp, présenter nos fonctionnalités phares (IA de vente 24/7, validation instantanée des reçus Wave/MTN/Orange/Moov par PaymentShield OCR, relance des clients), nos offres réelles :\n- 🟢 Pack Essentiel : 5 000 F CFA / mois (ou 50 000 F CFA / an — 2 mois offerts)\n- 🔵 Pack Pro : 20 000 F CFA / mois (ou 200 000 F CFA / an — 2 mois offerts)\n- 🚀 Option Pack Pro Expert (Installation clé en main) : 25 000 F CFA (paiement unique)\n\nGuide les prospects pour choisir leur formule et démarrer immédiatement."
     };
 
-    if (!knowledge) {
-      await CommerceKnowledgeModel.create(knowledgeData);
-    } else {
-      Object.assign(knowledge, knowledgeData);
-      await knowledge.save();
-    }
+    await CommerceKnowledgeModel.findOneAndUpdate(
+      { merchantId: merchant._id },
+      { $set: knowledgeData },
+      { upsert: true, new: true }
+    );
 
     return merchant;
   }
@@ -891,25 +900,36 @@ export class CommerceService {
   }
 
   async getKnowledge(merchantId: string) {
-    let knowledge = await CommerceKnowledgeModel.findOne({ merchantId });
+    if (!merchantId) throw new Error("merchantId est requis pour la base de connaissances");
+    const mObjId = mongoose.Types.ObjectId.isValid(merchantId) ? new mongoose.Types.ObjectId(merchantId) : merchantId;
+    let knowledge = await CommerceKnowledgeModel.findOne({
+      $or: [{ merchantId }, { merchantId: mObjId as any }]
+    });
+
     if (!knowledge) {
-      const merchant = await CommerceMerchantModel.findById(merchantId);
+      const merchant = await CommerceMerchantModel.findById(merchantId).lean();
       knowledge = await CommerceKnowledgeModel.create({
-        merchantId,
+        merchantId: mObjId,
+        businessName: merchant?.businessName || "Ma Boutique",
+        generalKnowledge: merchant?.description || `Boutique ${merchant?.businessName || "Ma Boutique"} spécialisée dans la vente.`,
         businessRules: {
-          deliveryZones: merchant?.city ? [merchant.city] : [],
+          deliveryZones: merchant?.city ? [merchant.city] : ["Abidjan"],
           openingHours: "09:00 - 18:00",
           returnPolicy: "Retours acceptés sous 48h.",
-          paymentMethods: [] // No defaults here either
-        }
+          paymentMethods: [],
+          deliveryFees: []
+        },
+        faq: []
       });
     }
     return knowledge;
   }
 
   async updateKnowledge(merchantId: string, data: any) {
+    if (!merchantId) throw new Error("merchantId est requis pour la mise à jour de la base de connaissances");
+    const mObjId = mongoose.Types.ObjectId.isValid(merchantId) ? new mongoose.Types.ObjectId(merchantId) : merchantId;
     const knowledge = await CommerceKnowledgeModel.findOneAndUpdate(
-      { merchantId },
+      { $or: [{ merchantId }, { merchantId: mObjId as any }] },
       { $set: data },
       { new: true, upsert: true }
     );

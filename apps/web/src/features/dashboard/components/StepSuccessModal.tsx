@@ -21,6 +21,8 @@ interface StepSuccessModalProps {
   completedStepLabel: string;
   nextStep: { id: string; label: string } | null;
   businessName?: string;
+  score?: number;
+  steps?: Array<{ id: string; label: string; completed: boolean; weight?: number }>;
 }
 
 const STEP_ICONS: Record<string, React.ReactNode> = {
@@ -66,8 +68,32 @@ export function StepSuccessModal({
   completedStepLabel,
   nextStep,
   businessName,
+  score,
+  steps,
 }: StepSuccessModalProps) {
   if (!isOpen) return null;
+
+  const rawScore = React.useMemo(() => {
+    if (score !== undefined && score !== null && !isNaN(score)) {
+      return Math.max(0, Math.min(100, score));
+    }
+    if (steps && steps.length > 0) {
+      return Math.min(100, Math.round(steps.reduce((acc: number, s: any) => acc + (s.completed ? (s.weight || 33) : 0), 0)));
+    }
+    return 0;
+  }, [score, steps]);
+
+  const [displayScore, setDisplayScore] = React.useState<number>(0);
+
+  React.useEffect(() => {
+    if (isOpen) {
+      setDisplayScore((prev) => (prev > 0 ? Math.max(prev, rawScore) : rawScore));
+    } else {
+      setDisplayScore(0);
+    }
+  }, [isOpen, rawScore]);
+
+  const progressPercent = displayScore || rawScore;
 
   const nextLink = nextStep ? NEXT_STEP_LINKS[completedStepId] : "/dashboard";
   const nextCTA = nextStep
@@ -82,26 +108,26 @@ export function StepSuccessModal({
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.94, y: 12 }}
           transition={{ type: "spring", stiffness: 350, damping: 25 }}
-          className="relative w-full max-w-sm bg-white dark:bg-vendeur-coal border border-slate-200 dark:border-vendeur-emerald/40 rounded-2xl p-4 sm:p-5 shadow-2xl overflow-hidden text-slate-900 dark:text-white"
+          className="relative w-full max-w-md bg-white dark:bg-vendeur-coal border border-slate-200 dark:border-vendeur-emerald/40 rounded-3xl p-5 sm:p-6 shadow-2xl overflow-hidden text-slate-900 dark:text-white"
         >
           {/* Close Button */}
           <button
             onClick={onClose}
-            className="absolute top-3 right-3 p-1 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-500 hover:text-slate-900 dark:text-white/50 dark:hover:text-white transition-all cursor-pointer"
+            className="absolute top-3.5 right-3.5 p-1 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-500 hover:text-slate-900 dark:text-white/50 dark:hover:text-white transition-all cursor-pointer"
             title="Fermer"
           >
             <X size={14} />
           </button>
 
-          <div className="relative z-10 text-center space-y-3">
+          <div className="relative z-10 text-center space-y-4">
             {/* Animated Check Icon + Header Compact */}
             <div className="flex items-center justify-center gap-2.5 pt-1">
               <div className="h-10 w-10 rounded-xl bg-emerald-500 flex items-center justify-center text-white shrink-0 shadow-md shadow-emerald-500/20">
                 {STEP_ICONS[completedStepId] || <CheckCircle2 size={22} />}
               </div>
               <div className="text-left min-w-0">
-                <span className="text-[10px] font-black uppercase text-emerald-700 dark:text-vendeur-emerald tracking-wider">
-                  Étape complétée ✓
+                <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-wider text-emerald-600 dark:text-vendeur-emerald">
+                  <Zap size={11} /> Étape complétée ✓ ({progressPercent}%)
                 </span>
                 <h2 className="text-base sm:text-lg font-black text-slate-900 dark:text-white uppercase tracking-tight leading-tight truncate">
                   {completedStepLabel}
@@ -109,10 +135,20 @@ export function StepSuccessModal({
               </div>
             </div>
 
-            <p className="text-xs text-slate-600 dark:text-white/70 leading-normal line-clamp-2">
+            <p className="text-xs text-slate-600 dark:text-white/70 leading-relaxed px-1">
               {STEP_MESSAGES[completedStepId] ||
                 `Super, vous avez complété cette étape${businessName ? ` pour ${businessName}` : ""} !`}
             </p>
+
+            {/* Compact Progress Line */}
+            <div className="w-full bg-slate-100 dark:bg-black/60 rounded-full h-1.5 overflow-hidden border border-slate-200 dark:border-white/5">
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: `${progressPercent}%` }}
+                transition={{ duration: 0.6, ease: "easeOut" }}
+                className="h-full bg-vendeur-emerald rounded-full"
+              />
+            </div>
 
             {/* Actions */}
             <div className="space-y-2 pt-1">
@@ -130,7 +166,7 @@ export function StepSuccessModal({
 
               <button
                 onClick={onClose}
-                className="w-full text-center text-xs font-bold text-slate-500 hover:text-slate-900 dark:text-white/50 dark:hover:text-white transition-colors py-1 cursor-pointer"
+                className="w-full py-2 px-3 rounded-xl hover:bg-slate-100 dark:hover:bg-white/5 text-center text-xs font-bold text-slate-500 hover:text-slate-900 dark:text-white/50 dark:hover:text-white transition-colors cursor-pointer"
               >
                 Rester sur le tableau de bord
               </button>

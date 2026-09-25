@@ -116,7 +116,7 @@ export function WhatsAppConnectionFlow() {
   const isConnectedLive = isFounder || isBaileysConnected || isMetaConnected;
 
   const isPaidActive = merchant?.subscription?.status === "active";
-  const isPaused = isPaidActive && merchant?.aiSettings?.autoReply === false;
+  const isPaused = merchant?.aiSettings?.autoReply === false;
   const isDiscoveryMode = !isPaidActive;
 
   // Prefill phone on load
@@ -415,10 +415,10 @@ export function WhatsAppConnectionFlow() {
                     {isConnectedLive
                       ? isFounder
                         ? "Ligne Officielle Meta Cloud (24h/24)"
-                        : isPaidActive && !isPaused
-                          ? "En Vente 24h/24"
-                          : isPaused
-                            ? "Mode Pause (Manuel)"
+                        : isPaused
+                          ? "Mode Pause (WhatsApp Manuel)"
+                          : isPaidActive
+                            ? "En Vente 24h/24"
                             : "Ligne Connectée (Essai Gratuit)"
                       : "Ligne Non Connectée"}
                   </span>
@@ -933,7 +933,8 @@ export function WhatsAppConnectionFlow() {
         onClose={() => setShowMilestoneModal(false)}
         title="Ligne WhatsApp Connectée ! 🎉"
         subtitle="Votre WhatsApp de vente est désormais relié à votre Vendeur IA. Vos clients reçoivent des réponses automatiques en direct pendant votre essai gratuit."
-        score={dashboard?.setupStatus?.score ?? 70}
+        score={dashboard?.setupStatus?.score}
+        steps={dashboard?.setupStatus?.steps}
         stepNumber={2}
         totalSteps={3}
         primaryAction={{

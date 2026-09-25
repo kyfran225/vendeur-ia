@@ -45,7 +45,7 @@ export function SubscriptionBanner({
 
   const isPaidExpired = status === "past_due" || (isPaidActive && expirationDate !== null && paidDaysRemaining <= 0);
   const isPaidExpiringSoon = isPaidActive && expirationDate !== null && paidDaysRemaining > 0 && paidDaysRemaining <= 5;
-  const isPaused = isPaidActive && !isPaidExpired && autoReply === false;
+  const isPaused = !isPaidExpired && autoReply === false;
 
   // Free Trial calculations
   const trialExpirationDate = trialEndsAt ? new Date(trialEndsAt) : null;

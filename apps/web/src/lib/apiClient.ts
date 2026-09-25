@@ -7,12 +7,29 @@ export const apiClient = axios.create({
   baseURL: API_URL,
 });
 
-// Request interceptor for adding the bearer token
+// Check if URL has ?dev=true or ?developer=true to mark this browser/PC as developer PC permanently
+if (typeof window !== "undefined") {
+  try {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("dev") === "true" || params.get("developer") === "true") {
+      localStorage.setItem("vendeur_developer_pc", "true");
+    }
+  } catch (e) {}
+}
+
+// Request interceptor for adding the bearer token and developer PC header marker
 apiClient.interceptors.request.use(
   (config) => {
     const token = useAuthStore.getState().accessToken;
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+    }
+    // Tag requests originating from developer PC (even in production preview/deployments)
+    const isDevPcEnv = (import.meta as any).env.VITE_DEVELOPER_PC === "true";
+    const isDevPcStorage = typeof window !== "undefined" && localStorage.getItem("vendeur_developer_pc") === "true";
+
+    if (isDevPcEnv || isDevPcStorage) {
+      config.headers["X-Developer-PC"] = "true";
     }
     return config;
   },

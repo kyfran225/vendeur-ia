@@ -1032,7 +1032,7 @@ export function SalesInbox() {
         "flex bg-white dark:bg-[#111b21] text-slate-900 dark:text-white transition-all duration-300 animate-in fade-in h-full w-full min-h-0 flex-1 overflow-hidden",
         showMobileChat
           ? "fixed inset-0 z-[60] h-[100dvh] w-full rounded-none border-0 m-0 overflow-hidden md:relative md:inset-auto md:z-auto md:h-full md:rounded-2xl md:border md:border-slate-200 md:dark:border-white/10 md:shadow-2xl"
-          : "rounded-2xl border border-slate-200 dark:border-white/10 shadow-xl dark:shadow-2xl"
+          : "h-full w-full min-h-0 flex-1 rounded-2xl border border-slate-200 dark:border-white/10 shadow-xl dark:shadow-2xl overflow-hidden"
       )}
     >
       {/* ========================================================================= */}
@@ -1040,10 +1040,10 @@ export function SalesInbox() {
       {/* ========================================================================= */}
       <aside className={cn(
         "w-full md:w-[380px] lg:w-[420px] border-r border-slate-200 dark:border-white/10 flex flex-col bg-white dark:bg-[#111b21] transition-all shrink-0 h-full min-h-0 overflow-hidden",
-        showMobileChat ? "hidden md:flex" : "flex"
+        showMobileChat ? "hidden md:flex" : "flex flex-col h-full min-h-0 overflow-hidden"
       )}>
-        {/* Sidebar Header */}
-        <div className="p-4 bg-slate-50 dark:bg-[#202c33] border-b border-slate-200 dark:border-white/5 space-y-3">
+        {/* Sidebar Header (Fixed at top of sidebar) */}
+        <div className="p-3.5 sm:p-4 bg-slate-50 dark:bg-[#202c33] border-b border-slate-200 dark:border-white/5 space-y-3 shrink-0">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3 min-w-0">
               <Link
@@ -1189,8 +1189,8 @@ export function SalesInbox() {
           </div>
         </div>
 
-        {/* Conversation List */}
-        <div className="flex-1 overflow-y-auto divide-y divide-slate-100 dark:divide-white/5">
+        {/* Conversation List (Scrollable area) */}
+        <div className="flex-1 overflow-y-auto min-h-0 overscroll-contain divide-y divide-slate-100 dark:divide-white/5">
           {loadingChats ? (
             <div className="flex flex-col items-center justify-center p-12 space-y-3">
               <VendeurIALoader size="md" label="Chargement de vos échanges WhatsApp..." />

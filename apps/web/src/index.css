@@ -46,7 +46,8 @@ html.dark {
     width: 100%;
     min-height: 100%;
     overflow-x: hidden;
-    overflow-y: auto;
+    overscroll-behavior: none;
+    touch-action: manipulation;
     -webkit-overflow-scrolling: touch;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;

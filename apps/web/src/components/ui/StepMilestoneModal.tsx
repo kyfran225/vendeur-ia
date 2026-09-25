@@ -45,6 +45,7 @@ export interface StepMilestoneModalProps {
   secondaryAction?: NextAction; // e.g. "Ajouter un autre produit"
   dashboardActionLabel?: string; // default "Aller au Tableau de Bord"
   onDashboardClick?: () => void;
+  steps?: Array<{ id: string; label: string; completed: boolean; weight?: number }>;
 }
 
 export function StepMilestoneModal({
@@ -60,7 +61,8 @@ export function StepMilestoneModal({
   primaryAction,
   secondaryAction,
   dashboardActionLabel = "Tableau de Bord",
-  onDashboardClick
+  onDashboardClick,
+  steps
 }: StepMilestoneModalProps) {
   const navigate = useNavigate();
   const [secondsRemaining, setSecondsRemaining] = useState(autoRedirectSeconds);
@@ -68,10 +70,15 @@ export function StepMilestoneModal({
   const [displayScore, setDisplayScore] = useState<number>(0);
 
   // Compute raw score from props safely
-  const rawScore = Math.max(
-    0,
-    Math.min(100, score !== undefined ? score : stepNumber ? Math.round((stepNumber / totalSteps) * 100) : 50)
-  );
+  const rawScore = React.useMemo(() => {
+    if (score !== undefined && score !== null && !isNaN(score)) {
+      return Math.max(0, Math.min(100, score));
+    }
+    if (steps && steps.length > 0) {
+      return Math.min(100, Math.round(steps.reduce((acc: number, s: any) => acc + (s.completed ? (s.weight || 33) : 0), 0)));
+    }
+    return stepNumber && totalSteps ? Math.round((stepNumber / totalSteps) * 100) : 0;
+  }, [score, steps, stepNumber, totalSteps]);
 
   // Lock score on open and prevent regression while open
   useEffect(() => {
@@ -136,18 +143,18 @@ export function StepMilestoneModal({
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.94, y: 10 }}
           transition={{ type: "spring", damping: 25, stiffness: 350 }}
-          className="relative w-full max-w-sm bg-white dark:bg-[#0c120e] border border-slate-200 dark:border-vendeur-emerald/30 rounded-2xl p-4 sm:p-5 shadow-2xl overflow-hidden my-auto text-slate-900 dark:text-white"
+          className="relative w-full max-w-md bg-white dark:bg-[#0c120e] border border-slate-200 dark:border-vendeur-emerald/30 rounded-3xl p-5 sm:p-6 shadow-2xl overflow-hidden my-auto text-slate-900 dark:text-white"
         >
           {/* Close button */}
           <button
             onClick={onClose}
-            className="absolute top-3 right-3 p-1 rounded-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-500 hover:text-slate-900 dark:text-white/50 dark:hover:text-white transition-all cursor-pointer z-20"
+            className="absolute top-3.5 right-3.5 p-1 rounded-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-500 hover:text-slate-900 dark:text-white/50 dark:hover:text-white transition-all cursor-pointer z-20"
             title="Fermer"
           >
             <X size={14} />
           </button>
 
-          <div className="space-y-3.5 relative z-10 text-center">
+          <div className="space-y-4 relative z-10 text-center">
             {/* Success Badge Icon + Title Compact Row */}
             <div className="flex items-center justify-center gap-2.5 pt-1">
               <div className="h-10 w-10 rounded-xl bg-vendeur-emerald flex items-center justify-center text-vendeur-coal shrink-0 shadow-md shadow-vendeur-emerald/20">
@@ -164,7 +171,7 @@ export function StepMilestoneModal({
             </div>
 
             {subtitle && (
-              <p className="text-xs text-slate-600 dark:text-white/70 font-medium leading-normal line-clamp-2">
+              <p className="text-xs text-slate-600 dark:text-white/70 font-medium leading-relaxed px-1">
                 {subtitle}
               </p>
             )}
@@ -179,24 +186,23 @@ export function StepMilestoneModal({
               />
             </div>
 
-            {/* Primary Action Button */}
-            {primaryAction && (
-              <button
-                type="button"
-                onClick={() => {
-                  onClose();
-                  if (primaryAction.onClick) primaryAction.onClick();
-                  else if (primaryAction.href) navigate(primaryAction.href);
-                }}
-                className="w-full h-11 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black uppercase tracking-wider text-xs sm:text-sm rounded-xl flex items-center justify-center gap-2 px-4 active:scale-95 transition-all shadow-md shadow-emerald-500/20 cursor-pointer"
-              >
-                <span className="truncate">{primaryAction.label}</span>
-                <ArrowRight size={15} className="shrink-0" />
-              </button>
-            )}
+            {/* Actions Stack */}
+            <div className="space-y-2 pt-1">
+              {primaryAction && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    onClose();
+                    if (primaryAction.onClick) primaryAction.onClick();
+                    else if (primaryAction.href) navigate(primaryAction.href);
+                  }}
+                  className="w-full h-11 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black uppercase tracking-wider text-xs sm:text-sm rounded-xl flex items-center justify-center gap-2 px-4 active:scale-95 transition-all shadow-md shadow-emerald-500/20 cursor-pointer"
+                >
+                  <span className="truncate">{primaryAction.label}</span>
+                  <ArrowRight size={15} className="shrink-0" />
+                </button>
+              )}
 
-            {/* Secondary Action / Dashboard Options in one line */}
-            <div className="flex items-center justify-center gap-3 pt-0.5 text-xs font-bold">
               {secondaryAction && (
                 <button
                   type="button"
@@ -205,23 +211,23 @@ export function StepMilestoneModal({
                     if (secondaryAction.onClick) secondaryAction.onClick();
                     else if (secondaryAction.href) navigate(secondaryAction.href);
                   }}
-                  className="text-slate-700 dark:text-white/80 hover:text-emerald-600 dark:hover:text-vendeur-emerald underline underline-offset-2 transition-colors cursor-pointer"
+                  className="w-full py-2 px-3 rounded-xl bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 text-slate-700 dark:text-white/90 text-xs font-bold transition-colors cursor-pointer text-center truncate"
                 >
                   {secondaryAction.label}
                 </button>
               )}
-              {secondaryAction && <span className="text-slate-300 dark:text-white/20">•</span>}
+
               <button
                 type="button"
                 onClick={handleDashboard}
-                className="text-slate-500 dark:text-white/50 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer"
+                className="w-full py-1.5 px-3 rounded-xl hover:bg-slate-100 dark:hover:bg-white/5 text-slate-500 dark:text-white/50 hover:text-slate-900 dark:hover:text-white text-xs font-medium transition-colors cursor-pointer text-center truncate"
               >
                 {dashboardActionLabel}
               </button>
             </div>
 
             {/* Auto-redirect Timer line */}
-            <div className="flex items-center justify-center gap-1.5 text-[10px] text-slate-400 dark:text-white/40 font-mono pt-0.5">
+            <div className="flex items-center justify-center gap-1.5 text-[10px] text-slate-400 dark:text-white/40 font-mono pt-1">
               <Timer size={11} className={isPaused ? "text-amber-500" : "text-emerald-600 dark:text-vendeur-emerald"} />
               <span>
                 {isPaused ? "Redirection en pause" : `Suite automatique dans ${secondsRemaining}s`}

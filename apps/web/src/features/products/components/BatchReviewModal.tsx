@@ -393,7 +393,7 @@ export function BatchReviewModal({ image, rawItems, boutiqueName, currency = "XO
       </div>
 
       {/* Footer / Confirm Actions */}
-      <div className="px-4 py-3 sm:px-6 sm:py-4 border-t border-slate-200 dark:border-white/10 bg-white/95 dark:bg-zinc-950/95 backdrop-blur-md flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0">
+      <div className="px-4 pt-3.5 pb-20 sm:px-6 sm:py-4 border-t border-slate-200 dark:border-white/10 bg-white/95 dark:bg-zinc-950/95 backdrop-blur-md flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0">
         <div className="text-xs text-slate-500 dark:text-white/60 text-center sm:text-left hidden sm:block">
           <span className="font-bold text-slate-900 dark:text-white">{selectedCount} article{selectedCount > 1 ? "s" : ""}</span> prêt{selectedCount > 1 ? "s" : ""} à être ajouté{selectedCount > 1 ? "s" : ""} au catalogue de <strong className="text-emerald-600 dark:text-emerald-400">{boutiqueName}</strong>.
         </div>

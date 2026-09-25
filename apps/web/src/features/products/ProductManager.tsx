@@ -996,7 +996,7 @@ export function ProductManager() {
             </div>
 
             {/* Modal / Page Footer Actions */}
-            <div className="px-4 py-3.5 sm:px-8 sm:py-5 border-t border-slate-200 dark:border-white/5 bg-slate-50/95 dark:bg-[#0c1612]/95 backdrop-blur-md flex items-center justify-between gap-4 shrink-0 sticky bottom-0 z-20">
+            <div className="px-4 pt-3.5 pb-20 sm:px-8 sm:py-5 border-t border-slate-200 dark:border-white/5 bg-slate-50/95 dark:bg-[#0c1612]/95 backdrop-blur-md flex items-center justify-between gap-4 shrink-0 sticky bottom-0 z-20">
               <button
                 type="button"
                 onClick={() => { setEditingProduct(null); setIsAddingManual(false); }}
@@ -1672,7 +1672,8 @@ export function ProductManager() {
             onClose={() => setShowMilestoneModal(false)}
             title={modalTitle}
             subtitle={`« ${lastAddedName || itemLabel} » est enregistré. Votre commercial IA connaît désormais ses spécificités et ses tarifs.`}
-            score={dashboard?.setupStatus?.score ?? 100}
+            score={dashboard?.setupStatus?.score}
+            steps={dashboard?.setupStatus?.steps}
             stepNumber={3}
             totalSteps={3}
             primaryAction={nextActionConfig}

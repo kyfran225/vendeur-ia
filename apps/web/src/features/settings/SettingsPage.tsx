@@ -585,8 +585,20 @@ function BoutiqueTab({
   const isPaymentsModified = JSON.stringify(payments) !== JSON.stringify(initialPayments);
   const isDeliveryModified = JSON.stringify(deliveryFees) !== JSON.stringify(initialFees) ||
     JSON.stringify(localMerchant?.defaultDeliveryGuy) !== JSON.stringify(savedMerchant?.defaultDeliveryGuy);
-  const isMerchantModified = isDirty || (JSON.stringify(localMerchant) !== JSON.stringify(savedMerchant));
-  const hasChanges = isMerchantModified || isPaymentsModified || isDeliveryModified;
+  const isGeneralMerchantModified = isDirty || (
+    localMerchant?.businessName !== savedMerchant?.businessName ||
+    localMerchant?.city !== savedMerchant?.city ||
+    localMerchant?.country !== savedMerchant?.country ||
+    localMerchant?.address !== savedMerchant?.address ||
+    localMerchant?.description !== savedMerchant?.description ||
+    localMerchant?.category !== savedMerchant?.category ||
+    localMerchant?.currency !== savedMerchant?.currency ||
+    localMerchant?.billingCurrency !== savedMerchant?.billingCurrency ||
+    localMerchant?.whatsappNumber !== savedMerchant?.whatsappNumber ||
+    localMerchant?.phone !== savedMerchant?.phone
+  );
+  const isMerchantModified = isGeneralMerchantModified;
+  const hasChanges = isGeneralMerchantModified || isPaymentsModified || isDeliveryModified;
 
   const [showMilestoneModal, setShowMilestoneModal] = useState(false);
   const [savedSectionType, setSavedSectionType] = useState<"delivery" | "payments" | "all">("all");
@@ -1104,7 +1116,6 @@ function BoutiqueTab({
                           name: e.target.value
                         }
                       });
-                      setIsDirty(true);
                     }}
                     placeholder="Ex: Moussa Express, Livreur Diallo..."
                     className="w-full h-12 bg-slate-50 dark:bg-black/40 border border-slate-200 dark:border-white/10 rounded-xl sm:rounded-2xl px-3.5 text-xs sm:text-sm text-slate-900 dark:text-white font-bold outline-none focus:border-purple-500 transition-all"
@@ -1126,7 +1137,6 @@ function BoutiqueTab({
                           phone: e.target.value
                         }
                       });
-                      setIsDirty(true);
                     }}
                     placeholder="Ex: +225 07 00 00 00 00 ou 0700000000"
                     className="w-full h-12 bg-slate-50 dark:bg-black/40 border border-slate-200 dark:border-white/10 rounded-xl sm:rounded-2xl px-3.5 text-xs sm:text-sm text-slate-900 dark:text-white font-mono font-bold outline-none focus:border-purple-500 transition-all"
@@ -1136,10 +1146,13 @@ function BoutiqueTab({
 
               {/* Auto-Dispatch Toggle Card */}
               <div className="p-3.5 sm:p-4 rounded-2xl bg-purple-500/5 dark:bg-purple-500/10 border border-purple-500/20 flex items-center justify-between gap-3">
-                <div className="space-y-0.5 min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-black uppercase text-purple-900 dark:text-purple-200">Dispatch Automatique WhatsApp</span>
-                    <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-700 dark:text-purple-300 border border-purple-500/30">Auto ⚡</span>
+                <div className="space-y-1 min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                    <span className="text-xs font-black uppercase text-purple-950 dark:text-purple-100 tracking-tight">Dispatch Automatique WhatsApp</span>
+                    <span className="inline-flex items-center gap-1 shrink-0 whitespace-nowrap px-2.5 py-0.5 rounded-full bg-purple-500/20 text-purple-800 dark:text-purple-200 border border-purple-500/30 text-[10px] font-black uppercase tracking-wider shadow-2xs">
+                      <span>AUTO</span>
+                      <Zap size={11} className="text-amber-500 fill-amber-500/40 shrink-0" />
+                    </span>
                   </div>
                   <p className="text-[10px] sm:text-xs text-slate-600 dark:text-white/60">
                     Envoie immédiatement le bon de livraison pré-rempli (Nom client, Téléphone, Adresse, Point de repère, Montant à encaisser) à votre livreur dès qu'une commande est confirmée.
@@ -1158,7 +1171,6 @@ function BoutiqueTab({
                           autoDispatch: e.target.checked
                         }
                       });
-                      setIsDirty(true);
                     }}
                     className="sr-only peer"
                   />

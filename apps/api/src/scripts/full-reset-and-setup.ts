@@ -76,6 +76,40 @@ const offerSchema = new mongoose.Schema({
   metadata: mongoose.Schema.Types.Mixed,
 }, { timestamps: true });
 
+const systemSettingsSchema = new mongoose.Schema({
+  supportWhatsApp: { type: String, default: '+2250505111157' },
+  pricing: { type: mongoose.Schema.Types.Mixed },
+  metaConfig: { type: mongoose.Schema.Types.Mixed },
+  aiConfig: { type: mongoose.Schema.Types.Mixed },
+  manualPaymentConfig: { type: mongoose.Schema.Types.Mixed },
+  pushConfig: { type: mongoose.Schema.Types.Mixed },
+  maintenanceMode: { type: Boolean, default: false }
+}, { timestamps: true });
+
+const productSchema = new mongoose.Schema({
+  merchantId: { type: mongoose.Schema.Types.ObjectId, ref: 'CommerceMerchant', required: true },
+  name: { type: String, required: true },
+  price: { type: Number, required: true },
+  currency: { type: String, default: 'XOF' },
+  stock: { type: Number, default: 999 },
+  availability: { type: String, default: 'available' },
+  category: { type: String, default: 'services' },
+  isService: { type: Boolean, default: true },
+  description: { type: String }
+}, { timestamps: true });
+
+const subscriptionSchema = new mongoose.Schema({
+  userId: { type: String, required: true },
+  offerId: { type: mongoose.Schema.Types.ObjectId, ref: 'Offer' },
+  status: { type: String, default: 'active' },
+  billingInterval: { type: String, default: 'yearly' },
+  price: { type: Number, default: 0 },
+  currency: { type: String, default: 'XOF' },
+  currentPeriodStart: Date,
+  currentPeriodEnd: Date,
+  paymentMethod: { type: String, default: 'manual' }
+}, { timestamps: true });
+
 // ─── Données canoniques ──────────────────────────────────────────────────────
 
 const WAVE_MTN_PHONE = '+2250505111157';
@@ -204,6 +238,105 @@ async function setupDatabase(uri: string, envName: string) {
   const Merchant = conn.model('CommerceMerchant', merchantSchema);
   const Knowledge = conn.model('CommerceKnowledge', knowledgeSchema);
   const Offer = conn.model('Offer', offerSchema);
+  const SystemSettings = conn.model('SystemSettings', systemSettingsSchema);
+  const Product = conn.model('CommerceProduct', productSchema);
+  const Subscription = conn.model('Subscription', subscriptionSchema);
+
+  // 2b. Seed SystemSettings (Clés API IA, Meta Cloud, Payment Routing, Pricing)
+  console.log(`\n⚙️ [${envName}] Seeding des paramètres système (Clés API IA, Meta, Paiements)...`);
+  const GROQ_API_KEY = process.env.GROQ_API_KEY || '';
+  const OPENAI_API_KEY = process.env.OPENAI_API_KEY || '';
+  const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || '';
+  const ELEVENLABS_API_KEY = process.env.ELEVENLABS_API_KEY || '';
+  const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
+  const VAPID_PUBLIC_KEY = process.env.VAPID_PUBLIC_KEY || '';
+  const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY || '';
+  const META_APP_ID = process.env.WHATSAPP_META_APP_ID || process.env.META_APP_ID || '';
+  const META_VERIFY_TOKEN = process.env.WHATSAPP_META_VERIFY_TOKEN || process.env.META_VERIFY_TOKEN || '';
+
+  await SystemSettings.create({
+    supportWhatsApp: WAVE_MTN_PHONE,
+    pricing: {
+      essentialMonthly: 5000,
+      proMonthly: 20000,
+      packProFee: 25000,
+      ramContributionFee: 5000,
+      premiumSubscriptionMonthly: 5000,
+      regional: [
+        { currency: "XOF", essentialMonthly: 5000, proMonthly: 20000, premiumMonthly: 5000, businessMonthly: 20000, packPro: 25000, ramFee: 5000 },
+        { currency: "XAF", essentialMonthly: 5000, proMonthly: 20000, premiumMonthly: 5000, businessMonthly: 20000, packPro: 25000, ramFee: 5000 },
+        { currency: "GNF", essentialMonthly: 75000, proMonthly: 300000, premiumMonthly: 75000, businessMonthly: 300000, packPro: 375000, ramFee: 75000 },
+        { currency: "EUR", essentialMonthly: 9, proMonthly: 35, premiumMonthly: 9, businessMonthly: 35, packPro: 45, ramFee: 9 }
+      ]
+    },
+    metaConfig: {
+      globalAppId: META_APP_ID,
+      globalVerifyToken: META_VERIFY_TOKEN,
+      whatsappDefaults: {
+        phoneNumberId: WHATSAPP_PHONE_ID,
+        accessToken: WHATSAPP_ACCESS_TOKEN
+      }
+    },
+    aiConfig: {
+      defaultTextProvider: process.env.DISABLE_GEMINI === 'true' ? 'groq' : 'gemini',
+      defaultVisionProvider: process.env.DISABLE_GEMINI === 'true' ? 'openai' : 'gemini',
+      defaultAudioProvider: 'elevenlabs',
+      providers: [
+        {
+          name: 'gemini',
+          apiKey: GEMINI_API_KEY,
+          isActive: process.env.DISABLE_GEMINI !== 'true' && !!GEMINI_API_KEY,
+          models: { text: 'gemini-2.0-flash', vision: 'gemini-2.0-flash', audio: '' }
+        },
+        {
+          name: 'groq',
+          apiKey: GROQ_API_KEY,
+          isActive: !!GROQ_API_KEY,
+          models: { text: 'openai/gpt-oss-120b', vision: '', audio: '' }
+        },
+        {
+          name: 'openai',
+          apiKey: OPENAI_API_KEY,
+          isActive: process.env.DISABLE_OPENAI !== 'true' && !!OPENAI_API_KEY,
+          models: { text: 'gpt-4o-mini', vision: 'gpt-4o', audio: 'tts-1' }
+        },
+        {
+          name: 'openrouter',
+          apiKey: OPENROUTER_API_KEY,
+          isActive: !!OPENROUTER_API_KEY,
+          models: { text: 'openrouter/free', vision: '', audio: '' }
+        },
+        {
+          name: 'elevenlabs',
+          apiKey: ELEVENLABS_API_KEY,
+          isActive: !!ELEVENLABS_API_KEY,
+          models: { text: '', vision: '', audio: 'eleven_multilingual_v2' }
+        }
+      ],
+      notificationSettings: {
+        enablePush: true,
+        enableEmail: false,
+        alertThreshold: 'always'
+      }
+    },
+    manualPaymentConfig: {
+      enabled: true,
+      recipientName: 'Vendeur IA',
+      waveNumber: WAVE_MTN_PHONE,
+      orangeMoneyNumber: ORANGE_PHONE,
+      mtnNumber: WAVE_MTN_PHONE,
+      moovNumber: '+2250100000000',
+      djamoTag: '$vendeuria',
+      instructions: "Effectuez votre transfert vers le numéro correspondant, puis renseignez l'ID de transaction ci-dessous.",
+      autoApproveConfidenceThreshold: 95
+    },
+    pushConfig: {
+      vapidPublicKey: VAPID_PUBLIC_KEY,
+      vapidPrivateKey: VAPID_PRIVATE_KEY
+    },
+    maintenanceMode: false
+  });
+  console.log(`✅ [${envName}] SystemSettings créés avec clés IA et Meta Cloud.`);
 
   // 3. Créer admin fondateur
   console.log(`\n👤 [${envName}] Création du compte admin fondateur...`);
@@ -261,6 +394,57 @@ async function setupDatabase(uri: string, envName: string) {
     },
   });
   console.log(`✅ [${envName}] Merchant créé : ${merchant.businessName} | Plan: Pro actif | ID: ${merchant._id}`);
+
+  // 4b. Produits officiels & Abonnement
+  await Product.create([
+    {
+      merchantId: merchant._id,
+      name: "Abonnement Vendeur IA - Pack Essentiel",
+      price: 5000,
+      currency: "XOF",
+      stock: 999,
+      availability: "available",
+      category: "services",
+      isService: true,
+      description: "IA commerciale WhatsApp 24h/24 & 7j/7, catalogue produits complet, détection automatique des reçus Mobile Money (Wave, MTN, Orange, Moov) et prise de commandes automatique."
+    },
+    {
+      merchantId: merchant._id,
+      name: "Abonnement Vendeur IA - Pack Pro",
+      price: 20000,
+      currency: "XOF",
+      stock: 999,
+      availability: "available",
+      category: "services",
+      isService: true,
+      description: "Tout ce qui est inclus dans Essentiel + Numéro Officiel Meta Cloud API, Multi-Canal (WhatsApp + Instagram), Broadcast IA marketing, PaymentShield Forensic, Vocaux IA et Support VIP 7j/7."
+    },
+    {
+      merchantId: merchant._id,
+      name: "Configuration & Déploiement Clé en main (Pack Pro Expert Setup)",
+      price: 25000,
+      currency: "XOF",
+      stock: 999,
+      availability: "available",
+      category: "services",
+      isService: true,
+      description: "Mise en service complète et clé en main par nos experts : intégration WhatsApp Meta Cloud API, saisie du catalogue, entraînement personnalisé de votre IA et tests en direct."
+    }
+  ]);
+
+  const oneYearFromNow = new Date();
+  oneYearFromNow.setFullYear(oneYearFromNow.getFullYear() + 1);
+
+  await Subscription.create({
+    userId: user._id.toString(),
+    status: "active",
+    billingInterval: "yearly",
+    price: 0,
+    currency: "XOF",
+    currentPeriodStart: new Date(),
+    currentPeriodEnd: oneYearFromNow,
+    paymentMethod: "manual"
+  });
 
   // 5. Seeder les offres
   console.log(`\n💎 [${envName}] Seed des offres officielles...`);

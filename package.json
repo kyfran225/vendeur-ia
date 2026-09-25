@@ -17,6 +17,7 @@
     "typecheck": "turbo typecheck",
     "test": "turbo test",
     "db:reset": "pnpm --filter @vendeur-ia/api db:reset",
+    "db:full-reset": "pnpm --filter @vendeur-ia/api db:full-reset",
     "db:purge": "pnpm --filter @vendeur-ia/api db:purge",
     "db:backup": "pnpm --filter @vendeur-ia/api db:backup",
     "db:restore": "pnpm --filter @vendeur-ia/api db:restore"

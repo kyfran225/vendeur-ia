@@ -13,9 +13,11 @@ interface OrderReceiptModalProps {
 
 export function OrderReceiptModal({ isOpen, onClose, order, merchant }: OrderReceiptModalProps) {
   const receiptRef = useRef<HTMLDivElement>(null);
+  const [logoError, setLogoError] = React.useState(false);
 
   if (!isOpen || !order) return null;
 
+  const logoUrl = merchant?.branding?.logoUrl || merchant?.logoUrl;
   const orderNumber = order._id?.toString().slice(-6).toUpperCase() || "000000";
   const formattedDate = new Date(order.createdAt).toLocaleDateString("fr-FR", {
     day: "2-digit",
@@ -81,8 +83,19 @@ export function OrderReceiptModal({ isOpen, onClose, order, merchant }: OrderRec
         {/* Printable Ticket Receipt Area */}
         <div className="p-6 md:p-8 overflow-y-auto flex-1 bg-white text-black font-sans print:p-0" ref={receiptRef}>
           <div className="text-center space-y-2 pb-6 border-b-2 border-dashed border-neutral-300">
-            <div className="h-12 w-12 rounded-2xl bg-neutral-900 text-white flex items-center justify-center mx-auto shadow-md">
-              <ShoppingBag size={24} />
+            <div className="h-14 w-14 rounded-2xl overflow-hidden bg-neutral-100 border border-neutral-200 flex items-center justify-center mx-auto shadow-sm">
+              {logoUrl && !logoError ? (
+                <img
+                  src={logoUrl}
+                  alt={merchant?.businessName || "Boutique"}
+                  onError={() => setLogoError(true)}
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <div className="h-full w-full bg-emerald-600 text-white flex items-center justify-center font-black text-xl uppercase">
+                  {(merchant?.businessName?.[0] || "V").toUpperCase()}
+                </div>
+              )}
             </div>
             <h2 className="text-xl font-black uppercase tracking-tight text-neutral-900">{merchant?.businessName || "Vendeur IA"}</h2>
             <p className="text-xs text-neutral-500 font-medium">{merchant?.city || "Boutique Officielle"}, {merchant?.country || "CI"}</p>

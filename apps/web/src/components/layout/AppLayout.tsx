@@ -33,18 +33,28 @@ export function AppLayout() {
   // Auto-hide header when scrolling DOWN, reveal when scrolling UP
   const handleScroll = () => {
     if (isInbox || !mainRef.current) return;
-    const currentScrollTop = mainRef.current.scrollTop;
-    const diff = currentScrollTop - lastScrollTopRef.current;
+    const { scrollTop, scrollHeight, clientHeight } = mainRef.current;
+    const diff = scrollTop - lastScrollTopRef.current;
 
-    if (Math.abs(diff) > 8) {
-      if (currentScrollTop > 60 && diff > 0) {
+    // Prevent auto-hide if near top OR near bottom (where overscroll/bounce causes flickering)
+    const isNearTop = scrollTop <= 40;
+    const isNearBottom = scrollTop + clientHeight >= scrollHeight - 80;
+
+    if (isNearTop || isNearBottom) {
+      setIsHeaderHidden(false);
+      lastScrollTopRef.current = scrollTop;
+      return;
+    }
+
+    if (Math.abs(diff) > 10) {
+      if (diff > 0 && scrollTop > 60) {
         // Scrolling DOWN -> Hide header
         setIsHeaderHidden(true);
-      } else if (diff < 0 || currentScrollTop <= 20) {
-        // Scrolling UP or near top -> Show header
+      } else if (diff < 0) {
+        // Scrolling UP -> Show header
         setIsHeaderHidden(false);
       }
-      lastScrollTopRef.current = currentScrollTop;
+      lastScrollTopRef.current = scrollTop;
     }
   };
 
@@ -56,10 +66,8 @@ export function AppLayout() {
         {!isInbox && (
           <div
             className={cn(
-              "sticky top-0 w-full z-40 transition-all duration-300 ease-in-out shrink-0",
-              isHeaderHidden
-                ? "-mt-14 md:-mt-16 opacity-0 pointer-events-none"
-                : "mt-0 opacity-100"
+              "sticky top-0 w-full z-40 transition-transform duration-300 ease-in-out shrink-0",
+              isHeaderHidden ? "-translate-y-full" : "translate-y-0"
             )}
           >
             <ShellHeader />

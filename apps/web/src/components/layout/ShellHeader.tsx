@@ -267,7 +267,7 @@ export function ShellHeader({ isVisible = true }: ShellHeaderProps) {
       />
 
       <header
-        className="h-14 md:h-16 border-b border-slate-200/80 dark:border-white/5 bg-white/80 dark:bg-[#07100d]/90 backdrop-blur-md flex items-center justify-between px-3 sm:px-4 md:px-10 w-full gap-2.5 sm:gap-4 shrink-0 transition-colors"
+        className="h-14 md:h-16 border-b border-slate-200/80 dark:border-white/5 bg-white dark:bg-[#07100d] backdrop-blur-md flex items-center justify-between px-3 sm:px-4 md:px-10 w-full gap-2.5 sm:gap-4 shrink-0 transition-colors relative z-[90]"
       >
         {/* Brand & Business Identity */}
         <div className="flex items-center gap-2.5 sm:gap-3 md:gap-4 flex-1 min-w-0">
@@ -421,17 +421,17 @@ export function ShellHeader({ isVisible = true }: ShellHeaderProps) {
               )}
             </button>
 
-            {/* Dropdown Floating Panel Backdrop (Mobile Only) */}
+            {/* Dropdown Floating Panel Backdrop (Mobile Only - positioned below header) */}
             {isDropdownOpen && (
               <div
-                className="fixed inset-0 bg-black/30 dark:bg-black/50 backdrop-blur-[2px] z-[85] md:hidden animate-in fade-in duration-150"
+                className="fixed inset-x-0 top-14 md:top-16 bottom-0 bg-black/40 dark:bg-black/60 backdrop-blur-sm z-[85] md:hidden animate-in fade-in duration-150"
                 onClick={() => setIsDropdownOpen(false)}
               />
             )}
 
             {/* Dropdown Floating Panel */}
             {isDropdownOpen && (
-              <div className="absolute right-0 mt-2.5 w-[calc(100vw-1.5rem)] sm:w-88 max-w-[375px] max-h-[calc(100dvh-9.5rem)] overflow-y-auto overscroll-contain no-scrollbar bg-white dark:bg-[#0c1612] border border-slate-200 dark:border-white/10 rounded-3xl shadow-2xl p-3.5 sm:p-5 space-y-2.5 sm:space-y-4 z-[90] animate-in fade-in slide-in-from-top-2 duration-200 backdrop-blur-xl">
+              <div className="absolute right-0 mt-2.5 w-[calc(100vw-1.5rem)] sm:w-88 max-w-[375px] max-h-[calc(100dvh-9.5rem)] overflow-y-auto overscroll-contain no-scrollbar bg-white dark:bg-[#0c1612] border border-slate-200 dark:border-white/10 rounded-3xl shadow-2xl p-3.5 sm:p-5 space-y-2.5 sm:space-y-4 z-[100] animate-in fade-in slide-in-from-top-2 duration-200 backdrop-blur-xl">
                 {/* 1. Header Profile Card */}
                 <div className="p-3 sm:p-3.5 bg-slate-50 dark:bg-white/5 border border-slate-200/80 dark:border-white/5 rounded-2xl flex items-center gap-3">
                   <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-2xl overflow-hidden shrink-0 bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-600 dark:text-vendeur-emerald font-black text-xs sm:text-sm">

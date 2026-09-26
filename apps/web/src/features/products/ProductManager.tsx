@@ -213,7 +213,7 @@ export function ProductManager() {
     imageUrl: "",
     digitalUrl: "",
     digitalFormat: "PDF / E-Book",
-    serviceDuration: "1h",
+    serviceDuration: "",
     serviceDeliveryType: "Présentiel",
     preparationTime: "15-20 min",
     foodOptions: ""
@@ -284,7 +284,7 @@ export function ProductManager() {
         imageUrl: "",
         digitalUrl: "",
         digitalFormat: "PDF / E-Book",
-        serviceDuration: "1h",
+        serviceDuration: "",
         serviceDeliveryType: "Présentiel",
         preparationTime: "15-20 min",
         foodOptions: ""
@@ -863,12 +863,12 @@ export function ProductManager() {
                         </label>
                         <input
                           className="w-full h-12 rounded-2xl bg-slate-50 dark:bg-black/40 border border-slate-300 dark:border-white/10 px-4 text-sm font-medium text-slate-900 dark:text-white outline-none focus:border-emerald-500 transition-all placeholder:text-slate-400 dark:placeholder:text-white/20"
-                          value={editingProduct ? (editingProduct.serviceDuration || "1h") : newProduct.serviceDuration}
+                          value={editingProduct ? (editingProduct.serviceDuration ?? "") : newProduct.serviceDuration}
                           onChange={e => editingProduct
                             ? setEditingProduct({...editingProduct, serviceDuration: e.target.value})
                             : setNewProduct({...newProduct, serviceDuration: e.target.value})
                           }
-                          placeholder="ex: 45 min, 1h30"
+                          placeholder="ex: 1 min, 15 min, 1h30"
                         />
                       </div>
                     )}
@@ -880,7 +880,7 @@ export function ProductManager() {
                         </label>
                         <input
                           className="w-full h-12 rounded-2xl bg-slate-50 dark:bg-black/40 border border-slate-300 dark:border-white/10 px-4 text-sm font-medium text-slate-900 dark:text-white outline-none focus:border-emerald-500 transition-all placeholder:text-slate-400 dark:placeholder:text-white/20"
-                          value={editingProduct ? (editingProduct.preparationTime || "15-20 min") : newProduct.preparationTime}
+                          value={editingProduct ? (editingProduct.preparationTime ?? "") : newProduct.preparationTime}
                           onChange={e => editingProduct
                             ? setEditingProduct({...editingProduct, preparationTime: e.target.value})
                             : setNewProduct({...newProduct, preparationTime: e.target.value})

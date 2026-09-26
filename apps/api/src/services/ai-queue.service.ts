@@ -211,14 +211,18 @@ Réponds UNIQUEMENT avec le texte final du message.`;
     const isPaidActive = merchantData?.subscription?.status === "active" || isFounder;
     const now = new Date();
     const isTrial = merchantData?.subscription?.status === "trial" || (!merchantData?.subscription?.status && !isPaidActive);
-    // Defensive fallback: if trialEndsAt is missing (old/partial onboarding), infer from createdAt + 7 days
+    // Defensive fallback: if trialEndsAt is missing (old/partial onboarding), infer from createdAt + 7 days.
+    // If createdAt is also missing, default to allowing (fail-open) to avoid silently blocking legit merchants.
     const rawTrialEndsAt = merchantData?.subscription?.trialEndsAt
       ? new Date(merchantData.subscription.trialEndsAt)
-      : (isTrial && (merchantData as any)?.createdAt ? new Date(new Date((merchantData as any).createdAt).getTime() + 7 * 24 * 60 * 60 * 1000) : null);
+      : (isTrial && (merchantData as any)?.createdAt
+          ? new Date(new Date((merchantData as any).createdAt).getTime() + 7 * 24 * 60 * 60 * 1000)
+          : isTrial ? new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000) : null); // no createdAt → grant 7 days from now (fail-open)
     const trialUsage = merchantData?.subscription?.trialUsage || { messagesCount: 0, maxMessages: 50 };
     const isTrialValid = isTrial && rawTrialEndsAt && rawTrialEndsAt > now && (trialUsage.messagesCount ?? 0) < (trialUsage.maxMessages ?? 50);
 
-    if (!isPaidActive && !isTrialValid && !jobData.isSimulator) {
+    // If merchantData itself is missing, let the job through — better to respond than to silently drop.
+    if (merchantData && !isPaidActive && !isTrialValid && !jobData.isSimulator) {
       console.log(`[AI Queue] Free Trial Expired or Inactive: AI locked for merchant ${merchantData?._id}. Skipping live AI response.`);
       return { status: 'skipped_inactive_subscription_or_trial' };
     }
@@ -524,10 +528,10 @@ export async function addAIJob(context: SalesContext & { userId: string; convers
   try {
     await aiQueue.add('process-message', context, {
       jobId: dedupeJobId,
-      attempts: 1, // Only 1 attempt — duplicate sends are worse than missing a retry
+      attempts: 2, // 2 attempts: covers transient Groq timeouts/rate-limits without risking duplicates (jobId deduplication handles that)
       backoff: {
         type: 'exponential',
-        delay: 1000,
+        delay: 3000,
       },
     });
   } catch (queueError: any) {

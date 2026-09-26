@@ -1204,13 +1204,11 @@ class WhatsAppService {
       }
     }
 
-    // Check if message already recorded in DB to prevent duplicate processing
-    if (messageId) {
-      const existingInDb = await CommerceMessageModel.findOne({ whatsappMessageId: messageId }).select("_id").lean();
-      if (existingInDb) {
-        return;
-      }
-    }
+    // NOTE: We intentionally do NOT check DB for existing whatsappMessageId here.
+    // The in-memory processedMessageIds set (above) already deduplicates within a session.
+    // A strict DB check would block messages retransmitted by Baileys on reconnection
+    // that were received but never processed by the AI (race condition on restart).
+    // BullMQ jobId deduplication (`ai:${conversationId}:${messageId}`) handles the rest.
 
     const imageMsg = rawMsg.imageMessage || rawMsg.interactiveMessage?.header?.imageMessage || rawMsg.templateMessage?.hydratedTemplate?.imageMessage || rawMsg.templateMessage?.hydratedFourRowTemplate?.imageMessage;
     const audioMsg = rawMsg.audioMessage;

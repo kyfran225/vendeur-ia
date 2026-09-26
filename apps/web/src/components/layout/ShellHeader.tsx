@@ -421,12 +421,20 @@ export function ShellHeader({ isVisible = true }: ShellHeaderProps) {
               )}
             </button>
 
+            {/* Dropdown Floating Panel Backdrop (Mobile Only) */}
+            {isDropdownOpen && (
+              <div
+                className="fixed inset-0 bg-black/30 dark:bg-black/50 backdrop-blur-[2px] z-[85] md:hidden animate-in fade-in duration-150"
+                onClick={() => setIsDropdownOpen(false)}
+              />
+            )}
+
             {/* Dropdown Floating Panel */}
             {isDropdownOpen && (
-              <div className="absolute right-0 mt-2.5 w-[calc(100vw-1.5rem)] sm:w-88 max-w-[375px] bg-white dark:bg-[#0c1612] border border-slate-200 dark:border-white/10 rounded-3xl shadow-2xl p-4 sm:p-5 space-y-3.5 sm:space-y-4 z-[90] animate-in fade-in slide-in-from-top-2 duration-200 backdrop-blur-xl">
+              <div className="absolute right-0 mt-2.5 w-[calc(100vw-1.5rem)] sm:w-88 max-w-[375px] max-h-[calc(100dvh-9.5rem)] overflow-y-auto overscroll-contain no-scrollbar bg-white dark:bg-[#0c1612] border border-slate-200 dark:border-white/10 rounded-3xl shadow-2xl p-3.5 sm:p-5 space-y-2.5 sm:space-y-4 z-[90] animate-in fade-in slide-in-from-top-2 duration-200 backdrop-blur-xl">
                 {/* 1. Header Profile Card */}
-                <div className="p-3.5 bg-slate-50 dark:bg-white/5 border border-slate-200/80 dark:border-white/5 rounded-2xl flex items-center gap-3.5">
-                  <div className="h-12 w-12 rounded-2xl overflow-hidden shrink-0 bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-600 dark:text-vendeur-emerald font-black text-sm">
+                <div className="p-3 sm:p-3.5 bg-slate-50 dark:bg-white/5 border border-slate-200/80 dark:border-white/5 rounded-2xl flex items-center gap-3">
+                  <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-2xl overflow-hidden shrink-0 bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-600 dark:text-vendeur-emerald font-black text-xs sm:text-sm">
                     {userAvatarUrl && !avatarError ? (
                       <img
                         src={userAvatarUrl}
@@ -439,55 +447,55 @@ export function ShellHeader({ isVisible = true }: ShellHeaderProps) {
                     )}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-black uppercase text-slate-900 dark:text-white truncate">
+                    <p className="text-xs sm:text-sm font-black uppercase text-slate-900 dark:text-white truncate">
                       {merchant?.businessName || user?.displayName || "Mon Compte"}
                     </p>
-                    <p className="text-xs font-mono text-slate-500 dark:text-white/50 truncate mt-0.5">
+                    <p className="text-[11px] sm:text-xs font-mono text-slate-500 dark:text-white/50 truncate mt-0.5">
                       {activePhone ? formatDisplayPhone(activePhone, merchant?.country || "CI") : (user?.email || "Vendeur IA")}
                     </p>
                   </div>
-                  <span className="px-2.5 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-700 dark:text-vendeur-emerald text-[10px] sm:text-xs font-black uppercase shrink-0">
+                  <span className="px-2 sm:px-2.5 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-700 dark:text-vendeur-emerald text-[9px] sm:text-xs font-black uppercase shrink-0">
                     {subscription?.plan ? subscription.plan.toUpperCase() : "ACTIVE"}
                   </span>
                 </div>
 
                 {/* 2. Theme Selector Control */}
-                <div className="p-3 bg-slate-50 dark:bg-white/5 border border-slate-200/80 dark:border-white/5 rounded-2xl flex items-center justify-between gap-2">
+                <div className="p-2.5 sm:p-3 bg-slate-50 dark:bg-white/5 border border-slate-200/80 dark:border-white/5 rounded-2xl flex items-center justify-between gap-2">
                   <span className="text-xs sm:text-sm font-bold text-slate-700 dark:text-white/80">Thème d'affichage</span>
                   <div className="inline-flex items-center p-1 rounded-xl bg-slate-200/80 dark:bg-black/40 border border-slate-300/60 dark:border-white/10 gap-1">
                     <button
                       type="button"
                       onClick={() => setTheme("light")}
                       className={cn(
-                        "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black uppercase transition-all cursor-pointer",
+                        "flex items-center gap-1.5 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg text-xs font-black uppercase transition-all cursor-pointer",
                         resolvedTheme === "light"
                           ? "bg-white text-slate-950 shadow-sm"
                           : "text-slate-500 dark:text-white/50 hover:text-slate-900 dark:hover:text-white"
                       )}
                     >
-                      <Sun size={14} className="text-amber-500" />
+                      <Sun size={13} className="text-amber-500" />
                       <span>Clair</span>
                     </button>
                     <button
                       type="button"
                       onClick={() => setTheme("dark")}
                       className={cn(
-                        "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black uppercase transition-all cursor-pointer",
+                        "flex items-center gap-1.5 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg text-xs font-black uppercase transition-all cursor-pointer",
                         resolvedTheme === "dark"
                           ? "bg-vendeur-emerald text-slate-950 font-black shadow-sm"
                           : "text-slate-500 dark:text-white/50 hover:text-slate-900 dark:hover:text-white"
                       )}
                     >
-                      <Moon size={14} />
+                      <Moon size={13} />
                       <span>Sombre</span>
                     </button>
                   </div>
                 </div>
 
                 {/* 3. Language Selector (FR / EN) */}
-                <div className="p-3 bg-slate-50 dark:bg-white/5 border border-slate-200/80 dark:border-white/5 rounded-2xl flex items-center justify-between gap-2">
+                <div className="p-2.5 sm:p-3 bg-slate-50 dark:bg-white/5 border border-slate-200/80 dark:border-white/5 rounded-2xl flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2 text-xs sm:text-sm font-bold text-slate-700 dark:text-white/80">
-                    <Globe size={15} className="text-emerald-600 dark:text-vendeur-emerald shrink-0" />
+                    <Globe size={14} className="text-emerald-600 dark:text-vendeur-emerald shrink-0" />
                     <span>Langue / Language</span>
                   </div>
                   <div className="inline-flex items-center p-1 rounded-xl bg-slate-200/80 dark:bg-black/40 border border-slate-300/60 dark:border-white/10 gap-1">
@@ -498,13 +506,14 @@ export function ShellHeader({ isVisible = true }: ShellHeaderProps) {
                         toast.success("Langue : Français (défaut)");
                       }}
                       className={cn(
-                        "px-3 py-1.5 rounded-lg text-xs font-black uppercase transition-all cursor-pointer",
+                        "flex items-center gap-1.5 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg text-xs font-black uppercase transition-all cursor-pointer",
                         selectedLanguage === "fr"
                           ? "bg-vendeur-emerald text-slate-950 font-black shadow-sm"
                           : "text-slate-500 dark:text-white/50 hover:text-slate-900 dark:hover:text-white"
                       )}
                     >
-                      FR 🇫🇷
+                      <span>FR</span>
+                      <img src="https://flagcdn.com/w40/fr.png" alt="France" className="w-4 h-3 object-cover rounded-2xs shadow-xs shrink-0" />
                     </button>
                     <button
                       type="button"
@@ -513,25 +522,27 @@ export function ShellHeader({ isVisible = true }: ShellHeaderProps) {
                         toast.info("English language active 🇬🇧");
                       }}
                       className={cn(
-                        "px-3 py-1.5 rounded-lg text-xs font-black uppercase transition-all cursor-pointer",
+                        "flex items-center gap-1.5 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg text-xs font-black uppercase transition-all cursor-pointer",
                         selectedLanguage === "en"
                           ? "bg-vendeur-emerald text-slate-950 font-black shadow-sm"
                           : "text-slate-500 dark:text-white/50 hover:text-slate-900 dark:hover:text-white"
                       )}
                     >
-                      EN 🇬🇧
+                      <span>EN</span>
+                      <img src="https://flagcdn.com/w40/gb.png" alt="United Kingdom" className="w-4 h-3 object-cover rounded-2xs shadow-xs shrink-0" />
                     </button>
                   </div>
                 </div>
 
                 {/* 4. Quick Nav Links */}
-                <div className="space-y-1.5 pt-2 border-t border-slate-200/80 dark:border-white/5">
+                <div className="space-y-1 pt-2 border-t border-slate-200/80 dark:border-white/5">
                   <Link
                     to="/settings?tab=boutique"
-                    className="flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-bold text-slate-700 dark:text-white/80 hover:bg-slate-100 dark:hover:bg-white/5 hover:text-slate-950 dark:hover:text-white transition-all group"
+                    onClick={() => setIsDropdownOpen(false)}
+                    className="flex items-center justify-between px-3 py-2 sm:px-3.5 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold text-slate-700 dark:text-white/80 hover:bg-slate-100 dark:hover:bg-white/5 hover:text-slate-950 dark:hover:text-white transition-all group"
                   >
                     <div className="flex items-center gap-3">
-                      <User size={17} className="text-emerald-600 dark:text-vendeur-emerald group-hover:scale-110 transition-transform" />
+                      <User size={16} className="text-emerald-600 dark:text-vendeur-emerald group-hover:scale-110 transition-transform" />
                       <span>Mon Profil Boutique</span>
                     </div>
                     <ChevronDown size={14} className="-rotate-90 text-slate-400 group-hover:text-slate-700 dark:group-hover:text-white transition-colors" />
@@ -540,10 +551,11 @@ export function ShellHeader({ isVisible = true }: ShellHeaderProps) {
                   <Link
                     to={getMerchantShopPath(merchant)}
                     target="_blank"
-                    className="flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-bold text-slate-700 dark:text-white/80 hover:bg-slate-100 dark:hover:bg-white/5 hover:text-slate-950 dark:hover:text-white transition-all group"
+                    onClick={() => setIsDropdownOpen(false)}
+                    className="flex items-center justify-between px-3 py-2 sm:px-3.5 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold text-slate-700 dark:text-white/80 hover:bg-slate-100 dark:hover:bg-white/5 hover:text-slate-950 dark:hover:text-white transition-all group"
                   >
                     <div className="flex items-center gap-3">
-                      <Store size={17} className="text-emerald-600 dark:text-vendeur-emerald group-hover:scale-110 transition-transform" />
+                      <Store size={16} className="text-emerald-600 dark:text-vendeur-emerald group-hover:scale-110 transition-transform" />
                       <span>Ma Vitrine en Ligne</span>
                     </div>
                     <ExternalLink size={14} className="text-slate-400 group-hover:text-slate-700 dark:group-hover:text-white transition-colors" />
@@ -551,30 +563,33 @@ export function ShellHeader({ isVisible = true }: ShellHeaderProps) {
 
                   <Link
                     to="/settings"
-                    className="flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-bold text-slate-700 dark:text-white/80 hover:bg-slate-100 dark:hover:bg-white/5 hover:text-slate-950 dark:hover:text-white transition-all group"
+                    onClick={() => setIsDropdownOpen(false)}
+                    className="flex items-center justify-between px-3 py-2 sm:px-3.5 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold text-slate-700 dark:text-white/80 hover:bg-slate-100 dark:hover:bg-white/5 hover:text-slate-950 dark:hover:text-white transition-all group"
                   >
                     <div className="flex items-center gap-3">
-                      <Settings size={17} className="text-slate-500 dark:text-white/50 group-hover:text-emerald-600 dark:group-hover:text-vendeur-emerald group-hover:rotate-45 transition-all" />
+                      <Settings size={16} className="text-slate-500 dark:text-white/50 group-hover:text-emerald-600 dark:group-hover:text-vendeur-emerald group-hover:rotate-45 transition-all" />
                       <span>Paramètres de la Boutique</span>
                     </div>
                   </Link>
 
                   <Link
                     to="/help"
-                    className="flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-bold text-slate-700 dark:text-white/80 hover:bg-slate-100 dark:hover:bg-white/5 hover:text-slate-950 dark:hover:text-white transition-all group"
+                    onClick={() => setIsDropdownOpen(false)}
+                    className="flex items-center justify-between px-3 py-2 sm:px-3.5 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold text-slate-700 dark:text-white/80 hover:bg-slate-100 dark:hover:bg-white/5 hover:text-slate-950 dark:hover:text-white transition-all group"
                   >
                     <div className="flex items-center gap-3">
-                      <HelpCircle size={17} className="text-slate-500 dark:text-white/50 group-hover:text-emerald-600 dark:group-hover:text-vendeur-emerald group-hover:scale-110 transition-all" />
+                      <HelpCircle size={16} className="text-slate-500 dark:text-white/50 group-hover:text-emerald-600 dark:group-hover:text-vendeur-emerald group-hover:scale-110 transition-all" />
                       <span>Centre d'Aide & FAQ</span>
                     </div>
                   </Link>
 
                   <Link
                     to="/offers"
-                    className="flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-bold text-slate-700 dark:text-white/80 hover:bg-slate-100 dark:hover:bg-white/5 hover:text-slate-950 dark:hover:text-white transition-all group"
+                    onClick={() => setIsDropdownOpen(false)}
+                    className="flex items-center justify-between px-3 py-2 sm:px-3.5 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold text-slate-700 dark:text-white/80 hover:bg-slate-100 dark:hover:bg-white/5 hover:text-slate-950 dark:hover:text-white transition-all group"
                   >
                     <div className="flex items-center gap-3">
-                      <Zap size={17} className="text-amber-500 group-hover:scale-110 transition-transform" />
+                      <Zap size={16} className="text-amber-500 group-hover:scale-110 transition-transform" />
                       <span>Abonnements & Offres</span>
                     </div>
                   </Link>
@@ -588,9 +603,9 @@ export function ShellHeader({ isVisible = true }: ShellHeaderProps) {
                       setIsDropdownOpen(false);
                       setShowLogoutModal(true);
                     }}
-                    className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-black uppercase tracking-wider text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 transition-all cursor-pointer group"
+                    className="w-full flex items-center gap-3 px-3 py-2 sm:px-3.5 sm:py-2.5 rounded-xl text-xs sm:text-sm font-black uppercase tracking-wider text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 transition-all cursor-pointer group"
                   >
-                    <LogOut size={17} className="group-hover:-translate-x-0.5 transition-transform" />
+                    <LogOut size={16} className="group-hover:-translate-x-0.5 transition-transform" />
                     <span>Se Déconnecter</span>
                   </button>
                 </div>

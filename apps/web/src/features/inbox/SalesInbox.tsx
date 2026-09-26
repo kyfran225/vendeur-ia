@@ -1189,14 +1189,21 @@ export function SalesInbox() {
           </div>
         </div>
 
-        {/* Conversation List (Scrollable area) */}
-        <div className="flex-1 overflow-y-auto min-h-0 overscroll-contain divide-y divide-slate-100 dark:divide-white/5">
+        {/* Conversation List (Fixed when empty, scrollable when filled) */}
+        <div
+          className={cn(
+            "flex-1 min-h-0 overscroll-none h-full",
+            loadingChats || filteredConversations.length === 0
+              ? "flex flex-col items-center justify-center overflow-hidden touch-none select-none p-6"
+              : "overflow-y-auto divide-y divide-slate-100 dark:divide-white/5"
+          )}
+        >
           {loadingChats ? (
-            <div className="flex flex-col items-center justify-center p-12 space-y-3">
+            <div className="flex flex-col items-center justify-center space-y-3">
               <VendeurIALoader size="md" label="Chargement de vos échanges WhatsApp..." />
             </div>
           ) : filteredConversations.length === 0 ? (
-            <div className="flex flex-col items-center justify-center p-8 text-center text-slate-400 dark:text-white/40 space-y-2">
+            <div className="flex flex-col items-center justify-center text-center text-slate-400 dark:text-white/40 space-y-2 max-w-xs">
               <MessageCircle size={40} className="opacity-30" />
               <p className="text-sm font-bold text-slate-600 dark:text-white/60">Aucune conversation trouvée</p>
               <p className="text-xs text-slate-400 dark:text-white/30">
@@ -1797,7 +1804,7 @@ export function SalesInbox() {
             </footer>
           </div>
         ) : (
-          <div className="flex-1 flex flex-col items-center justify-center text-center p-8 space-y-4">
+          <div className="flex-1 flex flex-col items-center justify-center text-center p-8 space-y-4 select-none touch-none overscroll-none overflow-hidden h-full">
             <div className="h-20 w-20 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-600 dark:text-[#00a884]">
               <MessageCircle size={40} />
             </div>

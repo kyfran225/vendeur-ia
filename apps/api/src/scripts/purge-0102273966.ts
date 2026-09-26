@@ -84,13 +84,13 @@ async function purgeFromDatabase(uri: string, envName: string): Promise<CleanSta
       ]
     }).lean();
 
-    const userIds = users.map(u => u._id);
-    const userIdStrings = userIds.map(id => id.toString());
+    const userIds: any[] = users.map((u: any) => u._id);
+    const userIdStrings: string[] = userIds.map((id: any) => id.toString());
     console.log(`📌 Utilisateurs trouvés (${userIds.length}):`, userIds);
 
     // 2. Identification des Merchandises (Commerces)
     const Merchant = conn.model("CommerceMerchant", new mongoose.Schema({}, { strict: false }));
-    const merchants = await Merchant.find({
+    const merchants: any[] = await Merchant.find({
       $or: [
         { whatsappNumber: { $regex: PHONE_REGEX } },
         { phone: { $regex: PHONE_REGEX } },
@@ -98,13 +98,13 @@ async function purgeFromDatabase(uri: string, envName: string): Promise<CleanSta
       ]
     }).lean();
 
-    const merchantIds = merchants.map(m => m._id);
-    const merchantIdStrings = merchantIds.map(m => m.toString());
+    const merchantIds: any[] = merchants.map((m: any) => m._id);
+    const merchantIdStrings: string[] = merchantIds.map((m: any) => m.toString());
     console.log(`📌 Commerces trouvés (${merchantIds.length}):`, merchantIds);
 
     // 3. Identification des Clients (Customers)
     const Customer = conn.model("CommerceCustomer", new mongoose.Schema({}, { strict: false }));
-    const customers = await Customer.find({
+    const customers: any[] = await Customer.find({
       $or: [
         { whatsappNumber: { $regex: PHONE_REGEX } },
         { phone: { $regex: PHONE_REGEX } },
@@ -112,12 +112,12 @@ async function purgeFromDatabase(uri: string, envName: string): Promise<CleanSta
       ]
     }).lean();
 
-    const customerIds = customers.map(c => c._id);
+    const customerIds: any[] = customers.map((c: any) => c._id);
     console.log(`📌 Clients trouvés (${customerIds.length})`);
 
     // 4. Identification des Conversations
     const Conversation = conn.model("CommerceConversation", new mongoose.Schema({}, { strict: false }));
-    const conversations = await Conversation.find({
+    const conversations: any[] = await Conversation.find({
       $or: [
         { customerPhone: { $regex: PHONE_REGEX } },
         { merchantId: { $in: merchantIds } },
@@ -125,7 +125,7 @@ async function purgeFromDatabase(uri: string, envName: string): Promise<CleanSta
       ]
     }).lean();
 
-    const conversationIds = conversations.map(c => c._id);
+    const conversationIds: any[] = conversations.map((c: any) => c._id);
     console.log(`📌 Conversations trouvées (${conversationIds.length})`);
 
     // --- EXECUTION DES SUPPRESSIONS RELATIONNELLES ---
@@ -241,7 +241,7 @@ async function purgeFromDatabase(uri: string, envName: string): Promise<CleanSta
       if (residualDocs.length > 0) {
         console.log(`🔍 [${colInfo.name}] ${residualDocs.length} document(s) orphelin(s) trouvé(s) et supprimé(s).`);
         const residualDel = await collection.deleteMany({
-          _id: { $in: residualDocs.map(d => d._id) }
+          _id: { $in: residualDocs.map((d: any) => d._id) }
         });
         stats.otherOrphanedDocsDeleted += residualDel.deletedCount || 0;
       }

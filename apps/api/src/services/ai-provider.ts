@@ -304,7 +304,7 @@ export class AIProvider {
     // Ultra-reliable Defaults
     switch (providerName) {
       case 'gemini': return GEMINI_DEFAULT_TEXT_MODEL;
-      case 'groq': return 'openai/gpt-oss-120b';
+      case 'groq': return 'qwen/qwen3.8-27b';
       case 'openai': return type === 'audio' ? 'whisper-1' : 'gpt-4o-mini';
       case 'openrouter': return 'openrouter/free';
       case 'elevenlabs': return 'eleven_multilingual_v2';
@@ -590,12 +590,15 @@ export class AIProvider {
 
     const messages = normalizeMessagesForOpenAI(systemPrompt, request.history, request.userMessage);
 
-    const defaultGroqModel = model && model.trim() && !model.includes("llama-3") ? model : "openai/gpt-oss-120b";
+    // qwen/qwen3.8-27b is first: it's a standard model that returns content correctly.
+    // openai/gpt-oss-* are reasoning models that put their answer in `reasoning` and leave `content` empty —
+    // they are kept as last-resort fallbacks only.
+    const defaultGroqModel = model && model.trim() && !model.includes("llama-3") && !model.includes("gpt-oss") ? model : "qwen/qwen3.8-27b";
     const modelsToTry = [
       defaultGroqModel,
-      "openai/gpt-oss-120b",
+      "qwen/qwen3.8-27b",
       "openai/gpt-oss-20b",
-      "qwen/qwen3.8-27b"
+      "openai/gpt-oss-120b"
     ].filter((m, i, arr) => arr.indexOf(m) === i && !!m);
 
     let lastError: any;
@@ -617,7 +620,10 @@ export class AIProvider {
         });
 
         const usage = response.data.usage || {};
-        const rawContent = response.data.choices?.[0]?.message?.content || "";
+        const messageObj = response.data.choices?.[0]?.message;
+        // Reasoning models (gpt-oss-*) put the answer in `reasoning` and leave `content` empty.
+        // Fall back to `reasoning` so we never lose the response.
+        const rawContent = (messageObj?.content || messageObj?.reasoning || "").trim();
         const sanitized = sanitizeAIText(rawContent);
 
         if (!sanitized) {

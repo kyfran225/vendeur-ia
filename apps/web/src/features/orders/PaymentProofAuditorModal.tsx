@@ -282,7 +282,7 @@ export function PaymentProofAuditorModal({ isOpen, onClose }: PaymentProofAudito
                               <button
                                 onClick={() => reviewMutation.mutate({ logId: proof._id, action: "approve" })}
                                 disabled={reviewMutation.isPending}
-                                className="flex-1 h-11 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white dark:text-black font-black uppercase text-xs tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 transition-all active:scale-95"
+                                className="flex-1 h-11 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black uppercase text-xs tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/20 transition-all active:scale-95"
                               >
                                 <CheckCircle size={15} className="shrink-0" />
                                 <span>Valider Paiement</span>

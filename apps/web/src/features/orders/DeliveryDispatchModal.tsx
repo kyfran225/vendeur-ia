@@ -179,9 +179,9 @@ export function DeliveryDispatchModal({ isOpen, onClose, order }: DeliveryDispat
               <Truck size={20} />
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-base sm:text-lg font-black text-slate-900 dark:text-white">Partage Logistique Livreur</h2>
-                <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-700 dark:text-purple-300 border border-purple-500/30">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h2 className="text-base sm:text-lg font-black text-slate-900 dark:text-white truncate">Partage Logistique Livreur</h2>
+                <span className="text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-purple-600 text-white shadow-sm shrink-0 whitespace-nowrap">
                   Bon de livraison
                 </span>
               </div>
@@ -277,12 +277,14 @@ export function DeliveryDispatchModal({ isOpen, onClose, order }: DeliveryDispat
                   }}
                   className={`px-3 py-1.5 rounded-xl text-xs font-black border transition-all flex items-center gap-1.5 ${
                     isUsingDefaultCourier
-                      ? "bg-purple-600 text-white border-purple-600 shadow-md shadow-purple-500/20"
-                      : "bg-purple-500/10 text-purple-700 dark:text-purple-300 border-purple-500/30 hover:bg-purple-500/20"
+                      ? "bg-purple-600 text-white border-purple-600 shadow-md shadow-purple-600/30"
+                      : "bg-purple-100 dark:bg-purple-950/60 text-purple-900 dark:text-purple-200 border-purple-300 dark:border-purple-500/40 hover:bg-purple-200 dark:hover:bg-purple-900/80"
                   }`}
                 >
-                  <Star size={12} className={isUsingDefaultCourier ? "fill-white text-white" : "text-purple-500"} />
-                  <span>{defaultCourier.name || "Livreur Habituel"} (Marchand)</span>
+                  <Star size={12} className={isUsingDefaultCourier ? "fill-white text-white" : "text-purple-600 dark:text-purple-400"} />
+                  <span className={isUsingDefaultCourier ? "text-white" : "text-purple-900 dark:text-purple-200"}>
+                    {defaultCourier.name || "Livreur Habituel"} (Marchand)
+                  </span>
                 </button>
               )}
 
@@ -296,12 +298,14 @@ export function DeliveryDispatchModal({ isOpen, onClose, order }: DeliveryDispat
                   }}
                   className={`px-2.5 py-1.5 rounded-xl text-xs font-bold border transition-colors flex items-center gap-1 ${
                     cleanPhone === courier.phone && !isUsingDefaultCourier
-                      ? "bg-purple-500/20 border-purple-500 text-purple-700 dark:text-purple-300"
-                      : "bg-slate-100 dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-600 dark:text-white/60 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-white/10"
+                      ? "bg-purple-600 text-white border-purple-600 shadow-sm"
+                      : "bg-slate-100 dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-700 dark:text-white/80 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-white/10"
                   }`}
                 >
                   <span>{courier.name}</span>
-                  <span className="text-slate-400 dark:text-white/30 font-mono text-[11px]">({courier.phone.slice(-4)})</span>
+                  <span className={cleanPhone === courier.phone && !isUsingDefaultCourier ? "text-white/80 font-mono text-[11px]" : "text-slate-500 dark:text-white/40 font-mono text-[11px]"}>
+                    ({courier.phone.slice(-4)})
+                  </span>
                 </button>
               ))}
             </div>
@@ -373,10 +377,10 @@ export function DeliveryDispatchModal({ isOpen, onClose, order }: DeliveryDispat
               type="button"
               disabled={!deliveryGuyPhone.trim()}
               onClick={handleOpenWhatsAppDirect}
-              className="w-full h-12 bg-emerald-500 hover:bg-emerald-600 text-white dark:text-black font-black uppercase tracking-wider text-xs rounded-xl flex items-center justify-center gap-2 hover:scale-[1.01] active:scale-98 transition-all shadow-lg shadow-emerald-500/20 disabled:opacity-20 cursor-pointer"
+              className="w-full h-12 bg-emerald-600 hover:bg-emerald-700 text-white font-black uppercase tracking-wider text-xs sm:text-sm rounded-xl flex items-center justify-center gap-2 hover:scale-[1.01] active:scale-98 transition-all shadow-lg shadow-emerald-600/20 disabled:opacity-20 cursor-pointer"
             >
-              <ExternalLink size={16} />
-              Ouvrir & Envoyer Bon de Livraison sur WhatsApp
+              <ExternalLink size={16} className="text-white" />
+              Envoyer le bon sur WhatsApp
             </button>
 
             {/* Server Automated Dispatch */}
@@ -384,10 +388,10 @@ export function DeliveryDispatchModal({ isOpen, onClose, order }: DeliveryDispat
               type="button"
               disabled={!deliveryGuyPhone.trim() || dispatchMutation.isPending}
               onClick={() => dispatchMutation.mutate()}
-              className="w-full h-11 bg-purple-500/10 dark:bg-purple-500/15 hover:bg-purple-500/20 dark:hover:bg-purple-500/25 text-purple-700 dark:text-purple-300 border border-purple-500/30 font-black uppercase tracking-wider text-[11px] rounded-xl flex items-center justify-center gap-2 hover:scale-[1.01] active:scale-98 transition-all disabled:opacity-20 cursor-pointer"
+              className="w-full h-11 bg-purple-600/10 dark:bg-purple-500/15 hover:bg-purple-600/20 dark:hover:bg-purple-500/25 text-purple-900 dark:text-purple-200 border border-purple-500/30 font-black uppercase tracking-wider text-xs rounded-xl flex items-center justify-center gap-2 hover:scale-[1.01] active:scale-98 transition-all disabled:opacity-20 cursor-pointer"
             >
               {dispatchMutation.isPending ? <Loader2 className="animate-spin" size={16} /> : <Send size={14} />}
-              Envoi automatique en arrière-plan
+              Envoi automatique (arrière-plan)
             </button>
           </div>
         </div>

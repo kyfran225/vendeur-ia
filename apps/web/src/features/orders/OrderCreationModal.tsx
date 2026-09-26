@@ -525,7 +525,7 @@ export function OrderCreationModal({
                           </span>
                           <button
                             onClick={() => handleAddItem(p)}
-                            className="w-8 h-8 rounded-lg bg-emerald-500 text-white dark:text-black flex items-center justify-center active:scale-95 shrink-0"
+                            className="w-8 h-8 rounded-lg bg-emerald-600 text-white flex items-center justify-center active:scale-95 shrink-0"
                           >
                             <Plus size={13} className="shrink-0 font-bold" />
                           </button>
@@ -533,7 +533,7 @@ export function OrderCreationModal({
                       ) : (
                         <button
                           onClick={() => handleAddItem(p)}
-                          className="h-9 px-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 hover:bg-emerald-500 hover:text-white dark:hover:text-black text-emerald-600 dark:text-emerald-400 font-bold text-sm flex items-center gap-1.5 transition-all active:scale-95 shrink-0"
+                          className="h-9 px-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 hover:bg-emerald-600 hover:text-white text-emerald-600 dark:text-emerald-400 font-bold text-sm flex items-center gap-1.5 transition-all active:scale-95 shrink-0"
                         >
                           <Plus size={14} className="shrink-0" />
                           <span>Ajouter</span>
@@ -581,7 +581,7 @@ export function OrderCreationModal({
                       <span className="text-sm font-black text-emerald-600 dark:text-emerald-400 w-5 text-center shrink-0">{item.quantity}</span>
                       <button
                         onClick={() => handleAddItem({ _id: item.productId, name: item.name, price: item.price })}
-                        className="w-8 h-8 rounded-lg bg-emerald-500 text-white dark:text-black flex items-center justify-center active:scale-95 shrink-0"
+                        className="w-8 h-8 rounded-lg bg-emerald-600 text-white flex items-center justify-center active:scale-95 shrink-0"
                       >
                         <Plus size={13} className="shrink-0 font-bold" />
                       </button>
@@ -601,7 +601,7 @@ export function OrderCreationModal({
               <button
                 disabled={selectedItems.length === 0 || createOrderMutation.isPending || isCreatingCustomer}
                 onClick={handleValidateOrder}
-                className="w-full h-12 sm:h-14 bg-emerald-500 hover:bg-emerald-600 text-white dark:text-black font-black uppercase tracking-wider text-sm sm:text-base rounded-2xl flex items-center justify-center gap-2 shadow-xl shadow-emerald-500/20 active:scale-98 transition-all disabled:opacity-20"
+                className="w-full h-12 sm:h-14 bg-emerald-600 hover:bg-emerald-700 text-white font-black uppercase tracking-wider text-sm sm:text-base rounded-2xl flex items-center justify-center gap-2 shadow-xl shadow-emerald-600/20 active:scale-98 transition-all disabled:opacity-20 cursor-pointer"
               >
                 {createOrderMutation.isPending || isCreatingCustomer ? (
                   <Loader2 className="animate-spin shrink-0" size={18} />

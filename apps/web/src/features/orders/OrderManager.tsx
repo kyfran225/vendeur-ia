@@ -434,7 +434,7 @@ export function OrderManager() {
                         {order.customerId?.name || formatDisplayPhone(order.customerId?.phone, "CI") || "Client"}
                       </h3>
                       {(order.customerId?.loyaltyPoints || 0) >= 50 && (
-                        <span className="text-[8px] font-black bg-emerald-500 text-slate-950 px-1.5 py-0.2 rounded uppercase shrink-0">
+                        <span className="text-[8px] font-black bg-emerald-600 text-white px-1.5 py-0.2 rounded uppercase shrink-0">
                           VIP
                         </span>
                       )}

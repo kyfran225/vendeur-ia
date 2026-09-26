@@ -26,7 +26,7 @@ const statusColors: Record<string, string> = {
   payment_detected: "bg-sky-500/10 text-sky-700 dark:text-sky-400 border-sky-500/25",
   under_verification: "bg-amber-500/15 text-amber-800 dark:text-amber-400 border-amber-500/30 font-black",
   confirmed: "bg-blue-500/10 text-blue-700 dark:text-blue-500 border-blue-500/25",
-  dispatched: "bg-purple-500/10 text-purple-700 dark:text-purple-400 border-purple-500/25",
+  dispatched: "bg-purple-600 text-white !text-white border-purple-600 font-bold",
   paid: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-500 border-emerald-500/25",
   delivered: "bg-teal-500/10 text-teal-700 dark:text-teal-400 border-teal-500/25",
   cancelled: "bg-rose-500/10 text-rose-700 dark:text-rose-500 border-rose-500/25",
@@ -48,7 +48,7 @@ const statusIcons: Record<string, React.ReactNode> = {
   payment_detected: <Clock size={12} className="shrink-0 text-sky-500" />,
   under_verification: <Clock size={12} className="shrink-0 text-amber-500" />,
   confirmed: <Package size={12} className="shrink-0" />,
-  dispatched: <Truck size={12} className="shrink-0 text-purple-600 dark:text-purple-400" />,
+  dispatched: <Truck size={12} className="shrink-0 text-white" />,
   paid: <Banknote size={12} className="shrink-0" />,
   delivered: <CheckCircle2 size={12} className="shrink-0" />,
   cancelled: <XCircle size={12} className="shrink-0" />,
@@ -534,24 +534,16 @@ export function OrderManager() {
                       {order.status !== "delivered" && order.status !== "cancelled" ? (
                         <button
                           onClick={() => setSelectedDispatchOrder(order)}
-                          className="w-full h-10 min-h-[40px] px-2.5 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 dark:bg-purple-500/10 dark:text-purple-300 dark:border-purple-500/25 dark:hover:bg-purple-500/20 font-bold text-xs flex items-center justify-center gap-1.5 transition-all active:scale-95 shadow-sm cursor-pointer"
+                          className="w-full h-10 min-h-[40px] px-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white !text-white border border-purple-600 font-bold text-xs flex items-center justify-center gap-1.5 transition-all active:scale-95 shadow-sm cursor-pointer"
                           title="Assigner un livreur (WhatsApp)"
                         >
-                          <Truck size={14} className="shrink-0" />
-                          <span className="truncate">{order.deliveryGuyPhone ? "Livreur 🛵" : "Livreur"}</span>
+                          <Truck size={14} className="shrink-0 text-white" />
+                          <span className="truncate text-white !text-white">{order.deliveryGuyPhone ? "Livreur 🛵" : "Livreur"}</span>
                         </button>
                       ) : null}
 
                       {/* 4. Action de Validation (Encaissé ou Livré en 1 clic) */}
-                      {order.status === "delivered" ? (
-                        <div
-                          className="w-full h-10 min-h-[40px] px-2.5 rounded-xl bg-teal-500/10 text-teal-700 dark:text-teal-400 border border-teal-500/25 font-bold text-xs flex items-center justify-center gap-1.5 select-none"
-                          title="Commande livrée et clôturée avec succès"
-                        >
-                          <CheckCircle2 size={14} className="shrink-0 text-teal-600 dark:text-teal-400" />
-                          <span className="truncate">Livrée ✨</span>
-                        </div>
-                      ) : order.status === "dispatched" || order.status === "paid" ? (
+                      {order.status === "delivered" || order.status === "cancelled" ? null : order.status === "dispatched" || order.status === "paid" ? (
                         <button
                           onClick={() => updateStatusMutation.mutate({ id: order._id, status: "delivered" })}
                           disabled={updateStatusMutation.isPending}
@@ -603,8 +595,8 @@ export function OrderManager() {
               {order.deliveryGuyPhone && (
                 <div className="mt-4 pt-3 border-t border-slate-100 dark:border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-purple-50/70 dark:bg-purple-500/[0.04] -mx-4 lg:-mx-6 -mb-4 lg:-mb-6 p-4 rounded-b-2xl lg:rounded-b-[2rem] border-t border-purple-200 dark:border-purple-500/15">
                   <div className="flex items-center gap-3 min-w-0">
-                    <div className="h-9 w-9 rounded-xl bg-purple-100 dark:bg-purple-500/20 text-purple-700 dark:text-purple-300 flex items-center justify-center shrink-0 border border-purple-200 dark:border-purple-500/30">
-                      <Truck size={18} />
+                    <div className="h-9 w-9 rounded-xl bg-purple-600 text-white flex items-center justify-center shrink-0 border border-purple-600 shadow-sm">
+                      <Truck size={18} className="text-white" />
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
@@ -612,7 +604,7 @@ export function OrderManager() {
                           🛵 Livreur : {order.deliveryGuyName || "Assigné"}
                         </span>
                         {order.dispatchedAt && (
-                          <span className="text-[10px] text-purple-700 dark:text-purple-300/70 font-mono">
+                          <span className="text-[10px] text-purple-700 dark:text-purple-300/70 font-mono font-bold">
                             • Assigné à {new Date(order.dispatchedAt).toLocaleTimeString("fr-FR", { hour: '2-digit', minute: '2-digit' })}
                           </span>
                         )}

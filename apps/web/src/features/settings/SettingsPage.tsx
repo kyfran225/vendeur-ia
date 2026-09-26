@@ -1163,9 +1163,9 @@ function BoutiqueTab({
                 <div className="space-y-1 min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
                     <span className="text-xs font-black uppercase text-purple-950 dark:text-purple-100 tracking-tight">Dispatch Automatique WhatsApp</span>
-                    <span className="inline-flex items-center gap-1 shrink-0 whitespace-nowrap px-2.5 py-0.5 rounded-full bg-purple-500/20 text-purple-800 dark:text-purple-200 border border-purple-500/30 text-[10px] font-black uppercase tracking-wider shadow-2xs">
+                    <span className="inline-flex items-center gap-1 shrink-0 whitespace-nowrap px-2.5 py-0.5 rounded-full bg-purple-600 text-white !text-white text-[10px] font-black uppercase tracking-wider shadow-xs">
                       <span>AUTO</span>
-                      <Zap size={11} className="text-amber-500 fill-amber-500/40 shrink-0" />
+                      <Zap size={11} className="text-amber-300 fill-amber-300 shrink-0" />
                     </span>
                   </div>
                   <p className="text-[10px] sm:text-xs text-slate-600 dark:text-white/60">

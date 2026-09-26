@@ -220,6 +220,10 @@ Réponds UNIQUEMENT avec le texte du message.`;
       const product = await CommerceProductModel.findById(productId);
       if (product) {
         imageUrl = product.images?.[0] || (product as any).imageUrl || "";
+        if (imageUrl && imageUrl.startsWith("/")) {
+          const baseUrl = env.API_URL || "https://api.vendeuria.com";
+          imageUrl = `${baseUrl.replace(/\/+$/, "")}${imageUrl}`;
+        }
         productDetails = `Produit: ${product.name}, Prix: ${product.price} ${product.currency}, Description: ${product.description}`;
       }
     }

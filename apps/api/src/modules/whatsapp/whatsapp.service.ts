@@ -3050,6 +3050,34 @@ class WhatsAppService {
     // Subscribe to presence so we receive typing indicator when recipient types
     this.subscribePresence(userId, to).catch(() => {});
 
+    // Automatically resolve options.mediaUrl to options.fileBuffer if options.fileBuffer is missing
+    if (options?.mediaUrl && !options?.fileBuffer) {
+      try {
+        let relPath = "";
+        if (options.mediaUrl.includes("/uploads/")) {
+          relPath = options.mediaUrl.substring(options.mediaUrl.indexOf("/uploads/") + "/uploads/".length);
+        } else if (options.mediaUrl.startsWith("/")) {
+          relPath = options.mediaUrl.substring(1);
+        }
+
+        if (relPath) {
+          const localFilePath = path.resolve(process.cwd(), "uploads", relPath);
+          if (fs.existsSync(localFilePath)) {
+            options.fileBuffer = fs.readFileSync(localFilePath);
+          }
+        }
+
+        if (!options.fileBuffer && (options.mediaUrl.startsWith("http://") || options.mediaUrl.startsWith("https://"))) {
+          const mediaRes = await axios.get(options.mediaUrl, { responseType: "arraybuffer", timeout: 10000 });
+          if (mediaRes.data) {
+            options.fileBuffer = Buffer.from(mediaRes.data);
+          }
+        }
+      } catch (mediaErr: any) {
+        console.warn(`[WhatsApp] Could not resolve mediaUrl (${options.mediaUrl}) to buffer:`, mediaErr?.message || mediaErr);
+      }
+    }
+
     const isMetaMerchant = merchant.whatsappConfig?.provider === 'meta' || 
       isFounderNumber(merchant.whatsappNumber || merchant.phone || '') || 
       merchant.businessName === "Vendeur IA";

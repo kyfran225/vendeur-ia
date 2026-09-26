@@ -839,6 +839,11 @@ Pour offrir une expérience hors-norme, insère TOUJOURS des balises d'action pr
         { text: "Comment personnaliser l'apparence et le logo de ma vitrine ?", category: "settings", icon: "palette" },
         { text: "Comment configurer mes tarifs de livraison par quartier ?", category: "settings", icon: "map-pin" }
       );
+    } else if (pageRoute.includes("/admin")) {
+      suggestions.push(
+        { text: "Quels sont les paiements en attente de vérification ?", category: "admin", icon: "shield" },
+        { text: "Comment gérer les passerelles de paiement Mobile Money ?", category: "admin", icon: "banknote" }
+      );
     }
 
     return {

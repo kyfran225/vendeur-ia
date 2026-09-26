@@ -34,7 +34,27 @@ app.use(helmet({
   crossOriginResourcePolicy: { policy: "cross-origin" },
   crossOriginEmbedderPolicy: false,
 }));
-app.use(cors());
+
+const allowedOrigins = [
+  "https://vendeuria.maatfeed.com",
+  "https://vendeuria-api.maatfeed.com",
+  "http://localhost:5173",
+  "http://localhost:3000",
+  "http://localhost:3001"
+];
+
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.indexOf(origin) !== -1 || process.env.NODE_ENV !== "production") {
+      return callback(null, true);
+    }
+    return callback(null, true);
+  },
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization", "X-Developer-PC", "X-Requested-With"]
+}));
 app.use(express.json({
   limit: '10mb',
   verify: (req: any, _res, buf) => {
@@ -114,5 +134,13 @@ app.use("/api/tiktok", tiktokRoutes);
 app.use("/api/media", mediaRoutes);
 app.use("/api/commerce/web-chat", webChatRoutes);
 app.use("/api/copilot", copilotRoutes);
+
+// Global Error Handler
+app.use((err: any, req: any, res: any, _next: any) => {
+  console.error(`[Express Global Error] ${req.method} ${req.url}:`, err.message || err);
+  res.status(err.status || 500).json({
+    error: err.message || "Erreur serveur interne"
+  });
+});
 
 export { app, httpServer };

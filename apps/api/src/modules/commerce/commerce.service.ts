@@ -849,11 +849,15 @@ export class CommerceService {
       { new: true }
     ) || merchant;
 
-    // Sync businessName to Knowledge base
-    if (data.businessName) {
+    // Sync businessName and paymentChannels to Knowledge base
+    const knowledgeSyncData: any = {};
+    if (data.businessName) knowledgeSyncData.businessName = data.businessName;
+    if (data.paymentChannels) knowledgeSyncData["businessRules.paymentMethods"] = data.paymentChannels;
+
+    if (Object.keys(knowledgeSyncData).length > 0) {
       await CommerceKnowledgeModel.findOneAndUpdate(
         { merchantId: merchant._id },
-        { $set: { businessName: data.businessName } }
+        { $set: knowledgeSyncData }
       );
     }
 
@@ -934,6 +938,15 @@ export class CommerceService {
       { $set: data },
       { new: true, upsert: true }
     );
+
+    // Sync paymentMethods back to CommerceMerchantModel if updated in knowledge
+    if (data.businessRules?.paymentMethods) {
+      await CommerceMerchantModel.findByIdAndUpdate(
+        mObjId,
+        { $set: { paymentChannels: data.businessRules.paymentMethods } }
+      );
+    }
+
     return knowledge;
   }
 

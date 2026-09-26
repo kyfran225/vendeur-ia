@@ -195,6 +195,8 @@ export function AdminPaymentsTab() {
     onSuccess: () => {
       toast.success("Paramètres de paiement et numéros multi-pays mis à jour avec succès !");
       queryClient.invalidateQueries({ queryKey: ["admin:payments:config"] });
+      queryClient.invalidateQueries({ queryKey: ["paymentConfig"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
     },
     onError: (err: any) => {
       toast.error(err.response?.data?.error || "Erreur de sauvegarde");

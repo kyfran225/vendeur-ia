@@ -541,8 +541,16 @@ function BoutiqueTab({
       setSavedMerchant(normalized);
       setLocalMerchant(normalized);
     }
-    if (initialKnowledge?.businessRules?.paymentMethods) {
-      setPayments(JSON.parse(JSON.stringify(initialKnowledge.businessRules.paymentMethods)));
+    const knowledgePayments = initialKnowledge?.businessRules?.paymentMethods;
+    const merchantPayments = merchant?.paymentChannels;
+    if (knowledgePayments && knowledgePayments.length > 0) {
+      setPayments(JSON.parse(JSON.stringify(knowledgePayments)));
+    } else if (merchantPayments && merchantPayments.length > 0) {
+      setPayments(JSON.parse(JSON.stringify(merchantPayments.map((p: any) => ({
+        provider: p.label || p.provider || "Wave",
+        number: p.number || "",
+        customLabel: p.customLabel || ""
+      })))));
     }
     if (initialKnowledge?.businessRules?.deliveryFees) {
       setDeliveryFees(JSON.parse(JSON.stringify(initialKnowledge.businessRules.deliveryFees)));
@@ -566,8 +574,12 @@ function BoutiqueTab({
     const normalized = normalizeMerchant(merchant);
     setSavedMerchant(normalized);
     setLocalMerchant(normalized);
-    if (initialKnowledge?.businessRules?.paymentMethods) {
-      setPayments(JSON.parse(JSON.stringify(initialKnowledge.businessRules.paymentMethods)));
+    const knowledgePayments = initialKnowledge?.businessRules?.paymentMethods;
+    const merchantPayments = merchant?.paymentChannels;
+    if (knowledgePayments && knowledgePayments.length > 0) {
+      setPayments(JSON.parse(JSON.stringify(knowledgePayments)));
+    } else if (merchantPayments && merchantPayments.length > 0) {
+      setPayments(JSON.parse(JSON.stringify(merchantPayments)));
     } else {
       setPayments([]);
     }
@@ -580,7 +592,9 @@ function BoutiqueTab({
     toast.info("Modifications annulées 🔄");
   };
 
-  const initialPayments = initialKnowledge?.businessRules?.paymentMethods || [];
+  const initialPayments = (initialKnowledge?.businessRules?.paymentMethods && initialKnowledge.businessRules.paymentMethods.length > 0)
+    ? initialKnowledge.businessRules.paymentMethods
+    : (merchant?.paymentChannels || []);
   const initialFees = initialKnowledge?.businessRules?.deliveryFees || [];
   const isPaymentsModified = JSON.stringify(payments) !== JSON.stringify(initialPayments);
   const isDeliveryModified = JSON.stringify(deliveryFees) !== JSON.stringify(initialFees) ||

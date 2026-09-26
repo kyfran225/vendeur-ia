@@ -20,7 +20,7 @@ export class NotificationsService {
     const ownerId = merchant?.ownerId?.toString() || merchant?.ownerId;
 
     const currency = merchant?.currency || "XOF";
-    const totalFormatted = (order.totalAmount || 0).toLocaleString();
+    const totalFormatted = (order.totalAmount || 0).toLocaleString("fr-FR");
     const customerName = customer?.name || order.shippingAddress || "Client";
     const customerPhone = customer?.phone || customer?.whatsappNumber || customer?.platformId || "Non renseigné";
     
@@ -59,7 +59,7 @@ export class NotificationsService {
     if (merchantPhone) {
       try {
         const itemsList = Array.isArray(order.items)
-          ? order.items.map((i: any) => `• ${i.name || "Article"} (x${i.quantity || 1}) - ${((i.price || 0) * (i.quantity || 1)).toLocaleString()} ${currency}`).join("\n")
+          ? order.items.map((i: any) => `• ${i.name || "Article"} (x${i.quantity || 1}) - ${((i.price || 0) * (i.quantity || 1)).toLocaleString("fr-FR")} ${currency}`).join("\n")
           : "• Articles sélectionnés";
 
         const whatsappMessage = `🔔 *NOUVELLE COMMANDE REÇUE !*\n` +
@@ -89,7 +89,7 @@ export class NotificationsService {
     const ownerId = merchant?.ownerId?.toString() || merchant?.ownerId;
 
     const currency = merchant?.currency || "XOF";
-    const totalFormatted = (amount || order?.totalAmount || 0).toLocaleString();
+    const totalFormatted = (amount || order?.totalAmount || 0).toLocaleString("fr-FR");
     const customerName = customer?.name || "Client";
     const customerPhone = customer?.phone || customer?.whatsappNumber || customer?.platformId || "Non renseigné";
 

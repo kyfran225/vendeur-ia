@@ -306,7 +306,7 @@ describe('Commerce Module API', () => {
       // 4. Point de repère
       expect(slip).toContain("Pharmacie des Grâces");
       // 5. Montant à encaisser
-      expect(slip).toMatch(/15[\s\u202f]*000\s*XOF/);
+      expect(slip).toMatch(/15[\s\u202f,]*000\s*XOF/);
     });
   });
 });

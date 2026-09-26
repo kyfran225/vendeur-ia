@@ -1188,7 +1188,7 @@ router.post("/conversations/:id/fast-pay", authenticate, async (req, res) => {
       `💳 *DEMANDE DE RÈGLEMENT - ${merchant.businessName.toUpperCase()}*`,
       `━━━━━━━━━━━━━━━━━━━━`,
       `📦 *Objet* : ${itemTitle}`,
-      `💵 *Montant à payer* : *${numAmount.toLocaleString()} ${currency}*`,
+      `💵 *Montant à payer* : *${numAmount.toLocaleString("fr-FR")} ${currency}*`,
       `━━━━━━━━━━━━━━━━━━━━`,
       `📱 *MOYENS DE PAIEMENT DISPONIBLES :*\n`
     ];
@@ -1323,7 +1323,7 @@ router.post("/conversations/:id/send-product-card", authenticate, async (req, re
     const lines: string[] = [
       `🛍️ *FICHE ARTICLE : ${product.name.toUpperCase()}*`,
       `━━━━━━━━━━━━━━━━━━━━`,
-      `💰 *Prix* : *${finalPrice.toLocaleString()} ${currency}*`,
+      `💰 *Prix* : *${finalPrice.toLocaleString("fr-FR")} ${currency}*`,
       product.category ? `🏷️ *Catégorie* : ${product.category}` : "",
       product.stock > 0 ? `✅ *Disponibilité* : En stock (${product.stock} disponible${product.stock > 1 ? "s" : ""})` : `⚡ *Disponibilité* : Commande directe`,
       product.description ? `\n📝 *Détails* :\n${product.description.trim()}` : "",

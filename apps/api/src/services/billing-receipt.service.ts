@@ -12,7 +12,7 @@ export class BillingReceiptService {
       if (!merchant) return;
 
       const date = new Date(transaction.paidAt || transaction.createdAt).toLocaleDateString('fr-FR');
-      const amount = transaction.amount.toLocaleString();
+      const amount = transaction.amount.toLocaleString("fr-FR");
       const currency = transaction.currency || "XOF";
       const planName = merchant.subscription?.plan === 'pro' ? 'Vendeur IA Pro' : 'Vendeur IA Essentiel';
       const intervalLabel = merchant.subscription?.billingInterval === 'yearly' ? 'Annuel (12 mois)' : 'Mensuel';
@@ -87,7 +87,7 @@ export class BillingReceiptService {
         `🏪 *Boutique* : ${merchant.businessName}\n` +
         `📞 *WhatsApp* : ${merchant.whatsappNumber || 'À contacter via email'}\n` +
         `📧 *Email* : ${user?.email || 'N/A'}\n` +
-        `💰 *Montant* : ${transaction.amount?.toLocaleString()} ${transaction.currency || 'XOF'}\n` +
+        `💰 *Montant* : ${transaction.amount?.toLocaleString("fr-FR")} ${transaction.currency || 'XOF'}\n` +
         `🔖 *Réf* : ${transaction.reference}\n` +
         `━━━━━━━━━━━━━━━━━━\n\n` +
         `👉 Connectez-vous au Back-Office Admin pour assigner le technicien.`;

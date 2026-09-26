@@ -1189,7 +1189,7 @@ Réponds UNIQUEMENT avec le texte du message.`;
 📦 *DÉTAILS :*
 ${itemsStr}
 ━━━━━━━━━━━━━━━━━━━━━
-💰 *TOTAL : ${order.totalAmount.toLocaleString()} ${order.currency}*
+💰 *TOTAL : ${order.totalAmount.toLocaleString("fr-FR")} ${order.currency}*
 ━━━━━━━━━━━━━━━━━━━━━
 ✅ *Statut:* Payé
 
@@ -1839,13 +1839,13 @@ Résumé actuel :`;
     const shippingLandmark = order?.shippingLandmark || (order?.shippingAddress && order.shippingAddress.includes(",") ? order.shippingAddress.split(",")[1].trim() : "À préciser par le client / Appeler à l'arrivée");
 
     const itemsList = Array.isArray(order?.items) && order.items.length > 0
-      ? order.items.map((i: any) => `• ${i.quantity || 1}x ${i.name || "Article"} (${((i.price || 0) * (i.quantity || 1)).toLocaleString()} ${order?.currency || merchant?.currency || "XOF"})`).join("\n")
+      ? order.items.map((i: any) => `• ${i.quantity || 1}x ${i.name || "Article"} (${((i.price || 0) * (i.quantity || 1)).toLocaleString("fr-FR")} ${order?.currency || merchant?.currency || "XOF"})`).join("\n")
       : "• Articles de la commande";
 
     const isPaid = order?.status === "paid" || !!order?.paidAt;
     const amountToCollect = isPaid
       ? "0 FCFA (DÉJÀ PAYÉ EN LIGNE ✅ - NE RIEN ENCAISSER)"
-      : `${(order?.totalAmount || 0).toLocaleString()} ${order?.currency || merchant?.currency || "XOF"} (À ENCAISSER EN ESPÈCES 💵)`;
+      : `${(order?.totalAmount || 0).toLocaleString("fr-FR")} ${order?.currency || merchant?.currency || "XOF"} (À ENCAISSER EN ESPÈCES 💵)`;
 
     const effectiveNotes = notes || order?.deliveryNotes || "";
 

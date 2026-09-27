@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { X, Download, ZoomIn, ZoomOut, RotateCw, Share2, ExternalLink } from "lucide-react";
 
 interface MediaLightboxModalProps {
@@ -39,7 +40,7 @@ export function MediaLightboxModal({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isOpen, onClose]);
 
-  if (!isOpen || !imageUrl) return null;
+  if (!isOpen || !imageUrl || typeof document === "undefined") return null;
 
   const handleZoomIn = () => setScale((s) => Math.min(s + 0.25, 3));
   const handleZoomOut = () => setScale((s) => Math.max(s - 0.25, 0.5));
@@ -55,7 +56,7 @@ export function MediaLightboxModal({
     document.body.removeChild(a);
   };
 
-  return (
+  return createPortal(
     <div 
       className="fixed inset-0 z-[1000] flex flex-col bg-black/95 backdrop-blur-lg select-none animate-in fade-in duration-200"
       onClick={onClose}
@@ -155,6 +156,7 @@ export function MediaLightboxModal({
           </p>
         </div>
       )}
-    </div>
+    </div>,
+    document.body
   );
 }

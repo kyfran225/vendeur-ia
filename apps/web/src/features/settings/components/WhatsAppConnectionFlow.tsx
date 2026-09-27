@@ -23,7 +23,7 @@ import { toast } from "sonner";
 import { apiClient } from "@/lib/apiClient";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
-import { StepMilestoneModal } from "@/components/ui/StepMilestoneModal";
+import { StepMilestoneModal, hasMilestoneBeenSeen, markMilestoneAsSeen } from "@/components/ui/StepMilestoneModal";
 import { formatDisplayPhone, parsePhoneNumber } from "@/features/onboarding/components/CountrySelector";
 import { QRCodeSVG } from "qrcode.react";
 import { useAuthStore } from "@/stores/authStore";
@@ -168,7 +168,11 @@ export function WhatsAppConnectionFlow() {
       setPairingCode(null);
       setQrCodeData(null);
       toast.success("🎉 Votre WhatsApp de vente est connecté avec succès ! L'IA est prête.");
-      setShowMilestoneModal(true);
+      const mId = merchant?._id;
+      if (!hasMilestoneBeenSeen("whatsapp", mId)) {
+        markMilestoneAsSeen("whatsapp", mId);
+        setShowMilestoneModal(true);
+      }
       refetch();
       queryClient.invalidateQueries({ queryKey: ["dashboard"] });
     };
@@ -931,6 +935,8 @@ export function WhatsAppConnectionFlow() {
       <StepMilestoneModal
         isOpen={showMilestoneModal}
         onClose={() => setShowMilestoneModal(false)}
+        milestoneKey="whatsapp"
+        merchantId={merchant?._id}
         title="Ligne WhatsApp Connectée ! 🎉"
         subtitle="Votre WhatsApp de vente est désormais relié à votre Vendeur IA. Vos clients reçoivent des réponses automatiques en direct pendant votre essai gratuit."
         score={dashboard?.setupStatus?.score}

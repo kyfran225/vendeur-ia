@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { createPortal } from "react-dom";
 import { X, Phone, Copy, Check, Sparkles, CreditCard, ShoppingCart, ShoppingBag, RefreshCw, User, ShieldCheck } from "lucide-react";
 import { formatDisplayPhone } from "@/features/onboarding/components/CountrySelector";
 import { toast } from "sonner";
@@ -66,7 +67,7 @@ export function CustomerProfileModal({
     }
   });
 
-  if (!isOpen || !customer) return null;
+  if (!isOpen || !customer || typeof document === "undefined") return null;
 
   const displayName = customer.name?.trim() || formatDisplayPhone(customer.phone, "CI") || "Client WhatsApp";
   const displayPhone = formatDisplayPhone(customer.phone, "CI");
@@ -81,7 +82,7 @@ export function CustomerProfileModal({
     setTimeout(() => setCopied(false), 2000);
   };
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/60 dark:bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
       <div
         className="relative w-full max-w-sm bg-slate-50 dark:bg-[#0c1612] border border-slate-200/90 dark:border-white/10 rounded-3xl overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200 text-slate-900 dark:text-white"
@@ -217,6 +218,7 @@ export function CustomerProfileModal({
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

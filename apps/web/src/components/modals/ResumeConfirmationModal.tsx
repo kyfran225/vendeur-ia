@@ -1,4 +1,5 @@
 import React from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Zap,
@@ -82,9 +83,9 @@ export function ResumeConfirmationModal({ isOpen, onClose, onSuccess }: ResumeCo
     }
   });
 
-  if (!isOpen) return null;
+  if (!isOpen || typeof document === "undefined") return null;
 
-  return (
+  return createPortal(
     <AnimatePresence>
       <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
         {/* Backdrop */}
@@ -193,6 +194,7 @@ export function ResumeConfirmationModal({ isOpen, onClose, onSuccess }: ResumeCo
           </div>
         </motion.div>
       </div>
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 }

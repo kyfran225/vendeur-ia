@@ -1,4 +1,5 @@
 import React from "react";
+import { createPortal } from "react-dom";
 import { useCopilotStore } from "@/stores/copilotStore";
 import { useNavigate } from "react-router-dom";
 import {
@@ -41,7 +42,7 @@ export function StoreAuditModal() {
     runStoreAudit
   } = useCopilotStore();
 
-  if (!isAuditModalOpen) return null;
+  if (!isAuditModalOpen || typeof document === "undefined") return null;
 
   const handleActionClick = (actionType: string, actionPayload: string) => {
     setAuditModalOpen(false);
@@ -62,7 +63,7 @@ export function StoreAuditModal() {
     return "text-rose-400 border-rose-500/40 bg-rose-500/10";
   };
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-0 sm:p-4 bg-slate-950/60 dark:bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
       <div
         className="relative w-full h-full sm:h-auto max-w-2xl sm:max-h-[90vh] bg-slate-50 dark:bg-[#0c1612] border-0 sm:border border-slate-200/90 dark:border-white/10 rounded-none sm:rounded-3xl shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-200 text-slate-900 dark:text-white supports-[height:100dvh]:h-[100dvh] sm:supports-[height:100dvh]:h-auto"
@@ -246,6 +247,7 @@ export function StoreAuditModal() {
         </div>
 
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

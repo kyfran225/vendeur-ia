@@ -91,6 +91,14 @@ export function ShellHeader({ isVisible = true }: ShellHeaderProps) {
     setIsDropdownOpen(false);
   }, [location.pathname]);
 
+  // Close dropdown on scroll
+  useEffect(() => {
+    if (!isDropdownOpen) return;
+    const handleScrollClose = () => setIsDropdownOpen(false);
+    window.addEventListener("scroll", handleScrollClose, true);
+    return () => window.removeEventListener("scroll", handleScrollClose, true);
+  }, [isDropdownOpen]);
+
   const { data: dashboard } = useQuery({
     queryKey: ["dashboard"],
     queryFn: async () => {
@@ -252,7 +260,7 @@ export function ShellHeader({ isVisible = true }: ShellHeaderProps) {
   const userAvatarUrl = user?.avatarUrl || merchant?.branding?.logoUrl;
 
   return (
-    <div className={cn("sticky top-0 w-full flex flex-col shrink-0", isDropdownOpen ? "z-[80]" : "z-40")}>
+    <div className={cn("w-full flex flex-col shrink-0", isDropdownOpen ? "z-[80]" : "z-40")}>
       <PackProModal isOpen={isPackProOpen} onClose={() => setIsPackProOpen(false)} />
 
       <ConfirmationModal

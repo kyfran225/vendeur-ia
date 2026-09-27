@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { X, Send, Image as ImageIcon, FileText, Loader2, Paperclip } from "lucide-react";
 import { toast } from "sonner";
 import { apiClient } from "@/lib/apiClient";
@@ -36,7 +37,7 @@ export function MediaUploaderModal({
     }
   }, [file]);
 
-  if (!isOpen || !file) return null;
+  if (!isOpen || !file || typeof document === "undefined") return null;
 
   const handleSend = async () => {
     setIsUploading(true);
@@ -64,7 +65,7 @@ export function MediaUploaderModal({
 
   const isImage = file.type.startsWith("image/");
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-[999] flex items-center justify-center p-4 bg-black/60 dark:bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
       <div 
         className="w-full max-w-lg bg-white dark:bg-[#111b21] border border-slate-200 dark:border-[#222e35] rounded-2xl shadow-2xl overflow-hidden flex flex-col text-slate-900 dark:text-[#e9edef] animate-in zoom-in-95 duration-200"
@@ -160,6 +161,7 @@ export function MediaUploaderModal({
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

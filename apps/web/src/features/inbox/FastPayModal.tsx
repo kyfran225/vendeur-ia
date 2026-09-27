@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { createPortal } from "react-dom";
 import {
   X,
   CreditCard,
@@ -104,7 +105,9 @@ export function FastPayModal({
     }
   };
 
-  return (
+  if (!isOpen || typeof document === "undefined") return null;
+
+  return createPortal(
     <div className="fixed inset-0 z-[120] flex items-center justify-center p-0 sm:p-4 bg-slate-950/60 dark:bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
       <div className="relative w-full h-full sm:h-auto max-w-lg bg-slate-50 dark:bg-[#0c1612] border-0 sm:border border-slate-200/90 dark:border-white/10 rounded-none sm:rounded-3xl p-5 sm:p-6 md:p-8 space-y-6 shadow-2xl animate-in zoom-in-95 duration-200 text-slate-900 dark:text-white flex flex-col justify-between supports-[height:100dvh]:h-[100dvh] sm:supports-[height:100dvh]:h-auto overflow-y-auto">
         
@@ -248,6 +251,7 @@ export function FastPayModal({
           <span>Génère le lien direct Wave + instructions instantanées</span>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

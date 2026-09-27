@@ -1,4 +1,5 @@
 import React from "react";
+import { createPortal } from "react-dom";
 import { X, Copy, Check, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -25,7 +26,7 @@ export function CaptionModal({ isOpen, onClose, caption, productName }: CaptionM
     };
   }, [caption]);
 
-  if (!isOpen) return null;
+  if (!isOpen || typeof document === "undefined") return null;
 
   const handleCopy = (text: string, id: string) => {
     navigator.clipboard.writeText(text);
@@ -34,7 +35,7 @@ export function CaptionModal({ isOpen, onClose, caption, productName }: CaptionM
     setTimeout(() => setCopied(null), 2000);
   };
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/60 dark:bg-black/90 backdrop-blur-md" onClick={onClose} />
       <div className="relative w-full max-w-lg bg-white dark:bg-[#0c0f0d] border border-slate-200 dark:border-white/10 rounded-[2.5rem] p-8 space-y-6 shadow-2xl animate-in zoom-in-95 duration-200 text-slate-900 dark:text-white">
@@ -90,6 +91,7 @@ export function CaptionModal({ isOpen, onClose, caption, productName }: CaptionM
           </p>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

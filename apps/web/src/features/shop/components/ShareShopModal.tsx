@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { createPortal } from "react-dom";
 import { X, Copy, Check, Share2, MessageCircle, Download } from "lucide-react";
 import { toast } from "sonner";
 import { ShopTheme, getShopTheme } from "../lib/theme";
@@ -15,7 +16,7 @@ interface ShareShopModalProps {
 export function ShareShopModal({ isOpen, onClose, merchant, shopUrl, theme }: ShareShopModalProps) {
   const [copied, setCopied] = useState(false);
 
-  if (!isOpen) return null;
+  if (!isOpen || typeof document === "undefined") return null;
 
   const activeTheme = theme || getShopTheme(merchant?.branding?.primaryColor || merchant?.branding?.accentColor);
   const qrHex = (activeTheme.primary || "#10B981").replace("#", "");
@@ -44,7 +45,7 @@ export function ShareShopModal({ isOpen, onClose, merchant, shopUrl, theme }: Sh
     toast.success("QR Code téléchargé !");
   };
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
       <div className="relative w-full max-w-md bg-white dark:bg-slate-900 text-slate-900 dark:text-white border border-slate-200/90 dark:border-white/10 rounded-3xl p-6 md:p-8 space-y-6 shadow-2xl animate-in zoom-in-95 duration-200 text-center">
         <button
@@ -116,6 +117,7 @@ export function ShareShopModal({ isOpen, onClose, merchant, shopUrl, theme }: Sh
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

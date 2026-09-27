@@ -4,7 +4,7 @@ import { ProductScanner } from "./components/ProductScanner";
 import { CaptionModal } from "./components/CaptionModal";
 import { PosterGenerator } from "./components/PosterGenerator";
 import { ConfirmationModal } from "../../components/ui/ConfirmationModal";
-import { StepMilestoneModal } from "../../components/ui/StepMilestoneModal";
+import { StepMilestoneModal, hasMilestoneBeenSeen, markMilestoneAsSeen } from "../../components/ui/StepMilestoneModal";
 import { VendeurIALoader } from "@/components/ui/VendeurIALoader";
 import { useOnboardingStore } from "@/stores/onboardingStore";
 import { useAuthStore } from "@/stores/authStore";
@@ -274,7 +274,13 @@ export function ProductManager() {
       toast.success("Ajouté au catalogue avec succès !");
       setIsAddingManual(false);
       setLastAddedName(variables.name || "Produit");
-      setShowMilestoneModal(true);
+      
+      // Only show milestone celebration on very first product
+      const mId = merchant?._id;
+      if (products.length === 0 && !hasMilestoneBeenSeen("products", mId)) {
+        markMilestoneAsSeen("products", mId);
+        setShowMilestoneModal(true);
+      }
       setNewProduct({
         name: "",
         price: NaN,
@@ -1670,6 +1676,8 @@ export function ProductManager() {
           <StepMilestoneModal
             isOpen={showMilestoneModal}
             onClose={() => setShowMilestoneModal(false)}
+            milestoneKey="products"
+            merchantId={merchant?._id}
             title={modalTitle}
             subtitle={`« ${lastAddedName || itemLabel} » est enregistré. Votre commercial IA connaît désormais ses spécificités et ses tarifs.`}
             score={dashboard?.setupStatus?.score}

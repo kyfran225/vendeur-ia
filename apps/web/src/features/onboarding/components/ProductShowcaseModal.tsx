@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Eye,
@@ -132,9 +133,9 @@ export function ProductShowcaseModal({
 
   const currentProduct = products.find((p) => p.id === activeTab) || products[0];
 
-  if (!isOpen) return null;
+  if (!isOpen || typeof document === "undefined") return null;
 
-  return (
+  return createPortal(
     <AnimatePresence>
       <div className="fixed inset-0 z-[200] flex items-center justify-center p-0 sm:p-4 md:p-6 overflow-y-auto">
         {/* Backdrop */}
@@ -1061,6 +1062,7 @@ $order = $vendeur->orders->createFromWhatsApp([
           </div>
         </motion.div>
       </div>
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 }

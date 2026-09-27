@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import {
   X,
   ChevronLeft,
@@ -81,7 +82,7 @@ export function StoryViewerModal({
     return () => clearInterval(timer);
   }, [isOpen, currentIndex, stories.length, isPaused, onClose]);
 
-  if (!isOpen || stories.length === 0) return null;
+  if (!isOpen || stories.length === 0 || typeof document === "undefined") return null;
 
   const currentStory = stories[currentIndex] || stories[0];
   const product = currentStory.product;
@@ -106,7 +107,7 @@ export function StoryViewerModal({
     }
   };
 
-  return (
+  return createPortal(
     <div
       className="fixed inset-0 z-[120] bg-slate-950/90 dark:bg-black/95 backdrop-blur-2xl flex items-center justify-center p-0 md:p-6 select-none animate-in fade-in duration-200"
       onMouseDown={() => setIsPaused(true)}
@@ -266,6 +267,7 @@ export function StoryViewerModal({
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

@@ -100,7 +100,7 @@ export class CommerceService {
         provider: "baileys" as const,
         status: "connected" as const
       },
-      paymentChannels: merchant?.paymentChannels?.length ? merchant.paymentChannels : [
+      paymentChannels: merchant?.paymentChannels ?? [
         { provider: "wave" as const, label: "Wave", number: canonicalPhone },
         { provider: "mtn_momo" as const, label: "MTN MoMo", number: canonicalPhone }
       ],
@@ -162,44 +162,41 @@ export class CommerceService {
       }
     ];
 
-    // Clean up any legacy, outdated or non-canonical services for Vendeur IA
-    await CommerceProductModel.deleteMany({
-      merchantId: merchant._id,
-      name: { $nin: canonicalProducts.map(p => p.name) }
-    });
-
-    for (const prod of canonicalProducts) {
-      await CommerceProductModel.findOneAndUpdate(
-        { merchantId: merchant._id, name: prod.name },
-        { $set: { ...prod, merchantId: merchant._id } },
-        { upsert: true, new: true }
-      );
+    // Clean up or seed canonical products only if merchant has no products yet
+    const existingProductsCount = await CommerceProductModel.countDocuments({ merchantId: merchant._id });
+    if (existingProductsCount === 0) {
+      for (const prod of canonicalProducts) {
+        await CommerceProductModel.findOneAndUpdate(
+          { merchantId: merchant._id, name: prod.name },
+          { $set: { ...prod, merchantId: merchant._id } },
+          { upsert: true, new: true }
+        );
+      }
     }
 
-    // Update Knowledge base for Vendeur IA via atomic findOneAndUpdate
-    const knowledgeData = {
-      merchantId: merchant._id,
-      businessName: "Vendeur IA",
-      generalKnowledge: "Vendeur IA est la solution d'intelligence artificielle leader en Afrique pour automatiser les ventes et le support client sur WhatsApp et Instagram. L'IA accueille vos prospects, présente votre catalogue, répond aux questions 24h/24, prend les commandes, valide les paiements Mobile Money (Wave, MTN, Orange, Moov) par scan OCR et relance les paniers abandonnés.",
-      businessRules: {
-        openingHours: "24h/24 - 7j/7 (Service automatisé par IA)",
-        deliveryZones: ["Côte d'Ivoire", "Sénégal", "Bénin", "Togo", "Burkina Faso", "Mali", "Cameroun", "Afrique & International"],
-        paymentMethods: [
-          { provider: "Wave", number: canonicalPhone, label: "Wave" },
-          { provider: "MTN MoMo", number: canonicalPhone, label: "MTN Mobile Money" },
-          { provider: "Orange Money", number: canonicalPhone, label: "Orange Money" },
-          { provider: "Carte Bancaire", number: "En ligne", label: "Visa / Mastercard (Paystack)" }
-        ],
-        returnPolicy: "Garantie satisfait ou remboursé sous 7 jours après activation."
-      },
-      customInstructions: "Tu es l'assistant commercial d'élite de la plateforme Vendeur IA — tu ES l'exemple vivant de ce que tu vends.\n\nTon rôle : accueillir chaleureusement les commerçants, entrepreneurs et marques qui souhaitent automatiser leurs ventes sur WhatsApp, présenter nos fonctionnalités phares (IA de vente 24/7, validation instantanée des reçus Wave/MTN/Orange/Moov par PaymentShield OCR, relance des clients), nos offres réelles :\n- 🟢 Pack Essentiel : 5 000 F CFA / mois (ou 50 000 F CFA / an — 2 mois offerts)\n- 🔵 Pack Pro : 20 000 F CFA / mois (ou 200 000 F CFA / an — 2 mois offerts)\n- 🚀 Option Pack Pro Expert (Installation clé en main) : 25 000 F CFA (paiement unique)\n\nGuide les prospects pour choisir leur formule et démarrer immédiatement."
-    };
+    // Initialize Knowledge base for Vendeur IA ONLY if it does not exist yet
+    const existingKnowledge = await CommerceKnowledgeModel.findOne({ merchantId: merchant._id });
+    if (!existingKnowledge) {
+      const knowledgeData = {
+        merchantId: merchant._id,
+        businessName: merchant.businessName || "Vendeur IA",
+        generalKnowledge: "Vendeur IA est la solution d'intelligence artificielle leader en Afrique pour automatiser les ventes et le support client sur WhatsApp et Instagram. L'IA accueille vos prospects, présente votre catalogue, répond aux questions 24h/24, prend les commandes, valide les paiements Mobile Money (Wave, MTN, Orange, Moov) par scan OCR et relance les paniers abandonnés.",
+        businessRules: {
+          openingHours: "24h/24 - 7j/7 (Service automatisé par IA)",
+          deliveryZones: ["Côte d'Ivoire", "Sénégal", "Bénin", "Togo", "Burkina Faso", "Mali", "Cameroun", "Afrique & International"],
+          paymentMethods: [
+            { provider: "Wave", number: canonicalPhone, label: "Wave" },
+            { provider: "MTN MoMo", number: canonicalPhone, label: "MTN Mobile Money" },
+            { provider: "Orange Money", number: canonicalPhone, label: "Orange Money" },
+            { provider: "Carte Bancaire", number: "En ligne", label: "Visa / Mastercard (Paystack)" }
+          ],
+          returnPolicy: "Garantie satisfait ou remboursé sous 7 jours après activation."
+        },
+        customInstructions: "Tu es l'assistant commercial d'élite de la plateforme Vendeur IA — tu ES l'exemple vivant de ce que tu vends.\n\nTon rôle : accueillir chaleureusement les commerçants, entrepreneurs et marques qui souhaitent automatiser leurs ventes sur WhatsApp, présenter nos fonctionnalités phares (IA de vente 24/7, validation instantanée des reçus Wave/MTN/Orange/Moov par PaymentShield OCR, relance des clients), nos offres réelles :\n- 🟢 Pack Essentiel : 5 000 F CFA / mois (ou 50 000 F CFA / an — 2 mois offerts)\n- 🔵 Pack Pro : 20 000 F CFA / mois (ou 200 000 F CFA / an — 2 mois offerts)\n- 🚀 Option Pack Pro Expert (Installation clé en main) : 25 000 F CFA (paiement unique)\n\nGuide les prospects pour choisir leur formule et démarrer immédiatement."
+      };
 
-    await CommerceKnowledgeModel.findOneAndUpdate(
-      { merchantId: merchant._id },
-      { $set: knowledgeData },
-      { upsert: true, new: true }
-    );
+      await CommerceKnowledgeModel.create(knowledgeData);
+    }
 
     return merchant;
   }
@@ -852,7 +849,7 @@ export class CommerceService {
     // Sync businessName and paymentChannels to Knowledge base
     const knowledgeSyncData: any = {};
     if (data.businessName) knowledgeSyncData.businessName = data.businessName;
-    if (data.paymentChannels) knowledgeSyncData["businessRules.paymentMethods"] = data.paymentChannels;
+    if (data.paymentChannels !== undefined) knowledgeSyncData["businessRules.paymentMethods"] = data.paymentChannels;
 
     if (Object.keys(knowledgeSyncData).length > 0) {
       await CommerceKnowledgeModel.findOneAndUpdate(
@@ -940,7 +937,7 @@ export class CommerceService {
     );
 
     // Sync paymentMethods back to CommerceMerchantModel if updated in knowledge
-    if (data.businessRules?.paymentMethods) {
+    if (data.businessRules && data.businessRules.paymentMethods !== undefined) {
       await CommerceMerchantModel.findByIdAndUpdate(
         mObjId,
         { $set: { paymentChannels: data.businessRules.paymentMethods } }

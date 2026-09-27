@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { createPortal } from "react-dom";
 import { X, Zap, Rocket, Check, ShieldCheck, Loader2, Server, Sparkles, AlertCircle } from "lucide-react";
 import { apiClient } from "@/lib/apiClient";
 import { toast } from "sonner";
@@ -52,13 +53,14 @@ export function OffersModal({ isOpen, onClose }: OffersModalProps) {
      latestPaymentIntent.status === "awaiting_payment")
   );
 
-  if (!isOpen) return null;
+  if (!isOpen || typeof document === "undefined") return null;
 
   if (isLoading) {
-    return (
+    return createPortal(
       <div className="fixed inset-0 z-[300] flex items-center justify-center bg-black/90 backdrop-blur-sm">
         <VendeurIALoader label="Chargement des formules..." />
-      </div>
+      </div>,
+      document.body
     );
   }
 
@@ -77,7 +79,7 @@ export function OffersModal({ isOpen, onClose }: OffersModalProps) {
     dashboard?.merchant?.subscription?.planId?.toLowerCase().includes("essential")
   );
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-[300] flex flex-col items-center justify-start sm:justify-center p-0 sm:p-4 md:p-6 overflow-y-auto no-scrollbar sm:py-8">
       <div className="fixed inset-0 bg-black/80 backdrop-blur-xl hidden sm:block" onClick={onClose} />
 
@@ -313,7 +315,8 @@ export function OffersModal({ isOpen, onClose }: OffersModalProps) {
           <span>→</span>
         </button>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 

@@ -64,7 +64,7 @@ import { useNavigate } from "react-router-dom";
 import { useSocket } from "@/hooks/useSocket";
 import { getProvidersForCountry, getZonesForCity, getCountryByCode, convertCurrencyAmount, CURRENCIES_DATA } from "@vendeur-ia/core";
 import { ConfirmationModal } from "@/components/ui/ConfirmationModal";
-import { StepMilestoneModal } from "@/components/ui/StepMilestoneModal";
+import { StepMilestoneModal, hasMilestoneBeenSeen, markMilestoneAsSeen } from "@/components/ui/StepMilestoneModal";
 import { FacebookIcon, InstagramIcon, TikTokIcon } from "@/components/ui/SocialIcons";
 
 function cn(...inputs: ClassValue[]) {
@@ -544,13 +544,21 @@ function BoutiqueTab({
     const knowledgePayments = initialKnowledge?.businessRules?.paymentMethods;
     const merchantPayments = merchant?.paymentChannels;
     if (knowledgePayments && knowledgePayments.length > 0) {
-      setPayments(JSON.parse(JSON.stringify(knowledgePayments)));
+      setPayments(JSON.parse(JSON.stringify(knowledgePayments.map((p: any) => ({
+        provider: p.label || p.provider || "Wave",
+        number: p.number || "",
+        label: p.label || p.provider || "Wave",
+        customLabel: p.customLabel || ""
+      })))));
     } else if (merchantPayments && merchantPayments.length > 0) {
       setPayments(JSON.parse(JSON.stringify(merchantPayments.map((p: any) => ({
         provider: p.label || p.provider || "Wave",
         number: p.number || "",
+        label: p.label || p.provider || "Wave",
         customLabel: p.customLabel || ""
       })))));
+    } else {
+      setPayments([]);
     }
     if (initialKnowledge?.businessRules?.deliveryFees) {
       setDeliveryFees(JSON.parse(JSON.stringify(initialKnowledge.businessRules.deliveryFees)));
@@ -577,9 +585,19 @@ function BoutiqueTab({
     const knowledgePayments = initialKnowledge?.businessRules?.paymentMethods;
     const merchantPayments = merchant?.paymentChannels;
     if (knowledgePayments && knowledgePayments.length > 0) {
-      setPayments(JSON.parse(JSON.stringify(knowledgePayments)));
+      setPayments(JSON.parse(JSON.stringify(knowledgePayments.map((p: any) => ({
+        provider: p.label || p.provider || "Wave",
+        number: p.number || "",
+        label: p.label || p.provider || "Wave",
+        customLabel: p.customLabel || ""
+      })))));
     } else if (merchantPayments && merchantPayments.length > 0) {
-      setPayments(JSON.parse(JSON.stringify(merchantPayments)));
+      setPayments(JSON.parse(JSON.stringify(merchantPayments.map((p: any) => ({
+        provider: p.label || p.provider || "Wave",
+        number: p.number || "",
+        label: p.label || p.provider || "Wave",
+        customLabel: p.customLabel || ""
+      })))));
     } else {
       setPayments([]);
     }
@@ -592,11 +610,25 @@ function BoutiqueTab({
     toast.info("Modifications annulées 🔄");
   };
 
-  const initialPayments = (initialKnowledge?.businessRules?.paymentMethods && initialKnowledge.businessRules.paymentMethods.length > 0)
+  const rawInitialPayments = (initialKnowledge?.businessRules?.paymentMethods && initialKnowledge.businessRules.paymentMethods.length > 0)
     ? initialKnowledge.businessRules.paymentMethods
     : (merchant?.paymentChannels || []);
+  const initialPayments = rawInitialPayments.map((p: any) => ({
+    provider: p.label || p.provider || "Wave",
+    number: p.number || "",
+    label: p.label || p.provider || "Wave",
+    customLabel: p.customLabel || ""
+  }));
   const initialFees = initialKnowledge?.businessRules?.deliveryFees || [];
-  const isPaymentsModified = JSON.stringify(payments) !== JSON.stringify(initialPayments);
+  const isPaymentsModified = JSON.stringify(payments.map((p: any) => ({
+    provider: p.provider || "",
+    number: (p.number || "").trim(),
+    customLabel: (p.customLabel || "").trim()
+  }))) !== JSON.stringify(initialPayments.map((p: any) => ({
+    provider: p.provider || "",
+    number: (p.number || "").trim(),
+    customLabel: (p.customLabel || "").trim()
+  })));
   const isDeliveryModified = JSON.stringify(deliveryFees) !== JSON.stringify(initialFees) ||
     JSON.stringify(localMerchant?.defaultDeliveryGuy) !== JSON.stringify(savedMerchant?.defaultDeliveryGuy);
   const isGeneralMerchantModified = isDirty || (
@@ -646,12 +678,14 @@ function BoutiqueTab({
       const cleanPayments = payments.filter((p: any) => p && (p.number?.trim() || p.provider?.trim()));
       const cleanDelivery = deliveryFees.filter((f: any) => f && f.zone?.trim());
 
-      merchantPayload.paymentChannels = cleanPayments.map((p: any) => ({
+      const normalizedPayments = cleanPayments.map((p: any) => ({
         provider: p.provider || "Wave",
-        number: p.number || "",
+        number: (p.number || "").trim(),
         label: p.label || p.provider || "Wave",
-        customLabel: p.customLabel || ""
+        customLabel: (p.customLabel || "").trim()
       }));
+
+      merchantPayload.paymentChannels = normalizedPayments;
 
       // Patch merchant with safe sanitized payload
       await apiClient.patch("/api/commerce/merchant", merchantPayload);
@@ -660,7 +694,7 @@ function BoutiqueTab({
       await apiClient.patch("/api/commerce/knowledge", {
         businessRules: {
           ...initialKnowledge?.businessRules,
-          paymentMethods: cleanPayments,
+          paymentMethods: normalizedPayments,
           deliveryFees: cleanDelivery
         }
       });
@@ -679,7 +713,20 @@ function BoutiqueTab({
       } else {
         toast.success("Réglages Boutique enregistrés ! 🚀");
       }
-      setShowMilestoneModal(true);
+
+      // Only show milestone modal the FIRST time this step is configured
+      const merchantId = merchant?._id || localMerchant?._id;
+      const stepKey = effectiveType === "delivery" ? "delivery" : effectiveType === "payments" ? "payments" : "boutique";
+      const isInitialSetup = (
+        (effectiveType === "delivery" && initialFees.length === 0) ||
+        (effectiveType === "payments" && initialPayments.length === 0) ||
+        (effectiveType === "all" && !merchant?.onboardingCompleted)
+      );
+
+      if (isInitialSetup && !hasMilestoneBeenSeen(stepKey, merchantId)) {
+        markMilestoneAsSeen(stepKey, merchantId);
+        setShowMilestoneModal(true);
+      }
       // Invalidate queries so that dashboard score and data update everywhere
       queryClient.invalidateQueries({ queryKey: ["dashboard"] });
       queryClient.invalidateQueries({ queryKey: ["knowledge"] });
@@ -1375,31 +1422,31 @@ function BoutiqueTab({
               <button
                 type="button"
                 onClick={() => {
-                  const validPayments = payments.filter((p: any) => p && p.number && p.number.trim() !== "");
-                  if (validPayments.length === 0) {
-                    toast.error("Veuillez renseigner le numéro pour votre moyen de paiement (ex: 0700000000).");
+                  const invalidChannels = payments.filter((p: any) => !p || !p.number || p.number.trim() === "");
+                  if (payments.length > 0 && invalidChannels.length > 0) {
+                    toast.error("Veuillez renseigner le numéro pour tous les moyens de paiement ajoutés.");
                     return;
                   }
                   setSavedSectionType("payments");
                   updateMutation.mutate("payments");
                 }}
-                disabled={updateMutation.isPending || payments.length === 0 || !isPaymentsModified}
+                disabled={updateMutation.isPending || !isPaymentsModified}
                 className={cn(
                   "h-12 px-6 rounded-2xl font-black uppercase text-xs tracking-wider flex items-center justify-center gap-2 transition-all shadow-lg shrink-0",
-                  !isPaymentsModified && payments.length > 0
+                  !isPaymentsModified
                     ? "bg-slate-100 dark:bg-white/10 text-slate-400 dark:text-white/50 border border-slate-200 dark:border-white/10 cursor-default"
                     : "bg-emerald-500 hover:bg-emerald-400 text-white hover:scale-105 active:scale-95 shadow-emerald-500/20 cursor-pointer disabled:opacity-50"
                 )}
               >
                 {updateMutation.isPending && savedSectionType === "payments" ? (
                   <Loader2 size={16} className="animate-spin" />
-                ) : !isPaymentsModified && payments.length > 0 ? (
-                  <Check size={16} className="text-white" />
+                ) : !isPaymentsModified ? (
+                  <Check size={16} className="text-emerald-500 dark:text-emerald-400" />
                 ) : (
                   <Check size={16} />
                 )}
                 <span>
-                  {!isPaymentsModified && payments.length > 0
+                  {!isPaymentsModified
                     ? "Canaux de Paiement Validés"
                     : "Valider mes Canaux de Paiement"}
                 </span>
@@ -1592,10 +1639,14 @@ function BoutiqueTab({
         const isIdentityDone = Boolean(localMerchant?.businessName && localMerchant.businessName !== "Ma Boutique" && (hasPayments || hasDelivery));
         const calculatedScore = dashboard?.setupStatus?.score ?? ((isIdentityDone ? 35 : 0) + (hasWhatsApp ? 35 : 0) + (hasProducts ? 30 : 0));
 
+        const currentStepKey = savedSectionType === "delivery" ? "delivery" : savedSectionType === "payments" ? "payments" : "boutique";
+
         return (
           <StepMilestoneModal
             isOpen={showMilestoneModal}
             onClose={() => setShowMilestoneModal(false)}
+            milestoneKey={currentStepKey}
+            merchantId={merchant?._id || localMerchant?._id}
             title={modalTitle}
             subtitle={modalSubtitle}
             score={calculatedScore}

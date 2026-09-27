@@ -1,4 +1,5 @@
 import React from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { AlertTriangle, Trash2, X, AlertCircle, LogOut, Loader2 } from "lucide-react";
 
@@ -52,29 +53,40 @@ export function ConfirmationModal({
     return "bg-vendeur-emerald text-slate-950 font-black shadow-lg shadow-vendeur-emerald/20 hover:bg-vendeur-emerald/90";
   };
 
-  return (
+  if (typeof document === "undefined") return null;
+
+  return createPortal(
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
+        <motion.div
+          key="confirmation-modal-wrapper"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.15, ease: "easeInOut" }}
+          className="fixed inset-0 z-[300] flex items-center justify-center p-4 sm:p-6 overflow-y-auto"
+        >
           {/* Backdrop */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+          <div
             onClick={isLoading ? undefined : onClose}
-            className="absolute inset-0 bg-black/80 backdrop-blur-md"
+            className="fixed inset-0 bg-black/80 backdrop-blur-md"
           />
 
           {/* Modal Content */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.94, y: 10 }}
+            initial={{ opacity: 0, scale: 0.95, y: 8 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.94, y: 10 }}
-            transition={{ type: "spring", damping: 25, stiffness: 350 }}
+            exit={{ opacity: 0, scale: 0.95, y: 8 }}
+            transition={{
+              opacity: { duration: 0.15, ease: "easeInOut" },
+              scale: { duration: 0.18, ease: "easeOut" },
+              y: { duration: 0.18, ease: "easeOut" }
+            }}
             className="relative w-full max-w-sm overflow-hidden rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-vendeur-coal p-4 sm:p-5 shadow-2xl z-10 text-slate-900 dark:text-white"
           >
             {/* Close Button */}
             <button
+              type="button"
               onClick={onClose}
               disabled={isLoading}
               className="absolute right-3 top-3 text-slate-400 hover:text-slate-900 dark:text-white/30 dark:hover:text-white transition-colors p-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-white/5 disabled:opacity-30 cursor-pointer"
@@ -102,6 +114,7 @@ export function ConfirmationModal({
             {/* Actions */}
             <div className="flex gap-2">
               <button
+                type="button"
                 disabled={isLoading}
                 onClick={onClose}
                 className="flex h-11 flex-1 items-center justify-center rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/5 text-xs font-black uppercase tracking-wider text-slate-700 dark:text-white/70 hover:bg-slate-200 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white transition-all active:scale-95 disabled:opacity-50 shrink-0 cursor-pointer"
@@ -109,6 +122,7 @@ export function ConfirmationModal({
                 {cancelLabel}
               </button>
               <button
+                type="button"
                 disabled={isLoading}
                 onClick={handleConfirm}
                 className={`flex h-11 flex-1 items-center justify-center gap-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all active:scale-95 disabled:opacity-50 shrink-0 cursor-pointer ${getConfirmButtonStyle()}`}
@@ -117,9 +131,10 @@ export function ConfirmationModal({
               </button>
             </div>
           </motion.div>
-        </div>
+        </motion.div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 }
 

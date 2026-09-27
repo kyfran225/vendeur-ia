@@ -333,6 +333,8 @@ export function SalesDashboard() {
       <StepMilestoneModal
         isOpen={isWhatsAppMilestoneOpen}
         onClose={() => setIsWhatsAppMilestoneOpen(false)}
+        milestoneKey="whatsapp_dashboard"
+        merchantId={dashboard?.merchant?._id}
         title="🎉 Étape validée : WhatsApp Connecté !"
         subtitle={
           !dashboard?.setupStatus?.steps?.find((s: any) => s.id === "identity")?.completed

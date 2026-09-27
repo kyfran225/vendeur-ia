@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { createPortal } from "react-dom";
 import { Check, Edit3, Trash2, Plus, Sparkles, Layers, PackageCheck, ShoppingBag, ArrowRight, X } from "lucide-react";
 import { toast } from "sonner";
 
@@ -88,7 +89,9 @@ export function BatchReviewModal({ image, rawItems, boutiqueName, currency = "XO
 
   const activeItem = items.find((i) => i.id === activeTabId) || items[0];
 
-  return (
+  if (typeof document === "undefined") return null;
+
+  return createPortal(
     <div className="fixed inset-0 z-[110] bg-slate-50 dark:bg-zinc-950 flex flex-col animate-in fade-in duration-300 overflow-hidden text-slate-900 dark:text-white">
       {/* Header */}
       <div className="px-4 py-3 sm:px-6 sm:py-4 border-b border-slate-200 dark:border-white/10 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-md flex items-center justify-between shrink-0 gap-3">
@@ -416,6 +419,7 @@ export function BatchReviewModal({ image, rawItems, boutiqueName, currency = "XO
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

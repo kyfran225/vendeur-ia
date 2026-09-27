@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from "react";
+import { createPortal } from "react-dom";
 import {
   X,
   ShoppingBag,
@@ -168,7 +169,9 @@ export function ProductCardSenderModal({
     setTimeout(() => setCopied(false), 2000);
   };
 
-  return (
+  if (!isOpen || typeof document === "undefined") return null;
+
+  return createPortal(
     <div className="fixed inset-0 z-[120] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
       <div className="relative w-full h-full sm:h-auto max-w-4xl bg-white dark:bg-[#111b21] text-slate-900 dark:text-white border-0 sm:border border-slate-200 dark:border-white/10 rounded-none sm:rounded-3xl md:rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col sm:max-h-[88vh] animate-in zoom-in-95 duration-200 supports-[height:100dvh]:h-[100dvh] sm:supports-[height:100dvh]:h-auto">
         
@@ -444,6 +447,7 @@ export function ProductCardSenderModal({
         </div>
 
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

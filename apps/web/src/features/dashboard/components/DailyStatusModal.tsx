@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import {
   X,
   Sparkles,
@@ -87,9 +88,9 @@ export function DailyStatusModal({ isOpen, onClose }: DailyStatusModalProps) {
     }
   };
 
-  if (!isOpen) return null;
+  if (!isOpen || typeof document === "undefined") return null;
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-[200] flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
       <div
         className="fixed inset-0 bg-black/80 backdrop-blur-md transition-opacity"
@@ -251,6 +252,7 @@ export function DailyStatusModal({ isOpen, onClose }: DailyStatusModalProps) {
           <span>💡 Conseil : Copiez le texte et ajoutez la photo de votre produit avant de publier en statut.</span>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

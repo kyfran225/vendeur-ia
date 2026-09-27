@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   CheckCircle2,
@@ -46,6 +47,26 @@ export interface StepMilestoneModalProps {
   dashboardActionLabel?: string; // default "Aller au Tableau de Bord"
   onDashboardClick?: () => void;
   steps?: Array<{ id: string; label: string; completed: boolean; weight?: number }>;
+  milestoneKey?: string;
+  merchantId?: string;
+}
+
+export function hasMilestoneBeenSeen(stepKey: string, merchantId?: string): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    const key = `vendeur_milestone_seen_${merchantId || "global"}_${stepKey}`;
+    return localStorage.getItem(key) === "true";
+  } catch {
+    return false;
+  }
+}
+
+export function markMilestoneAsSeen(stepKey: string, merchantId?: string): void {
+  if (typeof window === "undefined") return;
+  try {
+    const key = `vendeur_milestone_seen_${merchantId || "global"}_${stepKey}`;
+    localStorage.setItem(key, "true");
+  } catch {}
 }
 
 export function StepMilestoneModal({
@@ -62,34 +83,27 @@ export function StepMilestoneModal({
   secondaryAction,
   dashboardActionLabel = "Tableau de Bord",
   onDashboardClick,
-  steps
+  steps,
+  milestoneKey,
+  merchantId
 }: StepMilestoneModalProps) {
   const navigate = useNavigate();
   const [secondsRemaining, setSecondsRemaining] = useState(autoRedirectSeconds);
   const [isPaused, setIsPaused] = useState(false);
-  const [displayScore, setDisplayScore] = useState<number>(0);
 
-  // Compute raw score from props safely
-  const rawScore = React.useMemo(() => {
-    if (score !== undefined && score !== null && !isNaN(score)) {
-      return Math.max(0, Math.min(100, score));
+  // Automatically mark milestone as seen when opened
+  useEffect(() => {
+    if (isOpen && milestoneKey) {
+      markMilestoneAsSeen(milestoneKey, merchantId);
     }
-    if (steps && steps.length > 0) {
-      return Math.min(100, Math.round(steps.reduce((acc: number, s: any) => acc + (s.completed ? (s.weight || 33) : 0), 0)));
-    }
-    return stepNumber && totalSteps ? Math.round((stepNumber / totalSteps) * 100) : 0;
-  }, [score, steps, stepNumber, totalSteps]);
+  }, [isOpen, milestoneKey, merchantId]);
 
-  // Lock score on open and prevent regression while open
   useEffect(() => {
     if (isOpen) {
-      setDisplayScore((prev) => (prev > 0 ? Math.max(prev, rawScore) : rawScore));
       setSecondsRemaining(autoRedirectSeconds);
       setIsPaused(false);
-    } else {
-      setDisplayScore(0);
     }
-  }, [isOpen, rawScore, autoRedirectSeconds]);
+  }, [isOpen, autoRedirectSeconds]);
 
   const handleAutoRedirect = () => {
     onClose();
@@ -127,67 +141,66 @@ export function StepMilestoneModal({
     }
   };
 
-  if (!isOpen) return null;
+  if (!isOpen || typeof document === "undefined") return null;
 
-  const progressPercent = displayScore || rawScore;
-
-  return (
+  return createPortal(
     <AnimatePresence>
-      <div
-        className="fixed inset-0 z-[250] flex items-center justify-center p-3 bg-black/80 backdrop-blur-md"
-        onMouseEnter={() => setIsPaused(true)}
-        onMouseLeave={() => setIsPaused(false)}
-      >
+      {isOpen && (
         <motion.div
-          initial={{ opacity: 0, scale: 0.94, y: 10 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.94, y: 10 }}
-          transition={{ type: "spring", damping: 25, stiffness: 350 }}
-          className="relative w-full max-w-md bg-white dark:bg-[#0c120e] border border-slate-200 dark:border-vendeur-emerald/30 rounded-3xl p-5 sm:p-6 shadow-2xl overflow-hidden my-auto text-slate-900 dark:text-white"
+          key="step-milestone-wrapper"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.15, ease: "easeInOut" }}
+          className="fixed inset-0 z-[250] flex items-center justify-center p-3 bg-black/80 backdrop-blur-md"
+          onMouseEnter={() => setIsPaused(true)}
+          onMouseLeave={() => setIsPaused(false)}
         >
-          {/* Close button */}
-          <button
-            onClick={onClose}
-            className="absolute top-3.5 right-3.5 p-1 rounded-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-500 hover:text-slate-900 dark:text-white/50 dark:hover:text-white transition-all cursor-pointer z-20"
-            title="Fermer"
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: 8 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 8 }}
+            transition={{
+              opacity: { duration: 0.15, ease: "easeInOut" },
+              scale: { duration: 0.18, ease: "easeOut" },
+              y: { duration: 0.18, ease: "easeOut" }
+            }}
+            className="relative w-full max-w-md bg-white dark:bg-[#0c120e] border border-slate-200 dark:border-vendeur-emerald/30 rounded-3xl p-5 sm:p-6 shadow-2xl overflow-hidden my-auto text-slate-900 dark:text-white"
           >
-            <X size={14} />
-          </button>
+            {/* Close button */}
+            <button
+              type="button"
+              onClick={onClose}
+              className="absolute top-3.5 right-3.5 p-1 rounded-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-500 hover:text-slate-900 dark:text-white/50 dark:hover:text-white transition-all cursor-pointer z-20"
+              title="Fermer"
+            >
+              <X size={14} />
+            </button>
 
-          <div className="space-y-4 relative z-10 text-center">
-            {/* Success Badge Icon + Title Compact Row */}
-            <div className="flex items-center justify-center gap-2.5 pt-1">
-              <div className="h-10 w-10 rounded-xl bg-vendeur-emerald flex items-center justify-center text-vendeur-coal shrink-0 shadow-md shadow-vendeur-emerald/20">
-                <CheckCircle2 size={22} />
+            <div className="space-y-4 relative z-10 text-center">
+              {/* Success Badge Icon + Title Compact Row */}
+              <div className="flex items-center justify-center gap-2.5 pt-1">
+                <div className="h-10 w-10 rounded-xl bg-vendeur-emerald flex items-center justify-center text-vendeur-coal shrink-0 shadow-md shadow-vendeur-emerald/20">
+                  <CheckCircle2 size={22} />
+                </div>
+                <div className="text-left min-w-0">
+                  <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-wider text-emerald-600 dark:text-vendeur-emerald">
+                    <Zap size={11} /> Étape Validée
+                  </span>
+                  <h2 className="text-base sm:text-lg font-black text-slate-900 dark:text-white uppercase tracking-tight truncate leading-tight">
+                    {title}
+                  </h2>
+                </div>
               </div>
-              <div className="text-left min-w-0">
-                <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-wider text-emerald-600 dark:text-vendeur-emerald">
-                  <Zap size={11} /> Étape Validée ({progressPercent}%)
-                </span>
-                <h2 className="text-base sm:text-lg font-black text-slate-900 dark:text-white uppercase tracking-tight truncate leading-tight">
-                  {title}
-                </h2>
-              </div>
-            </div>
 
-            {subtitle && (
-              <p className="text-xs text-slate-600 dark:text-white/70 font-medium leading-relaxed px-1">
-                {subtitle}
-              </p>
-            )}
+              {subtitle && (
+                <p className="text-xs text-slate-600 dark:text-white/70 font-medium leading-relaxed px-1">
+                  {subtitle}
+                </p>
+              )}
 
-            {/* Compact Progress Line */}
-            <div className="w-full bg-slate-100 dark:bg-black/60 rounded-full h-1.5 overflow-hidden border border-slate-200 dark:border-white/5">
-              <motion.div
-                initial={{ width: 0 }}
-                animate={{ width: `${progressPercent}%` }}
-                transition={{ duration: 0.6, ease: "easeOut" }}
-                className="h-full bg-vendeur-emerald rounded-full"
-              />
-            </div>
-
-            {/* Actions Stack */}
-            <div className="space-y-2 pt-1">
+              {/* Actions Stack */}
+              <div className="space-y-2 pt-1">
               {primaryAction && (
                 <button
                   type="button"
@@ -235,7 +248,9 @@ export function StepMilestoneModal({
             </div>
           </div>
         </motion.div>
-      </div>
-    </AnimatePresence>
+      </motion.div>
+    )}
+    </AnimatePresence>,
+    document.body
   );
 }

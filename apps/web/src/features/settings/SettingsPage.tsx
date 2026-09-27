@@ -34,6 +34,7 @@ import {
   Palette,
   Menu,
   X,
+  MapPin,
   PauseCircle
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -610,6 +611,77 @@ function BoutiqueTab({
     toast.info("Modifications annulées 🔄");
   };
 
+  const centerAndFocusElement = (elementId: string) => {
+    let attempts = 0;
+    const maxAttempts = 25;
+
+    const executeScrollAndFocus = () => {
+      const el = document.getElementById(elementId);
+      if (!el) {
+        if (attempts < maxAttempts) {
+          attempts++;
+          setTimeout(executeScrollAndFocus, 35);
+        }
+        return;
+      }
+
+      // 1. Scroll <main> container (AppLayout active scroll viewport)
+      const mainContainer = document.querySelector("main") || (el.closest(".overflow-y-auto") as HTMLElement | null);
+      if (mainContainer) {
+        const containerRect = mainContainer.getBoundingClientRect();
+        const elRect = el.getBoundingClientRect();
+        const currentScrollTop = mainContainer.scrollTop;
+        const elRelativeTop = elRect.top - containerRect.top;
+        const targetScrollTop = currentScrollTop + elRelativeTop - (containerRect.height / 2) + (elRect.height / 2);
+
+        mainContainer.scrollTo({
+          top: Math.max(0, targetScrollTop),
+          behavior: "smooth"
+        });
+      } else {
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+
+      // 2. Window scroll fallback if window is the primary scroller
+      const elRect = el.getBoundingClientRect();
+      const windowTarget = window.scrollY + elRect.top - (window.innerHeight / 2) + (elRect.height / 2);
+      window.scrollTo({
+        top: Math.max(0, windowTarget),
+        behavior: "smooth"
+      });
+
+      // 3. Highlight with gentle glow so user immediately spots the newly created row
+      el.classList.add("highlight-target-glow");
+      setTimeout(() => {
+        el.classList.remove("highlight-target-glow");
+      }, 2500);
+
+      // 4. Focus input without disrupting the smooth centering scroll
+      const input = el.querySelector("input") as HTMLInputElement | null;
+      if (input) {
+        input.focus({ preventScroll: true });
+      }
+    };
+
+    setTimeout(executeScrollAndFocus, 50);
+  };
+
+  const handleAddDeliveryFee = (customZone?: string, customPrice?: number) => {
+    const newIndex = deliveryFees.length;
+    setDeliveryFees((prev: any[]) => [...prev, { zone: customZone || "", price: customPrice !== undefined ? customPrice : 1000 }]);
+    setIsDirty(true);
+    centerAndFocusElement(`delivery-fee-${newIndex}`);
+  };
+
+  const handleAddPayment = () => {
+    const countryProviders = getProvidersForCountry(localMerchant?.country || "CI");
+    const defaultProvider = countryProviders[0]?.label || "Wave";
+    const newIndex = payments.length;
+    setPayments((prev: any[]) => [...prev, { provider: defaultProvider, number: "" }]);
+    setIsDirty(true);
+    centerAndFocusElement(`payment-channel-${newIndex}`);
+  };
+
   const rawInitialPayments = (initialKnowledge?.businessRules?.paymentMethods && initialKnowledge.businessRules.paymentMethods.length > 0)
     ? initialKnowledge.businessRules.paymentMethods
     : (merchant?.paymentChannels || []);
@@ -621,27 +693,42 @@ function BoutiqueTab({
   }));
   const initialFees = initialKnowledge?.businessRules?.deliveryFees || [];
   const isPaymentsModified = JSON.stringify(payments.map((p: any) => ({
-    provider: p.provider || "",
+    provider: (p.provider || "").trim(),
     number: (p.number || "").trim(),
     customLabel: (p.customLabel || "").trim()
   }))) !== JSON.stringify(initialPayments.map((p: any) => ({
-    provider: p.provider || "",
+    provider: (p.provider || "").trim(),
     number: (p.number || "").trim(),
     customLabel: (p.customLabel || "").trim()
   })));
-  const isDeliveryModified = JSON.stringify(deliveryFees) !== JSON.stringify(initialFees) ||
-    JSON.stringify(localMerchant?.defaultDeliveryGuy) !== JSON.stringify(savedMerchant?.defaultDeliveryGuy);
-  const isGeneralMerchantModified = isDirty || (
-    localMerchant?.businessName !== savedMerchant?.businessName ||
-    localMerchant?.city !== savedMerchant?.city ||
-    localMerchant?.country !== savedMerchant?.country ||
-    localMerchant?.address !== savedMerchant?.address ||
-    localMerchant?.description !== savedMerchant?.description ||
-    localMerchant?.category !== savedMerchant?.category ||
-    localMerchant?.currency !== savedMerchant?.currency ||
-    localMerchant?.billingCurrency !== savedMerchant?.billingCurrency ||
-    localMerchant?.whatsappNumber !== savedMerchant?.whatsappNumber ||
-    localMerchant?.phone !== savedMerchant?.phone
+
+  const isDeliveryModified = JSON.stringify(deliveryFees.map((f: any) => ({
+    zone: (f.zone || "").trim(),
+    price: Number(f.price) || 0
+  }))) !== JSON.stringify(initialFees.map((f: any) => ({
+    zone: (f.zone || "").trim(),
+    price: Number(f.price) || 0
+  }))) || JSON.stringify({
+    name: (localMerchant?.defaultDeliveryGuy?.name || "").trim(),
+    phone: (localMerchant?.defaultDeliveryGuy?.phone || "").trim(),
+    autoDispatch: Boolean(localMerchant?.defaultDeliveryGuy?.autoDispatch)
+  }) !== JSON.stringify({
+    name: (savedMerchant?.defaultDeliveryGuy?.name || "").trim(),
+    phone: (savedMerchant?.defaultDeliveryGuy?.phone || "").trim(),
+    autoDispatch: Boolean(savedMerchant?.defaultDeliveryGuy?.autoDispatch)
+  });
+
+  const isGeneralMerchantModified = (
+    (localMerchant?.businessName || "").trim() !== (savedMerchant?.businessName || "").trim() ||
+    (localMerchant?.city || "").trim() !== (savedMerchant?.city || "").trim() ||
+    (localMerchant?.country || "").trim() !== (savedMerchant?.country || "").trim() ||
+    (localMerchant?.address || "").trim() !== (savedMerchant?.address || "").trim() ||
+    (localMerchant?.description || "").trim() !== (savedMerchant?.description || "").trim() ||
+    (localMerchant?.category || "").trim() !== (savedMerchant?.category || "").trim() ||
+    (localMerchant?.currency || "").trim() !== (savedMerchant?.currency || "").trim() ||
+    (localMerchant?.billingCurrency || "").trim() !== (savedMerchant?.billingCurrency || "").trim() ||
+    (localMerchant?.whatsappNumber || "").trim() !== (savedMerchant?.whatsappNumber || "").trim() ||
+    (localMerchant?.phone || "").trim() !== (savedMerchant?.phone || "").trim()
   );
   const isMerchantModified = isGeneralMerchantModified;
   const hasChanges = isGeneralMerchantModified || isPaymentsModified || isDeliveryModified;
@@ -649,7 +736,7 @@ function BoutiqueTab({
   const [showMilestoneModal, setShowMilestoneModal] = useState(false);
   const [savedSectionType, setSavedSectionType] = useState<"delivery" | "payments" | "all">("all");
 
-  const isModified = isMerchantModified;
+  const isModified = hasChanges;
 
   const updateMutation = useMutation({
     mutationFn: async (targetType?: "delivery" | "payments" | "all") => {
@@ -1080,13 +1167,18 @@ function BoutiqueTab({
               <span className="w-28 sm:w-40 text-right pr-2">Tarif ({localMerchant?.currency || "XOF"})</span>
            </div>
 
-           {deliveryFees.map((fee: any, idx: number) => (
-              <div key={idx} className="relative group w-full max-w-full animate-in slide-in-from-left-2 duration-200">
+            {deliveryFees.map((fee: any, idx: number) => (
+              <div
+                key={idx}
+                id={`delivery-fee-${idx}`}
+                className="relative group w-full max-w-full animate-in slide-in-from-left-2 duration-200"
+              >
                 {/* Bouton Supprimer en exposant au coin supérieur droit lors du clic/focus ou survol */}
                 <button
                   type="button"
                   onClick={() => {
                     setDeliveryFees((prev: any[]) => prev.filter((_: any, i: number) => i !== idx));
+                    setIsDirty(true);
                   }}
                   className="absolute -top-2.5 -right-1.5 z-20 h-6 w-6 sm:h-6 sm:w-6 rounded-full bg-rose-500 hover:bg-rose-600 text-white shadow-md shadow-rose-500/40 flex items-center justify-center transition-all duration-200 cursor-pointer active:scale-90 border border-white/20 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 scale-90 group-hover:scale-100 group-focus-within:scale-100"
                   title="Supprimer cette zone de livraison"
@@ -1097,11 +1189,13 @@ function BoutiqueTab({
 
                 <div className="flex items-center gap-2 w-full max-w-full">
                   <ZoneAutocomplete
+                      id={`delivery-zone-input-${idx}`}
                       value={fee.zone}
                       city={localMerchant?.city}
                       countryCode={localMerchant?.country}
                       onChange={(val) => {
                         setDeliveryFees((prev: any[]) => prev.map((f: any, i: number) => i === idx ? { ...f, zone: val } : f));
+                        setIsDirty(true);
                       }}
                       placeholder="Ex: Riviera 3"
                       className="flex-1 min-w-0 h-12 sm:h-14 text-xs sm:text-sm font-bold"
@@ -1117,6 +1211,7 @@ function BoutiqueTab({
                         onChange={(e) => {
                           const val = parseInt(e.target.value.replace(/\D/g, "")) || 0;
                           setDeliveryFees((prev: any[]) => prev.map((f: any, i: number) => i === idx ? { ...f, price: val } : f));
+                          setIsDirty(true);
                         }}
                     />
                     <span className="absolute right-2.5 sm:right-3.5 top-1/2 -translate-y-1/2 text-[9px] sm:text-[10px] font-black text-slate-400 dark:text-white/30 pointer-events-none font-mono">
@@ -1127,25 +1222,46 @@ function BoutiqueTab({
               </div>
            ))}
 
-           {deliveryFees.length === 0 && localMerchant?.city && (
-              <div className="p-3 sm:p-4 rounded-2xl bg-slate-50 dark:bg-white/[0.02] border border-dashed border-slate-200 dark:border-white/10 space-y-2">
-                 <p className="text-[10px] sm:text-xs text-slate-600 dark:text-white/50">Suggestions rapides pour votre ville ({localMerchant?.city}) :</p>
-                 <div className="flex flex-wrap gap-1.5 sm:gap-2">
-                    {getZonesForCity(localMerchant.city).slice(0, 4).map((suggestion: any, sIdx: number) => (
-                      <button
-                          key={sIdx}
-                          type="button"
-                          onClick={() => {
-                            setDeliveryFees((prev: any[]) => [...prev, { zone: suggestion.name, price: suggestion.suggestedPrice }]);
-                          }}
-                          className="px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/20 text-sky-600 dark:text-sky-300 text-[10px] sm:text-xs font-bold transition-all cursor-pointer"
-                      >
-                        + {suggestion.name} ({suggestion.suggestedPrice} {localMerchant?.currency || "XOF"})
-                      </button>
-                    ))}
-                 </div>
+           {deliveryFees.length === 0 && (
+              <div className="p-4 rounded-2xl bg-slate-50 dark:bg-white/[0.02] border border-dashed border-slate-200 dark:border-white/10 text-center space-y-3">
+                 <p className="text-xs text-slate-500 dark:text-white/40 font-medium">
+                   Aucune zone de livraison enregistrée pour le moment.
+                 </p>
+                 {localMerchant?.city && (
+                   <div className="space-y-2">
+                     <p className="text-[10px] sm:text-xs text-slate-600 dark:text-white/50 font-bold">Suggestions rapides pour votre ville ({localMerchant?.city}) :</p>
+                     <div className="flex flex-wrap justify-center gap-2">
+                        {getZonesForCity(localMerchant.city).slice(0, 4).map((suggestion: any, sIdx: number) => (
+                          <button
+                              key={sIdx}
+                              type="button"
+                              onClick={() => handleAddDeliveryFee(suggestion.name, suggestion.suggestedPrice)}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/20 text-sky-700 dark:text-sky-300 text-xs font-bold transition-all active:scale-95 cursor-pointer"
+                          >
+                            <MapPin size={12} className="text-sky-500 shrink-0" />
+                            <span>{suggestion.name}</span>
+                            <span className="text-[10px] font-mono opacity-70">({suggestion.suggestedPrice} {localMerchant?.currency || "XOF"})</span>
+                          </button>
+                        ))}
+                     </div>
+                   </div>
+                 )}
               </div>
            )}
+
+           {/* Bouton Ajouter une zone de livraison - DIRECTEMENT sous la liste des zones */}
+           <div className="pt-2">
+             <button
+                type="button"
+                onClick={() => handleAddDeliveryFee()}
+                className="w-full sm:w-auto h-11 sm:h-12 px-4 sm:px-5 rounded-xl sm:rounded-2xl bg-sky-500/10 hover:bg-sky-500/15 dark:bg-sky-500/10 dark:hover:bg-sky-500/20 text-sky-700 dark:text-sky-300 border border-sky-500/25 hover:border-sky-500/40 text-xs sm:text-sm font-black uppercase tracking-wider flex items-center justify-center gap-2.5 transition-all duration-200 active:scale-95 cursor-pointer shadow-xs hover:shadow-md hover:shadow-sky-500/10"
+             >
+                <div className="h-6 w-6 rounded-lg bg-sky-500/20 flex items-center justify-center text-sky-700 dark:text-sky-300 shrink-0">
+                  <Plus size={14} className="stroke-[3]" />
+                </div>
+                <span>Ajouter une zone de livraison</span>
+             </button>
+           </div>
 
            {/* Livreur Habituel & Dispatch Automatique WhatsApp */}
            <div className="pt-6 border-t border-slate-200 dark:border-white/10 space-y-4">
@@ -1177,6 +1293,7 @@ function BoutiqueTab({
                           name: e.target.value
                         }
                       });
+                      setIsDirty(true);
                     }}
                     placeholder="Ex: Moussa Express, Livreur Diallo..."
                     className="w-full h-12 bg-slate-50 dark:bg-black/40 border border-slate-200 dark:border-white/10 rounded-xl sm:rounded-2xl px-3.5 text-xs sm:text-sm text-slate-900 dark:text-white font-bold outline-none focus:border-purple-500 transition-all"
@@ -1198,6 +1315,7 @@ function BoutiqueTab({
                           phone: e.target.value
                         }
                       });
+                      setIsDirty(true);
                     }}
                     placeholder="Ex: +225 07 00 00 00 00 ou 0700000000"
                     className="w-full h-12 bg-slate-50 dark:bg-black/40 border border-slate-200 dark:border-white/10 rounded-xl sm:rounded-2xl px-3.5 text-xs sm:text-sm text-slate-900 dark:text-white font-mono font-bold outline-none focus:border-purple-500 transition-all"
@@ -1232,57 +1350,13 @@ function BoutiqueTab({
                           autoDispatch: e.target.checked
                         }
                       });
+                      setIsDirty(true);
                     }}
                     className="sr-only peer"
                   />
                   <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-white/10 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-purple-600"></div>
                 </label>
               </div>
-           </div>
-
-           <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-2">
-             <button
-                type="button"
-                onClick={() => {
-                  setDeliveryFees((prev: any[]) => [...prev, { zone: "", price: 1000 }]);
-                }}
-                className="flex items-center gap-2 text-sky-600 dark:text-sky-400 text-[10px] font-black uppercase tracking-[0.2em] hover:underline px-1 py-1 cursor-pointer"
-             >
-                <Plus size={16} /> Ajouter une zone de livraison
-             </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  const validDelivery = deliveryFees.filter((f: any) => f && f.zone && f.zone.trim() !== "");
-                  if (validDelivery.length === 0 && !localMerchant?.defaultDeliveryGuy?.phone) {
-                    toast.error("Veuillez renseigner au moins une zone de livraison ou un numéro de livreur.");
-                    return;
-                  }
-                  setSavedSectionType("delivery");
-                  updateMutation.mutate("delivery");
-                }}
-                disabled={updateMutation.isPending || (!isDeliveryModified && deliveryFees.length === 0 && !localMerchant?.defaultDeliveryGuy?.phone)}
-                className={cn(
-                  "h-12 px-6 rounded-2xl font-black uppercase text-xs tracking-wider flex items-center justify-center gap-2 transition-all shadow-lg shrink-0",
-                  !isDeliveryModified && (deliveryFees.length > 0 || !!localMerchant?.defaultDeliveryGuy?.phone)
-                    ? "bg-slate-100 dark:bg-white/10 text-slate-400 dark:text-white/50 border border-slate-200 dark:border-white/10 cursor-default"
-                    : "bg-sky-500 hover:bg-sky-400 text-white hover:scale-105 active:scale-95 shadow-sky-500/20 cursor-pointer disabled:opacity-50"
-                )}
-              >
-                {updateMutation.isPending && savedSectionType === "delivery" ? (
-                  <Loader2 size={16} className="animate-spin" />
-                ) : !isDeliveryModified && (deliveryFees.length > 0 || !!localMerchant?.defaultDeliveryGuy?.phone) ? (
-                  <Check size={16} className="text-emerald-500 dark:text-white" />
-                ) : (
-                  <Check size={16} />
-                )}
-                <span>
-                  {!isDeliveryModified && (deliveryFees.length > 0 || !!localMerchant?.defaultDeliveryGuy?.phone)
-                    ? "Paramètres de Livraison Validés"
-                    : "Valider les Paramètres de Livraison"}
-                </span>
-              </button>
            </div>
         </div>
       </section>
@@ -1326,12 +1400,17 @@ function BoutiqueTab({
               const placeholder = matchedProvider?.placeholder || (p.provider === "Carte Bancaire" ? "Lien ou instructions" : p.provider?.includes("Virement") || p.provider?.includes("Bank") ? "IBAN / Détails bancaires" : p.provider === "Autre (Préciser)" ? "Détails" : "07 00 00 00 00");
 
               return (
-                <div key={idx} className="relative group space-y-2 animate-in slide-in-from-left-2 duration-300 py-1">
+                <div
+                  key={idx}
+                  id={`payment-channel-${idx}`}
+                  className="relative group space-y-2 animate-in slide-in-from-left-2 duration-300 py-1"
+                >
                   {/* Bouton Supprimer en exposant au coin supérieur droit lors du clic/focus ou survol */}
                   <button
                     type="button"
                     onClick={() => {
                       setPayments((prev: any[]) => prev.filter((_: any, i: number) => i !== idx));
+                      setIsDirty(true);
                     }}
                     className="absolute -top-1.5 -right-1.5 z-20 h-6 w-6 sm:h-6 sm:w-6 rounded-full bg-rose-500 hover:bg-rose-600 text-white shadow-md shadow-rose-500/40 flex items-center justify-center transition-all duration-200 cursor-pointer active:scale-90 border border-white/20 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 scale-90 group-hover:scale-100 group-focus-within:scale-100"
                     title="Supprimer ce canal"
@@ -1349,6 +1428,7 @@ function BoutiqueTab({
                             onChange={(e) => {
                               const val = e.target.value;
                               setPayments((prev: any[]) => prev.map((item: any, i: number) => i === idx ? { ...item, provider: val } : item));
+                              setIsDirty(true);
                             }}
                           >
                             {countryProviders.map(provider => (
@@ -1376,6 +1456,7 @@ function BoutiqueTab({
                             onChange={(e) => {
                               const val = e.target.value;
                               setPayments((prev: any[]) => prev.map((item: any, i: number) => i === idx ? { ...item, number: val } : item));
+                              setIsDirty(true);
                             }}
                             placeholder={placeholder}
                           />
@@ -1398,6 +1479,7 @@ function BoutiqueTab({
                         onChange={(e) => {
                           const val = e.target.value;
                           setPayments((prev: any[]) => prev.map((item: any, i: number) => i === idx ? { ...item, customLabel: val } : item));
+                          setIsDirty(true);
                         }}
                       />
                     </div>
@@ -1406,50 +1488,16 @@ function BoutiqueTab({
               );
             })}
 
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-2">
+            <div className="pt-2">
               <button
                 type="button"
-                onClick={() => {
-                  const countryProviders = getProvidersForCountry(localMerchant?.country || "CI");
-                  const defaultProvider = countryProviders[0]?.label || "Wave";
-                  setPayments((prev: any[]) => [...prev, { provider: defaultProvider, number: "" }]);
-                }}
-                className="flex items-center gap-2 text-sky-600 dark:text-sky-400 text-[10px] font-black uppercase tracking-[0.2em] hover:underline px-1 py-1 cursor-pointer"
+                onClick={handleAddPayment}
+                className="w-full sm:w-auto h-11 sm:h-12 px-4 sm:px-5 rounded-xl sm:rounded-2xl bg-emerald-500/10 hover:bg-emerald-500/15 dark:bg-vendeur-emerald/10 dark:hover:bg-vendeur-emerald/20 text-emerald-800 dark:text-vendeur-emerald border border-emerald-500/25 hover:border-emerald-500/40 text-xs sm:text-sm font-black uppercase tracking-wider flex items-center justify-center gap-2.5 transition-all duration-200 active:scale-95 cursor-pointer shadow-xs hover:shadow-md hover:shadow-emerald-500/10"
               >
-                 <Plus size={16} /> Ajouter un canal de paiement
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  const invalidChannels = payments.filter((p: any) => !p || !p.number || p.number.trim() === "");
-                  if (payments.length > 0 && invalidChannels.length > 0) {
-                    toast.error("Veuillez renseigner le numéro pour tous les moyens de paiement ajoutés.");
-                    return;
-                  }
-                  setSavedSectionType("payments");
-                  updateMutation.mutate("payments");
-                }}
-                disabled={updateMutation.isPending || !isPaymentsModified}
-                className={cn(
-                  "h-12 px-6 rounded-2xl font-black uppercase text-xs tracking-wider flex items-center justify-center gap-2 transition-all shadow-lg shrink-0",
-                  !isPaymentsModified
-                    ? "bg-slate-100 dark:bg-white/10 text-slate-400 dark:text-white/50 border border-slate-200 dark:border-white/10 cursor-default"
-                    : "bg-emerald-500 hover:bg-emerald-400 text-white hover:scale-105 active:scale-95 shadow-emerald-500/20 cursor-pointer disabled:opacity-50"
-                )}
-              >
-                {updateMutation.isPending && savedSectionType === "payments" ? (
-                  <Loader2 size={16} className="animate-spin" />
-                ) : !isPaymentsModified ? (
-                  <Check size={16} className="text-emerald-500 dark:text-emerald-400" />
-                ) : (
-                  <Check size={16} />
-                )}
-                <span>
-                  {!isPaymentsModified
-                    ? "Canaux de Paiement Validés"
-                    : "Valider mes Canaux de Paiement"}
-                </span>
+                <div className="h-6 w-6 rounded-lg bg-emerald-500/20 flex items-center justify-center text-emerald-800 dark:text-vendeur-emerald shrink-0">
+                  <Plus size={14} className="stroke-[3]" />
+                </div>
+                <span>Ajouter un canal de paiement</span>
               </button>
             </div>
          </div>
@@ -1536,6 +1584,16 @@ function BoutiqueTab({
             <button
               type="button"
               onClick={() => {
+                const invalidPayments = payments.filter((p: any) => p && (!p.number || p.number.trim() === "") && p.provider !== "Espèces");
+                if (payments.length > 0 && invalidPayments.length > 0) {
+                  toast.error("Veuillez renseigner le numéro pour tous les moyens de paiement ajoutés (ou supprimez la ligne vide).");
+                  return;
+                }
+                const invalidDelivery = deliveryFees.filter((f: any) => f && (!f.zone || f.zone.trim() === ""));
+                if (deliveryFees.length > 0 && invalidDelivery.length > 0) {
+                  toast.error("Veuillez renseigner le nom de la zone pour tous les frais de livraison ajoutés (ou supprimez la ligne vide).");
+                  return;
+                }
                 setSavedSectionType("all");
                 updateMutation.mutate("all");
               }}
@@ -1553,8 +1611,10 @@ function BoutiqueTab({
         const steps = dashboard?.setupStatus?.steps || [];
         const hasProducts = Boolean(steps.find((s: any) => s.id === "products")?.completed);
         const hasWhatsApp = Boolean(steps.find((s: any) => s.id === "whatsapp")?.completed || merchant?.whatsappConfig?.status === "connected");
-        const hasPayments = payments.length > 0;
-        const hasDelivery = deliveryFees.length > 0;
+        // Vérifier que les moyens de paiement ont un vrai numéro (>= 8 chiffres)
+        const hasPayments = payments.some((p: any) => p?.number?.trim().replace(/\D/g, "").length >= 8);
+        // Vérifier que les zones de livraison ont un nom de zone
+        const hasDelivery = deliveryFees.some((f: any) => f?.zone?.trim());
         const hasSubscription = Boolean(steps.find((s: any) => s.id === "subscription")?.completed || merchant?.subscription?.status === "active");
 
         let modalTitle = "Réglages Boutique Validés ! 🚀";
@@ -1636,7 +1696,11 @@ function BoutiqueTab({
           }
         }
 
-        const isIdentityDone = Boolean(localMerchant?.businessName && localMerchant.businessName !== "Ma Boutique" && (hasPayments || hasDelivery));
+        // Priorité aux données backend (fiables) — fallback sur l'état local en cas de chargement
+        const isIdentityDone = Boolean(
+          dashboard?.setupStatus?.steps?.find((s: any) => s.id === "identity")?.completed ??
+          (localMerchant?.businessName && localMerchant.businessName !== "Ma Boutique" && localMerchant.businessName !== "Votre boutique" && (hasPayments || hasDelivery))
+        );
         const calculatedScore = dashboard?.setupStatus?.score ?? ((isIdentityDone ? 35 : 0) + (hasWhatsApp ? 35 : 0) + (hasProducts ? 30 : 0));
 
         const currentStepKey = savedSectionType === "delivery" ? "delivery" : savedSectionType === "payments" ? "payments" : "boutique";

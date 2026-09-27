@@ -171,8 +171,8 @@ export function DeliveryDispatchModal({ isOpen, onClose, order }: DeliveryDispat
   const isUsingDefaultCourier = defaultCourier?.phone && getCleanPhone(defaultCourier.phone) === cleanPhone;
 
   return createPortal(
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-0 sm:p-4 bg-slate-950/60 dark:bg-black/80 backdrop-blur-md animate-in fade-in duration-300">
-      <div className="bg-slate-50 dark:bg-[#0c1612] border-0 sm:border border-slate-200/90 dark:border-white/10 w-full h-full sm:h-auto max-w-lg rounded-none sm:rounded-[2.5rem] overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300 flex flex-col text-slate-900 dark:text-white supports-[height:100dvh]:h-[100dvh] sm:supports-[height:100dvh]:h-auto max-h-[92vh]">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center sm:items-stretch sm:justify-end p-0 bg-slate-950/60 dark:bg-black/80 backdrop-blur-md animate-in fade-in duration-300" onClick={onClose}>
+      <div className="bg-slate-50 dark:bg-[#0c1612] border-0 sm:border-l border-slate-200/90 dark:border-white/10 w-full h-full sm:h-full sm:w-[520px] rounded-none overflow-hidden shadow-2xl animate-in slide-in-from-right duration-300 flex flex-col text-slate-900 dark:text-white supports-[height:100dvh]:h-[100dvh]" onClick={(e) => e.stopPropagation()}>
         <header className="p-5 sm:p-6 border-b border-slate-100 dark:border-white/5 flex items-center justify-between bg-slate-50/50 dark:bg-white/[0.02] shrink-0">
           <div className="flex items-center gap-3">
             <div className="h-10 w-10 rounded-2xl bg-purple-500/10 flex items-center justify-center border border-purple-500/30 text-purple-600 dark:text-purple-400">

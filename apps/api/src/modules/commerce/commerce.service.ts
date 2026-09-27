@@ -267,10 +267,15 @@ export class CommerceService {
     let merchant = await CommerceMerchantModel.findOne({ ownerId });
 
     if (!merchant) {
-      const rawName = initialData?.businessName || user?.displayName || "Ma Boutique";
-      const cleanName = (rawName.includes("Commerçant WhatsApp") || rawName.includes("Utilisateur Google"))
+      const rawName = initialData?.businessName || "Ma Boutique";
+      const cleanName = (
+        !rawName ||
+        rawName.trim().toLowerCase() === "ma boutique" ||
+        rawName.includes("Commerçant WhatsApp") ||
+        rawName.includes("Utilisateur Google")
+      )
         ? "Ma Boutique"
-        : rawName;
+        : rawName.trim();
       const slug = await this.generateUniqueSlug(cleanName);
       const phoneNum = initialData?.phone || initialData?.whatsappNumber || user?.whatsappNumber || "";
 
@@ -323,14 +328,8 @@ export class CommerceService {
             businessRules: {
               openingHours: "09:00 - 19:00",
               deliveryZones: ["Abidjan", "Intérieur de la Côte d'Ivoire"],
-              deliveryFees: [
-                { zoneName: "Abidjan Centre (Cocody, Plateau, Marcory)", fee: 1500 },
-                { zoneName: "Abidjan Périphérie (Yopougon, Abobo)", fee: 2000 }
-              ],
-              paymentMethods: [
-                { provider: "Wave", number: phoneNum || "Non configuré" },
-                { provider: "Orange Money", number: phoneNum || "Non configuré" }
-              ],
+              deliveryFees: [],
+              paymentMethods: [],
               returnPolicy: "Retours acceptés sous 48h en cas de défaut."
             },
             faq: []
@@ -538,19 +537,42 @@ export class CommerceService {
     const nameTrimmed = (merchant.businessName || "").trim();
     const isDefaultPlaceholderName = !nameTrimmed ||
       nameTrimmed.toLowerCase() === "ma boutique" ||
+      nameTrimmed.toLowerCase() === "votre boutique" ||
+      (nameTrimmed.toLowerCase() === "boutique franck" && !isFounder) ||
       nameTrimmed.includes("Commerçant WhatsApp") ||
-      nameTrimmed.includes("Utilisateur Google");
+      nameTrimmed.includes("Utilisateur Google") ||
+      Boolean(user?.displayName && nameTrimmed.toLowerCase() === user.displayName.trim().toLowerCase()) ||
+      Boolean(user?.email && nameTrimmed.toLowerCase() === user.email.split('@')[0].trim().toLowerCase());
 
     const hasCustomIdentityName = Boolean(nameTrimmed.length > 0 && !isDefaultPlaceholderName);
 
-    // Check if user has actually ADDED payment methods (not just default empty ones)
-    const hasPaymentMethods = (knowledge?.businessRules?.paymentMethods?.length || 0) > 0 &&
-                             knowledge?.businessRules?.paymentMethods?.some((m: any) => m.number && m.number.trim() !== "");
+    const isRealPhoneNumber = (num?: string) => {
+      if (!num) return false;
+      const clean = num.trim().toLowerCase();
+      if (!clean || clean.includes("non configur") || clean === "placeholder") return false;
+      const digits = clean.replace(/\D/g, "");
+      return digits.length >= 8;
+    };
 
-    const hasDeliveryFees = (knowledge?.businessRules?.deliveryFees?.length || 0) > 0;
+    // Check if user has actually configured valid payment methods (not empty, not "Non configuré", valid digits)
+    const hasKnowledgePaymentMethods = (knowledge?.businessRules?.paymentMethods?.length || 0) > 0 &&
+      knowledge?.businessRules?.paymentMethods?.some((m: any) => isRealPhoneNumber(m.number));
+
+    const hasMerchantPaymentChannels = (merchant.paymentChannels?.length || 0) > 0 &&
+      merchant.paymentChannels?.some((p: any) => isRealPhoneNumber(p.number));
+
+    const hasPaymentMethods = Boolean(hasKnowledgePaymentMethods || hasMerchantPaymentChannels);
+
+    // Check if user has real delivery fees (not just the auto-provisioned 2 mock items)
+    const rawDeliveryFees = knowledge?.businessRules?.deliveryFees || [];
+    const isDefaultMockDeliveryFees = rawDeliveryFees.length === 2 &&
+      rawDeliveryFees.some((f: any) => (f.zoneName || f.zone || "").includes("Abidjan Centre")) &&
+      rawDeliveryFees.some((f: any) => (f.zoneName || f.zone || "").includes("Abidjan Périphérie"));
+
+    const hasDeliveryFees = rawDeliveryFees.length > 0 && !isDefaultMockDeliveryFees;
 
     // Grouped Identity & Store Settings (Custom Name + (Payments or Delivery))
-    const isIdentityStepComplete = hasCustomIdentityName && (hasPaymentMethods || hasDeliveryFees);
+    const isIdentityStepComplete = isFounder || (hasCustomIdentityName && (hasPaymentMethods || hasDeliveryFees));
 
     const now = new Date();
     const sub = subscription as any;
@@ -813,7 +835,9 @@ export class CommerceService {
   }
 
   async updateMerchant(ownerId: string, data: any) {
-    let merchant = await this.getOrCreateMerchant(ownerId, data);
+    // Ne pas passer data comme initialData pour éviter que le body de la requête PATCH serve
+    // à créer un marchand avec des données partielles si celui-ci n'existe pas encore
+    let merchant = await this.getOrCreateMerchant(ownerId, {});
 
     if (data.slug) {
       data.slug = await this.generateUniqueSlug(data.slug, merchant._id.toString());

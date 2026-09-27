@@ -89,7 +89,6 @@ export class AuthService {
     try {
       const { commerceService } = await import("../commerce/commerce.service.js");
       await commerceService.getOrCreateMerchant(user._id.toString(), {
-        businessName: user.displayName,
         phone: user.whatsappNumber
       });
     } catch (err) {
@@ -330,7 +329,7 @@ export class AuthService {
       };
     }
 
-    // 2. Check if user already exists AND has an active, live WhatsApp connection
+    // 2. Returning merchant -> Instant 1-Click Reverse WhatsApp Auth (No password, zero OTP wait, 100% reliable)
     if (!forcePairing) {
       const existingUser = await UserModel.findOne({
         $or: [
@@ -340,25 +339,24 @@ export class AuthService {
       });
 
       if (existingUser) {
-        const merchant = await CommerceMerchantModel.findOne({ ownerId: existingUser._id }).lean();
-        const isConnectedInDb = merchant?.whatsappConfig?.status === "connected" && merchant?.whatsappConfig?.provider === "baileys";
-        const liveSock = whatsappService.getLiveSocket(existingUser._id.toString(), merchant);
+        const magicResult = await this.requestWhatsAppMagicLink(
+          cleanNumber,
+          env.CLIENT_URL || "http://localhost:5173",
+          authSessionId
+        );
+        const systemNumber = magicResult.systemWhatsAppNumber || "2250505111157";
+        const sessionCode = magicResult.sessionCode;
+        const whatsappUrl = `https://wa.me/${systemNumber}?text=${encodeURIComponent(`CONNEXION ${sessionCode}`)}`;
 
-        // Only send OTP if merchant WhatsApp device is genuinely connected and reachable
-        if (isConnectedInDb && liveSock) {
-          const magicResult = await this.requestWhatsAppMagicLink(cleanNumber, env.CLIENT_URL || "http://localhost:5173", authSessionId);
-          if (magicResult.dispatched) {
-            return {
-              mode: "otp" as const,
-              authSessionId: magicResult.authSessionId || authSessionId,
-              phoneNumber: cleanNumber,
-              sessionCode: magicResult.sessionCode,
-              systemWhatsAppNumber: magicResult.systemWhatsAppNumber,
-              dispatched: true,
-              message: "Un code de confirmation à 6 chiffres a été envoyé sur votre WhatsApp."
-            };
-          }
-        }
+        return {
+          mode: "reverse_auth" as const,
+          authSessionId: magicResult.authSessionId || authSessionId,
+          phoneNumber: cleanNumber,
+          sessionCode,
+          systemWhatsAppNumber: systemNumber,
+          whatsappUrl,
+          message: "Ouvrez WhatsApp pour valider votre connexion en 1 clic."
+        };
       }
     }
 
@@ -397,10 +395,6 @@ export class AuthService {
     const sessionCode = Math.floor(1000 + Math.random() * 9000).toString(); // e.g. "7284"
     const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 min
 
-    // 3. Generate 6-digit OTP (for manual input)
-    const code = Math.floor(100000 + Math.random() * 900000).toString();
-    const codeHash = await bcrypt.hash(code, 10);
-
     // Invalidate any previous authenticated sessions for this phone to require fresh auth
     try {
       await AuthSessionModel.updateMany(
@@ -412,7 +406,7 @@ export class AuthService {
       pendingAuthSessions.delete(`phone:${variant}`);
     }
 
-    // 4. Save in Memory Map
+    // 3. Save in Memory Map
     const sessionRecord: PendingAuthSession = {
       phoneNumber: cleanNumber,
       authSessionId,
@@ -426,7 +420,7 @@ export class AuthService {
       pendingAuthSessions.set(`phone:${variant}`, sessionRecord);
     }
 
-    // 5. Persist in MongoDB AuthSessionModel for resilient multi-instance polling
+    // 4. Persist in MongoDB AuthSessionModel for resilient multi-instance polling
     try {
       await AuthSessionModel.findOneAndUpdate(
         { authSessionId },
@@ -438,7 +432,6 @@ export class AuthService {
           status: "pending",
           magicToken: token,
           magicTokenHash: magicHash,
-          otpCode: code,
           clientUrl: clientUrl || env.CLIENT_URL || "http://localhost:5173",
           expiresAt
         },
@@ -448,7 +441,7 @@ export class AuthService {
       console.warn("[Auth] Failed to persist AuthSession in MongoDB, continuing with in-memory:", dbErr);
     }
 
-    // 6. Create or update User in MongoDB
+    // 5. Create or update User in MongoDB
     let user = await UserModel.findOne({ whatsappNumber: cleanNumber });
     const userRoles = isFounder ? ["user", "admin", "creator"] : ["user"];
 
@@ -462,15 +455,11 @@ export class AuthService {
         roles: userRoles,
         magicTokenHash: magicHash,
         magicTokenExpiresAt: expiresAt,
-        otpCodeHash: codeHash,
-        otpExpiresAt: expiresAt,
         onboardingCompleted: false
       });
     } else {
       user.magicTokenHash = magicHash;
       user.magicTokenExpiresAt = expiresAt;
-      user.otpCodeHash = codeHash;
-      user.otpExpiresAt = expiresAt;
       if (isFounder) {
         user.roles = ["user", "admin", "creator"];
         if (!user.displayName || user.displayName.startsWith("Commerçant")) {
@@ -480,17 +469,8 @@ export class AuthService {
       await user.save();
     }
 
-    // 7. Send OTP code directly to user's WhatsApp
-    const otpText = `🔐 *Vendeur IA - Code de Connexion*\n\nVoici votre code de sécurité pour accéder à votre boutique :\n\n👉 *${code}*\n\nCe code est valable 15 minutes.`;
-    let dispatched = false;
-    try {
-      dispatched = await whatsappService.sendDirectMessageToPhone(cleanNumber, otpText);
-    } catch (err) {
-      console.warn("[Auth] Failed to dispatch WhatsApp OTP:", err);
-    }
-
-    // 8. Get System WhatsApp Number
-    let systemWhatsAppNumber = "22505111157";
+    // 6. Get System WhatsApp Number
+    let systemWhatsAppNumber = "2250505111157";
     try {
       const settings = await SystemSettingsModel.findOne();
       const num = settings?.supportWhatsApp;
@@ -499,15 +479,15 @@ export class AuthService {
       }
     } catch {}
 
+    const whatsappUrl = `https://wa.me/${systemWhatsAppNumber}?text=${encodeURIComponent(`CONNEXION ${sessionCode}`)}`;
+
     return { 
       success: true, 
-      dispatched,
       authSessionId,
       sessionCode,
       systemWhatsAppNumber,
-      message: dispatched 
-        ? "Un code de sécurité à 6 chiffres a été envoyé sur votre WhatsApp."
-        : "Impossible d'expédier le code sur WhatsApp. Utilisez le jumelage direct."
+      whatsappUrl,
+      message: "Connectez-vous en 1 clic via WhatsApp."
     };
   }
 
@@ -979,113 +959,6 @@ export class AuthService {
     };
   }
 
-  async requestWhatsAppOtp(whatsappNumber: string) {
-    const cleanNumber = whatsappNumber.replace(/[\s\-\(\)\+]/g, "");
-    if (!cleanNumber || cleanNumber.length < 8) {
-      throw new Error("Numéro WhatsApp invalide.");
-    }
-
-    const isFounder = isFounderNumber(cleanNumber);
-    const founderDisplayName = "Franck (Co-Fondateur & Lead)";
-
-    // Generate 6-digit code
-    const code = Math.floor(100000 + Math.random() * 900000).toString();
-    const codeHash = await bcrypt.hash(code, 10);
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 min
-
-    let user = await UserModel.findOne({ whatsappNumber: cleanNumber });
-    const userRoles = isFounder ? ["user", "admin", "creator"] : ["user"];
-
-    if (!user) {
-      const fallbackEmail = `${cleanNumber.replace(/[^0-9]/g, "")}@whatsapp.vendeur-ia.com`;
-      user = await UserModel.create({
-        whatsappNumber: cleanNumber,
-        email: fallbackEmail,
-        authProvider: "whatsapp",
-        displayName: isFounder ? founderDisplayName : `Commerçant WhatsApp (${cleanNumber.slice(-4)})`,
-        roles: userRoles,
-        otpCodeHash: codeHash,
-        otpExpiresAt: expiresAt,
-        onboardingCompleted: true
-      });
-    } else {
-      user.otpCodeHash = codeHash;
-      user.otpExpiresAt = expiresAt;
-      if (isFounder) {
-        user.roles = ["user", "admin", "creator"];
-        user.onboardingCompleted = true;
-        if (!user.displayName || user.displayName.startsWith("Commerçant")) {
-          user.displayName = founderDisplayName;
-        }
-      }
-      await user.save();
-    }
-
-    // Send OTP message directly via official Meta Cloud API or socket
-    const otpText = `🔐 *Vendeur IA - Code de Connexion*\n\nVoici votre code de sécurité pour accéder à votre boutique :\n\n👉 *${code}*\n\nCe code est valable 10 minutes.`;
-    let dispatched = false;
-    try {
-      dispatched = await whatsappService.sendDirectMessageToPhone(cleanNumber, otpText);
-    } catch (err) {
-      console.warn("[WhatsApp Auth] Failed to dispatch OTP in requestWhatsAppOtp:", err);
-    }
-
-    console.log(`[WhatsApp Auth] Code OTP pour ${cleanNumber}: ${code} (dispatched: ${dispatched})`);
-    return { 
-      success: true, 
-      dispatched,
-      message: dispatched ? "Code OTP envoyé sur votre WhatsApp" : "Code généré", 
-      code: (isFounder || process.env.NODE_ENV !== "production") ? code : undefined 
-    };
-  }
-
-  async verifyWhatsAppOtp(whatsappNumber: string, code: string) {
-    const cleanNumber = whatsappNumber.replace(/[\s\-\(\)\+]/g, "");
-    const phoneVariants = generatePhoneVariants(cleanNumber);
-    const isFounder = isFounderNumber(cleanNumber);
-
-    if (isFounder) {
-      return this.founderLogin(cleanNumber, code);
-    }
-
-    const user = await UserModel.findOne({
-      $or: [
-        { whatsappNumber: cleanNumber },
-        { whatsappNumber: { $in: phoneVariants } }
-      ],
-      otpExpiresAt: { $gt: new Date() }
-    });
-
-    if (!user || !user.otpCodeHash) {
-      throw new Error("Code OTP expiré ou numéro invalide.");
-    }
-
-    const isValid = await bcrypt.compare(code, user.otpCodeHash);
-    if (!isValid) {
-      throw new Error("Code OTP incorrect.");
-    }
-
-    user.otpCodeHash = undefined;
-    user.otpExpiresAt = undefined;
-    user.magicTokenHash = undefined;
-    user.magicTokenExpiresAt = undefined;
-    if (user.displayName === "Franck (Co-Fondateur & Lead)") {
-      user.roles = ["user"];
-      user.displayName = `Commerçant WhatsApp (${cleanNumber.slice(-4)})`;
-    }
-    await user.save();
-
-    const tokens = await this.generateTokens(user);
-
-    // Notify other devices
-    const io = getSocketServer();
-    if (io) {
-      io.to(`auth:${cleanNumber}`).emit("auth:success", tokens);
-    }
-
-    return tokens;
-  }
-
   async register(input: any) {
     const { email, password, displayName } = input;
     const cleanEmail = (email || "").trim().toLowerCase();
@@ -1156,27 +1029,32 @@ export class AuthService {
 
     let user = await UserModel.findOne({ email: payload.email });
     if (!user) {
+      // Nouveau user Google : onboardingCompleted = false car il n'a pas encore configuré sa boutique
       user = await UserModel.create({
         email: payload.email,
         googleId: payload.sub,
         displayName: payload.name || "Utilisateur Google",
         avatarUrl: payload.picture,
-        onboardingCompleted: true,
+        onboardingCompleted: false,
         emailVerifiedAt: new Date(), // Google emails are considered verified
       });
     } else {
-      user.onboardingCompleted = true;
-      let changed = true;
+      // User existant : on ne force PAS onboardingCompleted à true ici,
+      // on garde la valeur déjà en DB pour ne pas bypasser l'onboarding d'un compte non configuré
+      let changed = false;
       if (!user.googleId) {
         user.googleId = payload.sub;
+        changed = true;
       }
       if (!user.avatarUrl && payload.picture) {
         user.avatarUrl = payload.picture;
+        changed = true;
       }
       if (!user.emailVerifiedAt) {
         user.emailVerifiedAt = new Date();
+        changed = true;
       }
-      await user.save();
+      if (changed) await user.save();
     }
 
     return this.generateTokens(user);

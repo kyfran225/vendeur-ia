@@ -13,7 +13,8 @@ import {
   Check,
   RefreshCw,
   Eye,
-  EyeOff
+  EyeOff,
+  ExternalLink
 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { Logo } from "@/components/ui/Logo";
@@ -114,7 +115,7 @@ const GoogleLoginButton = ({
 
 export function AuthSheet({ isOpen, onClose, onSuccess }: { isOpen: boolean; onClose: () => void; onSuccess?: (sessionData: any) => void }) {
   const [authMethod, setAuthMethod] = useState<"whatsapp" | "email">("whatsapp");
-  const [whatsappStep, setWhatsappStep] = useState<"input" | "pairing" | "otp" | "founder">("input");
+  const [whatsappStep, setWhatsappStep] = useState<"input" | "pairing" | "reverse_auth" | "founder">("input");
   const [pairTab, setPairTab] = useState<"code" | "qr">("code");
   const [pairingCode, setPairingCode] = useState<string>("");
   const [qrCodeData, setQrCodeData] = useState<string>("");
@@ -124,9 +125,10 @@ export function AuthSheet({ isOpen, onClose, onSuccess }: { isOpen: boolean; onC
   const [isConnectingLive, setIsConnectingLive] = useState<boolean>(false);
   const [isRegenerating, setIsRegenerating] = useState<boolean>(false);
 
-  // OTP State for returning users
-  const [otpValue, setOtpValue] = useState("");
-  const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
+  // 1-Click Reverse Auth State for returning users (Zero password, zero OTP wait)
+  const [sessionCode, setSessionCode] = useState<string>("");
+  const [whatsappUrl, setWhatsappUrl] = useState<string>("");
+  const [systemWhatsAppNumber, setSystemWhatsAppNumber] = useState<string>("2250505111157");
 
   // Founder & Direct PIN State
   const [founderPin, setFounderPin] = useState("");
@@ -173,6 +175,8 @@ export function AuthSheet({ isOpen, onClose, onSuccess }: { isOpen: boolean; onC
     setPairingCode("");
     setQrCodeData("");
     setIsConnectingLive(false);
+    setSessionCode("");
+    setWhatsappUrl("");
 
     if (tempData?.whatsappNumber) {
       const p = parsePhoneNumber(tempData.whatsappNumber, tempData?.country || "CI");
@@ -196,11 +200,20 @@ export function AuthSheet({ isOpen, onClose, onSuccess }: { isOpen: boolean; onC
 
   // Complete login helper
   const completeAuth = useCallback(
-    async (sessionData: any) => {
+    async (sessionData: any, authType?: "whatsapp" | "email" | "google") => {
       if (isAuthCompletedRef.current) return;
       isAuthCompletedRef.current = true;
 
       setSession(sessionData);
+
+      // Message du toast selon le type de connexion
+      const toastMessage =
+        authType === "email"
+          ? "Connexion réussie ! 🎉"
+          : authType === "google"
+          ? "Connexion Google réussie ! 🎉"
+          : "WhatsApp appairé avec succès ! 🎉";
+
       toast.custom(
         () => (
           <div className="flex items-center gap-3 bg-white dark:bg-[#0b1410] border border-emerald-500/40 text-slate-900 dark:text-white p-3.5 sm:p-4 rounded-2xl shadow-[0_10px_30px_rgba(16,185,129,0.25)] min-w-[300px] animate-in slide-in-from-top-2 duration-300">
@@ -214,7 +227,7 @@ export function AuthSheet({ isOpen, onClose, onSuccess }: { isOpen: boolean; onC
                 <span className="text-[10px] text-slate-500 dark:text-white/50 font-bold uppercase">Connecté</span>
               </div>
               <p className="text-xs sm:text-sm font-black text-slate-900 dark:text-white truncate mt-0.5">
-                WhatsApp appairé avec succès ! 🎉
+                {toastMessage}
               </p>
             </div>
           </div>
@@ -276,7 +289,7 @@ export function AuthSheet({ isOpen, onClose, onSuccess }: { isOpen: boolean; onC
       // 2. Check if merchant profile already exists and is configured in DB
       try {
         const res = await apiClient.get("/api/commerce/merchant");
-        if (res.data && res.data.businessName && res.data.businessName !== "Votre boutique" && res.data.onboardingCompleted) {
+        if (res.data && res.data.businessName && res.data.businessName !== "Votre boutique" && res.data.businessName !== "Ma Boutique" && res.data.onboardingCompleted) {
           useAuthStore.getState().updateUser({ onboardingCompleted: true });
           navigate("/dashboard");
           return;
@@ -285,7 +298,7 @@ export function AuthSheet({ isOpen, onClose, onSuccess }: { isOpen: boolean; onC
         // New user without merchant profile yet
       }
 
-      // 3. User authenticated via WhatsApp/email but hasn't configured store yet:
+      // 3. User authenticated via WhatsApp/email/Google but hasn't configured store yet:
       // Stay on landing page form so they can configure their store name & details!
       useAuthStore.getState().updateUser({ onboardingCompleted: false });
       navigate("/");
@@ -293,9 +306,9 @@ export function AuthSheet({ isOpen, onClose, onSuccess }: { isOpen: boolean; onC
     [setSession, onClose, navigate, tempData]
   );
 
-  // Real-time socket & polling listener during pairing / OTP
+  // Real-time socket & polling listener during pairing / Reverse Auth
   useEffect(() => {
-    if ((whatsappStep !== "pairing" && whatsappStep !== "otp") || !localPhone) return;
+    if ((whatsappStep !== "pairing" && whatsappStep !== "reverse_auth") || !localPhone) return;
 
     const fullPhoneNumber = `${selectedCountry.dialCode}${localPhone}`.replace(/\D/g, "");
     const localCleanNumber = localPhone.replace(/\D/g, "");
@@ -313,6 +326,9 @@ export function AuthSheet({ isOpen, onClose, onSuccess }: { isOpen: boolean; onC
       if (authSessionIdRef.current) {
         socket.emit("join_auth", authSessionIdRef.current);
         socket.emit("join_session", authSessionIdRef.current);
+      }
+      if (sessionCode) {
+        socket.emit("join_auth", sessionCode);
       }
     };
 
@@ -364,7 +380,8 @@ export function AuthSheet({ isOpen, onClose, onSuccess }: { isOpen: boolean; onC
       try {
         const res = await apiClient.post("/api/auth/poll-status", {
           authSessionId: authSessionIdRef.current || undefined,
-          phoneNumber: fullPhoneNumber
+          phoneNumber: fullPhoneNumber,
+          sessionCode: sessionCode || undefined
         });
         if (res.data && res.data.status === "authenticated" && res.data.sessionData) {
           if (isAuthCompletedRef.current) return;
@@ -395,7 +412,7 @@ export function AuthSheet({ isOpen, onClose, onSuccess }: { isOpen: boolean; onC
       window.removeEventListener("focus", handleFocus);
       socket.disconnect();
     };
-  }, [whatsappStep, localPhone, selectedCountry, completeAuth]);
+  }, [whatsappStep, localPhone, selectedCountry, sessionCode, completeAuth]);
 
   // Request Pairing Code / OTP / Founder initiation
   const handleInitiateWhatsApp = async (e?: React.FormEvent) => {
@@ -429,9 +446,12 @@ export function AuthSheet({ isOpen, onClose, onSuccess }: { isOpen: boolean; onC
         } else {
           toast.info("Accès Démo Marchand détecté.");
         }
-      } else if (res.data?.mode === "otp") {
-        setWhatsappStep("otp");
-        toast.info("Un code à 6 chiffres a été envoyé sur votre WhatsApp.");
+      } else if (res.data?.mode === "reverse_auth") {
+        setSessionCode(res.data.sessionCode || "");
+        setWhatsappUrl(res.data.whatsappUrl || "");
+        setSystemWhatsAppNumber(res.data.systemWhatsAppNumber || "2250505111157");
+        setWhatsappStep("reverse_auth");
+        toast.success("Boutique reconnue ! Validez votre connexion en 1 clic sur WhatsApp.");
       } else {
         setPairingCode(res.data?.pairingCode || "");
         if (res.data?.qr) setQrCodeData(res.data.qr);
@@ -511,31 +531,6 @@ export function AuthSheet({ isOpen, onClose, onSuccess }: { isOpen: boolean; onC
     setTimeout(() => setCopied(false), 2500);
   };
 
-  // OTP Verification
-  const handleVerifyOtp = async (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    if (otpValue.length !== 6) return;
-
-    const fullPhoneNumber = `${selectedCountry.dialCode}${localPhone}`.replace(/\D/g, "");
-    setIsVerifyingOtp(true);
-    try {
-      const res = await apiClient.post("/api/auth/whatsapp-otp-verify", {
-        phoneNumber: fullPhoneNumber,
-        code: otpValue
-      });
-      await completeAuth(res.data);
-    } catch (err: any) {
-      toast.error(err.response?.data?.error || "Code incorrect ou expiré.");
-    } finally {
-      setIsVerifyingOtp(false);
-    }
-  };
-
-  useEffect(() => {
-    if (otpValue.length === 6) {
-      handleVerifyOtp();
-    }
-  }, [otpValue]);
 
   // Email form state
   const [form, setForm] = useState({
@@ -563,7 +558,7 @@ export function AuthSheet({ isOpen, onClose, onSuccess }: { isOpen: boolean; onC
 
       const endpoint = mode === "login" ? "/api/auth/login" : "/api/auth/register";
       const res = await apiClient.post(endpoint, cleanForm);
-      await completeAuth(res.data);
+      await completeAuth(res.data, "email");
     } catch (err: any) {
       toast.error(err.response?.data?.error || "Une erreur est survenue.");
     } finally {
@@ -603,8 +598,8 @@ export function AuthSheet({ isOpen, onClose, onSuccess }: { isOpen: boolean; onC
               {authMethod === "whatsapp"
                 ? whatsappStep === "founder"
                   ? "Accès Fondateur & Système"
-                  : whatsappStep === "otp"
-                  ? "Code de Sécurité WhatsApp"
+                  : whatsappStep === "reverse_auth"
+                  ? "Connexion 1-Clic WhatsApp"
                   : "Accès Commerçant"
                 : mode === "login"
                 ? "Connexion Équipe"
@@ -616,8 +611,8 @@ export function AuthSheet({ isOpen, onClose, onSuccess }: { isOpen: boolean; onC
               {authMethod === "whatsapp"
                 ? whatsappStep === "founder"
                   ? "Numéro système configuré sur l'API Meta Cloud."
-                  : whatsappStep === "otp"
-                  ? "Saisissez le code de sécurité reçu sur votre WhatsApp."
+                  : whatsappStep === "reverse_auth"
+                  ? "Validez votre identité en 1 clic sur WhatsApp sans aucun mot de passe."
                   : "Activez votre commercial IA sur WhatsApp en quelques secondes."
                 : "Espace d'accès par email pour l'équipe."}
             </p>
@@ -699,7 +694,7 @@ export function AuthSheet({ isOpen, onClose, onSuccess }: { isOpen: boolean; onC
                       <div className="h-px flex-1 bg-slate-200 dark:bg-white/5" />
                     </div>
                     <GoogleLoginButton
-                      onSuccess={onClose}
+                      onSuccess={(sessionData) => completeAuth(sessionData, "google")}
                       onLoading={setGoogleLoading}
                       disabled={loading}
                     />
@@ -914,91 +909,98 @@ export function AuthSheet({ isOpen, onClose, onSuccess }: { isOpen: boolean; onC
               </div>
             )}
 
-            {/* STEP 3: RETURNING USER OTP VIEW */}
-            {whatsappStep === "otp" && (
-              <form onSubmit={handleVerifyOtp} className="space-y-4 animate-in zoom-in-95 duration-200">
-                <div className="flex items-center justify-between p-3 rounded-2xl bg-slate-50 dark:bg-white/[0.03] border border-slate-200 dark:border-white/10 shadow-inner">
+            {/* STEP 3: RETURNING USER 1-CLICK WHATSAPP REVERSE AUTH VIEW (ZERO PASSWORD, ZERO OTP WAIT) */}
+            {whatsappStep === "reverse_auth" && (
+              <div className="space-y-3.5 animate-in zoom-in-95 duration-200">
+                {/* Account badge */}
+                <div className="flex items-center justify-between p-3 rounded-2xl bg-emerald-500/5 dark:bg-white/[0.03] border border-emerald-500/20 dark:border-white/10 shadow-inner">
                   <div className="flex items-center gap-2.5 min-w-0">
-                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+                    <span className="w-2.5 h-2.5 rounded-full bg-[#25D366] animate-pulse shrink-0" />
                     <div className="text-left min-w-0">
-                      <p className="text-[10px] text-slate-500 dark:text-white/40 uppercase font-black tracking-wider leading-none">Code envoyé au numéro</p>
+                      <p className="text-[10px] text-slate-500 dark:text-white/40 uppercase font-black tracking-wider leading-none">
+                        Boutique reconnue
+                      </p>
                       <p className="text-xs font-mono font-bold text-slate-900 dark:text-white truncate mt-1">
                         {formatDisplayPhone(`${selectedCountry.dialCode}${localPhone}`, selectedCountry.code)}
                       </p>
                     </div>
                   </div>
                   <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-md bg-emerald-100 dark:bg-emerald-500/15 text-emerald-800 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-500/30 shrink-0">
-                    WhatsApp Live
+                    1-Clic WhatsApp
                   </span>
                 </div>
 
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-white/50 ml-1">
-                    Code de confirmation (6 chiffres)
-                  </label>
-                  <input
-                    required
-                    type="text"
-                    inputMode="numeric"
-                    maxLength={6}
-                    className="w-full h-13 bg-slate-50 dark:bg-black/50 border border-slate-200 dark:border-white/10 focus:border-emerald-500 rounded-2xl text-center text-slate-950 dark:text-white font-mono text-2xl tracking-[0.35em] placeholder:text-slate-400 dark:placeholder:text-white/20 outline-none transition-all shadow-inner"
-                    placeholder="••••••"
-                    value={otpValue}
-                    onChange={(e) => setOtpValue(e.target.value.replace(/\D/g, ""))}
-                    autoFocus
-                  />
+                {/* Primary WhatsApp 1-Click Action Button */}
+                <a
+                  href={whatsappUrl || `https://wa.me/${systemWhatsAppNumber}?text=${encodeURIComponent(`CONNEXION ${sessionCode}`)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full h-14 bg-[#25D366] hover:bg-[#20bd5a] text-slate-950 font-black text-xs sm:text-sm uppercase tracking-wider rounded-2xl flex items-center justify-center gap-2.5 shadow-xl shadow-[#25D366]/25 transition-all transform active:scale-[0.98] cursor-pointer"
+                >
+                  <WhatsAppIcon size={20} className="shrink-0" />
+                  <span>Ouvrir WhatsApp & Valider</span>
+                  <ExternalLink size={16} className="shrink-0 opacity-80" />
+                </a>
+
+                {/* Live Waiting indicator */}
+                <div className="flex items-center justify-center gap-2 py-1 text-xs text-slate-600 dark:text-white/60">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
+                  <span className="text-[11px] font-medium">En attente de votre message dans WhatsApp...</span>
                 </div>
 
-                <button
-                  type="submit"
-                  disabled={isVerifyingOtp || otpValue.length !== 6}
-                  className="w-full h-13 min-h-[52px] bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black uppercase tracking-widest text-xs sm:text-sm rounded-2xl flex items-center justify-center gap-2 active:scale-[0.98] transition-all disabled:opacity-50 shadow-xl shadow-emerald-500/20 cursor-pointer"
-                >
-                  {isVerifyingOtp ? (
-                    <Loader2 className="animate-spin shrink-0" size={18} />
-                  ) : (
-                    <>
-                      <span>Confirmer & Accéder</span>
-                      <ChevronRight size={16} className="shrink-0" />
-                    </>
-                  )}
-                </button>
+                {/* Step Instructions Card */}
+                <div className="bg-slate-50 dark:bg-white/[0.03] border border-slate-200 dark:border-white/5 rounded-2xl p-3.5 text-xs space-y-2 text-left">
+                  <p className="text-[11px] font-black uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
+                    Connexion en 3 secondes :
+                  </p>
+                  <ol className="space-y-1.5 text-slate-700 dark:text-white/80 text-[11px] leading-tight list-decimal list-inside">
+                    <li>Cliquez sur le bouton vert <strong>« Ouvrir WhatsApp & Valider »</strong>.</li>
+                    <li>
+                      Appuyez sur <strong>Envoyer</strong> dans WhatsApp (le message <code className="px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-500/20 font-mono font-bold text-emerald-800 dark:text-emerald-300">CONNEXION {sessionCode}</code> est déjà prêt).
+                    </li>
+                    <li>Revenez ici : votre boutique s'ouvre <strong>automatiquement</strong> sans mot de passe !</li>
+                  </ol>
+                </div>
 
+                {/* Desktop QR Code Option */}
+                <div className="p-3 rounded-2xl bg-slate-50 dark:bg-white/[0.02] border border-slate-200 dark:border-white/5 text-center space-y-2">
+                  <p className="text-[10px] text-slate-500 dark:text-white/50 leading-tight">
+                    Vous êtes sur ordinateur ? Scannez avec l'appareil photo de votre téléphone :
+                  </p>
+                  <div className="inline-block bg-white p-2 rounded-xl border border-slate-200 dark:border-white/10 shadow-sm">
+                    <QRCodeSVG
+                      value={whatsappUrl || `https://wa.me/${systemWhatsAppNumber}?text=${encodeURIComponent(`CONNEXION ${sessionCode}`)}`}
+                      size={110}
+                      level="M"
+                      className="mx-auto"
+                    />
+                  </div>
+                  <p className="text-[10px] text-slate-400 dark:text-white/40">
+                    Code de session : <strong className="text-slate-800 dark:text-white">CONNEXION {sessionCode}</strong>
+                  </p>
+                </div>
+
+                {/* Fallbacks */}
                 <div className="flex items-center justify-between text-xs text-slate-500 dark:text-white/40 pt-1">
                   <button
                     type="button"
                     onClick={() => {
                       setWhatsappStep("input");
-                      setOtpValue("");
                     }}
-                    className="hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer"
+                    className="hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer text-[11px]"
                   >
                     ← Changer de numéro
                   </button>
 
                   <button
                     type="button"
-                    onClick={handleInitiateWhatsApp}
-                    className="text-emerald-700 dark:text-emerald-400 hover:underline transition-colors font-bold cursor-pointer"
-                  >
-                    Renvoyer le code
-                  </button>
-                </div>
-
-                <div className="pt-3 p-3 rounded-2xl bg-slate-50 dark:bg-white/[0.03] border border-slate-200 dark:border-white/10 text-center space-y-2">
-                  <p className="text-[11px] text-slate-500 dark:text-white/50 leading-tight">
-                    Vous souhaitez connecter un autre téléphone ou réinitialiser ?
-                  </p>
-                  <button
-                    type="button"
                     onClick={handleRegenerateCode}
-                    className="w-full py-2 px-3 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 hover:bg-emerald-100 dark:hover:bg-emerald-500/20 border border-emerald-300 dark:border-emerald-500/30 text-emerald-800 dark:text-emerald-400 text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-2"
+                    className="text-emerald-700 dark:text-emerald-400 hover:underline transition-colors font-bold cursor-pointer text-[11px]"
                   >
-                    <QrCode size={14} />
-                    <span>Ré-appairer un appareil (Code / QR)</span>
+                    Changer d'appareil (QR)
                   </button>
                 </div>
-              </form>
+              </div>
             )}
 
             {/* STEP 4: FOUNDER DIRECT PIN AUTH */}

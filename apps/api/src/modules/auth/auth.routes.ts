@@ -202,41 +202,6 @@ router.post("/poll-status", async (req, res) => {
   }
 });
 
-// WhatsApp Request OTP
-router.post("/whatsapp-otp-request", async (req, res) => {
-  try {
-    const { phoneNumber } = req.body;
-    if (!phoneNumber) {
-      return res.status(400).json({ error: "Le numéro WhatsApp est obligatoire." });
-    }
-    const result = await authService.requestWhatsAppOtp(phoneNumber);
-    res.json(result);
-  } catch (error: any) {
-    res.status(400).json({ error: error.message });
-  }
-});
-
-// WhatsApp Verify OTP
-router.post("/whatsapp-otp-verify", async (req, res) => {
-  try {
-    const { phoneNumber, code } = req.body;
-    if (!phoneNumber || !code) {
-      return res.status(400).json({ error: "Le numéro et le code OTP sont requis." });
-    }
-    const tokens = await authService.verifyWhatsAppOtp(phoneNumber, code);
-
-    // Only notify here if it's NOT a founder number (because founderLogin already handles its own notification inside the service)
-    const isFounder = tokens?.user?.roles?.includes("creator") || tokens?.user?.roles?.includes("admin");
-    if (!isFounder) {
-      notifyAdminOfLogin(tokens?.user, "OTP Code WhatsApp");
-    }
-
-    res.json(tokens);
-  } catch (error: any) {
-    res.status(400).json({ error: error.message });
-  }
-});
-
 router.post("/forgot-password", validate(forgotPasswordSchema), async (req, res) => {
   try {
     await authService.forgotPassword(req.body.email);

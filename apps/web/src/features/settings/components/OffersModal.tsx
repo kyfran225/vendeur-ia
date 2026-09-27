@@ -80,10 +80,13 @@ export function OffersModal({ isOpen, onClose }: OffersModalProps) {
   );
 
   return createPortal(
-    <div className="fixed inset-0 z-[300] flex flex-col items-center justify-start sm:justify-center p-0 sm:p-4 md:p-6 overflow-y-auto no-scrollbar sm:py-8">
-      <div className="fixed inset-0 bg-black/80 backdrop-blur-xl hidden sm:block" onClick={onClose} />
+    <div className="fixed inset-0 z-[300] flex items-stretch justify-end" onClick={onClose}>
+      <div className="fixed inset-0 bg-black/80 backdrop-blur-xl" />
 
-      <div className="relative w-full h-full sm:h-auto max-w-5xl bg-white dark:bg-[#09110d] border-0 sm:border border-slate-200 dark:border-white/10 rounded-none sm:rounded-[2.5rem] md:rounded-[3rem] overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300 flex flex-col my-0 sm:my-auto shrink-0 text-slate-900 dark:text-white supports-[height:100dvh]:h-[100dvh] sm:supports-[height:100dvh]:h-auto">
+      <div
+        className="relative w-full h-full sm:w-[640px] bg-white dark:bg-[#09110d] border-0 sm:border-l border-slate-200 dark:border-white/10 rounded-none overflow-hidden shadow-2xl animate-in slide-in-from-right duration-300 flex flex-col text-slate-900 dark:text-white supports-[height:100dvh]:h-[100dvh]"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Glow ambient spots */}
         <div className="absolute top-0 right-1/4 w-96 h-48 bg-emerald-500/10 dark:bg-vendeur-emerald/10 blur-[90px] rounded-full pointer-events-none" />
         <div className="absolute bottom-0 left-1/4 w-96 h-48 bg-emerald-600/5 blur-[90px] rounded-full pointer-events-none" />
@@ -95,28 +98,29 @@ export function OffersModal({ isOpen, onClose }: OffersModalProps) {
           <X size={16} />
         </button>
 
-        {/* Modal Header */}
-        <div className="p-5 sm:p-8 pb-4 sm:pb-5 text-center space-y-1.5 sm:space-y-2 border-b border-slate-200 dark:border-white/5 relative z-10">
+        {/* Drawer Header */}
+        <div className="p-5 sm:p-8 pb-4 sm:pb-5 text-center space-y-1.5 sm:space-y-2 border-b border-slate-200 dark:border-white/5 relative z-10 shrink-0">
           <div className="inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-3.5 py-1 rounded-full bg-emerald-50 dark:bg-vendeur-emerald/10 border border-emerald-200 dark:border-vendeur-emerald/30 text-emerald-700 dark:text-vendeur-emerald text-[10px] sm:text-[11px] font-black uppercase tracking-wider">
             <Sparkles size={12} className="shrink-0" />
             <span>{isEssentialActive ? "Passez au niveau supérieur" : "Formules Vendeur IA"}</span>
           </div>
-          <h2 className="text-xl sm:text-3xl md:text-4xl font-black uppercase tracking-tight text-slate-900 dark:text-white leading-tight">
+          <h2 className="text-xl sm:text-3xl font-black uppercase tracking-tight text-slate-900 dark:text-white leading-tight">
             {isEssentialActive ? (
               <>Passez à la vitesse <span className="text-emerald-600 dark:text-vendeur-emerald">PRO</span></>
             ) : (
               <>Choisissez votre <span className="text-emerald-600 dark:text-vendeur-emerald">Vendeur IA</span></>
             )}
           </h2>
-          <p className="text-[11px] sm:text-xs md:text-sm text-slate-600 dark:text-white/60 font-medium max-w-xl mx-auto leading-relaxed px-2">
+          <p className="text-[11px] sm:text-xs text-slate-600 dark:text-white/60 font-medium max-w-xl mx-auto leading-relaxed px-2">
             {isEssentialActive
               ? "Débloquez l'API Meta Cloud officielle, le multicanal (WhatsApp + Instagram), le Broadcast IA et le support VIP."
               : "Activez votre commercial IA autonome 24h/24. Sans engagement, paiements Mobile Money (Wave, Orange, MTN, Moov) et Carte sécurisés."}
           </p>
         </div>
 
-        {/* 3 Offers Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-0 divide-y md:divide-y-0 md:divide-x divide-slate-200 dark:divide-white/10 items-stretch relative z-10">
+        {/* 3 Offers — scrollable column list */}
+        <div className="overflow-y-auto flex-1 relative z-10">
+        <div className="grid grid-cols-1 divide-y divide-slate-200 dark:divide-white/10 items-stretch">
           
           {/* OPTION 1: ESSENTIEL */}
           <div className={cn("p-5 sm:p-7 md:p-8 flex flex-col justify-between space-y-5 sm:space-y-6 relative", isEssentialActive ? "bg-slate-50/50 dark:bg-white/[0.02]" : "hover:bg-slate-50/80 dark:hover:bg-white/[0.02] transition-colors")}>
@@ -303,17 +307,18 @@ export function OffersModal({ isOpen, onClose }: OffersModalProps) {
           </div>
 
         </div>
-      </div>
+        </div>
 
-      {/* Centered Bottom Link */}
-      <div className="relative z-10 w-full max-w-5xl text-center mt-3 sm:mt-4 mb-2 shrink-0">
-        <button
-          onClick={onClose}
-          className="text-slate-500 hover:text-slate-900 dark:text-white/60 dark:hover:text-white text-xs sm:text-sm font-bold uppercase tracking-wider py-2 sm:py-2.5 px-4 sm:px-6 rounded-2xl hover:bg-slate-200/50 dark:hover:bg-white/5 transition-all cursor-pointer inline-flex items-center justify-center gap-2"
-        >
-          <span>Continuer gratuitement & explorer mon espace</span>
-          <span>→</span>
-        </button>
+        {/* Footer — Continuer gratuitement */}
+        <div className="relative z-10 border-t border-slate-200 dark:border-white/5 shrink-0 text-center py-3 sm:py-4 px-4">
+          <button
+            onClick={onClose}
+            className="text-slate-500 hover:text-slate-900 dark:text-white/60 dark:hover:text-white text-xs sm:text-sm font-bold uppercase tracking-wider py-2 sm:py-2.5 px-4 sm:px-6 rounded-2xl hover:bg-slate-200/50 dark:hover:bg-white/5 transition-all cursor-pointer inline-flex items-center justify-center gap-2"
+          >
+            <span>Continuer gratuitement & explorer mon espace</span>
+            <span>→</span>
+          </button>
+        </div>
       </div>
     </div>,
     document.body

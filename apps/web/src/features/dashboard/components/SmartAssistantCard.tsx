@@ -99,12 +99,18 @@ export function SmartAssistantCard({
   const isCustomName = Boolean(
     nameTrimmed.length > 0 &&
     nameTrimmed.toLowerCase() !== "ma boutique" &&
+    nameTrimmed.toLowerCase() !== "votre boutique" &&
     !nameTrimmed.includes("Commerçant WhatsApp") &&
     !nameTrimmed.includes("Utilisateur Google")
   );
+  const hasValidPayments = Boolean(
+    (merchant?.paymentChannels?.length || 0) > 0 &&
+    merchant.paymentChannels.some((p: any) => p.number && p.number.replace(/\D/g, "").length >= 8)
+  );
+  const isFallbackIdentityDone = isCustomName && hasValidPayments;
 
   const rawSteps = setupStatus?.steps && setupStatus.steps.length > 0 ? setupStatus.steps : [
-    { id: 'identity', label: 'Identité & Réglages Boutique', completed: isCustomName, weight: 35 },
+    { id: 'identity', label: 'Identité & Réglages Boutique', completed: isFallbackIdentityDone, weight: 35 },
     { id: 'whatsapp', label: 'Numéro WhatsApp de vente', completed: false, weight: 35 },
     { id: 'products', label: 'Catalogue & Produits', completed: (dashboard?.products?.length || 0) > 0, weight: 30 }
   ];

@@ -77,7 +77,9 @@ export function StoreSetupWizardModal({
 
   // Merchant Identity State
   const merchant = dashboard?.merchant || {};
-  const [businessName, setBusinessName] = useState(merchant?.businessName || "");
+  const [businessName, setBusinessName] = useState(
+    merchant?.businessName && merchant.businessName !== "Ma Boutique" ? merchant.businessName : ""
+  );
   const [category, setCategory] = useState(merchant?.category || "clothing");
   const [city, setCity] = useState(merchant?.city || "Abidjan");
   const [whatsappNumber, setWhatsappNumber] = useState(merchant?.whatsappNumber || merchant?.phone || "");
@@ -132,7 +134,9 @@ export function StoreSetupWizardModal({
 
   useEffect(() => {
     if (merchant) {
-      if (merchant.businessName) setBusinessName(merchant.businessName);
+      if (merchant.businessName && merchant.businessName !== "Ma Boutique") {
+        setBusinessName(merchant.businessName);
+      }
       if (merchant.category) setCategory(merchant.category);
       if (merchant.city) setCity(merchant.city);
       if (merchant.whatsappNumber || merchant.phone) setWhatsappNumber(merchant.whatsappNumber || merchant.phone);
@@ -509,7 +513,7 @@ export function StoreSetupWizardModal({
           {currentStep < 3 ? (
             <button
               type="button"
-              disabled={!businessName.trim()}
+              disabled={!businessName.trim() || businessName.trim().toLowerCase() === "ma boutique"}
               onClick={() => setCurrentStep((prev) => (prev + 1) as any)}
               className="h-11 px-6 rounded-xl bg-vendeur-emerald hover:bg-emerald-400 text-white font-black uppercase text-xs tracking-wider flex items-center gap-2 transition-all shadow-lg shadow-emerald-500/20 disabled:opacity-50 cursor-pointer"
             >
@@ -519,7 +523,7 @@ export function StoreSetupWizardModal({
           ) : (
             <button
               type="button"
-              disabled={saveMutation.isPending || !businessName.trim()}
+              disabled={saveMutation.isPending || !businessName.trim() || businessName.trim().toLowerCase() === "ma boutique"}
               onClick={() => saveMutation.mutate()}
               className="h-11 px-6 rounded-xl bg-vendeur-emerald hover:bg-emerald-400 text-white font-black uppercase text-xs tracking-wider flex items-center gap-2 transition-all shadow-lg shadow-emerald-500/20 disabled:opacity-50 cursor-pointer"
             >

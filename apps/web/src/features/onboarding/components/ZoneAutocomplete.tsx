@@ -29,19 +29,23 @@ const TYPE_BADGES: Record<string, { label: string; bg: string; text: string }> =
 };
 
 export function ZoneAutocomplete({
+  id,
   value,
   onChange,
   city,
   countryCode = "CI",
   placeholder = "Ex: Plateau, Cocody Angré, Almadies, Zone 4...",
-  className
+  className,
+  autoFocus
 }: {
+  id?: string;
   value: string;
   onChange: (value: string) => void;
   city?: string;
   countryCode?: string;
   placeholder?: string;
   className?: string;
+  autoFocus?: boolean;
 }) {
   const [suggestions, setSuggestions] = useState<ZoneSuggestionItem[]>([]);
   const [loading, setLoading] = useState(false);
@@ -181,15 +185,17 @@ export function ZoneAutocomplete({
     <div className="relative w-full group" ref={containerRef}>
       <div className={cn(
         "absolute left-4 top-1/2 -translate-y-1/2 transition-colors z-10",
-        value ? "text-sky-500" : "text-white/20 group-focus-within:text-sky-500"
+        value ? "text-sky-500" : "text-slate-400 dark:text-white/20 group-focus-within:text-sky-500"
       )}>
         {loading ? <Loader2 size={14} className="animate-spin" /> : <Search size={14} />}
       </div>
 
       <input
+        id={id}
+        autoFocus={autoFocus}
         type="text"
         className={cn(
-          "h-12 w-full rounded-xl border border-white/10 bg-black/40 pl-11 pr-10 text-white outline-none focus:border-sky-500 transition-all placeholder:text-white/20 text-xs",
+          "h-12 w-full rounded-xl sm:rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-black/40 pl-11 pr-10 text-slate-900 dark:text-white outline-none focus:border-sky-500 transition-all placeholder:text-slate-400 dark:placeholder:text-white/20 text-xs sm:text-sm",
           className
         )}
         value={value}
@@ -212,7 +218,7 @@ export function ZoneAutocomplete({
             setSuggestions([]);
             setShowSuggestions(false);
           }}
-          className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-white/20 hover:text-white transition-colors z-10 cursor-pointer"
+          className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-700 dark:text-white/20 dark:hover:text-white transition-colors z-10 cursor-pointer"
         >
           <X size={12} />
         </button>
@@ -228,7 +234,7 @@ export function ZoneAutocomplete({
               left: `${coords.left}px`,
               width: `${Math.max(coords.width, 300)}px`
             }}
-            className="z-[99999] max-h-60 overflow-y-auto rounded-xl border border-white/10 bg-vendeur-coal p-1 shadow-2xl animate-in fade-in zoom-in-95 duration-200 no-scrollbar divide-y divide-white/5"
+            className="z-[99999] max-h-60 overflow-y-auto rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-vendeur-coal p-1 shadow-2xl animate-in fade-in zoom-in-95 duration-200 no-scrollbar divide-y divide-slate-100 dark:divide-white/5"
           >
             {suggestions.map((suggestion) => {
               const badge = TYPE_BADGES[suggestion.type] || TYPE_BADGES.neighborhood;
@@ -240,10 +246,10 @@ export function ZoneAutocomplete({
                     e.preventDefault();
                     handleSelect(suggestion);
                   }}
-                  className="flex w-full flex-col gap-0.5 rounded-lg px-3.5 py-2 text-left transition-colors hover:bg-white/5 cursor-pointer group/item"
+                  className="flex w-full flex-col gap-0.5 rounded-lg px-3.5 py-2 text-left transition-colors hover:bg-slate-100 dark:hover:bg-white/5 cursor-pointer group/item"
                 >
                   <div className="flex items-center gap-1.5 flex-wrap">
-                    <span className="text-xs font-bold text-white leading-tight group-hover/item:text-sky-400 transition-colors">
+                    <span className="text-xs font-bold text-slate-900 dark:text-white leading-tight group-hover/item:text-sky-500 dark:group-hover/item:text-sky-400 transition-colors">
                       {suggestion.name}
                     </span>
                     <span className={cn("text-[9px] font-bold px-1.5 py-0.2 rounded tracking-wider uppercase", badge.bg)}>
@@ -251,7 +257,7 @@ export function ZoneAutocomplete({
                     </span>
                   </div>
                   {suggestion.secondaryText && (
-                    <span className="text-[10px] text-white/40 truncate">
+                    <span className="text-[10px] text-slate-500 dark:text-white/40 truncate">
                       {suggestion.secondaryText}
                     </span>
                   )}

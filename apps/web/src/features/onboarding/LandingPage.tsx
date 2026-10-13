@@ -618,8 +618,8 @@ function LandingHero({
               {/* Video Element */}
               <video
                 ref={videoRef}
-                src="/videos/vendeur-ia-demo-optimized.mp4"
-                poster="/videos/vendeur-ia-demo-poster.webp"
+                src="/videos/vid2222-optimized.mp4"
+                poster="/videos/vid2222-poster.webp"
                 autoPlay
                 loop
                 muted={isMuted}

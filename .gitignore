@@ -49,6 +49,8 @@ pnpm-debug.log*
 apps/web/public/videos/*
 !apps/web/public/videos/vendeur-ia-demo-optimized.mp4
 !apps/web/public/videos/vendeur-ia-demo-poster.webp
+!apps/web/public/videos/vid2222-optimized.mp4
+!apps/web/public/videos/vid2222-poster.webp
 
 apps/api/storage/
 apps/api/uploads/audio/

@@ -600,11 +600,15 @@ function LandingHero({
 
             {/* Clean & Compact Video Stage - Enlarged Display on Mobile */}
             <div
-              className="relative w-full aspect-[9/16] rounded-2xl sm:rounded-3xl overflow-hidden bg-slate-100 dark:bg-[#07100d] border border-slate-200/90 dark:border-white/10 shadow-[0_25px_60px_rgba(0,0,0,0.18)] dark:shadow-[0_30px_70px_rgba(0,0,0,0.8)] group ring-1 ring-black/5 dark:ring-white/10"
+              onClick={togglePlay}
+              className="relative w-full aspect-[9/16] rounded-2xl sm:rounded-3xl overflow-hidden bg-slate-100 dark:bg-[#07100d] border border-slate-200/90 dark:border-white/10 shadow-[0_25px_60px_rgba(0,0,0,0.18)] dark:shadow-[0_30px_70px_rgba(0,0,0,0.8)] group ring-1 ring-black/5 dark:ring-white/10 touch-pan-y cursor-pointer select-none"
             >
               {/* Minimalist Glass Audio Button (Top Right) */}
               <button
-                onClick={toggleMute}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toggleMute();
+                }}
                 title={isMuted ? "Activer le son" : "Couper le son"}
                 className="absolute top-3 right-3 z-30 h-8 w-8 sm:h-9 sm:w-9 rounded-full bg-white/80 dark:bg-black/60 backdrop-blur-md border border-slate-200/80 dark:border-white/20 text-slate-800 dark:text-white flex items-center justify-center transition-all hover:scale-110 active:scale-95 cursor-pointer shadow-md hover:bg-white dark:hover:bg-black/80 group/btn"
               >
@@ -625,21 +629,24 @@ function LandingHero({
                 muted={isMuted}
                 playsInline
                 preload="auto"
-                className="w-full h-full object-cover select-none"
+                className="w-full h-full object-cover select-none pointer-events-none touch-pan-y"
               />
 
               {/* Play/Pause Overlay Controller */}
               <button
-                onClick={togglePlay}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  togglePlay();
+                }}
                 className={cn(
-                  "absolute inset-0 flex items-center justify-center transition-all cursor-pointer z-10",
+                  "absolute inset-0 flex items-center justify-center transition-all cursor-pointer z-10 touch-pan-y",
                   isPlaying
-                    ? "bg-black/10 opacity-0 [@media(hover:hover)]:group-hover:opacity-100"
-                    : "bg-slate-900/40 dark:bg-black/50 backdrop-blur-[2px] opacity-100"
+                    ? "bg-black/10 opacity-0 pointer-events-none [@media(hover:hover)]:pointer-events-auto [@media(hover:hover)]:group-hover:opacity-100"
+                    : "bg-slate-900/40 dark:bg-black/50 backdrop-blur-[2px] opacity-100 pointer-events-auto"
                 )}
                 aria-label={isPlaying ? "Mettre en pause" : "Lire la vidéo"}
               >
-                <div className="p-3.5 sm:p-4 rounded-full bg-white/95 dark:bg-slate-900/90 text-slate-900 dark:text-white border border-slate-200/80 dark:border-white/20 shadow-2xl hover:scale-110 active:scale-95 transition-transform flex items-center justify-center">
+                <div className="p-3.5 sm:p-4 rounded-full bg-white/95 dark:bg-slate-900/90 text-slate-900 dark:text-white border border-slate-200/80 dark:border-white/20 shadow-2xl hover:scale-110 active:scale-95 transition-transform flex items-center justify-center pointer-events-auto">
                   {isPlaying ? (
                     <Pause size={18} className="text-slate-900 dark:text-white" />
                   ) : (
@@ -721,6 +728,19 @@ export function LandingPage() {
     setMobileMenuOpen(false);
   };
 
+  const handleCloseProductModal = () => {
+    setProductModalOpen(false);
+    if (searchParams.get("product")) {
+      const nextParams = new URLSearchParams(searchParams);
+      nextParams.delete("product");
+      setSearchParams(nextParams, { replace: true });
+    }
+    const validTabs = ["vision", "marketing", "api", "simulator", "payments"];
+    if (validTabs.includes(location.hash.replace("#", ""))) {
+      navigate(location.pathname + (searchParams.toString() ? `?${searchParams.toString()}` : ""), { replace: true });
+    }
+  };
+
   // Synchronize URL query or hash with product modal
   useEffect(() => {
     const productParam = searchParams.get("product") as ProductTab | null;
@@ -795,7 +815,7 @@ export function LandingPage() {
   }, [user, isMasterAdmin, navigate]);
 
   return (
-    <div data-page="landing" className="min-h-[100dvh] bg-slate-50 dark:bg-[#07100d] text-slate-900 dark:text-white selection:bg-emerald-300/30 overflow-x-hidden pt-16 md:pt-20 lg:pt-24 w-full text-left transition-colors duration-200">
+    <div data-page="landing" className="min-h-[100dvh] bg-slate-50 dark:bg-[#07100d] text-slate-900 dark:text-white selection:bg-emerald-300/30 overflow-x-clip pt-16 md:pt-20 lg:pt-24 w-full text-left transition-colors duration-200">
       <MetaHead
         title="Vendeur IA | Commercial Virtuel Haute-Performance sur WhatsApp"
         description="Vendeur IA : votre commercial virtuel sur WhatsApp & Instagram. Répondez, conseillez et vendez 24h/24, 7j/7."
@@ -1347,7 +1367,7 @@ export function LandingPage() {
       {/* PRODUCT SHOWCASE DEEP-DIVE MODAL */}
       <ProductShowcaseModal
         isOpen={productModalOpen}
-        onClose={() => setProductModalOpen(false)}
+        onClose={handleCloseProductModal}
         initialTab={selectedProductTab}
         onLaunchDemo={handleLaunchDemo}
       />

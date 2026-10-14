@@ -307,10 +307,10 @@ export function PublicShop() {
     if (selectedProduct || isStoryModalOpen || isShareModalOpen) {
       document.body.style.overflow = "hidden";
     } else {
-      document.body.style.overflow = "unset";
+      document.body.style.overflow = "";
     }
     return () => {
-      document.body.style.overflow = "unset";
+      document.body.style.overflow = "";
     };
   }, [selectedProduct, isStoryModalOpen, isShareModalOpen]);
 

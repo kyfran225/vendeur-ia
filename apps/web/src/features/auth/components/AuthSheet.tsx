@@ -569,7 +569,7 @@ export function AuthSheet({ isOpen, onClose, onSuccess }: { isOpen: boolean; onC
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/40 dark:bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
       <div
         className={cn(
           "relative w-full bg-white dark:bg-[#0e1612] border border-slate-200 dark:border-white/10 rounded-[1.75rem] p-4 sm:p-6 shadow-2xl overflow-hidden transition-all duration-300 text-slate-900 dark:text-white",

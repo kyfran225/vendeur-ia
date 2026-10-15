@@ -94,14 +94,6 @@ export function PosterGenerator({
     (productData.images && productData.images[0]) ||
     "";
 
-  // Lock background scroll while studio is mounted
-  useEffect(() => {
-    const origOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = origOverflow;
-    };
-  }, []);
 
   // Inspect image dimensions and adapt default format to the base photo
   useEffect(() => {
@@ -596,7 +588,7 @@ export function PosterGenerator({
   };
 
   const modalContent = (
-    <div className="fixed inset-0 top-0 left-0 right-0 bottom-0 z-[99999] w-screen h-screen h-[100dvh] bg-slate-900/98 dark:bg-slate-950 flex flex-col overflow-hidden text-slate-900 dark:text-white select-none">
+    <div className="fixed inset-0 top-0 left-0 right-0 bottom-0 z-[99999] w-screen h-screen h-[100dvh] bg-slate-900/98 dark:bg-slate-950 flex flex-col overflow-y-auto md:overflow-hidden text-slate-900 dark:text-white select-none">
       {/* Top Navbar: Compact 52px height */}
       <header className="h-[52px] px-3 sm:px-5 bg-white dark:bg-[#12141a] border-b border-slate-200 dark:border-white/10 flex justify-between items-center z-50 shrink-0">
         <div className="flex items-center gap-3">
@@ -638,10 +630,10 @@ export function PosterGenerator({
         </div>
       </header>
 
-      {/* Main Studio Body: Side-by-side on desktop, ZERO page scrolling */}
-      <div className="flex-1 min-h-0 flex flex-col md:flex-row overflow-hidden">
+      {/* Main Studio Body: Side-by-side on desktop */}
+      <div className="flex-1 min-h-0 flex flex-col md:flex-row overflow-y-auto md:overflow-hidden">
         {/* Left / Center: Dynamic Canvas Stage */}
-        <div className="flex-1 min-h-0 min-w-0 p-3 sm:p-5 flex items-center justify-center bg-slate-950/90 relative overflow-hidden">
+        <div className="flex-1 min-h-0 min-w-0 p-3 sm:p-5 flex items-center justify-center bg-slate-950/90 relative overflow-auto">
           <div className="relative max-h-full max-w-full flex items-center justify-center">
             <canvas
               ref={canvasRef}

@@ -572,7 +572,13 @@ export class CommerceService {
     const hasDeliveryFees = rawDeliveryFees.length > 0 && !isDefaultMockDeliveryFees;
 
     // Grouped Identity & Store Settings (Custom Name + (Payments or Delivery))
-    const isIdentityStepComplete = isFounder || (hasCustomIdentityName && (hasPaymentMethods || hasDeliveryFees));
+    // For services/digital without physical delivery, delivery fees are not required
+    const isServiceOrDigital = merchant.category === "services" || merchant.category === "digital";
+    const hasPhysicalDelivery = merchant.hasPhysicalDelivery !== undefined && merchant.hasPhysicalDelivery !== null
+      ? Boolean(merchant.hasPhysicalDelivery)
+      : !isServiceOrDigital;
+
+    const isIdentityStepComplete = isFounder || (hasCustomIdentityName && (hasPhysicalDelivery ? (hasPaymentMethods || hasDeliveryFees) : hasPaymentMethods));
 
     const now = new Date();
     const sub = subscription as any;

@@ -107,6 +107,11 @@ export function SmartAssistantCard({
     (merchant?.paymentChannels?.length || 0) > 0 &&
     merchant.paymentChannels.some((p: any) => p.number && p.number.replace(/\D/g, "").length >= 8)
   );
+  const isService = merchant?.category === "services";
+  const isDigital = merchant?.category === "digital";
+  const hasPhysicalDelivery = merchant?.hasPhysicalDelivery !== undefined && merchant?.hasPhysicalDelivery !== null
+    ? Boolean(merchant.hasPhysicalDelivery)
+    : (!isService && !isDigital);
   const isFallbackIdentityDone = isCustomName && hasValidPayments;
 
   const rawSteps = setupStatus?.steps && setupStatus.steps.length > 0 ? setupStatus.steps : [
@@ -322,7 +327,7 @@ export function SmartAssistantCard({
                     </>
                   ) : nextStep?.id === "identity" ? (
                     <>
-                      Bienvenue chez <span className="text-amber-600 dark:text-amber-400 font-bold not-italic">{businessName}</span> ! 🏪 Configurez l'identité et les réglages de votre boutique (moyens de paiement Mobile Money et frais de livraison) pour activer les ventes automatiques.
+                      Bienvenue chez <span className="text-amber-600 dark:text-amber-400 font-bold not-italic">{businessName}</span> ! 🏪 Configurez l'identité et les réglages de votre boutique ({hasPhysicalDelivery ? "moyens de paiement Mobile Money et frais de livraison" : "moyens de paiement Mobile Money"}) pour activer les ventes automatiques.
                     </>
                   ) : nextStep?.id === "whatsapp" ? (
                     <>
@@ -344,7 +349,7 @@ export function SmartAssistantCard({
                 ) : (
                   nextStep?.id === "identity" ? (
                     <>
-                      Bienvenue chez <span className="text-emerald-700 dark:text-vendeur-emerald font-bold not-italic">{businessName}</span> ! Configurez votre identité, vos modes de paiement et vos frais de livraison pour valider vos ventes.
+                      Bienvenue chez <span className="text-emerald-700 dark:text-vendeur-emerald font-bold not-italic">{businessName}</span> ! Configurez votre identité{hasPhysicalDelivery ? ", vos modes de paiement et vos frais de livraison" : " et vos modes de paiement"} pour valider vos ventes.
                     </>
                   ) : nextStep?.id === "whatsapp" ? (
                     <>

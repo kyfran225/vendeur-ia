@@ -43,6 +43,7 @@ const CATEGORIES = [
   { id: "electronics", label: "Électronique & High-Tech", icon: "💻" },
   { id: "shoes", label: "Chaussures & Maroquinerie", icon: "👠" },
   { id: "services", label: "Prestations & Services", icon: "🛠️" },
+  { id: "digital", label: "Produits Digitaux & Formations", icon: "📱" },
   { id: "other", label: "Autre commerce", icon: "📦" }
 ];
 
@@ -73,7 +74,6 @@ export function StoreSetupWizardModal({
   dashboard
 }: StoreSetupWizardModalProps) {
   const queryClient = useQueryClient();
-  const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1);
 
   // Merchant Identity State
   const merchant = dashboard?.merchant || {};
@@ -81,9 +81,33 @@ export function StoreSetupWizardModal({
     merchant?.businessName && merchant.businessName !== "Ma Boutique" ? merchant.businessName : ""
   );
   const [category, setCategory] = useState(merchant?.category || "clothing");
+  const isServiceOrDigital = category === "services" || category === "digital";
   const [city, setCity] = useState(merchant?.city || "Abidjan");
   const [whatsappNumber, setWhatsappNumber] = useState(merchant?.whatsappNumber || merchant?.phone || "");
   const [description, setDescription] = useState(merchant?.description || "");
+
+  const handleCategoryChange = (newCat: string) => {
+    setCategory(newCat);
+  };
+
+  type WizardStepId = "profile" | "delivery" | "payments";
+  interface WizardStep {
+    id: WizardStepId;
+    label: string;
+    icon: React.ReactNode;
+  }
+
+  const steps: WizardStep[] = [
+    { id: "profile" as const, label: "Profil de votre boutique", icon: <Store size={22} /> },
+    ...(!isServiceOrDigital ? [{ id: "delivery" as const, label: "Tarifs de Livraison", icon: <Truck size={22} /> }] : []),
+    { id: "payments" as const, label: "Moyens de Paiement", icon: <CreditCard size={22} /> }
+  ];
+
+  const [currentStepId, setCurrentStepId] = useState<WizardStepId>("profile");
+  const currentStepIndex = Math.max(0, steps.findIndex(s => s.id === currentStepId));
+  const activeStep = steps[currentStepIndex] || steps[0];
+  const isFirstStep = currentStepIndex === 0;
+  const isLastStep = currentStepIndex === steps.length - 1;
 
   // Delivery Fees State
   const [deliveryFees, setDeliveryFees] = useState<Array<{ zoneName: string; fee: number }>>([
@@ -137,7 +161,9 @@ export function StoreSetupWizardModal({
       if (merchant.businessName && merchant.businessName !== "Ma Boutique") {
         setBusinessName(merchant.businessName);
       }
-      if (merchant.category) setCategory(merchant.category);
+      if (merchant.category) {
+        setCategory(merchant.category);
+      }
       if (merchant.city) setCity(merchant.city);
       if (merchant.whatsappNumber || merchant.phone) setWhatsappNumber(merchant.whatsappNumber || merchant.phone);
       if (merchant.description) setDescription(merchant.description);
@@ -156,10 +182,12 @@ export function StoreSetupWizardModal({
   // Save Mutation
   const saveMutation = useMutation({
     mutationFn: async () => {
+      const hasPhysicalDelivery = !isServiceOrDigital;
       // 1. Update Merchant Info
       await apiClient.patch("/api/commerce/merchant", {
         businessName: businessName.trim(),
         category,
+        hasPhysicalDelivery,
         city: city.trim(),
         phone: whatsappNumber.trim(),
         whatsappNumber: whatsappNumber.trim(),
@@ -167,14 +195,15 @@ export function StoreSetupWizardModal({
       });
 
       // 2. Update Knowledge Rules (Payments + Delivery)
-      const isServiceOrDigital = category === "services" || category === "digital";
       const cleanPayments = paymentMethods.filter(p => p.number && p.number.trim() !== "");
-      const cleanDelivery = deliveryFees.filter(d => d.zoneName && d.zoneName.trim() !== "");
+      const cleanDelivery = hasPhysicalDelivery
+        ? deliveryFees.filter(d => d.zoneName && d.zoneName.trim() !== "")
+        : [];
 
       await apiClient.patch("/api/commerce/knowledge", {
         businessRules: {
           paymentMethods: cleanPayments.length > 0 ? cleanPayments : [{ provider: "Wave", number: whatsappNumber }],
-          deliveryFees: cleanDelivery.length > 0 ? cleanDelivery : (isServiceOrDigital ? [] : [{ zoneName: "Livraison Standard", fee: 1500 }])
+          deliveryFees: cleanDelivery
         }
       });
     },
@@ -224,18 +253,14 @@ export function StoreSetupWizardModal({
         <div className="px-6 py-5 border-b border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/[0.02] flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3.5">
             <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-2xl bg-vendeur-emerald/15 border border-vendeur-emerald/30 flex items-center justify-center text-vendeur-emerald shrink-0">
-              {currentStep === 1 && <Store size={22} />}
-              {currentStep === 2 && <Truck size={22} />}
-              {currentStep === 3 && <CreditCard size={22} />}
+              {activeStep.icon}
             </div>
             <div>
               <span className="text-[10px] font-black uppercase text-vendeur-emerald tracking-widest bg-vendeur-emerald/10 px-2.5 py-0.5 rounded-full border border-vendeur-emerald/20">
-                Étape {currentStep} sur 3
+                Étape {currentStepIndex + 1} sur {steps.length}
               </span>
               <h2 className="text-base sm:text-lg font-black uppercase tracking-tight text-slate-900 dark:text-white mt-0.5">
-                {currentStep === 1 && "Profil de votre boutique"}
-                {currentStep === 2 && "Tarifs de Livraison"}
-                {currentStep === 3 && "Moyens de Paiement"}
+                {activeStep.label}
               </h2>
             </div>
           </div>
@@ -252,8 +277,8 @@ export function StoreSetupWizardModal({
         <div className="h-1.5 w-full bg-slate-100 dark:bg-white/5 overflow-hidden shrink-0">
           <motion.div
             className="h-full bg-vendeur-emerald"
-            initial={{ width: "33%" }}
-            animate={{ width: `${(currentStep / 3) * 100}%` }}
+            initial={{ width: `${(1 / steps.length) * 100}%` }}
+            animate={{ width: `${((currentStepIndex + 1) / steps.length) * 100}%` }}
             transition={{ duration: 0.3 }}
           />
         </div>
@@ -262,7 +287,7 @@ export function StoreSetupWizardModal({
         <div className="flex-1 overflow-y-auto p-5 sm:p-7 space-y-5 custom-scrollbar">
 
           {/* STEP 1: Identity & Profile */}
-          {currentStep === 1 && (
+          {activeStep.id === "profile" && (
             <motion.div
               key="step1"
               initial={{ opacity: 0, x: 20 }}
@@ -290,7 +315,7 @@ export function StoreSetupWizardModal({
                   </label>
                   <select
                     value={category}
-                    onChange={(e) => setCategory(e.target.value)}
+                    onChange={(e) => handleCategoryChange(e.target.value)}
                     className="w-full h-12 sm:h-13 px-4 rounded-2xl bg-slate-50 dark:bg-black/40 border border-slate-200 dark:border-white/10 focus:border-vendeur-emerald text-sm font-bold outline-none transition-all cursor-pointer"
                   >
                     {CATEGORIES.map((cat) => (
@@ -345,8 +370,8 @@ export function StoreSetupWizardModal({
             </motion.div>
           )}
 
-          {/* STEP 2: Delivery Fees */}
-          {currentStep === 2 && (
+          {/* STEP 2: Delivery Fees (Only if hasPhysicalDelivery is true) */}
+          {activeStep.id === "delivery" && (
             <motion.div
               key="step2"
               initial={{ opacity: 0, x: 20 }}
@@ -354,15 +379,9 @@ export function StoreSetupWizardModal({
               exit={{ opacity: 0, x: -20 }}
               className="space-y-4"
             >
-              {category === "services" || category === "digital" ? (
-                <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-900 dark:text-amber-200 font-medium leading-relaxed">
-                  ✨ <strong>Activité sans livraison physique</strong> : Vous proposez des prestations ou des services/produits digitaux. Vos clients réservent ou reçoivent leurs accès en ligne. Si vous n'avez pas de livraison physique, vous pouvez laisser ces champs vides ou passer à l'étape suivante.
-                </div>
-              ) : (
-                <div className="p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-800 dark:text-emerald-300 font-medium leading-relaxed">
-                  🚚 <strong>Information pour vos clients</strong> : Vendeur IA utilisera ces tarifs pour calculer automatiquement les frais d'expédition lorsqu'un client demande une livraison sur WhatsApp.
-                </div>
-              )}
+              <div className="p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-800 dark:text-emerald-300 font-medium leading-relaxed">
+                🚚 <strong>Information pour vos clients</strong> : Vendeur IA utilisera ces tarifs pour calculer automatiquement les frais d'expédition lorsqu'un client demande une livraison sur WhatsApp.
+              </div>
 
               <div className="space-y-3">
                 {deliveryFees.map((item, idx) => (
@@ -422,7 +441,7 @@ export function StoreSetupWizardModal({
           )}
 
           {/* STEP 3: Payment Channels */}
-          {currentStep === 3 && (
+          {activeStep.id === "payments" && (
             <motion.div
               key="step3"
               initial={{ opacity: 0, x: 20 }}
@@ -504,10 +523,10 @@ export function StoreSetupWizardModal({
 
         {/* Modal Footer Controls */}
         <div className="px-6 py-4 border-t border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/[0.02] flex items-center justify-between gap-3 shrink-0">
-          {currentStep > 1 ? (
+          {!isFirstStep ? (
             <button
               type="button"
-              onClick={() => setCurrentStep((prev) => (prev - 1) as any)}
+              onClick={() => setCurrentStepId(steps[currentStepIndex - 1].id)}
               className="h-11 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-white/5 dark:hover:bg-white/10 text-slate-700 dark:text-white font-black uppercase text-xs tracking-wider flex items-center gap-2 transition-all cursor-pointer"
             >
               <ArrowLeft size={16} />
@@ -517,11 +536,11 @@ export function StoreSetupWizardModal({
             <div />
           )}
 
-          {currentStep < 3 ? (
+          {!isLastStep ? (
             <button
               type="button"
               disabled={!businessName.trim() || businessName.trim().toLowerCase() === "ma boutique"}
-              onClick={() => setCurrentStep((prev) => (prev + 1) as any)}
+              onClick={() => setCurrentStepId(steps[currentStepIndex + 1].id)}
               className="h-11 px-6 rounded-xl bg-vendeur-emerald hover:bg-emerald-400 text-white font-black uppercase text-xs tracking-wider flex items-center gap-2 transition-all shadow-lg shadow-emerald-500/20 disabled:opacity-50 cursor-pointer"
             >
               <span>Suivant</span>

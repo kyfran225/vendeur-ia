@@ -33,6 +33,11 @@ export function SetupGuide({ setupStatus, businessName, dashboard, onOpenStoreSe
   const { score, steps, isFullyOperational } = setupStatus;
 
   const hasPackPro = dashboard?.merchant?.subscription?.type === 'pack_pro' || dashboard?.whatsappConnection?.connectionType === 'meta';
+  const isService = dashboard?.merchant?.category === "services";
+  const isDigital = dashboard?.merchant?.category === "digital";
+  const hasPhysicalDelivery = dashboard?.merchant?.hasPhysicalDelivery !== undefined && dashboard?.merchant?.hasPhysicalDelivery !== null
+    ? Boolean(dashboard.merchant.hasPhysicalDelivery)
+    : (!isService && !isDigital);
 
   // Find the first uncompleted step to highlight it
   const nextStep = steps.find((s: any) => !s.completed);
@@ -83,7 +88,7 @@ export function SetupGuide({ setupStatus, businessName, dashboard, onOpenStoreSe
               <p className="text-xs sm:text-sm md:text-base text-slate-700 dark:text-white/80 leading-relaxed italic break-words">
                 "{nextStep?.id === 'identity' ? (
                   <>
-                    Bienvenue ! Commençons par configurer l'identité de <span className="text-emerald-700 dark:text-vendeur-emerald font-black not-italic">{businessName}</span> (numéro, modes de paiement Mobile Money et frais de livraison) pour que je puisse encaisser tes clients.
+                    Bienvenue ! Commençons par configurer l'identité de <span className="text-emerald-700 dark:text-vendeur-emerald font-black not-italic">{businessName}</span> ({hasPhysicalDelivery ? "numéro, modes de paiement Mobile Money et frais de livraison" : "numéro et modes de paiement Mobile Money"}) pour que je puisse encaisser tes clients.
                   </>
                 ) : nextStep?.id === 'whatsapp' ? (
                   <>

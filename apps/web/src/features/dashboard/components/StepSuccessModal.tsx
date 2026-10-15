@@ -23,6 +23,7 @@ interface StepSuccessModalProps {
   businessName?: string;
   score?: number;
   steps?: Array<{ id: string; label: string; completed: boolean; weight?: number }>;
+  hasPhysicalDelivery?: boolean;
 }
 
 const STEP_ICONS: Record<string, React.ReactNode> = {
@@ -70,6 +71,7 @@ export function StepSuccessModal({
   businessName,
   score,
   steps,
+  hasPhysicalDelivery = true,
 }: StepSuccessModalProps) {
   if (!isOpen) return null;
 
@@ -95,10 +97,13 @@ export function StepSuccessModal({
 
   const progressPercent = displayScore || rawScore;
 
-  const nextLink = nextStep ? NEXT_STEP_LINKS[completedStepId] : "/dashboard";
-  const nextCTA = nextStep
-    ? NEXT_STEP_CTA[completedStepId] || `Étape suivante : ${nextStep.label}`
-    : "Voir mon tableau de bord";
+  const isDeliverySkipped = completedStepId === "payments" && hasPhysicalDelivery === false;
+  const nextLink = isDeliverySkipped ? "/dashboard" : (nextStep ? NEXT_STEP_LINKS[completedStepId] : "/dashboard");
+  const nextCTA = isDeliverySkipped
+    ? "Voir mon tableau de bord"
+    : (nextStep
+      ? NEXT_STEP_CTA[completedStepId] || `Étape suivante : ${nextStep.label}`
+      : "Voir mon tableau de bord");
 
   return createPortal(
     <AnimatePresence>

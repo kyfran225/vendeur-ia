@@ -66,6 +66,7 @@ export const UpdateMerchantSchema = z.object({
     businessName: z.string().min(2).optional().or(z.literal("")),
     slug: z.string().optional(),
     category: z.string().optional(),
+    hasPhysicalDelivery: z.boolean().optional(),
     description: z.string().optional(),
     city: z.string().optional(),
     address: z.string().optional(),

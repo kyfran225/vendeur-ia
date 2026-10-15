@@ -6,6 +6,7 @@ const MerchantSchema = new Schema({
   businessName: { type: String, default: "" },
   slug: { type: String, index: true, lowercase: true, trim: true },
   category: { type: String, default: "" },
+  hasPhysicalDelivery: { type: Boolean, default: null },
   description: { type: String, default: "" },
   country: { type: String, default: "CI" },
   city: { type: String, default: "" },

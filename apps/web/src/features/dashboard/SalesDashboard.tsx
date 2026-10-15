@@ -328,6 +328,11 @@ export function SalesDashboard() {
         businessName={dashboard?.merchant?.businessName}
         score={dashboard?.setupStatus?.score}
         steps={dashboard?.setupStatus?.steps}
+        hasPhysicalDelivery={
+          dashboard?.merchant?.hasPhysicalDelivery !== undefined && dashboard?.merchant?.hasPhysicalDelivery !== null
+            ? Boolean(dashboard.merchant.hasPhysicalDelivery)
+            : (dashboard?.merchant?.category !== "services" && dashboard?.merchant?.category !== "digital")
+        }
       />
 
       <StepMilestoneModal

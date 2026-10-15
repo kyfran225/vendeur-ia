@@ -718,6 +718,18 @@ function BoutiqueTab({
     autoDispatch: Boolean(savedMerchant?.defaultDeliveryGuy?.autoDispatch)
   });
 
+  const isService = localMerchant?.category === "services";
+  const isDigital = localMerchant?.category === "digital";
+  const hasPhysicalDelivery = localMerchant?.hasPhysicalDelivery !== undefined && localMerchant?.hasPhysicalDelivery !== null
+    ? Boolean(localMerchant.hasPhysicalDelivery)
+    : (!isService && !isDigital);
+
+  const savedIsService = savedMerchant?.category === "services";
+  const savedIsDigital = savedMerchant?.category === "digital";
+  const savedHasPhysicalDelivery = savedMerchant?.hasPhysicalDelivery !== undefined && savedMerchant?.hasPhysicalDelivery !== null
+    ? Boolean(savedMerchant.hasPhysicalDelivery)
+    : (!savedIsService && !savedIsDigital);
+
   const isGeneralMerchantModified = (
     (localMerchant?.businessName || "").trim() !== (savedMerchant?.businessName || "").trim() ||
     (localMerchant?.city || "").trim() !== (savedMerchant?.city || "").trim() ||
@@ -725,13 +737,14 @@ function BoutiqueTab({
     (localMerchant?.address || "").trim() !== (savedMerchant?.address || "").trim() ||
     (localMerchant?.description || "").trim() !== (savedMerchant?.description || "").trim() ||
     (localMerchant?.category || "").trim() !== (savedMerchant?.category || "").trim() ||
+    hasPhysicalDelivery !== savedHasPhysicalDelivery ||
     (localMerchant?.currency || "").trim() !== (savedMerchant?.currency || "").trim() ||
     (localMerchant?.billingCurrency || "").trim() !== (savedMerchant?.billingCurrency || "").trim() ||
     (localMerchant?.whatsappNumber || "").trim() !== (savedMerchant?.whatsappNumber || "").trim() ||
     (localMerchant?.phone || "").trim() !== (savedMerchant?.phone || "").trim()
   );
   const isMerchantModified = isGeneralMerchantModified;
-  const hasChanges = isGeneralMerchantModified || isPaymentsModified || isDeliveryModified;
+  const hasChanges = isGeneralMerchantModified || isPaymentsModified || (hasPhysicalDelivery && isDeliveryModified);
 
   const [showMilestoneModal, setShowMilestoneModal] = useState(false);
   const [savedSectionType, setSavedSectionType] = useState<"delivery" | "payments" | "all">("all");
@@ -750,6 +763,7 @@ function BoutiqueTab({
       if (localMerchant?.address !== undefined) merchantPayload.address = localMerchant.address;
       if (localMerchant?.description !== undefined) merchantPayload.description = localMerchant.description;
       if (localMerchant?.category !== undefined) merchantPayload.category = localMerchant.category;
+      merchantPayload.hasPhysicalDelivery = hasPhysicalDelivery;
       if (localMerchant?.currency !== undefined) merchantPayload.currency = localMerchant.currency;
       if (localMerchant?.billingCurrency !== undefined) merchantPayload.billingCurrency = localMerchant.billingCurrency;
       if (localMerchant?.phone !== undefined) merchantPayload.phone = localMerchant.phone;
@@ -763,7 +777,7 @@ function BoutiqueTab({
       }
 
       const cleanPayments = payments.filter((p: any) => p && (p.number?.trim() || p.provider?.trim()));
-      const cleanDelivery = deliveryFees.filter((f: any) => f && f.zone?.trim());
+      const cleanDelivery = hasPhysicalDelivery ? deliveryFees.filter((f: any) => f && f.zone?.trim()) : [];
 
       const normalizedPayments = cleanPayments.map((p: any) => ({
         provider: p.provider || "Wave",
@@ -1107,9 +1121,9 @@ function BoutiqueTab({
                   setLocalMerchant({ ...localMerchant, ...updates });
                   setIsDirty(true);
 
-                  // Automatically suggest adding the detected zone/commune if not already present
+                  // Automatically suggest adding the detected zone/commune if not already present (only if physical delivery is enabled)
                   const zoneName = neighborhood || district;
-                  if (zoneName && !deliveryFees.find((f: any) => f.zone.toLowerCase().includes(zoneName.toLowerCase()))) {
+                  if (hasPhysicalDelivery && zoneName && !deliveryFees.find((f: any) => f.zone.toLowerCase().includes(zoneName.toLowerCase()))) {
                     setDeliveryFees([...deliveryFees, { zone: zoneName, price: 1000 }]);
                     toast.info(`Zone "${zoneName}" ajoutée aux frais de livraison`);
                   }
@@ -1135,7 +1149,9 @@ function BoutiqueTab({
           <div className="flex items-center gap-3 md:gap-4 min-w-0">
             <div className={cn(
               "h-11 w-11 sm:h-12 sm:w-12 md:h-14 md:w-14 rounded-2xl flex items-center justify-center border shrink-0 transition-all",
-              highlightedSection === "delivery"
+              !hasPhysicalDelivery
+                ? "bg-slate-500/10 border-slate-500/20 text-slate-400"
+                : highlightedSection === "delivery"
                 ? "bg-vendeur-emerald/20 border-vendeur-emerald text-vendeur-emerald shadow-lg shadow-vendeur-emerald/20"
                 : "bg-sky-500/10 border-sky-500/20 text-sky-500 dark:text-sky-400"
             )}>
@@ -1144,28 +1160,81 @@ function BoutiqueTab({
             <div className="min-w-0 flex-1">
               <h2 className="text-lg sm:text-xl md:text-2xl font-black uppercase text-slate-900 dark:text-white leading-tight flex items-center gap-2">
                 <span>Frais de Livraison</span>
-                {highlightedSection === "delivery" && (
+                {!hasPhysicalDelivery && (
+                  <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-white/10 text-slate-500 dark:text-white/50 border border-slate-200 dark:border-white/10 hidden sm:inline-block">
+                    Non requis (Sans livraison)
+                  </span>
+                )}
+                {hasPhysicalDelivery && highlightedSection === "delivery" && (
                   <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-vendeur-emerald/20 text-vendeur-emerald border border-vendeur-emerald/40 animate-pulse hidden sm:inline-block">
                     Étape en cours 👉
                   </span>
                 )}
               </h2>
-              <p className="text-[9px] md:text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-white/30">Ces tarifs seront communiqués aux clients.</p>
+              <p className="text-[9px] md:text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-white/30">
+                {hasPhysicalDelivery
+                  ? "Ces tarifs seront communiqués aux clients."
+                  : "Désactivé pour les activités et services sans livraison physique."}
+              </p>
             </div>
           </div>
 
-          {highlightedSection === "delivery" && (
+          {hasPhysicalDelivery && highlightedSection === "delivery" && (
             <span className="sm:hidden text-[9px] font-black uppercase px-2.5 py-1 rounded-full bg-vendeur-emerald/20 text-vendeur-emerald border border-vendeur-emerald/40 animate-pulse shrink-0">
               À configurer
             </span>
           )}
+          {!hasPhysicalDelivery && (
+            <span className="sm:hidden text-[9px] font-black uppercase px-2.5 py-1 rounded-full bg-slate-100 dark:bg-white/10 text-slate-500 dark:text-white/50 border border-slate-200 dark:border-white/10 shrink-0">
+              Non requis
+            </span>
+          )}
         </div>
 
-        <div className="space-y-3 sm:space-y-4 w-full max-w-full">
-           <div className="flex flex-row gap-2 px-1 text-[9px] sm:text-[10px] font-black uppercase tracking-[0.15em] text-slate-400 dark:text-white/30">
-              <span className="flex-1">Zone / Commune</span>
-              <span className="w-28 sm:w-40 text-right pr-2">Tarif ({localMerchant?.currency || "XOF"})</span>
-           </div>
+        {!hasPhysicalDelivery ? (
+          <div className="p-5 sm:p-6 rounded-2xl bg-slate-50 dark:bg-white/[0.02] border border-dashed border-slate-200 dark:border-white/10 space-y-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-vendeur-emerald text-xs font-black">
+                    ✓
+                  </span>
+                  <h3 className="text-xs sm:text-sm font-black uppercase text-slate-900 dark:text-white">
+                    Activité sans livraison physique
+                  </h3>
+                </div>
+                <p className="text-[11px] sm:text-xs text-slate-500 dark:text-white/50 leading-relaxed max-w-xl">
+                  {isService
+                    ? "Votre boutique est configurée en Prestation de Service sans livraison physique."
+                    : isDigital
+                    ? "Votre boutique propose des Produits Digitaux sans livraison physique."
+                    : "Votre boutique est configurée sans livraison physique."}
+                  {" "}Vos clients ne se verront pas facturer de frais de transport et l'assistant IA ne demandera pas d'adresse ou de zone de livraison lors des commandes.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setLocalMerchant({ ...localMerchant, hasPhysicalDelivery: true });
+                  setIsDirty(true);
+                  if (deliveryFees.length === 0) {
+                    handleAddDeliveryFee();
+                  }
+                }}
+                className="shrink-0 h-10 px-3.5 rounded-xl bg-sky-500/10 hover:bg-sky-500/20 text-sky-700 dark:text-sky-300 border border-sky-500/30 text-xs font-black uppercase tracking-wider flex items-center gap-2 transition-all cursor-pointer active:scale-95"
+              >
+                <Plus size={14} className="stroke-[3]" />
+                <span>Activer la livraison</span>
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-3 sm:space-y-4 w-full max-w-full">
+            <div className="flex flex-row gap-2 px-1 text-[9px] sm:text-[10px] font-black uppercase tracking-[0.15em] text-slate-400 dark:text-white/30">
+               <span className="flex-1">Zone / Commune</span>
+               <span className="w-28 sm:w-40 text-right pr-2">Tarif ({localMerchant?.currency || "XOF"})</span>
+            </div>
 
             {deliveryFees.map((fee: any, idx: number) => (
               <div
@@ -1220,9 +1289,9 @@ function BoutiqueTab({
                   </div>
                 </div>
               </div>
-           ))}
+            ))}
 
-           {deliveryFees.length === 0 && (
+            {deliveryFees.length === 0 && (
               <div className="p-4 rounded-2xl bg-slate-50 dark:bg-white/[0.02] border border-dashed border-slate-200 dark:border-white/10 text-center space-y-3">
                  <p className="text-xs text-slate-500 dark:text-white/40 font-medium">
                    Aucune zone de livraison enregistrée pour le moment.
@@ -1247,24 +1316,38 @@ function BoutiqueTab({
                    </div>
                  )}
               </div>
-           )}
+            )}
 
-           {/* Bouton Ajouter une zone de livraison - DIRECTEMENT sous la liste des zones */}
-           <div className="pt-2">
-             <button
-                type="button"
-                onClick={() => handleAddDeliveryFee()}
-                className="w-full sm:w-auto h-11 sm:h-12 px-4 sm:px-5 rounded-xl sm:rounded-2xl bg-sky-500/10 hover:bg-sky-500/15 dark:bg-sky-500/10 dark:hover:bg-sky-500/20 text-sky-700 dark:text-sky-300 border border-sky-500/25 hover:border-sky-500/40 text-xs sm:text-sm font-black uppercase tracking-wider flex items-center justify-center gap-2.5 transition-all duration-200 active:scale-95 cursor-pointer shadow-xs hover:shadow-md hover:shadow-sky-500/10"
-             >
-                <div className="h-6 w-6 rounded-lg bg-sky-500/20 flex items-center justify-center text-sky-700 dark:text-sky-300 shrink-0">
-                  <Plus size={14} className="stroke-[3]" />
-                </div>
-                <span>Ajouter une zone de livraison</span>
-             </button>
-           </div>
+            {/* Bouton Ajouter une zone de livraison - DIRECTEMENT sous la liste des zones */}
+            <div className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+              <button
+                 type="button"
+                 onClick={() => handleAddDeliveryFee()}
+                 className="w-full sm:w-auto h-11 sm:h-12 px-4 sm:px-5 rounded-xl sm:rounded-2xl bg-sky-500/10 hover:bg-sky-500/15 dark:bg-sky-500/10 dark:hover:bg-sky-500/20 text-sky-700 dark:text-sky-300 border border-sky-500/25 hover:border-sky-500/40 text-xs sm:text-sm font-black uppercase tracking-wider flex items-center justify-center gap-2.5 transition-all duration-200 active:scale-95 cursor-pointer shadow-xs hover:shadow-md hover:shadow-sky-500/10"
+              >
+                 <div className="h-6 w-6 rounded-lg bg-sky-500/20 flex items-center justify-center text-sky-700 dark:text-sky-300 shrink-0">
+                   <Plus size={14} className="stroke-[3]" />
+                 </div>
+                 <span>Ajouter une zone de livraison</span>
+              </button>
 
-           {/* Livreur Habituel & Dispatch Automatique WhatsApp */}
-           <div className="pt-6 border-t border-slate-200 dark:border-white/10 space-y-4">
+              {(isService || isDigital) && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setLocalMerchant({ ...localMerchant, hasPhysicalDelivery: false });
+                    setIsDirty(true);
+                  }}
+                  className="text-xs font-bold text-slate-400 hover:text-rose-500 transition-colors flex items-center justify-center gap-1.5 py-2 cursor-pointer"
+                >
+                  <Trash2 size={13} />
+                  <span>Désactiver la livraison pour ce service</span>
+                </button>
+              )}
+            </div>
+
+            {/* Livreur Habituel & Dispatch Automatique WhatsApp */}
+            <div className="pt-6 border-t border-slate-200 dark:border-white/10 space-y-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
                   <div className="h-9 w-9 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center border border-purple-500/20 shrink-0">
@@ -1357,8 +1440,9 @@ function BoutiqueTab({
                   <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-white/10 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-purple-600"></div>
                 </label>
               </div>
-           </div>
-        </div>
+            </div>
+          </div>
+        )}
       </section>
 
       {/* Canal de paiement */}
@@ -1590,7 +1674,7 @@ function BoutiqueTab({
                   return;
                 }
                 const invalidDelivery = deliveryFees.filter((f: any) => f && (!f.zone || f.zone.trim() === ""));
-                if (deliveryFees.length > 0 && invalidDelivery.length > 0) {
+                if (hasPhysicalDelivery && deliveryFees.length > 0 && invalidDelivery.length > 0) {
                   toast.error("Veuillez renseigner le nom de la zone pour tous les frais de livraison ajoutés (ou supprimez la ligne vide).");
                   return;
                 }
@@ -1613,12 +1697,14 @@ function BoutiqueTab({
         const hasWhatsApp = Boolean(steps.find((s: any) => s.id === "whatsapp")?.completed || merchant?.whatsappConfig?.status === "connected");
         // Vérifier que les moyens de paiement ont un vrai numéro (>= 8 chiffres)
         const hasPayments = payments.some((p: any) => p?.number?.trim().replace(/\D/g, "").length >= 8);
-        // Vérifier que les zones de livraison ont un nom de zone
-        const hasDelivery = deliveryFees.some((f: any) => f?.zone?.trim());
+        // Vérifier que les zones de livraison ont un nom de zone (ou non requis si sans livraison physique)
+        const hasDelivery = !hasPhysicalDelivery || deliveryFees.some((f: any) => f?.zone?.trim());
         const hasSubscription = Boolean(steps.find((s: any) => s.id === "subscription")?.completed || merchant?.subscription?.status === "active");
 
         let modalTitle = "Réglages Boutique Validés ! 🚀";
-        let modalSubtitle = "Vos informations de boutique, frais de livraison et comptes de paiement sont enregistrés.";
+        let modalSubtitle = hasPhysicalDelivery
+          ? "Vos informations de boutique, frais de livraison et comptes de paiement sont enregistrés."
+          : "Vos informations d'activité et comptes de paiement sont enregistrés.";
         let primaryLabel = "Tester dans le Simulateur";
         let primarySub = "Vérifiez les réponses de l'IA";
         let primaryHref = "/dashboard?test_ia=true";

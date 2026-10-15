@@ -14,7 +14,9 @@ import {
   Palette,
   Maximize2,
   Minimize2,
-  Tag
+  Tag,
+  Eye,
+  SlidersHorizontal
 } from "lucide-react";
 import { toast } from "sonner";
 import { slugify } from "@/lib/slugify";
@@ -83,6 +85,7 @@ export function PosterGenerator({
   const [includeQrCode, setIncludeQrCode] = useState(true);
   const [isRendering, setIsRendering] = useState(false);
   const [activeTab, setActiveTab] = useState<"style" | "content">("style");
+  const [mobileView, setMobileView] = useState<"preview" | "settings">("preview");
   const [imgNaturalRatio, setImgNaturalRatio] = useState<number | null>(null);
 
   const activeTheme = THEME_PALETTES.find((t) => t.id === selectedTheme) || THEME_PALETTES[0];
@@ -601,12 +604,40 @@ export function PosterGenerator({
             <span>Retour</span>
           </button>
           <div className="h-4 w-px bg-slate-200 dark:bg-white/10 hidden sm:block" />
-          <div className="flex items-center gap-1.5">
+          <div className="hidden md:flex items-center gap-1.5">
             <span className="h-2 w-2 rounded-full bg-vendeur-emerald animate-pulse" />
             <span className="text-xs font-black uppercase tracking-wider text-slate-900 dark:text-white flex items-center gap-1">
               <Sparkles size={13} className="text-vendeur-emerald" /> Instant Studio V2
             </span>
           </div>
+        </div>
+
+        {/* Center: Mobile Segmented Switcher (Affiche vs Paramètres) */}
+        <div className="flex md:hidden items-center bg-slate-100 dark:bg-white/10 p-0.5 rounded-xl border border-slate-200 dark:border-white/10">
+          <button
+            type="button"
+            onClick={() => setMobileView("preview")}
+            className={`px-3 py-1 rounded-lg text-xs font-black uppercase tracking-wider flex items-center gap-1.5 transition-all cursor-pointer ${
+              mobileView === "preview"
+                ? "bg-slate-900 text-white dark:bg-white dark:text-slate-950 shadow-xs"
+                : "text-slate-600 dark:text-white/60"
+            }`}
+          >
+            <Eye size={13} />
+            <span>Affiche</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setMobileView("settings")}
+            className={`px-3 py-1 rounded-lg text-xs font-black uppercase tracking-wider flex items-center gap-1.5 transition-all cursor-pointer ${
+              mobileView === "settings"
+                ? "bg-slate-900 text-white dark:bg-white dark:text-slate-950 shadow-xs"
+                : "text-slate-600 dark:text-white/60"
+            }`}
+          >
+            <SlidersHorizontal size={13} />
+            <span>Modifier</span>
+          </button>
         </div>
 
         {/* Header Action Buttons */}
@@ -630,14 +661,18 @@ export function PosterGenerator({
         </div>
       </header>
 
-      {/* Main Studio Body: Side-by-side on desktop */}
+      {/* Main Studio Body: Side-by-side on desktop, Fullscreen mode switch on mobile */}
       <div className="flex-1 min-h-0 flex flex-col md:flex-row overflow-y-auto md:overflow-hidden">
         {/* Left / Center: Dynamic Canvas Stage */}
-        <div className="flex-1 min-h-0 min-w-0 p-3 sm:p-5 flex items-center justify-center bg-slate-950/90 relative overflow-auto">
-          <div className="relative max-h-full max-w-full flex items-center justify-center">
+        <div
+          className={`flex-1 min-h-0 min-w-0 p-3 sm:p-5 flex-col items-center justify-center bg-slate-950/95 relative overflow-auto ${
+            mobileView === "preview" ? "flex" : "hidden md:flex"
+          }`}
+        >
+          <div className="relative max-h-full max-w-full flex-1 flex items-center justify-center w-full">
             <canvas
               ref={canvasRef}
-              className="max-h-[calc(100dvh-5rem)] max-w-full w-auto h-auto object-contain rounded-2xl shadow-2xl border border-white/10 ring-1 ring-white/5"
+              className="max-h-[calc(100dvh-9.5rem)] md:max-h-[calc(100dvh-5rem)] max-w-full w-auto h-auto object-contain rounded-2xl shadow-2xl border border-white/10 ring-1 ring-white/5"
             />
             {isRendering && (
               <div className="absolute inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center rounded-2xl">
@@ -645,16 +680,48 @@ export function PosterGenerator({
               </div>
             )}
           </div>
+
+          {/* Mobile Bottom Dock when viewing poster */}
+          <div className="w-full max-w-md pt-3 flex md:hidden items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={() => setMobileView("settings")}
+              className="flex-1 h-11 rounded-xl bg-white/10 hover:bg-white/15 border border-white/15 text-white font-black text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 active:scale-95 transition-all cursor-pointer"
+            >
+              <SlidersHorizontal size={14} />
+              <span>Modifier</span>
+            </button>
+            <button
+              type="button"
+              onClick={handleShareWhatsApp}
+              className="flex-2 h-11 rounded-xl bg-vendeur-emerald hover:bg-emerald-400 text-slate-950 font-black text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-lg shadow-vendeur-emerald/20 active:scale-95 transition-all cursor-pointer"
+            >
+              <Share2 size={15} />
+              <span>Statut WhatsApp</span>
+            </button>
+            <button
+              type="button"
+              onClick={handleDownload}
+              className="h-11 w-11 rounded-xl bg-white/10 hover:bg-white/15 border border-white/15 text-white flex items-center justify-center active:scale-95 transition-all cursor-pointer shrink-0"
+              title="Télécharger HD"
+            >
+              <Download size={16} />
+            </button>
+          </div>
         </div>
 
         {/* Right: Studio Control Sidebar */}
-        <div className="w-full md:w-[390px] lg:w-[420px] shrink-0 h-full flex flex-col bg-white dark:bg-[#12141a] border-l border-slate-200 dark:border-white/10 shadow-2xl z-20 overflow-hidden">
-          {/* Tabs Selector: Style & Format vs Contenu & Tarifs */}
-          <div className="p-2 border-b border-slate-200 dark:border-white/10 grid grid-cols-2 gap-1 bg-slate-50 dark:bg-white/[0.02] shrink-0">
+        <div
+          className={`w-full md:w-[390px] lg:w-[420px] shrink-0 h-full flex flex-col bg-white dark:bg-[#12141a] border-l border-slate-200 dark:border-white/10 shadow-2xl z-20 overflow-hidden ${
+            mobileView === "settings" ? "flex" : "hidden md:flex"
+          }`}
+        >
+          {/* Tabs Selector: Style & Format vs Contenu & Tarifs + Mobile Affiche button */}
+          <div className="p-2 border-b border-slate-200 dark:border-white/10 flex items-center gap-1 bg-slate-50 dark:bg-white/[0.02] shrink-0">
             <button
               type="button"
               onClick={() => setActiveTab("style")}
-              className={`py-2 px-3 rounded-xl font-black text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+              className={`flex-1 py-2 px-3 rounded-xl font-black text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                 activeTab === "style"
                   ? "bg-slate-900 text-white dark:bg-white dark:text-slate-950 shadow-sm"
                   : "text-slate-600 dark:text-white/60 hover:text-slate-900 dark:hover:text-white"
@@ -666,7 +733,7 @@ export function PosterGenerator({
             <button
               type="button"
               onClick={() => setActiveTab("content")}
-              className={`py-2 px-3 rounded-xl font-black text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+              className={`flex-1 py-2 px-3 rounded-xl font-black text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                 activeTab === "content"
                   ? "bg-slate-900 text-white dark:bg-white dark:text-slate-950 shadow-sm"
                   : "text-slate-600 dark:text-white/60 hover:text-slate-900 dark:hover:text-white"
@@ -674,6 +741,15 @@ export function PosterGenerator({
             >
               <Tag size={14} />
               <span>Textes &amp; Tarifs</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setMobileView("preview")}
+              className="md:hidden py-2 px-3 rounded-xl font-black text-xs uppercase tracking-wider flex items-center justify-center gap-1 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 transition-all cursor-pointer shrink-0"
+              title="Voir l'affiche"
+            >
+              <Eye size={14} />
+              <span>Affiche</span>
             </button>
           </div>
 

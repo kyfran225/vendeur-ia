@@ -591,17 +591,18 @@ export function PosterGenerator({
   };
 
   const modalContent = (
-    <div className="fixed inset-0 top-0 left-0 right-0 bottom-0 z-[99999] w-screen h-screen h-[100dvh] bg-slate-900/98 dark:bg-slate-950 flex flex-col overflow-y-auto md:overflow-hidden text-slate-900 dark:text-white select-none">
+    <div className="fixed inset-0 top-0 left-0 right-0 bottom-0 z-[99999] w-full max-w-full h-screen h-[100dvh] bg-slate-900/98 dark:bg-slate-950 flex flex-col overflow-x-hidden overflow-y-auto md:overflow-hidden text-slate-900 dark:text-white select-none">
       {/* Top Navbar: Compact 52px height */}
-      <header className="h-[52px] px-3 sm:px-5 bg-white dark:bg-[#12141a] border-b border-slate-200 dark:border-white/10 flex justify-between items-center z-50 shrink-0">
-        <div className="flex items-center gap-3">
+      <header className="h-[52px] px-2.5 sm:px-5 bg-white dark:bg-[#12141a] border-b border-slate-200 dark:border-white/10 flex justify-between items-center z-50 shrink-0 max-w-full overflow-hidden">
+        <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
           <button
             type="button"
             onClick={onBack}
-            className="flex items-center gap-1.5 text-slate-600 dark:text-white/60 hover:text-slate-900 dark:hover:text-white font-bold text-xs uppercase tracking-wider transition-colors cursor-pointer py-1 px-2 rounded-lg hover:bg-slate-100 dark:hover:bg-white/5"
+            className="flex items-center gap-1 text-slate-600 dark:text-white/60 hover:text-slate-900 dark:hover:text-white font-bold text-xs uppercase tracking-wider transition-colors cursor-pointer py-1.5 px-1.5 sm:px-2 rounded-lg hover:bg-slate-100 dark:hover:bg-white/5 shrink-0"
+            title="Retour"
           >
-            <ChevronLeft size={16} />
-            <span>Retour</span>
+            <ChevronLeft size={18} />
+            <span className="hidden sm:inline">Retour</span>
           </button>
           <div className="h-4 w-px bg-slate-200 dark:bg-white/10 hidden sm:block" />
           <div className="hidden md:flex items-center gap-1.5">
@@ -612,40 +613,40 @@ export function PosterGenerator({
           </div>
         </div>
 
-        {/* Center: Mobile Segmented Switcher (Affiche vs Paramètres) */}
-        <div className="flex md:hidden items-center bg-slate-100 dark:bg-white/10 p-0.5 rounded-xl border border-slate-200 dark:border-white/10">
+        {/* Center: Mobile Segmented Switcher (Aperçu vs Réglages) */}
+        <div className="flex md:hidden items-center bg-slate-100 dark:bg-white/10 p-0.5 rounded-xl border border-slate-200 dark:border-white/10 shrink-0">
           <button
             type="button"
             onClick={() => setMobileView("preview")}
-            className={`px-3 py-1 rounded-lg text-xs font-black uppercase tracking-wider flex items-center gap-1.5 transition-all cursor-pointer ${
+            className={`px-2.5 py-1 rounded-lg text-[11px] font-black uppercase tracking-wider flex items-center gap-1 transition-all cursor-pointer ${
               mobileView === "preview"
                 ? "bg-slate-900 text-white dark:bg-white dark:text-slate-950 shadow-xs"
                 : "text-slate-600 dark:text-white/60"
             }`}
           >
-            <Eye size={13} />
-            <span>Affiche</span>
+            <Eye size={12} />
+            <span>Aperçu</span>
           </button>
           <button
             type="button"
             onClick={() => setMobileView("settings")}
-            className={`px-3 py-1 rounded-lg text-xs font-black uppercase tracking-wider flex items-center gap-1.5 transition-all cursor-pointer ${
+            className={`px-2.5 py-1 rounded-lg text-[11px] font-black uppercase tracking-wider flex items-center gap-1 transition-all cursor-pointer ${
               mobileView === "settings"
                 ? "bg-slate-900 text-white dark:bg-white dark:text-slate-950 shadow-xs"
                 : "text-slate-600 dark:text-white/60"
             }`}
           >
-            <SlidersHorizontal size={13} />
+            <SlidersHorizontal size={12} />
             <span>Modifier</span>
           </button>
         </div>
 
         {/* Header Action Buttons */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
           <button
             type="button"
             onClick={handleShareWhatsApp}
-            className="hidden sm:flex bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-3 py-1.5 rounded-xl text-xs uppercase tracking-wider items-center gap-1.5 shadow-md active:scale-95 transition-all cursor-pointer"
+            className="hidden sm:flex bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-3 py-1.5 rounded-xl text-xs uppercase tracking-wider items-center gap-1.5 shadow-md active:scale-95 transition-all cursor-pointer shrink-0"
           >
             <Share2 size={14} />
             <span>Statut WhatsApp</span>
@@ -653,9 +654,9 @@ export function PosterGenerator({
           <button
             type="button"
             onClick={handleFinalSave}
-            className="bg-vendeur-emerald hover:bg-emerald-400 text-slate-950 font-black px-3.5 py-1.5 rounded-xl text-xs uppercase tracking-wider flex items-center gap-1.5 shadow-md shadow-vendeur-emerald/20 active:scale-95 transition-all cursor-pointer"
+            className="bg-vendeur-emerald hover:bg-emerald-400 text-slate-950 font-black px-2.5 sm:px-3.5 py-1.5 rounded-xl text-xs uppercase tracking-wider flex items-center gap-1 shadow-md shadow-vendeur-emerald/20 active:scale-95 transition-all cursor-pointer shrink-0"
           >
-            <Check size={15} />
+            <Check size={14} />
             <span>Enregistrer</span>
           </button>
         </div>
@@ -716,12 +717,12 @@ export function PosterGenerator({
             mobileView === "settings" ? "flex" : "hidden md:flex"
           }`}
         >
-          {/* Tabs Selector: Style & Format vs Contenu & Tarifs + Mobile Affiche button */}
-          <div className="p-2 border-b border-slate-200 dark:border-white/10 flex items-center gap-1 bg-slate-50 dark:bg-white/[0.02] shrink-0">
+          {/* Tabs Selector: Style & Format vs Contenu & Tarifs */}
+          <div className="p-2 border-b border-slate-200 dark:border-white/10 grid grid-cols-2 gap-1 bg-slate-50 dark:bg-white/[0.02] shrink-0">
             <button
               type="button"
               onClick={() => setActiveTab("style")}
-              className={`flex-1 py-2 px-3 rounded-xl font-black text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+              className={`py-2 px-3 rounded-xl font-black text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                 activeTab === "style"
                   ? "bg-slate-900 text-white dark:bg-white dark:text-slate-950 shadow-sm"
                   : "text-slate-600 dark:text-white/60 hover:text-slate-900 dark:hover:text-white"
@@ -733,7 +734,7 @@ export function PosterGenerator({
             <button
               type="button"
               onClick={() => setActiveTab("content")}
-              className={`flex-1 py-2 px-3 rounded-xl font-black text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+              className={`py-2 px-3 rounded-xl font-black text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                 activeTab === "content"
                   ? "bg-slate-900 text-white dark:bg-white dark:text-slate-950 shadow-sm"
                   : "text-slate-600 dark:text-white/60 hover:text-slate-900 dark:hover:text-white"
@@ -741,15 +742,6 @@ export function PosterGenerator({
             >
               <Tag size={14} />
               <span>Textes &amp; Tarifs</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setMobileView("preview")}
-              className="md:hidden py-2 px-3 rounded-xl font-black text-xs uppercase tracking-wider flex items-center justify-center gap-1 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 transition-all cursor-pointer shrink-0"
-              title="Voir l'affiche"
-            >
-              <Eye size={14} />
-              <span>Affiche</span>
             </button>
           </div>
 

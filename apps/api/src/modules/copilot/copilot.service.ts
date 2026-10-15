@@ -177,7 +177,7 @@ Ton objectif absolu : GUIDER, ORIENTER ET AIDER le marchand avec une clarté tot
   - WhatsApp relié : ${setupHealth.isWhatsAppConnected ? 'OUI' : 'NON'}
   - Produits ajoutés : ${setupHealth.hasProducts ? 'OUI' : 'NON'}
   - Canaux de paiement (Wave/OM/MoMo) : ${setupHealth.hasPaymentChannels ? 'OUI' : 'NON'}
-  - Tarifs de livraison configurés : ${setupHealth.hasDeliveryFees ? 'OUI' : 'NON'}
+  - Tarifs de livraison configurés : ${(merchant.category === 'services' || merchant.category === 'digital') ? 'NON REQUIS (Activité Service/Digital)' : (setupHealth.hasDeliveryFees ? 'OUI' : 'NON')}
 
 ---
 ### 🛡️ RÈGLES CRUCIALES DE SÉCURITÉ & MODES COMMERCIAUX :
@@ -654,9 +654,10 @@ Pour offrir une expérience hors-norme, insère TOUJOURS des balises d'action pr
       });
     }
 
-    // Check 4: Delivery Fees (Max 15 pts)
+    // Check 4: Delivery Fees (Max 15 pts - Uniquement requis pour les commerces physiques)
+    const isImmaterialMerchant = merchant.category === "services" || merchant.category === "digital";
     const deliveryFees = knowledge?.businessRules?.deliveryFees || [];
-    if (deliveryFees.length === 0) {
+    if (!isImmaterialMerchant && deliveryFees.length === 0) {
       score -= 15;
       issues.push({
         id: "no_delivery_fees",

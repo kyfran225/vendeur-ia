@@ -176,12 +176,31 @@ class WhatsAppService {
       const userIdsToBoot = new Set<string>();
       merchants.forEach(m => m.ownerId && userIdsToBoot.add(m.ownerId));
       activeConnections.forEach(c => c.userId && userIdsToBoot.add(c.userId));
-      storedCreds.forEach(s => {
+
+      for (const s of storedCreds) {
         // Exclude temporary session IDs (like onboarding uuid timestamps)
-        if (s.sessionId && !s.sessionId.startsWith("auth_") && !s.sessionId.startsWith("temp_")) {
-          userIdsToBoot.add(s.sessionId);
+        if (!s.sessionId || s.sessionId.startsWith("auth_") || s.sessionId.startsWith("temp_")) {
+          continue;
         }
-      });
+
+        // Verify that this sessionId belongs to an active merchant or user in DB
+        const hasMerchant = await CommerceMerchantModel.exists({
+          $or: [
+            { ownerId: s.sessionId },
+            ...(mongoose.isValidObjectId(s.sessionId) ? [
+              { ownerId: new mongoose.Types.ObjectId(s.sessionId) },
+              { _id: new mongoose.Types.ObjectId(s.sessionId) }
+            ] : [{ _id: s.sessionId }])
+          ]
+        });
+
+        if (hasMerchant) {
+          userIdsToBoot.add(s.sessionId);
+        } else {
+          console.warn(`[WhatsApp] Purging orphaned WhatsApp session for deleted merchant/user: ${s.sessionId}`);
+          await clearMongoAuthState(s.sessionId).catch(() => {});
+        }
+      }
 
       console.log(`[WhatsApp] Found ${userIdsToBoot.size} user sessions with saved WhatsApp auth state to boot.`);
 
@@ -1261,23 +1280,46 @@ class WhatsAppService {
     let merchant = await CommerceMerchantModel.findOne({
       $or: [
         { ownerId: userId },
-        ...(userId && mongoose.isValidObjectId(userId) ? [{ ownerId: new mongoose.Types.ObjectId(userId) }] : [])
+        ...(userId && mongoose.isValidObjectId(userId) ? [{ ownerId: new mongoose.Types.ObjectId(userId) }] : []),
+        ...(userId && mongoose.isValidObjectId(userId) ? [{ _id: new mongoose.Types.ObjectId(userId) }] : [{ _id: userId }])
       ]
     });
 
     if (!merchant) {
-      merchant = await CommerceMerchantModel.findOne({
-        $or: [
-          { whatsappNumber: { $regex: '5111157' } },
-          { phone: { $regex: '5111157' } },
-          { businessName: "Vendeur IA" },
-          { "whatsappConfig.phoneNumberId": env.WHATSAPP_PHONE_ID }
-        ]
-      });
+      // 1. If socket has a registered phone, look up by that merchant's phone
+      const sock = this.activeSessions.get(userId);
+      const sockDigits = (sock?.user?.id || '').split('@')[0].split(':')[0].replace(/\D/g, '');
+      if (sockDigits && sockDigits.length >= 8) {
+        merchant = await CommerceMerchantModel.findOne({
+          $or: [
+            { whatsappNumber: { $regex: sockDigits.slice(-8) } },
+            { phone: { $regex: sockDigits.slice(-8) } }
+          ]
+        });
+      }
     }
 
     if (!merchant) {
-      console.warn(`[WhatsApp] No merchant found for incoming message (userId: ${userId}, from: ${from})`);
+      // 2. Only allow founder fallback if userId explicitly belongs to the system founder/admin
+      const userDoc = userId ? await UserModel.findById(userId).lean() : null;
+      const isFounder = (userDoc?.whatsappNumber && isFounderNumber(userDoc.whatsappNumber)) ||
+                        (userDoc?.email && isFounderNumber(userDoc.email)) ||
+                        (userDoc?.roles && (userDoc.roles.includes("admin") || userDoc.roles.includes("creator")));
+
+      if (isFounder) {
+        merchant = await CommerceMerchantModel.findOne({
+          $or: [
+            { whatsappNumber: { $regex: '5111157' } },
+            { phone: { $regex: '5111157' } },
+            { businessName: "Vendeur IA" },
+            { "whatsappConfig.phoneNumberId": env.WHATSAPP_PHONE_ID }
+          ]
+        });
+      }
+    }
+
+    if (!merchant) {
+      console.warn(`[WhatsApp] No merchant found for incoming message (userId: ${userId}, from: ${from}). Dropping to prevent cross-account leak.`);
       return;
     }
 
@@ -1811,22 +1853,46 @@ class WhatsAppService {
     let merchant = await CommerceMerchantModel.findOne({
       $or: [
         { ownerId: userId },
-        ...(userId && mongoose.isValidObjectId(userId) ? [{ ownerId: new mongoose.Types.ObjectId(userId) }] : [])
+        ...(userId && mongoose.isValidObjectId(userId) ? [{ ownerId: new mongoose.Types.ObjectId(userId) }] : []),
+        ...(userId && mongoose.isValidObjectId(userId) ? [{ _id: new mongoose.Types.ObjectId(userId) }] : [{ _id: userId }])
       ]
     });
 
     if (!merchant) {
-      merchant = await CommerceMerchantModel.findOne({
-        $or: [
-          { whatsappNumber: { $regex: '5111157' } },
-          { phone: { $regex: '5111157' } },
-          { businessName: "Vendeur IA" },
-          { "whatsappConfig.phoneNumberId": env.WHATSAPP_PHONE_ID }
-        ]
-      });
+      const sock = this.activeSessions.get(userId);
+      const sockDigits = (sock?.user?.id || '').split('@')[0].split(':')[0].replace(/\D/g, '');
+      if (sockDigits && sockDigits.length >= 8) {
+        merchant = await CommerceMerchantModel.findOne({
+          $or: [
+            { whatsappNumber: { $regex: sockDigits.slice(-8) } },
+            { phone: { $regex: sockDigits.slice(-8) } }
+          ]
+        });
+      }
     }
 
-    if (!merchant) return;
+    if (!merchant) {
+      const userDoc = userId ? await UserModel.findById(userId).lean() : null;
+      const isFounder = (userDoc?.whatsappNumber && isFounderNumber(userDoc.whatsappNumber)) ||
+                        (userDoc?.email && isFounderNumber(userDoc.email)) ||
+                        (userDoc?.roles && (userDoc.roles.includes("admin") || userDoc.roles.includes("creator")));
+
+      if (isFounder) {
+        merchant = await CommerceMerchantModel.findOne({
+          $or: [
+            { whatsappNumber: { $regex: '5111157' } },
+            { phone: { $regex: '5111157' } },
+            { businessName: "Vendeur IA" },
+            { "whatsappConfig.phoneNumberId": env.WHATSAPP_PHONE_ID }
+          ]
+        });
+      }
+    }
+
+    if (!merchant) {
+      console.warn(`[WhatsApp] No merchant found for outgoing message (userId: ${userId}, to: ${to}). Dropping to prevent cross-account leak.`);
+      return;
+    }
 
     // Find or create customer
     let customer = await CommerceCustomerModel.findOne({ merchantId: merchant._id, phone: to });

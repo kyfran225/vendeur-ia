@@ -1319,31 +1319,51 @@ router.post("/conversations/:id/send-product-card", authenticate, async (req, re
     const currency = product.currency || merchant.currency || "XOF";
     const finalPrice = customPrice !== undefined && Number(customPrice) > 0 ? Number(customPrice) : product.price;
 
+    const isImmaterialProduct = Boolean(product.isService || product.digitalUrl || product.digitalFormat || product.serviceDuration || merchant.category === "services" || merchant.category === "digital");
+
+    const titleLabel = (product.isService || merchant.category === "services")
+      ? `✨ *FICHE PRESTATION : ${product.name.toUpperCase()}*`
+      : (product.digitalUrl || merchant.category === "digital")
+      ? `🚀 *FICHE OFFRE : ${product.name.toUpperCase()}*`
+      : `🛍️ *FICHE ARTICLE : ${product.name.toUpperCase()}*`;
+
+    const availabilityLabel = isImmaterialProduct
+      ? `✅ *Disponibilité* : Disponible immédiatement / Réservation ouverte`
+      : (product.stock > 0 ? `✅ *Disponibilité* : En stock (${product.stock} disponible${product.stock > 1 ? "s" : ""})` : `⚡ *Disponibilité* : Commande directe`);
+
     // Build aesthetic WhatsApp card message
     const lines: string[] = [
-      `🛍️ *FICHE ARTICLE : ${product.name.toUpperCase()}*`,
+      titleLabel,
       `━━━━━━━━━━━━━━━━━━━━`,
       `💰 *Prix* : *${finalPrice.toLocaleString("fr-FR")} ${currency}*`,
       product.category ? `🏷️ *Catégorie* : ${product.category}` : "",
-      product.stock > 0 ? `✅ *Disponibilité* : En stock (${product.stock} disponible${product.stock > 1 ? "s" : ""})` : `⚡ *Disponibilité* : Commande directe`,
+      availabilityLabel,
       product.description ? `\n📝 *Détails* :\n${product.description.trim()}` : "",
       customText?.trim() ? `\n✨ *Note du vendeur* : ${customText.trim()}` : ""
     ].filter(Boolean);
 
     // Add actionable button links based on actionType
     if (actionType === "order") {
+      const orderActionHelp = isImmaterialProduct
+        ? `\n💡 *Ou répondez simplement "Je commande" ou "Je réserve" pour finaliser directement avec votre conseiller !*`
+        : `\n💡 *Ou répondez simplement "Je commande" avec votre commune / quartier pour lancer la livraison directe !*`;
+
       lines.push(
         `\n━━━━━━━━━━━━━━━━━━━━`,
         `👉 *Pour commander immédiatement en 1 clic :*`,
         `🛒 ${productDirectUrl}`,
-        `\n💡 *Ou répondez simplement "Je commande" avec votre commune / quartier pour lancer la livraison directe !*`
+        orderActionHelp
       );
     } else if (actionType === "pay") {
+      const payActionHelp = isImmaterialProduct
+        ? `\n⚡ *Accès ou réservation validé(e) instantanément dès réception du paiement.*`
+        : `\n💵 *Paiement également accepté en espèces à la livraison.*`;
+
       lines.push(
         `\n━━━━━━━━━━━━━━━━━━━━`,
         `💳 *Pour régler directement en ligne (Wave / Orange Money / MoMo) :*`,
         `👉 ${productDirectUrl}`,
-        `\n💵 *Paiement également accepté en espèces à la livraison.*`
+        payActionHelp
       );
     } else if (actionType === "details") {
       lines.push(

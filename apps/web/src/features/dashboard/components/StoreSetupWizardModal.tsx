@@ -167,13 +167,14 @@ export function StoreSetupWizardModal({
       });
 
       // 2. Update Knowledge Rules (Payments + Delivery)
+      const isServiceOrDigital = category === "services" || category === "digital";
       const cleanPayments = paymentMethods.filter(p => p.number && p.number.trim() !== "");
       const cleanDelivery = deliveryFees.filter(d => d.zoneName && d.zoneName.trim() !== "");
 
       await apiClient.patch("/api/commerce/knowledge", {
         businessRules: {
           paymentMethods: cleanPayments.length > 0 ? cleanPayments : [{ provider: "Wave", number: whatsappNumber }],
-          deliveryFees: cleanDelivery.length > 0 ? cleanDelivery : [{ zoneName: "Livraison Standard", fee: 1500 }]
+          deliveryFees: cleanDelivery.length > 0 ? cleanDelivery : (isServiceOrDigital ? [] : [{ zoneName: "Livraison Standard", fee: 1500 }])
         }
       });
     },
@@ -353,9 +354,15 @@ export function StoreSetupWizardModal({
               exit={{ opacity: 0, x: -20 }}
               className="space-y-4"
             >
-              <div className="p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-800 dark:text-emerald-300 font-medium leading-relaxed">
-                🚚 <strong>Information pour vos clients</strong> : Vendeur IA utilisera ces tarifs pour calculer automatiquement les frais d'expédition lorsqu'un client demande une livraison sur WhatsApp.
-              </div>
+              {category === "services" || category === "digital" ? (
+                <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-900 dark:text-amber-200 font-medium leading-relaxed">
+                  ✨ <strong>Activité sans livraison physique</strong> : Vous proposez des prestations ou des services/produits digitaux. Vos clients réservent ou reçoivent leurs accès en ligne. Si vous n'avez pas de livraison physique, vous pouvez laisser ces champs vides ou passer à l'étape suivante.
+                </div>
+              ) : (
+                <div className="p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-800 dark:text-emerald-300 font-medium leading-relaxed">
+                  🚚 <strong>Information pour vos clients</strong> : Vendeur IA utilisera ces tarifs pour calculer automatiquement les frais d'expédition lorsqu'un client demande une livraison sur WhatsApp.
+                </div>
+              )}
 
               <div className="space-y-3">
                 {deliveryFees.map((item, idx) => (

@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { useOnboardingStore } from "./onboardingStore";
+import { queryClient } from "@/lib/queryClient";
 
 interface AuthUser {
   id: string;
@@ -38,6 +39,9 @@ export const useAuthStore = create<AuthState>()(
         const currentUser = (useAuthStore.getState() as any)?.user;
         if (currentUser && (currentUser.id !== session.user.id || currentUser.whatsappNumber !== session.user.whatsappNumber)) {
           useOnboardingStore.getState().clearOnboarding();
+          try {
+            queryClient.clear();
+          } catch (e) {}
         }
         set({
           user: session.user,
@@ -48,6 +52,11 @@ export const useAuthStore = create<AuthState>()(
       logout: () => {
         // Clear onboarding data as well to prevent cross-account pollution
         useOnboardingStore.getState().clearOnboarding();
+
+        // Clear all cached TanStack queries (conversations, dashboard, etc.) to prevent data leak across logins
+        try {
+          queryClient.clear();
+        } catch (e) {}
 
         set({ user: null, accessToken: null, refreshToken: null });
       },

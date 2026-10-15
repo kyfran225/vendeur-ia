@@ -1,4 +1,5 @@
 import React, { useRef, useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import {
   Download,
   Share2,
@@ -9,7 +10,11 @@ import {
   Smartphone,
   Square,
   FileText,
-  Zap
+  Zap,
+  Palette,
+  Maximize2,
+  Minimize2,
+  Tag
 } from "lucide-react";
 import { toast } from "sonner";
 import { slugify } from "@/lib/slugify";
@@ -54,16 +59,11 @@ const THEME_PALETTES = [
   { id: "sky", name: "Bleu Tech", primary: "#0ea5e9", bgOverlay: "rgba(12, 74, 110, 0.4)", accent: "#38bdf8" }
 ];
 
-const FORMAT_PRESETS = {
-  story: { label: "Story (9:16)", width: 1080, height: 1920, icon: <Smartphone size={14} /> },
-  post: { label: "Post Carré (1:1)", width: 1080, height: 1080, icon: <Square size={14} /> },
-  flyer: { label: "Flyer (4:5)", width: 1080, height: 1350, icon: <FileText size={14} /> }
-};
+type PosterFormatKey = "story" | "post" | "flyer" | "auto";
 
 export function PosterGenerator({
   productData,
   boutiqueName,
-  businessCategory,
   currency = productData.currency || "XOF",
   whatsappNumber = "",
   merchantId = "",
@@ -77,13 +77,15 @@ export function PosterGenerator({
   const [selectedSticker, setSelectedSticker] = useState<string>("flash");
   const [stickerPosition, setStickerPosition] = useState<"above_title" | "top_right">("above_title");
   const [selectedTheme, setSelectedTheme] = useState<string>("emerald");
-  const [format, setFormat] = useState<"story" | "post" | "flyer">("story");
+  const [format, setFormat] = useState<PosterFormatKey>("story");
+  const [imageFit, setImageFit] = useState<"contain" | "cover">("contain");
   const [hookText, setHookText] = useState("Commandez sur WhatsApp & recevez chez vous !");
   const [includeQrCode, setIncludeQrCode] = useState(true);
   const [isRendering, setIsRendering] = useState(false);
+  const [activeTab, setActiveTab] = useState<"style" | "content">("style");
+  const [imgNaturalRatio, setImgNaturalRatio] = useState<number | null>(null);
 
   const activeTheme = THEME_PALETTES.find((t) => t.id === selectedTheme) || THEME_PALETTES[0];
-  const activeFormat = FORMAT_PRESETS[format];
   const activeSticker = STICKER_PRESETS.find((s) => s.id === selectedSticker);
 
   const productImage =
@@ -92,12 +94,59 @@ export function PosterGenerator({
     (productData.images && productData.images[0]) ||
     "";
 
+  // Lock background scroll while studio is mounted
+  useEffect(() => {
+    const origOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = origOverflow;
+    };
+  }, []);
+
+  // Inspect image dimensions and adapt default format to the base photo
+  useEffect(() => {
+    if (!productImage) return;
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => {
+      const ratio = img.naturalWidth / img.naturalHeight;
+      setImgNaturalRatio(ratio);
+      // Auto-adapt format to the base image aspect ratio
+      if (ratio >= 0.88 && ratio <= 1.15) {
+        setFormat("post"); // Square image -> 1:1
+      } else if (ratio < 0.65) {
+        setFormat("story"); // Vertical image -> 9:16
+      } else if (ratio >= 0.65 && ratio < 0.88) {
+        setFormat("flyer"); // Portrait 4:5 image -> 4:5
+      }
+    };
+    img.src = productImage;
+  }, [productImage]);
+
   // Shop URL for QR Code (uses clean normalized slug)
   const shopUrl = boutiqueName
     ? `${window.location.origin}/shop/${slugify(boutiqueName)}`
     : merchantId
     ? `${window.location.origin}/shop/${merchantId}`
     : window.location.origin;
+
+  // Compute canvas dimensions according to chosen format
+  const getCanvasDimensions = (): { width: number; height: number; key: PosterFormatKey } => {
+    if (format === "post") {
+      return { width: 1080, height: 1080, key: "post" };
+    }
+    if (format === "flyer") {
+      return { width: 1080, height: 1350, key: "flyer" };
+    }
+    if (format === "auto" && imgNaturalRatio) {
+      const computedHeight = Math.round(1080 / imgNaturalRatio);
+      // Clamp between square and story limits for aesthetic consistency
+      const clampedHeight = Math.min(Math.max(computedHeight, 1080), 1920);
+      return { width: 1080, height: clampedHeight, key: "auto" };
+    }
+    // Default: 9:16 Story
+    return { width: 1080, height: 1920, key: "story" };
+  };
 
   const renderPoster = () => {
     const canvas = canvasRef.current;
@@ -107,41 +156,46 @@ export function PosterGenerator({
 
     setIsRendering(true);
 
-    canvas.width = activeFormat.width;
-    canvas.height = activeFormat.height;
+    const dims = getCanvasDimensions();
+    canvas.width = dims.width;
+    canvas.height = dims.height;
 
     // 1. Solid Dark Background
     ctx.fillStyle = "#090a0f";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    const isStory = format === "story";
+    const isStory = canvas.height >= 1700;
+    const isSquare = canvas.height <= 1150;
     const hasSticker = activeSticker && activeSticker.id !== "none";
     const hasHook = Boolean(hookText && hookText.trim());
 
-    // Dynamic Bottom-Up Layout Calculations to prevent any overlap
-    const bottomMargin = isStory ? 70 : 45;
-    const ctaHeight = isStory ? 106 : 90;
+    // Proportional layout tuning per format
+    const bottomMargin = isSquare ? 36 : isStory ? 70 : 48;
+    const ctaHeight = isSquare ? 76 : isStory ? 104 : 88;
     const ctaY = canvas.height - bottomMargin - ctaHeight;
-    const qrSize = isStory ? 144 : 120;
-    const ctaWidth = includeQrCode ? canvas.width - 140 - qrSize - 24 : canvas.width - 140;
+    const qrSize = isSquare ? 96 : isStory ? 138 : 116;
+    const horizontalMargin = isSquare ? 50 : 70;
+    const ctaWidth = includeQrCode
+      ? canvas.width - horizontalMargin * 2 - qrSize - 20
+      : canvas.width - horizontalMargin * 2;
 
-    const hookGap = hasHook ? 24 : 0;
-    const hookY = ctaY - hookGap - (hasHook ? 10 : 0);
+    const hookGap = hasHook ? (isSquare ? 16 : 24) : 0;
+    const hookY = ctaY - hookGap - (hasHook ? (isSquare ? 6 : 10) : 0);
 
-    const priceGap = 28;
-    const priceBaseY = (hasHook ? hookY - 38 : ctaY) - priceGap;
+    const priceGap = isSquare ? 18 : 28;
+    const priceBaseY = (hasHook ? hookY - (isSquare ? 24 : 36) : ctaY) - priceGap;
     const priceY = priceBaseY;
 
     // Product Title Wrap & Font Scaling
-    const maxTitleWidth = canvas.width - 140;
-    let titleFontSize = isStory ? 60 : 48;
-    let titleLineHeight = titleFontSize + 14;
+    const maxTitleWidth = canvas.width - horizontalMargin * 2;
+    let titleFontSize = isSquare ? 38 : isStory ? 58 : 46;
+    let titleLineHeight = titleFontSize + (isSquare ? 10 : 14);
     if (name.length > 55) {
-      titleFontSize = isStory ? 44 : 36;
-      titleLineHeight = titleFontSize + 10;
+      titleFontSize = isSquare ? 30 : isStory ? 42 : 36;
+      titleLineHeight = titleFontSize + 8;
     } else if (name.length > 30) {
-      titleFontSize = isStory ? 52 : 42;
-      titleLineHeight = titleFontSize + 12;
+      titleFontSize = isSquare ? 34 : isStory ? 50 : 42;
+      titleLineHeight = titleFontSize + 10;
     }
     ctx.font = `900 ${titleFontSize}px sans-serif`;
 
@@ -159,59 +213,67 @@ export function PosterGenerator({
     }
     if (curLine) lines.push(curLine);
 
-    // Limit to 3 lines maximum
-    const displayLines = lines.slice(0, 3);
-    if (lines.length > 3) {
-      displayLines[2] = displayLines[2].replace(/\s+$/, "") + "...";
+    // Limit to 2 lines in square format, 3 lines in story/flyer
+    const maxAllowedLines = isSquare ? 2 : 3;
+    const displayLines = lines.slice(0, maxAllowedLines);
+    if (lines.length > maxAllowedLines) {
+      displayLines[maxAllowedLines - 1] =
+        displayLines[maxAllowedLines - 1].replace(/\s+$/, "") + "...";
     }
 
-    const titleGap = 24;
-    const titleBaseY = priceY - (isStory ? 74 : 58) - titleGap;
+    const titleGap = isSquare ? 16 : 24;
+    const titleBaseY = priceY - (isSquare ? 48 : isStory ? 74 : 60) - titleGap;
     const titleStartY = titleBaseY - (displayLines.length - 1) * titleLineHeight;
 
     // Sticker Badge Height & Y Position
-    const stickerHeight = isStory ? 58 : 50;
-    const stickerGap = 20;
+    const stickerHeight = isSquare ? 44 : isStory ? 58 : 50;
+    const stickerGap = isSquare ? 14 : 20;
     const stickerAboveTitleY = titleStartY - stickerHeight - stickerGap;
 
     // Gradient starts cleanly above the text block (or above the badge)
     const gradientStartY =
       hasSticker && stickerPosition === "above_title"
-        ? stickerAboveTitleY - 140
-        : titleStartY - 140;
+        ? stickerAboveTitleY - (isSquare ? 70 : 130)
+        : titleStartY - (isSquare ? 70 : 130);
+
+    // Top Header Dimensions
+    const headerY = isSquare ? 40 : isStory ? 75 : 52;
+    const headerHeight = isSquare ? 48 : isStory ? 64 : 54;
 
     const finishCanvas = () => {
       // 2. Gradient Overlay for Perfect Legibility
       const gradient = ctx.createLinearGradient(0, Math.max(0, gradientStartY), 0, canvas.height);
       gradient.addColorStop(0, "rgba(9, 10, 15, 0)");
-      gradient.addColorStop(0.25, "rgba(9, 10, 15, 0.78)");
-      gradient.addColorStop(0.55, "rgba(9, 10, 15, 0.95)");
+      gradient.addColorStop(0.25, "rgba(9, 10, 15, 0.82)");
+      gradient.addColorStop(0.55, "rgba(9, 10, 15, 0.96)");
       gradient.addColorStop(1, "#090a0f");
       ctx.fillStyle = gradient;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
       // 3. Top Header: Boutique Name Glass Pill Badge
-      const headerY = isStory ? 75 : 45;
-      const headerHeight = isStory ? 64 : 54;
       ctx.save();
-      ctx.fillStyle = "rgba(9, 10, 15, 0.72)";
+      ctx.fillStyle = "rgba(9, 10, 15, 0.78)";
       ctx.strokeStyle = activeTheme.primary;
       ctx.lineWidth = 3;
       ctx.beginPath();
       const boutiqueLabel = `🛍️ ${boutiqueName.toUpperCase()}`;
-      ctx.font = `900 ${isStory ? 28 : 24}px sans-serif`;
+      ctx.font = `900 ${isSquare ? 20 : isStory ? 28 : 24}px sans-serif`;
       const boutiqueWidth = ctx.measureText(boutiqueLabel).width;
       const pillWidth = Math.min(
-        boutiqueWidth + 50,
-        canvas.width - (hasSticker && stickerPosition === "top_right" ? 420 : 140)
+        boutiqueWidth + 44,
+        canvas.width - (hasSticker && stickerPosition === "top_right" ? 400 : horizontalMargin * 2)
       );
-      ctx.roundRect(70, headerY, pillWidth, headerHeight, 32);
+      ctx.roundRect(horizontalMargin, headerY, pillWidth, headerHeight, 32);
       ctx.fill();
       ctx.stroke();
 
       ctx.fillStyle = "#ffffff";
       ctx.textAlign = "left";
-      ctx.fillText(boutiqueLabel, 95, headerY + (isStory ? 42 : 36));
+      ctx.fillText(
+        boutiqueLabel,
+        horizontalMargin + 22,
+        headerY + (isSquare ? 31 : isStory ? 42 : 36)
+      );
       ctx.restore();
 
       // 4. Promo Sticker Badge
@@ -219,15 +281,15 @@ export function PosterGenerator({
         ctx.save();
         ctx.fillStyle = activeSticker.color;
         ctx.shadowColor = activeSticker.color;
-        ctx.shadowBlur = 24;
+        ctx.shadowBlur = 22;
 
         if (stickerPosition === "top_right") {
           // Top-right pill aligned horizontally with the boutique header
-          ctx.font = `900 ${isStory ? 26 : 22}px sans-serif`;
+          ctx.font = `900 ${isSquare ? 19 : isStory ? 26 : 22}px sans-serif`;
           const stkTextWidth = ctx.measureText(activeSticker.label).width;
-          const stkW = stkTextWidth + 46;
+          const stkW = stkTextWidth + 40;
           const stkH = headerHeight;
-          const stkX = canvas.width - 70 - stkW;
+          const stkX = canvas.width - horizontalMargin - stkW;
 
           ctx.beginPath();
           ctx.roundRect(stkX, headerY, stkW, stkH, 24);
@@ -235,21 +297,29 @@ export function PosterGenerator({
 
           ctx.fillStyle = "#ffffff";
           ctx.textAlign = "center";
-          ctx.fillText(activeSticker.label, stkX + stkW / 2, headerY + (isStory ? 42 : 36));
+          ctx.fillText(
+            activeSticker.label,
+            stkX + stkW / 2,
+            headerY + (isSquare ? 31 : isStory ? 42 : 36)
+          );
         } else {
           // Above title inside the contrast-safe dark zone
-          ctx.font = `900 ${isStory ? 28 : 24}px sans-serif`;
+          ctx.font = `900 ${isSquare ? 20 : isStory ? 28 : 24}px sans-serif`;
           const stkTextWidth = ctx.measureText(activeSticker.label).width;
-          const stkW = stkTextWidth + 48;
+          const stkW = stkTextWidth + 44;
           const stkH = stickerHeight;
 
           ctx.beginPath();
-          ctx.roundRect(70, stickerAboveTitleY, stkW, stkH, 20);
+          ctx.roundRect(horizontalMargin, stickerAboveTitleY, stkW, stkH, 20);
           ctx.fill();
 
           ctx.fillStyle = "#ffffff";
           ctx.textAlign = "center";
-          ctx.fillText(activeSticker.label, 70 + stkW / 2, stickerAboveTitleY + (isStory ? 39 : 34));
+          ctx.fillText(
+            activeSticker.label,
+            horizontalMargin + stkW / 2,
+            stickerAboveTitleY + (isSquare ? 29 : isStory ? 39 : 34)
+          );
         }
         ctx.restore();
       }
@@ -259,11 +329,11 @@ export function PosterGenerator({
       ctx.fillStyle = "#ffffff";
       ctx.font = `900 ${titleFontSize}px sans-serif`;
       ctx.textAlign = "left";
-      ctx.shadowColor = "rgba(0, 0, 0, 0.8)";
-      ctx.shadowBlur = 16;
+      ctx.shadowColor = "rgba(0, 0, 0, 0.9)";
+      ctx.shadowBlur = 18;
 
       for (let i = 0; i < displayLines.length; i++) {
-        ctx.fillText(displayLines[i], 70, titleStartY + i * titleLineHeight);
+        ctx.fillText(displayLines[i], horizontalMargin, titleStartY + i * titleLineHeight);
       }
       ctx.restore();
 
@@ -273,11 +343,11 @@ export function PosterGenerator({
 
       ctx.save();
       ctx.fillStyle = activeTheme.primary;
-      ctx.font = `900 ${isStory ? 80 : 66}px sans-serif`;
+      ctx.font = `900 ${isSquare ? 54 : isStory ? 80 : 66}px sans-serif`;
       ctx.textAlign = "left";
       ctx.shadowColor = activeTheme.primary;
       ctx.shadowBlur = 12;
-      ctx.fillText(formattedPrice, 70, priceY);
+      ctx.fillText(formattedPrice, horizontalMargin, priceY);
 
       // Crossed original price
       if (originalPrice && parseInt(originalPrice, 10) > numPrice) {
@@ -286,18 +356,18 @@ export function PosterGenerator({
         const priceWidth = ctx.measureText(formattedPrice).width;
 
         ctx.fillStyle = "rgba(255, 255, 255, 0.45)";
-        ctx.font = `700 ${isStory ? 44 : 36}px sans-serif`;
+        ctx.font = `700 ${isSquare ? 30 : isStory ? 44 : 36}px sans-serif`;
         ctx.shadowBlur = 0;
-        const origX = 70 + priceWidth + 32;
-        ctx.fillText(origText, origX, priceY - 6);
+        const origX = horizontalMargin + priceWidth + (isSquare ? 20 : 28);
+        ctx.fillText(origText, origX, priceY - 4);
 
         // Strike-through line
         const origWidth = ctx.measureText(origText).width;
         ctx.strokeStyle = "#ef4444";
-        ctx.lineWidth = 5;
+        ctx.lineWidth = isSquare ? 3.5 : 5;
         ctx.beginPath();
-        ctx.moveTo(origX - 8, priceY - 20);
-        ctx.lineTo(origX + origWidth + 8, priceY - 20);
+        ctx.moveTo(origX - 6, priceY - (isSquare ? 12 : 18));
+        ctx.lineTo(origX + origWidth + 6, priceY - (isSquare ? 12 : 18));
         ctx.stroke();
       }
       ctx.restore();
@@ -305,10 +375,10 @@ export function PosterGenerator({
       // 7. Slogan / Hook
       if (hasHook) {
         ctx.save();
-        ctx.fillStyle = "rgba(255, 255, 255, 0.85)";
-        ctx.font = `700 ${isStory ? 30 : 25}px sans-serif`;
+        ctx.fillStyle = "rgba(255, 255, 255, 0.88)";
+        ctx.font = `700 ${isSquare ? 20 : isStory ? 30 : 25}px sans-serif`;
         ctx.textAlign = "left";
-        ctx.fillText(`✨ ${hookText}`, 70, hookY);
+        ctx.fillText(`✨ ${hookText}`, horizontalMargin, hookY);
         ctx.restore();
       }
 
@@ -318,16 +388,20 @@ export function PosterGenerator({
       ctx.shadowColor = "#25D366";
       ctx.shadowBlur = 24;
       ctx.beginPath();
-      ctx.roundRect(70, ctaY, ctaWidth, ctaHeight, 26);
+      ctx.roundRect(horizontalMargin, ctaY, ctaWidth, ctaHeight, 24);
       ctx.fill();
 
       ctx.fillStyle = "#000000";
-      ctx.font = `900 ${isStory ? 32 : 26}px sans-serif`;
+      ctx.font = `900 ${isSquare ? 22 : isStory ? 32 : 26}px sans-serif`;
       ctx.textAlign = "center";
       const ctaText = whatsappNumber
         ? `📲 COMMANDER : ${formatDisplayPhone(whatsappNumber)}`
         : "📲 COMMANDER SUR WHATSAPP";
-      ctx.fillText(ctaText, 70 + ctaWidth / 2, ctaY + (isStory ? 64 : 54));
+      ctx.fillText(
+        ctaText,
+        horizontalMargin + ctaWidth / 2,
+        ctaY + (isSquare ? 47 : isStory ? 64 : 54)
+      );
       ctx.restore();
 
       // 9. QR Code in bottom right
@@ -339,12 +413,12 @@ export function PosterGenerator({
         )}&bgcolor=090a0f&color=10b981&margin=4`;
 
         qrImg.onload = () => {
-          const qrX = canvas.width - 70 - qrSize;
+          const qrX = canvas.width - horizontalMargin - qrSize;
           ctx.drawImage(qrImg, qrX, ctaY, qrSize, qrSize);
           ctx.fillStyle = "rgba(255, 255, 255, 0.45)";
-          ctx.font = "900 14px sans-serif";
+          ctx.font = "900 13px sans-serif";
           ctx.textAlign = "center";
-          ctx.fillText("SCANNEZ ICI", qrX + qrSize / 2, ctaY + qrSize + 22);
+          ctx.fillText("SCANNEZ ICI", qrX + qrSize / 2, ctaY + qrSize + 18);
           setIsRendering(false);
         };
         qrImg.onerror = () => {
@@ -355,21 +429,74 @@ export function PosterGenerator({
       }
     };
 
-    // Draw background product image
+    // Draw background product image with smart fit & ambient backdrop
     if (productImage) {
       const img = new Image();
       img.crossOrigin = "anonymous";
       img.src = productImage;
       img.onload = () => {
-        const targetHeight = isStory
-          ? canvas.height * 0.75
-          : format === "flyer"
-          ? canvas.height * 0.70
-          : canvas.height * 0.65;
-        const scale = Math.max(canvas.width / img.width, targetHeight / img.height);
-        const x = (canvas.width - img.width * scale) / 2;
-        const y = 0;
-        ctx.drawImage(img, x, y, img.width * scale, img.height * scale);
+        const visualZoneHeight = gradientStartY > 0 ? gradientStartY + (isSquare ? 40 : 100) : canvas.height * 0.65;
+
+        if (imageFit === "contain") {
+          // 1. Ambient Blurred Backdrop so there are no empty gaps
+          ctx.save();
+          try {
+            ctx.filter = "blur(32px) brightness(0.45)";
+          } catch {
+            // Fallback if filter not supported
+          }
+          const bgScale = Math.max(canvas.width / img.width, visualZoneHeight / img.height);
+          const bgW = img.width * bgScale;
+          const bgH = img.height * bgScale;
+          const bgX = (canvas.width - bgW) / 2;
+          const bgY = (visualZoneHeight - bgH) / 2;
+          ctx.drawImage(img, bgX, bgY, bgW, bgH);
+          ctx.restore();
+
+          // 2. Foreground Clean Uncropped Product Image
+          const availableTop = headerY + headerHeight + 16;
+          const availableBottom = gradientStartY + 40;
+          const availableHeight = Math.max(200, availableBottom - availableTop);
+          const availableWidth = canvas.width - horizontalMargin * 2;
+
+          const fitScale = Math.min(
+            availableWidth / img.width,
+            availableHeight / img.height,
+            1.1
+          );
+          const fgW = img.width * fitScale;
+          const fgH = img.height * fitScale;
+          const fgX = (canvas.width - fgW) / 2;
+          const fgY = availableTop + (availableHeight - fgH) / 2;
+
+          ctx.save();
+          ctx.shadowColor = "rgba(0, 0, 0, 0.65)";
+          ctx.shadowBlur = 36;
+          ctx.beginPath();
+          ctx.roundRect(fgX, fgY, fgW, fgH, 24);
+          ctx.clip();
+          ctx.drawImage(img, fgX, fgY, fgW, fgH);
+          ctx.restore();
+
+          // Subtle elegant border around the foreground card
+          ctx.save();
+          ctx.strokeStyle = "rgba(255, 255, 255, 0.18)";
+          ctx.lineWidth = 2.5;
+          ctx.beginPath();
+          ctx.roundRect(fgX, fgY, fgW, fgH, 24);
+          ctx.stroke();
+          ctx.restore();
+        } else {
+          // Cover Mode: fills the visual area
+          const targetHeight = visualZoneHeight;
+          const scale = Math.max(canvas.width / img.width, targetHeight / img.height);
+          const w = img.width * scale;
+          const h = img.height * scale;
+          const x = (canvas.width - w) / 2;
+          const y = (targetHeight - h) / 2;
+          ctx.drawImage(img, x, y, w, h);
+        }
+
         finishCanvas();
       };
       img.onerror = () => {
@@ -390,6 +517,7 @@ export function PosterGenerator({
     stickerPosition,
     selectedTheme,
     format,
+    imageFit,
     hookText,
     includeQrCode,
     productImage,
@@ -398,23 +526,22 @@ export function PosterGenerator({
 
   const handleDownload = () => {
     const canvas = canvasRef.current;
-    if (canvas) {
-      const link = document.createElement("a");
-      link.download = `affiche-${name.toLowerCase().replace(/\s+/g, "-")}.png`;
-      link.href = canvas.toDataURL("image/png", 1.0);
-      link.click();
-      toast.success("Affiche HD téléchargée !");
-    }
+    if (!canvas) return;
+    const link = document.createElement("a");
+    link.download = `affiche-${slugify(name || "produit")}-${format}.png`;
+    link.href = canvas.toDataURL("image/png");
+    link.click();
+    toast.success("Affiche HD téléchargée !");
   };
 
   const handleFinalSave = () => {
     const canvas = canvasRef.current;
-    if (canvas) {
-      const dataUrl = canvas.toDataURL("image/jpeg", 0.9);
-      if (onSave) {
-        onSave(dataUrl);
-      }
-      toast.success("Affiche enregistrée dans votre galerie produit !");
+    if (!canvas) return;
+    const finalImage = canvas.toDataURL("image/png");
+    if (onSave) {
+      onSave(finalImage);
+    } else {
+      toast.success("Affiche enregistrée pour votre boutique !");
     }
   };
 
@@ -422,21 +549,23 @@ export function PosterGenerator({
     const canvas = canvasRef.current;
     if (!canvas) return;
 
+    const numPrice = parseInt(price, 10) || 0;
+    const captionText = `🔥 *${name.toUpperCase()}*\n💰 Prix Promo : *${numPrice.toLocaleString()} ${currency}*${
+      originalPrice ? ` ~${parseInt(originalPrice, 10).toLocaleString()} ${currency}~` : ""
+    }\n\n${hookText}\n\n👉 Commandez ici : ${shopUrl}`;
+
     try {
       const blob = await new Promise<Blob | null>((resolve) =>
-        canvas.toBlob(resolve, "image/png", 1.0)
+        canvas.toBlob(resolve, "image/png", 0.95)
       );
-      if (!blob) return;
 
-      const file = new File([blob], `promo-${name}.png`, { type: "image/png" });
-      const captionText = `🔥 *OFFRE SPÉCIALE CHEZ ${boutiqueName.toUpperCase()}* 🔥\n\n*${name}*\n💰 Prix : *${parseInt(
-        price,
-        10
-      ).toLocaleString()} ${currency}* ${
-        originalPrice ? `~(au lieu de ${parseInt(originalPrice, 10).toLocaleString()} ${currency})~` : ""
-      }\n\n👉 Commandez directement sur WhatsApp ou sur notre boutique en ligne :\n${shopUrl}`;
-
-      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      if (
+        blob &&
+        navigator.share &&
+        navigator.canShare &&
+        navigator.canShare({ files: [new File([blob], "promo.png", { type: "image/png" })] })
+      ) {
+        const file = new File([blob], `promo-${slugify(name)}.png`, { type: "image/png" });
         await navigator.share({
           files: [file],
           title: `Promo ${name}`,
@@ -445,7 +574,7 @@ export function PosterGenerator({
       } else {
         navigator.clipboard.writeText(captionText);
         handleDownload();
-        toast.info("Texte copié ! L'affiche a été téléchargée pour votre statut.");
+        toast.info("Texte copié ! L'affiche a été téléchargée pour votre statut WhatsApp.");
       }
     } catch (err: any) {
       console.warn("Share failed:", err);
@@ -466,245 +595,391 @@ export function PosterGenerator({
     toast.success("Nouvelle accroche IA générée !");
   };
 
-  return (
-    <div className="fixed inset-0 z-[110] bg-slate-100 dark:bg-slate-950 flex flex-col animate-in fade-in duration-200 overflow-hidden text-slate-900 dark:text-white">
-      {/* Top Navbar */}
-      <div className="p-3.5 sm:p-4 bg-white/95 dark:bg-[#12141a]/95 backdrop-blur-xl border-b border-slate-200 dark:border-white/10 flex justify-between items-center z-50 shrink-0">
-        <button
-          onClick={onBack}
-          className="flex items-center gap-2 text-slate-600 dark:text-white/60 hover:text-slate-900 dark:hover:text-white font-bold text-xs uppercase tracking-widest transition-colors cursor-pointer"
-        >
-          <ChevronLeft size={18} />
-          <span>Retour</span>
-        </button>
+  const modalContent = (
+    <div className="fixed inset-0 top-0 left-0 right-0 bottom-0 z-[99999] w-screen h-screen h-[100dvh] bg-slate-900/98 dark:bg-slate-950 flex flex-col overflow-hidden text-slate-900 dark:text-white select-none">
+      {/* Top Navbar: Compact 52px height */}
+      <header className="h-[52px] px-3 sm:px-5 bg-white dark:bg-[#12141a] border-b border-slate-200 dark:border-white/10 flex justify-between items-center z-50 shrink-0">
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={onBack}
+            className="flex items-center gap-1.5 text-slate-600 dark:text-white/60 hover:text-slate-900 dark:hover:text-white font-bold text-xs uppercase tracking-wider transition-colors cursor-pointer py-1 px-2 rounded-lg hover:bg-slate-100 dark:hover:bg-white/5"
+          >
+            <ChevronLeft size={16} />
+            <span>Retour</span>
+          </button>
+          <div className="h-4 w-px bg-slate-200 dark:bg-white/10 hidden sm:block" />
+          <div className="flex items-center gap-1.5">
+            <span className="h-2 w-2 rounded-full bg-vendeur-emerald animate-pulse" />
+            <span className="text-xs font-black uppercase tracking-wider text-slate-900 dark:text-white flex items-center gap-1">
+              <Sparkles size={13} className="text-vendeur-emerald" /> Instant Studio V2
+            </span>
+          </div>
+        </div>
 
+        {/* Header Action Buttons */}
         <div className="flex items-center gap-2">
-          <div className="h-2 w-2 rounded-full bg-vendeur-emerald animate-pulse" />
-          <span className="text-xs font-black uppercase tracking-widest text-emerald-600 dark:text-vendeur-emerald flex items-center gap-1.5">
-            <Sparkles size={14} /> Instant Studio V2
-          </span>
+          <button
+            type="button"
+            onClick={handleShareWhatsApp}
+            className="hidden sm:flex bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-3 py-1.5 rounded-xl text-xs uppercase tracking-wider items-center gap-1.5 shadow-md active:scale-95 transition-all cursor-pointer"
+          >
+            <Share2 size={14} />
+            <span>Statut WhatsApp</span>
+          </button>
+          <button
+            type="button"
+            onClick={handleFinalSave}
+            className="bg-vendeur-emerald hover:bg-emerald-400 text-slate-950 font-black px-3.5 py-1.5 rounded-xl text-xs uppercase tracking-wider flex items-center gap-1.5 shadow-md shadow-vendeur-emerald/20 active:scale-95 transition-all cursor-pointer"
+          >
+            <Check size={15} />
+            <span>Enregistrer</span>
+          </button>
+        </div>
+      </header>
+
+      {/* Main Studio Body: Side-by-side on desktop, ZERO page scrolling */}
+      <div className="flex-1 min-h-0 flex flex-col md:flex-row overflow-hidden">
+        {/* Left / Center: Dynamic Canvas Stage */}
+        <div className="flex-1 min-h-0 min-w-0 p-3 sm:p-5 flex items-center justify-center bg-slate-950/90 relative overflow-hidden">
+          <div className="relative max-h-full max-w-full flex items-center justify-center">
+            <canvas
+              ref={canvasRef}
+              className="max-h-[calc(100dvh-5rem)] max-w-full w-auto h-auto object-contain rounded-2xl shadow-2xl border border-white/10 ring-1 ring-white/5"
+            />
+            {isRendering && (
+              <div className="absolute inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center rounded-2xl">
+                <Sparkles className="animate-spin text-vendeur-emerald" size={32} />
+              </div>
+            )}
+          </div>
         </div>
 
-        <button
-          onClick={handleFinalSave}
-          className="bg-vendeur-emerald hover:bg-emerald-400 text-slate-950 font-black px-4 py-2.5 rounded-xl text-xs uppercase tracking-widest flex items-center gap-2 shadow-lg shadow-vendeur-emerald/20 active:scale-95 transition-all cursor-pointer"
-        >
-          <Check size={16} />
-          <span>Enregistrer</span>
-        </button>
-      </div>
-
-      {/* Main Workspace: Canvas Preview + Control Panel */}
-      <div className="flex-1 flex flex-col lg:flex-row items-center justify-center p-4 md:p-8 gap-6 md:gap-8 overflow-y-auto max-w-7xl mx-auto w-full">
-        {/* Canvas Visualizer */}
-        <div className="relative w-full max-w-sm lg:max-w-md h-[460px] sm:h-[540px] md:h-[620px] rounded-3xl overflow-hidden border-2 border-slate-300 dark:border-white/15 shadow-2xl bg-[#090a0f] flex items-center justify-center shrink-0 p-1">
-          <canvas ref={canvasRef} className="w-full h-full object-contain rounded-2xl" />
-          {isRendering && (
-            <div className="absolute inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center rounded-2xl">
-              <Sparkles className="animate-spin text-vendeur-emerald" size={32} />
-            </div>
-          )}
-        </div>
-
-        {/* Studio Control Deck */}
-        <div className="w-full max-w-xl space-y-5 bg-white dark:bg-[#12141a] border border-slate-200 dark:border-white/10 p-5 sm:p-7 md:p-8 rounded-3xl shadow-xl dark:shadow-2xl overflow-y-auto max-h-[85vh]">
-          {/* Format Selector */}
-          <div className="space-y-2">
-            <label className="text-[10px] font-black text-slate-500 dark:text-white/50 uppercase tracking-widest">
-              Format de l&apos;Affiche
-            </label>
-            <div className="grid grid-cols-3 gap-2">
-              {(Object.keys(FORMAT_PRESETS) as Array<keyof typeof FORMAT_PRESETS>).map((fmtKey) => (
-                <button
-                  key={fmtKey}
-                  type="button"
-                  onClick={() => setFormat(fmtKey)}
-                  className={`h-11 rounded-xl border font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer ${
-                    format === fmtKey
-                      ? "bg-slate-900 text-white dark:bg-white dark:text-slate-950 border-slate-900 dark:border-white shadow-md font-black"
-                      : "bg-slate-50 dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-700 dark:text-white/60 hover:bg-slate-100 dark:hover:bg-white/10"
-                  }`}
-                >
-                  {FORMAT_PRESETS[fmtKey].icon}
-                  <span>{FORMAT_PRESETS[fmtKey].label.split(" ")[0]}</span>
-                </button>
-              ))}
-            </div>
+        {/* Right: Studio Control Sidebar */}
+        <div className="w-full md:w-[390px] lg:w-[420px] shrink-0 h-full flex flex-col bg-white dark:bg-[#12141a] border-l border-slate-200 dark:border-white/10 shadow-2xl z-20 overflow-hidden">
+          {/* Tabs Selector: Style & Format vs Contenu & Tarifs */}
+          <div className="p-2 border-b border-slate-200 dark:border-white/10 grid grid-cols-2 gap-1 bg-slate-50 dark:bg-white/[0.02] shrink-0">
+            <button
+              type="button"
+              onClick={() => setActiveTab("style")}
+              className={`py-2 px-3 rounded-xl font-black text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                activeTab === "style"
+                  ? "bg-slate-900 text-white dark:bg-white dark:text-slate-950 shadow-sm"
+                  : "text-slate-600 dark:text-white/60 hover:text-slate-900 dark:hover:text-white"
+              }`}
+            >
+              <Palette size={14} />
+              <span>Format &amp; Style</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab("content")}
+              className={`py-2 px-3 rounded-xl font-black text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                activeTab === "content"
+                  ? "bg-slate-900 text-white dark:bg-white dark:text-slate-950 shadow-sm"
+                  : "text-slate-600 dark:text-white/60 hover:text-slate-900 dark:hover:text-white"
+              }`}
+            >
+              <Tag size={14} />
+              <span>Textes &amp; Tarifs</span>
+            </button>
           </div>
 
-          {/* Theme Palette Selector */}
-          <div className="space-y-2">
-            <label className="text-[10px] font-black text-slate-500 dark:text-white/50 uppercase tracking-widest">
-              Ambiance &amp; Couleurs
-            </label>
-            <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
-              {THEME_PALETTES.map((theme) => (
-                <button
-                  key={theme.id}
-                  type="button"
-                  onClick={() => setSelectedTheme(theme.id)}
-                  className={`px-3 py-2 rounded-xl border text-[10px] font-black uppercase tracking-wider flex items-center gap-2 shrink-0 transition-all cursor-pointer ${
-                    selectedTheme === theme.id
-                      ? "border-slate-900 dark:border-white bg-slate-900/10 dark:bg-white/15 text-slate-900 dark:text-white shadow-sm font-black"
-                      : "border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 text-slate-600 dark:text-white/60 hover:bg-slate-100 dark:hover:bg-white/10"
-                  }`}
-                >
-                  <span
-                    className="h-3 w-3 rounded-full shrink-0 shadow-xs"
-                    style={{ backgroundColor: theme.primary }}
-                  />
-                  <span>{theme.name}</span>
-                </button>
-              ))}
-            </div>
-          </div>
+          {/* Tab Content Body: Compact, tight, zero scroll on desktop */}
+          <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-3.5">
+            {activeTab === "style" ? (
+              <>
+                {/* 1. Format Selector (Story 9:16, Carré 1:1, Flyer 4:5, Auto) */}
+                <div className="space-y-1.5">
+                  <div className="flex justify-between items-center">
+                    <label className="text-[10px] font-black text-slate-500 dark:text-white/50 uppercase tracking-widest">
+                      Format de l&apos;Affiche
+                    </label>
+                    {imgNaturalRatio && (
+                      <span className="text-[9px] font-bold text-emerald-600 dark:text-vendeur-emerald">
+                        Photo {imgNaturalRatio >= 0.9 && imgNaturalRatio <= 1.1 ? "Carrée (1:1)" : imgNaturalRatio < 0.7 ? "Verticale (9:16)" : "Portrait"}
+                      </span>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-4 gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => setFormat("story")}
+                      className={`h-9 rounded-xl border text-[11px] font-black flex flex-col items-center justify-center transition-all cursor-pointer ${
+                        format === "story"
+                          ? "bg-slate-900 text-white dark:bg-white dark:text-slate-950 border-slate-900 dark:border-white shadow-xs"
+                          : "bg-slate-50 dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-700 dark:text-white/70 hover:bg-slate-100"
+                      }`}
+                    >
+                      <div className="flex items-center gap-1">
+                        <Smartphone size={12} />
+                        <span>9:16</span>
+                      </div>
+                      <span className="text-[8px] font-bold opacity-75">Statut</span>
+                    </button>
 
-          {/* Promo Sticker Selector & Position Toggle */}
-          <div className="space-y-2.5">
-            <div className="flex justify-between items-center">
-              <label className="text-[10px] font-black text-slate-500 dark:text-white/50 uppercase tracking-widest">
-                Sticker Promotionnel
-              </label>
-              {activeSticker && activeSticker.id !== "none" && (
-                <div className="inline-flex rounded-lg border border-slate-200 dark:border-white/10 p-0.5 bg-slate-100 dark:bg-white/5 text-[9px] font-bold">
-                  <button
-                    type="button"
-                    onClick={() => setStickerPosition("above_title")}
-                    className={`px-2 py-0.5 rounded-md transition-all cursor-pointer ${
-                      stickerPosition === "above_title"
-                        ? "bg-white dark:bg-white/20 text-slate-900 dark:text-white shadow-xs font-black"
-                        : "text-slate-500 dark:text-white/50 hover:text-slate-900 dark:hover:text-white"
-                    }`}
-                  >
-                    Au-dessus du titre
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setStickerPosition("top_right")}
-                    className={`px-2 py-0.5 rounded-md transition-all cursor-pointer ${
-                      stickerPosition === "top_right"
-                        ? "bg-white dark:bg-white/20 text-slate-900 dark:text-white shadow-xs font-black"
-                        : "text-slate-500 dark:text-white/50 hover:text-slate-900 dark:hover:text-white"
-                    }`}
-                  >
-                    En haut à droite
-                  </button>
+                    <button
+                      type="button"
+                      onClick={() => setFormat("post")}
+                      className={`h-9 rounded-xl border text-[11px] font-black flex flex-col items-center justify-center transition-all cursor-pointer ${
+                        format === "post"
+                          ? "bg-slate-900 text-white dark:bg-white dark:text-slate-950 border-slate-900 dark:border-white shadow-xs"
+                          : "bg-slate-50 dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-700 dark:text-white/70 hover:bg-slate-100"
+                      }`}
+                    >
+                      <div className="flex items-center gap-1">
+                        <Square size={12} />
+                        <span>1:1</span>
+                      </div>
+                      <span className="text-[8px] font-bold opacity-75">Carré</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setFormat("flyer")}
+                      className={`h-9 rounded-xl border text-[11px] font-black flex flex-col items-center justify-center transition-all cursor-pointer ${
+                        format === "flyer"
+                          ? "bg-slate-900 text-white dark:bg-white dark:text-slate-950 border-slate-900 dark:border-white shadow-xs"
+                          : "bg-slate-50 dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-700 dark:text-white/70 hover:bg-slate-100"
+                      }`}
+                    >
+                      <div className="flex items-center gap-1">
+                        <FileText size={12} />
+                        <span>4:5</span>
+                      </div>
+                      <span className="text-[8px] font-bold opacity-75">Flyer</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setFormat("auto")}
+                      className={`h-9 rounded-xl border text-[11px] font-black flex flex-col items-center justify-center transition-all cursor-pointer ${
+                        format === "auto"
+                          ? "bg-slate-900 text-white dark:bg-white dark:text-slate-950 border-slate-900 dark:border-white shadow-xs"
+                          : "bg-slate-50 dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-700 dark:text-white/70 hover:bg-slate-100"
+                      }`}
+                    >
+                      <div className="flex items-center gap-1">
+                        <Sparkles size={12} />
+                        <span>Auto</span>
+                      </div>
+                      <span className="text-[8px] font-bold opacity-75">Photo</span>
+                    </button>
+                  </div>
                 </div>
-              )}
-            </div>
 
-            <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
-              {STICKER_PRESETS.map((stk) => (
-                <button
-                  key={stk.id}
-                  type="button"
-                  onClick={() => setSelectedSticker(stk.id)}
-                  className={`px-3 py-2 rounded-xl border text-[10px] font-black uppercase tracking-wider shrink-0 transition-all cursor-pointer ${
-                    selectedSticker === stk.id
-                      ? "border-slate-900 dark:border-white bg-slate-900 text-white dark:bg-white dark:text-slate-950 shadow-md font-black"
-                      : "border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 text-slate-600 dark:text-white/60 hover:bg-slate-100 dark:hover:bg-white/10"
-                  }`}
-                >
-                  {stk.label}
-                </button>
-              ))}
-            </div>
+                {/* 2. Cadrage Photo (Ajuster sans couper vs Remplir tout l'espace) */}
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black text-slate-500 dark:text-white/50 uppercase tracking-widest">
+                    Cadrage du Produit
+                  </label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setImageFit("contain")}
+                      className={`h-9 px-3 rounded-xl border text-[11px] font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                        imageFit === "contain"
+                          ? "bg-emerald-500/10 border-emerald-500 text-emerald-700 dark:text-emerald-400 font-black shadow-xs"
+                          : "bg-slate-50 dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-600 dark:text-white/60 hover:bg-slate-100"
+                      }`}
+                    >
+                      <Minimize2 size={13} />
+                      <span>Produit Entier (Sans couper)</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setImageFit("cover")}
+                      className={`h-9 px-3 rounded-xl border text-[11px] font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                        imageFit === "cover"
+                          ? "bg-emerald-500/10 border-emerald-500 text-emerald-700 dark:text-emerald-400 font-black shadow-xs"
+                          : "bg-slate-50 dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-600 dark:text-white/60 hover:bg-slate-100"
+                      }`}
+                    >
+                      <Maximize2 size={13} />
+                      <span>Plein Écran (Cover)</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* 3. Theme Palette Selector */}
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black text-slate-500 dark:text-white/50 uppercase tracking-widest">
+                    Ambiance &amp; Couleurs
+                  </label>
+                  <div className="flex gap-1.5 overflow-x-auto pb-0.5 no-scrollbar">
+                    {THEME_PALETTES.map((theme) => (
+                      <button
+                        key={theme.id}
+                        type="button"
+                        onClick={() => setSelectedTheme(theme.id)}
+                        className={`px-2.5 py-1.5 rounded-xl border text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 shrink-0 transition-all cursor-pointer ${
+                          selectedTheme === theme.id
+                            ? "border-slate-900 dark:border-white bg-slate-900/10 dark:bg-white/15 text-slate-900 dark:text-white shadow-xs font-black"
+                            : "border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 text-slate-600 dark:text-white/60 hover:bg-slate-100"
+                        }`}
+                      >
+                        <span
+                          className="h-2.5 w-2.5 rounded-full shrink-0 shadow-xs"
+                          style={{ backgroundColor: theme.primary }}
+                        />
+                        <span>{theme.name}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* 4. Promo Sticker Selector & Position Toggle */}
+                <div className="space-y-1.5 pt-1">
+                  <div className="flex justify-between items-center">
+                    <label className="text-[10px] font-black text-slate-500 dark:text-white/50 uppercase tracking-widest">
+                      Sticker Promo
+                    </label>
+                    {activeSticker && activeSticker.id !== "none" && (
+                      <div className="inline-flex rounded-lg border border-slate-200 dark:border-white/10 p-0.5 bg-slate-100 dark:bg-white/5 text-[9px] font-bold">
+                        <button
+                          type="button"
+                          onClick={() => setStickerPosition("above_title")}
+                          className={`px-2 py-0.5 rounded-md transition-all cursor-pointer ${
+                            stickerPosition === "above_title"
+                              ? "bg-white dark:bg-white/20 text-slate-900 dark:text-white shadow-xs font-black"
+                              : "text-slate-500 dark:text-white/50 hover:text-slate-900 dark:hover:text-white"
+                          }`}
+                        >
+                          Sur Titre
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setStickerPosition("top_right")}
+                          className={`px-2 py-0.5 rounded-md transition-all cursor-pointer ${
+                            stickerPosition === "top_right"
+                              ? "bg-white dark:bg-white/20 text-slate-900 dark:text-white shadow-xs font-black"
+                              : "text-slate-500 dark:text-white/50 hover:text-slate-900 dark:hover:text-white"
+                          }`}
+                        >
+                          Coin Droit
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-1.5 max-h-36 overflow-y-auto no-scrollbar p-0.5">
+                    {STICKER_PRESETS.map((stk) => (
+                      <button
+                        key={stk.id}
+                        type="button"
+                        onClick={() => setSelectedSticker(stk.id)}
+                        className={`px-2 py-1.5 rounded-xl border text-[10px] font-black uppercase tracking-wider text-left truncate transition-all cursor-pointer ${
+                          selectedSticker === stk.id
+                            ? "border-slate-900 dark:border-white bg-slate-900 text-white dark:bg-white dark:text-slate-950 shadow-xs font-black"
+                            : "border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 text-slate-600 dark:text-white/60 hover:bg-slate-100"
+                        }`}
+                      >
+                        {stk.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </>
+            ) : (
+              <>
+                {/* Product Title */}
+                <div className="space-y-1">
+                  <label className="block text-[10px] font-black text-slate-500 dark:text-white/50 uppercase tracking-widest">
+                    Titre du Produit
+                  </label>
+                  <input
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className="w-full h-9 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-3 text-xs font-bold text-slate-900 dark:text-white outline-none focus:border-vendeur-emerald focus:bg-white dark:focus:bg-white/10 transition-all shadow-xs"
+                  />
+                </div>
+
+                {/* Prices Side-by-side */}
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="space-y-1">
+                    <label className="block text-[10px] font-black text-emerald-600 dark:text-vendeur-emerald uppercase tracking-widest">
+                      Prix ({currency})
+                    </label>
+                    <input
+                      type="number"
+                      value={price}
+                      onChange={(e) => setPrice(e.target.value)}
+                      className="w-full h-9 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-3 text-xs font-black text-emerald-600 dark:text-vendeur-emerald outline-none focus:border-vendeur-emerald focus:bg-white dark:focus:bg-white/10 transition-all shadow-xs"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="block text-[10px] font-black text-slate-500 dark:text-white/40 uppercase tracking-widest">
+                      Ancien Prix Barré
+                    </label>
+                    <input
+                      type="number"
+                      placeholder="Ex: 35000"
+                      value={originalPrice}
+                      onChange={(e) => setOriginalPrice(e.target.value)}
+                      className="w-full h-9 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-3 text-xs text-slate-600 dark:text-white/60 outline-none focus:border-slate-400 dark:focus:border-white/30 focus:bg-white dark:focus:bg-white/10 transition-all shadow-xs"
+                    />
+                  </div>
+                </div>
+
+                {/* Hook / Slogan with Quick AI Idea */}
+                <div className="space-y-1">
+                  <div className="flex justify-between items-center">
+                    <label className="text-[10px] font-black text-slate-500 dark:text-white/50 uppercase tracking-widest">
+                      Accroche Commerciale
+                    </label>
+                    <button
+                      type="button"
+                      onClick={generateQuickAiHook}
+                      className="text-[9px] font-black text-sky-600 dark:text-sky-400 uppercase tracking-widest hover:underline flex items-center gap-1 cursor-pointer"
+                    >
+                      <Zap size={10} /> Idée IA
+                    </button>
+                  </div>
+                  <input
+                    type="text"
+                    value={hookText}
+                    onChange={(e) => setHookText(e.target.value)}
+                    className="w-full h-9 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-3 text-xs text-slate-700 dark:text-white/80 outline-none focus:border-vendeur-emerald focus:bg-white dark:focus:bg-white/10 transition-all shadow-xs"
+                  />
+                </div>
+
+                {/* QR Code Toggle */}
+                <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 shadow-xs">
+                  <div className="flex items-center gap-2">
+                    <QrCode size={16} className="text-emerald-600 dark:text-vendeur-emerald" />
+                    <span className="text-xs font-bold text-slate-900 dark:text-white">QR Code Boutique</span>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={includeQrCode}
+                    onChange={(e) => setIncludeQrCode(e.target.checked)}
+                    className="h-4 w-4 rounded accent-vendeur-emerald cursor-pointer"
+                  />
+                </div>
+              </>
+            )}
           </div>
 
-          {/* Product Title & Prices */}
-          <div className="space-y-3 pt-2 border-t border-slate-200 dark:border-white/10">
-            <div>
-              <label className="block text-[10px] font-black text-slate-500 dark:text-white/50 uppercase tracking-widest mb-1">
-                Titre du Produit
-              </label>
-              <input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="w-full h-11 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-4 text-xs font-bold text-slate-900 dark:text-white outline-none focus:border-vendeur-emerald focus:bg-white dark:focus:bg-white/10 transition-all shadow-xs"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-[10px] font-black text-emerald-600 dark:text-vendeur-emerald uppercase tracking-widest mb-1">
-                  Prix Promo ({currency})
-                </label>
-                <input
-                  type="number"
-                  value={price}
-                  onChange={(e) => setPrice(e.target.value)}
-                  className="w-full h-11 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-4 text-xs font-black text-emerald-600 dark:text-vendeur-emerald outline-none focus:border-vendeur-emerald focus:bg-white dark:focus:bg-white/10 transition-all shadow-xs"
-                />
-              </div>
-
-              <div>
-                <label className="block text-[10px] font-black text-slate-500 dark:text-white/40 uppercase tracking-widest mb-1">
-                  Ancien Prix Barré (optionnel)
-                </label>
-                <input
-                  type="number"
-                  placeholder="Ex: 35000"
-                  value={originalPrice}
-                  onChange={(e) => setOriginalPrice(e.target.value)}
-                  className="w-full h-11 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-4 text-xs text-slate-600 dark:text-white/60 outline-none focus:border-slate-400 dark:focus:border-white/30 focus:bg-white dark:focus:bg-white/10 transition-all shadow-xs"
-                />
-              </div>
-            </div>
-
-            <div>
-              <div className="flex justify-between items-center mb-1">
-                <label className="text-[10px] font-black text-slate-500 dark:text-white/50 uppercase tracking-widest">
-                  Accroche Commerciale
-                </label>
-                <button
-                  type="button"
-                  onClick={generateQuickAiHook}
-                  className="text-[9px] font-black text-sky-600 dark:text-sky-400 uppercase tracking-widest hover:underline flex items-center gap-1 cursor-pointer"
-                >
-                  <Zap size={10} /> Idée IA
-                </button>
-              </div>
-              <input
-                type="text"
-                value={hookText}
-                onChange={(e) => setHookText(e.target.value)}
-                className="w-full h-11 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-4 text-xs text-slate-700 dark:text-white/80 outline-none focus:border-vendeur-emerald focus:bg-white dark:focus:bg-white/10 transition-all shadow-xs"
-              />
-            </div>
-
-            {/* QR Code Toggle */}
-            <div className="flex items-center justify-between p-3.5 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 shadow-xs">
-              <div className="flex items-center gap-2.5">
-                <QrCode size={18} className="text-emerald-600 dark:text-vendeur-emerald" />
-                <span className="text-xs font-bold text-slate-900 dark:text-white">Inclure le QR Code Boutique</span>
-              </div>
-              <input
-                type="checkbox"
-                checked={includeQrCode}
-                onChange={(e) => setIncludeQrCode(e.target.checked)}
-                className="h-4 w-4 rounded accent-vendeur-emerald cursor-pointer"
-              />
-            </div>
-          </div>
-
-          {/* Action Buttons: 1-Tap Share & Download */}
-          <div className="pt-2 grid grid-cols-2 gap-3">
+          {/* Action Footer: Always visible, pinned at bottom */}
+          <div className="p-3 bg-slate-50/80 dark:bg-white/[0.03] border-t border-slate-200 dark:border-white/10 grid grid-cols-2 gap-2 shrink-0">
             <button
               type="button"
               onClick={handleShareWhatsApp}
-              className="h-12 sm:h-14 rounded-2xl bg-vendeur-emerald hover:bg-emerald-400 text-slate-950 font-black uppercase text-[10px] tracking-widest flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all shadow-xl shadow-vendeur-emerald/20 cursor-pointer"
+              className="h-10 rounded-xl bg-vendeur-emerald hover:bg-emerald-400 text-slate-950 font-black uppercase text-[10px] tracking-wider flex items-center justify-center gap-1.5 active:scale-95 transition-all shadow-md shadow-vendeur-emerald/20 cursor-pointer"
             >
-              <Share2 size={16} />
+              <Share2 size={14} />
               <span>Statut WhatsApp</span>
             </button>
 
             <button
               type="button"
               onClick={handleDownload}
-              className="h-12 sm:h-14 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-white/10 dark:hover:bg-white/15 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white font-black uppercase text-[10px] tracking-widest flex items-center justify-center gap-2 transition-all cursor-pointer"
+              className="h-10 rounded-xl bg-slate-200 hover:bg-slate-300 dark:bg-white/10 dark:hover:bg-white/15 border border-slate-300 dark:border-white/10 text-slate-900 dark:text-white font-black uppercase text-[10px] tracking-wider flex items-center justify-center gap-1.5 transition-all cursor-pointer"
             >
-              <Download size={16} />
+              <Download size={14} />
               <span>Télécharger HD</span>
             </button>
           </div>
@@ -712,4 +987,6 @@ export function PosterGenerator({
       </div>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 }

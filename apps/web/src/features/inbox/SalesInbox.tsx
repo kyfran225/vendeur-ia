@@ -290,7 +290,14 @@ export function SalesInbox() {
         const convId = String(data.conversationId || data.message?.conversationId);
         if (!convId) return old;
 
-        const existingIndex = old.findIndex(c => String(c._id) === convId);
+        const incomingPhone = (data.customer?.phone || "").replace(/@.*$/, "").replace(/\D/g, "");
+        const existingIndex = old.findIndex(c => {
+          if (String(c._id) === convId) return true;
+          if (data.customer?._id && c.customerId?._id && String(c.customerId._id) === String(data.customer._id)) return true;
+          const cPhone = (c.customerId?.phone || "").replace(/@.*$/, "").replace(/\D/g, "");
+          if (incomingPhone.length >= 8 && cPhone.length >= 8 && incomingPhone.slice(-8) === cPhone.slice(-8)) return true;
+          return false;
+        });
 
         if (existingIndex > -1) {
           // Update existing conversation
@@ -954,10 +961,29 @@ export function SalesInbox() {
     }
   };
 
+  const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024; // 5 Mo max pour les images
+  const MAX_MEDIA_SIZE_BYTES = 15 * 1024 * 1024; // 15 Mo max pour les documents / autres médias
+
+  const validateAndSelectFile = (file: File): boolean => {
+    const isImage = file.type.startsWith("image/") || /\.(jpe?g|png|webp|gif|heic)$/i.test(file.name || "");
+    const maxBytes = isImage ? MAX_IMAGE_SIZE_BYTES : MAX_MEDIA_SIZE_BYTES;
+    if (file.size > maxBytes) {
+      const sizeMb = (file.size / 1024 / 1024).toFixed(2);
+      toast.error(
+        isImage
+          ? `Image trop volumineuse (${sizeMb} Mo). La limite maximale pour une photo est de 5 Mo.`
+          : `Fichier trop volumineux (${sizeMb} Mo). La limite maximale est de 15 Mo.`
+      );
+      return false;
+    }
+    setSelectedFileForUpload(file);
+    setIsMediaUploaderOpen(true);
+    return true;
+  };
+
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      setSelectedFileForUpload(e.target.files[0]);
-      setIsMediaUploaderOpen(true);
+      validateAndSelectFile(e.target.files[0]);
       e.target.value = "";
     }
   };
@@ -967,8 +993,7 @@ export function SalesInbox() {
       const file = e.clipboardData.files[0];
       if (file.type.startsWith("image/") || file.type.startsWith("application/pdf")) {
         e.preventDefault();
-        setSelectedFileForUpload(file);
-        setIsMediaUploaderOpen(true);
+        validateAndSelectFile(file);
       }
     }
   };
@@ -976,8 +1001,7 @@ export function SalesInbox() {
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      setSelectedFileForUpload(e.dataTransfer.files[0]);
-      setIsMediaUploaderOpen(true);
+      validateAndSelectFile(e.dataTransfer.files[0]);
     }
   };
 
@@ -996,10 +1020,25 @@ export function SalesInbox() {
 
   const activeChatData = conversations?.find((c: any) => c._id === selectedChat);
 
-  // Filter conversations
-  const filteredConversations = useMemo(() => {
+  // Filter & deduplicate conversations by contact
+  const uniqueConversations = useMemo(() => {
     if (!conversations || !Array.isArray(conversations)) return [];
-    return conversations.filter((c: any) => {
+    const seenContacts = new Set<string>();
+    const result: any[] = [];
+    for (const c of conversations) {
+      const rawPhone = (c.customerId?.phone || "").replace(/@.*$/, "").replace(/\D/g, "");
+      const contactKey = rawPhone.length >= 8
+        ? `${c.platform || "whatsapp"}:${rawPhone.slice(-8)}`
+        : String(c.customerId?._id || c._id);
+      if (seenContacts.has(contactKey)) continue;
+      seenContacts.add(contactKey);
+      result.push(c);
+    }
+    return result;
+  }, [conversations]);
+
+  const filteredConversations = useMemo(() => {
+    return uniqueConversations.filter((c: any) => {
       // 1. Search Query
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
@@ -1017,7 +1056,7 @@ export function SalesInbox() {
 
       return true;
     });
-  }, [conversations, searchQuery, filterTab]);
+  }, [uniqueConversations, searchQuery, filterTab]);
 
   const toggleTakeover = () => {
     if (!selectedChat || !activeChatData) return;
@@ -1138,7 +1177,7 @@ export function SalesInbox() {
                   : "bg-slate-200/80 text-slate-700 dark:bg-white/5 dark:text-white/60 hover:bg-slate-300 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white"
               )}
             >
-              Tous ({conversations?.length || 0})
+              Tous ({uniqueConversations.length})
             </button>
 
             <button

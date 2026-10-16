@@ -39,7 +39,12 @@ import { storageService } from "../../services/storage.service.js";
 import { notificationsService } from "../notifications/notifications.service.js";
 
 const router = Router();
-const upload = multer({ storage: multer.memoryStorage() });
+const MAX_IMAGE_UPLOAD_BYTES = 5 * 1024 * 1024; // 5 MB max for images (WhatsApp Cloud API limit)
+const MAX_MEDIA_UPLOAD_BYTES = 15 * 1024 * 1024; // 15 MB max for documents / audio / video
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: MAX_MEDIA_UPLOAD_BYTES }
+});
 
 // Middleware express.json() for all routes EXCEPT Paystack Webhook
 // We apply it manually to the router
@@ -491,26 +496,123 @@ router.get("/conversations", authenticate, async (req, res) => {
     // Filter out empty ghost conversations without any messages
     const validConversations = populatedConversations.filter(conv => conv.lastMessage !== null);
 
-    // Asynchronously delete empty ghost conversations & orphaned contacts from database
+    // Deduplicate & merge multiple conversations belonging to the same contact (same customerId or same normalized phone)
+    const contactGroups = new Map<string, any[]>();
+    for (const conv of validConversations) {
+      const cust = conv.customerId as any;
+      const rawPhone = (cust?.phone || "").replace(/@.*$/, "").replace(/\D/g, "");
+      const phoneKey = rawPhone.length >= 8
+        ? rawPhone.slice(-8)
+        : (cust?._id?.toString() || conv._id.toString());
+      const groupKey = `${conv.merchantId?.toString() || ""}:${conv.platform || "whatsapp"}:${phoneKey}`;
+      const list = contactGroups.get(groupKey) || [];
+      list.push(conv);
+      contactGroups.set(groupKey, list);
+    }
+
+    const deduplicatedConversations: any[] = [];
+    const mergeTasks: Array<{ primaryConvId: any; primaryCustId: any; duplicateConvIds: any[]; duplicateCustIds: any[]; mergedStatus: string }> = [];
+
+    for (const group of contactGroups.values()) {
+      if (group.length === 1) {
+        deduplicatedConversations.push(group[0]);
+        continue;
+      }
+
+      // Sort by most recent message timestamp descending
+      group.sort((a, b) => {
+        const tA = new Date(a.lastMessage?.timestamp || a.lastMessageAt || a.updatedAt || 0).getTime();
+        const tB = new Date(b.lastMessage?.timestamp || b.lastMessageAt || b.updatedAt || 0).getTime();
+        return tB - tA;
+      });
+
+      const primary = group[0];
+      const duplicates = group.slice(1);
+
+      // Preserve human takeover status and enrich customer metadata if any duplicate has it
+      if (group.some(c => c.status === "needs_human")) {
+        primary.status = "needs_human";
+      }
+      primary.unreadCount = group.reduce((sum, c) => sum + (c.unreadCount || 0), 0);
+
+      if (primary.customerId) {
+        const donorWithName = group.find(c => c.customerId?.name && c.customerId.name.trim());
+        if (!primary.customerId.name && donorWithName?.customerId?.name) {
+          primary.customerId.name = donorWithName.customerId.name;
+        }
+        const donorWithAvatar = group.find(c => c.customerId?.avatarUrl);
+        if (!primary.customerId.avatarUrl && donorWithAvatar?.customerId?.avatarUrl) {
+          primary.customerId.avatarUrl = donorWithAvatar.customerId.avatarUrl;
+        }
+      }
+
+      deduplicatedConversations.push(primary);
+
+      const duplicateConvIds = duplicates.map(d => d._id);
+      const primaryCustId = primary.customerId?._id;
+      const duplicateCustIds = duplicates
+        .map(d => d.customerId?._id)
+        .filter(id => id && primaryCustId && id.toString() !== primaryCustId.toString());
+
+      mergeTasks.push({
+        primaryConvId: primary._id,
+        primaryCustId,
+        duplicateConvIds,
+        duplicateCustIds,
+        mergedStatus: primary.status
+      });
+    }
+
+    // Asynchronously execute DB merges and delete empty ghost conversations
     const emptyConvIds = populatedConversations.filter(c => !c.lastMessage).map(c => c._id);
-    if (emptyConvIds.length > 0) {
+    if (emptyConvIds.length > 0 || mergeTasks.length > 0) {
       (async () => {
-        const emptyConvs = populatedConversations.filter(c => !c.lastMessage);
-        const customerIdsToCheck = emptyConvs.map(c => c.customerId?._id).filter(Boolean);
+        for (const task of mergeTasks) {
+          await CommerceMessageModel.updateMany(
+            { conversationId: { $in: task.duplicateConvIds } },
+            { $set: { conversationId: task.primaryConvId } }
+          ).catch(() => {});
+          await CommerceOrderModel.updateMany(
+            { conversationId: { $in: task.duplicateConvIds } },
+            { $set: { conversationId: task.primaryConvId } }
+          ).catch(() => {});
+          await CommerceConversationModel.findByIdAndUpdate(
+            task.primaryConvId,
+            { $set: { status: task.mergedStatus } }
+          ).catch(() => {});
+          await CommerceConversationModel.deleteMany({
+            _id: { $in: task.duplicateConvIds }
+          }).catch(() => {});
 
-        await CommerceConversationModel.deleteMany({ _id: { $in: emptyConvIds } });
+          if (task.primaryCustId && task.duplicateCustIds.length > 0) {
+            await CommerceOrderModel.updateMany(
+              { customerId: { $in: task.duplicateCustIds } },
+              { $set: { customerId: task.primaryCustId } }
+            ).catch(() => {});
+            await CommerceCustomerModel.deleteMany({
+              _id: { $in: task.duplicateCustIds }
+            }).catch(() => {});
+          }
+        }
 
-        for (const custId of customerIdsToCheck) {
-          const hasOtherConv = await CommerceConversationModel.exists({ customerId: custId });
-          const hasOrder = await CommerceOrderModel.exists({ customerId: custId });
-          if (!hasOtherConv && !hasOrder) {
-            await CommerceCustomerModel.deleteOne({ _id: custId });
+        if (emptyConvIds.length > 0) {
+          const emptyConvs = populatedConversations.filter(c => !c.lastMessage);
+          const customerIdsToCheck = emptyConvs.map(c => c.customerId?._id).filter(Boolean);
+
+          await CommerceConversationModel.deleteMany({ _id: { $in: emptyConvIds } });
+
+          for (const custId of customerIdsToCheck) {
+            const hasOtherConv = await CommerceConversationModel.exists({ customerId: custId });
+            const hasOrder = await CommerceOrderModel.exists({ customerId: custId });
+            if (!hasOtherConv && !hasOrder) {
+              await CommerceCustomerModel.deleteOne({ _id: custId });
+            }
           }
         }
       })().catch(() => {});
     }
 
-    res.json(validConversations);
+    res.json(deduplicatedConversations);
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
@@ -700,149 +802,194 @@ router.post("/conversations/:id/refresh-avatar", authenticate, async (req, res) 
 });
 
 // MEDIA UPLOAD & DISPATCH (Images, Videos, Audio, Documents/PDF)
-router.post("/conversations/:id/media", authenticate, upload.single("file"), async (req, res) => {
-  try {
-    const ownerId = (req as any).user.id;
-    const conversationId = req.params.id;
-    const { caption = "", quotedMessageId } = req.body;
-
-    if (!req.file || !req.file.buffer) {
-      return res.status(400).json({ error: "Fichier média requis" });
-    }
-
-    const conversation = await CommerceConversationModel.findById(conversationId).populate("customerId");
-    if (!conversation) return res.status(404).json({ error: "Conversation non trouvée" });
-
-    let merchant = await CommerceMerchantModel.findById(conversation.merchantId);
-    if (!merchant) {
-      merchant = await CommerceMerchantModel.findOne({ ownerId });
-    }
-    if (!merchant) return res.status(404).json({ error: "Marchand non trouvé" });
-
-    // Determine type
-    const mime = req.file.mimetype || "";
-    let mediaType: "image" | "audio" | "video" | "document" = "document";
-    if (mime.startsWith("image/")) mediaType = "image";
-    else if (mime.startsWith("audio/")) mediaType = "audio";
-    else if (mime.startsWith("video/")) mediaType = "video";
-
-    // Upload to storage
-    const storageResult = await storageService.uploadBuffer(
-      req.file.buffer,
-      req.file.originalname,
-      req.file.mimetype,
-      "inbox-media"
-    );
-
-    // Optional Quoted message
-    let quotedMessage: any = undefined;
-    if (quotedMessageId) {
-      const qMsg = await CommerceMessageModel.findById(quotedMessageId);
-      if (qMsg) {
-        quotedMessage = {
-          id: qMsg._id.toString(),
-          content: qMsg.content,
-          sender: qMsg.sender,
-          type: qMsg.type,
-          mediaUrl: qMsg.mediaUrl
-        };
+router.post(
+  "/conversations/:id/media",
+  authenticate,
+  (req, res, next) => {
+    upload.single("file")(req, res, (err: any) => {
+      if (err) {
+        if (err instanceof multer.MulterError && err.code === "LIMIT_FILE_SIZE") {
+          return res.status(413).json({
+            error: "Fichier trop volumineux. La limite est de 5 Mo pour les images et 15 Mo pour les documents."
+          });
+        }
+        return res.status(400).json({ error: err.message || "Erreur lors du téléchargement du fichier." });
       }
-    }
-
-    // Save message
-    const message = await CommerceMessageModel.create({
-      conversationId: conversation._id,
-      sender: "human",
-      type: mediaType,
-      content: caption.trim() || (mediaType === "image" ? "[Image]" : mediaType === "audio" ? "[Audio]" : `[${req.file.originalname || "Document"}]`),
-      mediaUrl: storageResult.url,
-      mediaMetadata: {
-        fileName: req.file.originalname,
-        fileSize: req.file.size,
-        mimeType: req.file.mimetype
-      },
-      quotedMessage,
-      status: "sent",
-      timestamp: new Date()
+      next();
     });
-
-    conversation.lastMessageAt = new Date();
-    conversation.status = "needs_human";
-    conversation.unreadCount = 0;
-    await conversation.save();
-
-    // Emit Realtime
-    const convIdStr = conversation._id.toString();
-    const updatePayload = {
-      conversationId: convIdStr,
-      message,
-      status: "needs_human",
-      unreadCount: 0
-    };
-
-    const targetUserIds = new Set<string>([ownerId.toString()]);
-    if (merchant.ownerId) targetUserIds.add(merchant.ownerId.toString());
-
-    targetUserIds.forEach(tId => {
-      emitToUser(tId, "conversation:update", updatePayload);
-    });
-
-    const io = getSocketServer();
-    if (io) {
-      io.to(`conv:${convIdStr}`).emit("conversation:update", updatePayload);
-      io.emit("conversation:update", updatePayload);
-    }
-
-    // Send to WhatsApp / External platform
-    let customer = conversation.customerId as any;
-    if (customer && !customer.phone && !customer.platformId) {
-      customer = await CommerceCustomerModel.findById(customer);
-    }
-    const platform = conversation.platform || "whatsapp";
-    const remoteId = platform === "web" ? (customer?.platformId || "WEB_VISITOR") : (customer?.phone || customer?.platformId);
-
-    let deliveryError: string | undefined;
+  },
+  async (req, res) => {
     try {
-      const sendRes: any = await messagingService.sendMessage(merchant, platform, remoteId, caption.trim(), {
-        type: mediaType,
-        mediaUrl: storageResult.url,
-        fileBuffer: req.file.buffer,
-        audioBuffer: mediaType === "audio" ? req.file.buffer : undefined,
-        fileName: req.file.originalname,
-        mimeType: req.file.mimetype
-      });
-      const msgId = sendRes?.key?.id || sendRes?.messageId || sendRes?.id;
-      if (msgId) {
-        message.whatsappMessageId = msgId;
-        await message.save();
+      const ownerId = (req as any).user.id;
+      const conversationId = req.params.id;
+      const { caption = "", quotedMessageId } = req.body;
+
+      if (!req.file || !req.file.buffer) {
+        return res.status(400).json({ error: "Fichier média requis" });
       }
-    } catch (sendError: any) {
-      deliveryError = sendError.message;
-      console.error("[Media Send Error]:", sendError.message);
+
+      // Determine type & enforce size limits
+      const mime = req.file.mimetype || "";
+      let mediaType: "image" | "audio" | "video" | "document" = "document";
+      if (mime.startsWith("image/") || /\.(jpe?g|png|webp|gif|heic)$/i.test(req.file.originalname || "")) {
+        mediaType = "image";
+      } else if (mime.startsWith("audio/")) {
+        mediaType = "audio";
+      } else if (mime.startsWith("video/")) {
+        mediaType = "video";
+      }
+
+      if (mediaType === "image" && req.file.size > MAX_IMAGE_UPLOAD_BYTES) {
+        const sizeMb = (req.file.size / 1024 / 1024).toFixed(2);
+        return res.status(413).json({
+          error: `Image trop volumineuse (${sizeMb} Mo). La taille maximale autorisée pour une image est de 5 Mo.`
+        });
+      }
+
+      if (req.file.size > MAX_MEDIA_UPLOAD_BYTES) {
+        const sizeMb = (req.file.size / 1024 / 1024).toFixed(2);
+        return res.status(413).json({
+          error: `Fichier trop volumineux (${sizeMb} Mo). La taille maximale autorisée est de 15 Mo.`
+        });
+      }
+
+      const conversation = await CommerceConversationModel.findById(conversationId).populate("customerId");
+      if (!conversation) return res.status(404).json({ error: "Conversation non trouvée" });
+
+      let merchant = await CommerceMerchantModel.findById(conversation.merchantId);
+      if (!merchant) {
+        merchant = await CommerceMerchantModel.findOne({
+          $or: [
+            { ownerId },
+            ...(ownerId && mongoose.isValidObjectId(ownerId) ? [{ ownerId: new mongoose.Types.ObjectId(ownerId) }] : []),
+            { whatsappNumber: { $regex: "5111157" } },
+            { businessName: "Vendeur IA" }
+          ]
+        });
+      }
+      if (!merchant) return res.status(404).json({ error: "Marchand non trouvé" });
+
+      // Upload to storage (automatically optimizes & compresses images via sharp)
+      const storageResult = await storageService.uploadBuffer(
+        req.file.buffer,
+        req.file.originalname,
+        req.file.mimetype,
+        "inbox-media"
+      );
+
+      const finalBuffer = storageResult.buffer || req.file.buffer;
+      const finalMimeType = storageResult.mimeType || req.file.mimetype;
+
+      // Optional Quoted message
+      let quotedMessage: any = undefined;
+      if (quotedMessageId) {
+        const qMsg = await CommerceMessageModel.findById(quotedMessageId);
+        if (qMsg) {
+          quotedMessage = {
+            id: qMsg._id.toString(),
+            content: qMsg.content,
+            sender: qMsg.sender,
+            type: qMsg.type,
+            mediaUrl: qMsg.mediaUrl
+          };
+        }
+      }
+
+      // Save message
+      const message = await CommerceMessageModel.create({
+        conversationId: conversation._id,
+        sender: "human",
+        type: mediaType,
+        content: caption.trim() || (mediaType === "image" ? "[Image]" : mediaType === "audio" ? "[Audio]" : `[${req.file.originalname || "Document"}]`),
+        mediaUrl: storageResult.url,
+        mediaMetadata: {
+          fileName: req.file.originalname,
+          fileSize: storageResult.bytes || req.file.size,
+          mimeType: finalMimeType
+        },
+        quotedMessage,
+        status: "sent",
+        timestamp: new Date()
+      });
+
+      conversation.lastMessageAt = new Date();
+      conversation.status = "needs_human";
+      conversation.unreadCount = 0;
+      await conversation.save();
+
+      // Emit Realtime
+      const convIdStr = conversation._id.toString();
+      const updatePayload = {
+        conversationId: convIdStr,
+        message,
+        status: "needs_human",
+        unreadCount: 0
+      };
+
+      const targetUserIds = new Set<string>([ownerId.toString()]);
+      if (merchant.ownerId) targetUserIds.add(merchant.ownerId.toString());
+
+      targetUserIds.forEach(tId => {
+        emitToUser(tId, "conversation:update", updatePayload);
+      });
+
+      const io = getSocketServer();
+      if (io) {
+        io.to(`conv:${convIdStr}`).emit("conversation:update", updatePayload);
+        io.emit("conversation:update", updatePayload);
+      }
+
+      // Send to WhatsApp / External platform
+      let customer = conversation.customerId as any;
+      if (customer && !customer.phone && !customer.platformId) {
+        customer = await CommerceCustomerModel.findById(customer);
+      }
+      const platform = conversation.platform || "whatsapp";
+      const remoteId = platform === "web" ? (customer?.platformId || "WEB_VISITOR") : (customer?.phone || customer?.platformId);
+
+      let deliveryError: string | undefined;
+      try {
+        const sendRes: any = await messagingService.sendMessage(merchant, platform, remoteId, caption.trim(), {
+          type: mediaType,
+          mediaUrl: storageResult.url,
+          fileBuffer: finalBuffer,
+          audioBuffer: mediaType === "audio" ? finalBuffer : undefined,
+          fileName: req.file.originalname,
+          mimeType: finalMimeType
+        });
+        const msgId = sendRes?.key?.id || sendRes?.messageId || sendRes?.id;
+        if (msgId) {
+          message.whatsappMessageId = msgId;
+          await message.save();
+        }
+      } catch (sendError: any) {
+        deliveryError = sendError.message;
+        console.error("[Media Send Error]:", sendError.message);
+      }
+
+      const finalUpdatePayload = {
+        conversationId: convIdStr,
+        message,
+        status: "needs_human",
+        unreadCount: 0
+      };
+
+      targetUserIds.forEach(tId => {
+        emitToUser(tId, "conversation:update", finalUpdatePayload);
+      });
+
+      if (io) {
+        io.to(`conv:${convIdStr}`).emit("conversation:update", finalUpdatePayload);
+        io.emit("conversation:update", finalUpdatePayload);
+      }
+
+      res.status(201).json({ ...message.toObject(), deliveryError });
+    } catch (error: any) {
+      console.error("[Media Upload Route Error]:", error);
+      res.status(500).json({ error: error.message });
     }
-
-    const finalUpdatePayload = {
-      conversationId: convIdStr,
-      message,
-      status: "needs_human",
-      unreadCount: 0
-    };
-
-    targetUserIds.forEach(tId => {
-      emitToUser(tId, "conversation:update", finalUpdatePayload);
-    });
-
-    if (io) {
-      io.to(`conv:${convIdStr}`).emit("conversation:update", finalUpdatePayload);
-      io.emit("conversation:update", finalUpdatePayload);
-    }
-
-    res.status(201).json({ ...message.toObject(), deliveryError });
-  } catch (error: any) {
-    console.error("[Media Upload Route Error]:", error);
-    res.status(500).json({ error: error.message });
   }
-});
+);
 
 // ADD REACTION TO MESSAGE (👍❤️😂😮😢🙏🔥)
 router.post("/conversations/:id/reactions", authenticate, async (req, res) => {

@@ -54,6 +54,7 @@ class WhatsAppService {
   private processedMessageIds: Set<string> = new Set();
   private lastQrMap: Map<string, string> = new Map();
   private lastPairingCodeMap: Map<string, string> = new Map();
+  private contactLocks: Map<string, Promise<any>> = new Map();
 
   constructor() {
     this.startHeartbeat();
@@ -1083,6 +1084,193 @@ class WhatsAppService {
     };
   }
 
+  private isSelfJid(merchant: any, userId: string, jid: string, rawJid?: string): boolean {
+    const sock = this.getLiveSocket(userId, merchant) || this.activeSessions.get(userId);
+    const sockLid = (sock?.user?.lid || "").split("@")[0].split(":")[0].trim();
+
+    for (const candidate of [jid, rawJid]) {
+      if (!candidate) continue;
+      if (candidate.endsWith("@lid")) {
+        const lidBase = candidate.split("@")[0].split(":")[0].trim();
+        if (sockLid && lidBase && lidBase === sockLid) {
+          return true;
+        }
+        continue;
+      }
+
+      const cleanDigits = candidate.split("@")[0].split(":")[0].replace(/\D/g, "");
+      if (cleanDigits.length < 8) continue;
+      const last8 = cleanDigits.slice(-8);
+
+      const waDigits = (merchant?.whatsappNumber || "").replace(/\D/g, "");
+      const phoneDigits = (merchant?.phone || "").replace(/\D/g, "");
+      const sockDigits = (sock?.user?.id || "").split("@")[0].split(":")[0].replace(/\D/g, "");
+
+      if (
+        (waDigits.length >= 8 && waDigits.slice(-8) === last8) ||
+        (phoneDigits.length >= 8 && phoneDigits.slice(-8) === last8) ||
+        (sockDigits.length >= 8 && sockDigits.slice(-8) === last8)
+      ) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  private async resolveCustomerAndConversation(
+    merchant: any,
+    phoneOrJid: string,
+    rawPhoneOrJid?: string,
+    options?: {
+      pushName?: string;
+      isOutgoing?: boolean;
+    }
+  ): Promise<{ customer: any; conversation: any }> {
+    const cleanDigits = (phoneOrJid || "").replace(/@.*$/, "").replace(/\D/g, "");
+    const lockKey = `${merchant._id.toString()}:${cleanDigits.length >= 8 ? cleanDigits.slice(-8) : phoneOrJid}`;
+
+    const prevLock = this.contactLocks.get(lockKey) || Promise.resolve();
+    let releaseLock!: () => void;
+    const currentLock = new Promise<void>((resolve) => {
+      releaseLock = resolve;
+    });
+    const nextLock = prevLock.then(() => currentLock, () => currentLock);
+    this.contactLocks.set(lockKey, nextLock);
+
+    await prevLock.catch(() => {});
+
+    try {
+      const variants = cleanDigits ? generatePhoneVariants(cleanDigits) : [];
+      const phoneCandidates = new Set<string>();
+      if (phoneOrJid) phoneCandidates.add(phoneOrJid);
+      if (rawPhoneOrJid) phoneCandidates.add(rawPhoneOrJid);
+      if (cleanDigits) {
+        phoneCandidates.add(cleanDigits);
+        phoneCandidates.add(`+${cleanDigits}`);
+        phoneCandidates.add(`${cleanDigits}@s.whatsapp.net`);
+      }
+      for (const v of variants) {
+        const vDigits = v.replace(/\D/g, "");
+        phoneCandidates.add(v);
+        if (vDigits) {
+          phoneCandidates.add(vDigits);
+          phoneCandidates.add(`+${vDigits}`);
+          phoneCandidates.add(`${vDigits}@s.whatsapp.net`);
+        }
+      }
+
+      const customerOrConditions: any[] = [
+        { phone: { $in: Array.from(phoneCandidates) } }
+      ];
+      if (cleanDigits.length >= 8) {
+        customerOrConditions.push({ phone: { $regex: cleanDigits.slice(-8) } });
+      }
+
+      const matchingCustomers = await CommerceCustomerModel.find({
+        merchantId: merchant._id,
+        $or: customerOrConditions
+      }).sort({ updatedAt: -1, createdAt: 1 });
+
+      // Prefer a customer record that already has a name
+      let customer = matchingCustomers.find(c => c.name && c.name.trim()) || matchingCustomers[0] || null;
+
+      if (!customer) {
+        customer = await CommerceCustomerModel.create({
+          merchantId: merchant._id,
+          phone: phoneOrJid,
+          name: options?.pushName
+        });
+      } else if (options?.pushName) {
+        const pushName = options.pushName;
+        const isCorrupted =
+          customer.name === merchant.businessName ||
+          customer.name?.toLowerCase().includes("vendeur ia") ||
+          customer.name?.includes("Co-Fondateur") ||
+          (customer.name?.toLowerCase().includes("franck") && !phoneOrJid.includes("5111157"));
+        if (!customer.name || isCorrupted || customer.name !== pushName) {
+          customer.name = pushName;
+          await customer.save();
+        }
+      }
+
+      const allCustomerIds = matchingCustomers.length > 0
+        ? matchingCustomers.map(c => c._id)
+        : [customer._id];
+
+      const existingConversations = await CommerceConversationModel.find({
+        merchantId: merchant._id,
+        customerId: { $in: allCustomerIds }
+      }).sort({ lastMessageAt: -1, updatedAt: -1 });
+
+      let conversation = existingConversations.find(c => c.status === "needs_human") || existingConversations[0] || null;
+
+      if (!conversation) {
+        conversation = await CommerceConversationModel.create({
+          merchantId: merchant._id,
+          customerId: customer._id,
+          platform: "whatsapp",
+          status: options?.isOutgoing ? "needs_human" : "active",
+          unreadCount: options?.isOutgoing ? 0 : 1,
+          lastMessageAt: new Date()
+        });
+      } else {
+        // Merge any duplicate conversations for this same contact into the primary conversation
+        if (existingConversations.length > 1) {
+          const duplicateConvIds = existingConversations
+            .filter(c => c._id.toString() !== conversation._id.toString())
+            .map(c => c._id);
+          if (duplicateConvIds.length > 0) {
+            await CommerceMessageModel.updateMany(
+              { conversationId: { $in: duplicateConvIds } },
+              { $set: { conversationId: conversation._id } }
+            ).catch(() => {});
+            await CommerceConversationModel.deleteMany({
+              _id: { $in: duplicateConvIds }
+            }).catch(() => {});
+          }
+        }
+
+        if (String(conversation.customerId) !== String(customer._id)) {
+          conversation.customerId = customer._id;
+        }
+
+        if (!options?.isOutgoing) {
+          conversation.unreadCount = (conversation.unreadCount || 0) + 1;
+          conversation.lastMessageAt = new Date();
+          if (conversation.followUpSent) {
+            conversation.followUpSent = false;
+            conversation.isRecoveryPending = true;
+          }
+          await conversation.save();
+        }
+      }
+
+      // Clean up duplicate customer records for this merchant if any
+      if (matchingCustomers.length > 1) {
+        const dupCustIds = matchingCustomers
+          .filter(c => c._id.toString() !== customer._id.toString())
+          .map(c => c._id);
+        if (dupCustIds.length > 0) {
+          await CommerceConversationModel.updateMany(
+            { customerId: { $in: dupCustIds } },
+            { $set: { customerId: customer._id } }
+          ).catch(() => {});
+          await CommerceCustomerModel.deleteMany({
+            _id: { $in: dupCustIds }
+          }).catch(() => {});
+        }
+      }
+
+      return { customer, conversation };
+    } finally {
+      releaseLock();
+      if (this.contactLocks.get(lockKey) === nextLock) {
+        this.contactLocks.delete(lockKey);
+      }
+    }
+  }
+
   async handleIncomingMessage(userId: string, msg: any) {
     if (!msg?.key) return;
 
@@ -1323,6 +1511,11 @@ class WhatsAppService {
       return;
     }
 
+    // Ignore self-chats / merchant's own phone number or LID
+    if (this.isSelfJid(merchant, userId, from, rawFrom)) {
+      return;
+    }
+
     // Auto-sync session keys so outbound messaging immediately finds the active socket
     const currentLiveSock = this.activeSessions.get(userId);
     if (currentLiveSock) {
@@ -1441,54 +1634,19 @@ class WhatsAppService {
 
     if (!text && !isImageMsg && !mediaUrl && !isAudioMsg && !isVideoMsg && !isDocMsg && !isStickerMsg) return;
 
-    // Find or create customer
+    // Find or create customer and conversation atomically (locked per contact)
     const pushName = msg.pushName || undefined;
-    let customer = await CommerceCustomerModel.findOne({ merchantId: merchant._id, phone: from });
-    if (!customer && rawFrom !== from) {
-      // Fallback: check if customer exists under rawFrom
-      customer = await CommerceCustomerModel.findOne({ merchantId: merchant._id, phone: rawFrom });
-    }
-
-    if (!customer) {
-      customer = await CommerceCustomerModel.create({ merchantId: merchant._id, phone: from, name: pushName });
-    } else if (pushName) {
-      const isCorrupted = customer.name === merchant.businessName || 
-                          customer.name?.toLowerCase().includes("vendeur ia") ||
-                          customer.name?.includes("Co-Fondateur") ||
-                          (customer.name?.toLowerCase().includes("franck") && !from.includes("5111157"));
-      if (!customer.name || isCorrupted || customer.name !== pushName) {
-        customer.name = pushName;
-        await customer.save();
-      }
-    }
+    const { customer, conversation } = await this.resolveCustomerAndConversation(merchant, from, rawFrom, {
+      pushName,
+      isOutgoing: false
+    });
 
     // Trigger WhatsApp Profile Picture synchronization safely in the background (non-blocking)
     setTimeout(() => {
       this.syncCustomerAvatar(userId, customer).catch(() => {});
     }, 5000);
 
-    // Find or create conversation
-    let conversation = await CommerceConversationModel.findOne({ merchantId: merchant._id, customerId: customer._id });
-    if (!conversation) {
-      conversation = await CommerceConversationModel.create({
-        merchantId: merchant._id,
-        customerId: customer._id,
-        platform: "whatsapp",
-        status: "active",
-        unreadCount: 1,
-        lastMessageAt: new Date()
-      });
-    } else {
-      conversation.unreadCount = (conversation.unreadCount || 0) + 1;
-      conversation.lastMessageAt = new Date();
-      if (conversation.followUpSent) {
-        conversation.followUpSent = false;
-        conversation.isRecoveryPending = true;
-      }
-      await conversation.save();
-    }
-
-    // Handle Image / Payment Proof (Baileys)
+    // Handle Image / Payment Proof (Baileys & Meta)
     if (isImageMsg && typeof imageMsg === 'object') {
       messageType = "image";
       console.log("[WhatsApp] Image received, downloading and checking for payment proof...");
@@ -1537,10 +1695,7 @@ class WhatsAppService {
             // Send digital receipt automatically
             if (auditResult.orderId) {
               const receipt = await commerceService.generateDigitalReceipt(auditResult.orderId.toString());
-              const sock = this.activeSessions.get(userId);
-              if (sock) {
-                await sock.sendMessage(from, { text: receipt });
-              }
+              await this.sendMessage(userId, from, receipt).catch(() => {});
             }
           } else if (auditResult.decision === "FLAGGED_FOR_REVIEW") {
             pushService.sendNotification(userId, {
@@ -1826,8 +1981,10 @@ class WhatsAppService {
 
     if (msg.key?.remoteJidAlt && msg.key.remoteJidAlt.includes('@s.whatsapp.net')) {
       to = msg.key.remoteJidAlt;
-    } else if (msg.key?.sender_pn) {
-      to = msg.key.sender_pn;
+    } else if (msg.key?.recipient_pn) {
+      to = msg.key.recipient_pn.includes('@s.whatsapp.net')
+        ? msg.key.recipient_pn
+        : `${msg.key.recipient_pn.replace(/\D/g, '')}@s.whatsapp.net`;
     }
 
     const rawMsg = msg.message?.ephemeralMessage?.message ||
@@ -1894,27 +2051,15 @@ class WhatsAppService {
       return;
     }
 
-    // Find or create customer
-    let customer = await CommerceCustomerModel.findOne({ merchantId: merchant._id, phone: to });
-    if (!customer && rawTo !== to) {
-      customer = await CommerceCustomerModel.findOne({ merchantId: merchant._id, phone: rawTo });
-    }
-    if (!customer) {
-      customer = await CommerceCustomerModel.create({ merchantId: merchant._id, phone: to });
+    // Ignore self-chats / merchant's own phone number or LID
+    if (this.isSelfJid(merchant, userId, to, rawTo)) {
+      return;
     }
 
-    // Find or create conversation
-    let conversation = await CommerceConversationModel.findOne({ merchantId: merchant._id, customerId: customer._id });
-    if (!conversation) {
-      conversation = await CommerceConversationModel.create({
-        merchantId: merchant._id,
-        customerId: customer._id,
-        platform: "whatsapp",
-        status: "needs_human",
-        unreadCount: 0,
-        lastMessageAt: new Date()
-      });
-    }
+    // Find or create customer and conversation atomically
+    const { customer, conversation } = await this.resolveCustomerAndConversation(merchant, to, rawTo, {
+      isOutgoing: true
+    });
 
     // Check if we already recorded this exact message within the last 10 seconds (e.g. sent via API / Web)
     const existingMsg = await CommerceMessageModel.findOne({
@@ -2498,65 +2643,8 @@ class WhatsAppService {
             mimetype: 'image/jpeg',
             caption: text
           };
-
-          // Find or create customer to get the ID for linking
-          let customer = await CommerceCustomerModel.findOne({ merchantId: merchant._id, phone: from });
-          if (!customer) {
-            customer = await CommerceCustomerModel.create({ merchantId: merchant._id, phone: from });
-          }
-
-          const auditResult = await commerceService.auditAndLinkPaymentToOrder({
-            merchant,
-            customer,
-            imageBuffer: buffer,
-            mimeType: 'image/jpeg'
-          });
-
-          if (auditResult && auditResult.extraction?.isPaymentProof) {
-            emitToUser(merchant.ownerId, "payment:detected", {
-               conversationId: latestConversation?._id,
-               auditResult,
-               ...auditResult.extraction
-            });
-
-            if (auditResult.decision === "AUTO_APPROVED") {
-              pushService.sendNotification(merchant.ownerId, {
-                title: "💰 Paiement Validé par Shield OCR ! (API)",
-                body: `Reçu authentifié (${auditResult.confidenceScore}%). ${customer.phone} a payé ${auditResult.amount} XOF via ${auditResult.platform}.`,
-                tag: `payment-${auditResult.orderId || latestConversation?._id}`,
-                data: { conversationId: latestConversation?._id?.toString(), orderId: auditResult.orderId?.toString(), url: `/inbox?chat=${latestConversation?._id}` }
-              }).catch((err: any) => console.error("[WhatsApp Meta] Push notification error:", err));
-
-              text = `[PAIEMENT SHIELD VALIDÉ AUTOMATIQUEMENT: ${auditResult.platform} - ${auditResult.amount} XOF (Score: ${auditResult.confidenceScore}%)]`;
-
-              // Send digital receipt automatically via Meta
-              if (auditResult.orderId) {
-                const receipt = await commerceService.generateDigitalReceipt(auditResult.orderId.toString());
-                await this.sendMetaMessage(merchant, from, receipt);
-              }
-            } else if (auditResult.decision === "FLAGGED_FOR_REVIEW") {
-              pushService.sendNotification(merchant.ownerId, {
-                title: "⚠️ Preuve Suspecte à Vérifier (API)",
-                body: `Capture de ${auditResult.amount} XOF reçue mais nécessite votre confirmation manuelle (Score: ${auditResult.confidenceScore}%).`,
-                tag: `payment-${latestConversation?._id}`,
-                data: { conversationId: latestConversation?._id?.toString(), url: `/inbox?chat=${latestConversation?._id}` }
-              }).catch((err: any) => console.error("[WhatsApp Meta] Push notification error:", err));
-
-              text = `[PREUVE SUSPECTE - VÉRIFICATION MANUELLE REQUISE: ${auditResult.platform} ${auditResult.amount} XOF (Alertes: ${auditResult.flags.join(", ")})]`;
-            } else {
-              pushService.sendNotification(merchant.ownerId, {
-                title: "🚨 Alerte Fraude / Fausse Preuve (API)",
-                body: `Tentative de fausse capture d'écran détectée pour ${customer.phone} (${auditResult.flags.join(", ")}).`,
-                tag: `payment-${latestConversation?._id}`,
-                data: { conversationId: latestConversation?._id?.toString(), url: `/inbox?chat=${latestConversation?._id}` }
-              }).catch((err: any) => console.error("[WhatsApp Meta] Push notification error:", err));
-
-              text = `[ALERTE SHIELD FRAUDE DÉTECTÉE: Reçu rejeté (${auditResult.flags.join(", ")})]`;
-            }
-            msg.message.conversation = text;
-          }
         } else if (media.mediaType === 'audio') {
-          console.log("[Meta WhatsApp] Audio received, uploading and attempting transcription...");
+          console.log("[Meta WhatsApp] Audio received, uploading and delegating transcription to handleIncomingMessage...");
           const storageResult = await storageService.uploadBuffer(
             buffer,
             `meta_voice_${Date.now()}.ogg`,
@@ -2571,16 +2659,6 @@ class WhatsAppService {
             mimeType: "audio/ogg"
           };
           msg.message.audioMessage = { mimetype: 'audio/ogg' };
-
-          const merchantContext = merchant ? `Boutique: ${merchant.businessName}, Ville: ${merchant.city}` : "";
-          text = await aiProvider.transcribeAudio(
-            buffer,
-            'audio/ogg',
-            merchantContext
-          );
-
-          msg.message.conversation = text;
-          console.log(`[Meta WhatsApp] Transcription result: ${text}`);
         } else if (media.mediaType === 'video') {
           const storageResult = await storageService.uploadBuffer(
             buffer,

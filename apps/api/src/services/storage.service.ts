@@ -13,6 +13,8 @@ export interface StorageResult {
   provider: "local" | "cloudinary";
   providerId?: string;
   bytes: number;
+  buffer?: Buffer;
+  mimeType?: string;
 }
 
 export class StorageService {
@@ -161,7 +163,9 @@ export class StorageService {
           url: result.secure_url,
           provider: "cloudinary",
           providerId: result.public_id,
-          bytes: result.bytes || finalBuffer.length
+          bytes: result.bytes || finalBuffer.length,
+          buffer: finalBuffer,
+          mimeType: finalMime
         };
       } catch (error) {
         console.error("Cloudinary buffer upload failed, falling back to local:", error);
@@ -181,7 +185,9 @@ export class StorageService {
       url: `${baseUrl}/uploads/${folder}/${filename}`,
       provider: "local",
       providerId: filename,
-      bytes: finalBuffer.length
+      bytes: finalBuffer.length,
+      buffer: finalBuffer,
+      mimeType: finalMime
     };
   }
 }

@@ -264,7 +264,7 @@ router.post("/webhook", async (req, res) => {
                 console.log(`[Webhook] New ${msg.type || 'message'} from ${from} (${contactName || 'sans nom'}) to PhoneID ${phoneId} (MsgID: ${msg.id})`);
                 // Handle the incoming message asynchronously with deduplication
                 const mediaPayload = mediaId ? { mediaId, mediaType: mediaType as any } : undefined;
-                whatsappService.handleMetaIncomingMessage(from, text || "", phoneId, mediaPayload, msg.id, contactName).catch(err => {
+                await whatsappService.handleMetaIncomingMessage(from, text || "", phoneId, mediaPayload, msg.id, contactName).catch(err => {
                   console.error("[Webhook] Error in async handleMetaIncomingMessage:", err);
                 });
               }
